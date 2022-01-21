@@ -5746,14 +5746,14 @@ Section convex2.
 
 End convex2.
 
-Section Paolo_converge.
+Section tails.
 
-   Lemma tails_succ_sub {a : nat -> R} (ha : ex_series a) :
-    let r := fun n => Series(fun k => a((n+k)%nat)) in
-      forall n, a n = r n - r (S n).
+  Definition tail_series (a : nat -> R) := fun n => Series(fun k => a((n+k)%nat)).
+
+   Lemma tail_succ_sub {a : nat -> R} (ha : ex_series a) :
+      forall n, a n = tail_series a n - tail_series a (S n).
   Proof.
-    intros r n.
-    unfold r.
+    intros n. unfold tail_series.
     rewrite Series_incr_1.
     setoid_rewrite plus_n_Sm.
     ring_simplify. f_equal; lia.
@@ -5761,33 +5761,30 @@ Section Paolo_converge.
   Qed.
 
   Lemma rudin_12_b_aux0 {a : nat -> R}(ha : ex_series a)(ha' : forall n, 0 < a n):
-    let r:= fun n => Series(fun k => a((n+k)%nat)) in
-    forall n, 0 < r (S n) < r n.
+    forall n, 0 < tail_series a (S n) < tail_series a n.
   Proof.
-    intros r n.
+    intros n.
     split.
-    + unfold r.
+    + unfold tail_series.
       apply Series_pos.
       now rewrite <-ex_series_incr_n.
       intros. apply ha'.
-    + generalize (tails_succ_sub ha); intros.
+    + generalize (tail_succ_sub ha); intros.
       setoid_rewrite H in ha'.
-      specialize (ha' n).
-      unfold r; lra.
+      specialize (ha' n); lra.
   Qed.
 
   Lemma rudin_12_b_aux1 {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 < a n):
-    let r := fun n => Series(fun k => a((n+k)%nat)) in
-    forall n, sqrt(r n) + sqrt(r (S n)) < 2*sqrt(r n).
+    forall n, sqrt(tail_series a n) + sqrt(tail_series a (S n)) < 2*sqrt(tail_series a n).
   Proof.
-    intros r n.
-    replace (2*sqrt(r n)) with (sqrt(r n) + sqrt(r n)) by lra.
-    apply Rplus_lt_compat_l with (r := sqrt (r n)).
+    intros n.
+    replace (2*sqrt(tail_series a n)) with (sqrt(tail_series a n) + sqrt(tail_series a n)) by lra.
+    apply Rplus_lt_compat_l with (r := sqrt (tail_series a n)).
     apply sqrt_lt_1_alt.
     split.
-    + unfold r. apply Series_nonneg;[|intros n0; left; apply ha'].
+    + unfold tail_series. apply Series_nonneg;[|intros n0; left; apply ha'].
       now rewrite <-ex_series_incr_n.
-    + unfold r.
+    + unfold tail_series.
       rewrite Series_incr_1 with (a := fun k => (a (n+k)%nat));[|now rewrite <-ex_series_incr_n] .
       setoid_rewrite <-plus_n_Sm.
       setoid_rewrite plus_n_Sm.
@@ -5797,14 +5794,13 @@ Section Paolo_converge.
   Qed.
 
   Lemma rudin_12_b_aux2 {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 < a n) :
-    let r := fun n => Series(fun k => a((n+k)%nat)) in
-      forall n, a n = (sqrt(r n) + sqrt(r (S n)))*(sqrt(r n) - sqrt(r (S n))).
+      forall n, a n = (sqrt(tail_series a n) + sqrt(tail_series a (S n)))*(sqrt(tail_series a n) - sqrt(tail_series a (S n))).
   Proof.
-    intros r n.
+    intros n.
     rewrite Rsqr_plus_minus.
     rewrite Rsqr_sqrt;[| apply Series_nonneg].
     rewrite Rsqr_sqrt;[| apply Series_nonneg].
-    now apply tails_succ_sub.
+    now apply tail_succ_sub.
     now rewrite <-ex_series_incr_n.
     intros. left. apply ha'.
     now rewrite <-ex_series_incr_n.
@@ -5813,42 +5809,40 @@ Section Paolo_converge.
 
 
   Lemma rudin_12_b_aux3 {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 < a n):
-    let r := fun n => Series(fun k => a((n+k)%nat)) in
-    forall n, a n*/sqrt(r n) < 2*(sqrt(r n) - sqrt(r (S n))).
+    forall n, a n*/sqrt(tail_series a n) < 2*(sqrt(tail_series a n) - sqrt(tail_series a (S n))).
   Proof.
-    intros r n.
+    intros n.
     generalize (rudin_12_b_aux0 ha ha'); intros.
-    assert (hr1 : 0 < sqrt(r n)).
+    assert (hr1 : 0 < sqrt(tail_series a n)).
     {
       apply sqrt_lt_R0. specialize (H n).
       destruct H. eapply Rlt_trans; eauto.
     }
-    assert (hr2 : 0 <> sqrt(r n)) by lra.
-    replace (a n) with ((sqrt(r n) + sqrt(r (S n)))*(sqrt(r n) - sqrt(r (S n))))
+    assert (hr2 : 0 <> sqrt(tail_series a n)) by lra.
+    replace (a n) with ((sqrt(tail_series a n) + sqrt(tail_series a (S n)))*(sqrt(tail_series a n) - sqrt(tail_series a (S n))))
                        by (symmetry; rewrite rudin_12_b_aux2; trivial).
     rewrite <-Rmult_1_r.
-    rewrite <-Rinv_r with (r := (sqrt(r n)));[| congruence].
+    rewrite <-Rinv_r with (r := (sqrt(tail_series a n)));[| congruence].
     rewrite <-Rmult_assoc.
     apply Rmult_lt_compat_r.
     ++ now apply Rinv_pos.
     ++ rewrite Rmult_comm.
        rewrite Rmult_comm with (r1 := 2).
        rewrite Rmult_assoc. apply Rmult_lt_compat_l.
-       enough (sqrt(r (S n)) < sqrt(r n)) by lra.
+       enough (sqrt(tail_series a (S n)) < sqrt(tail_series a n)) by lra.
        apply sqrt_lt_1_alt.
        destruct (H n). split; [left; apply H0| apply H1].
        apply rudin_12_b_aux1; trivial.
   Qed.
 
   Lemma rudin_12_b_aux4 {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 < a n) :
-    let r := fun n => Series(fun k => a((n+k)%nat)) in
-    forall m, sum_f_R0 (fun n => a n */ sqrt(r n)) m < 2*(sqrt(r 0%nat) - sqrt(r(S m))).
+    forall m, sum_f_R0 (fun n => a n */ sqrt(tail_series a n)) m < 2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a(S m))).
   Proof.
-    intros r m.
+    intros m.
     induction m; simpl.
     + apply (rudin_12_b_aux3 ha ha').
-    + replace (2*(sqrt(r 0%nat) - sqrt(r(S(S m))))) with
-          (2*(sqrt(r 0%nat) - sqrt(r(S m))) + 2*((sqrt(r (S m))) - sqrt(r(S(S m))))) by lra.
+    + replace (2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a(S(S m))))) with
+          (2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a (S m))) + 2*((sqrt(tail_series a (S m))) - sqrt(tail_series a(S(S m))))) by lra.
       apply (Rplus_lt_compat _ _ _ _ IHm).
       apply (rudin_12_b_aux3); auto.
   Qed.
@@ -5888,8 +5882,8 @@ Section Paolo_converge.
     apply Rabs_pos.
   Qed.
 
- Lemma Paolo_converge (a: nat -> R) :
-    (forall n, 0 < a n) ->
+ Lemma Paolo_converge_pos (a: nat -> R) :
+   (forall n, 0 < a n) ->
     ex_series a ->
     exists (b : nat -> R),
       (forall n, 0 < b n) /\
@@ -5912,12 +5906,12 @@ Section Paolo_converge.
        now rewrite sqrt_0 in H.
        apply continuity_pt_sqrt; lra.
      }
-     exists (fun n => 1/sqrt(r n)).
+     exists (fun n => 1/sqrt(tail_series a n)).
      split.
      + intros n.
        apply Rdiv_lt_0_compat; try lra.
        apply sqrt_lt_R0.
-       unfold r. apply (Series_pos);[|intros; apply Ha1].
+       apply (Series_pos);[|intros; apply Ha1].
        now rewrite <-ex_series_incr_n.
      + split.
        ** unfold Rdiv.
@@ -5946,7 +5940,19 @@ Section Paolo_converge.
              rewrite <-sqrt_0. apply sqrt_lt_1_alt.
              split; try lra.
              apply Series_pos; [|intros; try apply Ha1].
-             setoid_rewrite <-plus_Sn_m. now rewrite <-ex_series_incr_n.
+             now rewrite <-ex_series_incr_n.
    Qed.
 
-  End Paolo_converge.
+   Lemma Paolo_converge_nonneg (a: nat -> R) :
+     (forall n, 0 <= a n) ->
+         (forall n, exists h, 0 < a (n + h)%nat) ->
+    ex_series a ->
+    exists (b : nat -> R),
+      (forall n, 0 < b n) /\
+      is_lim_seq b p_infty /\
+      ex_series (fun n => a n * b n).
+   Proof.
+   Admitted.
+
+
+  End tails.
