@@ -14,6 +14,7 @@ Require Import List.
 Require Finite.
 Require Import Morphisms Permutation.
 Require Import EquivDec.
+Require Import PushNeg.
 
 Require Import LibUtils ListAdd.
 Require Import Relation_Definitions Sorted.
@@ -3930,6 +3931,19 @@ Proof.
   now apply ex_finite_lim_series.
 Qed.
 
+Lemma ex_series_const0 : ex_series (const 0).
+  Proof.
+    rewrite <- ex_finite_lim_series.
+    apply lim_sum_abs_bounded.
+    rewrite Lim_seq_ext with (v := fun _ => 0).
+    now rewrite Lim_seq_const.
+    intros.
+    rewrite sum_n_ext with (b := fun _ => 0).
+    now rewrite sum_n_zero.
+    intros; unfold const.
+    now rewrite Rabs_R0.
+  Qed.
+
 Lemma exp_ineq1 : forall x : R, x <> 0 -> 1 + x < exp x.
 Proof.
   assert (Hd : forall c : R,
@@ -5993,6 +6007,54 @@ Section tails.
    apply Hn; auto.
    intros. exists 0%nat.
    apply H.
+ Qed.
+
+ Definition eventually_pos_dec (a : nat -> R) :
+   {(forall n : nat, exists h : nat, 0 < a (n + h)%nat)} +{~(forall n : nat, exists h : nat, 0 < a (n + h)%nat)}.
+ Proof.
+   apply EM_dec'.
+   apply classic.
+ Qed.
+
+ Theorem Paolo_final (a : nat -> R):
+   (forall n, 0 <= a n) ->
+   ex_series a ->
+   exists (b : nat -> R),
+     (forall n, 0 < b n) /\
+     is_lim_seq b p_infty /\
+     ex_series (fun n => a n * b n).
+ Proof.
+   intros.
+   destruct (eventually_pos_dec a) as [H1|H2].
+   + apply Paolo_converge_nonneg; auto.
+   + push_neg_in H2.
+     destruct H2 as [N0 HN0].
+     exists (fun n => 1 + INR n).
+     split.
+     -- intros n.
+        rewrite Rplus_comm.
+        apply INRp1_pos.
+     -- split.
+        ++ generalize (is_lim_seq_INR); intros.
+           eapply is_lim_seq_le_p_loc with (u := fun n => INR n); auto.
+           exists 0%nat. intros; lra.
+        ++ setoid_rewrite Rmult_plus_distr_l.
+           setoid_rewrite Rmult_1_r.
+           apply ex_series_plus with (b := fun n => (a n)*(INR n)); trivial.
+           apply ex_series_incr_n  with (n := N0).
+           assert (forall n, a (N0 + n)%nat = 0).
+           {
+             intros.
+             apply Rle_antisym.
+             - apply Rge_le, HN0.
+             - apply H.
+           }
+           apply ex_series_ext with
+               (a0 := const 0); try (apply ex_series_const0).
+           intros.
+           unfold const.
+           rewrite H1.
+           lra.
  Qed.
 
  End tails.
