@@ -5817,25 +5817,6 @@ Section tails.
       + intros; apply H.
   Qed.
 
-  Lemma rudin_12_b_aux1 {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 < a n):
-    forall n, sqrt(tail_series a n) + sqrt(tail_series a (S n)) < 2*sqrt(tail_series a n).
-  Proof.
-   intros n.
-    replace (2*sqrt(tail_series a n)) with (sqrt(tail_series a n) + sqrt(tail_series a n)) by lra.
-    apply Rplus_lt_compat_l with (r := sqrt (tail_series a n)).
-    apply sqrt_lt_1_alt.
-    split.
-    + unfold tail_series. apply Series_nonneg;[|intros n0; left; apply ha'].
-      now rewrite <-ex_series_incr_n.
-    + unfold tail_series.
-      rewrite Series_incr_1 with (a := fun k => (a (n+k)%nat));[|now rewrite <-ex_series_incr_n] .
-      setoid_rewrite <-plus_n_Sm.
-      setoid_rewrite plus_n_Sm.
-      rewrite <-Rplus_0_l at 1.
-      apply Rplus_lt_compat_r.
-      apply ha'.
-   Qed.
-
   Lemma rudin_12_b_aux1_nonneg {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 <= a n)
         (ha'' : forall n, exists h, 0 < a (n + h)%nat):
     forall n, sqrt(tail_series a n) + sqrt(tail_series a (S n)) <= 2*sqrt(tail_series a n).
@@ -5846,20 +5827,6 @@ Section tails.
     apply sqrt_le_1_alt.
     generalize (tail_series_nonneg_le ha ha' n); intros.
     lra.
-  Qed.
-
-  Lemma rudin_12_b_aux2 {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 < a n) :
-      forall n, a n = (sqrt(tail_series a n) + sqrt(tail_series a (S n)))*(sqrt(tail_series a n) - sqrt(tail_series a (S n))).
-  Proof.
-    intros n.
-    rewrite Rsqr_plus_minus.
-    rewrite Rsqr_sqrt;[| apply Series_nonneg].
-    rewrite Rsqr_sqrt;[| apply Series_nonneg].
-    now apply tail_succ_sub.
-    now rewrite <-ex_series_incr_n.
-    intros. left. apply ha'.
-    now rewrite <-ex_series_incr_n.
-    intros. left. apply ha'.
   Qed.
 
   Lemma rudin_12_b_aux2_nonneg {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 <= a n):
@@ -5874,33 +5841,6 @@ Section tails.
     intros. apply ha'.
     now rewrite <-ex_series_incr_n.
     intros. apply ha'.
-  Qed.
-
-  Lemma rudin_12_b_aux3 {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 < a n):
-    forall n, a n*/sqrt(tail_series a n) < 2*(sqrt(tail_series a n) - sqrt(tail_series a (S n))).
-  Proof.
-    intros n.
-    generalize (tail_series_pos_lt ha ha'); intros.
-    assert (hr1 : 0 < sqrt(tail_series a n)).
-    {
-      apply sqrt_lt_R0. specialize (H n).
-      destruct H. eapply Rlt_trans; eauto.
-    }
-    assert (hr2 : 0 <> sqrt(tail_series a n)) by lra.
-    replace (a n) with ((sqrt(tail_series a n) + sqrt(tail_series a (S n)))*(sqrt(tail_series a n) - sqrt(tail_series a (S n))))
-                       by (symmetry; rewrite rudin_12_b_aux2; trivial).
-    rewrite <-Rmult_1_r.
-    rewrite <-Rinv_r with (r := (sqrt(tail_series a n)));[| congruence].
-    rewrite <-Rmult_assoc.
-    apply Rmult_lt_compat_r.
-    ++ now apply Rinv_pos.
-    ++ rewrite Rmult_comm.
-       rewrite Rmult_comm with (r1 := 2).
-       rewrite Rmult_assoc. apply Rmult_lt_compat_l.
-       enough (sqrt(tail_series a (S n)) < sqrt(tail_series a n)) by lra.
-       apply sqrt_lt_1_alt.
-       destruct (H n). split; [left; apply H0| apply H1].
-       apply rudin_12_b_aux1; trivial.
   Qed.
 
   Lemma rudin_12_b_aux3_nonneg {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 <= a n)
@@ -5930,18 +5870,6 @@ Section tails.
        apply sqrt_le_1_alt.
        apply (H n).
        apply rudin_12_b_aux1_nonneg; trivial.
-  Qed.
-
-  Lemma rudin_12_b_aux4 {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 < a n) :
-    forall m, sum_f_R0 (fun n => a n */ sqrt(tail_series a n)) m < 2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a(S m))).
-  Proof.
-    intros m.
-    induction m; simpl.
-    + apply (rudin_12_b_aux3 ha ha').
-    + replace (2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a(S(S m))))) with
-          (2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a (S m))) + 2*((sqrt(tail_series a (S m))) - sqrt(tail_series a(S(S m))))) by lra.
-      apply (Rplus_lt_compat _ _ _ _ IHm).
-      apply (rudin_12_b_aux3); auto.
   Qed.
 
   Lemma rudin_12_b_aux4_nonneg {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 <= a n)
