@@ -5992,67 +5992,6 @@ Section tails.
     apply Rabs_pos.
   Qed.
 
- Lemma Paolo_converge_pos (a: nat -> R) :
-   (forall n, 0 < a n) ->
-    ex_series a ->
-    exists (b : nat -> R),
-      (forall n, 0 < b n) /\
-      is_lim_seq b p_infty /\
-      ex_series (fun n => a n * b n).
-   Proof.
-     intros Ha1 Ha2.
-     pose (r := fun n => Series(fun k => a((n+k)%nat))).
-     assert (Hr : is_lim_seq r 0).
-     {
-       generalize (zerotails a Ha2); intros.
-       unfold r.
-       setoid_rewrite is_lim_seq_incr_1.
-       now setoid_rewrite <-Nat.add_succ_l in H.
-     }
-     assert (Hr' : is_lim_seq (fun n => sqrt(r n)) 0).
-     {
-       generalize (is_lim_seq_continuous (sqrt) r 0); intros.
-       cut_to H; trivial.
-       now rewrite sqrt_0 in H.
-       apply continuity_pt_sqrt; lra.
-     }
-     exists (fun n => 1/sqrt(tail_series a n)).
-     split.
-     + intros n.
-       apply Rdiv_lt_0_compat; try lra.
-       apply sqrt_lt_R0.
-       apply (Series_pos);[|intros; apply Ha1].
-       now rewrite <-ex_series_incr_n.
-     + split.
-       ** unfold Rdiv.
-          setoid_rewrite Rmult_1_l.
-          apply (is_lim_seq_inv_pos_p_infty Hr'); intros.
-          apply sqrt_lt_R0.
-          unfold r. apply (Series_pos);[|intros; apply Ha1].
-          now rewrite <-ex_series_incr_n.
-       ** unfold Rdiv. setoid_rewrite Rmult_1_l.
-          rewrite <-ex_finite_lim_series.
-          apply ex_finite_lim_seq_incr with (M := 2*(sqrt(r 0%nat))).
-          -- intros. do 2 rewrite sum_n_Reals.
-             simpl. apply Rplus_le_compat1_l.
-             apply Rmult_le_pos;[left; apply Ha1|left].
-             apply Rinv_pos.
-             apply sqrt_lt_R0.
-             unfold r. apply (Series_pos);[|intros; apply Ha1].
-             now rewrite <-ex_series_incr_n.
-          -- intros n. rewrite sum_n_Reals.
-             left. eapply Rlt_trans.
-             apply (rudin_12_b_aux4 Ha2 Ha1); intros.
-             apply Rmult_lt_compat_l; try lra.
-             replace (sqrt (r 0%nat)) with (sqrt(r 0%nat) - 0) by lra.
-             unfold r; simpl. apply Rplus_lt_compat_l.
-             apply Ropp_lt_contravar.
-             rewrite <-sqrt_0. apply sqrt_lt_1_alt.
-             split; try lra.
-             apply Series_pos; [|intros; try apply Ha1].
-             now rewrite <-ex_series_incr_n.
-   Qed.
-
    Lemma Paolo_converge_nonneg (a: nat -> R) :
      (forall n, 0 <= a n) ->
          (forall n, exists h, 0 < a (n + h)%nat) ->
@@ -6111,4 +6050,21 @@ Section tails.
              left. apply tail_series_nonneg_eventually_pos; auto.
     Qed.
 
-  End tails.
+
+ Lemma Paolo_converge_pos (a: nat -> R) :
+   (forall n, 0 < a n) ->
+    ex_series a ->
+    exists (b : nat -> R),
+      (forall n, 0 < b n) /\
+      is_lim_seq b p_infty /\
+      ex_series (fun n => a n * b n).
+ Proof.
+   intros.
+   assert (Ha : forall n, 0 <= a n) by (intros n ; left; auto).
+   generalize (Paolo_converge_nonneg a Ha); intros Hn.
+   apply Hn; auto.
+   intros. exists 0%nat.
+   apply H.
+ Qed.
+
+ End tails.
