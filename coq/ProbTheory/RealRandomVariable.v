@@ -5033,6 +5033,13 @@ End rv_expressible.
 Section adapted.
   Context {Ts:Type}.
 
+  Global Instance is_adapted_const c (sas:nat->SigmaAlgebra Ts) :
+    IsAdapted borel_sa (fun _ => const c) sas.
+  Proof.
+    unfold IsAdapted; intros.
+    typeclasses eauto.
+  Qed.
+
   Global Instance is_adapted_opp Y (sas:nat->SigmaAlgebra Ts) :
     IsAdapted borel_sa Y sas -> 
     IsAdapted borel_sa (fun n => rvopp (Y n)) sas.

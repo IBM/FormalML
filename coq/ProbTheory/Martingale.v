@@ -17,6 +17,7 @@ Require Import List.
 Require Import NumberIso.
 Require Import PushNeg.
 Require Import Reals.
+Require Import Coquelicot.Rbar.
 
 Set Bullet Behavior "Strict Subproofs". 
 
@@ -558,13 +559,14 @@ Section martingale.
       now apply is_martingale_eq_any.
   Qed.
 
-  Definition is_predictable (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
-    := IsAdapted borel_sa (fun x => Y (S x)) sas.
+  Definition is_predictable {Td} {saD:SigmaAlgebra Td} (Y : nat -> Ts -> Td) (sas : nat -> SigmaAlgebra Ts)
+    := IsAdapted saD (fun x => Y (S x)) sas.
 
-  Lemma is_adapted_filtration_pred (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+  Lemma is_adapted_filtration_pred {Td} {saD:SigmaAlgebra Td}
+        (Y : nat -> Ts -> Td) (sas : nat -> SigmaAlgebra Ts)
         {filt:IsFiltration sas}
-        {adapt:IsAdapted borel_sa Y (fun n => sas (pred n))} :
-    IsAdapted borel_sa Y sas.
+        {adapt:IsAdapted saD Y (fun n => sas (pred n))} :
+    IsAdapted saD Y sas.
   Proof.
     intros n.
     generalize (adapt n).
@@ -574,19 +576,23 @@ Section martingale.
     - apply filt.
   Qed.
 
-  Lemma is_adapted_filtration_pred_predictable (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+  Lemma is_adapted_filtration_pred_predictable
+        {Td} {saD:SigmaAlgebra Td}
+        (Y : nat -> Ts -> Td) (sas : nat -> SigmaAlgebra Ts)
         {filt:IsFiltration sas}
-        {adapt:IsAdapted borel_sa Y (fun n => sas (pred n))} :
+        {adapt:IsAdapted saD Y (fun n => sas (pred n))} :
     is_predictable Y sas.
   Proof.
     intros n.
     apply (adapt (S n)).
   Qed.
 
-  Lemma is_adapted_filtration_shift k (Y : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+  Lemma is_adapted_filtration_shift
+        {Td} {saD:SigmaAlgebra Td}
+        k (Y : nat -> Ts -> Td) (sas : nat -> SigmaAlgebra Ts)
         {filt:IsFiltration sas}
-        {adapt:IsAdapted borel_sa Y (fun n => sas (n - k)%nat)} :
-    IsAdapted borel_sa Y sas.
+        {adapt:IsAdapted saD Y (fun n => sas (n - k)%nat)} :
+    IsAdapted saD Y sas.
   Proof.
     intros n.
     generalize (adapt n).
@@ -1389,7 +1395,7 @@ Section martingale.
     typeclasses eauto.
   Qed.
 
-  Global Instance martingale_transform_adapted  (H X : nat -> Ts -> R) sas
+  Global Instance martingale_transform_adapted (H X : nat -> Ts -> R) sas
          {adapt:IsAdapted borel_sa X sas}
          {filt:IsFiltration sas} :
     is_predictable H sas ->
@@ -1720,6 +1726,55 @@ Section martingale.
       apply Rmult_le_pos; trivial.
       lra.
   Qed.
+
+  Lemma martingale_transform_plus (H1 H2 X : nat -> Ts -> R) (k:nat) :
+    rv_eq (rvplus (martingale_transform H1 X k) (martingale_transform H2 X k))
+          (martingale_transform (fun k' => (rvplus (H1 k') (H2 k'))) X k).
+  Proof.
+    intros ?.
+    unfold martingale_transform.
+    rv_unfold.
+    unfold rvsum.
+    destruct k; simpl.
+    - lra.
+    - generalize (@Hierarchy.sum_n_plus Hierarchy.R_AbelianGroup
+                 (fun n0 : nat => H1 (S n0) a * (X (S n0) a + -1 * X n0 a))
+                 (fun n0 : nat => H2 (S n0) a * (X (S n0) a + -1 * X n0 a))
+                 k); intros eqq.
+      unfold Hierarchy.plus in eqq; simpl in eqq.
+      rewrite <- eqq.
+      apply (@Hierarchy.sum_n_ext Hierarchy.R_AbelianGroup); intros.
+      lra.
+  Qed.
+
+  Global Instance martingale_transform_proper :
+    Proper (pointwise_relation _ rv_eq ==> pointwise_relation _ rv_eq ==> pointwise_relation _ rv_eq) martingale_transform.
+  Proof.
+    intros ?? eqq1 ?? eqq2 k ?.
+    unfold martingale_transform.
+    destruct k; trivial.
+    unfold rvsum; simpl.
+    apply (@Hierarchy.sum_n_ext Hierarchy.R_AbelianGroup); intros.
+    rv_unfold.
+    now rewrite eqq1, eqq2.
+  Qed.
+
+  Lemma martingale_transform_1 Y n : 
+    rv_eq (martingale_transform (fun _ : nat => const 1) Y n) (rvminus (Y n) (Y 0%nat)).
+  Proof.
+    intros ?.
+    unfold martingale_transform.
+    rv_unfold; unfold rvsum.
+    destruct n.
+    - lra.
+    - induction n; simpl.
+      + rewrite Hierarchy.sum_O.
+        lra.
+      + rewrite Hierarchy.sum_Sn.
+        rewrite IHn.
+        unfold Hierarchy.plus; simpl.
+        lra.
+  Qed.   
   
   Definition hitting_time
              (X : nat -> Ts -> R)
@@ -2035,7 +2090,7 @@ Section martingale.
         {filt:IsFiltration sas}
         {sub:IsSubAlgebras dom sas}
         {mart:IsMartingale Rle M sas}.
-
+ 
     Fixpoint upcrossing_times a b (n:nat) : Ts -> option nat
                := fun ts =>
                     match n with
@@ -2064,20 +2119,707 @@ Section martingale.
             ; eapply hitting_time_from_ge in H; eauto; lia.
     Qed.
 
-    (* we want sup{k | upcrossing_times a b (2*k) <= n}.  For integer k, this is the same as
-       inf{k | upcrossing_times a b (2*k) > n} - 1
-       which we can calculate using classic_min_of
-     *)
-    Definition upcrossing_var a b n ts :=
-      match classic_min_of (fun k => match upcrossing_times a b (2*k) ts with
-                            | Some k => (k > n)%nat
-                            | None => False
-                                  end) with
-      | Some k => Some (k - 1)%nat
-      | None => None
-      end.
+    (* sup {k | upcrossing_times a b (2*k) <= n} *)
+    (* Since upcrossing_times is increasing, 
+       and returns an integer, we only need to search the first n items 
+       (actually less, but any upper bound works *)
+ 
+    Definition upcrossing_var_expr a b n ts k
+      := match upcrossing_times a b (2*k) ts with
+         | None => 0%nat
+         | Some upn => if le_dec upn n then k else 0%nat
+         end.
+    
+    Definition upcrossing_var a b n (ts:Ts) : R
+      := Rmax_list (map INR (map (upcrossing_var_expr a b n ts) (seq 0 n))).
 
-  End doob_upcrossing_times.
+    Global Instance upcrossing_var_nneg a b n : NonnegativeFunction (upcrossing_var a b n).
+    Proof.
+      unfold upcrossing_var; intros ?.
+      destruct n; simpl; try reflexivity.
+      match_destr; try reflexivity.
+      apply Rmax_l.
+    Qed.
+
+    Lemma upcrossing_var_is_nat a b n ts :
+      { x | INR x = upcrossing_var a b n ts}.
+    Proof.
+      unfold upcrossing_var.
+      generalize (upcrossing_var_expr a b n ts); intros.
+      induction n.
+      - simpl.
+        exists 0%nat; simpl; trivial.
+      - rewrite seq_Sn.
+        destruct IHn.
+        simpl.
+        rewrite map_app; simpl.
+        destruct n; [simpl; eauto |].
+        rewrite Rmax_list_app.
+        + rewrite <- e.
+          unfold Rmax.
+          match_destr; eauto.
+        + simpl; congruence.
+    Qed.
+
+    Definition upcrossing_var_nat a b n ts : nat
+      := proj1_sig (upcrossing_var_is_nat a b n ts).
+
+(*    Lemma upcrossing_var_times_le a b n :
+      forall ts, upcrossing_times a b (2 * (upcrossing_var_nat a b n ts)) <= n.
+*)
+
+    Definition upcrossing_bound a b m : Ts -> R
+      := EventIndicator 
+           (classic_dec
+              (pre_union_of_collection
+                 (fun k x => (match upcrossing_times a b (2 * k - 1) x with
+                                 | Some x => (x < m)%nat
+                                 | None => False
+                                  end /\
+                                   match upcrossing_times a b (2 * k) x with
+                                   | Some x => (m <= x)%nat
+                                   | None => True
+                                   end)))).
+            
+    Lemma upcrossing_bound_is_predictable a b :
+      is_predictable (upcrossing_bound a b) sas.
+    Proof.
+      intros m.
+      unfold upcrossing_bound.
+      apply EventIndicator_pre_rv.
+      apply sa_countable_union; intros n.
+      apply sa_inter.
+      +
+        apply (sa_proper _
+                         (fun x =>
+                            exists y, (upcrossing_times a b (2 * n - 1) x) = Some y /\
+                                   y <= m)%nat).
+        * intros ?.
+          { split.
+            - intros [? [eqq ?]].
+              rewrite eqq; simpl.
+              lia.
+            - destruct (upcrossing_times a b (2 * n - 1) x); simpl; intros HH.
+              + eexists; split; [reflexivity | ]; lia.
+              + tauto.
+          } 
+        * apply sa_countable_union; intros.
+          {
+            destruct (le_dec n0 m)%nat.
+            - apply sa_inter.
+              + generalize (upcrossing_times_is_stop a b (2 * n - 1) n0); unfold is_stopping_time, stopping_time_pre_event.
+                eapply is_filtration_le; trivial.
+              + apply sa_sigma_const; eauto.
+            - eapply sa_proper; try eapply sa_none.
+              intros ?.
+              split; intros; tauto.
+          } 
+      + apply (sa_proper _
+                         (pre_event_complement
+                            (fun x =>
+                               exists y, (upcrossing_times a b (2 * n) x) = Some y /\
+                                      y <= m)%nat)).
+        * intros ?.
+          { unfold pre_event_complement.
+            split.
+            - match_destr.
+              intros HH.
+              destruct (le_dec (S m) n0)%nat; trivial.
+              elim HH.
+              eexists; split; [reflexivity |].
+              lia.
+            - destruct (upcrossing_times a b (2 * n) x); simpl; intros HH.
+              + intros [? [??]].
+                invcs H.
+                lia.
+              + intros [? [??]]; congruence.
+          } 
+        *
+          apply sa_complement.
+          apply sa_countable_union; intros.
+          {
+           (* generalize (upcrossing_times_is_stop a b (2 * n) n0); unfold is_stopping_time, stopping_time_pre_event. *)
+            
+            destruct (le_dec n0 m)%nat.
+            - apply sa_inter.
+              + generalize (upcrossing_times_is_stop a b (2 * n) n0); unfold is_stopping_time, stopping_time_pre_event.
+                eapply is_filtration_le; trivial.
+              + apply sa_sigma_const; lia.
+            - eapply sa_proper; try eapply sa_none.
+              intros ?.
+              split; intros; try tauto.
+          } 
+    Qed.
+
+
+    Global Instance upcrossing_bound_rv a b n :
+      RandomVariable dom borel_sa (upcrossing_bound a b n).
+    Proof.
+      destruct n.
+      - unfold upcrossing_bound; simpl.
+        apply EventIndicator_pre_rv.
+        apply sa_countable_union; intros.
+        apply sa_inter.
+        + eapply sa_proper; try apply sa_none.
+          intros ?; split; unfold pre_event_none; try tauto.
+          match_destr; lia.
+        + eapply sa_proper; try apply sa_all.
+          intros ?; split; unfold pre_Ω; try tauto.
+          match_destr; lia.
+      - generalize (upcrossing_bound_is_predictable a b n).
+        apply RandomVariable_proper_le; try reflexivity.
+        apply sub.
+    Qed.      
+
+    Lemma upcrossing_bound_transform_ge a b n :
+      rv_le (rvscale (b-a) (upcrossing_var a b n)) (martingale_transform (upcrossing_bound a b) M n).
+    Proof.
+      intros ?.
+    Admitted.
+(*
+    unfold upcrossing_var.
+      
+      unfold upcrossing_var.
+
+
+      
+      
+      
+      unfold upcrossing_var, martingale_transform, upcrossing_bound, rvscale, const,
+        upcrossing_var_expr.
+      unfold upcrossing_var_expr.
+      destruct n; [simpl; lra |].
+      induction n.
+      - simpl.
+        field_simplify; unfold rvsum.
+        rewrite Hierarchy.sum_O.
+        unfold rvmult, EventIndicator.
+        unfold classic_dec.
+        match_destr; try lra.
+        destruct p as [k [HH1 HH2]].
+        match_option_in HH1; try tauto.
+        assert (n = 0)%nat by lia; subst.
+        clear HH1.
+        destruct k; simpl in *; try lia.
+        replace (((k + S (k + 0)) - 0))%nat with (S (k + k))%nat in eqq by lia.
+        replace  (k + S (k + 0))%nat with (S (k + k))%nat in HH2 by lia.
+        rewrite eqq in HH2.
+        rewrite Nat.even_succ, Nat.odd_add, Bool.xorb_nilpotent in HH2.
+        unfold event_ge, id in HH2.
+        unfold hitting_time_from in HH2.
+        unfold hitting_time in HH2.
+        simpl in HH2.
+        
+        
+        
+        Search (xorb ?k ?k).
+        Search (Nat.even (2 * ?k)).
+
+          replace (((k + S (k + 0)) - 0))%nat with (S (k + k))%nat in eqq by lia.
+        assert (k = 0)%nat.
+        {
+          induction k; trivial.
+          simpl in eqq.
+          simpl in eqq.
+          rewrite plus_0_r in IHk.
+          
+        
+        Show 2.
+      rewrite map_map in *.
+      rewrite seq_Sn.
+      rewrite Rmax_list_app.
+      
+    
+*)
+    End doob_upcrossing_times.
+
+    Section doob_upcrossing_ineq.
+
+      Local Existing Instance Rbar_le_pre.
+
+      Context
+        (M : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+        {rv:forall n, RandomVariable dom borel_sa (M n)}
+        {isfe:forall n, IsFiniteExpectation prts (M n)}
+        {adapt:IsAdapted borel_sa M sas}
+        {filt:IsFiltration sas}
+        {sub:IsSubAlgebras dom sas}
+        {mart:IsMartingale Rle M sas}.
+
+      Theorem upcrossing_inequality a b n :
+        a < b ->
+        Rbar_le (Rbar_mult (b-a) (NonnegExpectation (upcrossing_var M a b (S n))))
+                (Rbar_minus (NonnegExpectation (pos_fun_part (rvminus (M (S n)) (const a))))
+                            (NonnegExpectation (pos_fun_part (rvminus (M 0%nat) (const a))))).
+      Proof.
+        intros altb.
+      pose (ϕ x := Rmax (x - a) 0 + a).
+      pose (Y n := fun x => ϕ (M n x)).
+
+      assert (ϕconvex:(forall c x y : R, convex ϕ c x y)).
+      {
+        unfold ϕ.
+        intros ????.
+        unfold Rmax.
+        repeat match_destr; try lra.
+        - field_simplify.
+          replace (y-a+a) with y by lra.
+          assert (a < y) by lra.
+          transitivity (c*a + (1-c)*a); try lra.
+          apply Rplus_le_compat_l.
+          apply Rmult_le_compat_l; try lra.
+        - field_simplify.
+          replace (x-a+a) with x by lra.
+          assert (a < x) by lra.
+          transitivity (c*a + (1-c)*a); try lra.
+          apply Rplus_le_compat_r.
+          apply Rmult_le_compat_l; try lra.
+        - replace (x-a+a) with x by lra.
+          replace (y-a+a) with y by lra.
+          assert (a < x) by lra.
+          assert (a < y) by lra.
+          transitivity (c*a + (1-c)*a); try lra.
+          apply Rplus_le_compat.
+          + apply Rmult_le_compat_l; try lra.
+          + apply Rmult_le_compat_l; try lra.
+        - rewrite Rplus_0_l.
+          unfold Rminus.
+          rewrite Rplus_assoc.
+          rewrite Rplus_opp_l.
+          rewrite Rplus_0_r.
+          apply Rplus_le_compat.
+          + apply Rmult_le_compat_l; lra.
+          + apply Rmult_le_compat_l; lra.
+        - rewrite Rplus_0_l.
+          unfold Rminus.
+          repeat rewrite Rplus_assoc.
+          apply Rplus_le_compat.
+          + apply Rmult_le_compat_l; lra.
+          + rewrite Rplus_opp_l.
+            lra.
+        - rewrite Rplus_0_l.
+          unfold Rminus.
+          repeat rewrite Rplus_assoc.
+          apply Rplus_le_compat.
+          + apply Rmult_le_compat_l; lra.
+          + rewrite Rplus_opp_l.
+            rewrite Rplus_0_r.
+            apply Rmult_le_compat_l; lra.
+      } 
+
+      assert (ϕincr : forall x y : R, x <= y -> ϕ x <= ϕ y).
+      {
+        unfold ϕ.
+        intros ???.
+        unfold Rmax.
+        repeat match_destr; lra.
+      }
+
+      assert (adaptY:IsAdapted borel_sa Y sas).
+      {
+        apply is_adapted_convex; trivial.
+      } 
+
+      assert (rvY:forall n : nat, RandomVariable dom borel_sa (Y n)).
+      {
+        intros m.
+        generalize (adaptY m).
+        apply RandomVariable_proper_le; try reflexivity.
+        apply sub.
+      } 
+
+      assert (isfeY:forall n : nat, IsFiniteExpectation prts (Y n)).
+      {
+        intros m.
+        unfold Y, ϕ.
+        assert (rv1:RandomVariable dom borel_sa (fun x : Ts => M m x - a)).
+        {
+          apply rvplus_rv.
+          - generalize (adapt m).
+            apply RandomVariable_proper_le; try reflexivity.
+            apply sub.
+          - apply rvconst.
+        } 
+
+        apply IsFiniteExpectation_plus.
+        - apply positive_part_rv; trivial.
+        - apply rvconst.
+        - apply IsFiniteExpectation_max; trivial.
+          + apply rvconst.
+          + apply IsFiniteExpectation_plus; trivial.
+            * apply rvconst.
+            * apply IsFiniteExpectation_const.
+          + apply IsFiniteExpectation_const.
+        - apply IsFiniteExpectation_const.
+      } 
+
+      assert (martY:IsMartingale Rle Y sas).
+      {
+        eapply is_sub_martingale_incr_convex; eauto.
+      } 
+
+      assert (upcross_same:forall m, rv_eq (upcrossing_var Y a b m) (upcrossing_var M a b m)).
+      {
+        intros m ts.
+        unfold Y, ϕ.
+        unfold upcrossing_var.
+        f_equal.
+        repeat rewrite map_map.
+        apply map_ext_in; intros c ?.
+        apply in_seq in H.
+        assert (c < m)%nat by lia.
+        f_equal.
+
+        unfold upcrossing_var_expr.
+
+        assert (eqq:forall c, upcrossing_times Y a b c ts = upcrossing_times M a b c ts).
+        {
+
+          assert (forall old, hitting_time_from Y old (event_ge borel_sa id b) ts =
+                           hitting_time_from M old (event_ge borel_sa id b) ts).
+          {
+            unfold hitting_time_from; intros.
+            unfold hitting_time.
+            repeat match_option.
+            - do 2 f_equal.
+              generalize (classic_min_of_some _ _ eqq); simpl; unfold id; intros HHY1.
+              generalize (classic_min_of_some _ _ eqq0); simpl; unfold id; intros HHM1.
+              generalize (classic_min_of_some_first _ _ eqq); simpl; unfold id; intros HHY2.
+              generalize (classic_min_of_some_first _ _ eqq0); simpl; unfold id; intros HHM2.
+              apply antisymmetry
+              ; apply not_lt
+              ; intros HH.
+              + apply (HHY2 _ HH).
+                unfold Y, ϕ.
+                unfold Rmax.
+                match_destr; lra.
+              + apply (HHM2 _ HH).
+                unfold Y, ϕ in HHY1.
+                unfold Rmax in HHY1.
+                match_destr_in HHY1; lra.
+            - generalize (classic_min_of_none _ eqq0 n0); simpl; unfold id
+              ; intros HHM.
+              generalize (classic_min_of_some _ _ eqq); simpl; unfold id
+              ; unfold Y, ϕ, Rmax; intros HHY1.
+              match_destr_in HHY1; try lra.
+            - generalize (classic_min_of_none _ eqq n0); simpl; unfold id
+              ; unfold Y, ϕ, Rmax; intros HHY1.
+              generalize (classic_min_of_some _ _ eqq0); simpl; unfold id
+              ; intros HHM1.
+              match_destr_in HHY1; try lra.
+          }
+          
+          assert (forall old, hitting_time_from Y old (event_le borel_sa id a) ts =
+                           hitting_time_from M old (event_le borel_sa id a) ts).
+          {
+            unfold hitting_time_from; intros.
+            unfold hitting_time.
+            repeat match_option.
+            - do 2 f_equal.
+              generalize (classic_min_of_some _ _ eqq); simpl; unfold id; intros HHY1.
+              generalize (classic_min_of_some _ _ eqq0); simpl; unfold id; intros HHM1.
+              generalize (classic_min_of_some_first _ _ eqq); simpl; unfold id; intros HHY2.
+              generalize (classic_min_of_some_first _ _ eqq0); simpl; unfold id; intros HHM2.
+              apply antisymmetry
+              ; apply not_lt
+              ; intros HH.
+              + apply (HHY2 _ HH).
+                unfold Y, ϕ.
+                unfold Rmax.
+                match_destr; lra.
+              + apply (HHM2 _ HH).
+                unfold Y, ϕ in HHY1.
+                unfold Rmax in HHY1.
+                match_destr_in HHY1; lra.
+            - generalize (classic_min_of_none _ eqq0 n0); simpl; unfold id
+              ; intros HHM.
+              generalize (classic_min_of_some _ _ eqq); simpl; unfold id
+              ; unfold Y, ϕ, Rmax; intros HHY1.
+              match_destr_in HHY1; try lra.
+            - generalize (classic_min_of_none _ eqq n0); simpl; unfold id
+              ; unfold Y, ϕ, Rmax; intros HHY1.
+              generalize (classic_min_of_some _ _ eqq0); simpl; unfold id
+              ; intros HHM1.
+              match_destr_in HHY1; try lra.
+          } 
+          intros x; destruct x; simpl; trivial.
+          induction x; simpl.
+          - specialize (H2 0%nat).
+            now repeat rewrite hitting_time_from0 in H2.
+          - rewrite IHx.
+            destruct (match x with
+                      | 0%nat => hitting_time M (event_le borel_sa id a) ts
+                      | S _ =>
+                          match upcrossing_times M a b x ts with
+                          | Some old =>
+                              if Nat.even x
+                              then hitting_time_from M (S old) (event_le borel_sa id a) ts
+                              else hitting_time_from M (S old) (event_ge borel_sa id b) ts
+                          | None => None
+                          end
+                      end); trivial.
+            destruct (match x with
+                      | 0%nat => false
+                      | S n' => Nat.even n'
+                      end); auto.
+        }
+        now rewrite eqq.
+      }
+
+      apply (Rbar_le_trans _ (Rbar_mult (b - a) (NonnegExpectation (upcrossing_var Y a b (S n))))).
+      {
+        apply Rbar_mult_le_compat_l; [simpl; lra |].
+        apply refl_refl.
+        now apply NonnegExpectation_ext.
+      }
+
+       assert (isfeb:forall n : nat,
+                  IsFiniteExpectation prts
+                                      (rvmult (upcrossing_bound Y a b (S n)) (rvminus (Y (S n)) (Y n)))).
+      {
+        intros.
+        unfold upcrossing_bound.
+        rewrite rvmult_comm.
+        apply IsFiniteExpectation_indicator.
+        - typeclasses eauto.
+        - 
+          generalize (upcrossing_bound_rv Y sas a b (S n0) (event_singleton _ (borel_singleton 1))).
+          apply sa_proper.
+          intros ?.
+          unfold event_preimage, upcrossing_bound; simpl.
+          unfold pre_event_singleton, EventIndicator.
+          match_destr.
+          + tauto.
+          + split; try tauto.
+            lra.
+        - typeclasses eauto.
+      } 
+
+      assert (IsAdapted borel_sa (martingale_transform (upcrossing_bound Y a b) Y) sas).
+      {
+        apply martingale_transform_adapted; trivial.
+        now apply upcrossing_bound_is_predictable.
+      } 
+
+      generalize (martingale_transform_predictable_sub_martingale
+                    (upcrossing_bound Y a b)
+                    Y
+                    sas); intros martT.
+      { cut_to martT.
+        shelve.
+        - now apply upcrossing_bound_is_predictable.
+        - intros.
+          apply all_almost; intros.
+          unfold const.
+          unfold upcrossing_bound, EventIndicator; simpl.
+          match_destr; lra.
+        - trivial.
+      }
+      Unshelve.
+
+      generalize (upcrossing_bound_transform_ge Y sas a b (S n)); intros leup.
+      assert (nneg1:NonnegativeFunction (rvscale (b - a) (upcrossing_var Y a b (S n)))).
+      {
+        apply scale_nneg_nnf.
+        - typeclasses eauto.
+        - lra.
+      }
+
+      generalize (NonnegativeFunction_le_proper _ _ leup nneg1); intros nneg2.
+      generalize (NonnegExpectation_le _ _ leup)
+      ; intros le2.
+      rewrite (NonnegExpectation_scale' _ _) in le2; try lra.
+      eapply Rbar_le_trans; try apply le2.
+
+      assert (eqq1:rv_eq (rvminus (Y (S n)) (Y 0%nat))
+                    (rvplus
+                       ((martingale_transform (fun k => rvminus (const 1) (upcrossing_bound Y a b k)) Y) (S n))
+                       ((martingale_transform (upcrossing_bound Y a b) Y) (S n)))).
+      {
+        rewrite martingale_transform_plus.
+        transitivity (martingale_transform
+                        (fun k' : nat =>
+                           (const 1)) Y 
+                        (S n)).
+        - rewrite martingale_transform_1.
+          reflexivity.
+        - apply martingale_transform_proper; try reflexivity.
+          intros ??.
+          rv_unfold.
+          lra.
+      }
+
+      assert (isfe2:IsFiniteExpectation _ (rvplus
+              (martingale_transform
+                 (fun k : nat => rvminus (const 1) (upcrossing_bound Y a b k)) Y 
+                 (S n)) (martingale_transform (upcrossing_bound Y a b) Y (S n)))).
+      {
+        eapply IsFiniteExpectation_proper.
+        - symmetry; apply eqq1.
+        - typeclasses eauto.
+      } 
+      generalize (FiniteExpectation_ext _ _ _ eqq1); intros eqq2.
+      rewrite FiniteExpectation_minus in eqq2.
+      unfold Y in eqq2 at 1 2.
+      unfold ϕ in eqq2 at 1 2.
+      assert (isfe3:forall n, IsFiniteExpectation prts (pos_fun_part (rvminus (M n) (const a)))).
+      {
+        intros.
+        - apply IsFiniteExpectation_max; trivial.
+          + typeclasses eauto.
+          + apply rvconst.
+          + apply IsFiniteExpectation_minus; trivial.
+            * apply rvconst.
+            * apply IsFiniteExpectation_const.
+          + apply IsFiniteExpectation_const.
+      }
+                                                
+      assert (eqq3:FiniteExpectation prts (fun x : Ts => Rmax (M (S n) x - a) 0 + a) =
+                FiniteExpectation prts (rvplus (pos_fun_part (rvminus (M (S n)) (const a)))
+                                               (const a))).
+      {
+        apply FiniteExpectation_ext; intros ?.
+        unfold rvminus, rvplus, rvopp, pos_fun_part, const, rvscale; simpl.
+        f_equal.
+        f_equal.
+        lra.
+      }
+      rewrite eqq3 in eqq2.
+      rewrite (FiniteExpectation_plus _ _) in eqq2. 
+      assert (eqq4:FiniteExpectation prts (fun x : Ts => Rmax (M 0 x - a) 0 + a) =
+                FiniteExpectation prts (rvplus (pos_fun_part (rvminus (M 0) (const a)))
+                                               (const a))).
+      {
+        apply FiniteExpectation_ext; intros ?.
+        unfold rvminus, rvplus, rvopp, pos_fun_part, const, rvscale; simpl.
+        f_equal.
+        f_equal.
+        lra.
+      }
+      rewrite eqq4 in eqq2.
+      rewrite (FiniteExpectation_plus _ _) in eqq2. 
+      field_simplify in eqq2.
+      rewrite (FiniteNonnegExpectation _ _) in eqq2.
+      rewrite (FiniteNonnegExpectation _ _) in eqq2.
+
+      match type of eqq2 with
+        ?x = ?y =>
+          match goal with
+          | [|- Rbar_le ?a ?b] => assert (eqq5:b = x)
+          end
+      end.
+      {
+        assert (isfin:forall n, is_finite
+                  (NonnegExpectation (fun x : Ts => pos_fun_part (rvminus (M n) (const a)) x))).
+        {
+          intros.
+          apply IsFiniteNonnegExpectation.
+          typeclasses eauto.
+        }
+        rewrite <- (isfin (S n)).
+        rewrite <- (isfin 0)%nat.
+        simpl.
+        reflexivity.
+      }
+      rewrite eqq5, eqq2.
+
+      assert (isfe4:IsFiniteExpectation prts (martingale_transform (upcrossing_bound Y a b) Y (S n))).
+      {
+        typeclasses eauto.
+      } 
+
+      assert (isfe5a: forall n0 : nat,
+                 IsFiniteExpectation prts
+                                     (rvmult (rvminus (const 1) (upcrossing_bound Y a b (S n0))) (rvminus (Y (S n0)) (Y n0)))).
+      { 
+        - intros.
+          cut (IsFiniteExpectation prts
+                                   (rvminus (rvminus (Y (S n0)) (Y n0))
+                                            
+                                            (rvmult (upcrossing_bound Y a b (S n0)) (rvminus (Y (S n0)) (Y n0))))).
+          + apply IsFiniteExpectation_proper; intros ?.
+            unfold rvmult, rvminus, rvplus, rvopp, rvscale, const.
+            lra.
+          + typeclasses eauto.
+      } 
+      
+      assert (isfe5:IsFiniteExpectation
+                      prts
+                      (martingale_transform
+                         (fun k : nat => rvminus (const 1) (upcrossing_bound Y a b k)) Y 
+                         (S n))).
+      {
+        apply martingale_transform_isfe; trivial.
+        - intros.
+          typeclasses eauto.
+      }
+      
+      rewrite (FiniteExpectation_plus' _ _ _).
+      rewrite (FiniteNonnegExpectation _
+                                       (martingale_transform (upcrossing_bound Y a b) Y (S n))).
+      cut (Rbar_le
+             (Rbar_plus 0
+                        (NonnegExpectation (martingale_transform (upcrossing_bound Y a b) Y (S n))))
+             (Rbar_plus
+                (FiniteExpectation prts
+                                   (martingale_transform
+                                      (fun k : nat => rvminus (const 1) (upcrossing_bound Y a b k)) Y 
+                                      (S n)))
+                (real (NonnegExpectation (martingale_transform (upcrossing_bound Y a b) Y (S n)))))).
+      {
+        rewrite Rbar_plus_0_l.
+        now simpl.
+      } 
+      apply Rbar_plus_le_compat
+      ; [| now rewrite IsFiniteNonnegExpectation; try reflexivity].
+
+      assert (ispredminus1:is_predictable (fun k : nat => rvminus (const 1) (upcrossing_bound Y a b k)) sas).
+      {
+        red.
+        apply is_adapted_minus.
+        - apply is_adapted_const.
+        - now apply upcrossing_bound_is_predictable.
+      } 
+
+      assert (IsAdapted borel_sa
+                        (martingale_transform (fun k : nat => rvminus (const 1) (upcrossing_bound Y a b k)) Y)
+                        sas).
+      {
+        apply martingale_transform_adapted; trivial.
+      } 
+ 
+
+      generalize (martingale_transform_predictable_sub_martingale
+                    (fun k => (rvminus (const 1) (upcrossing_bound Y a b k)))
+                    Y
+                    sas); intros martT1.
+      { cut_to martT1.
+        shelve.
+        - trivial.
+        - intros.
+          apply all_almost; intros.
+          rv_unfold.
+          unfold upcrossing_bound, EventIndicator; simpl.
+          match_destr; lra.
+        - trivial.
+      }
+      Unshelve.
+      generalize (is_sub_martingale_expectation
+                    (martingale_transform
+                       (fun k : nat => rvminus (const 1) (upcrossing_bound Y a b k)) Y)
+                    sas
+                    0
+                    (S n)); intros HH.
+      cut_to HH; [| lia].
+      unfold Rbar_le.
+      etransitivity; [etransitivity |]; [| apply HH |].
+        - simpl.
+          erewrite FiniteExpectation_pf_irrel; try rewrite FiniteExpectation_const.
+          reflexivity.
+        - right.
+          apply FiniteExpectation_pf_irrel.
+      Qed.
+  End doob_upcrossing_ineq.
 
 End martingale.
 
