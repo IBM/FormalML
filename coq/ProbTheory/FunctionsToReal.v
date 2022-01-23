@@ -103,6 +103,8 @@ Section defs.
 
     Definition rvabs  (rv_X : Ts -> R) := fun omega => Rabs (rv_X omega).
 
+    Definition rvsign (rv_X : Ts -> R) := fun omega => sign(rv_X omega).
+
     Lemma rvabs_pos (rv_X : Ts -> R) :
       rv_le (const 0) (rvabs rv_X).
     Proof.
@@ -304,6 +306,13 @@ Section defs.
       now rewrite H, H0.
     Qed.
 
+    Global Instance rvsign_proper : Proper (rv_eq ==> rv_eq) rvsign.
+    Proof.
+      unfold rvsign.
+      intros ????.
+      now rewrite H.
+    Qed.
+
     Local Open Scope equiv_scope.
     Lemma rv_pos_neg_id (rv_X:Ts->R) : rv_X === rvplus (pos_fun_part rv_X) (rvopp (neg_fun_part rv_X)).
     Proof.
@@ -418,6 +427,21 @@ Section defs.
       intros x.
       unfold rvpow, rvsqr, Rsqr; simpl.
       lra.
+    Qed.
+
+    Lemma rvsqr_rvsign_nonzero (f : Ts -> R):
+      (forall omega, 0 <> f omega) -> rvsqr (rvsign f) === const 1.
+    Proof.
+      intros H omega.
+      unfold rvsqr,rvsign,const.
+      destruct (Rle_dec (f omega) 0).
+      + destruct r as [H1 | H2].
+        -- generalize (sign_eq_m1 _ H1); intros; (rewrite H0).
+           unfold Rsqr; lra.
+        -- rewrite H2. specialize (H omega). congruence.
+      + apply Rnot_le_gt in n.
+        generalize (sign_eq_1 _ n); intros; rewrite H0.
+        unfold Rsqr; lra.
     Qed.
 
     Lemma rvpower_abs2_unfold (f:Ts->R) :
@@ -892,6 +916,7 @@ Ltac rv_unfold := unfold
                   rvsqr,
                   rvpow,
                   rvpower,
+                  rvsign,
                   rvabs,
                   rvmax, 
                   rvmin,
