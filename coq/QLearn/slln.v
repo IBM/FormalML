@@ -742,8 +742,8 @@ Lemma expec_cross_zero_filter (X : nat -> Ts -> R)
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
       (filt_sub : forall n, sa_sub (F n) dom)
+      {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {rv2 : forall (n:nat), RandomVariable (F n) borel_sa (X n)}      
       {frf : forall (n:nat), IsFiniteExpectation Prts (X n)}
       {frfmult : forall (k j:nat), IsFiniteExpectation Prts (rvmult (X k) (X j))} 
       (HC : forall n, 
@@ -819,8 +819,8 @@ Lemma expec_cross_zero_sum_shift_filter (X : nat -> Ts -> R) (m:nat)
       {F : nat -> SigmaAlgebra Ts}
       (isfilt: IsFiltration F)
       (filt_sub : forall n, sa_sub (F n) dom)
+      {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {rv2 : forall (n:nat), RandomVariable (F n) borel_sa (X n)}      
       {frf : forall (n:nat), IsFiniteExpectation Prts (X n)}
       {frfmult : forall (k j:nat), IsFiniteExpectation Prts (rvmult (X k) (X j))}
       (HC : forall n, 
@@ -887,8 +887,8 @@ Lemma expec_cross_zero_sum2_shift_filter (X : nat -> Ts -> R) (m : nat)
       {F : nat -> SigmaAlgebra Ts}
       (isfilt: IsFiltration F)
       (filt_sub : forall n, sa_sub (F n) dom)
+      {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {rv2 : forall (n:nat), RandomVariable (F n) borel_sa (X n)}      
       {isfe : forall (n:nat), IsFiniteExpectation Prts (X n)}
       {isfe_mult : forall (k j:nat), IsFiniteExpectation Prts (rvmult (X k) (X j))}
       {isfe_mult_sum: forall (k j:nat),
@@ -2006,8 +2006,8 @@ Proof.
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
       (filt_sub : forall n, sa_sub (F n) dom)
+      {adapt : IsAdapted borel_sa X F}
       {rv : forall n, RandomVariable dom borel_sa (X n)}
-      {rv2 : forall (n:nat), RandomVariable (F n) borel_sa (X (n))}        
       {frf : forall n, FiniteRangeFunction (X n)} 
       (HC : forall n, 
           almostR2 Prts eq
@@ -2036,9 +2036,9 @@ Proof.
 Lemma ash_6_1_4_filter (X: nat -> Ts -> R) {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
       (filt_sub : forall n, sa_sub (F n) dom)
+      {adapt : IsAdapted borel_sa X F}
       (eps:posreal) (m:nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {rv2 : forall (n:nat), RandomVariable (F n) borel_sa (X (n))}        
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       {isfe : forall (n:nat), IsFiniteExpectation Prts (X n)}
       (HC : forall n, 
@@ -2297,8 +2297,8 @@ Lemma var_sum_cross_0_offset_filter (X : nat -> Ts -> R) (m : nat)
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
       (filt_sub : forall n, sa_sub (F n) dom)
+      {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {rv2 : forall (n:nat), RandomVariable (F n) borel_sa (X (n))}        
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
       (HC : forall n, 
           almostR2 Prts eq
@@ -3017,8 +3017,8 @@ Lemma Ash_6_2_1_filter_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
       (filt_sub : forall n, sa_sub (F n) dom)
+      {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {rv2 : forall (n:nat), RandomVariable (F n) borel_sa (X (n))}        
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
           almostR2 Prts eq
@@ -3031,7 +3031,7 @@ Proof.
   intros.
   generalize (ash_6_1_4_filter X isfilt filt_sub); intros.
   assert (isfe : forall n, IsFiniteExpectation Prts (X n)) by (intros; now apply IsFiniteExpectation_simple).
-  specialize (H eps m _ _ _ _ HC).
+  specialize (H eps m _ _ _ HC).
   simpl in H.
   generalize (Lim_seq_le _ _ H); intros.
   unfold Sum.
@@ -3214,8 +3214,8 @@ Qed.
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
       (filt_sub : forall n, sa_sub (F n) dom)
+      {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {rv2 : forall (n:nat), RandomVariable (F n) borel_sa (X (n))}        
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
           almostR2 Prts eq
@@ -3308,8 +3308,8 @@ Qed.
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
       (filt_sub : forall n, sa_sub (F n) dom)
+      {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {rv2 : forall (n:nat), RandomVariable (F n) borel_sa (X (n))}        
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
           almostR2 Prts eq
@@ -3489,8 +3489,8 @@ Qed.
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
       (filt_sub : forall n, sa_sub (F n) dom)
+      {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {rv2 : forall (n:nat), RandomVariable (F n) borel_sa (X (n))}        
       {frf : forall (n:nat), FiniteRangeFunction (X (n))}
       (HC : forall n, 
           almostR2 Prts eq
