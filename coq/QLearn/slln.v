@@ -1813,195 +1813,6 @@ Section slln_extra.
       lia.
   Qed.
 
-Lemma ash_6_1_4 (X: nat -> Ts -> R) (eps:posreal) (m:nat)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {frf : forall (n:nat), FiniteRangeFunction (X n)}
-      {isfe : forall (n:nat), IsFiniteExpectation Prts (X n)}
-      (HC : forall n, 
-          almostR2 Prts eq
-                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
-                (const 0))  :
-  let Sum := fun j => (rvsum (fun n => X (n + m)%nat) j) in
-  forall (n:nat), ps_P (event_ge dom (rvmaxlist (fun k => rvabs(Sum k)) n) eps) <=
-           (SimpleExpectation (rvsqr (Sum n)))/eps^2.
-Proof.
-  intros.
-  assert (H1 : event_equiv (event_ge dom (rvmaxlist (fun k => rvabs(Sum k)) n) eps)
-                           (event_ge dom (rvabs(cutoff_eps_rv n eps Sum)) eps)).
-  {
-    intro omega.
-    unfold proj1_sig, rvabs; simpl.
-    split; intros H; try (apply Rle_ge; apply Rge_le in H).
-    + now rewrite cutoff_ge_eps_rv_rvmaxlist_iff.
-    + now rewrite <-cutoff_ge_eps_rv_rvmaxlist_iff.
-  }
-  rewrite H1.
-  generalize (Chebyshev_ineq_div_mean0 (cutoff_eps_rv n eps Sum) _ eps); intros H3.
-  erewrite <- simple_NonnegExpectation in H3.  
-  simpl in H3.
-  rewrite <- Rsqr_pow2.
-  unfold rvabs in H3.
-  eapply Rle_trans; [apply H3 |].
-  unfold Rdiv.
-  apply Rmult_le_compat_r; 
-    [left; apply Rinv_0_lt_compat, Rlt_0_sqr, Rgt_not_eq, cond_pos |].
-  assert (Srel:forall j, SimpleExpectation(rvsqr (Sum (S j))) =
-                    SimpleExpectation(rvsqr (Sum j)) + 
-                    SimpleExpectation(rvsqr (X ((S j)+m)%nat))).
-  {
-    intros.
-    assert (rv_eq (rvsqr (Sum (S j)))
-                  (rvplus (rvsqr (Sum j))
-                          (rvplus 
-                             (rvscale 2
-                                      (rvmult (Sum j) (X ((S j)+m)%nat)))
-                             (rvsqr (rvminus (Sum (S j)) (Sum j)))))).
-    - intro x.
-      unfold rvsqr, rvminus, rvopp, rvscale, rvplus, rvmult.
-      unfold Rsqr.
-      replace (Sum (S j) x) with ((Sum j x) + (X ((S j)+m)%nat x)).
-      + now ring_simplify.
-      + unfold Sum, rvsum.
-        rewrite sum_Sn.
-        unfold plus; simpl.
-        now unfold plus; simpl.
-   - rewrite (SimpleExpectation_ext H).
-     rewrite <- sumSimpleExpectation.
-     rewrite <- sumSimpleExpectation.
-     rewrite <- Rplus_assoc.
-     rewrite <- scaleSimpleExpectation.
-     assert (isfe_mult : forall k j : nat, IsFiniteExpectation Prts (rvmult (X k) (X j))).
-     {
-       intros.
-       apply IsFiniteExpectation_simple.
-       - typeclasses eauto.
-       - typeclasses eauto.
-     }
-     assert (isfe_mult_sum : forall k j : nat,
-                  IsFiniteExpectation Prts
-                    (rvmult (rvsum (fun n : nat => X (n + m)%nat) j) (X (k + m)%nat))).
-     {
-       intros.
-       apply IsFiniteExpectation_simple.
-       - typeclasses eauto.
-       - typeclasses eauto.
-     }
-     generalize (expec_cross_zero_sum2_shift X m HC); intros.
-     replace (SimpleExpectation (rvmult (Sum j) (X (S j + m)%nat))) with 0.
-     + ring_simplify.
-       f_equal.
-       assert (rv_eq (rvsqr (rvminus (Sum (S j)) (Sum j)))
-                     (rvsqr (X ((S j)+m)%nat))).
-       * intro x.
-         unfold Sum, rvsqr.
-         rewrite rvminus_unfold.
-         unfold rvsum.
-         rewrite sum_Sn.
-         unfold plus; simpl.
-         unfold Rsqr; ring.
-       * apply (SimpleExpectation_ext H2).
-     + rewrite simple_FiniteExpectation.
-       specialize (H0 j (S j)).
-       rewrite <- H0; try lia.
-       unfold Sum.
-       apply FiniteExpectation_pf_irrel.
-  }
-  assert (Zrel:forall j, SimpleExpectation(rvsqr (cutoff_eps_rv (S j) eps Sum)) =
-                    SimpleExpectation(rvsqr (cutoff_eps_rv j eps Sum)) + 
-                    SimpleExpectation(rvsqr (rvminus (cutoff_eps_rv (S j) eps Sum) 
-                                                     (cutoff_eps_rv j eps Sum)))).
-  {
-    intros.
-    assert (rv_eq (rvsqr (cutoff_eps_rv (S j) eps Sum)) 
-                  (rvplus (rvsqr (cutoff_eps_rv j eps Sum))
-                          (rvplus
-                             (rvscale 2
-                                      (rvmult (cutoff_eps_rv j eps Sum)
-                                              (rvminus (cutoff_eps_rv (S j) eps Sum) 
-                                                     (cutoff_eps_rv j eps Sum))))
-                             (rvsqr (rvminus (cutoff_eps_rv (S j) eps Sum) 
-                                             (cutoff_eps_rv j eps Sum)))))).
-    - intro x.
-      unfold rvsqr, rvminus, rvopp, rvscale, rvplus, rvmult.
-      unfold Rsqr.
-      replace (Sum (S j) x) with ((Sum j x) + (X ((S j)+m)%nat x)).
-      + now ring_simplify.
-      + unfold Sum, rvsum.
-        rewrite sum_Sn.
-        now unfold plus; simpl.
-   - rewrite (SimpleExpectation_ext H).
-     rewrite <- sumSimpleExpectation.
-     rewrite <- sumSimpleExpectation.
-     rewrite <- Rplus_assoc.
-     f_equal.
-     rewrite <- scaleSimpleExpectation.
-     assert (SimpleExpectation (rvmult (cutoff_eps_rv j eps Sum) (rvminus (cutoff_eps_rv (S j) eps Sum) (cutoff_eps_rv j eps Sum))) = 0).
-     + assert (Heq :rv_eq
-                      (rvmult (cutoff_eps_rv j eps Sum) 
-                              (rvmult 
-                                 (cutoff_indicator (S j) eps Sum)
-                                 (X ((S j)+m)%nat)))
-                      (rvmult 
-                         (cutoff_eps_rv j eps Sum) 
-                         (rvminus (cutoff_eps_rv (S j) eps Sum) 
-                                  (cutoff_eps_rv j eps Sum)))).
-        {
-         intros w.
-         rv_unfold. f_equal. ring_simplify.
-         unfold cutoff_eps_rv, cutoff_indicator, EventIndicator.
-         rewrite (cutoff_eps_succ_minus eps (fun k => Sum k w) j).
-         unfold Sum, rvsum. rewrite sum_Sn. unfold plus. simpl.
-         rewrite Rplus_comm.
-         unfold Rminus; rewrite Rplus_assoc.
-         replace  (sum_n (fun n0 : nat => X (n0+m)%nat w) j + - sum_n (fun n0 : nat => X (n0+m)%nat w) j) with 0 by lra.
-         rewrite Rplus_0_r.
-         match_destr.
-         - match_destr.
-           + lra.
-           + tauto.
-         - match_destr.
-           + tauto.
-           + lra.
-        }
-        erewrite <-(SimpleExpectation_ext Heq).
-        assert (rv_eq
-                  (rvmult (cutoff_eps_rv j eps Sum)
-                          (rvmult (cutoff_indicator (S j) eps Sum) (X ((S j)+m)%nat)))
-                  (rvmult 
-                     (rvmult (cutoff_eps_rv j eps Sum)
-                             (cutoff_indicator (S j) eps Sum))
-                     (X ((S j)+m)%nat))) by now rewrite rvmult_assoc.
-        erewrite (SimpleExpectation_ext H0).
-        now eapply indicator_prod_cross_shift.
-     + rewrite H0.
-       lra.
- }
- clear H1 H3.
- induction n.
- - simpl.
-   right.
-   apply SimpleExpectation_ext.
-   intro x.
-   now unfold rvsqr, Sum.
- - rewrite Srel.
-   rewrite Zrel.
-   apply Rplus_le_compat; trivial.
-   apply SimpleExpectation_le.
-   intro x.
-   unfold rvsqr.
-   rewrite rvminus_unfold.
-   unfold cutoff_eps_rv.
-   simpl.
-   match_destr; try (do 2 rewrite Rsqr_pow2; rewrite Rminus_eq_0).
-   + generalize (cutoff_eps_succ_minus eps (fun j => Sum j x) n); intros Hcut.
-     simpl in Hcut. match_destr_in Hcut; intuition; try (lra).
-     rewrite Hcut. unfold Sum. right.
-     f_equal. unfold rvsum. rewrite sum_Sn. unfold plus.
-     simpl. now ring_simplify.
-   + rewrite <-Rsqr_pow2. unfold Rsqr. eapply Rle_trans; try (apply pow2_ge_0).
-     lra.
- Qed.
-
   Lemma indicator_prod_cross_shift_filter (j m:nat) (eps:R) (X: nat -> Ts -> R) 
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
@@ -2224,8 +2035,25 @@ Proof.
      simpl. now ring_simplify.
    + rewrite <-Rsqr_pow2. unfold Rsqr. eapply Rle_trans; try (apply pow2_ge_0).
      lra.
- Qed.
+Qed.
 
+Lemma ash_6_1_4 (X: nat -> Ts -> R) (eps:posreal) (m:nat)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+      {frf : forall (n:nat), FiniteRangeFunction (X n)}
+      {isfe : forall (n:nat), IsFiniteExpectation Prts (X n)}
+      (HC : forall n, 
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+                (const 0))  :
+  let Sum := fun j => (rvsum (fun n => X (n + m)%nat) j) in
+  forall (n:nat), ps_P (event_ge dom (rvmaxlist (fun k => rvabs(Sum k)) n) eps) <=
+                  (SimpleExpectation (rvsqr (Sum n)))/eps^2.
+Proof.
+  apply ash_6_1_4_filter with (filt_sub := filtration_history_sa_sub X); trivial.
+  - apply filtration_history_sa_is_filtration.
+  - apply filtration_history_sa_is_adapted.
+Qed.    
+    
 Lemma var_sum_cross_0_offset (X : nat -> Ts -> R) (m : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
       {frf : forall (n:nat), FiniteRangeFunction (X n)}
@@ -2980,38 +2808,6 @@ Qed.
     Qed.
 
 (*ash 6.2.1 *)
-Lemma Ash_6_2_1_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-      (HC : forall n, 
-          almostR2 Prts eq
-                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
-                (const 0))  :
-  let Sum := fun j => rvsum (fun k => X (k+m)%nat) j in
-  Rbar_le (Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvabs (Sum k)) n) eps)))
-          (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))))) (mkposreal _ (sqr_pos eps))).
-Proof.
-  intros.
-  generalize (ash_6_1_4 X); intros.
-  assert (isfe : forall n, IsFiniteExpectation Prts (X n)) by (intros; now apply IsFiniteExpectation_simple).
-  specialize (H eps m _ _ _ HC).
-  simpl in H.
-  generalize (Lim_seq_le _ _ H); intros.
-  unfold Sum.
-  eapply Rbar_le_trans.
-  - apply H0.
-  - replace (eps * (eps * 1)) with (Rsqr eps) by (unfold Rsqr; lra).
-    unfold Rdiv.
-    rewrite Lim_seq_scal_r.
-    replace (Rbar.Finite (/ (Rsqr (pos eps)))) with (Rbar.Finite (/ (pos (mkposreal _ (sqr_pos eps))))) by now simpl.
-    rewrite Rbar_mult_div_pos.
-    apply Rbar_div_pos_le.
-    generalize (var_sum_cross_0_offset X m HC); intros.
-    simpl in H1.
-    rewrite Lim_seq_ext with (v := sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + m)%nat)))).
-    + apply Lim_seq_sup_le.
-    + apply H1.
-Qed.
 
 Lemma Ash_6_2_1_filter_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
       {F : nat -> SigmaAlgebra Ts}
@@ -3163,53 +2959,6 @@ Qed.
      lra.
    Qed.
 
-  Lemma Ash_6_2_1_helper4 (X : nat -> Ts -> R) (eps : posreal) (m : nat) 
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-      (HC : forall n, 
-          almostR2 Prts eq
-                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
-                (const 0))  :
-   let Sum := fun j => rvsum X j in
-    Rbar_le (ps_P (union_of_collection (fun k =>  event_ge dom (rvabs (rvminus (Sum (k + (S m))%nat) (Sum m))) eps)))
-            (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvsqr (X (n + (S m))%nat))))) (mkposreal _ (sqr_pos eps))).
-    Proof.
-      intros.
-      unfold Sum.
-      rewrite Ash_6_2_1_helper3; trivial.
-      generalize (Ash_6_2_1_helper X eps (S m) HC); intros.
-      simpl in H.
-      rewrite Lim_seq_ext with
-          (v :=  fun n : nat =>
-            ps_P
-              (event_ge dom
-                 (rvmaxlist
-                    (fun k : nat => rvabs (rvsum (fun k0 : nat => X (k0 + (S m))%nat) k))
-                    n) eps)).
-      - apply H.
-      - intros.
-        apply ps_proper.
-        assert (rv_eq
-                  (rvmaxlist
-                     (fun k : nat =>
-                        rvabs
-                          (rvminus (rvsum (fun k0 : nat => X k0) (k + (S m)))
-                                   (rvsum (fun k0 : nat => X k0) m))) n)
-                   (rvmaxlist (fun k : nat => rvabs (rvsum (fun k0 : nat => X (k0 + (S m))%nat) k))
-          n)).
-        + intro x.
-          unfold rvmaxlist.
-          apply Rmax_list_Proper, refl_refl, map_ext.
-          intros.
-          unfold rvabs, rvsum.
-          rewrite rvminus_unfold.
-          f_equal.
-          now rewrite sum_shift_diff.
-        + intro x.
-          simpl.
-          now rewrite H0.
-    Qed.
-
   Lemma Ash_6_2_1_filter_helper4 (X : nat -> Ts -> R) (eps : posreal) (m : nat) 
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
@@ -3261,49 +3010,6 @@ Qed.
           now rewrite H0.
     Qed.
 
-  Lemma Ash_6_2_1_helper5 (X : nat -> Ts -> R)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-      (HC : forall n, 
-          almostR2 Prts eq
-                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
-                (const 0))  :
-    ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
-   let Sum := fun j => rvsum X j in
-   forall (eps : posreal),
-     is_lim_seq (fun m => ps_P (union_of_collection (fun k => event_ge dom (rvabs (rvminus (Sum (k + (S m))%nat) (Sum m))) eps))) 0. 
-    Proof.
-      intros.
-      generalize (Ash_6_2_1_helper2 X eps H); intros.
-      assert (forall m, 
-                 0 <= (fun m : nat =>
-                                ps_P
-                                  (union_of_collection
-                                     (fun k : nat =>
-                                        event_ge dom (rvabs (rvminus (Sum (k + S m)%nat) (Sum m))) eps))) m <=
-                 (fun m : nat =>
-          Rbar_div_pos
-            (LimSup_seq
-               (sum_n (fun n : nat => SimpleExpectation (rvsqr (X (n + (S m))%nat)))))
-            {| pos := eps²; cond_pos := sqr_pos eps |}) m).
-      {
-        intros.
-        split.
-        - apply ps_pos.
-        - generalize (Ash_6_2_1_helper4 X eps m HC); intros.
-          unfold Sum in H1.
-          generalize (LimSup_seq_series H); intros.
-          rewrite H2 in H1.
-          simpl in H1.
-          rewrite H2.
-          simpl.
-          unfold Sum.
-          apply H1.
-      }
-      apply (is_lim_seq_le_le _ _ _ 0 H1); trivial.
-      apply is_lim_seq_const.
-   Qed.
-    
   Lemma Ash_6_2_1_filter_helper5 (X : nat -> Ts -> R)
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
@@ -3459,32 +3165,6 @@ Qed.
       specialize (Hx (mkposreal eps H)); eauto.
     Qed.
 
-  Lemma Ash_6_2_1 (X : nat -> Ts -> R)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-      (HC : forall n, 
-          almostR2 Prts eq
-                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
-                (const 0))  :
-    ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
-    almost Prts (fun (x : Ts) => ex_series (fun n => X n x)).
-  Proof.
-    intros.
-    generalize (almost_cauchy_is_lim_seq_iff (rvsum X)); intros.
-    generalize (Ash_6_2_1_helper6 (rvsum X)); intros.
-    rewrite <- H1 in H0.
-    clear H1.
-    generalize (Ash_6_2_1_helper5 X HC H); intros.
-    simpl in H1.
-    rewrite <- H0 in H1.
-    unfold almost.
-    destruct H1 as [E HE].
-    exists E. destruct HE. split; trivial.
-    intros.  specialize (H2 x H3).
-    apply cauchy_seq_at_ex_series.
-    apply H2.
-  Qed.
-  
   Lemma Ash_6_2_1_filter (X : nat -> Ts -> R)
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
@@ -3513,6 +3193,23 @@ Qed.
     intros.  specialize (H2 x H3).
     apply cauchy_seq_at_ex_series.
     apply H2.
+  Qed.
+
+  Lemma Ash_6_2_1 (X : nat -> Ts -> R)
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+      (HC : forall n, 
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+                (const 0))  :
+    ex_series (fun n => SimpleExpectation (rvsqr (X n))) ->
+    almost Prts (fun (x : Ts) => ex_series (fun n => X n x)).
+  Proof.
+    intros.
+    apply Ash_6_2_1_filter with (filt_sub := filtration_history_sa_sub X) 
+                                (rv := rv) (frf := frf); trivial.
+    - apply filtration_history_sa_is_filtration.
+    - apply filtration_history_sa_is_adapted.
   Qed.
 
   Lemma induced_sigma_scale (X : nat -> Ts -> R) (b : nat -> R)
