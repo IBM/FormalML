@@ -1907,7 +1907,6 @@ Section Derman_Sacks.
    destruct (DS_Dvor_aa a Y isfe Ha1 Ha2 HY) as [α [Hα1 [Hα2 Hα3]]].
    exists α.
    assert (forall n, 0 < α n) by (intros ; eapply Rlt_le_trans; eauto).
-   (*   assert (HESa : forall n, event_ge dom (rvabs (Z n)) (α n)).*)
    assert (rvZ : forall n, RandomVariable _ borel_sa ((Z n))).
    {
      intros.
@@ -2015,7 +2014,8 @@ Section Derman_Sacks.
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation_rv (X n) (Y n)) (fun x : Ts => const 0 x)) ->
   ex_series (fun n => SimpleExpectation (rvsqr (Y n))) ->
   ex_series (fun n => SimpleExpectation (rvsqr (Y n)) / Rsqr (alpha n)) ->
-  is_lim_seq (fun n => SimpleExpectation (X n)) 0.
+  (*is_lim_seq (fun n => SimpleExpectation (X n)) 0.*)
+  almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
  Admitted.
