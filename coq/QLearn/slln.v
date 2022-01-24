@@ -3171,4 +3171,70 @@ Qed.
     apply H.
 Qed.
 
+  Lemma Ash_6_2_2_filter (X : nat -> Ts -> R) (b : nat -> R)
+      {F : nat -> SigmaAlgebra Ts}
+      (isfilt : IsFiltration F)
+      (filt_sub : forall n, sa_sub (F n) dom)
+      {adapt : IsAdapted borel_sa X F}
+      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+      (HC : forall n, 
+          almostR2 Prts eq
+                   (ConditionalExpectation Prts (filt_sub n) (X (S n)))
+                (const 0))  :
+    (forall n, 0 < b n <= b (S n)) ->
+    is_lim_seq b p_infty ->
+    ex_series (fun n => SimpleExpectation (rvsqr (rvscale (/ (b n)) (X n)))) ->
+    almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvscale (/ (b n)) (rvsum X n)) x) 0). 
+  Proof.
+    intros.
+    assert (bneq0:forall n, b n <> 0).
+    {
+      intros.
+      apply Rgt_not_eq.
+      apply H.
+    }
+    generalize (Ash_6_2_1_filter (fun n => rvscale (/ (b n)) (X n)) isfilt); intros.
+    specialize (H2 filt_sub).
+    assert (isad2: IsAdapted borel_sa (fun n : nat => rvscale (/ b n) (X n)) F).
+    {
+      intros.
+      unfold IsAdapted.
+      intros.
+      apply rvscale_rv.
+      apply adapt.
+    }
+    specialize (H2 isad2 (fun n => @rvscale_rv Ts dom (Rinv (b n)) (X n) (rv n))
+                   (fun n => @frfscale Ts (Rinv (b n)) (X n) (frf n))).
+    cut_to H2; trivial.
+    - destruct H2 as [? [? ?]].
+      exists x.
+      split; trivial.
+      intros.
+      generalize (ash_6_1_3_strong H H0 (H3 x0 H4)); intros.
+      eapply is_lim_seq_ext; try (apply H5).
+      intros; simpl.
+      unfold rvsum, rvscale, Rdiv.
+      rewrite Rmult_comm.
+      f_equal.
+      apply sum_n_ext.
+      intros.
+      simpl; field.
+      apply Rgt_not_eq.
+      apply H.
+    - intros n.
+      specialize (HC n).
+      assert (isfe : IsFiniteExpectation Prts (X (S n))) by (intros; now apply IsFiniteExpectation_simple).
+      generalize (Condexp_scale Prts (filt_sub n) (/ b (S n)) (X (S n))); intros.
+      apply almostR2_prob_space_sa_sub_lift in H3.
+      revert HC; apply almost_impl.
+      revert H3; apply almost_impl.
+      apply all_almost.
+      intros x ??.
+      rewrite H3.
+      unfold Rbar_rvmult.
+      rewrite H4.
+      now rewrite Rbar_mult_0_r.
+  Qed.
+  
 End slln_extra.
