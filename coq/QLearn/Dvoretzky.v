@@ -1893,6 +1893,7 @@ Section Derman_Sacks.
  Lemma DS_Dvor_11_12 (a : nat -> R) (Y : nat -> Ts -> R)
        (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
        (T : nat -> Ts -> R)
+       (rvy : forall n, RandomVariable _ borel_sa (Y n))
        (rvt : forall n, RandomVariable _ borel_sa (fun r => T n r))
    :
    let Z := fun n => rvmult (Y n) (rvsign (T n)) in
@@ -1907,7 +1908,12 @@ Section Derman_Sacks.
    exists α.
    assert (forall n, 0 < α n) by (intros ; eapply Rlt_le_trans; eauto).
    (*   assert (HESa : forall n, event_ge dom (rvabs (Z n)) (α n)).*)
-   assert (rvZ : forall n, RandomVariable _ borel_sa (Z n)) by admit.
+   assert (rvZ : forall n, RandomVariable _ borel_sa ((Z n))).
+   {
+     intros.
+     apply rvmult_rv; trivial.
+     apply rvsign_rv, rvt.
+   }
    assert (HEsa : forall n, sa_sigma (event_ge dom (rvabs (Z n)) (mkposreal _ (H n)))).
    {
      intros.
@@ -1952,7 +1958,7 @@ Section Derman_Sacks.
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation_rv (X n) (Y n)) (fun x : Ts => const 0 x)) ->
   ex_series (fun n => SimpleExpectation (rvsqr (Y n))) ->
   ex_series (fun n => SimpleExpectation (rvsqr (Y n)) / Rsqr (alpha n)) ->
-  is_lim_seq (fun n => SimpleExpectation (rvsqr (X n))) 0.
+  is_lim_seq (fun n => SimpleExpectation (X n)) 0.
  Proof.
    intros.
  Admitted.
