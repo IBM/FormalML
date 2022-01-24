@@ -1921,14 +1921,61 @@ Section Derman_Sacks.
    }
    pose (frac := fun n => Rbar_div_pos (NonnegExpectation (rvsqr (Z n)))
                                     (mkposreal _ (rsqr_pos (mkposreal _ (H n))))).
+   assert (Z2leY2: forall n0, rv_le (rvsqr (Z n0)) (rvsqr (Y n0))).
+   {
+     intros n0 x.
+     unfold Z, rvsqr, rvmult, rvsign.
+     replace (Rsqr (Y n0 x)) with ((Rsqr (Y n0 x)) * 1) by lra.
+     rewrite Rsqr_mult.
+     apply Rmult_le_compat_l.
+     - apply Rle_0_sqr.
+     - destruct (Rlt_dec 0 (T n0 x)).
+       + rewrite sign_eq_1; unfold Rsqr; lra.
+       + destruct (Rlt_dec (T n0 x) 0).
+         * rewrite sign_eq_m1; unfold Rsqr; lra.
+         * assert (T n0 x = 0) by lra.
+           rewrite H0.
+           rewrite sign_0; unfold Rsqr; lra.
+   }
+   assert (isfez2: forall n, IsFiniteExpectation prts (rvsqr (Z n))).
+   {
+     intros.
+     apply IsFiniteExpectation_bounded with (rv_X1 := const 0)
+                                            (rv_X3 := rvsqr (Y n)); trivial.
+     - apply IsFiniteExpectation_const.
+     - apply nnfsqr.
+   }
+   assert (isfin: forall n, is_finite (NonnegExpectation (rvsqr (Z n)))).
+   {
+     intros.
+     now apply IsFiniteNonnegExpectation.
+   }
    assert (Hfinu : forall n0, Rbar_le (frac n0) (FiniteExpectation prts (rvsqr (Y n0)) / (α n0)²)).
    {
      intros. unfold frac.
-     simpl. admit.
+     rewrite <- (isfin n0).
+     simpl.
+     rewrite <- (isfin n0).
+     simpl.
+     unfold Rdiv.
+     apply Rmult_le_compat_r.
+     - left; apply Rinv_pos.
+       apply Rlt_0_sqr.
+       now apply Rgt_not_eq, Rlt_gt.
+     - rewrite <- FiniteNonnegExpectation with (isfeX := (isfez2 n0)).
+       now apply FiniteExpectation_le.
    }
    assert (Hfinb : forall n, Rbar_le 0 (frac n)).
    {
-     admit.
+     intros. unfold frac.
+     rewrite <- (isfin n).
+     simpl.
+     apply Rdiv_le_0_compat.
+     generalize (NonnegExpectation_pos (rvsqr (Z n))).
+     rewrite <- (isfin n); now simpl.
+     apply Rlt_0_sqr.
+     apply Rgt_not_eq.
+     apply H.
    }
    assert (Hisf : forall n, is_finite(frac n)) by (intros; eapply bounded_is_finite; auto).
    generalize (Borel_Cantelli prts _ (HEsa)); intros.
@@ -1948,8 +1995,11 @@ Section Derman_Sacks.
         unfold frac in Hisf. simpl in Hisf.
         rewrite <-(Hisf n) in H1. simpl in H1.
         apply H1.
- Admitted.
-
+        specialize (Hfinu n).
+        rewrite <- Hisf in Hfinu.
+        simpl in Hfinu.
+        apply Hfinu.
+ Qed.
 
   Theorem Dvoretzky_DS
         ( X Y : nat -> Ts -> R)
