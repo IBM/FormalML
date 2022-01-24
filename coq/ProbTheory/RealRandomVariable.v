@@ -966,6 +966,52 @@ Section RealRandomVariables.
         now apply rv_measurable.
       Qed.        
 
+      Global Instance rvsign_rv (X : Ts -> R)
+             {rv : RandomVariable dom borel_sa X} :
+        RandomVariable dom borel_sa (rvsign X).
+      Proof.
+        intros.
+        apply rv_measurable in rv.
+        apply measurable_rv.
+        unfold RealMeasurable, rvsign.
+        intros.
+        
+        assert (pre_event_equiv
+                  (fun omega : Ts => sign (X omega) <= r)         
+                  (pre_event_union 
+                     (pre_event_inter 
+                        (fun omega : Ts => (X omega) < 0)
+                        (fun omega : Ts => -1 <= r))
+                     (pre_event_union
+                        (pre_event_inter
+                           (fun omega : Ts => (X omega) > 0)                    
+                           (fun omega : Ts => 1 <= r))
+                        (pre_event_inter
+                           (fun omega : Ts => (X omega) = 0)                    
+                           (fun omega : Ts => 0 <= r))))).
+        - intro x.
+          unfold pre_event_union, pre_event_inter.
+          destruct (Rlt_dec (X x) 0).
+          + rewrite sign_eq_m1; trivial; lra.
+          + destruct (Rgt_dec (X x) 0).
+            * rewrite sign_eq_1; trivial; lra.
+            * assert (X x = 0) by lra.
+              rewrite H.
+              rewrite sign_0; lra.
+        - rewrite H.
+          apply sa_union.
+          + apply sa_inter.
+            * apply sa_le_lt, rv.
+            * apply sa_sigma_const; lra.
+          + apply sa_union.
+            * apply sa_inter.
+              -- apply sa_le_gt, rv.
+              -- apply sa_sigma_const; lra.
+            * apply sa_inter.
+              -- apply sa_le_pt, rv.
+              -- apply sa_sigma_const; lra.
+      Qed.
+
     End rvs.
 
   End measurable.

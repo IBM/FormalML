@@ -2583,6 +2583,41 @@ Proof.
     apply Rmax_r.
 Qed.
 
+Lemma double_series_interchange (f : nat -> nat -> R) :
+  (forall n m, 0 <= f n m) ->
+  Series (fun n => Series (fun m => f n m)) =
+  Series (fun m => Series (fun n => f n m)).
+Proof.
+  intros.
+  generalize (ELim_seq_sum_nneg_nested_swap f H); intros.
+  assert (ELim_seq
+            (sum_Rbar_n (fun i : nat => Lim_seq (sum_n (fun j : nat => f i j)))) =
+          ELim_seq
+            (sum_Rbar_n (fun i : nat => Lim_seq (sum_n (fun j : nat => f j i))))).
+  {
+    rewrite ELim_seq_ext with
+        (v := (sum_Rbar_n (fun i : nat => ELim_seq (sum_Rbar_n (fun j : nat => f i j))))).
+    symmetry.
+    rewrite ELim_seq_ext with
+        (v := (sum_Rbar_n (fun i : nat => ELim_seq (sum_Rbar_n (fun j : nat => f j i))))).
+    now symmetry.
+    - intros.
+      apply sum_Rbar_n_proper; trivial.
+      intro x.
+      now rewrite Lim_seq_sum_Elim.
+    - intros.
+      apply sum_Rbar_n_proper; trivial.
+      intro x.
+      now rewrite Lim_seq_sum_Elim.
+  }
+
+  apply Rbar_finite_eq.
+  rewrite <- ex_series_Lim_seq.
+  rewrite <- ex_series_Lim_seq.  
+  
+  
+  Admitted.
+
 Lemma zerotails_eps2k_double_sum_eq (a : nat -> R) (pf:ex_series a) {anneg:NonnegativeFunction a}:
   Series (fun k => Series (fun x => a (S (x+ (zerotails_eps2k_fun a pf k)%nat)))) =
     Series (fun n => zerotails_incr_mult a pf n * (a n)).
@@ -2616,11 +2651,14 @@ Proof.
        (fun k : nat =>
         a n * (if le_dec (S (zerotails_eps2k_fun a pf k)) n then 1 else 0)))).
   {
-    (* summation interchange *)
-    admit.
-  }
+    apply double_series_interchange.
+    intros.
+    apply Rmult_le_pos; trivial.
+    match_destr; lra.
+  }  
   apply Series_ext; intros.
   rewrite Series_scal_l.
   now rewrite Rmult_comm.
-Admitted.
+ Qed.
+
   

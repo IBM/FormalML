@@ -1025,6 +1025,76 @@ Qed.
           now apply sum_Rbar_n_nneg_nneg.
   Qed.
 
+
+  (* Fubini for nonnegative reals *)
+  Lemma Series_Series_seq_pair (f:nat->nat->R) :
+    (forall a b, 0 <= (f a b)) ->
+    Series (fun i : nat => Series (fun j : nat => f i j)) = 
+    Series (fun i : nat => let '(a, b) := iso_b (Isomorphism:=nat_pair_encoder) i in (f a b)).
+  Proof.
+    intros.
+    apply Rle_antisym.
+Admitted.
+(*
+    - apply Elim_seq_le_bound; intros.
+      replace (sum_Rbar_n
+                 (fun x0 : nat =>
+                    ELim_seq 
+                      (fun i0 : nat => sum_Rbar_n (fun n0 : nat => f x0 n0) i0)) n)
+              with
+                (ELim_seq (fun i0 =>
+                             (sum_Rbar_n (fun x0 =>
+                                            (sum_Rbar_n (fun n0 => f x0 n0) i0)) n))).
+      + apply Elim_seq_le_bound; intros.
+        destruct (bound_iso_f_pairs_sum_Rbar f n0 n).
+        apply H.
+        eapply Rbar_le_trans.
+        * apply H0.
+        * apply Elim_seq_incr_elem; intros.
+          apply sum_Rbar_n_pos_Sn; intros.
+          now destruct (iso_b n2).
+      + symmetry.
+        induction n.
+        * unfold sum_Rbar_n.
+          simpl.
+          now rewrite ELim_seq_const.
+        * rewrite sum_Rbar_n_Sn.
+          rewrite IHn.
+          rewrite <- ELim_seq_plus.
+          -- apply ELim_seq_ext; intros.
+             rewrite sum_Rbar_n_Sn; trivial; intros.
+             now apply sum_Rbar_n_nneg_nneg.
+          -- apply ex_Elim_seq_incr; intros.
+             apply sum_Rbar_n_monotone; trivial; intros ?.
+             now apply sum_Rbar_n_pos_Sn.
+          -- apply ex_Elim_seq_incr; intros.
+             now apply sum_Rbar_n_pos_Sn.
+          -- apply ex_Rbar_plus_pos.
+             ++ apply ELim_seq_nneg; intros.
+                apply sum_Rbar_n_nneg_nneg; intros.
+                now apply sum_Rbar_n_nneg_nneg.
+             ++ apply ELim_seq_nneg; intros.
+                now apply sum_Rbar_n_nneg_nneg.
+          -- intros.
+             apply ELim_seq_nneg; intros.
+             now apply sum_Rbar_n_nneg_nneg; intros.
+    - apply Elim_seq_le_bound; intros.
+      destruct (bound_pair_iso_b_sum_Rbar f n).
+      apply H.
+      eapply Rbar_le_trans.
+      + apply H0.
+      + apply Rbar_le_trans with
+            (y := sum_Rbar_n (fun x1 : nat => ELim_seq (fun i0 : nat => sum_Rbar_n (fun n0 : nat => f x1 n0) i0)) x).
+        * apply sum_Rbar_n_monotone; trivial; intros ?.
+          apply Elim_seq_incr_elem; intros.
+          now apply sum_Rbar_n_pos_Sn.
+        * apply Elim_seq_incr_elem; intros.
+          apply sum_Rbar_n_pos_Sn; intros.
+          apply ELim_seq_nneg; intros.
+          now apply sum_Rbar_n_nneg_nneg.
+  Qed.
+*)
+
  Lemma list_Rbar_sum_nneg_nested_prod_swap {A B:Type} (X:list A) (Y:list B) (f:A->B->Rbar) :
    (forall x y, In x X -> In y Y -> Rbar_le 0 (f x y)) ->
    list_Rbar_sum (map (fun xy => f (fst xy) (snd xy)) (list_prod X Y)) =
@@ -1261,6 +1331,38 @@ Qed.
     - now intros.
     - now intros.
   Qed.
+
+  Lemma Series_nneg_nested_swap (f:nat->nat->R) :
+    (forall a b, 0 <= (f a b)) ->
+    Series (fun i : nat => Series (fun j : nat => (f i j))) =
+    Series (fun i : nat => Series (fun j : nat => (f j i))).
+  Proof.
+    intros.
+    rewrite Series_Series_seq_pair.
+    rewrite Series_Series_seq_pair.
+    - apply Rle_antisym.
+      + Admitted.
+  (*
+        apply Elim_seq_le_bound; intros.
+        destruct (sum_Rbar_n_iso_swap f n H).
+        eapply Rbar_le_trans.
+        * apply H0.
+        * apply Elim_seq_incr_elem; intros.
+          apply sum_Rbar_n_pos_Sn; intros.
+          now destruct (iso_b n1).
+      + apply Elim_seq_le_bound; intros.
+        destruct (sum_Rbar_n_iso_swap (fun a b => f b a) n).
+        * now intros.
+        * eapply Rbar_le_trans.
+          -- apply H0.
+          -- apply Elim_seq_incr_elem; intros.
+             apply sum_Rbar_n_pos_Sn; intros.
+             now destruct (iso_b n1).
+    - now intros.
+    - now intros.
+  Qed.
+*)
+
 
     Lemma sum_Rbar_n_finite_sum_n f n:
     sum_Rbar_n (fun x => Finite (f x)) (S n) = Finite (sum_n f n).

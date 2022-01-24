@@ -10,6 +10,7 @@ Require Import Morphisms EquivDec Program.
 Require Import Utils.
 Import ListNotations.
 Require Import Classical.
+Require Import slln.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -1794,8 +1795,7 @@ Section Derman_Sacks.
       ex_series (fun n => a n / Rsqr (b n)).
     Proof.
       intros apos aconv.
-      generalize (Paolo_final a apos); intros.
-      destruct H as [H _].
+      destruct (Paolo_final a apos).
       specialize (H aconv).
       destruct H as [? [? [? ?]]].
       exists (fun n => sqrt (/ (x n))).
