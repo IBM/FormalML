@@ -3,7 +3,7 @@ Require Import Coquelicot.Coquelicot.
 Require Import LibUtils.
 Require Import Expectation ConditionalExpectation.
 Require Import infprod.
-
+Require Import PushNeg.
 Require Import List Permutation.
 Require Import Morphisms EquivDec Program.
 
@@ -1890,7 +1890,6 @@ Section Derman_Sacks.
       apply nnfsqr.
   Qed.
 
-
  Lemma DS_Dvor_11_12 (a : nat -> R) (Y : nat -> Ts -> R)
        (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
        (T : nat -> Ts -> R)
@@ -1901,14 +1900,14 @@ Section Derman_Sacks.
     is_lim_seq a 0 ->
     ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
     exists α : nat -> R,
-    exists N:nat, forall n, (N <= n)%nat -> almost _ (fun omega => rvabs (Z n) omega <= α n).
+      almost _ (fun omega =>  exists N:nat, forall n, (N <= n)%nat -> rvabs (Z n) omega <= α n).
  Proof.
    intros Z Ha1 Ha2 HY.
    destruct (DS_Dvor_aa a Y isfe Ha1 Ha2 HY) as [α [Hα1 [Hα2 Hα3]]].
    exists α.
    assert (forall n, 0 < α n) by (intros ; eapply Rlt_le_trans; eauto).
    (*   assert (HESa : forall n, event_ge dom (rvabs (Z n)) (α n)).*)
-   assert (rvZ : forall n, RandomVariable _ borel_sa ((Z n))) by admit.
+   assert (rvZ : forall n, RandomVariable _ borel_sa (Z n)) by admit.
    assert (HEsa : forall n, sa_sigma (event_ge dom (rvabs (Z n)) (mkposreal _ (H n)))).
    {
      intros.
@@ -1916,11 +1915,20 @@ Section Derman_Sacks.
    }
    pose (frac := fun n => Rbar_div_pos (NonnegExpectation (rvsqr (Z n)))
                                     (mkposreal _ (rsqr_pos (mkposreal _ (H n))))).
-   assert (Hfin : forall n0, (frac n0) = FiniteExpectation prts (rvsqr (Y n0)) / (α n0)²)
-     by admit.
+   assert (Hfin : forall n0, (frac n0) = FiniteExpectation prts (rvsqr (Y n0)) / (α n0)²).
+   {
+     intros. unfold frac.
+     simpl. admit.
+   }
    generalize (Borel_Cantelli prts _ (HEsa)); intros.
    cut_to H0.
-   + admit.
+   + rewrite almost_alt_eq.
+     unfold almost_alt. push_neg.
+     simpl in H0. eexists.
+     split; [apply H0|intros omega ?H].
+     simpl. intros n. specialize (H1 n).
+     destruct H1 as [n0 [Hn0 HZ]]. exists (n0-n)%nat.
+     left. now replace ((n0 - n + n)%nat) with n0 by lia.
    + simpl.
      eapply ex_series_nneg_bounded; eauto; intros.
      -- apply ps_pos.
