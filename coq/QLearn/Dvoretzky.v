@@ -1921,7 +1921,7 @@ Section Derman_Sacks.
    }
    pose (frac := fun n => Rbar_div_pos (NonnegExpectation (rvsqr (Z n)))
                                     (mkposreal _ (rsqr_pos (mkposreal _ (H n))))).
-   assert (Hfin : forall n0, (frac n0) = FiniteExpectation prts (rvsqr (Y n0)) / (α n0)²).
+   assert (Hfin : forall n0, (frac n0) <= FiniteExpectation prts (rvsqr (Y n0)) / (α n0)²).
    {
      intros. unfold frac.
      simpl. admit.
@@ -1939,8 +1939,9 @@ Section Derman_Sacks.
      eapply ex_series_nneg_bounded; eauto; intros.
      -- apply ps_pos.
      -- generalize(Chebyshev_ineq_div_mean0 _ (rvZ n) ((mkposreal _ (H n)))); intros.
-        simpl in H1. unfold frac in Hfin.
-        simpl in Hfin. now rewrite Hfin in H1.
+        eapply Rle_trans; eauto. simpl in H1.
+        unfold frac. simpl.
+
  Admitted.
 
 
