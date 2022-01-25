@@ -2344,27 +2344,26 @@ Qed.*)
            rewrite H7.
            rewrite sign_0; try (rewrite Rabs_R0); lra.
    }
-   assert (Haux : almost _ (fun omega => exists N, forall n, (N <= n)%nat -> X (S n) omega <=
+   assert (Haux : almost _ (fun omega => exists N, forall n, (N <= n)%nat -> rvabs (X (S n)) omega <=
                                            Rmax (2* A n)
                                                 (((1+beta n)*(rvabs (X n) omega) + Z n omega - gamma n)))).
    {
      exists E. split; trivial.
      intros w Hw.
      destruct (Hα w Hw) as [N HN]. clear Hα.
-     exists N; intros. rewrite H.
+     exists N; intros. rv_unfold. rewrite H.
      specialize (HN n H7). clear H7. clear Hw.
      rewrite Rmax_Rle.
      destruct (Rle_dec (Rabs(T n w)) (A n)).
      --  left. replace (2*A n) with (A n + A n) by lra.
-        rv_unfold. eapply Rle_trans; [apply Rle_abs|].
+        eapply Rle_trans; [apply Rle_abs|]. rewrite Rabs_Rabsolu.
         eapply Rle_trans;[apply Rabs_triang|].
         apply Rplus_le_compat; trivial.
      -- right.
-        rv_unfold.
         apply Rnot_le_gt in n0.
         eapply Rle_trans;[apply Rle_abs|].
         apply Rle_trans with (r2 := Rabs(T n w) + Z n w).
-        ** rewrite Rabs_sign.
+        ** rewrite Rabs_Rabsolu. rewrite Rabs_sign.
            rewrite (sign_sum HN n0). rewrite Rmult_plus_distr_l.
            rewrite <-Rabs_sign. right. unfold Z; lra.
         ** unfold Rminus. rewrite Rplus_assoc.
@@ -2402,10 +2401,10 @@ Qed.*)
        apply is_lim_seq_scal_l.
        unfold A.
        now apply is_lim_seq_max.
-     + destruct H7.
+     (* + destruct H7.
        exists x0; intros.
        specialize (H7 n H8).
-       admit.
+       admit.*)
    - apply is_lim_seq_spec in H8.
      apply is_lim_seq_spec.
      unfold is_lim_seq' in *; intros.
