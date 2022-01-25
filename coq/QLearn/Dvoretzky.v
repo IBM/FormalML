@@ -2416,8 +2416,7 @@ Qed.*)
      now rewrite Rminus_0_r, Rabs_Rabsolu in H8.
    - apply ex_series_ext with (a := fun n => FiniteExpectation prts (rvsqr (Y n))); trivial.
      intros.
-     admit.
-
+     now rewrite <- FiniteExpectation_simple with (isfe := (fey n)).
  Admitted.
 
 
