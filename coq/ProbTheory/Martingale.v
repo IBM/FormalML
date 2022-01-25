@@ -2271,66 +2271,160 @@ Section martingale.
         apply sub.
     Qed.      
 
+    Lemma plus_self_even x : Nat.even (x + x)%nat = true.
+    Proof.
+      induction x; simpl; trivial.
+      destruct x; simpl; trivial.
+      rewrite <- IHx.
+      f_equal.
+      lia.
+    Qed.
+
+    Lemma plus_self_and_one_odd x : Nat.even (x + S x)%nat = false.
+    Proof.
+      replace (x + S x)%nat with (S (x + x))%nat by lia.
+      rewrite Nat.even_succ.
+      rewrite <- NPeano.Nat.negb_even.
+      now rewrite plus_self_even.
+    Qed.
+
+    (*
+    Lemma upcrossing_transform_part_nneg a b a0 :
+      a < b ->
+      forall n0,
+        0 <= upcrossing_bound a b (S n0) a0 * (M (S n0) a0 + -1 * M n0 a0).
+    Proof.
+      intros altb; intros.
+      unfold upcrossing_bound.
+      unfold EventIndicator.
+      match_destr; [| lra].
+      field_simplify.
+      destruct p as [? [??]].
+      match_option_in H; [| tauto].
+      destruct x; [simpl in *; lia |].
+      replace (2 * S x - 1)%nat with (x + S x)%nat in eqq by lia.
+      replace (2 * S x)%nat with  (S (x + S x))%nat in H0 by lia.
+      simpl in H0.
+      rewrite eqq in H0.
+      rewrite plus_self_and_one_odd in H0.
+      rewrite NPeano.Nat.add_succ_r in H0, eqq.
+      simpl in H0, eqq.
+      destruct x; simpl in eqq.
+      - unfold hitting_time, classic_min_of in eqq.
+        match_destr_in eqq.
+        destruct s as [?[??]].
+        simpl in *.
+        invcs eqq.
+        unfold id in *.
+        unfold hitting_time_from, hitting_time, classic_min_of in H0.
+        destruct (classic_min_of_sumbool
+                    (fun k : nat => event_ge borel_sa (fun x : R => x) b (M (k + S n) a0))).
+        + destruct s as [? [??]]; simpl in *.
+          assert (n <= n0 <= x + n)%nat by lia.
+          destruct (Nat.eq_dec n n0).
+          * subst.
+          destruct x; simpl in *.
+          * admit.
+          * specialize (n2 (n0- S n))%nat.
+            cut_to n2; try lia.
+            replace (n0 - S n + S n)%nat with n0 in n2.
+            
+
+          
+        
+        match_option_in H0.
+        + unfold hitting_time_from in eqq.
+          match_option_in eqq.
+          invcs eqq.
+          unfold hitting_time, classic_min_of in eqq0.
+          match_destr_in eqq0.
+          destruct s as [? [??]]; simpl in *.
+          invcs eqq0.
+          specialize (n2 (n0 - S n))%nat.
+          assert (n0 <= n3 + n)%nat by lia.
+          admit.
+          assert (n <= n0)%nat by lia.
+          
+          
+
+          
+          n0 - n3 <= n <= n0
+                          
+                          destruct n3.
+          -- simpl in *.
+             assert (n = n0) by lia.
+             subst.
+             lra.
+          -- specialize (n2 (n0 - S n))%nat.
+             cut_to n2; try lia.
+             replace (n0 - S n + S n)%nat with n0 in n2.
+             
+             
+             
+      - rewrite plus_self_and_one_odd in H0.
+        unfold hitting_time_from, hitting_time, classic_min_of in H0.
+        destruct (classic_min_of_sumbool (fun k : nat => event_ge borel_sa id b (M (k + S n) a0))).
+        + destruct s as [? [??]]; simpl in *.
+          unfold id in *.
+          replace (x + S x)%nat with (S (x + x))%nat in eqq by lia.
+          match_option_in eqq.
+          match_option_in eqq0.
+          rewrite plus_self_even in eqq.
+          rewrite Nat.even_succ, <- NPeano.Nat.negb_even, plus_self_even in eqq0.
+          simpl in eqq0.
+
+          rewrite 
+*)
+          
+    Lemma upcrossing_bound_transform_ge_Sn a b n :
+      rv_le (rvscale (b-a) (upcrossing_var a b (S n))) (martingale_transform (upcrossing_bound a b) M (S n)).
+    Proof.
+      intros ?.
+      unfold martingale_transform.
+      rv_unfold.
+      generalize (Rmax_list_In (map INR (map (upcrossing_var_expr a b (S n) a0) (seq 0 (S n)))))
+      ; intros HH.
+      cut_to HH; [| simpl; congruence].
+      generalize (Rmax_spec_map (map (upcrossing_var_expr a b (S n) a0) (seq 0 (S n))) INR)
+      ; intros Hin'.
+      apply in_map_iff in HH.
+      destruct HH as [kk [??]].
+      rewrite <- H in Hin'.
+      unfold upcrossing_var.
+      rewrite <- H.
+      apply in_map_iff in H0.
+      destruct H0 as [k [??]].
+      apply in_seq in H1.
+      destruct H1 as [_ ?].
+      assert (k <= n)%nat by lia; clear H1.
+      assert (Hin : forall x1,
+                 (x1 <= n)%nat ->
+                 (upcrossing_var_expr a b (S n) a0 x1 <= kk)%nat).
+      {
+        intros.
+        apply INR_le.
+        subst.
+        apply Hin'.
+        apply in_map.
+        apply in_seq; lia.
+      }
+      clear Hin' H.
+      subst.
+      unfold rvsum.
+      
+    Admitted.
+
     Lemma upcrossing_bound_transform_ge a b n :
       rv_le (rvscale (b-a) (upcrossing_var a b n)) (martingale_transform (upcrossing_bound a b) M n).
     Proof.
       intros ?.
-    Admitted.
-(*
-    unfold upcrossing_var.
-      
-      unfold upcrossing_var.
-
-
-      
-      
-      
-      unfold upcrossing_var, martingale_transform, upcrossing_bound, rvscale, const,
-        upcrossing_var_expr.
-      unfold upcrossing_var_expr.
-      destruct n; [simpl; lra |].
-      induction n.
+      destruct n.
       - simpl.
-        field_simplify; unfold rvsum.
-        rewrite Hierarchy.sum_O.
-        unfold rvmult, EventIndicator.
-        unfold classic_dec.
-        match_destr; try lra.
-        destruct p as [k [HH1 HH2]].
-        match_option_in HH1; try tauto.
-        assert (n = 0)%nat by lia; subst.
-        clear HH1.
-        destruct k; simpl in *; try lia.
-        replace (((k + S (k + 0)) - 0))%nat with (S (k + k))%nat in eqq by lia.
-        replace  (k + S (k + 0))%nat with (S (k + k))%nat in HH2 by lia.
-        rewrite eqq in HH2.
-        rewrite Nat.even_succ, Nat.odd_add, Bool.xorb_nilpotent in HH2.
-        unfold event_ge, id in HH2.
-        unfold hitting_time_from in HH2.
-        unfold hitting_time in HH2.
-        simpl in HH2.
-        
-        
-        
-        Search (xorb ?k ?k).
-        Search (Nat.even (2 * ?k)).
+        unfold upcrossing_var; simpl.
+        rv_unfold; lra.
+      - apply upcrossing_bound_transform_ge_Sn.
+    Qed.
 
-          replace (((k + S (k + 0)) - 0))%nat with (S (k + k))%nat in eqq by lia.
-        assert (k = 0)%nat.
-        {
-          induction k; trivial.
-          simpl in eqq.
-          simpl in eqq.
-          rewrite plus_0_r in IHk.
-          
-        
-        Show 2.
-      rewrite map_map in *.
-      rewrite seq_Sn.
-      rewrite Rmax_list_app.
-      
-    
-*)
     End doob_upcrossing_times.
 
     Section doob_upcrossing_ineq.
