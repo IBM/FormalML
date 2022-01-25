@@ -1133,6 +1133,31 @@ Section RealRandomVariables.
       now apply in_map.
     Qed.
 
+    Lemma sign_vals :
+      forall (x:R),
+        -1 = sign x \/ 0 = sign x \/ 1 = sign x.
+    Proof.
+      intros.
+      generalize (sign_eq_m1 x); intros.
+      generalize (sign_eq_1 x); intros.
+      generalize sign_0; intros.
+      destruct (Rlt_dec x 0).
+      - intuition lra.
+      - destruct (Rlt_dec 0 x).
+        + intuition lra.
+        + assert (x = 0) by lra.
+          rewrite H2.
+          lra.
+   Qed.
+
+    Global Program Instance frfsign
+           (rv_X : Ts -> R) : FiniteRangeFunction (rvsign rv_X)
+      := { frf_vals := (-1) :: 0 :: 1 :: nil }.
+    Next Obligation.
+      unfold rvsign.
+      generalize (sign_vals (rv_X x)); intros.
+      firstorder.
+    Qed.
 
     Global Instance frfchoice (c:Ts->bool) x y
            {frfx:FiniteRangeFunction x}
