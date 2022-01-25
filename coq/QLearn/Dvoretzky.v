@@ -1821,6 +1821,40 @@ Section Derman_Sacks.
             now apply Rinv_0_lt_compat.
    Qed.
 
+    Lemma DS_lemma1_stochastic (a b c delta zeta : nat -> Ts -> R)
+          (b1pos : forall n x, 0 <= b n x) :
+    (forall n x, 0 <= a n x) ->
+    (forall n x, 0 <= c n x) ->
+    (forall n x, 0 <= zeta n x) ->
+    almost _ (fun x => is_lim_seq (fun n => a n x) 0) ->
+    almost _ (fun x => ex_series (fun n => b n x)) ->
+    almost _ (fun x => ex_series (fun n => delta n x)) ->
+    almost _ (fun x => is_lim_seq (sum_n (fun n => c n x)) p_infty) ->
+    almost _ (fun x =>
+                (exists (N0:nat),
+                    (forall n, 
+                        (n>= N0)%nat -> 
+                        (zeta (S n) x) <=
+                         Rmax (a n x) ((1+ (b n x))*(zeta n x) + (delta n x) - (c n x))))) ->
+    almost _ (fun x => (is_lim_seq (fun n => zeta n x) 0)).
+  Proof.
+    intros.
+    revert H6; apply almost_impl.
+    revert H5; apply almost_impl.
+    revert H4; apply almost_impl.
+    revert H3; apply almost_impl.
+    revert H2; apply almost_impl.
+    apply all_almost; 
+    intros ?? ?? ??.
+    apply DS_lemma1 with (a := fun n => a n x) 
+                         (b := fun n => b n x) 
+                         (c := fun n => c n x) 
+                         (delta := fun n => delta n x); trivial.
+  Qed.
+    
+
+     
+      
   Lemma DS_Dvor_aa (a : nat -> R) (Y : nat -> Ts -> R) 
         (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n))) :
     (forall n, 0 < a n) ->
@@ -2000,6 +2034,126 @@ Section Derman_Sacks.
         apply Hfinu.
  Qed.
 
+ Lemma DS_Dvor_ash_6_2_1 (X Y T : nat -> Ts -> R) 
+       {F : nat -> SigmaAlgebra Ts}
+       (isfilt : IsFiltration F)
+       (filt_sub : forall n, sa_sub (F n) dom)
+       {adaptX : IsAdapted borel_sa X F}
+       {adaptT : IsAdapted borel_sa T F}       
+       {rvX : forall (n:nat), RandomVariable dom borel_sa (X n)}
+       {rvY : forall (n:nat), RandomVariable dom borel_sa (Y n)}
+       {rvT : forall (n:nat), RandomVariable dom borel_sa (T n)}       
+       {frf : forall (n:nat), FiniteRangeFunction (Y (n))}
+       (HC : forall n, 
+           almostR2 _ eq
+                    (ConditionalExpectation _ (filt_sub (S n)) (Y (S n)))
+                    (const 0))  :
+   (forall (n:nat), rv_eq (X (S n)) (rvplus (T n) (Y n))) ->
+   ex_series (fun n => SimpleExpectation (rvsqr (Y n))) ->
+   let Z := fun n => rvmult (Y n) (rvsign (T n)) in
+   almost _ (fun (x : Ts) => ex_series (fun n => Z n x)).
+ Proof.
+   intros.
+   assert (adaptY : IsAdapted borel_sa Y (fun n => F (S n))).
+   {
+     unfold IsAdapted; intros.
+     specialize (H n).
+     assert (rv_eq (Y n) (rvminus (X (S n)) (T n))).
+     {
+       rewrite H.
+       intro x.
+       unfold rvminus, rvplus, rvopp, rvscale; lra.
+    }
+     rewrite H1.
+     apply rvminus_rv.
+     - apply adaptX.
+     - apply (RandomVariable_sa_sub (isfilt n)).
+       apply adaptT.
+  }
+   assert (adaptZ : IsAdapted borel_sa Z (fun n => F (S n))).
+   {
+     unfold IsAdapted; intros.
+     unfold Z.
+     apply rvmult_rv; trivial.
+     apply rvsign_rv; trivial.
+     apply (RandomVariable_sa_sub (isfilt n)).
+     apply adaptT.
+   }
+   assert (rvZ : forall n, RandomVariable dom borel_sa (Z n)).
+   {
+     intros.
+     unfold Z.
+     apply rvmult_rv; trivial.
+     apply rvsign_rv; trivial.
+   }
+   assert (isfilt1 : IsFiltration (fun n => F (S n))).
+   {
+     unfold IsFiltration; intros.
+     apply isfilt.
+   }
+   assert (frfz : forall (n:nat), FiniteRangeFunction (Z (n))).
+   {
+     intros.
+     unfold Z.
+     apply frfmult; trivial.
+     apply frfsign; trivial.
+  }
+   apply Ash_6_2_1_filter with 
+       (filt_sub0 := fun n => filt_sub (S n))
+       (rv := rvZ)
+       (frf0 := frfz); trivial.
+   - intros.
+     assert (isfef : IsFiniteExpectation prts (Y (S n))) by now apply IsFiniteExpectation_simple.
+     assert (rvs: RandomVariable (F (S n)) borel_sa (rvsign (T (S n)))).
+     {
+       apply rvsign_rv.
+       apply adaptT.
+     }
+     assert (isfe2 : IsFiniteExpectation prts (rvmult (Y (S n)) (rvsign (T (S n))))).
+     {
+       apply IsFiniteExpectation_simple; trivial.
+       - apply rvmult_rv; trivial.
+         now apply (RandomVariable_sa_sub (filt_sub (S n))).
+       - typeclasses eauto.
+     }
+     generalize (Condexp_factor_out prts (filt_sub (S n))(Y (S n)) (rvsign (T (S n)))); intros.
+     apply almost_prob_space_sa_sub_lift in H1.
+     revert H1.
+     apply almost_impl.
+     specialize (HC n).
+     revert HC.
+     apply almost_impl, all_almost; intros ??.
+     unfold impl; intros.
+     unfold Z.
+     rewrite H2.
+     unfold Rbar_rvmult.
+     rewrite H1.
+     unfold const.
+     now rewrite Rbar_mult_0_r.
+   -  assert (Z2leY2: forall n0, rv_le (rvsqr (Z n0)) (rvsqr (Y n0))).
+      {
+     intros n0 x.
+     unfold Z, rvsqr, rvmult, rvsign.
+     replace (Rsqr (Y n0 x)) with ((Rsqr (Y n0 x)) * 1) by lra.
+     rewrite Rsqr_mult.
+     apply Rmult_le_compat_l.
+     - apply Rle_0_sqr.
+     - destruct (Rlt_dec 0 (T n0 x)).
+       + rewrite sign_eq_1; unfold Rsqr; lra.
+       + destruct (Rlt_dec (T n0 x) 0).
+         * rewrite sign_eq_m1; unfold Rsqr; lra.
+         * assert (T n0 x = 0) by lra.
+           rewrite H1.
+           rewrite sign_0; unfold Rsqr; lra.
+      }
+      apply ex_series_nneg_bounded with (g := fun n => SimpleExpectation (rvsqr (Y n))); trivial. 
+      + intros.
+        apply SimpleExpectation_nneg.
+        apply nnfsqr.
+      + intros.
+        now apply SimpleExpectation_le.
+  Qed.
+        
   Theorem Dvoretzky_DS
         ( X Y : nat -> Ts -> R)
         (T : nat -> R -> R)
@@ -2019,4 +2173,5 @@ Section Derman_Sacks.
  Proof.
    intros.
  Admitted.
+ 
 End Derman_Sacks.
