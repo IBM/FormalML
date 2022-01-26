@@ -2204,7 +2204,7 @@ Section Derman_Sacks.
         {adaptT : IsAdapted borel_sa T F}       
         {alpha beta gamma : nat -> R}
         (hpos1 : forall n, 0 < alpha n)
-        (hpos2 : forall n, 0 < beta n )(hpos3 : forall n, 0 < gamma n)
+        (hpos2 : forall n, 0 <= beta n )(hpos3 : forall n, 0 <= gamma n)
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
         (svy : forall n, FiniteRangeFunction (Y n)) 
         (rvx : forall n, RandomVariable dom borel_sa (X n)) 
@@ -2287,13 +2287,11 @@ Section Derman_Sacks.
    assert (is_lim_seq (fun n => Rabs (X n x)) 0).
    - apply (DS_lemma1 (fun n => 2 * A n) beta gamma (fun n => Z n x) 
            (fun n => Rabs (X n x))); trivial.
-     + intros; left; apply hpos2.
      + intros; unfold A.
        apply Rmult_le_pos; try lra.
        apply Rle_trans with (r2 := alpha n).
        * left; apply hpos1.
        * apply Rmax_r.
-     + intros; left; apply hpos3.
      + intros; apply Rabs_pos.
      + replace (Finite 0) with (Rbar_mult 2 0) by apply Rbar_mult_0_r.
        apply is_lim_seq_scal_l.
