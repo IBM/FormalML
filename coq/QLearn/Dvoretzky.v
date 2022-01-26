@@ -2275,7 +2275,7 @@ Qed.*)
      -- subst; lra.
  Qed.
 
- Lemma is_lim_seq_max (f g : nat -> R) (l : R) :
+ Lemma is_lim_seq_max (f g : nat -> R) (l : Rbar) :
    is_lim_seq f l ->
    is_lim_seq g l ->
    is_lim_seq (fun n => Rmax (f n) (g n)) l.
@@ -2285,14 +2285,25 @@ Qed.*)
    apply is_lim_seq_spec in H.
    apply is_lim_seq_spec in H0.
    unfold is_lim_seq' in *; intros.
-   destruct (H eps).
-   destruct (H0 eps).
-   exists (max x x0); intros.
-   specialize (H1 n); specialize (H2 n).
-   cut_to H1; try lia.
-   cut_to H2; try lia.
-   unfold Rmax.
-   match_destr.
+   destruct l; intros.
+   - destruct (H eps); destruct (H0 eps).
+     exists (max x x0); intros.
+     specialize (H1 n); specialize (H2 n).
+     cut_to H1; try lia.
+     cut_to H2; try lia.
+     unfold Rmax; match_destr.
+   - destruct (H M); destruct (H0 M).
+     exists (max x x0); intros.
+     specialize (H1 n); specialize (H2 n).
+     cut_to H1; try lia.
+     cut_to H2; try lia.
+     unfold Rmax; match_destr.
+   - destruct (H M); destruct (H0 M).
+     exists (max x x0); intros.
+     specialize (H1 n); specialize (H2 n).
+     cut_to H1; try lia.
+     cut_to H2; try lia.
+     unfold Rmax; match_destr.
  Qed.
 
  Theorem Dvoretzky_DS
@@ -2318,7 +2329,6 @@ Qed.*)
                      (fun x : Ts => const 0 x)) ->
   (forall n omega, (rvabs (T n) omega) <= Rmax (alpha n) ((1+beta n)*(rvabs (X n) omega) - gamma n)) ->
   ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
-  ex_series (fun n => SimpleExpectation (rvsqr (Y n)) / Rsqr (alpha n)) ->
   is_lim_seq alpha 0 ->
   ex_series beta ->
   is_lim_seq (sum_n gamma) p_infty ->
@@ -2341,7 +2351,7 @@ Qed.*)
        + destruct (Rlt_dec (T n0 x) 0).
          * rewrite sign_eq_m1; trivial. rewrite Rabs_m1; lra.
          * assert (T n0 x = 0) by lra.
-           rewrite H7.
+           rewrite H6.
            rewrite sign_0; try (rewrite Rabs_R0); lra.
    }
    assert (Haux : almost _ (fun omega => exists N, forall n, (N <= n)%nat -> rvabs (X (S n)) omega <=
@@ -2352,7 +2362,7 @@ Qed.*)
      intros w Hw.
      destruct (Hα w Hw) as [N HN]. clear Hα.
      exists N; intros. rv_unfold. rewrite H.
-     specialize (HN n H7). clear H7. clear Hw.
+     specialize (HN n H6). clear H6. clear Hw.
      rewrite Rmax_Rle.
      destruct (Rle_dec (Rabs(T n w)) (A n)).
      --  left. replace (2*A n) with (A n + A n) by lra.
@@ -2380,9 +2390,9 @@ Qed.*)
                eapply Rle_trans; [apply H1| now right].
    }
    generalize (DS_Dvor_ash_6_2_1 X Y T isfilt filt_sub); intros.
-   cut_to H7; trivial.
-   simpl in H7.
-   revert H7; apply almost_impl.
+   cut_to H6; trivial.
+   simpl in H6.
+   revert H6; apply almost_impl.
    revert Haux; apply almost_impl.
    apply all_almost; intros ??.
    intro zser.
@@ -2401,23 +2411,19 @@ Qed.*)
        apply is_lim_seq_scal_l.
        unfold A.
        now apply is_lim_seq_max.
-     (* + destruct H7.
-       exists x0; intros.
-       specialize (H7 n H8).
-       admit.*)
-   - apply is_lim_seq_spec in H8.
+   - apply is_lim_seq_spec in H7.
      apply is_lim_seq_spec.
      unfold is_lim_seq' in *; intros.
-     specialize (H8 eps).
-     destruct H8.
+     specialize (H7 eps).
+     destruct H7.
      exists x0; intros.
-     specialize (H8 n H9).
+     specialize (H7 n H8).
      rewrite Rminus_0_r.
-     now rewrite Rminus_0_r, Rabs_Rabsolu in H8.
+     now rewrite Rminus_0_r, Rabs_Rabsolu in H7.
    - apply ex_series_ext with (a := fun n => FiniteExpectation prts (rvsqr (Y n))); trivial.
      intros.
      now rewrite <- FiniteExpectation_simple with (isfe := (fey n)).
- Admitted.
+ Qed.
 
 
 
