@@ -2267,6 +2267,67 @@ Section levy.
 
 End levy.
 
+Section MartingaleDifferenceSeq.
+
+  Class IsMDS {Ts:Type}
+          {dom: SigmaAlgebra Ts}
+          {prts: ProbSpace dom} (sas : nat -> SigmaAlgebra Ts) (X : nat -> Ts -> R)
+          {adapt : IsAdapted borel_sa X sas}
+          {isfe : forall n, IsFiniteExpectation prts (X n)}
+          {rv : forall n, RandomVariable dom borel_sa (X n)}
+          {filt:IsFiltration sas}
+          {sub:IsSubAlgebras dom sas}
+    :={
+    is_mds : forall n : nat, almostR2 prts eq (const 0%R)
+                               (FiniteConditionalExpectation prts (sub n) (X (S n)))
+      }.
+
+  Context  {Ts:Type}
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom) (X : nat -> Ts -> R)
+          (sas : nat -> SigmaAlgebra Ts)
+          {adapt : IsAdapted borel_sa X sas}
+          {rv: forall n, RandomVariable dom borel_sa (X n)}
+          {isfe:forall n, IsFiniteExpectation prts (X n)}
+          {sub:IsSubAlgebras dom sas}
+          {filt : IsFiltration sas}.
+
+  Lemma Martingale_diff_IsMDS (Y : nat -> Ts -> R) (rvy : forall n : nat, RandomVariable dom borel_sa (Y n))
+        (isfey : forall n : nat, IsFiniteExpectation prts (Y n))
+        (adapty : IsAdapted borel_sa Y sas)
+        (hy : IsMartingale prts eq Y sas) :
+    (forall n : nat, almostR2 prts eq (X (S n)) (rvminus (Y (S n)) (Y n))) ->
+    IsMDS sas X.
+  Proof.
+    intros Hn.
+    constructor.
+    intros n.
+    specialize (Hn n).
+    eapply FiniteCondexp_proper with (sub0 := sub n)
+                                    (rv1 := rv (S n))
+                                    (isfe1 := isfe (S n))
+      in Hn.
+    apply almost_prob_space_sa_sub_lift in Hn.
+    assert (almostR2 (prob_space_sa_sub prts (sub n)) eq
+                     (FiniteConditionalExpectation prts (sub n) (rvminus (Y (S n)) (Y n)))
+                     (rvminus (FiniteConditionalExpectation prts (sub n) (Y (S n)))
+                              (FiniteConditionalExpectation prts (sub n) (Y n)))) by
+      apply FiniteCondexp_minus.
+    apply almost_prob_space_sa_sub_lift in H.
+    unfold IsMartingale in hy.
+    specialize (hy n).
+    revert hy; apply almost_impl.
+    revert Hn; apply almost_impl.
+    revert H; apply almost_impl, all_almost; intros ??.
+    unfold impl; intros.
+    rewrite H0.
+    rewrite H.
+    rv_unfold. rewrite <- H1.
+    rewrite FiniteCondexp_id; try lra; trivial.
+  Qed.
+
+End MartingaleDifferenceSeq.
+
 Require Import Coquelicot.Coquelicot.
 
 Definition zerotails_prop a ϵ n : Prop :=
