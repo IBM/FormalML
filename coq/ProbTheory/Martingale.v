@@ -2915,6 +2915,158 @@ Section martingale.
       Qed.
   End doob_upcrossing_ineq.
 
+  Section mart_conv.
+
+    Local Existing Instance Rbar_le_pre.
+    
+    Context
+      (M : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+      {rv:forall n, RandomVariable dom borel_sa (M n)}
+      {isfe:forall n, IsFiniteExpectation prts (M n)}
+      {adapt:IsAdapted borel_sa M sas}
+        {filt:IsFiltration sas}
+        {sub:IsSubAlgebras dom sas}
+        {mart:IsMartingale Rle M sas}.
+
+
+(*    Lemma upcrossing_var_lim_isfe K a b :
+      is_ELimSup_seq (fun n => NonnegExpectation (pos_fun_part (M n))) K ->
+      a < b ->
+      IsFiniteExpectation prts (rvlim (upcrossing_var M a b)).
+    Proof.
+      intros.
+      unfold rvlim.
+
+      generalize (Fatou (upcrossing_var M a b) _); intros HH.
+      
+      assert Rbar_le (Rbar_mult (b-a) (NonnegExpectation (upcrossing_var M a b (S n))))
+                        (K + Rabs a)).
+      {
+
+      U∞[a, b] := limn→∞ Un[a, b].
+      
+      assert (HH:forall a b n, a < b ->
+                Rbar_le (Rbar_mult (b-a) (NonnegExpectation (upcrossing_var M a b (S n))))
+                        (K + Rabs a)).
+      {
+        intros a b n altb.
+        rewrite (upcrossing_inequality M sas a b n altb).
+        transitivity ((NonnegExpectation (fun x : Ts => pos_fun_part (rvminus (M (S n)) (const a)) x))).
+        {
+          rewrite <- (Rbar_plus_0_r (NonnegExpectation (fun x : Ts => pos_fun_part (rvminus (M (S n)) (const a)) x))) at 2.
+          apply Rbar_plus_le_compat; try reflexivity.
+          rewrite <- Rbar_opp_le.
+          rewrite Rbar_opp_involutive.
+          simpl Rbar_opp; rewrite Ropp_0.
+          apply NonnegExpectation_pos.
+        }
+        transitivity (NonnegExpectation (rvplus (pos_fun_part (M (S n))) (rvabs (const a)))).
+        {
+          apply NonnegExpectation_le; intros ?.
+          rv_unfold; simpl.
+          
+          unfold Rmax.
+          generalize (Rabs_pos a); intros.
+          repeat match_destr; simpl; try lra
+          ; unfold Rabs
+          ; match_destr; try lra.
+        }
+        rewrite NonnegExpectation_sum by try typeclasses eauto.
+        unfold rvabs, const.
+        assert (eqq:(NonnegExpectation (fun _ : Ts => Rabs a)) = Rabs a).
+        {
+          rewrite <- (NonnegExpectation_const (Rabs a)) with (nnc:=Rabs_pos a).
+          apply NonnegExpectation_ext; reflexivity.
+        }
+        rewrite eqq.
+        replace (Finite (K + Rabs a)) with (Rbar_plus K (Rabs a)) by reflexivity.
+        apply Rbar_plus_le_compat; try reflexivity.
+        red in sup.
+        admit.
+      }
+
+      
+    Theorem martingale_convergence (K:R) :
+      is_ELimSup_seq (fun n => NonnegExpectation (pos_fun_part (M n))) K ->
+      exists (Minf : Ts -> R),
+        RandomVariable dom borel_sa Minf /\
+        IsFiniteExpectation prts Minf /\
+          almost prts (fun omega => is_Elim_seq (fun n => M n omega) (Minf omega)).
+    Proof.
+      intros sup.
+
+
+      assert (isfeU:forall a b, a < b ->
+                           IsFiniteExpectation prts (rvlim (upcrossing_var M a b))).
+      { 
+      
+                Rbar_le (Rbar_mult (b-a) (NonnegExpectation (upcrossing_var M a b (S n))))
+                        (K + Rabs a)).
+      {
+
+      U∞[a, b] := limn→∞ Un[a, b].
+      
+      assert (HH:forall a b n, a < b ->
+                Rbar_le (Rbar_mult (b-a) (NonnegExpectation (upcrossing_var M a b (S n))))
+                        (K + Rabs a)).
+      {
+        intros a b n altb.
+        rewrite (upcrossing_inequality M sas a b n altb).
+        transitivity ((NonnegExpectation (fun x : Ts => pos_fun_part (rvminus (M (S n)) (const a)) x))).
+        {
+          rewrite <- (Rbar_plus_0_r (NonnegExpectation (fun x : Ts => pos_fun_part (rvminus (M (S n)) (const a)) x))) at 2.
+          apply Rbar_plus_le_compat; try reflexivity.
+          rewrite <- Rbar_opp_le.
+          rewrite Rbar_opp_involutive.
+          simpl Rbar_opp; rewrite Ropp_0.
+          apply NonnegExpectation_pos.
+        }
+        transitivity (NonnegExpectation (rvplus (pos_fun_part (M (S n))) (rvabs (const a)))).
+        {
+          apply NonnegExpectation_le; intros ?.
+          rv_unfold; simpl.
+          
+          unfold Rmax.
+          generalize (Rabs_pos a); intros.
+          repeat match_destr; simpl; try lra
+          ; unfold Rabs
+          ; match_destr; try lra.
+        }
+        rewrite NonnegExpectation_sum by try typeclasses eauto.
+        unfold rvabs, const.
+        assert (eqq:(NonnegExpectation (fun _ : Ts => Rabs a)) = Rabs a).
+        {
+          rewrite <- (NonnegExpectation_const (Rabs a)) with (nnc:=Rabs_pos a).
+          apply NonnegExpectation_ext; reflexivity.
+        }
+        rewrite eqq.
+        replace (Finite (K + Rabs a)) with (Rbar_plus K (Rabs a)) by reflexivity.
+        apply Rbar_plus_le_compat; try reflexivity.
+        red in sup.
+        admit.
+      }
+      assert (ps_P (fun omega => (ELimInf_seq (fun n => (M n omega))) < (ELimSup_seq (fun n => (M n omega))) )).
+          
+
+      
+            Theorem upcrossing_inequality a b n :
+        a < b ->
+        Rbar_le (Rbar_mult (b-a) (NonnegExpectation (upcrossing_var M a b (S n))))
+                (Rbar_minus (NonnegExpectation (pos_fun_part (rvminus (M (S n)) (const a))))
+                            (NonnegExpectation (pos_fun_part (rvminus (M 0%nat) (const a))))).
+      Proof.
+
+        
+
+
+                (b − a) E Un(a, b) 􏰁 E(Mn − a)+ 􏰁 E Mn+ + a 􏰁 K + a.
+      
+      
+      
+    Qed.
+    *)
+    End mart_conv.
+
 End martingale.
 
 Section levy.
