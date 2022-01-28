@@ -1,7 +1,7 @@
 Require Import Reals Sums Lra Lia.
 Require Import Coquelicot.Coquelicot.
 Require Import LibUtils.
-Require Import Expectation ConditionalExpectation.
+Require Import Expectation ConditionalExpectation RandomVariableLpR.
 Require Import infprod.
 Require Import PushNeg.
 Require Import List Permutation.
@@ -64,28 +64,34 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
       (T : nat -> R -> R)
       (F : nat -> R)
       (rvy : RandomVariable dom borel_sa (Y n)) 
-      (svy : FiniteRangeFunction (Y n)) 
+      (svy : IsFiniteExpectation prts (Y n)) 
+      (svy2 : IsFiniteExpectation prts (rvsqr (Y n))) 
       (rvx : RandomVariable dom borel_sa (X n)) 
-      (svx: FiniteRangeFunction (X n))
+      (svx: IsFiniteExpectation prts (X n))
+      {isfexm:IsFiniteExpectation prts (rvsqr (rvminus (X n) (const theta)) )}
       (rvt : RandomVariable borel_sa borel_sa (fun r:R => T n r))        
-      (svt: FiniteRangeFunction (fun r:Ts => T n (X n r))) 
+      (svt: IsFiniteExpectation prts (fun r:Ts => T n (X n r))) 
+      (svt2: IsFiniteExpectation prts (rvsqr (fun r:Ts => T n (X n r)))) 
       (rvx2 : RandomVariable dom borel_sa (X (S n)))
-      (svx2: FiniteRangeFunction (X (S n))) :
+      {isfex2m:IsFiniteExpectation prts (rvsqr (rvminus (X (S n)) (const theta)) )}
+      {isfety:IsFiniteExpectation prts (((fun r : Ts => T n (X n r)) .* Y n))}
+      (svx2: IsFiniteExpectation prts (X (S n))) :
   (forall (n:nat), F n >= 0) ->
   (forall (n:nat) (r:R), Rle (Rabs ((T n r) - theta)) (F n * Rabs (r-theta))) ->
   (forall (n:nat), rv_eq (X (S n)) (rvplus (fun r => T n (X n r)) (Y n))) ->
   almostR2 prts eq (ConditionalExpectation_rv (X n) (Y n)) (const 0) ->
-  Rle (SimpleExpectation (rvsqr (rvminus (X (S n)) (const theta)) ))
-      ((Rsqr (F n)) * SimpleExpectation (rvsqr (rvminus (X n) (const (theta))))
-       + SimpleExpectation (rvsqr (Y n))).
+  Rle (FiniteExpectation prts (rvsqr (rvminus (X (S n)) (const theta)) ))
+      ((Rsqr (F n)) * FiniteExpectation prts (rvsqr (rvminus (X n) (const (theta))))
+       + FiniteExpectation prts (rvsqr (Y n))).
   Proof.
     intros.
     specialize (H1 n).
     assert (rv_eq (rvminus (X (S n)) (const theta)) 
                   (rvminus (rvplus (fun r => T n (X n r)) (Y n)) (const theta))).
-    now rewrite H1.
-    rewrite (SimpleExpectation_transport (frfsqr (rvminus (X (S n)) (const theta)))
-                                        (rvsqr_proper _ _ H3)).    
+    {
+      now rewrite H1.
+    } 
+    rewrite (FiniteExpectation_ext_alt _ _ _ (rvsqr_proper _ _ H3)).
    assert (eqq1:rv_eq (rvsqr (rvminus (rvplus (fun r : Ts => T n (X n r)) (Y n)) (const theta))) 
                       (rvplus (rvsqr (rvminus (fun r : Ts => T n (X n r)) (const theta)))
                               (rvplus
@@ -97,29 +103,81 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
      unfold rvplus.
      lra.
    }
-   rewrite (SimpleExpectation_transport _ eqq1).
+   rewrite (FiniteExpectation_ext_alt _ _ _ eqq1).
    assert (rvtx: RandomVariable dom borel_sa (fun r:Ts => T n (X n r)))
-          by now apply (compose_rv (dom2 := borel_sa)).
-   rewrite (SimpleExpectation_pf_irrel _ _).
-   rewrite <- sumSimpleExpectation; try typeclasses eauto.
-   rewrite <- sumSimpleExpectation; try typeclasses eauto.
-   rewrite <- scaleSimpleExpectation.
+     by now apply (compose_rv (dom2 := borel_sa)).
+   erewrite (FiniteExpectation_plus' _ _ _ ).
+   erewrite (FiniteExpectation_plus' _ _ _ ).
+   erewrite (FiniteExpectation_scale' _ _ _).
    rewrite <- Rplus_assoc.
    apply Rplus_le_compat_r.
-   assert (SimpleExpectation (((fun r : Ts => T n (X n r)) .- const theta) .* Y n) = 0).
    {
-     apply SimpleCondexp_factor_out_zero 
-       with (sub := (pullback_rv_sub dom borel_sa (X n) rvx)) (rvf := rvy); trivial.
-     apply rvminus_rv.
-     - apply (compose_rv (dom2 := borel_sa)); trivial.
-       apply pullback_rv.
-     - typeclasses eauto.
+     Unshelve.
+     - shelve.
+     - rewrite rvsqr_minus_foil.
+       apply IsFiniteExpectation_plus; try typeclasses eauto.
+       apply IsFiniteExpectation_minus; try typeclasses eauto.
+       apply IsFiniteExpectation_scale.
+       rewrite rvmult_comm.
+       assert (eqq2:rv_eq (const theta .* (fun r : Ts => T n (X n r)))
+                          (rvscale theta (fun r : Ts => T n (X n r)))) by reflexivity.
+       rewrite eqq2.
+       now apply IsFiniteExpectation_scale.
+     - apply IsFiniteExpectation_plus; try typeclasses eauto.
+       apply IsFiniteExpectation_scale.
+       rewrite rvmult_comm.
+       rewrite rvmult_rvminus_distr.
+       apply IsFiniteExpectation_minus; try typeclasses eauto.
+       + now rewrite rvmult_comm.
+       + rewrite rvmult_comm.
+         assert (eqq2:rv_eq (const theta .* Y n)
+                            (rvscale theta (Y n))) by reflexivity.
+         rewrite eqq2.
+         now apply IsFiniteExpectation_scale.
+     - apply IsFiniteExpectation_scale.
+       rewrite rvmult_comm.
+       rewrite rvmult_rvminus_distr.
+       apply IsFiniteExpectation_minus; try typeclasses eauto.
+       + now rewrite rvmult_comm.
+       + rewrite rvmult_comm.
+         assert (eqq2:rv_eq (const theta .* Y n)
+                            (rvscale theta (Y n))) by reflexivity.
+         rewrite eqq2.
+         now apply IsFiniteExpectation_scale.
+     - rewrite rvmult_comm.
+       rewrite rvmult_rvminus_distr.
+       apply IsFiniteExpectation_minus; try typeclasses eauto.
+       + now rewrite rvmult_comm.
+       + rewrite rvmult_comm.
+         assert (eqq2:rv_eq (const theta .* Y n)
+                            (rvscale theta (Y n))) by reflexivity.
+         rewrite eqq2.
+         now apply IsFiniteExpectation_scale.
    }
-   rewrite H4.
-   rewrite Rmult_0_r, Rplus_0_r.
+   Unshelve.
+   replace (FiniteExpectation prts (((fun r : Ts => T n (X n r)) .- const theta) .* Y n)) with 0.
+   shelve.
+   {
+     symmetry.
+     eapply FiniteCondexp_factor_out_zero_swapped
+       with (sub := (pullback_rv_sub dom borel_sa (X n) rvx)) (rvf := rvy); trivial.
+     - apply rvminus_rv.
+       + apply (compose_rv (dom2 := borel_sa)); trivial.
+         apply pullback_rv.
+       + typeclasses eauto.
+     - revert H2.
+       apply almost_impl; apply all_almost; intros ??.
+       unfold ConditionalExpectation_rv in H2.
+       rewrite (FiniteCondexp_eq _ _ _) in H2.
+       invcs H2.
+       reflexivity.
+   }
+   Unshelve.
    specialize (H n).
-   rewrite (scaleSimpleExpectation (Rsqr (F n))).
-   apply SimpleExpectation_le; try typeclasses eauto.
+   field_simplify.
+   
+   rewrite <- (FiniteExpectation_scale _ (Rsqr (F n))).
+   apply FiniteExpectation_le; try typeclasses eauto.
    intros x.
    unfold rvsqr, rvscale.
    specialize (H0 n (X n x)).
@@ -280,46 +338,50 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
     - apply SimpleExpectation_const.
   Qed.
 
-  Lemma SimpleExpectation_sq_nneg (f : Ts -> R)
-        {frf: FiniteRangeFunction f}
-        {rvf : RandomVariable dom borel_sa f} :
-    0 <= SimpleExpectation (rvsqr f).
+  Lemma FiniteExpectation_sq_nneg (f : Ts -> R)
+        (svy2 : IsFiniteExpectation prts (rvsqr f)) 
+    :
+    0 <= FiniteExpectation prts (rvsqr f).
   Proof.
-    apply SimpleExpectation_nneg.
+    apply FiniteExpectation_pos.
     intro x.
     apply Rle_0_sqr.
   Qed.
 
   Lemma Dvoretzky_8_F_le_1 (theta:R) 
-        ( X Y : nat -> Ts -> R)
+        (X Y : nat -> Ts -> R)
         (T : nat -> R -> R)
         (F : nat -> posreal)
         (rvy : forall n, RandomVariable dom borel_sa (Y n)) 
-        (svy : forall n, FiniteRangeFunction (Y n)) 
         (rvx : forall n, RandomVariable dom borel_sa (X n)) 
-        (svx: forall n, FiniteRangeFunction (X n))
-        (rvt : forall n, RandomVariable borel_sa borel_sa (fun r:R => T n r))        
-        (svt: forall n, FiniteRangeFunction (fun r:Ts => T n (X n r))) :
+        (rvt : forall n, RandomVariable borel_sa borel_sa (fun r:R => T n r))
+        (svy : forall n, IsFiniteExpectation prts (Y n)) 
+        (svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))) 
+        (svx: forall n, IsFiniteExpectation prts (X n))
+        {isfexm: forall n, IsFiniteExpectation prts (rvsqr (rvminus (X n) (const theta)) )}
+        (svt: forall n, IsFiniteExpectation prts (fun r:Ts => T n (X n r)))
+        {isfety:forall n, IsFiniteExpectation prts (((fun r : Ts => T n (X n r)) .* Y n))}
+        (svt2: forall n, IsFiniteExpectation prts (rvsqr (fun r:Ts => T n (X n r)))) :
   (forall (n:nat), F n >= 0) ->
   (forall (n:nat) (r:R), Rle (Rabs ((T n r) - theta)) (F n * Rabs (r-theta))) ->
   (forall (n:nat), rv_eq (X (S n)) (rvplus (fun r => T n (X n r)) (Y n))) ->
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation_rv (X n) (Y n)) (fun x : Ts => const 0 x)) ->
   (forall n, F n <= 1) ->
-  ex_series (fun n => SimpleExpectation (rvsqr (Y n))) ->
+  ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
   is_lim_seq (part_prod F) 0 ->
-  is_lim_seq (fun n => SimpleExpectation (rvsqr (rvminus (X n) (const theta)))) 0.
+  is_lim_seq (fun n => FiniteExpectation prts (rvsqr (rvminus (X n) (const theta)))) 0.
  Proof.
   intros.
-  apply (Dvoretzky4B_Vpos F (fun n => SimpleExpectation (rvsqr (Y n)))); trivial.
+  apply (Dvoretzky4B_Vpos F (fun n => FiniteExpectation prts (rvsqr (Y n)))); trivial.
   - intros.
-    apply SimpleExpectation_sq_nneg.
+    apply FiniteExpectation_sq_nneg.
   - intros.
-    apply SimpleExpectation_sq_nneg.
+    apply FiniteExpectation_sq_nneg.
   - intros.
     unfold pos_sq_fun, pos_sq; simpl.
     replace ((F n) * (F n)) with (Rsqr (F n)) by now simpl.
-    generalize (Dvoretzky_rel n theta X Y T F (rvy n) (svy n) (rvx n) (svx n)
-                              (rvt n) (svt n) (rvx (S n)) (svx (S n))); intros rel.
+    generalize (Dvoretzky_rel n theta X Y T F (rvy n) (svy n) _ (rvx n) (svx n)
+                              (rvt n) (svt n) _ (rvx (S n)) (svx (S n))); intros rel.
     now apply rel.
  Qed.
 
@@ -1917,6 +1979,27 @@ Section Derman_Sacks.
    intros.
    apply (DS_Dvor_11_12_Y_fun (fun (n:nat) (omega:Ts) => a n)) with (isfe0 := isfe); trivial.
  Qed.
+ 
+ Global Instance IsFiniteExpectation_mult_sign (X : Ts -> R) f
+        {rvX:RandomVariable dom borel_sa X}
+        {rvf:RandomVariable dom borel_sa f}
+        {isfe:IsFiniteExpectation prts X} :
+   IsFiniteExpectation prts (rvmult X (rvsign f)).
+ Proof.
+   apply IsFiniteExpectation_abs_id.
+   - typeclasses eauto.
+   - apply IsFiniteExpectation_abs in isfe; trivial.
+     apply (IsFiniteExpectation_bounded _ (const 0) _ (rvabs X)).
+     + intros ?; rv_unfold.
+       apply Rabs_pos.
+     + intros ?.
+       rv_unfold.
+       rewrite Rabs_mult.
+       rewrite <- (Rmult_1_r (Rabs (X a))) at 2.
+       apply Rmult_le_compat; try apply Rabs_pos; try reflexivity.
+       unfold sign.
+       repeat match_destr; unfold Rabs; match_destr; lra.
+ Qed.
 
  Lemma DS_Dvor_ash_6_2_1 (X Y T : nat -> Ts -> R)
        {F : nat -> SigmaAlgebra Ts}
@@ -1926,14 +2009,16 @@ Section Derman_Sacks.
        {adaptT : IsAdapted borel_sa T F}       
        {rvX : forall (n:nat), RandomVariable dom borel_sa (X n)}
        {rvY : forall (n:nat), RandomVariable dom borel_sa (Y n)}
-       {rvT : forall (n:nat), RandomVariable dom borel_sa (T n)}       
-       {frf : forall (n:nat), FiniteRangeFunction (Y (n))}
+       {isfemult : forall k j : nat, IsFiniteExpectation prts (rvmult (Y k) (Y j))}
+       {rvT : forall (n:nat), RandomVariable dom borel_sa (T n)}
+       (svy : forall n, IsFiniteExpectation prts (Y n)) 
+       (svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
        (HC : forall n, 
            almostR2 _ eq
                     (ConditionalExpectation _ (filt_sub (S n)) (Y (S n)))
                     (const 0))  :
    (forall (n:nat), rv_eq (X (S n)) (rvplus (T n) (Y n))) ->
-   ex_series (fun n => SimpleExpectation (rvsqr (Y n))) ->
+   ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
    let Z := fun n => rvmult (Y n) (rvsign (T n)) in
    almost _ (fun (x : Ts) => ex_series (fun n => Z n x)).
  Proof.
@@ -1975,31 +2060,32 @@ Section Derman_Sacks.
      unfold IsFiltration; intros.
      apply isfilt.
    }
-   assert (frfz : forall (n:nat), FiniteRangeFunction (Z (n))).
+   assert (isfemultZ : forall k j : nat, IsFiniteExpectation prts (rvmult (Z k) (Z j))).
    {
      intros.
      unfold Z.
-     apply frfmult; trivial.
-     apply frfsign; trivial.
-  }
+     rewrite <- rvmult_assoc.
+     apply IsFiniteExpectation_mult_sign; try typeclasses eauto.
+     rewrite rvmult_assoc.
+     rewrite (rvmult_comm (rvsign (T k))).
+     rewrite <- rvmult_assoc.
+     apply IsFiniteExpectation_mult_sign; try typeclasses eauto.
+   } 
    apply Ash_6_2_1_filter with 
        (filt_sub0 := fun n => filt_sub (S n))
        (rv := rvZ)
-       (frf0 := frfz); trivial.
+       (isfemult0:=isfemultZ)
+   ; trivial.
+   - typeclasses eauto.
    - intros.
-     assert (isfef : IsFiniteExpectation prts (Y (S n))) by now apply IsFiniteExpectation_simple.
+     assert (isfef : IsFiniteExpectation prts (Y (S n))) by now typeclasses eauto.
      assert (rvs: RandomVariable (F (S n)) borel_sa (rvsign (T (S n)))).
      {
        apply rvsign_rv.
        apply adaptT.
      }
-     assert (isfe2 : IsFiniteExpectation prts (rvmult (Y (S n)) (rvsign (T (S n))))).
-     {
-       apply IsFiniteExpectation_simple; trivial.
-       - apply rvmult_rv; trivial.
-         now apply (RandomVariable_sa_sub (filt_sub (S n))).
-       - typeclasses eauto.
-     }
+     assert (isfe2 : IsFiniteExpectation prts (rvmult (Y (S n)) (rvsign (T (S n)))))
+       by typeclasses eauto.
      generalize (Condexp_factor_out prts (filt_sub (S n))(Y (S n)) (rvsign (T (S n)))); intros.
      apply almost_prob_space_sa_sub_lift in H1.
      revert H1.
@@ -2030,12 +2116,12 @@ Section Derman_Sacks.
            rewrite H1.
            rewrite sign_0; unfold Rsqr; lra.
       }
-      apply ex_series_nneg_bounded with (g := fun n => SimpleExpectation (rvsqr (Y n))); trivial. 
+      apply ex_series_nneg_bounded with (g := fun n => FiniteExpectation prts (rvsqr (Y n))); trivial. 
       + intros.
-        apply SimpleExpectation_nneg.
+        apply FiniteExpectation_pos.
         apply nnfsqr.
       + intros.
-        now apply SimpleExpectation_le.
+        now apply FiniteExpectation_le.
   Qed.
  
  Lemma sign_sum {a b : R} :
@@ -2124,12 +2210,10 @@ Section Derman_Sacks.
         (hpos2 : forall n, 0 <= beta n )
         (hpos3 : forall n, 0 <= gamma n)
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
-        (svy : forall n, FiniteRangeFunction (Y n)) 
         (rvx : forall n, RandomVariable dom borel_sa (X n)) 
-        (svx: forall n, FiniteRangeFunction (X n))
         (rvt : forall n, RandomVariable _ borel_sa (fun r:Ts => T n r))
-        (fey : forall n : nat, IsFiniteExpectation prts (rvsqr (Y n)))
-        (svt: forall n, FiniteRangeFunction (fun r:Ts => T n r)) :
+        {isfemult : forall k j : nat, IsFiniteExpectation prts (rvmult (Y k) (Y j))}
+   :
    (forall (n:nat), rv_eq (X (S n)) (rvplus (T n) (Y n))) ->
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
@@ -2141,7 +2225,29 @@ Section Derman_Sacks.
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
-   destruct (DS_Dvor_11_12_Y alpha fey) as [α [α0 [E [HE Hα]]]]; trivial.
+   assert (svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))).
+   {
+     intros.
+     rewrite rvsqr_eq.
+     apply isfemult.
+   } 
+   assert (svy : forall n, IsFiniteExpectation prts (Y n)).
+   {
+     intros.
+     apply (IsLp_Finite prts 2); trivial.
+     - lra.
+     - red.
+       rewrite rvpower2.
+       + now rewrite rvsqr_abs.
+       + apply nnfabs.
+   } 
+
+   destruct (DS_Dvor_11_12_Y alpha svy2) as [α [α0 [E [HE Hα]]]]; trivial.
+   {
+     revert H2.
+     apply ex_series_ext; intros.
+     apply FiniteExpectation_pf_irrel.
+   } 
    pose (Z := fun n => rvmult (Y n) (rvsign (T n))).
    pose (A := fun n => Rmax (α n) (alpha n)).
    assert (ZleY: forall n0, rv_le (rvabs (Z n0)) (rvabs (Y n0))).
@@ -2197,6 +2303,14 @@ Section Derman_Sacks.
    }
    generalize (DS_Dvor_ash_6_2_1 X Y T isfilt filt_sub); intros.
    cut_to H6; trivial.
+   specialize (H6 svy2).
+   cut_to H6; trivial.
+   2: {
+     revert H2.
+     apply ex_series_ext; intros.
+     apply FiniteExpectation_pf_irrel.
+   } 
+
    simpl in H6.
    revert H6; apply almost_impl.
    revert Haux; apply almost_impl.
@@ -2224,9 +2338,6 @@ Section Derman_Sacks.
      specialize (H7 n H8).
      rewrite Rminus_0_r.
      now rewrite Rminus_0_r, Rabs_Rabsolu in H7.
-   - apply ex_series_ext with (a := fun n => FiniteExpectation prts (rvsqr (Y n))); trivial.
-     intros.
-     now rewrite <- FiniteExpectation_simple with (isfe := (fey n)).
  Qed.
 
  Lemma almost_is_lim_seq_max (alpha : nat -> Ts -> R) (a : nat -> R) :
@@ -2255,12 +2366,9 @@ Theorem Dvoretzky_DS_extended
         (hpos2 : forall n x, 0 <= beta n x )
         (hpos3 : forall n x, 0 <= gamma n x)
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
-        (svy : forall n, FiniteRangeFunction (Y n)) 
         (rvx : forall n, RandomVariable dom borel_sa (X n)) 
-        (svx: forall n, FiniteRangeFunction (X n))
         (rvt : forall n, RandomVariable _ borel_sa (fun r:Ts => T n r))
-        (fey : forall n : nat, IsFiniteExpectation prts (rvsqr (Y n)))
-        (svt: forall n, FiniteRangeFunction (fun r:Ts => T n r)) :
+        {isfemult : forall k j : nat, IsFiniteExpectation prts (rvmult (Y k) (Y j))} :
    (forall (n:nat), rv_eq (X (S n)) (rvplus (T n) (Y n))) ->
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
@@ -2272,7 +2380,30 @@ Theorem Dvoretzky_DS_extended
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
-   destruct (DS_Dvor_11_12_Y_fun alpha fey) as [α [α0 [E [HE Hα]]]]; trivial.
+   assert (svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))).
+   {
+     intros.
+     rewrite rvsqr_eq.
+     apply isfemult.
+   } 
+   assert (svy : forall n, IsFiniteExpectation prts (Y n)).
+   {
+     intros.
+     apply (IsLp_Finite prts 2); trivial.
+     - lra.
+     - red.
+       rewrite rvpower2.
+       + now rewrite rvsqr_abs.
+       + apply nnfabs.
+   } 
+
+   destruct (DS_Dvor_11_12_Y_fun alpha svy2) as [α [α0 [E [HE Hα]]]]; trivial.
+   {
+     revert H2.
+     apply ex_series_ext; intros.
+     apply FiniteExpectation_pf_irrel.
+   } 
+
    pose (Z := fun n => rvmult (Y n) (rvsign (T n))).
    pose (A := fun n omega => Rmax (α n) (alpha n omega)).
    assert (ZleY: forall n0, rv_le (rvabs (Z n0)) (rvabs (Y n0))).
@@ -2328,6 +2459,14 @@ Theorem Dvoretzky_DS_extended
    }
    generalize (DS_Dvor_ash_6_2_1 X Y T isfilt filt_sub); intros.
    cut_to H6; trivial.
+   specialize (H6 svy2).
+   cut_to H6; trivial.
+   2: {
+     revert H2.
+     apply ex_series_ext; intros.
+     apply FiniteExpectation_pf_irrel.
+   } 
+
    simpl in H6.
    revert H6; apply almost_impl.
    revert Haux; apply almost_impl.
@@ -2358,9 +2497,6 @@ Theorem Dvoretzky_DS_extended
      specialize (H8 n H9).
      rewrite Rminus_0_r.
      now rewrite Rminus_0_r, Rabs_Rabsolu in H8.
-   - apply ex_series_ext with (a := fun n => FiniteExpectation prts (rvsqr (Y n))); trivial.
-     intros.
-     now rewrite <- FiniteExpectation_simple with (isfe := (fey n)).
  Qed.
 
  Lemma paolo2 (gamma : nat -> R) :
