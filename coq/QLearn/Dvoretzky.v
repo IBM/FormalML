@@ -2137,32 +2137,39 @@ generalize (ex_series_le  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) /
  Lemma DS_Dvor_11_12_Y_stochastic (a : nat -> Ts -> R) {Y : nat -> Ts -> R}
        (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
        (rvy : forall n, RandomVariable _ borel_sa (Y n))
-       (rva : forall n, RandomVariable _ borel_sa (a n))       
    :
      (forall n omega, 0 <= a n omega) ->
       almost _ (fun omega => is_lim_seq (fun n => a n omega) 0) ->
      ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
-     exists α : nat -> Ts -> R,
-       (almost _ (fun omega => is_lim_seq (fun n => a n omega) 0)) /\
-       almost _ (fun omega =>  exists N:nat, forall n, (N <= n)%nat -> rvabs (Y n) omega <= Rmax (α n omega) (a n omega)).
+     exists α : nat-> R,
+       is_lim_seq (fun n => α n) 0 /\
+       almost _ (fun omega =>  exists N:nat, forall n, (N <= n)%nat -> rvabs (Y n) omega <= Rmax (α n) (a n omega)).
  Proof.
    intros Ha1 Ha2 HY.
-   destruct (DS_Dvor_aa_stochastic isfe rva Ha1 Ha2 HY) as [α [Hα1 [Hα0 [Hα2 [Hα3 Hα4]]]]].
+   generalize (Paolo_div (fun n => FiniteExpectation prts (rvsqr (Y n)))); intros.
+   assert (forall n, 0 <= FiniteExpectation prts (rvsqr (Y n))).
+   {
+     intros.
+     apply FiniteExpectation_pos.
+     apply nnfsqr.
+   }
+   cut_to H; trivial.
+   destruct H as [α [Hα0 [Hα1 Hα2]]].
    exists α.
    split; trivial.
-   assert (HEsa : forall n, sa_sigma (event_Rge dom (rvabs (Y n)) (α n))).
+   assert (HEsa : forall n, sa_sigma (event_ge dom (rvabs (Y n)) (α n))).
    {
      intros.
      apply sa_sigma_event_pre.
    }
-   pose (frac := fun n omega => Rbar_div_pos (NonnegExpectation (rvsqr (Y n)))
-                                             (mkposreal _ (rsqr_pos (mkposreal _ (Hα0 n omega))))).
+   pose (frac := fun n => Rbar_div_pos (NonnegExpectation (rvsqr (Y n)))
+                                       (mkposreal _ (rsqr_pos (mkposreal _ (Hα0 n))))).
    assert (isfin: forall n, is_finite (NonnegExpectation (rvsqr (Y n)))).
    {
      intros.
      now apply IsFiniteNonnegExpectation.
    }
-   assert (Hfinu : forall n0 omega, Rbar_le (frac n0 omega) (FiniteExpectation prts (rvsqr (Y n0)) / (α n0 omega)²)).
+   assert (Hfinu : forall n0, Rbar_le (frac n0) (FiniteExpectation prts (rvsqr (Y n0)) / (α n0)²)).
    {
      intros. unfold frac.
      rewrite <- (isfin n0).
@@ -2177,7 +2184,7 @@ generalize (ex_series_le  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) /
      - rewrite <- FiniteNonnegExpectation with (isfeX := (isfe n0)).
        now apply FiniteExpectation_le.
    }
-   assert (Hfinb : forall n omega, Rbar_le 0 (frac n omega)).
+   assert (Hfinb : forall n, Rbar_le 0 (frac n)).
    {
      intros. unfold frac.
      rewrite <- (isfin n).
@@ -2189,35 +2196,30 @@ generalize (ex_series_le  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) /
      apply Rgt_not_eq.
      apply Hα0.
    }
-   assert (Hisf : forall n omega, is_finite(frac n omega)) by (intros; eapply bounded_is_finite; auto).
+   assert (Hisf : forall n, is_finite(frac n)) by (intros; eapply bounded_is_finite; auto).
    generalize (Borel_Cantelli prts _ (HEsa)); intros.
    cut_to H.
    + rewrite almost_alt_eq.
      unfold almost_alt. push_neg.
      simpl in H. eexists.
      split; [apply H|intros omega ?H].
-     simpl. intros n. specialize (H0 n).
-     destruct H0 as [n0 [Hn0 HZ]]. exists (n0-n)%nat.
+     simpl. intros n. specialize (H1 n).
+     destruct H1 as [n0 [Hn0 HZ]]. exists (n0-n)%nat.
      left. replace ((n0 - n + n)%nat) with n0 by lia.
      apply Rgt_lt in HZ. rewrite Rmax_Rlt in HZ.
      now destruct HZ.
-   + simpl.
-     eapply ex_series_nneg_bounded; eauto; intros.
+   + eapply ex_series_nneg_bounded; eauto; intros.
      -- apply ps_pos.
-     -- 
-   Admitted.
-(*
      -- generalize(Chebyshev_ineq_div_mean0 _ (rvy n) ((mkposreal _ (Hα0 n)))); intros.
         eapply Rle_trans; eauto.
         unfold frac in Hisf. simpl in Hisf.
-        rewrite <-(Hisf n) in H0. simpl in H0.
-        apply H0.
+        rewrite <-(Hisf n) in H1. simpl in H1.
+        apply H1.
         specialize (Hfinu n).
         rewrite <- Hisf in Hfinu.
         simpl in Hfinu.
         apply Hfinu.
  Qed.
-*)
 
  Lemma DS_Dvor_ash_6_2_1 (X Y T : nat -> Ts -> R)
        {F : nat -> SigmaAlgebra Ts}
