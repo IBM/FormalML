@@ -3368,8 +3368,8 @@ Qed.
   Qed.
 
   Lemma SCESA_scale (X : nat -> Ts -> R) (b : nat -> R)
-      {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+        {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
+        {isfe : forall k : nat, IsFiniteExpectation Prts (X k)}
       (HC : forall n, 
           almostR2 Prts eq
                    (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
@@ -3394,7 +3394,6 @@ Qed.
       apply pullback_sa_rvscale_equiv.
       now apply Rinv_neq_0_compat.
     }
-    assert (isfe : IsFiniteExpectation Prts (X (S n))) by (intros; now apply IsFiniteExpectation_simple).
     generalize (Condexp_scale Prts (filtration_history_sa_sub (fun n0 => (rvscale (/ b n0) (X n0))) n)
                               (/ b (S n)) (X (S n))); intros.
     specialize (HC n).
@@ -3421,14 +3420,16 @@ Qed.
 
   Lemma Ash_6_2_2 (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+      {isfe : forall k : nat, IsFiniteExpectation Prts (X k)}
+      {isfemult : forall k j : nat, IsFiniteExpectation Prts (rvmult (X k) (X j))}
+      {isfes:forall n, IsFiniteExpectation Prts (rvsqr (rvscale (/ b n) (X n)))}
       (HC : forall n, 
           almostR2 Prts eq
                    (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
     (forall n, 0 < b n <= b (S n)) ->
     is_lim_seq b p_infty ->
-    ex_series (fun n => SimpleExpectation (rvsqr (rvscale (/ (b n)) (X n)))) ->
+    ex_series (fun n => FiniteExpectation Prts (rvsqr (rvscale (/ (b n)) (X n)))) ->
     almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvscale (/ (b n)) (rvsum X n)) x) 0). 
   Proof.
     intros.
@@ -3439,22 +3440,38 @@ Qed.
       apply H.
     }
     generalize (SCESA_scale X b HC bneq0); intros.
-    generalize (Ash_6_2_1 (fun n => rvscale (/ (b n)) (X n)) H2 H1); intros.
+    assert (isfemult' : forall k j : nat,
+             IsFiniteExpectation Prts
+                                 (rvmult ((fun n : nat => rvscale (/ b n) (X n)) k) ((fun n : nat => rvscale (/ b n) (X n)) j))). 
+    {
+      intros.
+      rewrite rvmult_rvscale.
+      apply IsFiniteExpectation_scale.
+      rewrite rvmult_comm, rvmult_rvscale.
+      apply IsFiniteExpectation_scale.
+      auto.
+    } 
+
+    generalize (Ash_6_2_1 (fun n => rvscale (/ (b n)) (X n))); intros.
+    specialize (H3 H2).
     destruct H3 as [? [? ?]].
-    exists x.
-    split; trivial.
-    intros.
-    generalize (ash_6_1_3_strong H H0 (H4 x0 H5)); intros.
-    eapply is_lim_seq_ext; try (apply H6).
-    intros; simpl.
-    unfold rvsum, rvscale, Rdiv.
-    rewrite Rmult_comm.
-    f_equal.
-    apply sum_n_ext.
-    intros.
-    simpl; field.
-    apply Rgt_not_eq.
-    apply H.
+    - revert H1.
+      apply ex_series_ext; intros.
+      apply FiniteExpectation_pf_irrel.
+    - exists x.
+      split; trivial.
+      intros.
+      generalize (ash_6_1_3_strong H H0 (H4 x0 H5)); intros.
+      eapply is_lim_seq_ext; try (apply H6).
+      intros; simpl.
+      unfold rvsum, rvscale, Rdiv.
+      rewrite Rmult_comm.
+      f_equal.
+      apply sum_n_ext.
+      intros.
+      simpl; field.
+      apply Rgt_not_eq.
+      apply H.
 Qed.
 
   Lemma Ash_6_2_2_filter (X : nat -> Ts -> R) (b : nat -> R)
@@ -3463,14 +3480,16 @@ Qed.
       (filt_sub : forall n, sa_sub (F n) dom)
       {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-      {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+      {isfe : forall k : nat, IsFiniteExpectation Prts (X k)}
+      {isfemult : forall k j : nat, IsFiniteExpectation Prts (rvmult (X k) (X j))}
+      {isfes:forall n, IsFiniteExpectation Prts (rvsqr (rvscale (/ b n) (X n)))}
       (HC : forall n, 
           almostR2 Prts eq
                    (ConditionalExpectation Prts (filt_sub n) (X (S n)))
                 (const 0))  :
     (forall n, 0 < b n <= b (S n)) ->
     is_lim_seq b p_infty ->
-    ex_series (fun n => SimpleExpectation (rvsqr (rvscale (/ (b n)) (X n)))) ->
+    ex_series (fun n => FiniteExpectation Prts (rvsqr (rvscale (/ (b n)) (X n)))) ->
     almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvscale (/ (b n)) (rvsum X n)) x) 0). 
   Proof.
     intros.
@@ -3490,8 +3509,20 @@ Qed.
       apply rvscale_rv.
       apply adapt.
     }
-    specialize (H2 isad2 (fun n => @rvscale_rv Ts dom (Rinv (b n)) (X n) (rv n))
-                   (fun n => @frfscale Ts (Rinv (b n)) (X n) (frf n))).
+    specialize (H2 isad2 (fun n => @rvscale_rv Ts dom (Rinv (b n)) (X n) (rv n))).
+    cut_to H2; try typeclasses eauto.
+    assert (isfemult' : forall k j : nat,
+             IsFiniteExpectation Prts
+                                 (rvmult ((fun n : nat => rvscale (/ b n) (X n)) k) ((fun n : nat => rvscale (/ b n) (X n)) j))). 
+    {
+      intros.
+      rewrite rvmult_rvscale.
+      apply IsFiniteExpectation_scale.
+      rewrite rvmult_comm, rvmult_rvscale.
+      apply IsFiniteExpectation_scale.
+      auto.
+    } 
+    specialize (H2 isfemult').
     cut_to H2; trivial.
     - destruct H2 as [? [? ?]].
       exists x.
@@ -3510,7 +3541,6 @@ Qed.
       apply H.
     - intros n.
       specialize (HC n).
-      assert (isfe : IsFiniteExpectation Prts (X (S n))) by (intros; now apply IsFiniteExpectation_simple).
       generalize (Condexp_scale Prts (filt_sub n) (/ b (S n)) (X (S n))); intros.
       apply almostR2_prob_space_sa_sub_lift in H3.
       revert HC; apply almost_impl.
@@ -3521,6 +3551,9 @@ Qed.
       unfold Rbar_rvmult.
       rewrite H4.
       now rewrite Rbar_mult_0_r.
+    - revert H1.
+      apply ex_series_ext; intros.
+      apply FiniteExpectation_pf_irrel.
   Qed.
   
 End slln_extra.
