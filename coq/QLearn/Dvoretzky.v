@@ -1857,11 +1857,12 @@ Section Derman_Sacks.
       
   Lemma DS_Dvor_aa {a : nat -> R} {Y : nat -> Ts -> R}
         (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n))) :
-    (forall n, 0 < a n) ->
+    (forall n, 0 <= a n) ->
     is_lim_seq a 0 ->
     ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
     exists (aa : nat -> R),
       is_lim_seq aa 0 /\
+      (forall n, 0 < aa n) /\
       (forall n, a n <= aa n) /\
       ex_series (fun n => FiniteExpectation prts (rvsqr (Y n)) / Rsqr (aa n)).
   Proof.
@@ -1870,7 +1871,7 @@ Section Derman_Sacks.
     cut_to H2; trivial.
     - destruct H2 as [? [? [? ?]]].
       exists (fun n => Rmax (a n) (x n)).
-      split.
+      split; try split; try split.
       + apply is_lim_seq_spec.
         apply is_lim_seq_spec in H0.
         apply is_lim_seq_spec in H3.
@@ -1890,35 +1891,38 @@ Section Derman_Sacks.
         rewrite Rabs_right in *; try lra.
         * unfold Rmax; match_destr.
         * apply Rle_ge, Rmax_Rle; lra.
-      + split.
-        * intros.
-          apply Rmax_l.
-        * generalize (ex_series_le  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) / (Rmax (a n) (x n))²)
-                                    (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) / (x n)²)); intros.
-          apply H5; trivial.
-          intros.
-          unfold norm; simpl.
-          unfold abs; simpl.
-          rewrite Rabs_right.
-          -- unfold Rdiv.
-             apply Rmult_le_compat_l.
-             ++ apply FiniteExpectation_pos, nnfsqr.
-             ++ apply Rinv_le_contravar.
-                ** apply Rsqr_pos_lt.
-                   apply Rgt_not_eq.
-                   apply H2.
-                ** unfold Rmax; match_destr; try lra.
-                   assert (x n <= a n) by lra.
-                   apply Rsqr_le_abs_1.
-                   rewrite Rabs_right.
-                   --- rewrite Rabs_right; trivial.
-                       apply Rle_ge; now left.
-                   --- apply Rle_ge; now left.                   
-          -- apply Rle_ge, Rdiv_le_0_compat.
-             ++ apply FiniteExpectation_pos, nnfsqr.
+      + intros.
+        apply Rlt_le_trans with (r2 := x n); trivial.
+        apply Rmax_r.
+      + intros.
+        apply Rmax_l.
+      + generalize (ex_series_le  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) / (Rmax (a n) (x n))²)
+                                  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) / (x n)²)); intros.
+        apply H5; trivial.
+        intros.
+        unfold norm; simpl.
+        unfold abs; simpl.
+        rewrite Rabs_right.
+        * unfold Rdiv.
+          apply Rmult_le_compat_l.
+          -- apply FiniteExpectation_pos, nnfsqr.
+          -- apply Rinv_le_contravar.
              ++ apply Rsqr_pos_lt.
                 apply Rgt_not_eq.
-                unfold Rmax; match_destr; now apply Rlt_gt.
+                apply H2.
+             ++ unfold Rmax; match_destr; try lra.
+                assert (x n <= a n) by lra.
+                apply Rsqr_le_abs_1.
+                rewrite Rabs_right.
+                ** rewrite Rabs_right; trivial.
+                   now apply Rle_ge.
+                ** apply Rle_ge; now left.                   
+        * apply Rle_ge, Rdiv_le_0_compat.
+          -- apply FiniteExpectation_pos, nnfsqr.
+          -- apply Rsqr_pos_lt.
+             apply Rgt_not_eq, Rlt_gt.
+             apply Rlt_le_trans with (r2 := x n); trivial.
+             apply Rmax_r.
     - intros.
       apply FiniteExpectation_pos.
       apply nnfsqr.
@@ -1928,7 +1932,7 @@ Section Derman_Sacks.
        (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
        (rvy : forall n, RandomVariable _ borel_sa (Y n))
    :
-   (forall n, 0 < a n) ->
+   (forall n, 0 <= a n) ->
     is_lim_seq a 0 ->
     ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
     exists α : nat -> R,
@@ -1936,16 +1940,15 @@ Section Derman_Sacks.
       almost _ (fun omega =>  exists N:nat, forall n, (N <= n)%nat -> rvabs (Y n) omega <= Rmax (α n) (a n)).
  Proof.
    intros Ha1 Ha2 HY.
-   destruct (DS_Dvor_aa isfe Ha1 Ha2 HY) as [α [Hα1 [Hα2 Hα3]]].
+   destruct (DS_Dvor_aa isfe Ha1 Ha2 HY) as [α [Hα1 [Hα0 [Hα2 Hα3]]]].
    exists α.
-   assert (forall n, 0 < α n) by (intros ; eapply Rlt_le_trans; eauto).
-   assert (HEsa : forall n, sa_sigma (event_ge dom (rvabs (Y n)) (mkposreal _ (H n)))).
+   assert (HEsa : forall n, sa_sigma (event_ge dom (rvabs (Y n)) (mkposreal _ (Hα0 n)))).
    {
      intros.
      apply sa_sigma_event_pre.
    }
    pose (frac := fun n => Rbar_div_pos (NonnegExpectation (rvsqr (Y n)))
-                                    (mkposreal _ (rsqr_pos (mkposreal _ (H n))))).
+                                    (mkposreal _ (rsqr_pos (mkposreal _ (Hα0 n))))).
    assert (isfin: forall n, is_finite (NonnegExpectation (rvsqr (Y n)))).
    {
      intros.
@@ -1976,29 +1979,29 @@ Section Derman_Sacks.
      rewrite <- (isfin n); now simpl.
      apply Rlt_0_sqr.
      apply Rgt_not_eq.
-     apply H.
+     apply Hα0.
    }
    assert (Hisf : forall n, is_finite(frac n)) by (intros; eapply bounded_is_finite; auto).
    split; trivial.
    generalize (Borel_Cantelli prts _ (HEsa)); intros.
-   cut_to H0.
+   cut_to H.
    + rewrite almost_alt_eq.
      unfold almost_alt. push_neg.
-     simpl in H0. eexists.
-     split; [apply H0|intros omega ?H].
-     simpl. intros n. specialize (H1 n).
-     destruct H1 as [n0 [Hn0 HZ]]. exists (n0-n)%nat.
+     simpl in H. eexists.
+     split; [apply H|intros omega ?H].
+     simpl. intros n. specialize (H0 n).
+     destruct H0 as [n0 [Hn0 HZ]]. exists (n0-n)%nat.
      left. replace ((n0 - n + n)%nat) with n0 by lia.
      apply Rgt_lt in HZ. rewrite Rmax_Rlt in HZ.
      now destruct HZ.
    + simpl.
      eapply ex_series_nneg_bounded; eauto; intros.
      -- apply ps_pos.
-     -- generalize(Chebyshev_ineq_div_mean0 _ (rvy n) ((mkposreal _ (H n)))); intros.
+     -- generalize(Chebyshev_ineq_div_mean0 _ (rvy n) ((mkposreal _ (Hα0 n)))); intros.
         eapply Rle_trans; eauto.
         unfold frac in Hisf. simpl in Hisf.
-        rewrite <-(Hisf n) in H1. simpl in H1.
-        apply H1.
+        rewrite <-(Hisf n) in H0. simpl in H0.
+        apply H0.
         specialize (Hfinu n).
         rewrite <- Hisf in Hfinu.
         simpl in Hfinu.
@@ -2203,7 +2206,7 @@ Section Derman_Sacks.
         {adaptX : IsAdapted borel_sa X F}
         {adaptT : IsAdapted borel_sa T F}       
         {alpha beta gamma : nat -> R}
-        (hpos1 : forall n, 0 < alpha n)
+        (hpos1 : forall n, 0 <= alpha n)
         (hpos2 : forall n, 0 <= beta n )(hpos3 : forall n, 0 <= gamma n)
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
         (svy : forall n, FiniteRangeFunction (Y n)) 
@@ -2290,7 +2293,7 @@ Section Derman_Sacks.
      + intros; unfold A.
        apply Rmult_le_pos; try lra.
        apply Rle_trans with (r2 := alpha n).
-       * left; apply hpos1.
+       * apply hpos1.
        * apply Rmax_r.
      + intros; apply Rabs_pos.
      + replace (Finite 0) with (Rbar_mult 2 0) by apply Rbar_mult_0_r.
