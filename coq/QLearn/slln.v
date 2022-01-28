@@ -1909,6 +1909,42 @@ Qed.
     lra.
   Qed.
 
+  Instance isfe_Sum1_r_from_crossmult X m
+        {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+        {isfemult : forall k j : nat, IsFiniteExpectation Prts (rvmult (X k) (X j))} :
+    let Sum := fun j => (rvsum (fun n => X (n + m)%nat) j) in
+    forall a b, IsFiniteExpectation Prts (rvmult (Sum b) (X a)).
+  Proof.
+    intros.
+    unfold Sum.
+    rewrite <- rvsum_distr_r.
+    apply IsFiniteExpectation_sum; try typeclasses eauto; intros.
+  Qed.
+
+  Instance isfe_Sum1_from_crossmult X m
+        {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+        {isfemult : forall k j : nat, IsFiniteExpectation Prts (rvmult (X k) (X j))} :
+    let Sum := fun j => (rvsum (fun n => X (n + m)%nat) j) in
+    forall a b, IsFiniteExpectation Prts (rvmult (X a) (Sum b)).
+  Proof.
+    intros.
+    rewrite rvmult_comm.
+    now apply isfe_Sum1_r_from_crossmult.
+  Qed.
+
+  Instance isfe_Sum_from_crossmult X m
+           {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+           {isfemult : forall k j : nat, IsFiniteExpectation Prts (rvmult (X k) (X j))} :
+    let Sum := fun j => (rvsum (fun n => X (n + m)%nat) j) in
+    forall a b, IsFiniteExpectation Prts (rvmult (Sum a) (Sum b)).
+  Proof.
+    intros.
+    rewrite rvmult_comm.
+    unfold Sum.
+    rewrite <- rvsum_distr_r.
+    apply IsFiniteExpectation_sum; try typeclasses eauto; intros.
+  Qed.
+
 Lemma ash_6_1_4_filter (X: nat -> Ts -> R) {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
       (filt_sub : forall n, sa_sub (F n) dom)
@@ -1940,23 +1976,6 @@ Proof.
   }
   rewrite H1.
   generalize (Chebyshev_ineq_div_mean0 (cutoff_eps_rv n eps Sum) _ eps); intros H3.
-
-  assert (isfemultsum1 : forall a b, IsFiniteExpectation Prts (rvmult (X a) (Sum b))).
-  {
-    intros.
-    rewrite rvmult_comm.
-    unfold Sum.
-    rewrite <- rvsum_distr_r.
-    apply IsFiniteExpectation_sum; try typeclasses eauto; intros.
-  } 
-    
-  assert (isfemultsum : forall a b, IsFiniteExpectation Prts (rvmult (Sum a) (Sum b))).
-  {
-    intros.
-    unfold Sum.
-    rewrite <- rvsum_distr_r.
-    apply IsFiniteExpectation_sum; typeclasses eauto.
-  } 
 
   assert (isfemult':forall k j, IsFiniteExpectation Prts
                                      (rvmult (cutoff_eps_rv k eps Sum) (cutoff_eps_rv j eps Sum))).
@@ -2049,15 +2068,8 @@ Proof.
                                                        ((rvsqr (Sum j))))).
           + intros ?; rv_unfold; lra.
           + apply IsFiniteExpectation_minus; typeclasses eauto.
-        - apply IsFiniteExpectation_scale.
-          unfold Sum.
-          rewrite <- rvsum_distr_r.
-          apply IsFiniteExpectation_sum; typeclasses eauto.
         - rewrite rvsqr_minus_foil.
           typeclasses eauto.
-        - unfold Sum.
-          rewrite <- rvsum_distr_r.
-          apply IsFiniteExpectation_sum; typeclasses eauto.
       }
       Unshelve.
 
@@ -2195,7 +2207,6 @@ Proof.
    intro x.
    now unfold rvsqr, Sum.
  - specialize (Srel n).
-   rewrite (FiniteExpectation_pf_irrel _ (rvsqr (Sum (S n)))).
    rewrite Srel.
    specialize (Zrel n).
    rewrite (FiniteExpectation_pf_irrel _ (rvsqr (cutoff_eps_rv (S n) eps Sum))).
@@ -2224,21 +2235,22 @@ Qed.
 
 Lemma ash_6_1_4 (X: nat -> Ts -> R) (eps:posreal) (m:nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {frf : forall (n:nat), FiniteRangeFunction (X n)}
       {isfe : forall (n:nat), IsFiniteExpectation Prts (X n)}
+      (isfemult : forall k j : nat, IsFiniteExpectation Prts (rvmult (X k) (X j)))
       (HC : forall n, 
           almostR2 Prts eq
                    (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
                 (const 0))  :
   let Sum := fun j => (rvsum (fun n => X (n + m)%nat) j) in
+  forall (isfe2: forall n, IsFiniteExpectation _ ((rvsqr (Sum n)))), 
+
   forall (n:nat), ps_P (event_ge dom (rvmaxlist (fun k => rvabs(Sum k)) n) eps) <=
-                  (SimpleExpectation (rvsqr (Sum n)))/eps^2.
+                  (FiniteExpectation Prts (rvsqr (Sum n)))/eps^2.
 Proof.
   apply ash_6_1_4_filter with (filt_sub := filtration_history_sa_sub X); trivial.
   - apply filtration_history_sa_is_filtration.
   - apply filtration_history_sa_is_adapted.
-Qed.    
-    
+Qed.
 
 Lemma var_sum_cross_0_offset_filter (X : nat -> Ts -> R) (m : nat)
       {F : nat -> SigmaAlgebra Ts}
@@ -2246,14 +2258,17 @@ Lemma var_sum_cross_0_offset_filter (X : nat -> Ts -> R) (m : nat)
       (filt_sub : forall n, sa_sub (F n) dom)
       {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {frf : forall (n:nat), FiniteRangeFunction (X n)}
+      (isfe : forall k : nat, IsFiniteExpectation Prts (X k))
+      (isfemult : forall k j : nat, IsFiniteExpectation Prts (rvmult (X k) (X j)))
       (HC : forall n, 
           almostR2 Prts eq
                    (ConditionalExpectation Prts (filt_sub n) (X (S n)))
                 (const 0))  :
   let Xm := fun n => X (n + m)%nat in
-  forall j, SimpleExpectation(rvsqr (rvsum Xm j)) =
-            sum_n (fun n => SimpleExpectation (rvsqr (X (n + m)%nat))) j.
+  let Sum := fun j => (rvsum (fun n => X (n + m)%nat) j) in
+  forall j (isfej:IsFiniteExpectation Prts (rvsqr (rvsum Xm j))),
+          FiniteExpectation Prts (rvsqr (rvsum Xm j)) =
+            sum_n (fun n => FiniteExpectation Prts (rvsqr (X (n + m)%nat))) j.
 Proof.
   intros.
   induction j.
@@ -2261,7 +2276,7 @@ Proof.
     + intro x.
       unfold Xm, rvsqr, rvsum; simpl.
       now rewrite sum_O.
-    + rewrite (SimpleExpectation_ext H).
+    + rewrite (FiniteExpectation_ext _ _ _ H).
       now rewrite sum_O.
   - rewrite sum_Sn.
     unfold plus; simpl.
@@ -2277,39 +2292,20 @@ Proof.
       unfold plus; simpl.
       unfold Rsqr, rvscale, rvmult.
       ring.
-    + rewrite (SimpleExpectation_ext H).
-      rewrite <- sumSimpleExpectation.
-      rewrite <- sumSimpleExpectation.
-      rewrite <- scaleSimpleExpectation.
-      assert (isfe: forall n, IsFiniteExpectation Prts (X n)) 
-        by (intros; now apply IsFiniteExpectation_simple).
-      assert (isfe_mult: forall k j, IsFiniteExpectation Prts (rvmult (X k) (X j))).
-      {
-        intros.
-        apply IsFiniteExpectation_simple.
-        - typeclasses eauto.
-        - typeclasses eauto.
-      }
-      assert (
-        isfe_mult_sum : forall k j : nat,
-                  IsFiniteExpectation Prts
-                    (rvmult (rvsum (fun n : nat => X (n + m)%nat) j) (X (k + m)%nat))).
-      {
-        intros.
-        apply IsFiniteExpectation_simple.
-        - typeclasses eauto.
-        - typeclasses eauto.
-      }
+    + rewrite (FiniteExpectation_ext_alt _ _ _ H).
+      erewrite (FiniteExpectation_plus' _ _ _ ).
+      erewrite (FiniteExpectation_plus' _ _ _ ).
+      erewrite (FiniteExpectation_scale' _ _ _).
       generalize (expec_cross_zero_sum2_shift_filter X m _ _ HC); intros; try lia.
       unfold Xm.
       specialize (H0 j (S j)).
       cut_to H0; try lia.
-      erewrite FiniteExpectation_simple in H0.
       rewrite H0.
-      rewrite <- IHj.
       ring_simplify.
+      f_equal.
+      rewrite IHj.
       reflexivity.
-Qed.  
+Qed.
 
     Lemma sa_sigma_is_ELimInf_seq (f : nat -> Ts -> Rbar) (c:Rbar)
           {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
