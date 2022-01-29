@@ -1852,188 +1852,6 @@ Section Derman_Sacks.
                          (delta := fun n => delta n x); trivial.
   Qed.
     
-
-     
-      
-  Lemma DS_Dvor_aa {a : nat -> R} {Y : nat -> Ts -> R}
-        (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n))) :
-    (forall n, 0 <= a n) ->
-    is_lim_seq a 0 ->
-    ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
-    exists (aa : nat -> R),
-      is_lim_seq aa 0 /\
-      (forall n, 0 < aa n) /\
-      (forall n, a n <= aa n) /\
-      ex_series (fun n => FiniteExpectation prts (rvsqr (Y n)) / Rsqr (aa n)).
-  Proof.
-    intros.
-    generalize (Paolo_div (fun n => FiniteExpectation prts (rvsqr (Y n)))); intros.
-    cut_to H2; trivial.
-    - destruct H2 as [? [? [? ?]]].
-      exists (fun n => Rmax (a n) (x n)).
-      split; try split; try split.
-      + apply is_lim_seq_spec.
-        apply is_lim_seq_spec in H0.
-        apply is_lim_seq_spec in H3.
-        unfold is_lim_seq' in *.
-        intros.
-        destruct (H0 eps).
-        destruct (H3 eps).
-        exists (max x0 x1).
-        intros.
-        specialize (H5 n); specialize (H6 n).
-        cut_to H5; try lia.
-        cut_to H6; try lia.
-        rewrite Rminus_0_r in H5.
-        rewrite Rminus_0_r in H6.
-        rewrite Rminus_0_r.
-        specialize (H n); specialize (H2 n).
-        rewrite Rabs_right in *; try lra.
-        * unfold Rmax; match_destr.
-        * apply Rle_ge, Rmax_Rle; lra.
-      + intros.
-        apply Rlt_le_trans with (r2 := x n); trivial.
-        apply Rmax_r.
-      + intros.
-        apply Rmax_l.
-      + generalize (ex_series_le  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) / (Rmax (a n) (x n))²)
-                                  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) / (x n)²)); intros.
-        apply H5; trivial.
-        intros.
-        unfold norm; simpl.
-        unfold abs; simpl.
-        rewrite Rabs_right.
-        * unfold Rdiv.
-          apply Rmult_le_compat_l.
-          -- apply FiniteExpectation_pos, nnfsqr.
-          -- apply Rinv_le_contravar.
-             ++ apply Rsqr_pos_lt.
-                apply Rgt_not_eq.
-                apply H2.
-             ++ unfold Rmax; match_destr; try lra.
-                assert (x n <= a n) by lra.
-                apply Rsqr_le_abs_1.
-                rewrite Rabs_right.
-                ** rewrite Rabs_right; trivial.
-                   now apply Rle_ge.
-                ** apply Rle_ge; now left.                   
-        * apply Rle_ge, Rdiv_le_0_compat.
-          -- apply FiniteExpectation_pos, nnfsqr.
-          -- apply Rsqr_pos_lt.
-             apply Rgt_not_eq, Rlt_gt.
-             apply Rlt_le_trans with (r2 := x n); trivial.
-             apply Rmax_r.
-    - intros.
-      apply FiniteExpectation_pos.
-      apply nnfsqr.
-  Qed.
-
-  Lemma DS_Dvor_aa_fun {a : nat -> Ts -> R} {Y : nat -> Ts -> R}
-        (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n))) :
-    (forall n omega , 0 <= a n omega) ->
-    ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
-    exists (aa : nat -> Ts -> R),
-      (forall omega, is_lim_seq (fun n => a n omega) 0 ->
-                     is_lim_seq (fun n => aa n omega) 0) /\
-      (forall n, RandomVariable _ borel_sa (a n) -> RandomVariable _ borel_sa (aa n)) /\
-      (forall n omega, 0 < aa n omega) /\
-      (forall n omega, a n omega <= aa n omega) /\
-      forall omega,
-        ex_series (fun n => FiniteExpectation prts (rvsqr (Y n)) / Rsqr (aa n omega)).
-  Proof.
-    intros.
-    generalize (Paolo_div (fun n => FiniteExpectation prts (rvsqr (Y n)))); intros.
-    cut_to H1; trivial.
-    - destruct H1 as [? [? [? ?]]].
-      exists (fun n omega => Rmax (a n omega) (x n)).
-      split; try split; try split; try split.
-      + intros.
-        apply is_lim_seq_spec.
-        apply is_lim_seq_spec in H2.
-        apply is_lim_seq_spec in H4.
-        unfold is_lim_seq' in *.
-        intros.
-        destruct (H2 eps).
-        destruct (H4 eps).
-        exists (max x0 x1).
-        intros.
-        specialize (H5 n); specialize (H6 n).
-        cut_to H5; try lia.
-        cut_to H6; try lia.
-        rewrite Rminus_0_r in H5.
-        rewrite Rminus_0_r in H6.
-        rewrite Rminus_0_r.
-        specialize (H n); specialize (H1 n).
-        rewrite Rabs_right in *; try lra.
-        * unfold Rmax; match_destr.
-        * apply Rle_ge, H.
-        * apply Rle_ge, Rmax_Rle; lra.
-      + intros.
-        apply rvmax_rv; trivial.
-        apply rvconst.
-      + intros.
-        apply Rlt_le_trans with (r2 := x n); trivial.
-        apply Rmax_r.
-      + intros.
-        apply Rmax_l.
-      + intros.
-generalize (ex_series_le  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) / (Rmax (a n omega) (x n))²)
-                                  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) / (x n)²)); intros.
-        apply H4; trivial.
-        intros.
-        unfold norm; simpl.
-        unfold abs; simpl.
-        rewrite Rabs_right.
-        * unfold Rdiv.
-          apply Rmult_le_compat_l.
-          -- apply FiniteExpectation_pos, nnfsqr.
-          -- apply Rinv_le_contravar.
-             ++ apply Rsqr_pos_lt.
-                apply Rgt_not_eq.
-                apply H1.
-             ++ unfold Rmax; match_destr; try lra.
-                assert (x n <= a n omega) by lra.
-                apply Rsqr_le_abs_1.
-                rewrite Rabs_right.
-                ** rewrite Rabs_right; trivial.
-                   now apply Rle_ge.
-                ** apply Rle_ge; now left.                   
-        * apply Rle_ge, Rdiv_le_0_compat.
-          -- apply FiniteExpectation_pos, nnfsqr.
-          -- apply Rsqr_pos_lt.
-             apply Rgt_not_eq, Rlt_gt.
-             apply Rlt_le_trans with (r2 := x n); trivial.
-             apply Rmax_r.
-    - intros.
-      apply FiniteExpectation_pos.
-      apply nnfsqr.
-  Qed.
-
-  Lemma DS_Dvor_aa_stochastic {a : nat -> Ts -> R} {Y : nat -> Ts -> R}
-        (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n))) 
-        (rv : forall n, RandomVariable _ borel_sa (a n)) :
-    (forall n omega , 0 <= a n omega) ->
-    almost _ (fun omega => is_lim_seq (fun n => a n omega) 0) ->
-    ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
-    exists (aa : nat -> Ts -> R),
-      (almost _ (fun omega => is_lim_seq (fun n => aa n omega) 0)) /\
-      (forall n omega, 0 < aa n omega) /\
-      (forall n omega, a n omega <= aa n omega) /\
-      (forall n, RandomVariable _ borel_sa (aa n)) /\
-      forall omega, ex_series (fun n => FiniteExpectation prts (rvsqr (Y n)) / Rsqr (aa n omega)).
-  Proof.
-    intros.
-    destruct (DS_Dvor_aa_fun isfe H H1) as [α [Hα1 [Hα0 [Hα2 [Hα3 Hα4]]]]].
-    exists α.
-    split; try split; try split; trivial.
-    - revert H0.
-      apply almost_impl, all_almost; intros ??.
-      now apply Hα1.
-    - split; trivial.
-      intros.
-      now apply Hα0.
-  Qed.
-
  Lemma DS_Dvor_11_12_Y (a : nat -> R) {Y : nat -> Ts -> R}
        (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
        (rvy : forall n, RandomVariable _ borel_sa (Y n))
@@ -2046,7 +1864,15 @@ generalize (ex_series_le  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) /
       almost _ (fun omega =>  exists N:nat, forall n, (N <= n)%nat -> rvabs (Y n) omega <= Rmax (α n) (a n)).
  Proof.
    intros Ha1 Ha2 HY.
-   destruct (DS_Dvor_aa isfe Ha1 Ha2 HY) as [α [Hα1 [Hα0 [Hα2 Hα3]]]].
+   generalize (Paolo_div (fun n => FiniteExpectation prts (rvsqr (Y n)))); intros.
+   assert (forall n, 0 <= FiniteExpectation prts (rvsqr (Y n))).
+   {
+     intros.
+     apply FiniteExpectation_pos.
+     apply nnfsqr.
+   }
+   cut_to H; trivial.
+   destruct H as [α [Hα0 [Hα1 Hα2]]].
    exists α.
    assert (HEsa : forall n, sa_sigma (event_ge dom (rvabs (Y n)) (mkposreal _ (Hα0 n)))).
    {
@@ -2095,8 +1921,8 @@ generalize (ex_series_le  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) /
      unfold almost_alt. push_neg.
      simpl in H. eexists.
      split; [apply H|intros omega ?H].
-     simpl. intros n. specialize (H0 n).
-     destruct H0 as [n0 [Hn0 HZ]]. exists (n0-n)%nat.
+     simpl. intros n. specialize (H1 n).
+     destruct H1 as [n0 [Hn0 HZ]]. exists (n0-n)%nat.
      left. replace ((n0 - n + n)%nat) with n0 by lia.
      apply Rgt_lt in HZ. rewrite Rmax_Rlt in HZ.
      now destruct HZ.
@@ -2106,33 +1932,13 @@ generalize (ex_series_le  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) /
      -- generalize(Chebyshev_ineq_div_mean0 _ (rvy n) ((mkposreal _ (Hα0 n)))); intros.
         eapply Rle_trans; eauto.
         unfold frac in Hisf. simpl in Hisf.
-        rewrite <-(Hisf n) in H0. simpl in H0.
-        apply H0.
+        rewrite <-(Hisf n) in H1. simpl in H1.
+        apply H1.
         specialize (Hfinu n).
         rewrite <- Hisf in Hfinu.
         simpl in Hfinu.
         apply Hfinu.
  Qed.
-
-  Lemma event_Rge_sa (σ:SigmaAlgebra Ts) x1 x2
-        {rv1:RandomVariable σ borel_sa x1}
-        {rv2:RandomVariable σ borel_sa x2}
-    : sa_sigma (fun x => x1 x >= x2 x).
-  Proof.
-    apply (sa_proper _ (fun x => (rvminus x1 x2) x >= 0)).
-    -  red; intros.
-       rv_unfold.
-       intuition lra.
-    - apply sa_le_ge; intros.
-      apply rv_measurable.
-      typeclasses eauto.
-  Qed.
-
-  Definition event_Rge (σ:SigmaAlgebra Ts) x1 x2
-             {rv1:RandomVariable σ borel_sa x1}
-             {rv2:RandomVariable σ borel_sa x2} : event σ
-    := exist _ _ (event_Rge_sa σ x1 x2).
-
 
  Lemma DS_Dvor_11_12_Y_stochastic (a : nat -> Ts -> R) {Y : nat -> Ts -> R}
        (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
@@ -2526,7 +2332,7 @@ generalize (ex_series_le  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) /
      now rewrite <- FiniteExpectation_simple with (isfe := (fey n)).
  Qed.
 
- Lemma almost_is_lim_max (alpha : nat -> Ts -> R) (a : nat -> R) :
+ Lemma almost_is_lim_seq_max (alpha : nat -> Ts -> R) (a : nat -> R) :
    (forall n, 0 <= a n) ->
    (forall n omega, 0 <= alpha n omega) ->
    is_lim_seq (fun n : nat => a n) 0 ->
@@ -2536,25 +2342,7 @@ generalize (ex_series_le  (fun n : nat => FiniteExpectation prts (rvsqr (Y n)) /
    intros.
    revert H2.
    apply almost_impl, all_almost; intros ??.
-   apply is_lim_seq_spec.
-   apply is_lim_seq_spec in H1.
-   apply is_lim_seq_spec in H2.
-   unfold is_lim_seq' in *.
-   intros.
-   destruct (H1 eps).
-   destruct (H2 eps).
-   exists (max x0 x1).
-   intros.
-   specialize (H3 n); specialize (H4 n).
-   cut_to H3; try lia.
-   cut_to H4; try lia.
-   rewrite Rminus_0_r in H3.
-   rewrite Rminus_0_r in H4.
-   rewrite Rminus_0_r.
-   specialize (H n); specialize (H0 n x).
-   rewrite Rabs_right in *; try lra.
-   - unfold Rmax; match_destr.
-   - apply Rle_ge, Rmax_Rle; lra.
+   now apply is_lim_seq_max.
  Qed.
 
 Theorem Dvoretzky_DS_extended

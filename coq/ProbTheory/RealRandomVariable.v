@@ -1888,6 +1888,26 @@ Section MoreRealRandomVariable.
       typeclasses eauto.
   Qed.
 
+
+  Lemma event_Rge_sa (σ:SigmaAlgebra Ts) x1 x2
+        {rv1:RandomVariable σ borel_sa x1}
+        {rv2:RandomVariable σ borel_sa x2}
+    : sa_sigma (fun x => x1 x >= x2 x).
+  Proof.
+    apply (sa_proper _ (fun x => (rvminus x1 x2) x >= 0)).
+    -  red; intros.
+       rv_unfold.
+       intuition lra.
+    - apply sa_le_ge; intros.
+      apply rv_measurable.
+      typeclasses eauto.
+  Qed.
+
+  Definition event_Rge (σ:SigmaAlgebra Ts) x1 x2
+             {rv1:RandomVariable σ borel_sa x1}
+             {rv2:RandomVariable σ borel_sa x2} : event σ
+    := exist _ _ (event_Rge_sa σ x1 x2).
+
   Definition event_Rgt (σ:SigmaAlgebra Ts) x1 x2
              {rv1:RandomVariable σ borel_sa x1}
              {rv2:RandomVariable σ borel_sa x2} : event σ
