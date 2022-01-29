@@ -1466,11 +1466,7 @@ Section Derman_Sacks.
      apply H0; lia.
    Qed.
 
- 
-
-
-
-   Lemma map_shiftn_seq (f : nat -> R) (n m : nat) :
+    Lemma map_shiftn_seq (f : nat -> R) (n m : nat) :
      map f (seq n m) = map (fun n0 => f (n + n0)%nat) (seq 0 m).
    Proof.
      rewrite seq_shiftn_map.
@@ -1907,6 +1903,21 @@ Section Derman_Sacks.
         apply Hfinu.
  Qed.
 
+ Lemma DS_Dvor_11_12_Y (a : nat -> R) {Y : nat -> Ts -> R}
+       (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
+       (rvy : forall n, RandomVariable _ borel_sa (Y n))
+   :
+   (forall n, 0 <= a n) ->
+    is_lim_seq a 0 ->
+    ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
+    exists α : nat -> R,
+      is_lim_seq α 0 /\
+      almost _ (fun omega =>  exists N:nat, forall n, (N <= n)%nat -> rvabs (Y n) omega <= Rmax (α n) (a n)).
+ Proof.
+   intros.
+   apply (DS_Dvor_11_12_Y_fun (fun (n:nat) (omega:Ts) => a n)) with (isfe0 := isfe); trivial.
+ Qed.
+
  Lemma DS_Dvor_ash_6_2_1 (X Y T : nat -> Ts -> R)
        {F : nat -> SigmaAlgebra Ts}
        (isfilt : IsFiltration F)
@@ -2026,36 +2037,21 @@ Section Derman_Sacks.
       + intros.
         now apply SimpleExpectation_le.
   Qed.
-
- Lemma DS_Dvor_11_12_Y (a : nat -> R) {Y : nat -> Ts -> R}
-       (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
-       (rvy : forall n, RandomVariable _ borel_sa (Y n))
-   :
-   (forall n, 0 <= a n) ->
-    is_lim_seq a 0 ->
-    ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
-    exists α : nat -> R,
-      is_lim_seq α 0 /\
-      almost _ (fun omega =>  exists N:nat, forall n, (N <= n)%nat -> rvabs (Y n) omega <= Rmax (α n) (a n)).
- Proof.
-   intros.
-   apply (DS_Dvor_11_12_Y_fun (fun (n:nat) (omega:Ts) => a n)) with (isfe0 := isfe); trivial.
- Qed.
  
- Lemma sign_sum {a b c : R} :
-   Rabs a <= c -> Rabs b > c -> sign (b + a) = sign b.
+ Lemma sign_sum {a b : R} :
+   Rabs a < Rabs b -> sign (b + a) = sign b.
  Proof.
    intros.
    destruct (Rle_dec b 0).
    + destruct r.
-     -- rewrite (sign_eq_m1 b H1).
+     -- rewrite (sign_eq_m1 b H0).
         apply sign_eq_m1.
-        rewrite (Rabs_left _ H1) in H0.
+        rewrite (Rabs_left _ H0) in H.
         apply Rle_lt_trans with (r2 := b + Rabs a);
           [apply Rplus_le_compat_l; apply Rle_abs|].
         lra.
      -- subst. rewrite sign_0.
-        rewrite Rabs_R0 in H0.
+        rewrite Rabs_R0 in H.
         rewrite Rplus_0_l.
         assert (Rabs a < 0) by lra.
         generalize (Rabs_pos a); intros.
@@ -2063,12 +2059,16 @@ Section Derman_Sacks.
    + push_neg_in n.
      rewrite (sign_eq_1 b); trivial.
      apply sign_eq_1.
-     rewrite Rabs_pos_eq in H0; try lra.
-     destruct (Rle_dec a 0).
-     -- rewrite (Rabs_left1 _ r) in H.
-        lra.
-     -- push_neg_in n0.
-        lra.
+     rewrite (Rabs_pos_eq b) in H; try lra.
+     destruct (Rle_dec a 0); try lra.
+     rewrite (Rabs_left1 _ r) in H.
+     lra.
+ Qed.
+
+ Lemma sign_sum_alt {a b c : R} :
+   Rabs a <= c -> Rabs b > c -> sign (b + a) = sign b.
+ Proof.
+   intros; apply sign_sum; lra.
  Qed.
 
  Lemma Rabs_sign (a : R) : Rabs a = (sign a)*a.
@@ -2121,7 +2121,8 @@ Section Derman_Sacks.
         {adaptT : IsAdapted borel_sa T F}       
         {alpha beta gamma : nat -> R}
         (hpos1 : forall n, 0 <= alpha n)
-        (hpos2 : forall n, 0 <= beta n )(hpos3 : forall n, 0 <= gamma n)
+        (hpos2 : forall n, 0 <= beta n )
+        (hpos3 : forall n, 0 <= gamma n)
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
         (svy : forall n, FiniteRangeFunction (Y n)) 
         (rvx : forall n, RandomVariable dom borel_sa (X n)) 
@@ -2179,7 +2180,7 @@ Section Derman_Sacks.
         eapply Rle_trans;[apply Rle_abs|].
         apply Rle_trans with (r2 := Rabs(T n w) + Z n w).
         ** rewrite Rabs_Rabsolu. rewrite Rabs_sign.
-           rewrite (sign_sum HN n0). rewrite Rmult_plus_distr_l.
+           rewrite (sign_sum_alt HN n0). rewrite Rmult_plus_distr_l.
            rewrite <-Rabs_sign. right. unfold Z; lra.
         ** unfold Rminus. rewrite Rplus_assoc.
            rewrite (Rplus_comm (Z n w) (- gamma n)).
@@ -2251,7 +2252,8 @@ Theorem Dvoretzky_DS_extended
         {adaptT : IsAdapted borel_sa T F}       
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
-        (hpos2 : forall n x, 0 <= beta n x )(hpos3 : forall n x, 0 <= gamma n x)
+        (hpos2 : forall n x, 0 <= beta n x )
+        (hpos3 : forall n x, 0 <= gamma n x)
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
         (svy : forall n, FiniteRangeFunction (Y n)) 
         (rvx : forall n, RandomVariable dom borel_sa (X n)) 
@@ -2309,7 +2311,7 @@ Theorem Dvoretzky_DS_extended
         eapply Rle_trans;[apply Rle_abs|].
         apply Rle_trans with (r2 := Rabs(T n w) + Z n w).
         ** rewrite Rabs_Rabsolu. rewrite Rabs_sign.
-           rewrite (sign_sum HN n0). rewrite Rmult_plus_distr_l.
+           rewrite (sign_sum_alt HN n0). rewrite Rmult_plus_distr_l.
            rewrite <-Rabs_sign. right. unfold Z; lra.
         ** unfold Rminus. rewrite Rplus_assoc.
            rewrite (Rplus_comm (Z n w) (- gamma n w)).
@@ -2360,5 +2362,89 @@ Theorem Dvoretzky_DS_extended
      intros.
      now rewrite <- FiniteExpectation_simple with (isfe := (fey n)).
  Qed.
+
+ Lemma paolo2 (gamma : nat -> R) :
+   (forall n, 0 <= gamma n) ->
+   is_lim_seq (sum_n gamma) p_infty ->
+   exists (rho : nat -> posreal),
+     is_lim_seq rho 0 /\ is_lim_seq (sum_n (fun n => rho n * gamma n)) p_infty.
+ Proof.
+   intros Ha1 Ha2.
+    pose (s := fun n => sum_n gamma n).
+    assert (Hs1 : is_lim_seq (fun n => /(s n)) 0).
+     {
+       admit.
+     }
+     assert (Hs2 : forall n, 0 < / (s n)) by admit.     
+     exists (fun n => mkposreal _ (Hs2 n)).
+     split; trivial.
+    Admitted.
+
+Theorem Dvoretzky_DS_scale_prop
+        (X : nat -> Ts -> R)
+        (T : nat -> Ts -> R)
+        {alpha beta gamma : nat -> R}
+        (hpos1 : forall n , 0 <= alpha n)
+        (hpos2 : forall n , 0 <= beta n )
+        (hpos3 : forall n , 0 <= gamma n) :
+  (forall n omega, Rabs (T n omega) <= Rmax (alpha n) ((1+beta n - gamma n)*(Rabs (X n omega)))) ->
+  is_lim_seq alpha 0 ->
+  ex_series beta ->
+  is_lim_seq (sum_n gamma) p_infty ->
+  exists (alpha2 gamma2 : nat -> R),
+    (forall n, 0 <= alpha2 n) /\
+    (forall n, 0 <= gamma2 n) /\
+    is_lim_seq alpha2 0 /\
+    is_lim_seq (sum_n gamma2) p_infty /\
+    forall n omega, Rabs (T n omega) <= Rmax (alpha2 n) ((1+beta n)*(Rabs (X n omega)) - gamma2 n).
+ Proof.
+   intros.
+   destruct (paolo2 gamma hpos3 H2) as [rho [? ?]].
+   pose (alpha2 := fun n => Rmax (alpha n) ((1 + beta n) * rho n)).
+   pose (gamma2 := fun n => (rho n) *(gamma n)).
+   exists alpha2; exists gamma2.
+   split; try split; try split; try split.
+   - intros.
+     unfold alpha2.
+     eapply Rle_trans.
+     apply (hpos1 n).
+     apply Rmax_l.
+   - intros.
+     unfold gamma2.
+     apply Rmult_le_pos; trivial.
+     left; apply cond_pos.
+   - unfold alpha2.
+     apply is_lim_seq_max; trivial.
+     apply is_lim_seq_ext with (u := fun n => rho n + (beta n) * (rho n)).
+     + intros; lra.
+     + replace (Finite 0) with (Rbar_plus 0 0) by apply Rbar_plus_0_r.
+       apply is_lim_seq_plus'; trivial.
+       replace (Finite 0) with (Rbar_mult 0 0) by apply Rbar_mult_0_r.
+       apply is_lim_seq_mult'; trivial.
+       now apply ex_series_lim_0.
+   - apply H4.
+   - intros.
+     eapply Rle_trans.
+     apply H.
+     unfold alpha2, gamma2.
+     apply Rmax_case.
+     + apply Rle_trans with (r2 := Rmax (alpha n) ((1 + beta n) * rho n)); apply Rmax_l.
+     + destruct (Rle_dec (rho n) (Rabs (X n omega))).
+       * apply Rle_trans with (r2 :=  ((1 + beta n) * Rabs (X n omega) - rho n * gamma n)); try apply Rmax_r.
+         replace ( (1 + beta n - gamma n) * Rabs (X n omega)) with
+             ((1 + beta n) * Rabs (X n omega) - (gamma n) * Rabs (X n omega)) by lra.
+         apply Rplus_le_compat_l.
+         apply Ropp_le_contravar.
+         rewrite Rmult_comm.
+         apply Rmult_le_compat_l; trivial.
+       * assert (rho n > Rabs (X n omega)) by lra.
+         apply Rle_trans with (r2 := (Rmax (alpha n) ((1 + beta n) * rho n)) ); try apply Rmax_l.
+         apply Rle_trans with (r2 := ((1 + beta n) * rho n)); try apply Rmax_r.
+         apply Rle_trans with (r2 :=  (1 + beta n) * Rabs (X n omega)).
+         -- apply Rmult_le_compat_r; try apply Rabs_pos.
+            specialize (hpos3 n); lra.
+         -- apply Rmult_le_compat_l; try lra.
+            specialize (hpos2 n); lra.
+  Qed.
 
 End Derman_Sacks.
