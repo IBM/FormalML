@@ -338,46 +338,50 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
     - apply SimpleExpectation_const.
   Qed.
 
-  Lemma SimpleExpectation_sq_nneg (f : Ts -> R)
-        {frf: FiniteRangeFunction f}
-        {rvf : RandomVariable dom borel_sa f} :
-    0 <= SimpleExpectation (rvsqr f).
+  Lemma FiniteExpectation_sq_nneg (f : Ts -> R)
+        (svy2 : IsFiniteExpectation prts (rvsqr f)) 
+    :
+    0 <= FiniteExpectation prts (rvsqr f).
   Proof.
-    apply SimpleExpectation_nneg.
+    apply FiniteExpectation_pos.
     intro x.
     apply Rle_0_sqr.
   Qed.
 
   Lemma Dvoretzky_8_F_le_1 (theta:R) 
-        ( X Y : nat -> Ts -> R)
+        (X Y : nat -> Ts -> R)
         (T : nat -> R -> R)
         (F : nat -> posreal)
         (rvy : forall n, RandomVariable dom borel_sa (Y n)) 
-        (svy : forall n, FiniteRangeFunction (Y n)) 
         (rvx : forall n, RandomVariable dom borel_sa (X n)) 
-        (svx: forall n, FiniteRangeFunction (X n))
-        (rvt : forall n, RandomVariable borel_sa borel_sa (fun r:R => T n r))        
-        (svt: forall n, FiniteRangeFunction (fun r:Ts => T n (X n r))) :
+        (rvt : forall n, RandomVariable borel_sa borel_sa (fun r:R => T n r))
+        (svy : forall n, IsFiniteExpectation prts (Y n)) 
+        (svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))) 
+        (svx: forall n, IsFiniteExpectation prts (X n))
+        {isfexm: forall n, IsFiniteExpectation prts (rvsqr (rvminus (X n) (const theta)) )}
+        (svt: forall n, IsFiniteExpectation prts (fun r:Ts => T n (X n r)))
+        {isfety:forall n, IsFiniteExpectation prts (((fun r : Ts => T n (X n r)) .* Y n))}
+        (svt2: forall n, IsFiniteExpectation prts (rvsqr (fun r:Ts => T n (X n r)))) :
   (forall (n:nat), F n >= 0) ->
   (forall (n:nat) (r:R), Rle (Rabs ((T n r) - theta)) (F n * Rabs (r-theta))) ->
   (forall (n:nat), rv_eq (X (S n)) (rvplus (fun r => T n (X n r)) (Y n))) ->
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation_rv (X n) (Y n)) (fun x : Ts => const 0 x)) ->
   (forall n, F n <= 1) ->
-  ex_series (fun n => SimpleExpectation (rvsqr (Y n))) ->
+  ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
   is_lim_seq (part_prod F) 0 ->
-  is_lim_seq (fun n => SimpleExpectation (rvsqr (rvminus (X n) (const theta)))) 0.
+  is_lim_seq (fun n => FiniteExpectation prts (rvsqr (rvminus (X n) (const theta)))) 0.
  Proof.
   intros.
-  apply (Dvoretzky4B_Vpos F (fun n => SimpleExpectation (rvsqr (Y n)))); trivial.
+  apply (Dvoretzky4B_Vpos F (fun n => FiniteExpectation prts (rvsqr (Y n)))); trivial.
   - intros.
-    apply SimpleExpectation_sq_nneg.
+    apply FiniteExpectation_sq_nneg.
   - intros.
-    apply SimpleExpectation_sq_nneg.
+    apply FiniteExpectation_sq_nneg.
   - intros.
     unfold pos_sq_fun, pos_sq; simpl.
     replace ((F n) * (F n)) with (Rsqr (F n)) by now simpl.
-    generalize (Dvoretzky_rel n theta X Y T F (rvy n) (svy n) (rvx n) (svx n)
-                              (rvt n) (svt n) (rvx (S n)) (svx (S n))); intros rel.
+    generalize (Dvoretzky_rel n theta X Y T F (rvy n) (svy n) _ (rvx n) (svx n)
+                              (rvt n) (svt n) _ (rvx (S n)) (svx (S n))); intros rel.
     now apply rel.
  Qed.
 
