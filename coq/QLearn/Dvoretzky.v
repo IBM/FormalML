@@ -64,28 +64,34 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
       (T : nat -> R -> R)
       (F : nat -> R)
       (rvy : RandomVariable dom borel_sa (Y n)) 
-      (svy : FiniteRangeFunction (Y n)) 
+      (svy : IsFiniteExpectation prts (Y n)) 
+      (svy2 : IsFiniteExpectation prts (rvsqr (Y n))) 
       (rvx : RandomVariable dom borel_sa (X n)) 
-      (svx: FiniteRangeFunction (X n))
+      (svx: IsFiniteExpectation prts (X n))
+      {isfexm:IsFiniteExpectation prts (rvsqr (rvminus (X n) (const theta)) )}
       (rvt : RandomVariable borel_sa borel_sa (fun r:R => T n r))        
-      (svt: FiniteRangeFunction (fun r:Ts => T n (X n r))) 
+      (svt: IsFiniteExpectation prts (fun r:Ts => T n (X n r))) 
+      (svt2: IsFiniteExpectation prts (rvsqr (fun r:Ts => T n (X n r)))) 
       (rvx2 : RandomVariable dom borel_sa (X (S n)))
-      (svx2: FiniteRangeFunction (X (S n))) :
+      {isfex2m:IsFiniteExpectation prts (rvsqr (rvminus (X (S n)) (const theta)) )}
+      {isfety:IsFiniteExpectation prts (((fun r : Ts => T n (X n r)) .* Y n))}
+      (svx2: IsFiniteExpectation prts (X (S n))) :
   (forall (n:nat), F n >= 0) ->
   (forall (n:nat) (r:R), Rle (Rabs ((T n r) - theta)) (F n * Rabs (r-theta))) ->
   (forall (n:nat), rv_eq (X (S n)) (rvplus (fun r => T n (X n r)) (Y n))) ->
   almostR2 prts eq (ConditionalExpectation_rv (X n) (Y n)) (const 0) ->
-  Rle (SimpleExpectation (rvsqr (rvminus (X (S n)) (const theta)) ))
-      ((Rsqr (F n)) * SimpleExpectation (rvsqr (rvminus (X n) (const (theta))))
-       + SimpleExpectation (rvsqr (Y n))).
+  Rle (FiniteExpectation prts (rvsqr (rvminus (X (S n)) (const theta)) ))
+      ((Rsqr (F n)) * FiniteExpectation prts (rvsqr (rvminus (X n) (const (theta))))
+       + FiniteExpectation prts (rvsqr (Y n))).
   Proof.
     intros.
     specialize (H1 n).
     assert (rv_eq (rvminus (X (S n)) (const theta)) 
                   (rvminus (rvplus (fun r => T n (X n r)) (Y n)) (const theta))).
-    now rewrite H1.
-    rewrite (SimpleExpectation_transport (frfsqr (rvminus (X (S n)) (const theta)))
-                                        (rvsqr_proper _ _ H3)).    
+    {
+      now rewrite H1.
+    } 
+    rewrite (FiniteExpectation_ext_alt _ _ _ (rvsqr_proper _ _ H3)).
    assert (eqq1:rv_eq (rvsqr (rvminus (rvplus (fun r : Ts => T n (X n r)) (Y n)) (const theta))) 
                       (rvplus (rvsqr (rvminus (fun r : Ts => T n (X n r)) (const theta)))
                               (rvplus
@@ -97,29 +103,81 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
      unfold rvplus.
      lra.
    }
-   rewrite (SimpleExpectation_transport _ eqq1).
+   rewrite (FiniteExpectation_ext_alt _ _ _ eqq1).
    assert (rvtx: RandomVariable dom borel_sa (fun r:Ts => T n (X n r)))
-          by now apply (compose_rv (dom2 := borel_sa)).
-   rewrite (SimpleExpectation_pf_irrel _ _).
-   rewrite <- sumSimpleExpectation; try typeclasses eauto.
-   rewrite <- sumSimpleExpectation; try typeclasses eauto.
-   rewrite <- scaleSimpleExpectation.
+     by now apply (compose_rv (dom2 := borel_sa)).
+   erewrite (FiniteExpectation_plus' _ _ _ ).
+   erewrite (FiniteExpectation_plus' _ _ _ ).
+   erewrite (FiniteExpectation_scale' _ _ _).
    rewrite <- Rplus_assoc.
    apply Rplus_le_compat_r.
-   assert (SimpleExpectation (((fun r : Ts => T n (X n r)) .- const theta) .* Y n) = 0).
    {
-     apply SimpleCondexp_factor_out_zero 
-       with (sub := (pullback_rv_sub dom borel_sa (X n) rvx)) (rvf := rvy); trivial.
-     apply rvminus_rv.
-     - apply (compose_rv (dom2 := borel_sa)); trivial.
-       apply pullback_rv.
-     - typeclasses eauto.
+     Unshelve.
+     - shelve.
+     - rewrite rvsqr_minus_foil.
+       apply IsFiniteExpectation_plus; try typeclasses eauto.
+       apply IsFiniteExpectation_minus; try typeclasses eauto.
+       apply IsFiniteExpectation_scale.
+       rewrite rvmult_comm.
+       assert (eqq2:rv_eq (const theta .* (fun r : Ts => T n (X n r)))
+                          (rvscale theta (fun r : Ts => T n (X n r)))) by reflexivity.
+       rewrite eqq2.
+       now apply IsFiniteExpectation_scale.
+     - apply IsFiniteExpectation_plus; try typeclasses eauto.
+       apply IsFiniteExpectation_scale.
+       rewrite rvmult_comm.
+       rewrite rvmult_rvminus_distr.
+       apply IsFiniteExpectation_minus; try typeclasses eauto.
+       + now rewrite rvmult_comm.
+       + rewrite rvmult_comm.
+         assert (eqq2:rv_eq (const theta .* Y n)
+                            (rvscale theta (Y n))) by reflexivity.
+         rewrite eqq2.
+         now apply IsFiniteExpectation_scale.
+     - apply IsFiniteExpectation_scale.
+       rewrite rvmult_comm.
+       rewrite rvmult_rvminus_distr.
+       apply IsFiniteExpectation_minus; try typeclasses eauto.
+       + now rewrite rvmult_comm.
+       + rewrite rvmult_comm.
+         assert (eqq2:rv_eq (const theta .* Y n)
+                            (rvscale theta (Y n))) by reflexivity.
+         rewrite eqq2.
+         now apply IsFiniteExpectation_scale.
+     - rewrite rvmult_comm.
+       rewrite rvmult_rvminus_distr.
+       apply IsFiniteExpectation_minus; try typeclasses eauto.
+       + now rewrite rvmult_comm.
+       + rewrite rvmult_comm.
+         assert (eqq2:rv_eq (const theta .* Y n)
+                            (rvscale theta (Y n))) by reflexivity.
+         rewrite eqq2.
+         now apply IsFiniteExpectation_scale.
    }
-   rewrite H4.
-   rewrite Rmult_0_r, Rplus_0_r.
+   Unshelve.
+   replace (FiniteExpectation prts (((fun r : Ts => T n (X n r)) .- const theta) .* Y n)) with 0.
+   shelve.
+   {
+     symmetry.
+     eapply FiniteCondexp_factor_out_zero_swapped
+       with (sub := (pullback_rv_sub dom borel_sa (X n) rvx)) (rvf := rvy); trivial.
+     - apply rvminus_rv.
+       + apply (compose_rv (dom2 := borel_sa)); trivial.
+         apply pullback_rv.
+       + typeclasses eauto.
+     - revert H2.
+       apply almost_impl; apply all_almost; intros ??.
+       unfold ConditionalExpectation_rv in H2.
+       rewrite (FiniteCondexp_eq _ _ _) in H2.
+       invcs H2.
+       reflexivity.
+   }
+   Unshelve.
    specialize (H n).
-   rewrite (scaleSimpleExpectation (Rsqr (F n))).
-   apply SimpleExpectation_le; try typeclasses eauto.
+   field_simplify.
+   
+   rewrite <- (FiniteExpectation_scale _ (Rsqr (F n))).
+   apply FiniteExpectation_le; try typeclasses eauto.
    intros x.
    unfold rvsqr, rvscale.
    specialize (H0 n (X n x)).
