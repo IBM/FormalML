@@ -2067,6 +2067,27 @@ Section Derman_Sacks.
         apply Hfinu.
  Qed.
 
+ Global Instance IsFiniteExpectation_mult_sign (X : Ts -> R) f
+        {rvX:RandomVariable dom borel_sa X}
+        {rvf:RandomVariable dom borel_sa f}
+        {isfe:IsFiniteExpectation prts X} :
+   IsFiniteExpectation prts (rvmult X (rvsign f)).
+ Proof.
+   apply IsFiniteExpectation_abs_id.
+   - typeclasses eauto.
+   - apply IsFiniteExpectation_abs in isfe; trivial.
+     apply (IsFiniteExpectation_bounded _ (const 0) _ (rvabs X)).
+     + intros ?; rv_unfold.
+       apply Rabs_pos.
+     + intros ?.
+       rv_unfold.
+       rewrite Rabs_mult.
+       rewrite <- (Rmult_1_r (Rabs (X a))) at 2.
+       apply Rmult_le_compat; try apply Rabs_pos; try reflexivity.
+       unfold sign.
+       repeat match_destr; unfold Rabs; match_destr; lra.
+ Qed.
+
  Lemma DS_Dvor_ash_6_2_1 (X Y T : nat -> Ts -> R)
        {F : nat -> SigmaAlgebra Ts}
        (isfilt : IsFiltration F)
@@ -2075,14 +2096,16 @@ Section Derman_Sacks.
        {adaptT : IsAdapted borel_sa T F}       
        {rvX : forall (n:nat), RandomVariable dom borel_sa (X n)}
        {rvY : forall (n:nat), RandomVariable dom borel_sa (Y n)}
-       {rvT : forall (n:nat), RandomVariable dom borel_sa (T n)}       
-       {frf : forall (n:nat), FiniteRangeFunction (Y (n))}
+       {isfemult : forall k j : nat, IsFiniteExpectation prts (rvmult (Y k) (Y j))}
+       {rvT : forall (n:nat), RandomVariable dom borel_sa (T n)}
+       (svy : forall n, IsFiniteExpectation prts (Y n)) 
+       (svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
        (HC : forall n, 
            almostR2 _ eq
                     (ConditionalExpectation _ (filt_sub (S n)) (Y (S n)))
                     (const 0))  :
    (forall (n:nat), rv_eq (X (S n)) (rvplus (T n) (Y n))) ->
-   ex_series (fun n => SimpleExpectation (rvsqr (Y n))) ->
+   ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
    let Z := fun n => rvmult (Y n) (rvsign (T n)) in
    almost _ (fun (x : Ts) => ex_series (fun n => Z n x)).
  Proof.
@@ -2124,31 +2147,32 @@ Section Derman_Sacks.
      unfold IsFiltration; intros.
      apply isfilt.
    }
-   assert (frfz : forall (n:nat), FiniteRangeFunction (Z (n))).
+   assert (isfemultZ : forall k j : nat, IsFiniteExpectation prts (rvmult (Z k) (Z j))).
    {
      intros.
      unfold Z.
-     apply frfmult; trivial.
-     apply frfsign; trivial.
-  }
+     rewrite <- rvmult_assoc.
+     apply IsFiniteExpectation_mult_sign; try typeclasses eauto.
+     rewrite rvmult_assoc.
+     rewrite (rvmult_comm (rvsign (T k))).
+     rewrite <- rvmult_assoc.
+     apply IsFiniteExpectation_mult_sign; try typeclasses eauto.
+   } 
    apply Ash_6_2_1_filter with 
        (filt_sub0 := fun n => filt_sub (S n))
        (rv := rvZ)
-       (frf0 := frfz); trivial.
+       (isfemult0:=isfemultZ)
+   ; trivial.
+   - typeclasses eauto.
    - intros.
-     assert (isfef : IsFiniteExpectation prts (Y (S n))) by now apply IsFiniteExpectation_simple.
+     assert (isfef : IsFiniteExpectation prts (Y (S n))) by now typeclasses eauto.
      assert (rvs: RandomVariable (F (S n)) borel_sa (rvsign (T (S n)))).
      {
        apply rvsign_rv.
        apply adaptT.
      }
-     assert (isfe2 : IsFiniteExpectation prts (rvmult (Y (S n)) (rvsign (T (S n))))).
-     {
-       apply IsFiniteExpectation_simple; trivial.
-       - apply rvmult_rv; trivial.
-         now apply (RandomVariable_sa_sub (filt_sub (S n))).
-       - typeclasses eauto.
-     }
+     assert (isfe2 : IsFiniteExpectation prts (rvmult (Y (S n)) (rvsign (T (S n)))))
+       by typeclasses eauto.
      generalize (Condexp_factor_out prts (filt_sub (S n))(Y (S n)) (rvsign (T (S n)))); intros.
      apply almost_prob_space_sa_sub_lift in H1.
      revert H1.
@@ -2179,12 +2203,12 @@ Section Derman_Sacks.
            rewrite H1.
            rewrite sign_0; unfold Rsqr; lra.
       }
-      apply ex_series_nneg_bounded with (g := fun n => SimpleExpectation (rvsqr (Y n))); trivial. 
+      apply ex_series_nneg_bounded with (g := fun n => FiniteExpectation prts (rvsqr (Y n))); trivial. 
       + intros.
-        apply SimpleExpectation_nneg.
+        apply FiniteExpectation_pos.
         apply nnfsqr.
       + intros.
-        now apply SimpleExpectation_le.
+        now apply FiniteExpectation_le.
   Qed.
         
  Lemma sign_sum {a b c : R} :
