@@ -2499,22 +2499,232 @@ Theorem Dvoretzky_DS_extended
      now rewrite Rminus_0_r, Rabs_Rabsolu in H8.
  Qed.
 
- Lemma paolo2 (gamma : nat -> R) :
-   (forall n, 0 <= gamma n) ->
+Lemma sum_n_m_le_loc_alt (a b : nat -> R) (j k : nat) :
+  (forall n : nat, (j <= n <= j + k)%nat -> a n <= b n) -> 
+  sum_n_m a j (j + k)%nat <= sum_n_m b j (j + k)%nat.
+Proof.
+  intros.
+  induction k.
+  - replace (j + 0)%nat with (j) by lia.
+    do 2 rewrite sum_n_n.
+    apply H; lia.
+  - replace (j + S k)%nat with (S (j + k))%nat by lia.
+    rewrite sum_n_Sm; try lia.
+    rewrite sum_n_Sm; try lia.
+    assert (forall n : nat, (j <= n <= j + k)%nat -> a n <= b n).
+    + intros.
+      apply H; lia.
+    + specialize (IHk H0).
+      apply Rplus_le_compat; trivial.
+      apply H; lia.
+  Qed.
+
+Lemma sum_n_m_le_loc (a b : nat -> R) (j k : nat) :
+  (j <= k)%nat ->
+  (forall n : nat, (j <= n <= k)%nat -> a n <= b n) -> 
+  sum_n_m a j k <= sum_n_m b j k.
+Proof.
+  intros.
+  pose (h := (k - j)%nat).
+  replace (k) with (j + h)%nat by lia.
+  apply sum_n_m_le_loc_alt.
+  intros.
+  apply H0.
+  unfold h in H1.
+  lia.
+ Qed.
+
+Lemma ex_finite_lim_seq_incr_n (f : nat -> R) (N : nat) :
+  ex_finite_lim_seq f <-> ex_finite_lim_seq (fun n => f (N + n)%nat).
+Proof.
+  induction N.
+  - apply ex_finite_lim_seq_ext.
+    intros.
+    f_equal.
+  - generalize (ex_finite_lim_seq_S (fun n => f (N + n)%nat)); intros.
+    rewrite IHN.
+    rewrite H.
+    apply ex_finite_lim_seq_ext.
+    intros.
+    f_equal.
+    lia.
+  Qed.
+
+ Lemma paolo2_pos (gamma : nat -> R) :
+   (forall n, 0 < gamma n) ->
    is_lim_seq (sum_n gamma) p_infty ->
    exists (rho : nat -> posreal),
      is_lim_seq rho 0 /\ is_lim_seq (sum_n (fun n => rho n * gamma n)) p_infty.
  Proof.
    intros Ha1 Ha2.
-    pose (s := fun n => sum_n gamma n).
+    pose (s := sum_n gamma).
     assert (Hs1 : is_lim_seq (fun n => /(s n)) 0).
      {
-       admit.
+       replace (Finite 0) with (Rbar_inv p_infty) by now simpl.
+       apply is_lim_seq_inv; trivial; try discriminate.
      }
-     assert (Hs2 : forall n, 0 < / (s n)) by admit.     
+     assert (forall n, 0 < s n).
+     {
+       unfold s; intros.
+       apply sum_n_pos.
+       intros.
+       apply Ha1.
+     }
+     assert (forall n m, (n <= m)%nat -> (s n <= s m)).
+     {
+       intros.
+       unfold s.
+       destruct (lt_dec n m).
+       - unfold sum_n.
+         apply Rge_le.
+         rewrite sum_n_m_Chasles with (m0 := n); try lia.
+         apply Rle_ge.
+         replace (sum_n_m gamma 0 n) with ((sum_n_m gamma 0 n) + 0) at 1 by lra.
+         unfold plus; simpl.
+         apply Rplus_le_compat_l.
+         apply sum_n_m_pos.
+         intros.
+         now left.
+       - assert (n = m) by lia.
+         now rewrite H1.
+     }
+     assert (Hs2 : forall n, 0 < / (s n)).
+     {
+       intros.
+       now apply Rinv_0_lt_compat.
+     }
      exists (fun n => mkposreal _ (Hs2 n)).
      split; trivial.
-    Admitted.
+     assert (forall N k, sum_n_m (fun n => (gamma n)/(s n)) (S N) (S N + k) >= 1 - (s N) / (s (S N + k)%nat)).
+     {
+       intros.
+       apply Rge_trans with (r2 := sum_n_m (fun n => (gamma n)/(s (S N + k)%nat)) (S N) (S N + k)).
+       - apply Rle_ge.
+         apply sum_n_m_le_loc; intros; try lia.
+         unfold Rdiv.
+         apply Rmult_le_compat_l; [now left| ].
+         apply Rinv_le_contravar; trivial.
+         apply H0.
+         lia.
+       - unfold Rdiv.
+         rewrite sum_n_m_ext with (b := (fun n : nat => scal (/ s (S N + k)%nat) (gamma n))).
+         + rewrite sum_n_m_scal_l.
+           rewrite sum_n_m_sum_n; try lia.
+           unfold s.
+           unfold scal; simpl.
+           unfold mult; simpl.
+           rewrite Rmult_comm.
+           replace (1 - sum_n gamma N * / sum_n gamma (S (N + k))) with
+               ((sum_n gamma (S (N + k))%nat - sum_n gamma N) * / sum_n gamma (S (N + k))).
+           * apply Rmult_ge_compat_r.
+             left; apply Hs2.
+             right.
+             unfold minus; simpl.
+             unfold plus; simpl.
+             unfold opp; simpl.
+             now ring_simplify.
+           * field.
+             apply Rgt_not_eq.
+             apply H.
+         + intros.
+           unfold scal; simpl.
+           unfold mult; simpl.
+           now rewrite Rmult_comm.
+     }
+     simpl.
+     generalize (ex_lim_seq_incr  (sum_n (fun n : nat => / s n * gamma n)) ); intros.
+     cut_to  H2.
+   - destruct H2.
+     destruct x; trivial.
+     + assert (ex_finite_lim_seq  (sum_n (fun n : nat => / s n * gamma n)) ) 
+         by (now exists (r)).
+       apply ex_lim_seq_cauchy_corr in H3.
+       unfold ex_lim_seq_cauchy in H3.
+       assert (0 < /2) by lra.
+       specialize (H3 (mkposreal _ H4)).
+       destruct H3 as [N ?].
+       assert (forall k, s (S N + k)%nat < (s N)/(1 - mkposreal _ H4)).
+       {
+         intros.
+         specialize (H3 N (S N + k)%nat).
+         cut_to H3; try lia.
+         assert (1 - s N / s (S N + k)%nat < mkposreal _ H4).
+         {
+           specialize (H1 N k).
+           apply Rge_le in H1.
+           eapply Rle_lt_trans.
+           apply H1.
+           rewrite sum_n_m_ext with (b := fun n => / s n * gamma n) by (intros; unfold Rdiv; now rewrite Rmult_comm).
+           generalize (sum_n_m_sum_n (fun n : nat => / s n * gamma n) N (S N + k)); intros.
+           cut_to H5; try lia.
+           rewrite H5.
+           unfold minus; simpl.
+           unfold plus, opp; simpl.
+           rewrite Rabs_minus_sym in H3.
+           replace (S (N + k))%nat with (S N + k)%nat by lia.
+           rewrite Rabs_right in H3; trivial.
+           unfold minus, plus, opp in H5; simpl in H5.
+           unfold Rminus.
+           replace (S N + k)%nat with (S (N + k))%nat by lia.
+           rewrite <- H5.
+           apply Rle_ge.
+           apply sum_n_m_pos.
+           intros.
+           apply Rmult_le_pos.
+           - left; now apply Rinv_0_lt_compat.
+           - now left.
+         }
+         assert (s N / (s (S N + k)%nat) > 1 - mkposreal _ H4) by lra.
+         apply Rmult_gt_compat_r with (r :=  s (S N + k)%nat ) in H6; [| apply H].
+         unfold Rdiv in H6.
+         rewrite Rmult_assoc in H6.
+         rewrite Rinv_l in H6; [| apply Rgt_not_eq, H].
+         simpl in H6; simpl; lra.
+       }
+       assert (ex_finite_lim_seq s).
+       {
+         rewrite ex_finite_lim_seq_incr_n with (N := (S N)).
+         apply ex_finite_lim_seq_incr with (M := (s N)/(1 - mkposreal _ H4)).
+         - intros.
+           unfold s.
+           replace (S N + S n)%nat with (S (S N + n))%nat by lia.
+           rewrite sum_Sn.
+           replace (sum_n gamma (S N + n)) with (sum_n gamma (S N + n) + 0) at 1 by lra.
+           unfold plus; simpl.
+           apply Rplus_le_compat_l.
+           now left.
+         - intros.
+           left; apply H5.
+       }
+       destruct H6.
+       unfold s in H6.
+       apply is_lim_seq_unique in H6.
+       apply is_lim_seq_unique in Ha2.
+       rewrite Ha2 in H6.
+       discriminate.
+     + apply is_lim_seq_spec in H2; unfold is_lim_seq' in H2.
+       specialize (H2 0).
+       destruct H2.
+       specialize (H2 x).
+       cut_to H2; try lia.
+       assert (0 <= sum_n (fun n : nat => / s n * gamma n) x).
+       {
+         apply sum_n_nneg.
+         intros.
+         apply Rmult_le_pos.
+         - now left.
+         - now left.
+       }
+       lra.
+     - intros.
+       rewrite sum_Sn.
+       unfold plus; simpl.
+       assert (0 <= / s (S n) * gamma (S n)).
+       + apply Rmult_le_pos.
+         * now left.
+         * now left.
+       + lra.
+ Qed.
 
 Theorem Dvoretzky_DS_scale_prop
         (X : nat -> Ts -> R)
@@ -2522,7 +2732,7 @@ Theorem Dvoretzky_DS_scale_prop
         {alpha beta gamma : nat -> R}
         (hpos1 : forall n , 0 <= alpha n)
         (hpos2 : forall n , 0 <= beta n )
-        (hpos3 : forall n , 0 <= gamma n) :
+        (hpos3 : forall n , 0 < gamma n) :
   (forall n omega, Rabs (T n omega) <= Rmax (alpha n) ((1+beta n - gamma n)*(Rabs (X n omega)))) ->
   is_lim_seq alpha 0 ->
   ex_series beta ->
@@ -2535,7 +2745,7 @@ Theorem Dvoretzky_DS_scale_prop
     forall n omega, Rabs (T n omega) <= Rmax (alpha2 n) ((1+beta n)*(Rabs (X n omega)) - gamma2 n).
  Proof.
    intros.
-   destruct (paolo2 gamma hpos3 H2) as [rho [? ?]].
+   destruct (paolo2_pos gamma hpos3 H2) as [rho [? ?]].
    pose (alpha2 := fun n => Rmax (alpha n) ((1 + beta n) * rho n)).
    pose (gamma2 := fun n => (rho n) *(gamma n)).
    exists alpha2; exists gamma2.
@@ -2547,8 +2757,9 @@ Theorem Dvoretzky_DS_scale_prop
      apply Rmax_l.
    - intros.
      unfold gamma2.
-     apply Rmult_le_pos; trivial.
-     left; apply cond_pos.
+     apply Rmult_le_pos.
+     + left; apply cond_pos.
+     + now left.
    - unfold alpha2.
      apply is_lim_seq_max; trivial.
      apply is_lim_seq_ext with (u := fun n => rho n + (beta n) * (rho n)).
@@ -2573,6 +2784,7 @@ Theorem Dvoretzky_DS_scale_prop
          apply Ropp_le_contravar.
          rewrite Rmult_comm.
          apply Rmult_le_compat_l; trivial.
+         now left.
        * assert (rho n > Rabs (X n omega)) by lra.
          apply Rle_trans with (r2 := (Rmax (alpha n) ((1 + beta n) * rho n)) ); try apply Rmax_l.
          apply Rle_trans with (r2 := ((1 + beta n) * rho n)); try apply Rmax_r.
