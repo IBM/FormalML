@@ -705,6 +705,20 @@ Section sum_n.
       lia.
   Qed.
 
+  Lemma pos_ind_sum (gamma : nat -> R) (N : nat) :
+    (forall n : nat, 0 <= gamma n) ->
+    0 < sum_n gamma N ->
+    exists M : nat, 0 < gamma M.
+  Proof.
+    intros nneg.
+    induction N.
+    + rewrite sum_O; eauto.
+    + rewrite sum_Sn; intros Hpos.
+      destruct (Rlt_dec 0 (sum_n gamma N)); [eauto|].
+      destruct (Rlt_dec 0 (gamma (S N))); [eauto|].
+      unfold plus in *; simpl in *; lra.
+  Qed.
+    
   (* TODO(Kody) : Maybe get rid of Functional Extensionality? *)
   Lemma Series_nonneg {a : nat -> R} : ex_series a -> (forall n, 0 <= a n) -> 0 <= Series a.
   Proof.
