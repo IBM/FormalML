@@ -706,11 +706,9 @@ Section sum_n.
   Qed.
 
   Lemma pos_ind_sum (gamma : nat -> R) (N : nat) :
-    (forall n : nat, 0 <= gamma n) ->
     0 < sum_n gamma N ->
     exists M : nat, 0 < gamma M.
   Proof.
-    intros nneg.
     induction N.
     + rewrite sum_O; eauto.
     + rewrite sum_Sn; intros Hpos.
