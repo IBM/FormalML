@@ -1863,11 +1863,10 @@ Qed.
           {rvce : RandomVariable dom2 borel_sa ce}
           {rvgf: RandomVariable dom borel_sa (rvmult f g)} :
     IsFiniteExpectation prts f ->
-    IsFiniteExpectation prts (rvmult f g) ->
     is_conditional_expectation dom2 f ce ->
     is_conditional_expectation dom2 (rvmult f g) (Rbar_rvmult g ce).
   Proof.
-    intros isfef isfefg iscondf.
+    intros isfef iscondf.
     unfold is_conditional_expectation.
     intros.
     generalize (simple_approx_lim_seq g nnegg); intros.
@@ -2451,7 +2450,7 @@ Qed.
       apply nnegg.
    }
     rewrite H9 in H8.
-    specialize (H7 H8 H2).
+    specialize (H7 H2).
     unfold is_conditional_expectation; intros.
     assert (rv_eq
               (Rbar_rvmult (Rbar_rvmult (fun x : Ts => g x) (fun x : Ts => ce x))
