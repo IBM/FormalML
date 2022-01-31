@@ -1306,18 +1306,6 @@ Section Derman_Sacks.
          left; apply part_prod_n_pos.
      Qed.
 
-   Lemma Radd_minus (r1 r2 r3 : R) :
-     r1 = r2 + r3 <-> r1 - r2 = r3.
-   Proof.
-     split; intros; try lra.
-   Qed.
-
-  Lemma Radd_radd_minus (r1 r2 r3 r4 : R):
-    r1 + r2 = r3 + r4 <-> r3 - r1 = r2 - r4.
-  Proof.
-    split; intros; try lra.
-  Qed.
-
 
   Lemma sum_n_m_Series_alt (f : nat -> R) (n m : nat) :
      (n <= m)%nat ->
@@ -1444,7 +1432,7 @@ Section Derman_Sacks.
        forall (eps : posreal),
        exists (N : nat),
        forall (n p: nat),
-         (n > N)%nat ->
+         (n >= N)%nat ->
          Rabs (sum_n_m f n (n+p)%nat) < eps.
   Proof.
     split; intros.
@@ -1452,10 +1440,24 @@ Section Derman_Sacks.
       destruct H0.
       exists (S x); intros.
       apply H0; lia.
-    - Admitted.
+    - generalize (ex_series_Cauchy f); intros.
+      apply H0.
+      unfold Cauchy_series.
+      intros.
+      specialize (H eps).
+      destruct H as [N ?]; exists N.
+      intros.
+      destruct (le_dec n m).
+      + specialize (H n (m-n)%nat).
+        cut_to H; try lia.
+        now replace (n + (m - n))%nat with (m) in H by lia.
+      + rewrite sum_n_m_zero; try lia.
+        unfold norm, zero; simpl.
+        unfold abs; simpl.
+        rewrite Rabs_R0.
+        apply cond_pos.
+   Qed.
          
-
-   
   Lemma Rmax_list_map_seq_lt_gen (eps : R) {n0 n : nat} (X : nat -> R):
     (0 < n)%nat -> Rmax_list (map X (seq n0 n)) < eps <->
                    (forall k, (k < n)%nat -> X (n0 + k)%nat < eps).
@@ -1493,6 +1495,7 @@ Section Derman_Sacks.
              (seq N (S (n - N)))) < eps. 
    Proof.
      intros.
+     (* Cauchy_ex_series *)
      generalize (sum_series_eps _ H eps); intros.
      destruct H0.
      exists x.
@@ -2104,47 +2107,6 @@ Section Derman_Sacks.
         now apply FiniteExpectation_le.
   Qed.
  
- Lemma sign_sum {a b : R} :
-   Rabs a < Rabs b -> sign (b + a) = sign b.
- Proof.
-   intros.
-   destruct (Rle_dec b 0).
-   + destruct r.
-     -- rewrite (sign_eq_m1 b H0).
-        apply sign_eq_m1.
-        rewrite (Rabs_left _ H0) in H.
-        apply Rle_lt_trans with (r2 := b + Rabs a);
-          [apply Rplus_le_compat_l; apply Rle_abs|].
-        lra.
-     -- subst. rewrite sign_0.
-        rewrite Rabs_R0 in H.
-        rewrite Rplus_0_l.
-        assert (Rabs a < 0) by lra.
-        generalize (Rabs_pos a); intros.
-        exfalso. apply (Rlt_irrefl 0); lra.
-   + push_neg_in n.
-     rewrite (sign_eq_1 b); trivial.
-     apply sign_eq_1.
-     rewrite (Rabs_pos_eq b) in H; try lra.
-     destruct (Rle_dec a 0); try lra.
-     rewrite (Rabs_left1 _ r) in H.
-     lra.
- Qed.
-
- Lemma sign_sum_alt {a b c : R} :
-   Rabs a <= c -> Rabs b > c -> sign (b + a) = sign b.
- Proof.
-   intros; apply sign_sum; lra.
- Qed.
-
- Lemma Rabs_sign (a : R) : Rabs a = (sign a)*a.
- Proof.
-   split_Rabs.
-   + rewrite sign_eq_m1; trivial; lra.
-   + destruct Hge.
-     -- rewrite sign_eq_1; trivial; lra.
-     -- subst; lra.
- Qed.
 
  Lemma is_lim_seq_max (f g : nat -> R) (l : Rbar) :
    is_lim_seq f l ->

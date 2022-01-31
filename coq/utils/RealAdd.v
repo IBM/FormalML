@@ -1643,6 +1643,61 @@ Section ineqs.
     ring.
   Qed.
 
+   Lemma Radd_minus (r1 r2 r3 : R) :
+     r1 = r2 + r3 <-> r1 - r2 = r3.
+   Proof.
+     split; intros; try lra.
+   Qed.
+
+  Lemma Radd_radd_minus (r1 r2 r3 r4 : R):
+    r1 + r2 = r3 + r4 <-> r3 - r1 = r2 - r4.
+  Proof.
+    split; intros; try lra.
+  Qed.
+
+ Lemma sign_sum {a b : R} :
+   Rabs a < Rabs b -> sign (b + a) = sign b.
+ Proof.
+   intros.
+   destruct (Rle_dec b 0).
+   + destruct r.
+     -- rewrite (sign_eq_m1 b H0).
+        apply sign_eq_m1.
+        rewrite (Rabs_left _ H0) in H.
+        apply Rle_lt_trans with (r2 := b + Rabs a);
+          [apply Rplus_le_compat_l; apply Rle_abs|].
+        lra.
+     -- subst. rewrite sign_0.
+        rewrite Rabs_R0 in H.
+        rewrite Rplus_0_l.
+        assert (Rabs a < 0) by lra.
+        generalize (Rabs_pos a); intros.
+        exfalso. apply (Rlt_irrefl 0); lra.
+   + push_neg_in n.
+     rewrite (sign_eq_1 b); trivial.
+     apply sign_eq_1.
+     rewrite (Rabs_pos_eq b) in H; try lra.
+     destruct (Rle_dec a 0); try lra.
+     rewrite (Rabs_left1 _ r) in H.
+     lra.
+ Qed.
+
+ Lemma sign_sum_alt {a b c : R} :
+   Rabs a <= c -> Rabs b > c -> sign (b + a) = sign b.
+ Proof.
+   intros; apply sign_sum; lra.
+ Qed.
+
+ Lemma Rabs_sign (a : R) : Rabs a = (sign a)*a.
+ Proof.
+   split_Rabs.
+   + rewrite sign_eq_m1; trivial; lra.
+   + destruct Hge.
+     -- rewrite sign_eq_1; trivial; lra.
+     -- subst; lra.
+ Qed.
+
+
   (*
    This theorem also holds for a b : nonnegreal. But it is awkward since
    Rpower x y is defined in terms of exp and ln.
