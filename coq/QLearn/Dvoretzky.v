@@ -64,18 +64,15 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
       (T : nat -> R -> R)
       (F : nat -> R)
       (rvy : RandomVariable dom borel_sa (Y n)) 
-      (svy : IsFiniteExpectation prts (Y n)) 
       (svy2 : IsFiniteExpectation prts (rvsqr (Y n))) 
       (rvx : RandomVariable dom borel_sa (X n)) 
-      (svx: IsFiniteExpectation prts (X n))
       {isfexm:IsFiniteExpectation prts (rvsqr (rvminus (X n) (const theta)) )}
       (rvt : RandomVariable borel_sa borel_sa (fun r:R => T n r))        
       (svt: IsFiniteExpectation prts (fun r:Ts => T n (X n r))) 
       (svt2: IsFiniteExpectation prts (rvsqr (fun r:Ts => T n (X n r)))) 
       (rvx2 : RandomVariable dom borel_sa (X (S n)))
       {isfex2m:IsFiniteExpectation prts (rvsqr (rvminus (X (S n)) (const theta)) )}
-      {isfety:IsFiniteExpectation prts (((fun r : Ts => T n (X n r)) .* Y n))}
-      (svx2: IsFiniteExpectation prts (X (S n))) :
+      {isfety:IsFiniteExpectation prts (((fun r : Ts => T n (X n r)) .* Y n))} :
   (forall (n:nat), F n >= 0) ->
   (forall (n:nat) (r:R), Rle (Rabs ((T n r) - theta)) (F n * Rabs (r-theta))) ->
   (forall (n:nat), rv_eq (X (S n)) (rvplus (fun r => T n (X n r)) (Y n))) ->
@@ -133,7 +130,8 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
          assert (eqq2:rv_eq (const theta .* Y n)
                             (rvscale theta (Y n))) by reflexivity.
          rewrite eqq2.
-         now apply IsFiniteExpectation_scale.
+         apply IsFiniteExpectation_scale.
+         now apply IsFiniteExpectation_rvsqr_lower.
      - apply IsFiniteExpectation_scale.
        rewrite rvmult_comm.
        rewrite rvmult_rvminus_distr.
@@ -143,7 +141,8 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
          assert (eqq2:rv_eq (const theta .* Y n)
                             (rvscale theta (Y n))) by reflexivity.
          rewrite eqq2.
-         now apply IsFiniteExpectation_scale.
+         apply IsFiniteExpectation_scale.
+         now apply IsFiniteExpectation_rvsqr_lower.
      - rewrite rvmult_comm.
        rewrite rvmult_rvminus_distr.
        apply IsFiniteExpectation_minus; try typeclasses eauto.
@@ -152,20 +151,23 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
          assert (eqq2:rv_eq (const theta .* Y n)
                             (rvscale theta (Y n))) by reflexivity.
          rewrite eqq2.
-         now apply IsFiniteExpectation_scale.
+         apply IsFiniteExpectation_scale.
+         now apply IsFiniteExpectation_rvsqr_lower.
    }
    Unshelve.
    replace (FiniteExpectation prts (((fun r : Ts => T n (X n r)) .- const theta) .* Y n)) with 0.
    shelve.
    {
      symmetry.
+     assert (isfef: IsFiniteExpectation prts (Y n)) by now apply IsFiniteExpectation_rvsqr_lower.
      eapply FiniteCondexp_factor_out_zero_swapped
        with (sub := (pullback_rv_sub dom borel_sa (X n) rvx)) (rvf := rvy); trivial.
      - apply rvminus_rv.
        + apply (compose_rv (dom2 := borel_sa)); trivial.
          apply pullback_rv.
        + typeclasses eauto.
-     - revert H2.
+     - 
+       revert H2.
        apply almost_impl; apply all_almost; intros ??.
        unfold ConditionalExpectation_rv in H2.
        rewrite (FiniteCondexp_eq _ _ _) in H2.
@@ -355,9 +357,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
         (rvy : forall n, RandomVariable dom borel_sa (Y n)) 
         (rvx : forall n, RandomVariable dom borel_sa (X n)) 
         (rvt : forall n, RandomVariable borel_sa borel_sa (fun r:R => T n r))
-        (svy : forall n, IsFiniteExpectation prts (Y n)) 
         (svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))) 
-        (svx: forall n, IsFiniteExpectation prts (X n))
         {isfexm: forall n, IsFiniteExpectation prts (rvsqr (rvminus (X n) (const theta)) )}
         (svt: forall n, IsFiniteExpectation prts (fun r:Ts => T n (X n r)))
         {isfety:forall n, IsFiniteExpectation prts (((fun r : Ts => T n (X n r)) .* Y n))}
@@ -380,8 +380,8 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
   - intros.
     unfold pos_sq_fun, pos_sq; simpl.
     replace ((F n) * (F n)) with (Rsqr (F n)) by now simpl.
-    generalize (Dvoretzky_rel n theta X Y T F (rvy n) (svy n) _ (rvx n) (svx n)
-                              (rvt n) (svt n) _ (rvx (S n)) (svx (S n))); intros rel.
+    generalize (Dvoretzky_rel n theta X Y T F (rvy n) _ (rvx n) 
+                              (rvt n) (svt n) _ (rvx (S n))); intros rel.
     now apply rel.
  Qed.
 
@@ -2010,7 +2010,6 @@ Section Derman_Sacks.
        {rvX : forall (n:nat), RandomVariable dom borel_sa (X n)}
        {rvY : forall (n:nat), RandomVariable dom borel_sa (Y n)}
        {rvT : forall (n:nat), RandomVariable dom borel_sa (T n)}
-       (svy : forall n, IsFiniteExpectation prts (Y n)) 
        (svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
        (HC : forall n, 
            almostR2 _ eq
@@ -2080,9 +2079,9 @@ Section Derman_Sacks.
        (filt_sub0 := fun n => filt_sub (S n))
        (rv := rvZ)
        (isfesqr:=isfesqrZ) ; trivial.
-   - typeclasses eauto.
    - intros.
-     assert (isfef : IsFiniteExpectation prts (Y (S n))) by now typeclasses eauto.
+     assert (isfef : IsFiniteExpectation prts (Y (S n))) by (intros; now apply IsFiniteExpectation_rvsqr_lower).
+
      assert (rvs: RandomVariable (F (S n)) borel_sa (rvsign (T (S n)))).
      {
        apply rvsign_rv.
@@ -2296,7 +2295,6 @@ Section Derman_Sacks.
                eapply Rle_trans; [apply H1| now right].
    }
    generalize (DS_Dvor_ash_6_2_1 X Y T isfilt filt_sub); intros.
-   cut_to H6; trivial.
    specialize (H6 svy2).
    cut_to H6; trivial.
 
@@ -2436,7 +2434,6 @@ Theorem Dvoretzky_DS_extended
                eapply Rle_trans; [apply H1| now right].
    }
    generalize (DS_Dvor_ash_6_2_1 X Y T isfilt filt_sub); intros.
-   cut_to H6; trivial.
    specialize (H6 svy2).
    cut_to H6; trivial.
 

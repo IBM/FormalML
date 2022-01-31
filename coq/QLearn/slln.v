@@ -714,39 +714,8 @@ Instance filtration_sa_le_rv {Td:Type} {cod : SigmaAlgebra Td}
     apply is_filtration_le; trivial.
   Qed.
 
-  Lemma isfe_sqr_islp2 (f : Ts -> R) :
-    IsFiniteExpectation Prts (rvsqr f) ->
-    IsLp Prts 2 f.
-  Proof.
-    intros.
-    unfold IsLp.
-    apply IsFiniteExpectation_proper with (x := rvsqr f); trivial.
-    intro x.
-    rewrite rvpower2.
-    - unfold rvsqr, rvabs.
-      now rewrite <- Rsqr_abs.
-    - apply nnfabs.
-  Qed.
-
-  Instance isfe_l2_prod (f g : Ts -> R)
-           (rv1 : RandomVariable dom borel_sa f)
-           (rv2 : RandomVariable dom borel_sa g)  :
-    IsFiniteExpectation Prts (rvsqr f) ->
-    IsFiniteExpectation Prts (rvsqr g) ->
-    IsFiniteExpectation Prts (rvmult f g).
-  Proof.
-    intros.
-    apply is_L2_mult_finite; trivial; now apply isfe_sqr_islp2.
-  Qed.
-
-  Instance isfe_sqr_seq (X : nat -> Ts -> R)
-           (rv : forall n, RandomVariable dom borel_sa (X n)) :
-    (forall n, IsFiniteExpectation Prts (rvsqr (X n))) ->
-    forall j k, IsFiniteExpectation Prts (rvmult (X j) (X k)).
-  Proof.
-    intros.
-    now apply isfe_l2_prod.
-  Qed.
+Existing Instance isfe_l2_prod.
+Existing Instance isfe_sqr_seq.
 
 Lemma expec_cross_zero_filter (X : nat -> Ts -> R)
       {F : nat -> SigmaAlgebra Ts}
@@ -754,7 +723,6 @@ Lemma expec_cross_zero_filter (X : nat -> Ts -> R)
       (filt_sub : forall n, sa_sub (F n) dom)
       {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {frf : forall (n:nat), IsFiniteExpectation Prts (X n)} 
       {frf2 : forall (k:nat), IsFiniteExpectation Prts (rvsqr (X k))} 
       (HC : forall n, 
           almostR2 Prts eq
@@ -773,6 +741,8 @@ Proof.
     erewrite (FiniteCondexp_eq _ ) in HC.
     apply (almost_f_equal _ real) in HC.
     apply HC.
+    Unshelve.
+    now apply IsFiniteExpectation_rvsqr_lower.
  Qed.
 
 Lemma SimpleExpectation_rvsum {n}  
@@ -809,7 +779,6 @@ Lemma expec_cross_zero_sum_shift_filter (X : nat -> Ts -> R) (m:nat)
       (filt_sub : forall n, sa_sub (F n) dom)
       {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {frf : forall (n:nat), IsFiniteExpectation Prts (X n)}
       {frf2 : forall (k:nat), IsFiniteExpectation Prts (rvsqr (X k))}
       (HC : forall n, 
           almostR2 Prts eq
@@ -849,7 +818,6 @@ Lemma expec_cross_zero_sum2_shift_filter (X : nat -> Ts -> R) (m : nat)
       (filt_sub : forall n, sa_sub (F n) dom)
       {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {isfe : forall (n:nat), IsFiniteExpectation Prts (X n)}
       {isfe2 : forall (k:nat), IsFiniteExpectation Prts (rvsqr (X k))}
       {isfe_mult_sum: forall (k j:nat),
                              IsFiniteExpectation Prts (rvmult (rvsum (fun n : nat => X (n + m)%nat) j) 
@@ -1995,7 +1963,6 @@ Qed.
       {adapt : IsAdapted borel_sa X F}
       (eps:posreal) (m:nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {isfe : forall (n:nat), IsFiniteExpectation Prts (X n)}
       (isfesqr : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k)))
       (HC : forall n, 
           almostR2 Prts eq
@@ -2237,7 +2204,8 @@ Proof.
                              (cutoff_indicator (S j) eps Sum))
                      (X ((S j)+m)%nat))) by now rewrite rvmult_assoc.
         erewrite (Expectation_ext H0).
-        now eapply indicator_prod_cross_shift_filter.
+        eapply indicator_prod_cross_shift_filter; trivial.
+        intros; now apply IsFiniteExpectation_rvsqr_lower.
      + generalize (Expectation_IsFiniteExpectation _ _ _ H0); intros isfee2.
        rewrite (FiniteExpectation_Expectation _ _) in H0.
        invcs H0.
@@ -2281,7 +2249,6 @@ Qed.
 
 Lemma ash_6_1_4 (X: nat -> Ts -> R) (eps:posreal) (m:nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {isfe : forall (n:nat), IsFiniteExpectation Prts (X n)}
       (isfe2 : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k)))
       (HC : forall n, 
           almostR2 Prts eq
@@ -2304,7 +2271,6 @@ Lemma var_sum_cross_0_offset_filter (X : nat -> Ts -> R) (m : nat)
       (filt_sub : forall n, sa_sub (F n) dom)
       {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      (isfe : forall k : nat, IsFiniteExpectation Prts (X k))
       (isfe2 : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k)))
       (HC : forall n, 
           almostR2 Prts eq
@@ -2976,7 +2942,6 @@ Lemma Ash_6_2_1_filter_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
       (filt_sub : forall n, sa_sub (F n) dom)
       {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      (isfe : forall k : nat, IsFiniteExpectation Prts (X k))
       (isfesqr : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k)))
       (HC : forall n, 
           almostR2 Prts eq
@@ -2988,7 +2953,7 @@ Lemma Ash_6_2_1_filter_helper (X : nat -> Ts -> R) (eps : posreal) (m : nat)
 Proof.
   intros.
   generalize (ash_6_1_4_filter X isfilt filt_sub); intros.
-  specialize (H eps m _ _ _ HC (isfe_sqr_Sum X m)).
+  specialize (H eps m _ _ HC (isfe_sqr_Sum X m)).
   simpl in H.
   generalize (Lim_seq_le _ _ H); intros.
   unfold Sum.
@@ -3000,7 +2965,7 @@ Proof.
     replace (Rbar.Finite (/ (Rsqr (pos eps)))) with (Rbar.Finite (/ (pos (mkposreal _ (sqr_pos eps))))) by now simpl.
     rewrite Rbar_mult_div_pos.
     apply Rbar_div_pos_le.
-    generalize (var_sum_cross_0_offset_filter X m _ filt_sub _ _ HC); intros.
+    generalize (var_sum_cross_0_offset_filter X m _ filt_sub _ HC); intros.
     simpl in H1.
     rewrite Lim_seq_ext with (v := sum_n (fun n : nat => FiniteExpectation Prts (rvsqr (X (n + m)%nat)))).
     + apply Lim_seq_sup_le.
@@ -3010,7 +2975,6 @@ Qed.
 
  Lemma Ash_6_2_1_helper2 (X : nat -> Ts -> R) (eps : posreal)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-      (isfe : forall k : nat, IsFiniteExpectation Prts (X k))
       (isfe2 : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k))) :
     ex_series (fun n => FiniteExpectation Prts (rvsqr (X n))) ->
     is_lim_seq (fun m =>
@@ -3127,7 +3091,6 @@ Qed.
       (filt_sub : forall n, sa_sub (F n) dom)
       {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {isfe : forall k : nat, IsFiniteExpectation Prts (X k)}
       {isfe2 : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k))}
       (HC : forall n, 
           almostR2 Prts eq
@@ -3140,7 +3103,7 @@ Qed.
       intros.
       unfold Sum.
       rewrite Ash_6_2_1_helper3; trivial.
-      generalize (Ash_6_2_1_filter_helper X eps (S m) _ _ _ _ HC); intros.
+      generalize (Ash_6_2_1_filter_helper X eps (S m) _ _ _ HC); intros.
       simpl in H.
       rewrite Lim_seq_ext with
           (v :=  fun n : nat =>
@@ -3179,7 +3142,6 @@ Qed.
       (filt_sub : forall n, sa_sub (F n) dom)
       {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {isfe : forall k : nat, IsFiniteExpectation Prts (X k)}
       {isfe2 : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k))}
       (HC : forall n, 
           almostR2 Prts eq
@@ -3191,7 +3153,7 @@ Qed.
      is_lim_seq (fun m => ps_P (union_of_collection (fun k => event_ge dom (rvabs (rvminus (Sum (k + (S m))%nat) (Sum m))) eps))) 0. 
     Proof.
       intros.
-      generalize (Ash_6_2_1_helper2 X eps _ _ H); intros.
+      generalize (Ash_6_2_1_helper2 X eps _ H); intros.
       assert (forall m, 
                  0 <= (fun m : nat =>
                                 ps_P
@@ -3335,7 +3297,6 @@ Qed.
       (filt_sub : forall n, sa_sub (F n) dom)
       {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-      {isfe : forall k : nat, IsFiniteExpectation Prts (X k)}
       {isfesqr : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k))}
       (HC : forall n, 
           almostR2 Prts eq
@@ -3359,10 +3320,9 @@ Qed.
     apply cauchy_seq_at_ex_series.
     apply H2.
   Qed.
-
+  
   Lemma Ash_6_2_1 (X : nat -> Ts -> R)
         {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-        {isfe : forall k : nat, IsFiniteExpectation Prts (X k)}
         {isfe2 : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k))}
       (HC : forall n, 
           almostR2 Prts eq
@@ -3466,7 +3426,6 @@ Qed.
 
   Lemma Ash_6_2_2 (X : nat -> Ts -> R) (b : nat -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-      {isfe : forall k : nat, IsFiniteExpectation Prts (X k)}
       {isfe2 : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k))}
       {isfes:forall n, IsFiniteExpectation Prts (rvsqr (rvscale (/ b n) (X n)))}
       (HC : forall n, 
@@ -3485,6 +3444,9 @@ Qed.
       apply Rgt_not_eq.
       apply H.
     }
+    assert (isfe:forall k : nat, IsFiniteExpectation Prts (X k))
+      by (intros; now apply IsFiniteExpectation_rvsqr_lower).
+
     generalize (SCESA_scale X b HC bneq0); intros.
     assert (isfemult' : forall k j : nat,
              IsFiniteExpectation Prts
@@ -3526,7 +3488,6 @@ Qed.
       (filt_sub : forall n, sa_sub (F n) dom)
       {adapt : IsAdapted borel_sa X F}
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))}
-      {isfe : forall k : nat, IsFiniteExpectation Prts (X k)}
       {isfe2 : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k))}
       {isfes:forall n, IsFiniteExpectation Prts (rvsqr (rvscale (/ b n) (X n)))}
       (HC : forall n, 
@@ -3556,7 +3517,6 @@ Qed.
       apply adapt.
     }
     specialize (H2 isad2 (fun n => @rvscale_rv Ts dom (Rinv (b n)) (X n) (rv n))).
-    cut_to H2; try typeclasses eauto.
     specialize (H2 isfes).
     cut_to H2; trivial.
     - destruct H2 as [? [? ?]].
@@ -3576,6 +3536,8 @@ Qed.
       apply H.
     - intros n.
       specialize (HC n).
+      assert (isfe:IsFiniteExpectation Prts (X (S n)))
+        by now apply IsFiniteExpectation_rvsqr_lower.
       generalize (Condexp_scale Prts (filt_sub n) (/ b (S n)) (X (S n))); intros.
       apply almostR2_prob_space_sa_sub_lift in H3.
       revert HC; apply almost_impl.

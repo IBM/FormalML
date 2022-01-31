@@ -40,6 +40,20 @@ Section L2.
     apply big2.
   Qed.
 
+  Lemma isfe_sqr_islp2 (f : Ts -> R) :
+    IsFiniteExpectation prts (rvsqr f) ->
+    IsLp prts 2 f.
+  Proof.
+    intros.
+    unfold IsLp.
+    apply IsFiniteExpectation_proper with (x := rvsqr f); trivial.
+    intro x.
+    rewrite rvpower2.
+    - unfold rvsqr, rvabs.
+      now rewrite <- Rsqr_abs.
+    - apply nnfabs.
+  Qed.
+
   Global Instance is_L2_mult_finite x y 
         {xrv:RandomVariable dom borel_sa x}
         {yrv:RandomVariable dom borel_sa y} : 
@@ -89,6 +103,35 @@ Section L2.
         invcs eqq2.
         rewrite H0, H1.
         reflexivity.
+  Qed.
+
+  Lemma isfe_l2_prod (f g : Ts -> R)
+           (rv1 : RandomVariable dom borel_sa f)
+           (rv2 : RandomVariable dom borel_sa g)  :
+    IsFiniteExpectation prts (rvsqr f) ->
+    IsFiniteExpectation prts (rvsqr g) ->
+    IsFiniteExpectation prts (rvmult f g).
+  Proof.
+    intros.
+    apply is_L2_mult_finite; trivial; now apply isfe_sqr_islp2.
+  Qed.
+
+  Lemma isfe_sqr_seq (X : nat -> Ts -> R)
+           (rv : forall n, RandomVariable dom borel_sa (X n)) :
+    (forall n, IsFiniteExpectation prts (rvsqr (X n))) ->
+    forall j k, IsFiniteExpectation prts (rvmult (X j) (X k)).
+  Proof.
+    intros.
+    now apply isfe_l2_prod.
+  Qed.
+
+  Lemma IsFiniteExpectation_rvsqr_lower f
+           {rv: RandomVariable dom borel_sa f}
+           {isfe2 : IsFiniteExpectation prts (rvsqr f)} :
+    IsFiniteExpectation prts f.
+  Proof.
+    apply IsL2_Finite; trivial.
+    now apply isfe_sqr_islp2.
   Qed.
 
   Definition L2RRVinner (x y:LpRRV prts 2) : R
@@ -694,3 +737,4 @@ Section L2.
     Hilbert.Pack (LpRRVq prts 2) (Hilbert.Class _ _ L2RRVq_Hilbert_mixin) (LpRRVq prts 2).
 
 End L2.
+
