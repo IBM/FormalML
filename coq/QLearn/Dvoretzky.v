@@ -2723,6 +2723,7 @@ Proof.
          now left.
        + lra.
  Qed.
+ 
 
  Lemma lim_seq_sum_shift_inf1 (f : nat -> R) (N : nat) :
    is_lim_seq (sum_n f) p_infty <->
@@ -2778,11 +2779,48 @@ Proof.
        f_equal; lia.
   Qed.
 
+  Lemma paolo2 (gamma : nat -> R) :
+   (forall n, 0 <= gamma n) ->
+   is_lim_seq (sum_n gamma) p_infty ->
+   exists (rho : nat -> posreal),
+     is_lim_seq rho 0 /\ is_lim_seq (sum_n (fun n => rho n * gamma n)) p_infty.
+  Proof.
+    intros.
+    assert (exists N, 0 < gamma N).
+    {
+      apply is_lim_seq_spec in H0.
+      unfold is_lim_seq' in H0.
+      specialize (H0 0).
+      destruct H0 as [N ?].
+      specialize (H0 N).
+      cut_to H0; try lia.
+      now apply pos_ind_sum with (N := N).
+    }
+    destruct H1 as [N ?].
+    generalize (paolo2_pos (fun n => gamma (n + N)%nat)); intros.
+    cut_to H2; trivial.
+    - destruct H2 as [rho [? ?]].
+      assert (0 < 1) by lra.
+      exists (fun n => if (lt_dec n N) then (mkposreal _ H4) else rho (n - N)%nat).
+      split.
+      + apply is_lim_seq_incr_n with (N := N).
+        apply is_lim_seq_ext with (u := rho); trivial.
+        intros.
+        match_destr; try lia.
+        now replace (n + N - N)%nat with (n) by lia.
+      + rewrite lim_seq_sum_shift_inf with (N := N).
+        apply is_lim_seq_ext with (u := sum_n (fun n => rho n * gamma (n + N)%nat)); trivial.
+        intros.
+        apply sum_n_ext; intros.
+        match_destr; try lia.
+        now replace (n0 + N - N)%nat with (n0) by lia.
+    - now rewrite <- lim_seq_sum_shift_inf.
+  Qed.
+    
 Theorem Dvoretzky_DS_scale_prop
         (X : nat -> Ts -> R)
         (T : nat -> Ts -> R)
         {alpha beta gamma : nat -> R}
-        (hpos0 : 0 < gamma 0%nat)
         (hpos1 : forall n , 0 <= alpha n)
         (hpos2 : forall n , 0 <= beta n )
         (hpos3 : forall n , 0 <= gamma n) :
@@ -2798,7 +2836,7 @@ Theorem Dvoretzky_DS_scale_prop
     forall n omega, Rabs (T n omega) <= Rmax (alpha2 n) ((1+beta n)*(Rabs (X n omega)) - gamma2 n).
  Proof.
    intros.
-   destruct (paolo2_pos gamma hpos0 hpos3 H2) as [rho [? ?]].
+   destruct (paolo2 gamma hpos3 H2) as [rho [? ?]].
    pose (alpha2 := fun n => Rmax (alpha n) ((1 + beta n) * rho n)).
    pose (gamma2 := fun n => (rho n) *(gamma n)).
    exists alpha2; exists gamma2.
