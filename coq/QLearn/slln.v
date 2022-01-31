@@ -1985,7 +1985,9 @@ Qed.
     forall a,
       IsFiniteExpectation Prts (rvsqr (rvsum (fun n => X (n + m)%nat) a)).
   Proof.
-    Admitted.
+    intros.
+    now apply isfe_Sum_from_crossmult.
+  Qed.
 
   Lemma ash_6_1_4_filter (X: nat -> Ts -> R) {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)

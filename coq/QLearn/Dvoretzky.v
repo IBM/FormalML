@@ -2726,31 +2726,10 @@ Proof.
    is_lim_seq (sum_n f) p_infty <->
    is_lim_seq (sum_n (fun n => f (n + N)%nat)) p_infty.
  Proof.
-   destruct (lt_dec 0 N).
-   - generalize (lim_seq_sum_shift_inf1 f (N-1)); intros.
-     rewrite H.
-     split; intros.
-     + apply is_lim_seq_ext with (u := sum_n (fun n : nat => f (n + S (N - 1))%nat)).
-       * intros.
-         apply sum_n_ext; intros.
-         f_equal; lia.
-       * apply H0.
-     + apply is_lim_seq_ext with (v := sum_n (fun n : nat => f (n + S (N - 1))%nat)) in H0; trivial.
-       intros.
-       apply sum_n_ext; intros.
-       f_equal; lia.
-   - assert (N = 0%nat) by lia.
-     rewrite H.
-     split; intros.
-     + apply is_lim_seq_ext with (u := sum_n f); trivial.
-       intros.
-       apply sum_n_ext; intros.
-       f_equal; lia.
-     + apply is_lim_seq_ext with (v := sum_n f) in H0; trivial.
-       intros.
-       apply sum_n_ext; intros.
-       f_equal; lia.
-  Qed.
+   destruct N.
+   - split; apply is_lim_seq_ext; intros; apply sum_n_ext; intros; f_equal; lia.
+   - apply lim_seq_sum_shift_inf1.
+ Qed.
 
   Lemma paolo2 (gamma : nat -> R) :
    (forall n, 0 <= gamma n) ->
