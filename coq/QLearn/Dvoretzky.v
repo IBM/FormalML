@@ -327,29 +327,6 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
       + now exists x.
   Qed.
 
-  Lemma SimpleExpectation_nneg (f : Ts -> R)
-        {frf: FiniteRangeFunction f}
-        {rvf : RandomVariable dom borel_sa f} :
-    NonnegativeFunction f ->
-    0 <= SimpleExpectation f.
-  Proof.
-    intros.
-    replace (0) with (SimpleExpectation (const 0)).
-    - apply SimpleExpectation_le.
-      apply H.
-    - apply SimpleExpectation_const.
-  Qed.
-
-  Lemma FiniteExpectation_sq_nneg (f : Ts -> R)
-        (svy2 : IsFiniteExpectation prts (rvsqr f)) 
-    :
-    0 <= FiniteExpectation prts (rvsqr f).
-  Proof.
-    apply FiniteExpectation_pos.
-    intro x.
-    apply Rle_0_sqr.
-  Qed.
-
   Lemma Dvoretzky_8_F_le_1 (theta:R) 
         (X Y : nat -> Ts -> R)
         (T : nat -> R -> R)
@@ -2831,6 +2808,36 @@ Theorem Dvoretzky_DS_scale_prop
             specialize (hpos3 n); lra.
          -- apply Rmult_le_compat_l; try lra.
             specialize (hpos2 n); lra.
-  Qed.
+ Qed.
+
+ Theorem Dvoretzky_DS_extended_alt
+        (X Y : nat -> Ts -> R)
+        (T : nat -> Ts -> R)
+        {F : nat -> SigmaAlgebra Ts}
+        (isfilt : IsFiltration F)
+        (filt_sub : forall n, sa_sub (F n) dom)
+        {adaptX : IsAdapted borel_sa X F}
+        {adaptT : IsAdapted borel_sa T F}       
+        {alpha beta gamma : nat -> Ts -> R}
+        (hpos1 : forall n x, 0 <= alpha n x)
+        (hpos2 : forall n x, 0 <= beta n x )
+        (hpos3 : forall n x, 0 <= gamma n x)
+        (rvy : forall n, RandomVariable dom borel_sa (Y n))
+        (rvx : forall n, RandomVariable dom borel_sa (X n)) 
+        (rvt : forall n, RandomVariable _ borel_sa (fun r:Ts => T n r))
+        {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
+   (forall (n:nat), rv_eq (X (S n)) (rvplus (T n) (Y n))) ->
+  (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
+                     (fun x : Ts => const 0 x)) ->
+  (forall n omega, Rabs (T n omega) <= 
+                   Rmax (alpha n omega) ((1+beta n omega - gamma n omega)*(Rabs (X n omega)))) ->
+  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
+  almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
+  almost prts (fun omega => ex_series (fun n => beta n omega))->
+  almost prts (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
+  almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
+ Proof.
+Admitted.
+
 
 End Derman_Sacks.

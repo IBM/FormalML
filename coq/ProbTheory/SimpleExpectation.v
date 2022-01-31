@@ -1471,6 +1471,21 @@ Section SimpleConditionalExpectation.
       repeat red; intros; simpl; intuition.
   Qed.
   
+
+  Lemma SimpleExpectation_nneg (f : Ts -> R)
+        {frf: FiniteRangeFunction f}
+        {rvf : RandomVariable dom borel_sa f} :
+    NonnegativeFunction f ->
+    0 <= SimpleExpectation f.
+  Proof.
+    intros.
+    replace (0) with (SimpleExpectation (const 0)).
+    - apply SimpleExpectation_le.
+      apply H.
+    - apply SimpleExpectation_const.
+  Qed.
+
+
   Lemma scaleSimpleExpectation' (c:R)
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}

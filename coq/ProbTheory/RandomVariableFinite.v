@@ -634,6 +634,16 @@ Section fe.
     split; trivial.
   Qed.
 
+  Lemma FiniteExpectation_sq_nneg (f : Ts -> R)
+        (svy2 : IsFiniteExpectation (rvsqr f)) 
+    :
+    0 <= FiniteExpectation (rvsqr f).
+  Proof.
+    apply FiniteExpectation_pos.
+    intro x.
+    apply Rle_0_sqr.
+  Qed.
+
   Instance series_rv_pos
          (Xn : nat -> Ts -> R)
          (Xn_pos : forall n, NonnegativeFunction (Xn n)) 
