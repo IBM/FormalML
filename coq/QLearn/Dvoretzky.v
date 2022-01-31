@@ -2009,7 +2009,6 @@ Section Derman_Sacks.
        {adaptT : IsAdapted borel_sa T F}       
        {rvX : forall (n:nat), RandomVariable dom borel_sa (X n)}
        {rvY : forall (n:nat), RandomVariable dom borel_sa (Y n)}
-       {isfemult : forall k j : nat, IsFiniteExpectation prts (rvmult (Y k) (Y j))}
        {rvT : forall (n:nat), RandomVariable dom borel_sa (T n)}
        (svy : forall n, IsFiniteExpectation prts (Y n)) 
        (svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
@@ -2060,22 +2059,27 @@ Section Derman_Sacks.
      unfold IsFiltration; intros.
      apply isfilt.
    }
-   assert (isfemultZ : forall k j : nat, IsFiniteExpectation prts (rvmult (Z k) (Z j))).
+   assert (isfesqrZ : forall k : nat, IsFiniteExpectation prts (rvsqr (Z k))).
    {
      intros.
      unfold Z.
-     rewrite <- rvmult_assoc.
-     apply IsFiniteExpectation_mult_sign; try typeclasses eauto.
-     rewrite rvmult_assoc.
-     rewrite (rvmult_comm (rvsign (T k))).
-     rewrite <- rvmult_assoc.
-     apply IsFiniteExpectation_mult_sign; try typeclasses eauto.
+     apply IsFiniteExpectation_proper with
+         (x := rvmult (rvmult (Y k) (rvsign (T k))) (rvmult (Y k) (rvsign (T k)))).
+     - intros ?.
+       unfold rvmult, rvsign, rvsqr.
+       now unfold Rsqr.
+       
+     - rewrite <- rvmult_assoc.
+       apply IsFiniteExpectation_mult_sign; try typeclasses eauto.
+       rewrite rvmult_assoc.
+       rewrite (rvmult_comm (rvsign (T k))).
+       rewrite <- rvmult_assoc.
+       apply IsFiniteExpectation_mult_sign; try typeclasses eauto.
    } 
    apply Ash_6_2_1_filter with 
        (filt_sub0 := fun n => filt_sub (S n))
        (rv := rvZ)
-       (isfemult0:=isfemultZ)
-   ; trivial.
+       (isfesqr:=isfesqrZ) ; trivial.
    - typeclasses eauto.
    - intros.
      assert (isfef : IsFiniteExpectation prts (Y (S n))) by now typeclasses eauto.
@@ -2212,6 +2216,8 @@ Section Derman_Sacks.
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
         (rvx : forall n, RandomVariable dom borel_sa (X n)) 
         (rvt : forall n, RandomVariable _ borel_sa (fun r:Ts => T n r))
+        (svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
+
         {isfemult : forall k j : nat, IsFiniteExpectation prts (rvmult (Y k) (Y j))}
    :
    (forall (n:nat), rv_eq (X (S n)) (rvplus (T n) (Y n))) ->
@@ -2225,12 +2231,6 @@ Section Derman_Sacks.
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
-   assert (svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))).
-   {
-     intros.
-     rewrite rvsqr_eq.
-     apply isfemult.
-   } 
    assert (svy : forall n, IsFiniteExpectation prts (Y n)).
    {
      intros.
