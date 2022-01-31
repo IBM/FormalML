@@ -2551,24 +2551,28 @@ Proof.
   Qed.
 
  Lemma paolo2_pos (gamma : nat -> R) :
-   (forall n, 0 < gamma n) ->
+   0 < gamma 0%nat ->
+   (forall n, 0 <= gamma n) ->
    is_lim_seq (sum_n gamma) p_infty ->
    exists (rho : nat -> posreal),
      is_lim_seq rho 0 /\ is_lim_seq (sum_n (fun n => rho n * gamma n)) p_infty.
  Proof.
-   intros Ha1 Ha2.
-    pose (s := sum_n gamma).
+   intros Ha0 Ha1 Ha2.
+   pose (s := sum_n gamma).
+   assert (forall n, 0 < s n).
+   {
+     unfold s; intros.
+     induction n.
+     - now rewrite sum_O.
+     - rewrite sum_Sn.
+       unfold plus; simpl.
+       specialize (Ha1 (S n)).
+       lra.
+   }
     assert (Hs1 : is_lim_seq (fun n => /(s n)) 0).
      {
        replace (Finite 0) with (Rbar_inv p_infty) by now simpl.
        apply is_lim_seq_inv; trivial; try discriminate.
-     }
-     assert (forall n, 0 < s n).
-     {
-       unfold s; intros.
-       apply sum_n_pos.
-       intros.
-       apply Ha1.
      }
      assert (forall n m, (n <= m)%nat -> (s n <= s m)).
      {
@@ -2582,9 +2586,7 @@ Proof.
          replace (sum_n_m gamma 0 n) with ((sum_n_m gamma 0 n) + 0) at 1 by lra.
          unfold plus; simpl.
          apply Rplus_le_compat_l.
-         apply sum_n_m_pos.
-         intros.
-         now left.
+         apply sum_n_m_pos; trivial.
        - assert (n = m) by lia.
          now rewrite H1.
      }
@@ -2602,7 +2604,7 @@ Proof.
        - apply Rle_ge.
          apply sum_n_m_le_loc; intros; try lia.
          unfold Rdiv.
-         apply Rmult_le_compat_l; [now left| ].
+         apply Rmult_le_compat_l; trivial.
          apply Rinv_le_contravar; trivial.
          apply H0.
          lia.
@@ -2670,9 +2672,8 @@ Proof.
            apply Rle_ge.
            apply sum_n_m_pos.
            intros.
-           apply Rmult_le_pos.
-           - left; now apply Rinv_0_lt_compat.
-           - now left.
+           apply Rmult_le_pos; trivial.
+           left; now apply Rinv_0_lt_compat.
          }
          assert (s N / (s (S N + k)%nat) > 1 - mkposreal _ H4) by lra.
          apply Rmult_gt_compat_r with (r :=  s (S N + k)%nat ) in H6; [| apply H].
@@ -2691,8 +2692,7 @@ Proof.
            rewrite sum_Sn.
            replace (sum_n gamma (S N + n)) with (sum_n gamma (S N + n) + 0) at 1 by lra.
            unfold plus; simpl.
-           apply Rplus_le_compat_l.
-           now left.
+           apply Rplus_le_compat_l; trivial.
          - intros.
            left; apply H5.
        }
@@ -2711,8 +2711,7 @@ Proof.
        {
          apply sum_n_nneg.
          intros.
-         apply Rmult_le_pos.
-         - now left.
+         apply Rmult_le_pos; trivial.
          - now left.
        }
        lra.
@@ -2720,19 +2719,73 @@ Proof.
        rewrite sum_Sn.
        unfold plus; simpl.
        assert (0 <= / s (S n) * gamma (S n)).
-       + apply Rmult_le_pos.
-         * now left.
-         * now left.
+       + apply Rmult_le_pos; trivial.
+         now left.
        + lra.
  Qed.
+
+ Lemma lim_seq_sum_shift_inf1 (f : nat -> R) (N : nat) :
+   is_lim_seq (sum_n f) p_infty <->
+   is_lim_seq (sum_n (fun n => f (n + (S N))%nat)) p_infty.
+ Proof.
+     generalize (sum_shift_diff f N); intros.
+     generalize (is_lim_seq_ext _ _ p_infty H); intros.
+     split; intros.
+     - apply H0.
+       apply is_lim_seq_minus with (l1 := p_infty) (l2 := sum_n f N).
+       + now apply is_lim_seq_incr_n with (N := S N) in H1.
+       + apply is_lim_seq_const.
+       + unfold is_Rbar_minus, is_Rbar_plus.
+         now simpl.
+     - symmetry in H.
+       generalize (is_lim_seq_ext _ _ p_infty H); intros.
+       apply H2 in H1.
+       apply is_lim_seq_incr_n with (N := S N).
+       apply is_lim_seq_ext with (u := fun a : nat => (sum_n f (a + S N) - sum_n f N) + (sum_n f N)).
+       + intros; lra.
+       + apply is_lim_seq_plus with (l1 := p_infty) (l2 := sum_n f N); trivial.
+         apply is_lim_seq_const.
+         unfold is_Rbar_plus; now simpl.
+  Qed.
+
+ Lemma lim_seq_sum_shift_inf (f : nat -> R) (N : nat) :
+   is_lim_seq (sum_n f) p_infty <->
+   is_lim_seq (sum_n (fun n => f (n + N)%nat)) p_infty.
+ Proof.
+   destruct (lt_dec 0 N).
+   - generalize (lim_seq_sum_shift_inf1 f (N-1)); intros.
+     rewrite H.
+     split; intros.
+     + apply is_lim_seq_ext with (u := sum_n (fun n : nat => f (n + S (N - 1))%nat)).
+       * intros.
+         apply sum_n_ext; intros.
+         f_equal; lia.
+       * apply H0.
+     + apply is_lim_seq_ext with (v := sum_n (fun n : nat => f (n + S (N - 1))%nat)) in H0; trivial.
+       intros.
+       apply sum_n_ext; intros.
+       f_equal; lia.
+   - assert (N = 0%nat) by lia.
+     rewrite H.
+     split; intros.
+     + apply is_lim_seq_ext with (u := sum_n f); trivial.
+       intros.
+       apply sum_n_ext; intros.
+       f_equal; lia.
+     + apply is_lim_seq_ext with (v := sum_n f) in H0; trivial.
+       intros.
+       apply sum_n_ext; intros.
+       f_equal; lia.
+  Qed.
 
 Theorem Dvoretzky_DS_scale_prop
         (X : nat -> Ts -> R)
         (T : nat -> Ts -> R)
         {alpha beta gamma : nat -> R}
+        (hpos0 : 0 < gamma 0%nat)
         (hpos1 : forall n , 0 <= alpha n)
         (hpos2 : forall n , 0 <= beta n )
-        (hpos3 : forall n , 0 < gamma n) :
+        (hpos3 : forall n , 0 <= gamma n) :
   (forall n omega, Rabs (T n omega) <= Rmax (alpha n) ((1+beta n - gamma n)*(Rabs (X n omega)))) ->
   is_lim_seq alpha 0 ->
   ex_series beta ->
@@ -2745,7 +2798,7 @@ Theorem Dvoretzky_DS_scale_prop
     forall n omega, Rabs (T n omega) <= Rmax (alpha2 n) ((1+beta n)*(Rabs (X n omega)) - gamma2 n).
  Proof.
    intros.
-   destruct (paolo2_pos gamma hpos3 H2) as [rho [? ?]].
+   destruct (paolo2_pos gamma hpos0 hpos3 H2) as [rho [? ?]].
    pose (alpha2 := fun n => Rmax (alpha n) ((1 + beta n) * rho n)).
    pose (gamma2 := fun n => (rho n) *(gamma n)).
    exists alpha2; exists gamma2.
@@ -2757,9 +2810,8 @@ Theorem Dvoretzky_DS_scale_prop
      apply Rmax_l.
    - intros.
      unfold gamma2.
-     apply Rmult_le_pos.
-     + left; apply cond_pos.
-     + now left.
+     apply Rmult_le_pos; trivial.
+     left; apply cond_pos.
    - unfold alpha2.
      apply is_lim_seq_max; trivial.
      apply is_lim_seq_ext with (u := fun n => rho n + (beta n) * (rho n)).
@@ -2784,7 +2836,6 @@ Theorem Dvoretzky_DS_scale_prop
          apply Ropp_le_contravar.
          rewrite Rmult_comm.
          apply Rmult_le_compat_l; trivial.
-         now left.
        * assert (rho n > Rabs (X n omega)) by lra.
          apply Rle_trans with (r2 := (Rmax (alpha n) ((1 + beta n) * rho n)) ); try apply Rmax_l.
          apply Rle_trans with (r2 := ((1 + beta n) * rho n)); try apply Rmax_r.
