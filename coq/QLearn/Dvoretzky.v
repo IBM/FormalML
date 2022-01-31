@@ -2217,8 +2217,6 @@ Section Derman_Sacks.
         (rvx : forall n, RandomVariable dom borel_sa (X n)) 
         (rvt : forall n, RandomVariable _ borel_sa (fun r:Ts => T n r))
         (svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
-
-        {isfemult : forall k j : nat, IsFiniteExpectation prts (rvmult (Y k) (Y j))}
    :
    (forall (n:nat), rv_eq (X (S n)) (rvplus (T n) (Y n))) ->
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
@@ -2231,6 +2229,7 @@ Section Derman_Sacks.
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
+   
    assert (svy : forall n, IsFiniteExpectation prts (Y n)).
    {
      intros.
@@ -2243,11 +2242,6 @@ Section Derman_Sacks.
    } 
 
    destruct (DS_Dvor_11_12_Y alpha svy2) as [α [α0 [E [HE Hα]]]]; trivial.
-   {
-     revert H2.
-     apply ex_series_ext; intros.
-     apply FiniteExpectation_pf_irrel.
-   } 
    pose (Z := fun n => rvmult (Y n) (rvsign (T n))).
    pose (A := fun n => Rmax (α n) (alpha n)).
    assert (ZleY: forall n0, rv_le (rvabs (Z n0)) (rvabs (Y n0))).
@@ -2305,11 +2299,6 @@ Section Derman_Sacks.
    cut_to H6; trivial.
    specialize (H6 svy2).
    cut_to H6; trivial.
-   2: {
-     revert H2.
-     apply ex_series_ext; intros.
-     apply FiniteExpectation_pf_irrel.
-   } 
 
    simpl in H6.
    revert H6; apply almost_impl.
@@ -2368,7 +2357,7 @@ Theorem Dvoretzky_DS_extended
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
         (rvx : forall n, RandomVariable dom borel_sa (X n)) 
         (rvt : forall n, RandomVariable _ borel_sa (fun r:Ts => T n r))
-        {isfemult : forall k j : nat, IsFiniteExpectation prts (rvmult (Y k) (Y j))} :
+        {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
    (forall (n:nat), rv_eq (X (S n)) (rvplus (T n) (Y n))) ->
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
@@ -2380,12 +2369,6 @@ Theorem Dvoretzky_DS_extended
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
-   assert (svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))).
-   {
-     intros.
-     rewrite rvsqr_eq.
-     apply isfemult.
-   } 
    assert (svy : forall n, IsFiniteExpectation prts (Y n)).
    {
      intros.
@@ -2398,11 +2381,6 @@ Theorem Dvoretzky_DS_extended
    } 
 
    destruct (DS_Dvor_11_12_Y_fun alpha svy2) as [α [α0 [E [HE Hα]]]]; trivial.
-   {
-     revert H2.
-     apply ex_series_ext; intros.
-     apply FiniteExpectation_pf_irrel.
-   } 
 
    pose (Z := fun n => rvmult (Y n) (rvsign (T n))).
    pose (A := fun n omega => Rmax (α n) (alpha n omega)).
@@ -2461,11 +2439,6 @@ Theorem Dvoretzky_DS_extended
    cut_to H6; trivial.
    specialize (H6 svy2).
    cut_to H6; trivial.
-   2: {
-     revert H2.
-     apply ex_series_ext; intros.
-     apply FiniteExpectation_pf_irrel.
-   } 
 
    simpl in H6.
    revert H6; apply almost_impl.
