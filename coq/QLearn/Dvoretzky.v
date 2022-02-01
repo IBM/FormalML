@@ -1388,76 +1388,6 @@ Section Derman_Sacks.
        replace (pred (S m)) with m by lia.
        now rewrite <- sum_n_Reals.
    Qed.
-
-   Lemma sum_series_eps (f : nat -> R) :
-     ex_series f ->
-     forall (eps : posreal),
-     exists (N : nat),
-     forall (n k : nat),
-       (n >= N)%nat ->
-       Rabs (sum_n_m f n (n + k)%nat) < eps.
-   Proof.
-     intros.
-     generalize (zerotails f H); intros.
-     apply is_lim_seq_spec in H0.
-     unfold is_lim_seq' in H0.
-     assert (0 < eps) by apply cond_pos.
-     assert (0 < eps/2) by lra.
-     destruct (H0 (mkposreal _ H2)).
-     exists (S x).
-     intros.
-     rewrite sum_n_m_Series; trivial; try lia.
-     unfold Rminus.
-     apply Rle_lt_trans with
-         (r2 := (Rabs (Series (fun i : nat => f (n + i)%nat))) +
-                (Rabs (- Series (fun i : nat => f (S (n + k) + i)%nat)) )).
-     apply Rabs_triang.
-     replace (pos eps) with ((mkposreal _ H2) + (mkposreal _ H2)); [|simpl; lra].
-     apply Rplus_lt_compat.
-     - specialize (H3 (n-1)%nat).
-       cut_to H3; try lia.
-       setoid_rewrite Rminus_0_r in H3.
-       rewrite Series_ext with (b := (fun i : nat => f (n + i)%nat)) in H3; trivial.
-       intros.
-       f_equal; lia.
-     - rewrite Rabs_Ropp.
-       specialize (H3 (n + k)%nat).
-       cut_to H3; try lia.
-       setoid_rewrite Rminus_0_r in H3.
-       rewrite Series_ext with (b := (fun i : nat => f (S (n + k) + i)%nat)) in H3; trivial.       
-  Qed.
-
-   (* cauchy convergence test *)
-   Lemma Cauchy_convergence_test (f : nat -> R) :
-       ex_series f <->
-       forall (eps : posreal),
-       exists (N : nat),
-       forall (n p: nat),
-         (n >= N)%nat ->
-         Rabs (sum_n_m f n (n+p)%nat) < eps.
-  Proof.
-    split; intros.
-    - generalize (sum_series_eps f H eps); intros.
-      destruct H0.
-      exists (S x); intros.
-      apply H0; lia.
-    - generalize (ex_series_Cauchy f); intros.
-      apply H0.
-      unfold Cauchy_series.
-      intros.
-      specialize (H eps).
-      destruct H as [N ?]; exists N.
-      intros.
-      destruct (le_dec n m).
-      + specialize (H n (m-n)%nat).
-        cut_to H; try lia.
-        now replace (n + (m - n))%nat with (m) in H by lia.
-      + rewrite sum_n_m_zero; try lia.
-        unfold norm, zero; simpl.
-        unfold abs; simpl.
-        rewrite Rabs_R0.
-        apply cond_pos.
-   Qed.
          
   Lemma Rmax_list_map_seq_lt_gen (eps : R) {n0 n : nat} (X : nat -> R):
     (0 < n)%nat -> Rmax_list (map X (seq n0 n)) < eps <->
@@ -1496,17 +1426,17 @@ Section Derman_Sacks.
              (seq N (S (n - N)))) < eps. 
    Proof.
      intros.
-     (* Cauchy_ex_series *)
-     generalize (sum_series_eps _ H eps); intros.
+     generalize (Cauchy_ex_series _ H eps); intros.
      destruct H0.
      exists x.
      intros.
      apply Rmax_list_map_seq_lt_gen; try lia.
      intros.
-     
-     specialize (H0 (N + k)%nat (n - (N + k))%nat).
-     replace ((N + k) + (n - (N + k)))%nat with (n) in H0; try lia.
-     apply H0; lia.
+     specialize (H0 (N+k)%nat n).
+     destruct (le_dec (N + k)%nat n).
+     - apply H0; lia.
+     - assert (n < N + k)%nat by lia.
+       rewrite sum_n_m_zero; try lia.
    Qed.
 
     Lemma map_shiftn_seq (f : nat -> R) (n m : nat) :
@@ -1566,23 +1496,19 @@ Section Derman_Sacks.
              (seq N (S ((n-1) - N)))) < eps.
    Proof.
      intros.
-     generalize (sum_series_eps _ H eps); intros.
+     generalize (Cauchy_ex_series _ H eps); intros.
      destruct H0.
      exists x.
      intros.
      apply Rmax_list_map_seq_lt_gen; try lia.
      intros.
-     specialize (H0 (S (N + k))%nat ((n-1) - (S (N + k)))%nat).
-     destruct (lt_dec k (n - 1 - N)%nat).
-     - replace (S (N + k) + (n-1 - (S (N + k))))%nat with (n-1)%nat in H0.
-       + apply H0; lia.
-       + lia.
-     - assert (k = (n - 1 - N)%nat) by lia.
-       assert ((S (N + k)) > (n - 1))%nat by lia.
-       rewrite sum_n_m_zero; try lia.
+     specialize (H0 (S (N + k)) (n - 1)%nat).
+     destruct (lt_dec (n-1)%nat (S (N + k))).
+     - rewrite sum_n_m_zero; try lia.
        unfold zero; simpl.
        rewrite Rabs_R0.
        apply cond_pos.
+     - apply H0; lia.
    Qed.
 
           
