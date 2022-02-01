@@ -2721,8 +2721,28 @@ Theorem Dvoretzky_DS_scale_prop
      almost _ (fun omega => is_lim_seq (sum_n (fun n => rho n omega * gamma n omega)) p_infty).
   Proof.
     intros gpos glim.
-    Admitted.
-
+    destruct glim as [p [pone pH]].
+    destruct (paolo2_fun
+                  (fun n ts => if classic_dec p ts then
+                              gamma n ts
+                            else 1))
+      as [rho HH].
+    - intros; match_destr.
+      lra.
+    - intros; match_destr.
+      + now apply pH.
+      + generalize is_lim_seq_INR; intros HH.
+        apply is_lim_seq_incr_1 in HH.
+        revert HH.
+        apply is_lim_seq_proper; trivial; intros ?.
+        rewrite sum_n_const; lra.
+    - exists rho; split.
+      + exists p; split; trivial; intros.
+        now destruct (HH x) as [HH1 _].
+      + exists p; split; trivial; intros.
+        destruct (HH x) as [_ HH2].
+        match_destr_in HH2; tauto.
+  Qed.
 
  Theorem Dvoretzky_DS_scale_prop_stochastic
         (X : nat -> Ts -> R)
