@@ -2763,13 +2763,9 @@ Theorem Dvoretzky_DS_scale_prop
     forall n omega, Rabs (T n omega) <= Rmax (alpha2 n omega) ((1+beta n omega)*(Rabs (X n omega)) - gamma2 n omega).
  Proof.
    intros.
-(*
-   generalize (fun omega => paolo2 (fun n => gamma n omega)
-                                   (fun n => hpos3 n omega)); intros.
-   
-   destruct (paolo2 gamma hpos3 H2) as [rho [? ?]].
-   pose (alpha2 := fun n => Rmax (alpha n) ((1 + beta n) * rho n)).
-   pose (gamma2 := fun n => (rho n) *(gamma n)).
+   destruct (paolo2_stochastic gamma hpos3 H2) as [rho [? ?]].
+   pose (alpha2 := fun n omega => Rmax (alpha n omega) ((1 + beta n omega) * rho n omega)).
+   pose (gamma2 := fun n omega => (rho n omega) *(gamma n omega)).
    exists alpha2; exists gamma2.
    split; try split; try split; try split.
    - intros.
@@ -2781,9 +2777,14 @@ Theorem Dvoretzky_DS_scale_prop
      unfold gamma2.
      apply Rmult_le_pos; trivial.
      left; apply cond_pos.
-   - unfold alpha2.
+   - revert H0; apply almost_impl.
+     revert H1; apply almost_impl.
+     revert H3.
+     apply almost_impl, all_almost.
+     intros ??; unfold impl; intros.
+     unfold alpha2.
      apply is_lim_seq_max; trivial.
-     apply is_lim_seq_ext with (u := fun n => rho n + (beta n) * (rho n)).
+     apply is_lim_seq_ext with (u := fun n => rho n x + (beta n x) * (rho n x)).
      + intros; lra.
      + replace (Finite 0) with (Rbar_plus 0 0) by apply Rbar_plus_0_r.
        apply is_lim_seq_plus'; trivial.
@@ -2796,40 +2797,24 @@ Theorem Dvoretzky_DS_scale_prop
      apply H.
      unfold alpha2, gamma2.
      apply Rmax_case.
-     + apply Rle_trans with (r2 := Rmax (alpha n) ((1 + beta n) * rho n)); apply Rmax_l.
-     + destruct (Rle_dec (rho n) (Rabs (X n omega))).
-       * apply Rle_trans with (r2 :=  ((1 + beta n) * Rabs (X n omega) - rho n * gamma n)); try apply Rmax_r.
-         replace ( (1 + beta n - gamma n) * Rabs (X n omega)) with
-             ((1 + beta n) * Rabs (X n omega) - (gamma n) * Rabs (X n omega)) by lra.
+     + apply Rle_trans with (r2 := Rmax (alpha n omega) ((1 + beta n omega) * rho n omega)); apply Rmax_l.
+     + destruct (Rle_dec (rho n omega) (Rabs (X n omega))).
+       * apply Rle_trans with (r2 :=  ((1 + beta n omega) * Rabs (X n omega) - rho n omega * gamma n omega)); try apply Rmax_r.
+         replace ( (1 + beta n omega - gamma n omega) * Rabs (X n omega)) with
+             ((1 + beta n omega) * Rabs (X n omega) - (gamma n omega) * Rabs (X n omega)) by lra.
          apply Rplus_le_compat_l.
          apply Ropp_le_contravar.
          rewrite Rmult_comm.
          apply Rmult_le_compat_l; trivial.
-       * assert (rho n > Rabs (X n omega)) by lra.
-         apply Rle_trans with (r2 := (Rmax (alpha n) ((1 + beta n) * rho n)) ); try apply Rmax_l.
-         apply Rle_trans with (r2 := ((1 + beta n) * rho n)); try apply Rmax_r.
-         apply Rle_trans with (r2 :=  (1 + beta n) * Rabs (X n omega)).
+       * assert (rho n omega > Rabs (X n omega)) by lra.
+         apply Rle_trans with (r2 := (Rmax (alpha n omega) ((1 + beta n omega) * rho n omega)) ); try apply Rmax_l.
+         apply Rle_trans with (r2 := ((1 + beta n omega) * rho n omega)); try apply Rmax_r.
+         apply Rle_trans with (r2 :=  (1 + beta n omega) * Rabs (X n omega)).
          -- apply Rmult_le_compat_r; try apply Rabs_pos.
-            specialize (hpos3 n); lra.
+            specialize (hpos3 n omega); lra.
          -- apply Rmult_le_compat_l; try lra.
-            specialize (hpos2 n); lra.
+            specialize (hpos2 n omega); lra.
  Qed.
-
- Proof.
-   intros.
-   generalize (fun omega => Dvoretzky_DS_scale_prop 
-                              X T 
-                              (fun n => hpos1 n omega)
-                              (fun n => hpos2 n omega)
-                              (fun n => hpos3 n omega)
-              ); intros.
-   assert (forall omega,
-               (forall (n : nat) (omega0 : Ts),
-        Rabs (T n omega0) <=
-        Rmax (alpha n omega)
-          ((1 + beta n omega - gamma n omega) * Rabs (X n omega0))))
-   
-
 
  Let DS_X (X0:Ts->R) (T Y:nat->Ts->R) (n:nat) :=
        match n with
@@ -2869,8 +2854,6 @@ Theorem Dvoretzky_DS_scale_prop
      now apply rvplus_rv.
    - reflexivity.
  Qed.
- *)
- Admitted.
  
  Corollary Dvoretzky_DS_extended_vector
         (X Y : nat -> Ts -> R)
