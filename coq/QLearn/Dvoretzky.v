@@ -2193,19 +2193,6 @@ Section Derman_Sacks.
      now rewrite Rminus_0_r, Rabs_Rabsolu in H7.
  Qed.
 
- Lemma almost_is_lim_seq_max (alpha : nat -> Ts -> R) (a : nat -> R) :
-   (forall n, 0 <= a n) ->
-   (forall n omega, 0 <= alpha n omega) ->
-   is_lim_seq (fun n : nat => a n) 0 ->
-   almost _ (fun omega => is_lim_seq (fun n : nat => alpha n omega) 0) ->
-   almost _ (fun omega => is_lim_seq (fun n : nat => Rmax (alpha n omega) (a n)) 0).
- Proof.
-   intros.
-   revert H2.
-   apply almost_impl, all_almost; intros ??.
-   now apply is_lim_seq_max.
- Qed.
-
 Theorem Dvoretzky_DS_extended
         (X Y : nat -> Ts -> R)
         (T : nat -> Ts -> R)
@@ -2706,6 +2693,124 @@ Theorem Dvoretzky_DS_scale_prop
             specialize (hpos2 n); lra.
  Qed.
 
+
+  Lemma paolo2_fun (gamma : nat -> Ts -> R) :
+   (forall n omega, 0 <= gamma n omega) ->
+   (forall omega, is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
+   exists (rho : nat -> Ts -> posreal),
+   forall omega,
+     is_lim_seq (fun n => rho n omega)  0 /\ 
+     is_lim_seq (sum_n (fun n => rho n omega * gamma n omega)) p_infty.
+  Proof.
+    intros gpos glim.
+    generalize (fun omega => paolo2 (fun n => gamma n omega)
+                                    (fun n => gpos n omega)
+                                    (glim omega)); intros.
+    apply ClassicalChoice.choice in H.
+    destruct H as [f ?].
+    exists (fun n omega => f omega n).
+    apply H.
+  Qed.
+
+  
+  Lemma paolo2_stochastic (gamma : nat -> Ts -> R) :
+   (forall n omega, 0 <= gamma n omega) ->
+   almost _ (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
+   exists (rho : nat -> Ts -> posreal),
+     almost _ (fun omega => is_lim_seq (fun n => rho n omega)  0) /\ 
+     almost _ (fun omega => is_lim_seq (sum_n (fun n => rho n omega * gamma n omega)) p_infty).
+  Proof.
+    intros gpos glim.
+    Admitted.
+
+
+ Theorem Dvoretzky_DS_scale_prop_stochastic
+        (X : nat -> Ts -> R)
+        (T : nat -> Ts -> R)
+        {alpha beta gamma : nat -> Ts -> R}
+        (hpos1 : forall n omega , 0 <= alpha n omega)
+        (hpos2 : forall n omega, 0 <= beta n omega)
+        (hpos3 : forall n omega, 0 <= gamma n omega) :
+  (forall n omega, Rabs (T n omega) <= Rmax (alpha n omega) ((1+beta n omega - gamma n omega)*(Rabs (X n omega)))) ->
+  almost _ (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
+  almost _ (fun omega =>  ex_series (fun n => beta n omega)) ->
+  almost _ (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
+  exists (alpha2 gamma2 : nat -> Ts -> R),
+    (forall n omega, 0 <= alpha2 n omega) /\
+    (forall n omega, 0 <= gamma2 n omega) /\
+    almost _ (fun omega => is_lim_seq (fun n => alpha2 n omega) 0) /\
+    almost _ (fun omega => is_lim_seq (sum_n (fun n => gamma2 n omega)) p_infty) /\
+    forall n omega, Rabs (T n omega) <= Rmax (alpha2 n omega) ((1+beta n omega)*(Rabs (X n omega)) - gamma2 n omega).
+ Proof.
+   intros.
+(*
+   generalize (fun omega => paolo2 (fun n => gamma n omega)
+                                   (fun n => hpos3 n omega)); intros.
+   
+   destruct (paolo2 gamma hpos3 H2) as [rho [? ?]].
+   pose (alpha2 := fun n => Rmax (alpha n) ((1 + beta n) * rho n)).
+   pose (gamma2 := fun n => (rho n) *(gamma n)).
+   exists alpha2; exists gamma2.
+   split; try split; try split; try split.
+   - intros.
+     unfold alpha2.
+     eapply Rle_trans.
+     apply (hpos1 n).
+     apply Rmax_l.
+   - intros.
+     unfold gamma2.
+     apply Rmult_le_pos; trivial.
+     left; apply cond_pos.
+   - unfold alpha2.
+     apply is_lim_seq_max; trivial.
+     apply is_lim_seq_ext with (u := fun n => rho n + (beta n) * (rho n)).
+     + intros; lra.
+     + replace (Finite 0) with (Rbar_plus 0 0) by apply Rbar_plus_0_r.
+       apply is_lim_seq_plus'; trivial.
+       replace (Finite 0) with (Rbar_mult 0 0) by apply Rbar_mult_0_r.
+       apply is_lim_seq_mult'; trivial.
+       now apply ex_series_lim_0.
+   - apply H4.
+   - intros.
+     eapply Rle_trans.
+     apply H.
+     unfold alpha2, gamma2.
+     apply Rmax_case.
+     + apply Rle_trans with (r2 := Rmax (alpha n) ((1 + beta n) * rho n)); apply Rmax_l.
+     + destruct (Rle_dec (rho n) (Rabs (X n omega))).
+       * apply Rle_trans with (r2 :=  ((1 + beta n) * Rabs (X n omega) - rho n * gamma n)); try apply Rmax_r.
+         replace ( (1 + beta n - gamma n) * Rabs (X n omega)) with
+             ((1 + beta n) * Rabs (X n omega) - (gamma n) * Rabs (X n omega)) by lra.
+         apply Rplus_le_compat_l.
+         apply Ropp_le_contravar.
+         rewrite Rmult_comm.
+         apply Rmult_le_compat_l; trivial.
+       * assert (rho n > Rabs (X n omega)) by lra.
+         apply Rle_trans with (r2 := (Rmax (alpha n) ((1 + beta n) * rho n)) ); try apply Rmax_l.
+         apply Rle_trans with (r2 := ((1 + beta n) * rho n)); try apply Rmax_r.
+         apply Rle_trans with (r2 :=  (1 + beta n) * Rabs (X n omega)).
+         -- apply Rmult_le_compat_r; try apply Rabs_pos.
+            specialize (hpos3 n); lra.
+         -- apply Rmult_le_compat_l; try lra.
+            specialize (hpos2 n); lra.
+ Qed.
+
+ Proof.
+   intros.
+   generalize (fun omega => Dvoretzky_DS_scale_prop 
+                              X T 
+                              (fun n => hpos1 n omega)
+                              (fun n => hpos2 n omega)
+                              (fun n => hpos3 n omega)
+              ); intros.
+   assert (forall omega,
+               (forall (n : nat) (omega0 : Ts),
+        Rabs (T n omega0) <=
+        Rmax (alpha n omega)
+          ((1 + beta n omega - gamma n omega) * Rabs (X n omega0))))
+   
+
+
  Let DS_X (X0:Ts->R) (T Y:nat->Ts->R) (n:nat) :=
        match n with
        | 0%nat => X0
@@ -2744,7 +2849,9 @@ Theorem Dvoretzky_DS_scale_prop
      now apply rvplus_rv.
    - reflexivity.
  Qed.
-   
+ *)
+ Admitted.
+ 
  Corollary Dvoretzky_DS_extended_vector
         (X Y : nat -> Ts -> R)
         (T : forall (n:nat), vector R (S n) -> Ts -> R)
