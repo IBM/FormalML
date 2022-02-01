@@ -2920,7 +2920,10 @@ Theorem Dvoretzky_DS_scale_prop
   almost prts (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
-Admitted.
+   intros.
+   destruct (Dvoretzky_DS_scale_prop_stochastic X T hpos1 hpos2 hpos3 H1 H3 H4 H5) as [alpha2 [gamma2 [? [? [? [? ?]]]]]].
+   apply (Dvoretzky_DS_extended X Y T isfilt filt_sub H6 hpos2 H7 rvy rvx); trivial.
+ Qed.
 
 
 End Derman_Sacks.
