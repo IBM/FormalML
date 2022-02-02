@@ -2862,7 +2862,7 @@ Theorem Dvoretzky_DS_scale_prop
         (isfilt : IsFiltration F)
         (filt_sub : forall n, sa_sub (F n) dom)
         {adaptX : IsAdapted borel_sa X F}
-        {adaptT : forall n (v:Ts -> vector R (S n)), RandomVariable (F n) borel_sa (fun ts => T n (v ts) ts)}
+        {adaptT : IsAdapted borel_sa (fun n ts => T n ((vector_create 0 (S n) (fun m _ _ => X m ts))) ts) F}
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
         (hpos2 : forall n x, 0 <= beta n x )
@@ -2887,10 +2887,42 @@ Theorem Dvoretzky_DS_scale_prop
             isfilt filt_sub
             hpos1 hpos2 hpos3
           ); trivial.
-   Unshelve.
+   intros; apply H1.
+ Qed.
+
+ Corollary Dvoretzky_DS_extended_vector1
+        (X Y : nat -> Ts -> R)
+        (T : nat -> R -> Ts -> R)
+        {F : nat -> SigmaAlgebra Ts}
+        (isfilt : IsFiltration F)
+        (filt_sub : forall n, sa_sub (F n) dom)
+        {adaptX : IsAdapted borel_sa X F}
+        {adaptT : IsAdapted borel_sa (fun n ts => T n (X n ts) ts) F}
+        {alpha beta gamma : nat -> Ts -> R}
+        (hpos1 : forall n x, 0 <= alpha n x)
+        (hpos2 : forall n x, 0 <= beta n x )
+        (hpos3 : forall n x, 0 <= gamma n x)
+        (rvy : forall n, RandomVariable dom borel_sa (Y n))
+        (rvx : forall n, RandomVariable dom borel_sa (X n)) 
+        {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
+   (forall (n:nat), rv_eq (X (S n)) (rvplus (fun ts => T n (X n ts) ts) (Y n))) ->
+  (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
+                     (fun x : Ts => const 0 x)) ->
+  (forall n v omega, (rvabs (T n v) omega) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs (X n) omega) - gamma n omega)) ->
+  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
+  almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
+  almost prts (fun omega => ex_series (fun n => beta n omega))->
+  almost prts (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
+  almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
+ Proof.
+   intros.
+   eapply (Dvoretzky_DS_extended
+            X Y
+            (fun n ts => T n (X n ts) ts)
+            isfilt filt_sub
+            hpos1 hpos2 hpos3
+          ); trivial.
    - intros; apply H1.
-   - intros ?.
-     apply adaptT.
  Qed.
 
  Theorem Dvoretzky_DS_extended_alt
