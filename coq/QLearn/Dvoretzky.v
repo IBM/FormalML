@@ -7,6 +7,7 @@ Require Import PushNeg.
 Require Import List Permutation.
 Require Import Morphisms EquivDec Program.
 
+Require Import ProductSpace.
 Require Import Utils.
 Import ListNotations.
 Require Import Classical.
@@ -2945,6 +2946,13 @@ Theorem Dvoretzky_DS_scale_prop
    | S m => (rvplus (fun ts => T m (DS_X1 X0 T Y m ts) ts) (Y m))
    end.
 
+ Global Instance product_rv {Ts2:Type} (dom2:SigmaAlgebra Ts2) {Td1 Td2} (cod1:SigmaAlgebra Td1) (cod2:SigmaAlgebra Td2) X Y
+        {rvX:RandomVariable dom2 cod1 X}
+        {rvY:RandomVariable dom2 cod2 Y} :
+   RandomVariable dom2 (product_sa cod1 cod2) (fun ts => (X ts, Y ts)).
+ Proof.
+Admitted.
+
  Corollary Dvoretzky_DS_extended_simple1
            (X0:Ts->R) 
         (Y : nat -> Ts -> R)
@@ -2953,7 +2961,7 @@ Theorem Dvoretzky_DS_scale_prop
         (isfilt : IsFiltration F)
         (filt_sub : forall n, sa_sub (F n) dom)
         {adaptX : IsAdapted borel_sa (DS_X1 X0 T Y) F}
-        {adaptT : IsAdapted borel_sa (fun n ts => T n (DS_X1 X0 T Y n ts) ts) F}
+        {rvT: forall n, RandomVariable (product_sa borel_sa (F n)) borel_sa (fun '(x,ts) => T n x ts)}
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
         (hpos2 : forall n x, 0 <= beta n x )
@@ -2979,6 +2987,17 @@ Theorem Dvoretzky_DS_scale_prop
           ); trivial.
    - reflexivity.
    - intros; apply H0.
+     Unshelve.
+     intros n.
+     cut (RandomVariable (F n) borel_sa (fun ts : Ts =>  (fun '(x, ts) => T n x ts) ((DS_X1 X0 T Y n ts), ts))).
+     {
+       apply RandomVariable_proper; try reflexivity.
+     }
+     
+     apply (compose_rv (fun ts => (DS_X1 X0 T Y n ts, ts)) (dom1:=F n) (dom2:=(product_sa borel_sa (F n)))); trivial.
+     apply product_rv.
+     + apply adaptX.
+     + apply id_rv.
  Qed.
 
  Theorem Dvoretzky_DS_extended_alt
