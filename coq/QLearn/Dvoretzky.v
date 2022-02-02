@@ -2647,6 +2647,40 @@ Proof.
     - now rewrite <- lim_seq_sum_shift_inf.
   Qed.
     
+  Lemma paolo2_iff (gamma : nat -> R) :
+   (forall n, 0 <= gamma n) ->
+   is_lim_seq (sum_n gamma) p_infty <->
+   exists (rho : nat -> posreal),
+     is_lim_seq rho 0 /\ is_lim_seq (sum_n (fun n => rho n * gamma n)) p_infty.
+  Proof.
+    intros.
+    split; intros.
+    - now apply paolo2.
+    - destruct H0 as [? [? ?]].
+      apply is_lim_seq_spec in H0.
+      unfold is_lim_seq' in H0.
+      assert (0 < 1) by lra.
+      destruct (H0 (mkposreal _ H2)) as [? ?].
+      rewrite lim_seq_sum_shift_inf with (N := x0) in H1.
+      rewrite lim_seq_sum_shift_inf with (N := x0).
+      assert (forall n, x (n + x0)%nat < 1).
+      {
+        intros.
+        specialize (H3 (n + x0)%nat).
+        cut_to H3; try lia.
+        rewrite Rminus_0_r in H3.
+        rewrite Rabs_right in H3; [|left; apply cond_pos].
+        apply H3.
+      }
+      apply is_lim_seq_le_p_loc with (u :=  (sum_n (fun n : nat => x (n + x0)%nat * gamma (n + x0)%nat))); trivial.
+      exists (0%nat); intros.
+      apply sum_n_le_loc.
+      intros.
+      replace (gamma (n0 + x0)%nat) with (1 *  gamma (n0 + x0)%nat) at 2 by lra.
+      apply Rmult_le_compat_r; trivial.
+      now left.
+   Qed.
+
 Theorem Dvoretzky_DS_scale_prop
         (X : nat -> Ts -> R)
         (T : nat -> Ts -> R)
@@ -2951,6 +2985,16 @@ Theorem Dvoretzky_DS_scale_prop
         {rvY:RandomVariable dom2 cod2 Y} :
    RandomVariable dom2 (product_sa cod1 cod2) (fun ts => (X ts, Y ts)).
  Proof.
+   unfold RandomVariable; intros.
+   unfold event_preimage.
+   destruct B; simpl.
+   simpl in s.
+   apply generated_sa_closure in s.
+   simpl in s.
+   destruct s.
+   - unfold pre_Ω.
+     apply sa_all.
+ 
 Admitted.
 
  Corollary Dvoretzky_DS_extended_simple1
