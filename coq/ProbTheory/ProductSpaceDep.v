@@ -612,23 +612,6 @@ Section ps_product.
       + elim n; red; apply I.
   Defined.
 
-  Lemma dep_product_sa_sa (a:event A) (b:forall a, event (B a)) :
-    sa_sigma (SigmaAlgebra:=dep_product_sa A B) (fun '(existT x y) => a x /\ b x y).
-  Proof.
-    apply generated_sa_sub.
-    red.
-    exists a.
-    exists b.
-    split; [| split].
-    - apply sa_sigma_event_pre.
-    - intros.
-      apply sa_sigma_event_pre.
-    - intros [??]; simpl; reflexivity.
-  Qed.
-
-  Definition dep_product_sa_event (a:event A) (b:forall a, event (B a)) : event (dep_product_sa A B)
-    := exist _ _ (dep_product_sa_sa a b).
-  
   Theorem dep_product_sa_product (a:event A) (b:forall a, event (B a)) :
     ps_P (ProbSpace:=dep_product_ps) (dep_product_sa_event a b) =
       (NonnegExpectation (Prts:=psA) (rvmult (EventIndicator (classic_dec a)) (fun x => ps_P (b x)))).
