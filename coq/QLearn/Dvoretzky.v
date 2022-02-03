@@ -2974,21 +2974,21 @@ Theorem Dvoretzky_DS_scale_prop
    - intros; apply H1.
  Qed.
 
- Fixpoint DS_X1 (X0:Ts->R) (T:nat->R->Ts->R) (Y:nat->Ts->R) (n:nat) : Ts -> R :=
+ Fixpoint DS_X1 (X0:Ts->R) (T:nat->(R*Ts)->R) (Y:nat->Ts->R) (n:nat) : Ts -> R :=
    match n with
    | 0%nat => X0
-   | S m => (rvplus (fun ts => T m (DS_X1 X0 T Y m ts) ts) (Y m))
+   | S m => (rvplus (fun ts => T m ((DS_X1 X0 T Y m ts), ts)) (Y m))
    end.
 
  Corollary Dvoretzky_DS_extended_simple1
            (X0:Ts->R) 
         (Y : nat -> Ts -> R)
-        (T : nat -> R -> Ts -> R)
+        (T : nat -> (R * Ts) -> R)
         {F : nat -> SigmaAlgebra Ts}
         (isfilt : IsFiltration F)
         (filt_sub : forall n, sa_sub (F n) dom)
         {adaptX : IsAdapted borel_sa (DS_X1 X0 T Y) F}
-        {rvT: forall n, RandomVariable (product_sa borel_sa (F n)) borel_sa (fun '(x,ts) => T n x ts)}
+        {rvT: IsAdapted borel_sa T (fun n => product_sa borel_sa (F n))}
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
         (hpos2 : forall n x, 0 <= beta n x )
@@ -2997,7 +2997,7 @@ Theorem Dvoretzky_DS_scale_prop
         {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
-  (forall n v omega, (rvabs (T n v) omega) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_X1 X0 T Y n)) omega) - gamma n omega)) ->
+  (forall n v omega, (Rabs (T n (v, omega))) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_X1 X0 T Y n)) omega) - gamma n omega)) ->
   ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
   almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
   almost prts (fun omega => ex_series (fun n => beta n omega))->
@@ -3007,7 +3007,7 @@ Theorem Dvoretzky_DS_scale_prop
    intros.
    eapply (Dvoretzky_DS_extended
                  (DS_X1 X0 T Y) Y
-                 (fun n ts => T n (DS_X1 X0 T Y n ts) ts)
+                 (fun n ts => T n ((DS_X1 X0 T Y n ts),ts))
                  isfilt filt_sub
                  hpos1 hpos2 hpos3
 
@@ -3016,7 +3016,7 @@ Theorem Dvoretzky_DS_scale_prop
    - intros; apply H0.
      Unshelve.
      intros n.
-     cut (RandomVariable (F n) borel_sa (fun ts : Ts =>  (fun '(x, ts) => T n x ts) ((DS_X1 X0 T Y n ts), ts))).
+     cut (RandomVariable (F n) borel_sa (fun ts : Ts =>  (fun '(x, ts) => T n (x,ts)) ((DS_X1 X0 T Y n ts), ts))).
      {
        apply RandomVariable_proper; try reflexivity.
      }
