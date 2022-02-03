@@ -2980,23 +2980,6 @@ Theorem Dvoretzky_DS_scale_prop
    | S m => (rvplus (fun ts => T m (DS_X1 X0 T Y m ts) ts) (Y m))
    end.
 
- Global Instance product_rv {Ts2:Type} (dom2:SigmaAlgebra Ts2) {Td1 Td2} (cod1:SigmaAlgebra Td1) (cod2:SigmaAlgebra Td2) X Y
-        {rvX:RandomVariable dom2 cod1 X}
-        {rvY:RandomVariable dom2 cod2 Y} :
-   RandomVariable dom2 (product_sa cod1 cod2) (fun ts => (X ts, Y ts)).
- Proof.
-   unfold RandomVariable; intros.
-   unfold event_preimage.
-   destruct B; simpl.
-   simpl in s.
-   apply generated_sa_closure in s.
-   simpl in s.
-   destruct s.
-   - unfold pre_Ω.
-     apply sa_all.
- 
-Admitted.
-
  Corollary Dvoretzky_DS_extended_simple1
            (X0:Ts->R) 
         (Y : nat -> Ts -> R)
@@ -3039,7 +3022,7 @@ Admitted.
      }
      
      apply (compose_rv (fun ts => (DS_X1 X0 T Y n ts, ts)) (dom1:=F n) (dom2:=(product_sa borel_sa (F n)))); trivial.
-     apply product_rv.
+     apply product_sa_rv.
      + apply adaptX.
      + apply id_rv.
  Qed.
