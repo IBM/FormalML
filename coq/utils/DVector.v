@@ -964,3 +964,52 @@ Proof.
   apply vector_nth_eq; intros.
   now rewrite vector_nth_apply, vector_nth_map, vector_nth_const.
 Qed.
+
+Program Definition vector_cons {n} {A} (x:A) (v:vector A n) : vector A (S n)
+  := exist _ (x::proj1_sig v) _.
+Next Obligation.
+  destruct v; simpl; congruence.
+Defined.
+
+Definition vector_singleton {A} (x:A) : vector A 1%nat
+  := vector_cons x vector0.
+
+Program Definition vector_add_to_end {n} {A} (x:A) (v:vector A n) : vector A (S n)
+  := exist _ (proj1_sig v ++ x::nil) _.
+Next Obligation.
+  destruct v; simpl.
+  rewrite app_length; simpl.
+  rewrite e.
+  rewrite Nat.add_1_r.
+  congruence.
+Defined.
+
+Lemma vector_nth_singleton {A} (x:A) i pf : vector_nth i pf (vector_singleton x) = x.
+Proof.
+  destruct i; [| lia].
+  reflexivity.
+Qed.
+
+Lemma vector_nth_add_to_end_prefix {n} {A} (x:A) (v:vector A n) i pf (pf2:(i<n)%nat):
+  vector_nth i pf (vector_add_to_end x v) = vector_nth i pf2 v.
+Proof.
+  generalize (vector_nth_in i pf (vector_add_to_end x v)); intros HH1.
+  generalize (vector_nth_in i pf2 v); intros HH2.
+  cut ( nth_error (proj1_sig (vector_add_to_end x v)) i = nth_error (proj1_sig v) i)
+  ; [congruence | ].
+  simpl.
+  rewrite nth_error_app1; trivial.
+  now rewrite vector_length.
+Qed.
+
+Lemma vector_nth_add_to_end_suffix {n} {A} (x:A) (v:vector A n) pf :
+  vector_nth n pf (vector_add_to_end x v) = x.
+Proof.
+  generalize (vector_nth_in n pf (vector_add_to_end x v)); intros HH1.
+  simpl in HH1.
+  rewrite nth_error_app2 in HH1.
+  - rewrite vector_length, Nat.sub_diag in HH1.
+    simpl in HH1.
+    congruence.
+  - rewrite vector_length; reflexivity.
+Qed.

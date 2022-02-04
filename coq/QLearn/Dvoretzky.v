@@ -2997,7 +2997,7 @@ Theorem Dvoretzky_DS_scale_prop
         {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
-  (forall n v omega, (Rabs (T n (v, omega))) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_X1 X0 T Y n)) omega) - gamma n omega)) ->
+  (forall n omega, (Rabs (T n (DS_X1 X0 T Y n omega, omega))) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_X1 X0 T Y n)) omega) - gamma n omega)) ->
   ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
   almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
   almost prts (fun omega => ex_series (fun n => beta n omega))->
@@ -3013,7 +3013,6 @@ Theorem Dvoretzky_DS_scale_prop
 
           ); trivial.
    - reflexivity.
-   - intros; apply H0.
      Unshelve.
      intros n.
      cut (RandomVariable (F n) borel_sa (fun ts : Ts =>  (fun '(x, ts) => T n (x,ts)) ((DS_X1 X0 T Y n ts), ts))).
@@ -3025,6 +3024,100 @@ Theorem Dvoretzky_DS_scale_prop
      apply product_sa_rv.
      + apply adaptX.
      + apply id_rv.
+ Qed.
+ 
+ Fixpoint DS_Xn_v (X0:Ts->R) (T:forall (n:nat), (vector R n*Ts)->R) (Y:nat->Ts->R) (n:nat) : Ts -> vector R (S n) :=
+   match n with
+   | 0%nat => fun ts => vector_singleton (X0 ts)
+   | S m => let prefix := DS_Xn_v X0 T Y m in
+           fun ts =>
+             vector_add_to_end
+               (T (S m) (prefix ts, ts) + Y m ts) (prefix ts)
+   end.
+
+ Definition DS_Xn (X0:Ts->R) (T:forall (n:nat), (vector R n*Ts)->R) (Y:nat->Ts->R) (n:nat) :
+   Ts -> R
+   := fun ts => vector_nth n (Nat.lt_succ_diag_r _) (DS_Xn_v X0 T Y n ts).
+
+ Definition DS_Tn (X0:Ts->R) (T:forall (n:nat), (vector R n*Ts)->R) (Y:nat->Ts->R) (n:nat) ts : R
+   := T (S n) (DS_Xn_v X0 T Y n ts, ts).
+     
+ Corollary Dvoretzky_DS_extended_simple_vec
+           (X0:Ts->R) 
+        (Y : nat -> Ts -> R)
+        (T : forall (n:nat), (vector R n*Ts)->R)
+        {F : nat -> SigmaAlgebra Ts}
+        (isfilt : IsFiltration F)
+        (filt_sub : forall n, sa_sub (F n) dom)
+        {adaptX : IsAdapted borel_sa (DS_Xn X0 T Y) F}
+        {adaptT : IsAdapted borel_sa (DS_Tn X0 T Y) F}
+        {alpha beta gamma : nat -> Ts -> R}
+        (hpos1 : forall n x, 0 <= alpha n x)
+        (hpos2 : forall n x, 0 <= beta n x )
+        (hpos3 : forall n x, 0 <= gamma n x)
+        (rvy : forall n, RandomVariable dom borel_sa (Y n))
+        {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
+  (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
+                     (fun x : Ts => const 0 x)) ->
+  (forall n omega, (Rabs (DS_Tn X0 T Y n omega)) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_Xn X0 T Y n)) omega) - gamma n omega)) ->
+  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
+  almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
+  almost prts (fun omega => ex_series (fun n => beta n omega))->
+  almost prts (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
+  almost _ (fun omega => is_lim_seq (fun n => (DS_Xn X0 T Y n omega)) 0).
+ Proof.
+   intros.
+   eapply (Dvoretzky_DS_extended
+                 (DS_Xn X0 T Y) Y
+                 (DS_Tn X0 T Y)
+                 isfilt filt_sub
+                 hpos1 hpos2 hpos3
+
+          ); trivial.
+   - intros ??.
+     unfold DS_Tn, DS_Xn; simpl.
+     rewrite vector_nth_add_to_end_suffix.
+     unfold rvplus.
+     reflexivity.
+ Qed.
+
+ (* establish a basic property of the history we are passing aroung: we always just append to it *)
+ Lemma DS_Xn_v_same_prefix_plus_helper (X0:Ts->R) (T:forall (n:nat), (vector R n*Ts)->R) (Y:nat->Ts->R)
+       (m n i:nat) pf1 pf2 ts : 
+   vector_nth i pf1 (DS_Xn_v X0 T Y (m+n) ts) = vector_nth i pf2 (DS_Xn_v X0 T Y n ts).
+ Proof.
+   induction m; simpl.
+   - apply vector_nth_ext.
+   - simpl in pf2.
+     erewrite vector_nth_add_to_end_prefix.
+     rewrite IHm.
+     reflexivity.
+     Unshelve.
+     lia.
+ Qed.
+
+ Lemma DS_Xn_v_same_prefix_le_helper (X0:Ts->R) (T:forall (n:nat), (vector R n*Ts)->R) (Y:nat->Ts->R)
+       (m n i:nat) pf1 pf2 ts : (n <= m)%nat ->
+   vector_nth i pf1 (DS_Xn_v X0 T Y m ts) = vector_nth i pf2 (DS_Xn_v X0 T Y n ts).
+ Proof.
+   intros.
+   assert (m= ((m-n) + n)%nat) by lia.
+   generalize (DS_Xn_v_same_prefix_plus_helper X0 T Y (((m-n))%nat) n i)
+   ; intros HH.
+   destruct H0.
+   apply HH.
+ Qed.
+
+ (* Any common prefix is the same *)
+ Theorem DS_Xn_v_same_prefix (X0:Ts->R) (T:forall (n:nat), (vector R n*Ts)->R) (Y:nat->Ts->R)
+       (m n i:nat) pf1 pf2 ts :
+   vector_nth i pf1 (DS_Xn_v X0 T Y m ts) = vector_nth i pf2 (DS_Xn_v X0 T Y n ts).
+ Proof.
+   destruct (le_dec n m).
+   - now apply DS_Xn_v_same_prefix_le_helper.
+   - symmetry.
+     apply DS_Xn_v_same_prefix_le_helper.
+     lia.
  Qed.
 
  Theorem Dvoretzky_DS_extended_alt
