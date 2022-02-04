@@ -5829,6 +5829,8 @@ End convex2.
 
 Section tails.
 
+  (* Vraious properties of tail of a series. *)
+
   Definition tail_series (a : nat -> R) := fun n => Series(fun k => a((n+k)%nat)).
 
    Lemma tail_succ_sub {a : nat -> R} (ha : ex_series a) :
@@ -6001,7 +6003,9 @@ Section tails.
     apply Rabs_pos.
   Qed.
 
-   Lemma Paolo_converge_nonneg (a: nat -> R) :
+  (* No worst convergent series exsits. *)
+
+   Lemma no_worst_converge_nonneg (a: nat -> R) :
      (forall n, 0 <= a n) ->
          (forall n, exists h, 0 < a (n + h)%nat) ->
     ex_series a ->
@@ -6060,7 +6064,7 @@ Section tails.
     Qed.
 
 
- Lemma Paolo_converge_pos (a: nat -> R) :
+ Lemma no_worst_converge_pos (a: nat -> R) :
    (forall n, 0 < a n) ->
     ex_series a ->
     exists (b : nat -> R),
@@ -6070,7 +6074,7 @@ Section tails.
  Proof.
    intros.
    assert (Ha : forall n, 0 <= a n) by (intros n ; left; auto).
-   generalize (Paolo_converge_nonneg a Ha); intros Hn.
+   generalize (no_worst_converge_nonneg a Ha); intros Hn.
    apply Hn; auto.
    intros. exists 0%nat.
    apply H.
@@ -6083,7 +6087,7 @@ Section tails.
    apply classic.
  Qed.
 
- Theorem Paolo_final (a : nat -> R):
+ Theorem no_worst_final (a : nat -> R):
    (forall n, 0 <= a n) ->
    ex_series a <->
    exists (b : nat -> R),
@@ -6094,7 +6098,7 @@ Section tails.
    intros.
    split; intros.
    --- destruct (eventually_pos_dec a) as [H1|H2].
-       + apply Paolo_converge_nonneg; auto.
+       + apply no_worst_converge_nonneg; auto.
        + push_neg_in H2.
          destruct H2 as [N0 HN0].
          exists (fun n => 1 + INR n).
@@ -6135,5 +6139,383 @@ Section tails.
       apply Rmult_le_compat; try (trivial; lra).
       left. apply HN0; lia.
  Qed.
+
+ Lemma sum_n_m_le_loc_alt (a b : nat -> R) (j k : nat) :
+  (forall n : nat, (j <= n <= j + k)%nat -> a n <= b n) ->
+  sum_n_m a j (j + k)%nat <= sum_n_m b j (j + k)%nat.
+Proof.
+  intros.
+  induction k.
+  - replace (j + 0)%nat with (j) by lia.
+    do 2 rewrite sum_n_n.
+    apply H; lia.
+  - replace (j + S k)%nat with (S (j + k))%nat by lia.
+    rewrite sum_n_Sm; try lia.
+    rewrite sum_n_Sm; try lia.
+    assert (forall n : nat, (j <= n <= j + k)%nat -> a n <= b n).
+    + intros.
+      apply H; lia.
+    + specialize (IHk H0).
+      apply Rplus_le_compat; trivial.
+      apply H; lia.
+  Qed.
+
+Lemma sum_n_m_le_loc (a b : nat -> R) (j k : nat) :
+  (j <= k)%nat ->
+  (forall n : nat, (j <= n <= k)%nat -> a n <= b n) ->
+  sum_n_m a j k <= sum_n_m b j k.
+Proof.
+  intros.
+  pose (h := (k - j)%nat).
+  replace (k) with (j + h)%nat by lia.
+  apply sum_n_m_le_loc_alt.
+  intros.
+  apply H0.
+  unfold h in H1.
+  lia.
+Qed.
+
+ Lemma ex_finite_lim_seq_ext (f g : nat -> R) :
+    (forall n, f n = g n) ->
+    ex_finite_lim_seq f <-> ex_finite_lim_seq g.
+  Proof.
+    intros.
+    unfold ex_finite_lim_seq.
+    split; intros;
+      destruct H0 as [l ?]; exists l.
+    - now apply is_lim_seq_ext with (u := f).
+    - now apply is_lim_seq_ext with (u := g).
+  Qed.
+
+  Lemma ex_finite_lim_seq_S (f : nat -> R) :
+    ex_finite_lim_seq f <-> ex_finite_lim_seq (fun n => f (S n)).
+  Proof.
+    unfold ex_finite_lim_seq.
+    split; intros; destruct H as [l ?]; exists l.
+    now apply is_lim_seq_incr_1 in H.
+    now apply is_lim_seq_incr_1.
+  Qed.
+
+Lemma ex_finite_lim_seq_incr_n (f : nat -> R) (N : nat) :
+  ex_finite_lim_seq f <-> ex_finite_lim_seq (fun n => f (N + n)%nat).
+Proof.
+  induction N.
+  - apply ex_finite_lim_seq_ext.
+    intros.
+    f_equal.
+  - generalize (ex_finite_lim_seq_S (fun n => f (N + n)%nat)); intros.
+    rewrite IHN.
+    rewrite H.
+    apply ex_finite_lim_seq_ext.
+    intros.
+    f_equal.
+    lia.
+  Qed.
+
+ Lemma no_best_converge_pos (gamma : nat -> R) :
+   0 < gamma 0%nat ->
+   (forall n, 0 <= gamma n) ->
+   is_lim_seq (sum_n gamma) p_infty ->
+   exists (rho : nat -> posreal),
+     is_lim_seq rho 0 /\ is_lim_seq (sum_n (fun n => rho n * gamma n)) p_infty.
+ Proof.
+   intros Ha0 Ha1 Ha2.
+   pose (s := sum_n gamma).
+   assert (forall n, 0 < s n).
+   {
+     unfold s; intros.
+     induction n.
+     - now rewrite sum_O.
+     - rewrite sum_Sn.
+       unfold plus; simpl.
+       specialize (Ha1 (S n)).
+       lra.
+   }
+    assert (Hs1 : is_lim_seq (fun n => /(s n)) 0).
+     {
+       replace (Finite 0) with (Rbar_inv p_infty) by now simpl.
+       apply is_lim_seq_inv; trivial; try discriminate.
+     }
+     assert (forall n m, (n <= m)%nat -> (s n <= s m)).
+     {
+       intros.
+       unfold s.
+       destruct (lt_dec n m).
+       - unfold sum_n.
+         apply Rge_le.
+         rewrite sum_n_m_Chasles with (m0 := n); try lia.
+         apply Rle_ge.
+         replace (sum_n_m gamma 0 n) with ((sum_n_m gamma 0 n) + 0) at 1 by lra.
+         unfold plus; simpl.
+         apply Rplus_le_compat_l.
+         apply sum_n_m_pos; trivial.
+       - assert (n = m) by lia.
+         now rewrite H1.
+     }
+     assert (Hs2 : forall n, 0 < / (s n)).
+     {
+       intros.
+       now apply Rinv_0_lt_compat.
+     }
+     exists (fun n => mkposreal _ (Hs2 n)).
+     split; trivial.
+     assert (forall N k, sum_n_m (fun n => (gamma n)/(s n)) (S N) (S N + k) >= 1 - (s N) / (s (S N + k)%nat)).
+     {
+       intros.
+       apply Rge_trans with (r2 := sum_n_m (fun n => (gamma n)/(s (S N + k)%nat)) (S N) (S N + k)).
+       - apply Rle_ge.
+         apply sum_n_m_le_loc; intros; try lia.
+         unfold Rdiv.
+         apply Rmult_le_compat_l; trivial.
+         apply Rinv_le_contravar; trivial.
+         apply H0.
+         lia.
+       - unfold Rdiv.
+         rewrite sum_n_m_ext with (b := (fun n : nat => scal (/ s (S N + k)%nat) (gamma n))).
+         + rewrite sum_n_m_scal_l.
+           rewrite sum_n_m_sum_n; try lia.
+           unfold s.
+           unfold scal; simpl.
+           unfold mult; simpl.
+           rewrite Rmult_comm.
+           replace (1 - sum_n gamma N * / sum_n gamma (S (N + k))) with
+               ((sum_n gamma (S (N + k))%nat - sum_n gamma N) * / sum_n gamma (S (N + k))).
+           * apply Rmult_ge_compat_r.
+             left; apply Hs2.
+             right.
+             unfold minus; simpl.
+             unfold plus; simpl.
+             unfold opp; simpl.
+             now ring_simplify.
+           * field.
+             apply Rgt_not_eq.
+             apply H.
+         + intros.
+           unfold scal; simpl.
+           unfold mult; simpl.
+           now rewrite Rmult_comm.
+     }
+     simpl.
+     generalize (ex_lim_seq_incr  (sum_n (fun n : nat => / s n * gamma n)) ); intros.
+     cut_to  H2.
+   - destruct H2.
+     destruct x; trivial.
+     + assert (ex_finite_lim_seq  (sum_n (fun n : nat => / s n * gamma n)) )
+         by (now exists (r)).
+       apply ex_lim_seq_cauchy_corr in H3.
+       unfold ex_lim_seq_cauchy in H3.
+       assert (0 < /2) by lra.
+       specialize (H3 (mkposreal _ H4)).
+       destruct H3 as [N ?].
+       assert (forall k, s (S N + k)%nat < (s N)/(1 - mkposreal _ H4)).
+       {
+         intros.
+         specialize (H3 N (S N + k)%nat).
+         cut_to H3; try lia.
+         assert (1 - s N / s (S N + k)%nat < mkposreal _ H4).
+         {
+           specialize (H1 N k).
+           apply Rge_le in H1.
+           eapply Rle_lt_trans.
+           apply H1.
+           rewrite sum_n_m_ext with (b := fun n => / s n * gamma n) by (intros; unfold Rdiv; now rewrite Rmult_comm).
+           generalize (sum_n_m_sum_n (fun n : nat => / s n * gamma n) N (S N + k)); intros.
+           cut_to H5; try lia.
+           rewrite H5.
+           unfold minus; simpl.
+           unfold plus, opp; simpl.
+           rewrite Rabs_minus_sym in H3.
+           replace (S (N + k))%nat with (S N + k)%nat by lia.
+           rewrite Rabs_right in H3; trivial.
+           unfold minus, plus, opp in H5; simpl in H5.
+           unfold Rminus.
+           replace (S N + k)%nat with (S (N + k))%nat by lia.
+           rewrite <- H5.
+           apply Rle_ge.
+           apply sum_n_m_pos.
+           intros.
+           apply Rmult_le_pos; trivial.
+           left; now apply Rinv_0_lt_compat.
+         }
+         assert (s N / (s (S N + k)%nat) > 1 - mkposreal _ H4) by lra.
+         apply Rmult_gt_compat_r with (r :=  s (S N + k)%nat ) in H6; [| apply H].
+         unfold Rdiv in H6.
+         rewrite Rmult_assoc in H6.
+         rewrite Rinv_l in H6; [| apply Rgt_not_eq, H].
+         simpl in H6; simpl; lra.
+       }
+       assert (ex_finite_lim_seq s).
+       {
+         rewrite ex_finite_lim_seq_incr_n with (N := (S N)).
+         apply ex_finite_lim_seq_incr with (M := (s N)/(1 - mkposreal _ H4)).
+         - intros.
+           unfold s.
+           replace (S N + S n)%nat with (S (S N + n))%nat by lia.
+           rewrite sum_Sn.
+           replace (sum_n gamma (S N + n)) with (sum_n gamma (S N + n) + 0) at 1 by lra.
+           unfold plus; simpl.
+           apply Rplus_le_compat_l; trivial.
+         - intros.
+           left; apply H5.
+       }
+       destruct H6.
+       unfold s in H6.
+       apply is_lim_seq_unique in H6.
+       apply is_lim_seq_unique in Ha2.
+       rewrite Ha2 in H6.
+       discriminate.
+     + apply is_lim_seq_spec in H2; unfold is_lim_seq' in H2.
+       specialize (H2 0).
+       destruct H2.
+       specialize (H2 x).
+       cut_to H2; try lia.
+       assert (0 <= sum_n (fun n : nat => / s n * gamma n) x).
+       {
+         apply sum_n_nneg.
+         intros.
+         apply Rmult_le_pos; trivial.
+         - now left.
+       }
+       lra.
+     - intros.
+       rewrite sum_Sn.
+       unfold plus; simpl.
+       assert (0 <= / s (S n) * gamma (S n)).
+       + apply Rmult_le_pos; trivial.
+         now left.
+       + lra.
+ Qed.
+
+  Lemma sum_shift_diff (X : nat -> R) (m a : nat) :
+     sum_n X (a + S m) - sum_n X m =
+     sum_n (fun n0 : nat => X (n0 + S m)%nat) a.
+   Proof.
+     rewrite <-sum_n_m_shift.
+     rewrite sum_n_m_sum_n; try lia.
+     reflexivity.
+   Qed.
+
+ Lemma is_lim_seq_sum_shift_inf1 (f : nat -> R) (N : nat) :
+   is_lim_seq (sum_n f) p_infty <->
+   is_lim_seq (sum_n (fun n => f (n + (S N))%nat)) p_infty.
+ Proof.
+   generalize (sum_shift_diff f N); intros.
+   generalize (is_lim_seq_ext _ _ p_infty H); intros.
+   split; intros.
+   - apply H0.
+     apply is_lim_seq_minus with (l1 := p_infty) (l2 := sum_n f N).
+     + now apply is_lim_seq_incr_n with (N := S N) in H1.
+     + apply is_lim_seq_const.
+     + unfold is_Rbar_minus, is_Rbar_plus.
+       now simpl.
+   - symmetry in H.
+     generalize (is_lim_seq_ext _ _ p_infty H); intros.
+     apply H2 in H1.
+     apply is_lim_seq_incr_n with (N := S N).
+     apply is_lim_seq_ext with (u := fun a : nat => (sum_n f (a + S N) - sum_n f N) + (sum_n f N)).
+     + intros; lra.
+     + apply is_lim_seq_plus with (l1 := p_infty) (l2 := sum_n f N); trivial.
+       apply is_lim_seq_const.
+       unfold is_Rbar_plus; now simpl.
+  Qed.
+
+ Lemma is_lim_seq_sum_shift_inf (f : nat -> R) (N : nat) :
+   is_lim_seq (sum_n f) p_infty <->
+   is_lim_seq (sum_n (fun n => f (n + N)%nat)) p_infty.
+ Proof.
+   destruct N.
+   - split; apply is_lim_seq_ext; intros; apply sum_n_ext; intros; f_equal; lia.
+   - apply is_lim_seq_sum_shift_inf1.
+ Qed.
+
+  Lemma no_best_converge (gamma : nat -> R) :
+   (forall n, 0 <= gamma n) ->
+   is_lim_seq (sum_n gamma) p_infty ->
+   exists (rho : nat -> posreal),
+     is_lim_seq rho 0 /\ is_lim_seq (sum_n (fun n => rho n * gamma n)) p_infty.
+  Proof.
+    intros.
+    assert (exists N, 0 < gamma N).
+    {
+      apply is_lim_seq_spec in H0.
+      unfold is_lim_seq' in H0.
+      specialize (H0 0).
+      destruct H0 as [N ?].
+      specialize (H0 N).
+      cut_to H0; try lia.
+      now apply pos_ind_sum with (N := N).
+    }
+    destruct H1 as [N ?].
+    generalize (no_best_converge_pos (fun n => gamma (n + N)%nat)); intros.
+    cut_to H2; trivial.
+    - destruct H2 as [rho [? ?]].
+      assert (0 < 1) by lra.
+      exists (fun n => if (lt_dec n N) then (mkposreal _ H4) else rho (n - N)%nat).
+      split.
+      + apply is_lim_seq_incr_n with (N := N).
+        apply is_lim_seq_ext with (u := rho); trivial.
+        intros.
+        match_destr; try lia.
+        now replace (n + N - N)%nat with (n) by lia.
+      + rewrite is_lim_seq_sum_shift_inf with (N := N).
+        apply is_lim_seq_ext with (u := sum_n (fun n => rho n * gamma (n + N)%nat)); trivial.
+        intros.
+        apply sum_n_ext; intros.
+        match_destr; try lia.
+        now replace (n0 + N - N)%nat with (n0) by lia.
+    - now rewrite <- is_lim_seq_sum_shift_inf.
+  Qed.
+
+  Lemma sum_n_le_loc (a b : nat -> R) (k : nat) :
+  (forall n : nat, (n <= k)%nat -> a n <= b n) ->
+  sum_n a k <= sum_n b k.
+  Proof.
+    intros.
+    induction k.
+    - rewrite sum_O.
+      rewrite sum_O.
+      apply H; lia.
+    - rewrite sum_Sn.
+      rewrite sum_Sn.
+      assert (forall n : nat, (n <= k)%nat -> a n <= b n).
+      intros.
+      apply H; lia.
+      specialize (IHk H0).
+      apply Rplus_le_compat; trivial; apply H; lia.
+  Qed.
+
+  Lemma no_best_converge_iff (gamma : nat -> R) :
+   (forall n, 0 <= gamma n) ->
+   is_lim_seq (sum_n gamma) p_infty <->
+   exists (rho : nat -> posreal),
+     is_lim_seq rho 0 /\ is_lim_seq (sum_n (fun n => rho n * gamma n)) p_infty.
+  Proof.
+    intros.
+    split; intros.
+    - now apply no_best_converge.
+    - destruct H0 as [? [? ?]].
+      apply is_lim_seq_spec in H0.
+      unfold is_lim_seq' in H0.
+      assert (0 < 1) by lra.
+      destruct (H0 (mkposreal _ H2)) as [? ?].
+      rewrite is_lim_seq_sum_shift_inf with (N := x0) in H1.
+      rewrite is_lim_seq_sum_shift_inf with (N := x0).
+      assert (forall n, x (n + x0)%nat < 1).
+      {
+        intros.
+        specialize (H3 (n + x0)%nat).
+        cut_to H3; try lia.
+        rewrite Rminus_0_r in H3.
+        rewrite Rabs_right in H3; [|left; apply cond_pos].
+        apply H3.
+      }
+      apply is_lim_seq_le_p_loc with (u :=  (sum_n (fun n : nat => x (n + x0)%nat * gamma (n + x0)%nat))); trivial.
+      exists (0%nat); intros.
+      apply sum_n_le_loc.
+      intros.
+      replace (gamma (n0 + x0)%nat) with (1 *  gamma (n0 + x0)%nat) at 2 by lra.
+      apply Rmult_le_compat_r; trivial.
+      now left.
+   Qed.
 
  End tails.

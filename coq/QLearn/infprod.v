@@ -3,6 +3,7 @@ Require Import Reals Sums Lra Lia.
 Require Import Coquelicot.Coquelicot.
 Require Import LibUtils.
 Require Import sumtest.
+Require Import RealAdd.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -564,24 +565,6 @@ Proof.
   apply sub_sum_limit_nneg.
   intros.
   apply Rle_0_sqr.
-Qed.
-
-Lemma sum_n_le_loc (a b : nat -> R) (k : nat) :
-  (forall n : nat, (n <= k)%nat -> a n <= b n) -> 
-  sum_n a k <= sum_n b k.
-Proof.
-  intros.
-  induction k.
-  - rewrite sum_O.
-    rewrite sum_O.
-    apply H; lia.
-  - rewrite sum_Sn.
-    rewrite sum_Sn.
-    assert (forall n : nat, (n <= k)%nat -> a n <= b n).
-    intros.
-    apply H; lia.
-    specialize (IHk H0).
-    apply Rplus_le_compat; trivial; apply H; lia.
 Qed.
 
 Lemma lim_sq_0 (a : nat -> R) :
