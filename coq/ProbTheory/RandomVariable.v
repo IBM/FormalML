@@ -1,4 +1,4 @@
-Require Export Program.Basics.
+Require Export Program.Basics Program.
 Require Import List Morphisms Lia.
 
 Require Export LibUtils BasicUtils ProbSpace SigmaAlgebras.
@@ -811,3 +811,39 @@ Section adapted.
   Qed.    
 
 End adapted.
+
+Section prod_space.
+
+  Context {Ts Td1 Td2}
+          {dom:SigmaAlgebra Ts} {cod1:SigmaAlgebra Td1}
+          {cod2:SigmaAlgebra Td2}.
+
+
+  Global Instance product_sa_rv
+         (X1:Ts->Td1) (X2:Ts->Td2) 
+         {rv1:RandomVariable dom cod1 X1}
+         {rv2:RandomVariable dom cod2 X2} :
+    RandomVariable dom (product_sa cod1 cod2) (fun a => (X1 a, X2 a)).
+  Proof.
+    intros ?.
+    red in rv1, rv2.
+    unfold event_preimage in *.
+    destruct B; simpl.
+    apply generated_sa_closure in s.
+    simpl in *.
+    dependent induction s.
+    - apply sa_all.
+    - destruct H as [?[?[?[??]]]].
+      eapply sa_proper.
+      + intros ?.
+        apply H1.
+      + simpl.
+        apply sa_inter.
+        * apply (rv1 (exist _ _ H)).
+        * apply (rv2 (exist _ _ H0)).
+    - apply sa_countable_union. 
+      eauto.
+    - apply sa_complement; eauto.
+  Qed.
+
+End prod_space.

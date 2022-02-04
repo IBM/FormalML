@@ -445,6 +445,19 @@ Proof.
     reflexivity.
 Qed.
 
+Theorem product_sa_sa {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (a:event sa1) (b:event sa2) :
+  sa_sigma (SigmaAlgebra:=product_sa sa1 sa2) (fun '(x,y) => a x /\ b y).
+Proof.
+  apply generated_sa_sub.
+  red.
+  destruct a; destruct b; simpl.
+  exists x; exists x0.
+  firstorder.
+Qed.
+
+Definition product_sa_event {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (a:event sa1) (b:event sa2)
+  := exist _ _ (product_sa_sa a b).
+
 (* dependent product *)
 Definition pre_event_set_dep_product {T₁:Type} {T₂:T₁->Type} (s₁ : pre_event T₁ -> Prop) (s₂ : forall x, pre_event (T₂ x) -> Prop) : pre_event (sigT T₂) -> Prop
   := fun (e:pre_event (sigT T₂)) =>
@@ -495,6 +508,27 @@ Proof.
     apply pre_event_set_dep_product_proper; symmetry; trivial.
     apply s2equiv.
 Qed.
+
+Lemma dep_product_sa_sa {T₁:Type} {T₂:T₁->Type} {sa₁:SigmaAlgebra T₁} {sa₂:forall x, SigmaAlgebra (T₂ x)}
+       (a:event sa₁) (b:forall a, event (sa₂ a)) :
+  sa_sigma (SigmaAlgebra:=dep_product_sa sa₁ sa₂) (fun '(existT x y) => a x /\ b x y).
+Proof.
+  apply generated_sa_sub.
+  red.
+  exists a.
+  exists b.
+  split; [| split].
+  - apply sa_sigma_event_pre.
+  - intros.
+    apply sa_sigma_event_pre.
+  - intros [??]; simpl; reflexivity.
+Qed.
+
+Definition dep_product_sa_event {T₁:Type} {T₂:T₁->Type} {sa₁:SigmaAlgebra T₁} {sa₂:forall x, SigmaAlgebra (T₂ x)}
+  (a:event sa₁) (b:forall a, event (sa₂ a)) :
+  event (dep_product_sa sa₁ sa₂)
+  := exist _ _ (dep_product_sa_sa a b).
+
 
 Definition pre_event_push_forward {X Y:Type} (f:X->Y) (ex:pre_event X) : pre_event Y
   := fun y => exists x, f x = y /\ ex x.

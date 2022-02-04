@@ -2643,38 +2643,21 @@ Theorem Dvoretzky_DS_scale_prop
    - intros; apply H1.
  Qed.
 
- Fixpoint DS_X1 (X0:Ts->R) (T:nat->R->Ts->R) (Y:nat->Ts->R) (n:nat) : Ts -> R :=
+ Fixpoint DS_X1 (X0:Ts->R) (T:nat->(R*Ts)->R) (Y:nat->Ts->R) (n:nat) : Ts -> R :=
    match n with
    | 0%nat => X0
-   | S m => (rvplus (fun ts => T m (DS_X1 X0 T Y m ts) ts) (Y m))
+   | S m => (rvplus (fun ts => T m ((DS_X1 X0 T Y m ts), ts)) (Y m))
    end.
-
- Global Instance product_rv {Ts2:Type} (dom2:SigmaAlgebra Ts2) {Td1 Td2} (cod1:SigmaAlgebra Td1) (cod2:SigmaAlgebra Td2) X Y
-        {rvX:RandomVariable dom2 cod1 X}
-        {rvY:RandomVariable dom2 cod2 Y} :
-   RandomVariable dom2 (product_sa cod1 cod2) (fun ts => (X ts, Y ts)).
- Proof.
-   unfold RandomVariable; intros.
-   unfold event_preimage.
-   destruct B; simpl.
-   simpl in s.
-   apply generated_sa_closure in s.
-   simpl in s.
-   destruct s.
-   - unfold pre_Ω.
-     apply sa_all.
- 
-Admitted.
 
  Corollary Dvoretzky_DS_extended_simple1
            (X0:Ts->R) 
         (Y : nat -> Ts -> R)
-        (T : nat -> R -> Ts -> R)
+        (T : nat -> (R * Ts) -> R)
         {F : nat -> SigmaAlgebra Ts}
         (isfilt : IsFiltration F)
         (filt_sub : forall n, sa_sub (F n) dom)
         {adaptX : IsAdapted borel_sa (DS_X1 X0 T Y) F}
-        {rvT: forall n, RandomVariable (product_sa borel_sa (F n)) borel_sa (fun '(x,ts) => T n x ts)}
+        {rvT: IsAdapted borel_sa T (fun n => product_sa borel_sa (F n))}
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
         (hpos2 : forall n x, 0 <= beta n x )
@@ -2683,7 +2666,7 @@ Admitted.
         {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
-  (forall n v omega, (rvabs (T n v) omega) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_X1 X0 T Y n)) omega) - gamma n omega)) ->
+  (forall n omega, (Rabs (T n (DS_X1 X0 T Y n omega, omega))) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_X1 X0 T Y n)) omega) - gamma n omega)) ->
   ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
   almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
   almost prts (fun omega => ex_series (fun n => beta n omega))->
@@ -2693,24 +2676,253 @@ Admitted.
    intros.
    eapply (Dvoretzky_DS_extended
                  (DS_X1 X0 T Y) Y
-                 (fun n ts => T n (DS_X1 X0 T Y n ts) ts)
+                 (fun n ts => T n ((DS_X1 X0 T Y n ts),ts))
                  isfilt filt_sub
                  hpos1 hpos2 hpos3
 
           ); trivial.
    - reflexivity.
-   - intros; apply H0.
      Unshelve.
      intros n.
-     cut (RandomVariable (F n) borel_sa (fun ts : Ts =>  (fun '(x, ts) => T n x ts) ((DS_X1 X0 T Y n ts), ts))).
+     cut (RandomVariable (F n) borel_sa (fun ts : Ts =>  (fun '(x, ts) => T n (x,ts)) ((DS_X1 X0 T Y n ts), ts))).
      {
        apply RandomVariable_proper; try reflexivity.
      }
      
      apply (compose_rv (fun ts => (DS_X1 X0 T Y n ts, ts)) (dom1:=F n) (dom2:=(product_sa borel_sa (F n)))); trivial.
-     apply product_rv.
+     apply product_sa_rv.
      + apply adaptX.
      + apply id_rv.
+ Qed.
+ 
+ Fixpoint DS_Xn_v (X0:Ts->R) (T:forall (n:nat), (vector R n*Ts)->R) (Y:nat->Ts->R) (n:nat) : Ts -> vector R (S n) :=
+   match n with
+   | 0%nat => fun ts => vector_singleton (X0 ts)
+   | S m => let prefix := DS_Xn_v X0 T Y m in
+           fun ts =>
+             vector_add_to_end
+               (T (S m) (prefix ts, ts) + Y m ts) (prefix ts)
+   end.
+
+ Definition DS_Xn (X0:Ts->R) (T:forall (n:nat), (vector R n*Ts)->R) (Y:nat->Ts->R) (n:nat) :
+   Ts -> R
+   := fun ts => vector_nth n (Nat.lt_succ_diag_r _) (DS_Xn_v X0 T Y n ts).
+
+ Definition DS_Tn (X0:Ts->R) (T:forall (n:nat), (vector R n*Ts)->R) (Y:nat->Ts->R) (n:nat) ts : R
+   := T (S n) (DS_Xn_v X0 T Y n ts, ts).
+     
+ Corollary Dvoretzky_DS_extended_simple_vec
+           (X0:Ts->R) 
+        (Y : nat -> Ts -> R)
+        (T : forall (n:nat), (vector R n*Ts)->R)
+        {F : nat -> SigmaAlgebra Ts}
+        (isfilt : IsFiltration F)
+        (filt_sub : forall n, sa_sub (F n) dom)
+        {adaptX : IsAdapted borel_sa (DS_Xn X0 T Y) F}
+        {adaptT : IsAdapted borel_sa (DS_Tn X0 T Y) F}
+        {alpha beta gamma : nat -> Ts -> R}
+        (hpos1 : forall n x, 0 <= alpha n x)
+        (hpos2 : forall n x, 0 <= beta n x )
+        (hpos3 : forall n x, 0 <= gamma n x)
+        (rvy : forall n, RandomVariable dom borel_sa (Y n))
+        {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
+  (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
+                     (fun x : Ts => const 0 x)) ->
+  (forall n omega, (Rabs (DS_Tn X0 T Y n omega)) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_Xn X0 T Y n)) omega) - gamma n omega)) ->
+  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
+  almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
+  almost prts (fun omega => ex_series (fun n => beta n omega))->
+  almost prts (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
+  almost _ (fun omega => is_lim_seq (fun n => (DS_Xn X0 T Y n omega)) 0).
+ Proof.
+   intros.
+   eapply (Dvoretzky_DS_extended
+                 (DS_Xn X0 T Y) Y
+                 (DS_Tn X0 T Y)
+                 isfilt filt_sub
+                 hpos1 hpos2 hpos3
+
+          ); trivial.
+   - intros ??.
+     unfold DS_Tn, DS_Xn; simpl.
+     rewrite vector_nth_add_to_end_suffix.
+     unfold rvplus.
+     reflexivity.
+ Qed.
+
+ (* establish a basic property of the history we are passing aroung: we always just append to it *)
+ Lemma DS_Xn_v_same_prefix_plus_helper (X0:Ts->R) (T:forall (n:nat), (vector R n*Ts)->R) (Y:nat->Ts->R)
+       (m n i:nat) pf1 pf2 ts : 
+   vector_nth i pf1 (DS_Xn_v X0 T Y (m+n) ts) = vector_nth i pf2 (DS_Xn_v X0 T Y n ts).
+ Proof.
+   induction m; simpl.
+   - apply vector_nth_ext.
+   - simpl in pf2.
+     erewrite vector_nth_add_to_end_prefix.
+     rewrite IHm.
+     reflexivity.
+     Unshelve.
+     lia.
+ Qed.
+
+ Lemma DS_Xn_v_same_prefix_le_helper (X0:Ts->R) (T:forall (n:nat), (vector R n*Ts)->R) (Y:nat->Ts->R)
+       (m n i:nat) pf1 pf2 ts : (n <= m)%nat ->
+   vector_nth i pf1 (DS_Xn_v X0 T Y m ts) = vector_nth i pf2 (DS_Xn_v X0 T Y n ts).
+ Proof.
+   intros.
+   assert (m= ((m-n) + n)%nat) by lia.
+   generalize (DS_Xn_v_same_prefix_plus_helper X0 T Y (((m-n))%nat) n i)
+   ; intros HH.
+   destruct H0.
+   apply HH.
+ Qed.
+
+ (* Any common prefix is the same *)
+ Theorem DS_Xn_v_same_prefix (X0:Ts->R) (T:forall (n:nat), (vector R n*Ts)->R) (Y:nat->Ts->R)
+       (m n i:nat) pf1 pf2 ts :
+   vector_nth i pf1 (DS_Xn_v X0 T Y m ts) = vector_nth i pf2 (DS_Xn_v X0 T Y n ts).
+ Proof.
+   destruct (le_dec n m).
+   - now apply DS_Xn_v_same_prefix_le_helper.
+   - symmetry.
+     apply DS_Xn_v_same_prefix_le_helper.
+     lia.
+ Qed.
+
+  Fixpoint DS_Xnd_v (X0:Ts->R) (T:forall (n:nat), (vector R n)->R) (Y:nat->Ts->R) (n:nat) : Ts -> vector R (S n) :=
+   match n with
+   | 0%nat => fun ts => vector_singleton (X0 ts)
+   | S m => let prefix := DS_Xnd_v X0 T Y m in
+           fun ts =>
+             vector_add_to_end
+               (T (S m) (prefix ts) + Y m ts) (prefix ts)
+   end.
+
+ Definition DS_Xdn (X0:Ts->R) (T:forall (n:nat), (vector R n)->R) (Y:nat->Ts->R) (n:nat) :
+   Ts -> R
+   := fun ts => vector_nth n (Nat.lt_succ_diag_r _) (DS_Xnd_v X0 T Y n ts).
+
+ Definition DS_Tdn (X0:Ts->R) (T:forall (n:nat), (vector R n)->R) (Y:nat->Ts->R) (n:nat) ts : R
+   := T (S n) (DS_Xnd_v X0 T Y n ts).
+
+ Instance vector_singleton_rv : RandomVariable borel_sa (Rvector_borel_sa 1) vector_singleton.
+ Proof.
+   apply RealVectorMeasurableRandomVariable; intros ??; simpl.
+   rewrite vector_nth_fun_to_vector.
+   eapply RealMeasurable_proper.
+   - intros ?.
+     rewrite vector_nth_singleton.
+     reflexivity.
+   - apply rv_measurable.
+     apply id_rv.
+ Qed.
+
+ Instance DS_Xdn_v_rv (X0:Ts->R) 
+        (Y : nat -> Ts -> R)
+        (T : forall (n:nat), vector R n->R)
+        {F : nat -> SigmaAlgebra Ts}
+        (isfilt : IsFiltration F)
+        (filt_sub : forall n, sa_sub (F n) dom)
+        {rvT:(forall n, RandomVariable (Rvector_borel_sa n) borel_sa (T n))}
+        {adaptX : IsAdapted borel_sa (DS_Xdn X0 T Y) F} :
+   forall n,
+     RandomVariable (F n) (Rvector_borel_sa (S n)) (DS_Xnd_v X0 T Y n).
+ Proof.
+   induction n; simpl.
+   - apply (compose_rv (dom1:=F 0%nat) (dom2:=borel_sa) (dom3:=Rvector_borel_sa 1)%nat
+                       X0).
+     + apply (adaptX 0)%nat.
+     + apply vector_singleton_rv.
+   - apply RealVectorMeasurableRandomVariable; intros ??; simpl.
+     rewrite vector_nth_fun_to_vector.
+     destruct (Nat.eq_dec i (S n)).
+     + subst.
+       eapply RealMeasurable_proper.
+       * intros ?.
+         rewrite vector_nth_add_to_end_suffix.
+         reflexivity.
+       * specialize (adaptX (S n)).
+         unfold DS_Xdn in adaptX.
+         simpl in adaptX.
+         apply rv_measurable.
+         generalize adaptX.
+         apply RandomVariable_proper; try reflexivity.
+         intros ?.
+         rewrite vector_nth_add_to_end_suffix.
+         reflexivity.
+     + assert (pf2:(i < S n)%nat) by lia.
+       eapply RealMeasurable_proper.
+       * intros ?.
+         rewrite (vector_nth_add_to_end_prefix _ _ _ _ pf2).
+         reflexivity.
+       * apply RandomVariableRealVectorMeasurable in IHn.
+         specialize (IHn i pf2).
+         apply rv_measurable.
+         apply measurable_rv in IHn.
+         revert IHn.
+         apply RandomVariable_proper_le; try reflexivity.
+         -- apply isfilt.
+         -- intros ?; simpl.
+            rewrite vector_nth_fun_to_vector.
+            reflexivity.
+ Qed.
+
+ Instance DS_Tdn_adapted  (X0:Ts->R) 
+        (Y : nat -> Ts -> R)
+        (T : forall (n:nat), vector R n->R)
+        {F : nat -> SigmaAlgebra Ts}
+        (isfilt : IsFiltration F)
+        (filt_sub : forall n, sa_sub (F n) dom)
+        {rvT:(forall n, RandomVariable (Rvector_borel_sa n) borel_sa (T n))}
+        {adaptX : IsAdapted borel_sa (DS_Xdn X0 T Y) F} :
+   IsAdapted borel_sa (DS_Tdn X0 T Y) F.
+ Proof.
+   unfold DS_Tdn.
+   intros n.
+   apply (compose_rv (dom1:=F n) (dom2:=Rvector_borel_sa (S n)) (dom3:=borel_sa)
+                     (DS_Xnd_v X0 T Y n)); trivial.
+   now apply DS_Xdn_v_rv.
+ Qed.   
+
+ Corollary Dvoretzky_DS_simple_vec
+           (X0:Ts->R) 
+        (Y : nat -> Ts -> R)
+        (T : forall (n:nat), vector R n->R)
+        {F : nat -> SigmaAlgebra Ts}
+        (isfilt : IsFiltration F)
+        (filt_sub : forall n, sa_sub (F n) dom)
+        {rvT:(forall n, RandomVariable (Rvector_borel_sa n) borel_sa (T n))}
+        {adaptX : IsAdapted borel_sa (DS_Xdn X0 T Y) F}
+        {alpha beta gamma : nat -> R}
+        (hpos1 : forall n, 0 <= alpha n)
+        (hpos2 : forall n, 0 <= beta n)
+        (hpos3 : forall n, 0 <= gamma n)
+        (rvy : forall n, RandomVariable dom borel_sa (Y n))
+        {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
+  (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
+                     (fun x : Ts => const 0 x)) ->
+  (forall n omega, (Rabs (DS_Tdn X0 T Y n omega)) <= Rmax (alpha n) ((1+beta n)*(rvabs ((DS_Xdn X0 T Y n)) omega) - gamma n)) ->
+  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
+  is_lim_seq (fun n => alpha n) 0 ->
+  ex_series (fun n => beta n) ->
+  is_lim_seq (sum_n (fun n => gamma n)) p_infty ->
+  almost _ (fun omega => is_lim_seq (fun n => (DS_Xdn X0 T Y n omega)) 0).
+ Proof.
+   intros.
+   eapply (Dvoretzky_DS
+                 (DS_Xdn X0 T Y) Y
+                 (DS_Tdn X0 T Y)
+                 isfilt filt_sub
+                 hpos1 hpos2 hpos3
+
+          ); trivial.
+   - intros ??.
+     unfold DS_Tdn, DS_Xdn; simpl.
+     rewrite vector_nth_add_to_end_suffix.
+     unfold rvplus.
+     reflexivity.
+     Unshelve.
+     now apply DS_Tdn_adapted.
  Qed.
 
  Theorem Dvoretzky_DS_extended_alt

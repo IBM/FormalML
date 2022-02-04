@@ -668,19 +668,6 @@ Section ps_product.
                                                                   (ps_measure ps2)) Ω (exist _ _ sa)).
     now red; simpl.
   Defined.
-
-  Theorem product_sa_sa (a:event A) (b:event B) :
-    sa_sigma (SigmaAlgebra:=product_sa A B) (fun '(x,y) => a x /\ b y).
-  Proof.
-    apply generated_sa_sub.
-    red.
-    destruct a; destruct b; simpl.
-    exists x; exists x0.
-    firstorder.
-  Qed.
-
-  Definition product_sa_event (a:event A) (b:event B) : event (product_sa A B)
-    := exist _ _ (product_sa_sa a b).
   
   Theorem product_sa_product (a:event A) (b:event B) :
     ps_P (ProbSpace:=product_ps) (product_sa_event a b) =
