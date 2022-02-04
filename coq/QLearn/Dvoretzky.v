@@ -2086,13 +2086,15 @@ Section Derman_Sacks.
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
   (forall n omega, (rvabs (T n) omega) <= Rmax (alpha n) ((1+beta n)*(rvabs (X n) omega) - gamma n)) ->
-  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
+  ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
   is_lim_seq alpha 0 ->
-  ex_series beta ->
+  ex_finite_lim_seq (sum_n beta) ->
   is_lim_seq (sum_n gamma) p_infty ->
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
+   rewrite ex_finite_lim_series in H2.
+   rewrite ex_finite_lim_series in H4.   
    assert (rvt:forall n : nat, RandomVariable dom borel_sa (T n)).
    {
      intros.
@@ -2225,13 +2227,15 @@ Theorem Dvoretzky_DS_extended
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
   (forall n omega, (rvabs (T n) omega) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs (X n) omega) - gamma n omega)) ->
-  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
+  ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
   almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
-  almost prts (fun omega => ex_series (fun n => beta n omega))->
+  almost prts (fun omega => ex_finite_lim_seq (sum_n (fun n => beta n omega)))->
   almost prts (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
+   rewrite ex_finite_lim_series in H2.
+   setoid_rewrite ex_finite_lim_series in H4.   
    assert (rvt:forall n : nat, RandomVariable dom borel_sa (T n)).
    {
      intros.
@@ -2564,9 +2568,9 @@ Theorem Dvoretzky_DS_scale_prop
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
   (forall n omega, (rvabs (T n) omega) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs (DS_X X0 T Y n) omega) - gamma n omega)) ->
-  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
+  ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
   almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
-  almost prts (fun omega => ex_series (fun n => beta n omega))->
+  almost prts (fun omega => ex_finite_lim_seq (sum_n (fun n => beta n omega))) ->
   almost prts (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
   almost _ (fun omega => is_lim_seq (fun n => (DS_X X0 T Y) n omega) 0).
  Proof.
@@ -2593,9 +2597,9 @@ Theorem Dvoretzky_DS_scale_prop
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
   (forall n v omega, (rvabs (T n v) omega) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs (X n) omega) - gamma n omega)) ->
-  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
+  ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
   almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
-  almost prts (fun omega => ex_series (fun n => beta n omega))->
+  almost prts (fun omega => ex_finite_lim_seq (sum_n (fun n => beta n omega))) ->
   almost prts (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
@@ -2627,9 +2631,9 @@ Theorem Dvoretzky_DS_scale_prop
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
   (forall n v omega, (rvabs (T n v) omega) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs (X n) omega) - gamma n omega)) ->
-  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
+  ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
   almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
-  almost prts (fun omega => ex_series (fun n => beta n omega))->
+  almost prts (fun omega => ex_finite_lim_seq (sum_n (fun n => beta n omega))) ->
   almost prts (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
@@ -2667,9 +2671,9 @@ Theorem Dvoretzky_DS_scale_prop
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
   (forall n omega, (Rabs (T n (DS_X1 X0 T Y n omega, omega))) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_X1 X0 T Y n)) omega) - gamma n omega)) ->
-  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
+  ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
   almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
-  almost prts (fun omega => ex_series (fun n => beta n omega))->
+  almost prts (fun omega => ex_finite_lim_seq (sum_n (fun n => beta n omega))) ->
   almost prts (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
   almost _ (fun omega => is_lim_seq (fun n => (DS_X1 X0 T Y n omega)) 0).
  Proof.
@@ -2729,9 +2733,9 @@ Theorem Dvoretzky_DS_scale_prop
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
   (forall n omega, (Rabs (DS_Tn X0 T Y n omega)) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_Xn X0 T Y n)) omega) - gamma n omega)) ->
-  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
+  ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
   almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
-  almost prts (fun omega => ex_series (fun n => beta n omega))->
+  almost prts (fun omega => ex_finite_lim_seq (sum_n (fun n => beta n omega))) ->
   almost prts (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
   almost _ (fun omega => is_lim_seq (fun n => (DS_Xn X0 T Y n omega)) 0).
  Proof.
@@ -2902,10 +2906,10 @@ Theorem Dvoretzky_DS_scale_prop
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
   (forall n omega, (Rabs (DS_Tdn X0 T Y n omega)) <= Rmax (alpha n) ((1+beta n)*(rvabs ((DS_Xdn X0 T Y n)) omega) - gamma n)) ->
-  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
-  is_lim_seq (fun n => alpha n) 0 ->
-  ex_series (fun n => beta n) ->
-  is_lim_seq (sum_n (fun n => gamma n)) p_infty ->
+  ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
+  is_lim_seq alpha 0 ->
+  ex_finite_lim_seq (sum_n beta) ->
+  is_lim_seq (sum_n gamma) p_infty ->
   almost _ (fun omega => is_lim_seq (fun n => (DS_Xdn X0 T Y n omega)) 0).
  Proof.
    intros.
