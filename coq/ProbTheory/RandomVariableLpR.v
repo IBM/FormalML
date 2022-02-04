@@ -7,7 +7,7 @@ Require Import FunctionalExtensionality.
 Require Import IndefiniteDescription ClassicalDescription.
 Require Import PropExtensionality.
 
-Require Import Reals.
+Require Import Reals RealAdd.
 Require Import Coquelicot.Coquelicot.
 Require Export RandomVariableFinite.
 Require Import quotient_space.
@@ -3226,27 +3226,6 @@ Section complete.
     rewrite Elim_seq_fin in H0.
     now apply lim_sum_abs_bounded.
  Qed.
-
-  Lemma ex_finite_lim_seq_ext (f g : nat -> R) :
-    (forall n, f n = g n) ->
-    ex_finite_lim_seq f <-> ex_finite_lim_seq g.
-  Proof.
-    intros.
-    unfold ex_finite_lim_seq.
-    split; intros;
-      destruct H0 as [l ?]; exists l.
-    - now apply is_lim_seq_ext with (u := f).      
-    - now apply is_lim_seq_ext with (u := g).      
-  Qed.
-
-  Lemma ex_finite_lim_seq_S (f : nat -> R) :
-    ex_finite_lim_seq f <-> ex_finite_lim_seq (fun n => f (S n)).
-  Proof.
-    unfold ex_finite_lim_seq.
-    split; intros; destruct H as [l ?]; exists l.
-    now apply is_lim_seq_incr_1 in H.
-    now apply is_lim_seq_incr_1.    
-  Qed.
 
   Lemma cauchy_filter_sum_ext0_finite00
         (F : (LpRRV_UniformSpace prts pbig -> Prop) -> Prop)
