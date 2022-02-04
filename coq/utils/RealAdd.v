@@ -6087,7 +6087,7 @@ Section tails.
    apply classic.
  Qed.
 
- Theorem no_worst_final (a : nat -> R):
+ Theorem no_worst_converge_iff (a : nat -> R):
    (forall n, 0 <= a n) ->
    ex_series a <->
    exists (b : nat -> R),

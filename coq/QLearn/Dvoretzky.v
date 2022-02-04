@@ -1761,7 +1761,7 @@ Section Derman_Sacks.
       ex_series (fun n => a n / Rsqr (b n)).
     Proof.
       intros apos aconv.
-      destruct (no_worst_final a apos).
+      destruct (no_worst_converge_iff a apos).
       specialize (H aconv).
       destruct H as [? [? [? ?]]].
       exists (fun n => sqrt (/ (x n))).
