@@ -2369,7 +2369,7 @@ Theorem Dvoretzky_DS_scale_prop
     forall n omega, Rabs (T n omega) <= Rmax (alpha2 n) ((1+beta n)*(Rabs (X n omega)) - gamma2 n).
  Proof.
    intros.
-   destruct (no_best_converge gamma hpos3 H2) as [rho [? ?]].
+   destruct (no_best_diverge gamma hpos3 H2) as [rho [? ?]].
    pose (alpha2 := fun n => Rmax (alpha n) ((1 + beta n) * rho n)).
    pose (gamma2 := fun n => (rho n) *(gamma n)).
    exists alpha2; exists gamma2.
@@ -2418,7 +2418,7 @@ Theorem Dvoretzky_DS_scale_prop
  Qed.
 
 
-  Lemma no_best_converge_fun (gamma : nat -> Ts -> R) :
+  Lemma no_best_diverge_fun (gamma : nat -> Ts -> R) :
    (forall n omega, 0 <= gamma n omega) ->
    (forall omega, is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
    exists (rho : nat -> Ts -> posreal),
@@ -2427,7 +2427,7 @@ Theorem Dvoretzky_DS_scale_prop
      is_lim_seq (sum_n (fun n => rho n omega * gamma n omega)) p_infty.
   Proof.
     intros gpos glim.
-    generalize (fun omega => no_best_converge (fun n => gamma n omega)
+    generalize (fun omega => no_best_diverge (fun n => gamma n omega)
                                     (fun n => gpos n omega)
                                     (glim omega)); intros.
     apply ClassicalChoice.choice in H.
@@ -2437,7 +2437,7 @@ Theorem Dvoretzky_DS_scale_prop
   Qed.
 
   
-  Lemma no_best_converge_stochastic (gamma : nat -> Ts -> R) :
+  Lemma no_best_diverge_stochastic (gamma : nat -> Ts -> R) :
    (forall n omega, 0 <= gamma n omega) ->
    almost _ (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
    exists (rho : nat -> Ts -> posreal),
@@ -2446,7 +2446,7 @@ Theorem Dvoretzky_DS_scale_prop
   Proof.
     intros gpos glim.
     destruct glim as [p [pone pH]].
-    destruct (no_best_converge_fun
+    destruct (no_best_diverge_fun
                   (fun n ts => if classic_dec p ts then
                               gamma n ts
                             else 1))
@@ -2487,7 +2487,7 @@ Theorem Dvoretzky_DS_scale_prop
     forall n omega, Rabs (T n omega) <= Rmax (alpha2 n omega) ((1+beta n omega)*(Rabs (X n omega)) - gamma2 n omega).
  Proof.
    intros.
-   destruct (no_best_converge_stochastic gamma hpos3 H2) as [rho [? ?]].
+   destruct (no_best_diverge_stochastic gamma hpos3 H2) as [rho [? ?]].
    pose (alpha2 := fun n omega => Rmax (alpha n omega) ((1 + beta n omega) * rho n omega)).
    pose (gamma2 := fun n omega => (rho n omega) *(gamma n omega)).
    exists alpha2; exists gamma2.
