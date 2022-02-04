@@ -6212,7 +6212,7 @@ Proof.
     lia.
   Qed.
 
- Lemma no_best_converge_pos (gamma : nat -> R) :
+ Lemma no_best_diverge_pos (gamma : nat -> R) :
    0 < gamma 0%nat ->
    (forall n, 0 <= gamma n) ->
    is_lim_seq (sum_n gamma) p_infty ->
@@ -6428,7 +6428,7 @@ Proof.
    - apply is_lim_seq_sum_shift_inf1.
  Qed.
 
-  Lemma no_best_converge (gamma : nat -> R) :
+  Lemma no_best_diverge (gamma : nat -> R) :
    (forall n, 0 <= gamma n) ->
    is_lim_seq (sum_n gamma) p_infty ->
    exists (rho : nat -> posreal),
@@ -6446,7 +6446,7 @@ Proof.
       now apply pos_ind_sum with (N := N).
     }
     destruct H1 as [N ?].
-    generalize (no_best_converge_pos (fun n => gamma (n + N)%nat)); intros.
+    generalize (no_best_diverge_pos (fun n => gamma (n + N)%nat)); intros.
     cut_to H2; trivial.
     - destruct H2 as [rho [? ?]].
       assert (0 < 1) by lra.
@@ -6484,7 +6484,7 @@ Proof.
       apply Rplus_le_compat; trivial; apply H; lia.
   Qed.
 
-  Lemma no_best_converge_iff (gamma : nat -> R) :
+  Lemma no_best_diverge_iff (gamma : nat -> R) :
    (forall n, 0 <= gamma n) ->
    is_lim_seq (sum_n gamma) p_infty <->
    exists (rho : nat -> posreal),
@@ -6492,7 +6492,7 @@ Proof.
   Proof.
     intros.
     split; intros.
-    - now apply no_best_converge.
+    - now apply no_best_diverge.
     - destruct H0 as [? [? ?]].
       apply is_lim_seq_spec in H0.
       unfold is_lim_seq' in H0.
