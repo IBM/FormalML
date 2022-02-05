@@ -3082,5 +3082,44 @@ Theorem Dvoretzky_DS_scale_prop
    apply (Dvoretzky_DS_extended X Y T isfilt filt_sub H6 hpos2 H7 rvy); trivial.
  Qed.
 
+ Theorem Dvoretzky_DS_extended_alt_theta (theta : R)
+        (X Y : nat -> Ts -> R)
+        (T : nat -> Ts -> R)
+        {F : nat -> SigmaAlgebra Ts}
+        (isfilt : IsFiltration F)
+        (filt_sub : forall n, sa_sub (F n) dom)
+        {adaptX : IsAdapted borel_sa X F}
+        {adaptT : IsAdapted borel_sa T F}
+        {alpha beta gamma : nat -> Ts -> R}
+        (hpos1 : forall n x, 0 <= alpha n x)
+        (hpos2 : forall n x, 0 <= beta n x )
+        (hpos3 : forall n x, 0 <= gamma n x)
+        (rvy : forall n, RandomVariable dom borel_sa (Y n))
+        {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
+   (forall (n:nat), rv_eq (X (S n)) (rvplus (T n) (Y n))) ->
+  (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
+                     (fun x : Ts => const 0 x)) ->
+  (forall n omega, Rabs (T n omega - theta) <=
+                   Rmax (alpha n omega) ((1+beta n omega - gamma n omega)*(Rabs (X n omega - theta)))) ->
+  ex_series (fun n => FiniteExpectation _ (rvsqr (Y n))) ->
+  almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
+  almost prts (fun omega => ex_series (fun n => beta n omega))->
+  almost prts (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
+  almost _ (fun omega => is_lim_seq (fun n => X n omega) theta).
+ Proof.
+   intros.
+   pose (X' := fun n => rvminus (X n) (const theta)).
+   pose (T' := fun n => rvminus (T n) (const theta)).
+   destruct (Dvoretzky_DS_scale_prop_stochastic X' T' hpos1 hpos2 hpos3) as [alpha2 [gamma2 [? [? [? [? ?]]]]]]; trivial.
+   - intros.
+     unfold T', X'.
+     now do 2 rewrite rvminus_unfold.
+   - apply (Dvoretzky_DS_extended_theta theta X Y T isfilt filt_sub H6 hpos2 H7 rvy); trivial.
+     intros.
+     specialize (H10 n omega).
+     unfold T', X' in H10.
+     now do 2 rewrite rvminus_unfold in H10.
+ Qed.
+
 
 End Derman_Sacks.
