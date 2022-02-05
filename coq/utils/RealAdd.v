@@ -6484,7 +6484,9 @@ Proof.
       apply Rplus_le_compat; trivial; apply H; lia.
   Qed.
 
-  Lemma no_best_diverge_iff (gamma : nat -> R) :
+  (* No best divergent series exists. *)
+
+  Theorem no_best_diverge_iff (gamma : nat -> R) :
    (forall n, 0 <= gamma n) ->
    is_lim_seq (sum_n gamma) p_infty <->
    exists (rho : nat -> posreal),
