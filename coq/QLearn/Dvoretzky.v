@@ -2412,11 +2412,8 @@ Section Derman_Sacks.
      rv_unfold.
      rewrite H; lra.
    - intros.
-     unfold T', X'.
-     rv_unfold.
-     replace (T n omega + -1 * theta) with (T n omega - theta) by lra.
-     replace (X n omega + -1 * theta) with (X n omega - theta) by lra.
-     easy.
+     unfold T', X', rvabs.
+     now do 2 rewrite rvminus_unfold.
  Qed.
  
  Theorem Dvoretzky_DS_extended_theta (theta : R)
@@ -2476,11 +2473,8 @@ Proof.
      rv_unfold.
      rewrite H; lra.
    - intros.
-     unfold T', X'.
-     rv_unfold.
-     replace (T n omega + -1 * theta) with (T n omega - theta) by lra.
-     replace (X n omega + -1 * theta) with (X n omega - theta) by lra.
-     easy.
+     unfold T', X', rvabs.
+     now do 2 rewrite rvminus_unfold.
   Qed.
    
 Theorem Dvoretzky_DS_scale_prop
