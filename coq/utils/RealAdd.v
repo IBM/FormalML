@@ -27,6 +27,8 @@ Import ListNotations.
 
 Local Open Scope R.
 
+Global Instance EqDecR : EqDec R eq := Req_EM_T.
+
 Global Instance Rle_pre : PreOrder Rle.
 Proof.
   constructor.
@@ -384,29 +386,36 @@ Proof.
   lia.
 Qed.
 
-Lemma frac_max_frac_le (x y:R) :
-  1 <= x ->
-  x <= y ->
-  x / (x + 1) <= y / (y + 1).
-Proof.
-  intros.
-  assert (1 <= x) by lra.
-  cut (x * (y + 1) <= y * (x + 1)).
-  - intros HH.
-    apply (Rmult_le_compat_r (/ (x+1))) in HH.
-    + rewrite Rinv_r_simpl_l in HH by lra.
-      apply (Rmult_le_compat_r (/ (y+1))) in HH.
-      * eapply Rle_trans; try eassumption.
-        unfold Rdiv.
-        repeat rewrite Rmult_assoc.
-        apply Rmult_le_compat_l; [lra | ].
-        rewrite <- Rmult_assoc.
-        rewrite Rinv_r_simpl_m by lra.
-        right; trivial.
-      * left; apply Rinv_0_lt_compat; lra.
-    + left; apply Rinv_0_lt_compat; lra.
-  - lra.
-Qed.
+Section extra.
+
+  Lemma Rmult_four_assoc (a b c d : R) : a * b * (c * d) = a * (b*c) * d.
+  Proof.
+    ring.
+  Qed.
+
+   Lemma Radd_minus (r1 r2 r3 : R) :
+     r1 = r2 + r3 <-> r1 - r2 = r3.
+   Proof.
+     split; intros; try lra.
+   Qed.
+
+  Lemma Radd_radd_minus (r1 r2 r3 r4 : R):
+    r1 + r2 = r3 + r4 <-> r3 - r1 = r2 - r4.
+  Proof.
+    split; intros; try lra.
+  Qed.
+
+    Lemma Rmult_bigpos_le_l a b :
+    0 <= a ->
+    1 <= b ->
+    a <= b * a.
+  Proof.
+    intros.
+    rewrite <- (Rmult_1_l a) at 1.
+    now apply Rmult_le_compat_r.
+  Qed.
+
+End extra.
 
 Section list_sum.
 
@@ -657,7 +666,6 @@ Proof.
   apply derivable_Rsqr.
 Qed.
 
-Global Instance EqDecR : EqDec R eq := Req_EM_T.
 
 Section sum_n.
 
@@ -949,7 +957,47 @@ Section expprops.
     + left. now apply exp_ineq2.
   Qed.
 
+
+  Lemma exp_increasing_le (x y : R) :
+    x <= y ->
+    exp x <= exp y.
+  Proof.
+    intros.
+    destruct (Rlt_dec x y).
+    - left.
+      now apply exp_increasing.
+    - assert (x = y) by lra.
+      rewrite H0.
+      now right.
+  Qed.
+
 End expprops.
+
+Section ln.
+
+Lemma ln_lt_0  (a : R) :
+  0 < a < 1 ->
+  ln a < 0.
+Proof.
+  intros.
+  rewrite <- ln_1.
+  apply ln_increasing; lra.
+Qed.
+
+Lemma ln_le_0  (a : R) :
+  0 < a <= 1 ->
+  ln a <= 0.
+Proof.
+  intros.
+  destruct (Rlt_dec a 1).
+  - left.
+    apply ln_lt_0; lra.
+  - assert (a = 1) by lra.
+    rewrite H0.
+    rewrite ln_1; lra.
+ Qed.
+
+End ln.
 
 Section convex.
 
@@ -1231,7 +1279,94 @@ Section Rpower.
         trivial.
   Qed.
 
+  Lemma Rpower_ln : forall x y : R, ln (Rpower x y) = y*ln x.
+  Proof.
+    unfold Rpower ; intros.
+    now rewrite ln_exp.
+  Qed.
 
+  Lemma Rpower_base_1 : forall x : R, Rpower 1 x = 1.
+  Proof.
+    intros.
+    unfold Rpower.
+    rewrite ln_1.
+    replace (x*0) with 0 by lra.
+    apply exp_0.
+  Qed.
+
+    Lemma log_power_base (e b : R ) :
+      0 < e -> 0 < b ->
+      b <> 1 -> Rpower b (ln e / ln b) = e.
+    Proof.
+      intros.
+      assert (exp (ln (Rpower b (ln e / ln b))) = exp (ln e)).
+      {
+        f_equal.
+        rewrite Rpower_ln.
+        field.
+        destruct (Rlt_dec b 1).
+        - apply Rlt_not_eq.
+          rewrite <- ln_1.
+          apply ln_increasing; lra.
+        - apply Rgt_not_eq.
+          rewrite <- ln_1.
+          apply ln_increasing; lra.
+      }
+      rewrite exp_ln in H2; [|apply Rpower_pos].
+      now rewrite exp_ln in H2.
+    Qed.
+
+    Lemma Rpower_lt1 (b y z : R ) :
+      0 < b < 1 -> y < z -> Rpower b y > Rpower b z.
+    Proof.
+      intros.
+      unfold Rpower.
+      apply exp_increasing.
+      assert (ln b < 0).
+      - destruct H.
+        rewrite <- ln_1.
+        apply ln_increasing; lra.
+      - rewrite Rmult_comm with (r1 := z).
+        rewrite Rmult_comm with (r1 := y).
+        now apply Rmult_lt_gt_compat_neg_l.
+    Qed.
+
+    Lemma Rpower_neg1 b e : b < 0 -> Rpower b e = 1.
+Proof.
+  intros.
+  unfold Rpower.
+  unfold ln.
+  match_destr; try lra.
+  - elimtype False; try tauto; lra.
+  - rewrite Rmult_0_r.
+    now rewrite exp_0.
+Qed.
+
+Lemma Rpower_convex_pos (e:R) :
+  1 <= e ->
+  forall (x y a : R), 0<x -> 0<y -> convex (fun z => Rpower z e) a x y.
+Proof.
+  intros.
+  eapply ppos_convex_deriv; trivial.
+  - intros.
+    now apply derivable_pt_lim_power.
+  - intros.
+    apply (ppos_deriv_incr_convex (fun z => Rpower z e)); trivial.
+    + intros; now apply derivable_pt_lim_power.
+    + intros.
+      apply Rmult_le_compat_l; [lra |].
+      apply Rle_Rpower_l; lra.
+Qed.
+
+
+Lemma Rpower_base_0 e : Rpower 0 e = 1.
+Proof.
+  unfold Rpower, ln.
+  match_destr.
+  - elimtype False; try tauto; lra.
+  - rewrite Rmult_0_r.
+    now rewrite exp_0.
+Qed.
 
 End Rpower.
 
@@ -1257,6 +1392,13 @@ Section power.
     unfold power.
     match_destr; [lra |].
     left; apply Rpower_pos.
+  Qed.
+
+   Lemma power_base_1 e : power 1 e = 1.
+  Proof.
+    unfold power.
+    match_destr; try lra.
+    apply Rpower_base_1.
   Qed.
 
   Lemma power_pos (b e : R) :
@@ -1344,6 +1486,17 @@ Section power.
     now apply powerRZ_Rpower.
   Qed.
 
+  Lemma power_minus1 b e :
+    0 <= b ->
+    power b e = b * power b (e-1).
+  Proof.
+    intros.
+    replace e with ((e-1)+1) at 1 by lra.
+    rewrite power_plus.
+    rewrite power_1; trivial.
+    lra.
+  Qed.
+
   Lemma Rle_power (e n m : R) :
     1 <= e ->
     n <= m ->
@@ -1352,6 +1505,16 @@ Section power.
     unfold power; intros.
     match_destr; [lra |].
     now apply Rle_Rpower.
+  Qed.
+
+   Lemma power_big_big a e :
+    0 <= e ->
+    1 <= a ->
+    1 <= power a e.
+  Proof.
+    intros nne pbig.
+    generalize (Rle_power a 0 e pbig nne).
+    rewrite power_O; lra.
   Qed.
 
   Lemma power_lt (x y z : R) :
@@ -1565,69 +1728,282 @@ Section power.
     now apply derivable_pt_lim_power'.
   Qed.
 
+  Lemma derivable_pt_lim_abs_power2' (x y : R) :
+  0 <= x ->
+  1 < y ->
+  derivable_pt_lim (fun x0 : R => power (Rabs x0) y) x (y * power x (y - 1)).
+Proof.
+  intros.
+  unfold power.
+  match_destr.
+  - red; intros.
+    assert (x = 0) by lra.
+    subst.
+
+    assert (dpos:0 <  (power eps (Rinv (y-1)))).
+    {
+      apply power_pos; lra.
+    }
+    exists (mkposreal _ dpos); intros.
+    rewrite Rplus_0_l.
+    match_destr.
+    -- rewrite Rabs_R0.
+       match_destr; try lra.
+       unfold Rabs.
+       match_destr; lra.
+    -- simpl in *.
+       rewrite Rmult_0_r.
+       repeat rewrite Rminus_0_r.
+       generalize (Rlt_power_l (Rabs h) (power eps (Rinv (y - 1))) (y-1))
+       ; intros HH.
+       cut_to HH.
+    + rewrite power_mult in HH.
+      rewrite Rinv_l in HH by lra.
+      rewrite power_1 in HH by lra.
+      unfold power in HH.
+      match_destr_in HH; try lra.
+      unfold Rminus in HH.
+      rewrite Rpower_plus in HH.
+      rewrite Rpower_Ropp in HH.
+      rewrite Rpower_1 in HH
+        by now apply Rabs_pos_lt.
+      unfold Rdiv.
+      rewrite Rabs_mult.
+      rewrite Rabs_Rinv by trivial.
+      rewrite Rabs_R0.
+      match_destr; try lra.
+      rewrite Rminus_0_r.
+      rewrite (Rabs_pos_eq (Rpower (Rabs h) y)); trivial.
+      left.
+      apply Rpower_pos.
+    + lra.
+    + split; trivial.
+      apply Rabs_pos.
+  - assert ( 0 < x) by lra.
+    generalize (derivable_pt_lim_comp
+                  Rabs
+                  (fun x0 : R => if Rle_dec x0 0 then 0 else Rpower x0 y)
+                  x
+                  1
+                  (y * Rpower x (y - 1)))
+    ; intros HH2.
+    rewrite Rmult_1_r in HH2.
+    apply HH2.
+    + apply Rabs_derive_1; lra.
+    + rewrite Rabs_pos_eq by lra.
+      generalize (derivable_pt_lim_power' x y); intros HH.
+      cut_to HH; [| lra].
+      unfold power in HH.
+      match_destr_in HH; try lra.
+Qed.
+
+Lemma power_convex_pos (e:R) :
+  1 <= e ->
+  forall (x y a : R), 0<x -> 0<y -> convex (fun z => power z e) a x y.
+Proof.
+  intros.
+  eapply ppos_convex_deriv; trivial.
+  - intros.
+    now apply derivable_pt_lim_power'.
+  - intros.
+    apply (ppos_deriv_incr_convex (fun z => power z e)); trivial.
+    + intros; now apply derivable_pt_lim_power'.
+    + intros.
+      apply Rmult_le_compat_l; [lra |].
+      apply Rle_power_l; lra.
+Qed.
+
+Lemma power_scale_le (e a x:R) :
+  1 <= e ->
+  0 < x ->
+  0 <= a <= 1 ->
+  power (a * x) e <= a * power x e.
+Proof.
+  intros.
+  rewrite <- power_mult_distr; try lra.
+  apply Rmult_le_compat_r.
+  - left.
+    now apply power_pos.
+  - unfold power, Rpower.
+    match_destr; try lra.
+    assert (0 < a) by lra.
+    rewrite <- (exp_ln a) at 2; trivial.
+    apply exp_increasing_le.
+    apply Rplus_le_reg_r with (r := - ln a).
+    rewrite Rplus_opp_r.
+    replace (e * ln a + - ln a) with ((e - 1) * ln a) by lra.
+    destruct (Rlt_dec 0 (e - 1)).
+    + apply Rmult_le_reg_l with (r := / (e - 1)).
+      * now apply Rinv_pos.
+      * rewrite <- Rmult_assoc.
+        rewrite Rinv_l.
+        -- rewrite Rmult_1_l.
+           rewrite Rmult_0_r.
+           apply ln_le_0; lra.
+        -- apply Rgt_not_eq; lra.
+    + assert (e - 1 = 0) by lra.
+      rewrite H3.
+      rewrite Rmult_0_l.
+      lra.
+  Qed.
+
+Lemma power_increasing (e : R) :
+  0 <= e -> increasing (fun z => power z e).
+Proof.
+  unfold increasing.
+  intros.
+  destruct (Rle_dec 0 x); destruct (Rle_dec 0 y).
+  - apply Rle_power_l; lra.
+  - unfold power.
+    match_destr; try lra.
+  - unfold power.
+    match_destr; try lra.
+    match_destr; try lra.
+    left; apply Rpower_pos.
+  - unfold power.
+    match_destr; try lra.
+    match_destr; try lra.
+ Qed.
+
+Lemma power_convex (e:R) :
+  1 <= e ->
+  forall (x y a : R), convex (fun z => power z e) a x y.
+Proof.
+  unfold convex.
+  intros.
+  destruct (Rlt_dec 0 x); destruct (Rlt_dec 0 y).
+  - now apply power_convex_pos.
+  - assert (y <= 0) by lra.
+    assert (power y e = 0) by (unfold power; match_destr; lra).
+    rewrite H2.
+    rewrite Rmult_0_r.
+    rewrite Rplus_0_r.
+    apply Rle_trans with (r2 := power (a*x) e).
+    + apply power_increasing; try lra.
+      apply Rplus_le_reg_l with (r := - a*x).
+      ring_simplify.
+      replace (-a * y + y) with ((1-a)*y) by lra.
+      apply Rmult_le_0_l; lra.
+    + apply power_scale_le; lra.
+  - assert ( x <= 0) by lra.
+    assert (power x e = 0) by (unfold power; match_destr; lra).
+    rewrite H2.
+    rewrite Rmult_0_r.
+    rewrite Rplus_0_l.
+    apply Rle_trans with (r2 := power ((1-a)*y) e).
+    + apply power_increasing; try lra.
+      apply Rplus_le_reg_l with (r := - (1-a)*y).
+      ring_simplify.
+      apply Rmult_le_0_l; lra.
+    + apply power_scale_le; lra.
+  - assert (x <= 0) by lra.
+    assert (y <= 0) by lra.
+    assert (power x e = 0) by (unfold power; match_destr; lra).
+    assert (power y e = 0) by (unfold power; match_destr; lra).
+    rewrite H3, H4.
+    repeat rewrite Rmult_0_r.
+    rewrite Rplus_0_r.
+    unfold power.
+    match_destr; try lra.
+    assert (a * x + (1-a)* y > 0) by lra.
+    apply Rmult_le_compat_r with (r := a) in H1; try lra.
+    rewrite Rmult_0_l in H1.
+    apply Rmult_le_compat_r with (r := 1-a) in H2; lra.
+ Qed.
+
+Lemma convex_power_abs (e:R):  1 <= e -> forall c x y : R, convex (fun a : R => power (Rabs a) e) c x y.
+  Proof.
+    intros.
+    generalize (compose_convex (fun z => power z e) Rabs); intros.
+    apply H0.
+    - intros; now apply power_convex.
+    - apply abs_convex.
+    - apply power_increasing; lra.
+  Qed.
+
+    Lemma power_ineq_convex p :
+    1 <= p ->
+    forall (x y : R), 0 < x -> 0 < y ->
+                      power (x + y) p <= (power 2 (p-1))*(power x p + power y p).
+  Proof.
+    intros pbig; intros.
+    assert (0 <= (/2) <= 1) by lra.
+    generalize (power_convex_pos p pbig x y _ H H0 H1); intros HH.
+    replace (1 - /2) with (/2) in HH by lra.
+    repeat rewrite <- Rmult_plus_distr_l in HH.
+    rewrite <- power_mult_distr in HH by lra.
+    apply Rmult_le_compat_l with (r := power 2 p) in HH
+    ; [| apply power_nonneg].
+    repeat rewrite <- Rmult_assoc in HH.
+    replace (power 2 p * power (/2) p) with (1) in HH.
+    + replace (power 2 p * (/2)) with (power 2 (p - 1)) in HH.
+      * now repeat rewrite Rmult_1_l in HH.
+      * replace (/2) with (power 2 ((Ropp 1))).
+        -- now rewrite <- power_plus.
+        -- rewrite power_Ropp by lra.
+           rewrite power_1; lra.
+    + rewrite power_mult_distr by lra.
+      replace (2 * /2) with (1) by lra.
+      now rewrite power_base_1.
+  Qed.
+
+    Lemma power_abs_ineq (p : R) (x y : R) :
+    0 <= p ->
+    power (Rabs (x + y)) p <= (power 2 p)*(power (Rabs x) p + power (Rabs y) p).
+  Proof.
+    intros pnneg.
+    pose (m:=Rmax (Rabs x) (Rabs y)).
+
+    assert (eqq:Rabs (x + y) <= 2*m).
+    {
+      unfold m.
+      eapply Rle_trans; try eapply Rcomplements.Rplus_le_Rmax.
+      apply Rabs_triang.
+    }
+    eapply Rle_trans
+    ; try apply (Rle_power_l (Rabs (x + y)) (2 * m) p); trivial.
+    - split; trivial.
+      apply Rabs_pos.
+    - rewrite <- power_mult_distr.
+      + apply Rmult_le_compat_l.
+        * apply power_nonneg.
+        * unfold m, Rmax.
+          generalize (power_nonneg (Rabs x) p); intros.
+          generalize (power_nonneg (Rabs y) p); intros.
+          match_destr; lra.
+      + lra.
+      + unfold m; eapply Rle_trans; [| eapply Rmax_l].
+        apply Rabs_pos.
+  Qed.
+
+
 End power.
 
 Section ineqs.
 
-  Lemma Rpower_ln : forall x y : R, ln (Rpower x y) = y*ln x.
-  Proof.
-    unfold Rpower ; intros.
-    now rewrite ln_exp.
-  Qed.
-
-  Lemma Rpower_base_1 : forall x : R, Rpower 1 x = 1.
+  Lemma frac_max_frac_le (x y:R) :
+  1 <= x ->
+  x <= y ->
+  x / (x + 1) <= y / (y + 1).
   Proof.
     intros.
-    unfold Rpower.
-    rewrite ln_1.
-    replace (x*0) with 0 by lra.
-    apply exp_0.
-  Qed.
-
-  Lemma power_base_1 e : power 1 e = 1.
-  Proof.
-    unfold power.
-    match_destr; try lra.
-    apply Rpower_base_1.
-  Qed.
-
-    Lemma log_power_base (e b : R ) : 
-      0 < e -> 0 < b ->
-      b <> 1 -> Rpower b (ln e / ln b) = e.
-    Proof.
-      intros.
-      assert (exp (ln (Rpower b (ln e / ln b))) = exp (ln e)).
-      { 
-        f_equal.
-        rewrite Rpower_ln.
-        field.
-        destruct (Rlt_dec b 1).
-        - apply Rlt_not_eq.
-          rewrite <- ln_1.
-          apply ln_increasing; lra.
-        - apply Rgt_not_eq.
-          rewrite <- ln_1.
-          apply ln_increasing; lra.
-      }
-      rewrite exp_ln in H2; [|apply Rpower_pos].
-      now rewrite exp_ln in H2.
-    Qed.
-      
-    Lemma Rpower_lt1 (b y z : R ) :
-      0 < b < 1 -> y < z -> Rpower b y > Rpower b z.
-    Proof.
-      intros.
-      unfold Rpower.
-      apply exp_increasing.
-      assert (ln b < 0).
-      - destruct H.
-        rewrite <- ln_1.
-        apply ln_increasing; lra.
-      - rewrite Rmult_comm with (r1 := z).
-        rewrite Rmult_comm with (r1 := y).
-        now apply Rmult_lt_gt_compat_neg_l.
-    Qed.
-
+    assert (1 <= x) by lra.
+    cut (x * (y + 1) <= y * (x + 1)).
+    - intros HH.
+      apply (Rmult_le_compat_r (/ (x+1))) in HH.
+      + rewrite Rinv_r_simpl_l in HH by lra.
+        apply (Rmult_le_compat_r (/ (y+1))) in HH.
+        * eapply Rle_trans; try eassumption.
+          unfold Rdiv.
+          repeat rewrite Rmult_assoc.
+          apply Rmult_le_compat_l; [lra | ].
+          rewrite <- Rmult_assoc.
+          rewrite Rinv_r_simpl_m by lra.
+          right; trivial.
+        * left; apply Rinv_0_lt_compat; lra.
+      + left; apply Rinv_0_lt_compat; lra.
+    - lra.
+Qed.
 
   Lemma sum_one_le : forall x y : R, 0 <= x -> 0 <= y -> x + y = 1 -> x <= 1.
   Proof.
@@ -1637,66 +2013,6 @@ Section ineqs.
     replace (x+0+y) with (x+y) by lra.
     apply Rplus_le_compat_l ; trivial.
   Qed.
-
-  Lemma Rmult_four_assoc (a b c d : R) : a * b * (c * d) = a * (b*c) * d.
-  Proof.
-    ring.
-  Qed.
-
-   Lemma Radd_minus (r1 r2 r3 : R) :
-     r1 = r2 + r3 <-> r1 - r2 = r3.
-   Proof.
-     split; intros; try lra.
-   Qed.
-
-  Lemma Radd_radd_minus (r1 r2 r3 r4 : R):
-    r1 + r2 = r3 + r4 <-> r3 - r1 = r2 - r4.
-  Proof.
-    split; intros; try lra.
-  Qed.
-
- Lemma sign_sum {a b : R} :
-   Rabs a < Rabs b -> sign (b + a) = sign b.
- Proof.
-   intros.
-   destruct (Rle_dec b 0).
-   + destruct r.
-     -- rewrite (sign_eq_m1 b H0).
-        apply sign_eq_m1.
-        rewrite (Rabs_left _ H0) in H.
-        apply Rle_lt_trans with (r2 := b + Rabs a);
-          [apply Rplus_le_compat_l; apply Rle_abs|].
-        lra.
-     -- subst. rewrite sign_0.
-        rewrite Rabs_R0 in H.
-        rewrite Rplus_0_l.
-        assert (Rabs a < 0) by lra.
-        generalize (Rabs_pos a); intros.
-        exfalso. apply (Rlt_irrefl 0); lra.
-   + push_neg_in n.
-     rewrite (sign_eq_1 b); trivial.
-     apply sign_eq_1.
-     rewrite (Rabs_pos_eq b) in H; try lra.
-     destruct (Rle_dec a 0); try lra.
-     rewrite (Rabs_left1 _ r) in H.
-     lra.
- Qed.
-
- Lemma sign_sum_alt {a b c : R} :
-   Rabs a <= c -> Rabs b > c -> sign (b + a) = sign b.
- Proof.
-   intros; apply sign_sum; lra.
- Qed.
-
- Lemma Rabs_sign (a : R) : Rabs a = (sign a)*a.
- Proof.
-   split_Rabs.
-   + rewrite sign_eq_m1; trivial; lra.
-   + destruct Hge.
-     -- rewrite sign_eq_1; trivial; lra.
-     -- subst; lra.
- Qed.
-
 
   (*
    This theorem also holds for a b : nonnegreal. But it is awkward since
@@ -1915,270 +2231,54 @@ Section ineqs.
 
 End ineqs.
 
-Lemma Rpower_neg1 b e : b < 0 -> Rpower b e = 1.
-Proof.
-  intros.
-  unfold Rpower.
-  unfold ln.
-  match_destr; try lra.
-  - elimtype False; try tauto; lra.
-  - rewrite Rmult_0_r.
-    now rewrite exp_0.
-Qed.
 
-Lemma derivable_pt_lim_abs_power2' (x y : R) :
-  0 <= x ->
-  1 < y ->
-  derivable_pt_lim (fun x0 : R => power (Rabs x0) y) x (y * power x (y - 1)).
-Proof.
-  intros.
-  unfold power.
-  match_destr.
-  - red; intros.
-    assert (x = 0) by lra.
-    subst.
-
-    assert (dpos:0 <  (power eps (Rinv (y-1)))).
-    {
-      apply power_pos; lra.
-    } 
-    exists (mkposreal _ dpos); intros.
-    rewrite Rplus_0_l.
-    match_destr.
-    -- rewrite Rabs_R0.
-       match_destr; try lra.
-       unfold Rabs.
-       match_destr; lra.
-    -- simpl in *.
-       rewrite Rmult_0_r.
-       repeat rewrite Rminus_0_r.
-       generalize (Rlt_power_l (Rabs h) (power eps (Rinv (y - 1))) (y-1))
-       ; intros HH.
-       cut_to HH.
-    + rewrite power_mult in HH.
-      rewrite Rinv_l in HH by lra.
-      rewrite power_1 in HH by lra.
-      unfold power in HH.
-      match_destr_in HH; try lra.
-      unfold Rminus in HH.
-      rewrite Rpower_plus in HH.
-      rewrite Rpower_Ropp in HH.
-      rewrite Rpower_1 in HH
-        by now apply Rabs_pos_lt.
-      unfold Rdiv.
-      rewrite Rabs_mult.
-      rewrite Rabs_Rinv by trivial.
-      rewrite Rabs_R0.
-      match_destr; try lra.
-      rewrite Rminus_0_r.
-      rewrite (Rabs_pos_eq (Rpower (Rabs h) y)); trivial.
-      left.
-      apply Rpower_pos.
-    + lra.
-    + split; trivial.
-      apply Rabs_pos.
-  - assert ( 0 < x) by lra.
-    generalize (derivable_pt_lim_comp
-                  Rabs
-                  (fun x0 : R => if Rle_dec x0 0 then 0 else Rpower x0 y)
-                  x
-                  1
-                  (y * Rpower x (y - 1)))
-    ; intros HH2.
-    rewrite Rmult_1_r in HH2.
-    apply HH2.
-    + apply Rabs_derive_1; lra.
-    + rewrite Rabs_pos_eq by lra.
-      generalize (derivable_pt_lim_power' x y); intros HH.
-      cut_to HH; [| lra].
-      unfold power in HH.
-      match_destr_in HH; try lra.
-Qed.
-
-Lemma Rpower_convex_pos (e:R) :
-  1 <= e ->
-  forall (x y a : R), 0<x -> 0<y -> convex (fun z => Rpower z e) a x y.
-Proof.
-  intros.
-  eapply ppos_convex_deriv; trivial.
-  - intros.
-    now apply derivable_pt_lim_power.
-  - intros.
-    apply (ppos_deriv_incr_convex (fun z => Rpower z e)); trivial.
-    + intros; now apply derivable_pt_lim_power.
-    + intros.
-      apply Rmult_le_compat_l; [lra |].
-      apply Rle_Rpower_l; lra.
-Qed.
+Section sign.
 
 
-Lemma Rpower_base_0 e : Rpower 0 e = 1.
-Proof.
-  unfold Rpower, ln.
-  match_destr.
-  - elimtype False; try tauto; lra.
-  - rewrite Rmult_0_r.
-    now rewrite exp_0.
-Qed.
-
-Lemma power_convex_pos (e:R) :
-  1 <= e ->
-  forall (x y a : R), 0<x -> 0<y -> convex (fun z => power z e) a x y.
-Proof.
-  intros.
-  eapply ppos_convex_deriv; trivial.
-  - intros.
-    now apply derivable_pt_lim_power'.
-  - intros.
-    apply (ppos_deriv_incr_convex (fun z => power z e)); trivial.
-    + intros; now apply derivable_pt_lim_power'.
-    + intros.
-      apply Rmult_le_compat_l; [lra |].
-      apply Rle_power_l; lra.
-Qed.
-
-Lemma exp_increasing_le (x y : R) :
-  x <= y ->
-  exp x <= exp y.
-Proof.
-  intros.
-  destruct (Rlt_dec x y).
-  - left.
-    now apply exp_increasing.
-  - assert (x = y) by lra.
-    rewrite H0.
-    now right.
-Qed.
-
-Lemma ln_lt_0  (a : R) :
-  0 < a < 1 ->
-  ln a < 0.
-Proof.
-  intros.
-  rewrite <- ln_1.
-  apply ln_increasing; lra.
-Qed.
-
-Lemma ln_le_0  (a : R) :
-  0 < a <= 1 ->
-  ln a <= 0.
-Proof.
-  intros.
-  destruct (Rlt_dec a 1).
-  - left.
-    apply ln_lt_0; lra.
-  - assert (a = 1) by lra.
-    rewrite H0.
-    rewrite ln_1; lra.
+ Lemma sign_sum {a b : R} :
+   Rabs a < Rabs b -> sign (b + a) = sign b.
+ Proof.
+   intros.
+   destruct (Rle_dec b 0).
+   + destruct r.
+     -- rewrite (sign_eq_m1 b H0).
+        apply sign_eq_m1.
+        rewrite (Rabs_left _ H0) in H.
+        apply Rle_lt_trans with (r2 := b + Rabs a);
+          [apply Rplus_le_compat_l; apply Rle_abs|].
+        lra.
+     -- subst. rewrite sign_0.
+        rewrite Rabs_R0 in H.
+        rewrite Rplus_0_l.
+        assert (Rabs a < 0) by lra.
+        generalize (Rabs_pos a); intros.
+        exfalso. apply (Rlt_irrefl 0); lra.
+   + push_neg_in n.
+     rewrite (sign_eq_1 b); trivial.
+     apply sign_eq_1.
+     rewrite (Rabs_pos_eq b) in H; try lra.
+     destruct (Rle_dec a 0); try lra.
+     rewrite (Rabs_left1 _ r) in H.
+     lra.
  Qed.
 
-Lemma power_scale_le (e a x:R) :
-  1 <= e ->
-  0 < x ->
-  0 <= a <= 1 ->
-  power (a * x) e <= a * power x e.
-Proof.
-  intros.
-  rewrite <- power_mult_distr; try lra.
-  apply Rmult_le_compat_r.
-  - left.
-    now apply power_pos.
-  - unfold power, Rpower.
-    match_destr; try lra.
-    assert (0 < a) by lra.
-    rewrite <- (exp_ln a) at 2; trivial.
-    apply exp_increasing_le.
-    apply Rplus_le_reg_r with (r := - ln a).
-    rewrite Rplus_opp_r.
-    replace (e * ln a + - ln a) with ((e - 1) * ln a) by lra.
-    destruct (Rlt_dec 0 (e - 1)).
-    + apply Rmult_le_reg_l with (r := / (e - 1)).
-      * now apply Rinv_pos.
-      * rewrite <- Rmult_assoc.
-        rewrite Rinv_l.
-        -- rewrite Rmult_1_l.
-           rewrite Rmult_0_r.
-           apply ln_le_0; lra.
-        -- apply Rgt_not_eq; lra.
-    + assert (e - 1 = 0) by lra.
-      rewrite H3.
-      rewrite Rmult_0_l.
-      lra.
-  Qed.
-
-Lemma power_increasing (e : R) :
-  0 <= e -> increasing (fun z => power z e).
-Proof.
-  unfold increasing.
-  intros.
-  destruct (Rle_dec 0 x); destruct (Rle_dec 0 y).
-  - apply Rle_power_l; lra.
-  - unfold power.
-    match_destr; try lra.
-  - unfold power.
-    match_destr; try lra.
-    match_destr; try lra.
-    left; apply Rpower_pos.
-  - unfold power.
-    match_destr; try lra.
-    match_destr; try lra.
+ Lemma sign_sum_alt {a b c : R} :
+   Rabs a <= c -> Rabs b > c -> sign (b + a) = sign b.
+ Proof.
+   intros; apply sign_sum; lra.
  Qed.
 
-Lemma power_convex (e:R) :
-  1 <= e ->
-  forall (x y a : R), convex (fun z => power z e) a x y.
-Proof.
-  unfold convex.
-  intros.
-  destruct (Rlt_dec 0 x); destruct (Rlt_dec 0 y).
-  - now apply power_convex_pos.
-  - assert (y <= 0) by lra.
-    assert (power y e = 0) by (unfold power; match_destr; lra).
-    rewrite H2.
-    rewrite Rmult_0_r.
-    rewrite Rplus_0_r.
-    apply Rle_trans with (r2 := power (a*x) e).
-    + apply power_increasing; try lra.
-      apply Rplus_le_reg_l with (r := - a*x).
-      ring_simplify.
-      replace (-a * y + y) with ((1-a)*y) by lra.
-      apply Rmult_le_0_l; lra.
-    + apply power_scale_le; lra.
-  - assert ( x <= 0) by lra.
-    assert (power x e = 0) by (unfold power; match_destr; lra).
-    rewrite H2.
-    rewrite Rmult_0_r.
-    rewrite Rplus_0_l.
-    apply Rle_trans with (r2 := power ((1-a)*y) e).
-    + apply power_increasing; try lra.
-      apply Rplus_le_reg_l with (r := - (1-a)*y).
-      ring_simplify.
-      apply Rmult_le_0_l; lra.
-    + apply power_scale_le; lra.
-  - assert (x <= 0) by lra.
-    assert (y <= 0) by lra.
-    assert (power x e = 0) by (unfold power; match_destr; lra).
-    assert (power y e = 0) by (unfold power; match_destr; lra).    
-    rewrite H3, H4.
-    repeat rewrite Rmult_0_r.
-    rewrite Rplus_0_r.
-    unfold power.
-    match_destr; try lra.
-    assert (a * x + (1-a)* y > 0) by lra.
-    apply Rmult_le_compat_r with (r := a) in H1; try lra.
-    rewrite Rmult_0_l in H1.
-    apply Rmult_le_compat_r with (r := 1-a) in H2; lra.
+ Lemma Rabs_sign (a : R) : Rabs a = (sign a)*a.
+ Proof.
+   split_Rabs.
+   + rewrite sign_eq_m1; trivial; lra.
+   + destruct Hge.
+     -- rewrite sign_eq_1; trivial; lra.
+     -- subst; lra.
  Qed.
 
-Lemma convex_power_abs (e:R):  1 <= e -> forall c x y : R, convex (fun a : R => power (Rabs a) e) c x y.
-  Proof.
-    intros.
-    generalize (compose_convex (fun z => power z e) Rabs); intros.
-    apply H0.
-    - intros; now apply power_convex.
-    - apply abs_convex.
-    - apply power_increasing; lra.
-  Qed.
+End sign.
+
 
 Section power_minkowski.
 
@@ -2226,26 +2326,6 @@ Section power_minkowski.
     repeat (rewrite power_minkowski_helper_aux ; try lra).
   Qed.
 
-  Lemma Rmult_bigpos_le_l a b :
-    0 <= a ->
-    1 <= b ->
-    a <= b * a.
-  Proof.
-    intros.
-    rewrite <- (Rmult_1_l a) at 1.
-    now apply Rmult_le_compat_r.
-  Qed.
-
-  Lemma power_big_big a e :
-    0 <= e ->
-    1 <= a ->
-    1 <= power a e.
-  Proof.
-    intros nne pbig.
-    generalize (Rle_power a 0 e pbig nne).
-    rewrite power_O; lra.
-  Qed.
-  
   Lemma power_minkowski_helper (p : R) {a b t : R}:
     (0 <= a) ->
     (0 <= b) ->
@@ -2277,17 +2357,6 @@ Section power_minkowski.
              apply Rinv_le_contravar; lra.
           -- apply power_big_big; lra.
       + apply power_minkowski_helper_lt; trivial; lra.
-  Qed.
-
-  Lemma power_minus1 b e :
-    0 <= b ->
-    power b e = b * power b (e-1).
-  Proof.
-    intros.
-    replace e with ((e-1)+1) at 1 by lra.
-    rewrite power_plus.
-    rewrite power_1; trivial.
-    lra.
   Qed.
 
   Lemma power_minkowski_subst (p : R) {a b : R} :
@@ -2325,61 +2394,6 @@ Section power_minkowski.
       rewrite power_mult_distr by auto with real.
       rewrite Rinv_r, power_base_1 by lra.
       lra.
-  Qed.
-  
-  Lemma power_ineq_convex p :
-    1 <= p ->
-    forall (x y : R), 0 < x -> 0 < y -> 
-                      power (x + y) p <= (power 2 (p-1))*(power x p + power y p).
-  Proof.
-    intros pbig; intros.
-    assert (0 <= (/2) <= 1) by lra.
-    generalize (power_convex_pos p pbig x y _ H H0 H1); intros HH.
-    replace (1 - /2) with (/2) in HH by lra.
-    repeat rewrite <- Rmult_plus_distr_l in HH.
-    rewrite <- power_mult_distr in HH by lra.
-    apply Rmult_le_compat_l with (r := power 2 p) in HH
-    ; [| apply power_nonneg].
-    repeat rewrite <- Rmult_assoc in HH.
-    replace (power 2 p * power (/2) p) with (1) in HH.
-    + replace (power 2 p * (/2)) with (power 2 (p - 1)) in HH.
-      * now repeat rewrite Rmult_1_l in HH.
-      * replace (/2) with (power 2 ((Ropp 1))).
-        -- now rewrite <- power_plus.
-        -- rewrite power_Ropp by lra.
-           rewrite power_1; lra.
-    + rewrite power_mult_distr by lra.
-      replace (2 * /2) with (1) by lra.
-      now rewrite power_base_1.
-  Qed.
-
-  Lemma power_abs_ineq (p : R) (x y : R) :
-    0 <= p ->
-    power (Rabs (x + y)) p <= (power 2 p)*(power (Rabs x) p + power (Rabs y) p).
-  Proof.
-    intros pnneg.
-    pose (m:=Rmax (Rabs x) (Rabs y)).
-
-    assert (eqq:Rabs (x + y) <= 2*m).
-    {
-      unfold m.
-      eapply Rle_trans; try eapply Rcomplements.Rplus_le_Rmax.
-      apply Rabs_triang.
-    }
-    eapply Rle_trans
-    ; try apply (Rle_power_l (Rabs (x + y)) (2 * m) p); trivial.
-    - split; trivial.
-      apply Rabs_pos.
-    - rewrite <- power_mult_distr.
-      + apply Rmult_le_compat_l.
-        * apply power_nonneg.
-        * unfold m, Rmax.
-          generalize (power_nonneg (Rabs x) p); intros.
-          generalize (power_nonneg (Rabs y) p); intros.
-          match_destr; lra.
-      + lra.
-      + unfold m; eapply Rle_trans; [| eapply Rmax_l].
-        apply Rabs_pos.
   Qed.
 
 End power_minkowski.
@@ -2593,7 +2607,6 @@ Section Rmax_list.
 
   (*
    Definition and properties about the maximum element of a list of real numbers.
-   Dump this into RealAdd.
    *)
 
   Open Scope list_scope.
