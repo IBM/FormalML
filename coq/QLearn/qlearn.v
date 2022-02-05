@@ -1124,6 +1124,88 @@ End rv_expressible.
       now apply series_finite_sum_shift.
     Qed.
 
+    Lemma Rbar_mult_0_lt (a b : Rbar) :
+      Rbar_lt 0 a ->
+      Rbar_lt 0 b ->
+      Rbar_lt 0 (Rbar_mult a b).
+    Proof.
+      intros.
+      destruct a; destruct b; try now simpl in *.
+      - simpl in *.
+        now apply Rmult_lt_0_compat.
+      - simpl in H.
+        now rewrite Rbar_mult_comm, Rbar_mult_p_infty_pos.
+      - simpl in H0.
+        now rewrite Rbar_mult_p_infty_pos.
+    Qed.
+
+
+    Lemma ex_series_prod_gt_0 (a : nat -> R) :
+      (forall n, 0 <= a n < 1) ->
+      ex_series a ->
+      Rbar_lt 0 (Lim_seq (prod_f_R0 (fun n => 1 - a n))).
+    Proof.
+      intros.
+      assert (forall n, 0 <= a n <= 1).
+      {
+        intros; specialize (H n); lra.
+      }
+      destruct (product_sum_assumption_b_helper a H1 H0) as [N ?].
+      generalize (product_sum_helper_lim a N H1); intros.
+      cut_to H3; trivial; [|now apply series_finite_sum_shift with (N := N) in H0].
+      destruct N.
+      - rewrite Lim_seq_ext with
+            (v := (prod_f_R0 (fun n : nat => 1 - a n))) in H3; trivial.
+        intros.
+        apply prod_f_R0_proper; trivial.
+        red; intros.
+        now replace (a0 + 0)%nat with a0 by lia.
+      - generalize (prod_SO_split (fun n => 1 - a n)); intros.
+        rewrite <- Lim_seq_incr_n with (N := (S N)).
+        rewrite Lim_seq_ext with
+            (v := fun n =>
+                    (prod_f_R0 (fun n0 => 1 - a n0) N) *
+                    (prod_f_R0 (fun n0 => 1 - a (n0 + (S N))%nat) n)).
+        + rewrite Lim_seq_scal_l.
+          apply Rbar_mult_0_lt; trivial.
+          apply prod_f_R0_pos.
+          intros; specialize (H n); lra.
+        + intros.
+          rewrite prod_SO_split with (n := (n + S N)%nat) (k := N); try lia.
+          f_equal.
+          apply prod_f_R0_proper; try lia.
+          red; intros.
+          f_equal; f_equal; lia.
+     Qed.
+
+    Lemma prod_f_R0_one :
+      forall n, prod_f_R0 (fun _ => 1) n = 1.
+    Proof.
+      induction n.
+      - now simpl.
+      - rewrite prod_f_R0_Sn, IHn.
+        lra.
+    Qed.
+
+    Lemma finite_lim_prod (a : nat -> R) :
+      (forall n, 0 <= a n <= 1) ->
+      is_finite (Lim_seq (prod_f_R0 (fun n => 1 - a n))).
+    Proof.
+      intros.
+      apply is_finite_Lim_bounded with (m := 0) (M := 1).
+      intros.
+      split.
+      - apply prod_SO_pos.
+        intros.
+        specialize (H n0); lra.
+      - generalize (prod_f_R0_one n); intros.
+        rewrite <- H0.
+        apply prod_SO_Rle.
+        intros.
+        rewrite H0.
+        specialize (H n0); lra.
+    Qed.
+
     Lemma is_lim_seq_pos_inv_p_infty {α : nat -> R} (ha1 : forall n, 0 < α n):
       is_lim_seq α 0 <-> is_lim_seq (fun n => /α n) p_infty.
     Proof.
