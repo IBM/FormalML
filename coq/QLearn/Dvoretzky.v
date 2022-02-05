@@ -2877,6 +2877,45 @@ Theorem Dvoretzky_DS_scale_prop
      reflexivity.
  Qed.
 
+  Corollary Dvoretzky_DS_extended_simple_vec_theta (theta : R)
+           (X0:Ts->R) 
+        (Y : nat -> Ts -> R)
+        (T : forall (n:nat), (vector R n*Ts)->R)
+        {F : nat -> SigmaAlgebra Ts}
+        (isfilt : IsFiltration F)
+        (filt_sub : forall n, sa_sub (F n) dom)
+        {adaptX : IsAdapted borel_sa (DS_Xn X0 T Y) F}
+        {adaptT : IsAdapted borel_sa (DS_Tn X0 T Y) F}
+        {alpha beta gamma : nat -> Ts -> R}
+        (hpos1 : forall n x, 0 <= alpha n x)
+        (hpos2 : forall n x, 0 <= beta n x )
+        (hpos3 : forall n x, 0 <= gamma n x)
+        (rvy : forall n, RandomVariable dom borel_sa (Y n))
+        {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
+  (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
+                     (fun x : Ts => const 0 x)) ->
+  (forall n omega, (Rabs (DS_Tn X0 T Y n omega - theta)) <= Rmax (alpha n omega) ((1+beta n omega)*(Rabs (DS_Xn X0 T Y n omega - theta)) - gamma n omega)) ->
+  ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
+  almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
+  almost prts (fun omega => ex_finite_lim_seq (sum_n (fun n => beta n omega))) ->
+  almost prts (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
+  almost _ (fun omega => is_lim_seq (fun n => (DS_Xn X0 T Y n omega)) theta).
+ Proof.
+   intros.
+   eapply (Dvoretzky_DS_extended_theta theta
+                 (DS_Xn X0 T Y) Y
+                 (DS_Tn X0 T Y)
+                 isfilt filt_sub
+                 hpos1 hpos2 hpos3
+
+          ); trivial.
+   - intros ??.
+     unfold DS_Tn, DS_Xn; simpl.
+     rewrite vector_nth_add_to_end_suffix.
+     unfold rvplus.
+     reflexivity.
+ Qed.
+
  (* establish a basic property of the history we are passing aroung: we always just append to it *)
  Lemma DS_Xn_v_same_prefix_plus_helper (X0:Ts->R) (T:forall (n:nat), (vector R n*Ts)->R) (Y:nat->Ts->R)
        (m n i:nat) pf1 pf2 ts : 
@@ -3037,6 +3076,47 @@ Theorem Dvoretzky_DS_scale_prop
  Proof.
    intros.
    eapply (Dvoretzky_DS
+                 (DS_Xdn X0 T Y) Y
+                 (DS_Tdn X0 T Y)
+                 isfilt filt_sub
+                 hpos1 hpos2 hpos3
+
+          ); trivial.
+   - intros ??.
+     unfold DS_Tdn, DS_Xdn; simpl.
+     rewrite vector_nth_add_to_end_suffix.
+     unfold rvplus.
+     reflexivity.
+     Unshelve.
+     now apply DS_Tdn_adapted.
+ Qed.
+
+ Corollary Dvoretzky_DS_simple_vec_theta (theta : R)
+           (X0:Ts->R) 
+        (Y : nat -> Ts -> R)
+        (T : forall (n:nat), vector R n->R)
+        {F : nat -> SigmaAlgebra Ts}
+        (isfilt : IsFiltration F)
+        (filt_sub : forall n, sa_sub (F n) dom)
+        {rvT:(forall n, RandomVariable (Rvector_borel_sa n) borel_sa (T n))}
+        {adaptX : IsAdapted borel_sa (DS_Xdn X0 T Y) F}
+        {alpha beta gamma : nat -> R}
+        (hpos1 : forall n, 0 <= alpha n)
+        (hpos2 : forall n, 0 <= beta n)
+        (hpos3 : forall n, 0 <= gamma n)
+        (rvy : forall n, RandomVariable dom borel_sa (Y n))
+        {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
+  (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
+                     (fun x : Ts => const 0 x)) ->
+  (forall n omega, (Rabs (DS_Tdn X0 T Y n omega - theta)) <= Rmax (alpha n) ((1+beta n)*(Rabs (DS_Xdn X0 T Y n omega - theta)) - gamma n)) ->
+  ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
+  is_lim_seq alpha 0 ->
+  ex_finite_lim_seq (sum_n beta) ->
+  is_lim_seq (sum_n gamma) p_infty ->
+  almost _ (fun omega => is_lim_seq (fun n => (DS_Xdn X0 T Y n omega)) theta).
+ Proof.
+   intros.
+   eapply (Dvoretzky_DS_theta theta
                  (DS_Xdn X0 T Y) Y
                  (DS_Tdn X0 T Y)
                  isfilt filt_sub
