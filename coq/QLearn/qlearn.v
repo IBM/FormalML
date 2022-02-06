@@ -1140,7 +1140,7 @@ End rv_expressible.
     Qed.
 
 
-    Lemma ex_series_prod_gt_0 (a : nat -> R) :
+    Lemma ex_series_prod_Rbar_lt_0 (a : nat -> R) :
       (forall n, 0 <= a n < 1) ->
       ex_series a ->
       Rbar_lt 0 (Lim_seq (prod_f_R0 (fun n => 1 - a n))).
@@ -1187,6 +1187,7 @@ End rv_expressible.
         lra.
     Qed.
 
+
     Lemma finite_lim_prod (a : nat -> R) :
       (forall n, 0 <= a n <= 1) ->
       is_finite (Lim_seq (prod_f_R0 (fun n => 1 - a n))).
@@ -1204,6 +1205,21 @@ End rv_expressible.
         intros.
         rewrite H0.
         specialize (H n0); lra.
+    Qed.
+
+    Lemma ex_series_prod_lt_0 (a : nat -> R) :
+      (forall n, 0 <= a n < 1) ->
+      ex_series a ->
+      0 < (Lim_seq (prod_f_R0 (fun n => 1 - a n))).
+    Proof.
+      intros.
+      generalize (ex_series_prod_Rbar_lt_0 a H H0); intros.
+      generalize (finite_lim_prod a); intros.
+      cut_to H2.
+      - rewrite <- H2 in H1.
+        now simpl in H1.
+      - intros.
+        specialize (H n); lra.
     Qed.
 
     Lemma is_lim_seq_pos_inv_p_infty {α : nat -> R} (ha1 : forall n, 0 < α n):
