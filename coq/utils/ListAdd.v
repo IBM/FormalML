@@ -223,6 +223,24 @@ Section Seq.
       f_equal.
   Qed.
 
+  Lemma map_shiftn_seq (f : nat -> R) (n m : nat) :
+     map f (seq n m) = map (fun n0 => f (n + n0)%nat) (seq 0 m).
+   Proof.
+     rewrite seq_shiftn_map.
+     now rewrite map_map.
+   Qed.
+
+   Lemma map_shift1_seq (f : nat -> R) (n m : nat) :
+     map f (seq (S n) m) = map (fun n0 => f (S n0)%nat) (seq n m).
+   Proof.
+     rewrite seq_shiftn_map.
+     symmetry.
+     rewrite seq_shiftn_map.
+     do 2 rewrite map_map.
+     apply map_ext.
+     reflexivity.
+   Qed.
+
 End Seq.
 
 Section fp.

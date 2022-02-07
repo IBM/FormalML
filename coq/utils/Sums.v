@@ -1,11 +1,15 @@
 Require Import Coquelicot.Coquelicot.
 Set Bullet Behavior "Strict Subproofs".
-
+Require Import Morphisms.
 Require Import Program.
 Require Import Coq.Reals.Rbase.
 Require Import Coq.Reals.Rfunctions.
 Require Import List.
 Require Import EquivDec Nat Lia Lra.
+Require Import Reals.R_sqrt.
+Require Import PushNeg.
+Require Import Reals.Sqrt_reg.
+
 Require FinFun.
 
 Require Import LibUtils ListAdd RealAdd.
@@ -1032,7 +1036,7 @@ Proof.
   {
     intros.
     destruct (ge_dec x N); trivial.
-    apply not_ge in n.
+    apply Compare_dec.not_ge in n.
     assert (inn:In x gpre).
     { 
       rewrite <- gpre_perm.
@@ -1145,16 +1149,1395 @@ Proof.
     lra.
 Qed.
 
-Lemma lim_0_nneg (a : nat -> R) :
-  is_series a 0 ->
-  (forall n, 0 <= a n) ->
-  forall n, a n = 0.
+
+Section sum_n.
+
+
+    Lemma sum_n_le_loc (a b : nat -> R) (k : nat) :
+  (forall n : nat, (n <= k)%nat -> a n <= b n) ->
+  sum_n a k <= sum_n b k.
+  Proof.
+    intros.
+    induction k.
+    - rewrite sum_O.
+      rewrite sum_O.
+      apply H; lia.
+    - rewrite sum_Sn.
+      rewrite sum_Sn.
+      assert (forall n : nat, (n <= k)%nat -> a n <= b n).
+      intros.
+      apply H; lia.
+      specialize (IHk H0).
+      apply Rplus_le_compat; trivial; apply H; lia.
+  Qed.
+
+Lemma sum_n_m_le_loc_alt (a b : nat -> R) (j k : nat) :
+  (forall n : nat, (j <= n <= j + k)%nat -> a n <= b n) ->
+  sum_n_m a j (j + k)%nat <= sum_n_m b j (j + k)%nat.
 Proof.
-  intros ser nneg.
-  assert (serex:ex_series a) by (eexists; eauto).
-  generalize (sum_f_R0_nonneg_le_Series serex nneg); intros HH.
-  rewrite (is_series_unique _ _ ser) in HH.
-  apply sum_f_R0_0_inv; intros n.
-  apply antisymmetry; trivial.
-  apply sum_f_R0_nneg; trivial.
+  intros.
+  induction k.
+  - replace (j + 0)%nat with (j) by lia.
+    do 2 rewrite sum_n_n.
+    apply H; lia.
+  - replace (j + S k)%nat with (S (j + k))%nat by lia.
+    rewrite sum_n_Sm; try lia.
+    rewrite sum_n_Sm; try lia.
+    assert (forall n : nat, (j <= n <= j + k)%nat -> a n <= b n).
+    + intros.
+      apply H; lia.
+    + specialize (IHk H0).
+      apply Rplus_le_compat; trivial.
+      apply H; lia.
+  Qed.
+
+Lemma sum_n_m_le_loc (a b : nat -> R) (j k : nat) :
+  (j <= k)%nat ->
+  (forall n : nat, (j <= n <= k)%nat -> a n <= b n) ->
+  sum_n_m a j k <= sum_n_m b j k.
+Proof.
+  intros.
+  pose (h := (k - j)%nat).
+  replace (k) with (j + h)%nat by lia.
+  apply sum_n_m_le_loc_alt.
+  intros.
+  apply H0.
+  unfold h in H1.
+  lia.
 Qed.
+Lemma sum_n_m_fold_right_seq (f:nat->R) n m:
+  sum_n_m (fun n0 : nat => f n0) m n =
+  fold_right Rplus 0 (map f (List.seq m (S n - m))).
+Proof.
+  unfold sum_n_m, Iter.iter_nat.
+  rewrite seq_iota_seq.
+  generalize (S n - m)%nat; intros nn.
+  clear n.
+  revert m.
+  induction nn; unfold plus; simpl; trivial; intros m.
+  now rewrite IHnn.
+Qed.
+
+Lemma sum_n_fold_right_seq (f:nat->R) n :
+  sum_n (fun n0 : nat => f n0) n =
+  fold_right Rplus 0 (map f (seq 0 (S n))).
+Proof.
+  unfold sum_n.
+  now rewrite sum_n_m_fold_right_seq.
+Qed.
+
+Lemma list_sum_sum_n (l:list R) :
+  list_sum l =
+  @Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun i:nat => match nth_error l i with
+                                                          | Some x => x
+                                                          | None => 0%R
+                                                          end) (length l).
+Proof.
+  rewrite sum_n_fold_right_seq.
+  rewrite  list_sum_fold_right.
+  induction l; simpl; try lra.
+  f_equal.
+  rewrite IHl.
+  destruct l; simpl; try lra.
+  f_equal.
+  f_equal.
+  rewrite <- (@seq_shift _ 2).
+  rewrite map_map.
+  apply fold_right_ext; trivial.
+Qed.
+
+
+Lemma sum_n_m_shift (α : nat -> R) (k n0 : nat) :
+  sum_n_m α k (n0 + k)%nat = sum_n (fun n1 : nat => α (n1 + k)%nat) n0.
+Proof.
+  unfold sum_n.
+  induction n0.
+  - replace (0 + k)%nat with (k) by lia.
+    do 2 rewrite sum_n_n.
+    f_equal; lia.
+  - replace (S n0 + k)%nat with (S (n0 + k)%nat) by lia.
+    rewrite sum_n_Sm; try lia.
+    rewrite sum_n_Sm; try lia.
+    replace (S n0 + k)%nat with (S (n0 + k)%nat) by lia.
+    now rewrite IHn0.
+Qed.
+
+Lemma sum_n_m_pos a n1 n2 :
+  (forall n, (n1 <= n <= n2)%nat -> 0 <= a n) ->
+  0 <= (sum_n_m a n1 n2).
+Proof.
+  intros.
+  rewrite sum_n_m_fold_right_seq.
+  cut (forall x, List.In x ((List.seq n1 (S n2 - n1))) -> 0 <= a x).
+  - generalize ( (List.seq n1 (S n2 - n1))); intros l.
+    induction l; simpl; intros.
+    + lra.
+    + apply Rplus_le_le_0_compat; auto.
+  - intros ? inn.
+    apply List.in_seq in inn.
+    apply H.
+    lia.
+Qed.
+
+
+Lemma sum_n_pos_incr a n1 n2 : (forall n, (n1 < n <= n2)%nat -> 0 <= a n) ->
+                               (n1 <= n2)%nat -> sum_n a n1 <= sum_n a n2.
+Proof.
+  intros.
+  destruct (Nat.eq_dec n1 n2); [rewrite e; lra|].
+  assert (n1 < n2)%nat by lia.
+  unfold sum_n.
+  rewrite sum_n_m_Chasles with (k:=n2) (m:=n1); try lia.
+  replace (sum_n_m a 0 n1) with ((sum_n_m a 0 n1) + 0) at 1 by lra.
+  unfold plus; simpl.
+  apply Rplus_le_compat_l.
+  apply sum_n_m_pos; intros.
+  apply H.
+  lia.
+Qed.
+
+End sum_n.
+
+
+Section Sequences.
+
+  Global Instance is_lim_seq_proper:
+    Proper (pointwise_relation _ eq ==> eq ==> iff) (is_lim_seq).
+  Proof.
+    unfold Proper, pointwise_relation, respectful.
+    intros.
+    split; subst; apply is_lim_seq_ext; eauto.
+  Qed.
+
+  Global Instance Lim_seq_proper:
+    Proper (pointwise_relation _ eq ==> eq) (Lim_seq).
+  Proof.
+    unfold Proper, pointwise_relation, respectful; intros.
+    now apply Lim_seq_ext.
+  Qed.
+
+  Global Instance ex_lim_seq_proper:
+    Proper (pointwise_relation _ eq ==> iff) (ex_lim_seq).
+  Proof.
+    unfold Proper,pointwise_relation, respectful; intros.
+    split; intros.
+    + eapply ex_lim_seq_ext; eauto.
+    + symmetry in H. eapply ex_lim_seq_ext; eauto.
+  Qed.
+
+
+  Lemma sup_seq_pos (f : nat -> R) :
+    (forall n, 0 <= f n) ->
+    Rbar_le 0 (Sup_seq f).
+  Proof.
+    intros.
+    replace (Finite 0) with (Sup_seq (fun _ => 0)).
+    now apply Sup_seq_le.
+    apply Sup_seq_const.
+  Qed.
+
+  Lemma ex_finite_lim_seq_bounded (f : nat -> R) :
+    ex_finite_lim_seq f ->
+    exists (M:R),
+    forall n, Rabs (f n) <= M.
+  Proof.
+    intros.
+    destruct H.
+    apply is_lim_seq_spec in H.
+    unfold is_lim_seq' in H.
+    assert (0 < 1) by lra.
+    specialize (H (mkposreal _ H0)).
+    destruct H.
+    exists (Rmax ((Rabs x)+1) (Rmax_list (map (fun n => Rabs (f n)) (seq 0 x0)))).
+    intros.
+    destruct (dec_le x0 n).
+    - specialize (H n H1).
+      apply Rle_trans with (r2 := Rabs x + 1).
+      + simpl in H.
+        generalize (Rabs_triang_inv (f n) x); intros.
+        lra.
+      + apply Rmax_l.
+    - assert (n < x0)%nat by lia.
+      apply Rle_trans with (r2 := Rmax_list (map (fun n0 : nat => Rabs (f n0)) (seq 0 x0))).
+      + apply (Rmax_spec_map (seq 0 x0) (fun n => Rabs (f n)) n).
+        apply in_seq; lia.
+      + apply Rmax_r.
+  Qed.
+
+  Lemma ex_finite_lim_seq_plus (f g : nat -> R) :
+    ex_finite_lim_seq f ->
+    ex_finite_lim_seq g ->
+    ex_finite_lim_seq (fun n => f n + g n).
+  Proof.
+    intros.
+    destruct H.
+    destruct H0.
+    exists (x + x0).
+    now apply is_lim_seq_plus'.
+  Qed.
+
+ Lemma ex_finite_lim_seq_ext (f g : nat -> R) :
+    (forall n, f n = g n) ->
+    ex_finite_lim_seq f <-> ex_finite_lim_seq g.
+  Proof.
+    intros.
+    unfold ex_finite_lim_seq.
+    split; intros;
+      destruct H0 as [l ?]; exists l.
+    - now apply is_lim_seq_ext with (u := f).
+    - now apply is_lim_seq_ext with (u := g).
+  Qed.
+
+  Lemma ex_finite_lim_seq_S (f : nat -> R) :
+    ex_finite_lim_seq f <-> ex_finite_lim_seq (fun n => f (S n)).
+  Proof.
+    unfold ex_finite_lim_seq.
+    split; intros; destruct H as [l ?]; exists l.
+    now apply is_lim_seq_incr_1 in H.
+    now apply is_lim_seq_incr_1.
+  Qed.
+
+Lemma ex_finite_lim_seq_incr_n (f : nat -> R) (N : nat) :
+  ex_finite_lim_seq f <-> ex_finite_lim_seq (fun n => f (N + n)%nat).
+Proof.
+  induction N.
+  - apply ex_finite_lim_seq_ext.
+    intros.
+    f_equal.
+  - generalize (ex_finite_lim_seq_S (fun n => f (N + n)%nat)); intros.
+    rewrite IHN.
+    rewrite H.
+    apply ex_finite_lim_seq_ext.
+    intros.
+    f_equal.
+    lia.
+  Qed.
+
+End Sequences.
+
+Section Series.
+
+Global Instance Series_proper :
+  Proper (pointwise_relation _ eq  ==> eq) (Series).
+Proof.
+  unfold Proper, pointwise_relation, respectful.
+  apply Series_ext.
+Qed.
+
+Global Instance ex_series_proper (K : AbsRing) (V : NormedModule K):
+  Proper (pointwise_relation _ eq ==> iff) (@ex_series K V).
+Proof.
+  unfold Proper,pointwise_relation,respectful; intros.
+  split; intros.
+  + now apply ex_series_ext with (a := x).
+  + apply ex_series_ext with (a := y); trivial.
+    now congruence.
+Qed.
+  Lemma sum_f_R0_nonneg_le_Series {x : nat -> R}(hx1 : ex_series x) (hx2 : forall n, 0 <= x n) :
+    forall N, sum_f_R0 x N <= Series x.
+  Proof.
+    intros N.
+    unfold Series.
+    rewrite <-sum_n_Reals.
+    apply is_lim_seq_incr_compare.
+    + apply Lim_seq_correct'.
+      now rewrite ex_finite_lim_series.
+    + intros n.
+      apply sum_n_pos_incr; try lia; intros; auto.
+  Qed.
+
+
+  Lemma lim_0_nneg (a : nat -> R) :
+    is_series a 0 ->
+    (forall n, 0 <= a n) ->
+    forall n, a n = 0.
+  Proof.
+    intros ser nneg.
+    assert (serex:ex_series a) by (eexists; eauto).
+    generalize (sum_f_R0_nonneg_le_Series serex nneg); intros HH.
+    rewrite (is_series_unique _ _ ser) in HH.
+    apply sum_f_R0_0_inv; intros n.
+    apply antisymmetry; trivial.
+    apply sum_f_R0_nneg; trivial.
+  Qed.
+
+  Lemma ex_series_nneg_bounded (f g : nat -> R) :
+    (forall n, 0 <= f n) ->
+    (forall n, f n <= g n) ->
+    ex_series g ->
+    ex_series f.
+  Proof.
+    intros.
+    apply (ex_series_le f g); trivial.
+    intros.
+    unfold norm; simpl.
+    unfold abs; simpl.
+    rewrite Rabs_right; trivial.
+    now apply Rle_ge.
+  Qed.
+
+    Lemma ex_series_bounded (f : nat -> R) :
+    ex_series f ->
+    exists (M:R),
+      forall n, Rabs (sum_n f n) <= M.
+  Proof.
+    intros.
+    apply ex_finite_lim_seq_bounded.
+    now apply ex_finite_lim_series.
+  Qed.
+
+  Lemma ex_series_pos_bounded (f : nat -> R) (B:R) :
+    (forall n, 0 <= f n) ->
+    (forall n, sum_n f n <= B) ->
+    ex_series f.
+  Proof.
+    intros.
+    rewrite <- ex_finite_lim_series.
+    apply ex_finite_lim_seq_incr with (M := B); trivial.
+    intros.
+    rewrite sum_Sn.
+    unfold plus; simpl.
+    specialize (H (S n)).
+    lra.
+  Qed.
+
+  Lemma Abel_descending_convergence  (a b : nat -> R) :
+    ex_series b ->
+    (forall n, a n >= a (S n)) ->
+    (exists M, forall n, a n >= M) ->
+    ex_series (fun n => a n * b n).
+  Proof.
+    intros.
+    pose (B := sum_n b).
+    assert (forall n, sum_n (fun j => a j * b j) (S n) =
+                      (a (S n))*(B (S n)) + sum_n (fun j => (B j) * (a j - (a (S j)))) n).
+    {
+      intros.
+      do 2 rewrite sum_n_Reals.
+      induction n.
+      - unfold B.
+        rewrite sum_n_Reals.
+        simpl.
+        rewrite sum_O.
+        ring_simplify; lra.
+      - replace (S (S n)) with (S (n+1)) by lia.
+        simpl.
+        replace (n+1)%nat with (S n) by lia.
+        rewrite IHn.
+        apply Rplus_eq_reg_r with (r := sum_f_R0 (fun j : nat => B j * (a (j) - a (S j))) n).
+        ring_simplify.
+        apply Rplus_eq_reg_r with (r := - (a (S n) * B (S n))).
+        ring_simplify.
+        unfold B.
+        do 2 rewrite sum_n_Reals.
+        replace (S n) with (n+1)%nat by lia.
+        simpl.
+        now ring_simplify.
+    }
+    rewrite <- ex_finite_lim_series.
+    rewrite ex_finite_lim_seq_S.
+    apply (ex_finite_lim_seq_ext _ _ H2).
+    generalize (ex_series_bounded _ H); intros.
+    rewrite <- ex_finite_lim_series in H.
+    destruct H.
+    assert (ex_finite_lim_seq a).
+    {
+      destruct H1.
+      apply ex_finite_lim_seq_decr with (M := x0).
+      - intros.
+        specialize (H0 n).
+        lra.
+      - intros.
+        specialize (H1 n).
+        lra.
+    }
+    destruct H4.
+    apply ex_finite_lim_seq_plus.
+    - unfold ex_finite_lim_seq.
+      exists (x0 * x).
+      apply is_lim_seq_mult'.
+      + now apply is_lim_seq_incr_1 in H4.
+      + now apply is_lim_seq_incr_1 in H.
+    - destruct H3.
+      unfold B.
+      assert (forall n,
+                 (sum_n (fun j : nat => Rabs (sum_n b j * (a j - a (S j)))) n)  <=
+                 (sum_n (fun j : nat => scal x1 (Rabs (a j - a (S j)))) n)).
+      {
+        intros.
+        apply sum_n_le_loc; intros.
+        rewrite Rabs_mult.
+        apply Rmult_le_compat_r; trivial.
+        apply Rabs_pos.
+      }
+      assert (forall i h, a i >= a (i + h)%nat).
+      {
+        induction h.
+        - replace (i + 0)%nat with i by lia; lra.
+        - eapply Rge_trans.
+          apply IHh.
+          now replace (i + S h)%nat with (S (i + h))%nat by lia.
+      }
+      assert (forall i j, (i<=j)%nat -> a i >= a j).
+      {
+        intros.
+        specialize (H6 i (j - i)%nat).
+        now replace (i + (j - i))%nat with j in H6 by lia.
+      }
+      assert (forall n, sum_n (fun j => Rabs (a j - a (S j))) n = Rabs(a (0%nat) - a (S n))).
+      {
+        induction n.
+        - now rewrite sum_O.
+        - rewrite sum_Sn.
+          rewrite IHn.
+          unfold plus; simpl.
+          rewrite Rabs_right, Rabs_right, Rabs_right.
+          + ring.
+          + specialize (H7 (0%nat) (S (S n))).
+            cut_to H7; try lia.
+            lra.
+          + specialize (H0 (S n)); lra.
+          + specialize (H7 (0%nat) (S n)).
+            cut_to H7; try lia.
+            lra.
+     }
+      assert (forall n,
+                 (sum_n (fun j : nat => Rabs (sum_n b j * (a j - a (S j)))) n)  <=
+                 x1 * Rabs((a 0%nat) - a (S n))).
+      {
+        intros.
+        specialize (H5 n).
+        rewrite sum_n_scal_l in H5.
+        unfold scal in H5; simpl in H5.
+        unfold mult in H5; simpl in H5.
+        now rewrite H8 in H5.
+      }
+      rewrite ex_finite_lim_series.
+      apply ex_series_Rabs.
+      destruct H1.
+      assert (forall n, Rabs (a n) <= Rmax (a 0%nat) (-x2)).
+      {
+        intros.
+        apply Rabs_le_between_Rmax.
+        split; apply Rge_le; trivial.
+        apply H7; lia.
+      }
+      assert (forall n, Rabs (a 0%nat - a (S n)) <= Rabs(a 0%nat) + Rmax (a 0%nat) (-x2)).
+      {
+        intros.
+        unfold Rminus.
+        generalize (Rabs_triang (a 0%nat) (- a (S n))); intros.
+        eapply Rle_trans.
+        apply H11.
+        apply Rplus_le_compat_l.
+        now rewrite Rabs_Ropp.
+      }
+      apply ex_series_pos_bounded with (B := x1 * (Rabs (a 0%nat) + Rmax (a 0%nat) (- x2))).
+      + intros.
+        apply Rabs_pos.
+      + intros.
+        eapply Rle_trans.
+        apply H9.
+        apply Rmult_le_compat_l.
+        * specialize (H3 0%nat).
+          apply Rle_trans with (r2 := Rabs (sum_n b 0%nat)); trivial.
+          apply Rabs_pos.
+        * apply H11.
+  Qed.
+
+  Lemma Abel_ascending_convergence  (a b : nat -> R) :
+    ex_series b ->
+    (forall n, a n <= a (S n)) ->
+    (exists M, forall n, a n <= M) ->
+    ex_series (fun n => a n * b n).
+  Proof.
+    intros.
+    pose (B := sum_n b).
+    assert (forall n, sum_n (fun j => a j * b j) (S n) =
+                      (a (S n))*(B (S n)) + sum_n (fun j => (B j) * (a j - (a (S j)))) n).
+    {
+      intros.
+      do 2 rewrite sum_n_Reals.
+      induction n.
+      - unfold B.
+        rewrite sum_n_Reals.
+        simpl.
+        rewrite sum_O.
+        ring_simplify; lra.
+      - replace (S (S n)) with (S (n+1)) by lia.
+        simpl.
+        replace (n+1)%nat with (S n) by lia.
+        rewrite IHn.
+        apply Rplus_eq_reg_r with (r := sum_f_R0 (fun j : nat => B j * (a (j) - a (S j))) n).
+        ring_simplify.
+        apply Rplus_eq_reg_r with (r := - (a (S n) * B (S n))).
+        ring_simplify.
+        unfold B.
+        do 2 rewrite sum_n_Reals.
+        replace (S n) with (n+1)%nat by lia.
+        simpl.
+        now ring_simplify.
+    }
+    rewrite <- ex_finite_lim_series.
+    rewrite ex_finite_lim_seq_S.
+    apply (ex_finite_lim_seq_ext _ _ H2).
+    generalize (ex_series_bounded _ H); intros.
+    rewrite <- ex_finite_lim_series in H.
+    destruct H.
+    assert (ex_finite_lim_seq a).
+    {
+      destruct H1.
+      apply ex_finite_lim_seq_incr with (M := x0).
+      - intros.
+        specialize (H0 n).
+        lra.
+      - intros.
+        specialize (H1 n).
+        lra.
+    }
+    destruct H4.
+    apply ex_finite_lim_seq_plus.
+    - unfold ex_finite_lim_seq.
+      exists (x0 * x).
+      apply is_lim_seq_mult'.
+      + now apply is_lim_seq_incr_1 in H4.
+      + now apply is_lim_seq_incr_1 in H.
+    - destruct H3.
+      unfold B.
+      assert (forall n,
+                 (sum_n (fun j : nat => Rabs (sum_n b j * (a j - a (S j)))) n)  <=
+                 (sum_n (fun j : nat => scal x1 (Rabs (a j - a (S j)))) n)).
+      {
+        intros.
+        apply sum_n_le_loc; intros.
+        rewrite Rabs_mult.
+        apply Rmult_le_compat_r; trivial.
+        apply Rabs_pos.
+      }
+      assert (forall i h, a i <= a (i + h)%nat).
+      {
+        induction h.
+        - replace (i + 0)%nat with i by lia; lra.
+        - eapply Rle_trans.
+          apply IHh.
+          now replace (i + S h)%nat with (S (i + h))%nat by lia.
+      }
+      assert (forall i j, (i<=j)%nat -> a i <= a j).
+      {
+        intros.
+        specialize (H6 i (j - i)%nat).
+        now replace (i + (j - i))%nat with j in H6 by lia.
+      }
+      assert (forall n, sum_n (fun j => Rabs (a j - a (S j))) n = Rabs(a (0%nat) - a (S n))).
+      {
+        induction n.
+        - now rewrite sum_O.
+        - rewrite sum_Sn.
+          rewrite IHn.
+          unfold plus; simpl.
+          rewrite Rabs_left1, Rabs_left1, Rabs_left1.
+          + ring.
+          + specialize (H7 (0%nat) (S (S n))).
+            cut_to H7; try lia.
+            lra.
+          + specialize (H0 (S n)); lra.
+          + specialize (H7 (0%nat) (S n)).
+            cut_to H7; try lia.
+            lra.
+     }
+      assert (forall n,
+                 (sum_n (fun j : nat => Rabs (sum_n b j * (a j - a (S j)))) n)  <=
+                 x1 * Rabs((a 0%nat) - a (S n))).
+      {
+        intros.
+        specialize (H5 n).
+        rewrite sum_n_scal_l in H5.
+        unfold scal in H5; simpl in H5.
+        unfold mult in H5; simpl in H5.
+        now rewrite H8 in H5.
+      }
+      rewrite ex_finite_lim_series.
+      apply ex_series_Rabs.
+      destruct H1.
+      assert (forall n, Rabs (a n) <= Rmax (x2) (- (a 0%nat))).
+      {
+        intros.
+        apply Rabs_le_between_Rmax.
+        split; trivial.
+        apply H7; lia.
+      }
+      assert (forall n, Rabs (- a 0%nat + a (S n)) <= Rmax (x2) (- a 0%nat) + Rabs (a (S n)) ).
+      {
+        intros.
+        unfold Rminus.
+        generalize (Rabs_triang (- a 0%nat) (a (S n))); intros.
+        eapply Rle_trans.
+        apply H11.
+        apply Rplus_le_compat_r.
+        now rewrite Rabs_Ropp.
+      }
+      apply ex_series_pos_bounded with (B := x1 * (2* Rmax x2 (- a 0%nat))).
+      + intros.
+        apply Rabs_pos.
+      + intros.
+        eapply Rle_trans.
+        apply H9.
+        apply Rmult_le_compat_l.
+        * specialize (H3 0%nat).
+          apply Rle_trans with (r2 := Rabs (sum_n b 0%nat)); trivial.
+          apply Rabs_pos.
+        * rewrite <- Rabs_Ropp.
+          rewrite Ropp_minus_distr.
+          unfold Rminus.
+          rewrite Rplus_comm.
+          eapply Rle_trans.
+          apply H11.
+          specialize (H10 (S n)).
+          lra.
+  Qed.
+
+  Lemma sum_n_m_Series_alt (f : nat -> R) (n m : nat) :
+     (n <= m)%nat ->
+     ex_series f ->
+     sum_n_m f n m = Series (fun i => f (n + i)%nat) -
+                     Series (fun i => f (S m + i)%nat).
+   Proof.
+     intros.
+     destruct (n == 0%nat).
+     + setoid_rewrite e. clear H.
+       induction m.
+       -- cbn. rewrite (Series_incr_1); [lra |assumption].
+       -- simpl. rewrite sum_n_Sm;[|lia].
+          rewrite IHm. cbn.
+          rewrite (Series_incr_1 (fun i => f (S(m + i)))).
+          setoid_rewrite <-Nat.add_succ_l.
+          replace (S m + 0)%nat with (S m) by lia.
+          ring_simplify.
+          now setoid_rewrite plus_n_Sm at 2.
+          setoid_rewrite <-plus_Sn_m.
+          now rewrite <-ex_series_incr_n.
+     +
+       assert (Hn : (0 < n)%nat).
+       {
+         destruct n.
+         + intuition.
+         + lia.
+       }
+     assert (Hm : (0 < S m)%nat) by lia.
+     generalize (Series_incr_n f n Hn H0); intros.
+     generalize (Series_incr_n f _ Hm H0); intros.
+     rewrite H1 in H2.
+     rewrite Radd_radd_minus in H2.
+     rewrite <-H2. simpl.
+     do 2 rewrite <-sum_n_Reals.
+     replace n with (S (pred n)) by lia.
+     rewrite sum_n_m_sum_n; try lia.
+     reflexivity.
+   Qed.
+
+   Lemma sum_n_m_Series1 (f : nat -> R) (n m : nat) :
+     (0 < n <= m)%nat ->
+     ex_series f ->
+     sum_n_m f n m = Series (fun i => f (n + i)%nat) -
+                     Series (fun i => f (S m + i)%nat).
+   Proof.
+     intros.
+     assert (Hn : (0 < n)%nat) by (now destruct H).
+     assert (Hm : (0 < S m)%nat) by lia.
+     generalize (Series_incr_n f n Hn H0); intros.
+     generalize (Series_incr_n f _ Hm H0); intros.
+     rewrite H1 in H2.
+     rewrite Radd_radd_minus in H2.
+     rewrite <-H2. simpl.
+     do 2 rewrite <-sum_n_Reals.
+     replace n with (S (pred n)) by lia.
+     rewrite sum_n_m_sum_n; try lia.
+     reflexivity.
+   Qed.
+
+
+   Lemma sum_n_m_Series (f : nat -> R) (n m : nat) :
+     (n <= m)%nat ->
+     ex_series f ->
+     sum_n_m f n m = Series (fun i => f (n + i)%nat) -
+                     Series (fun i => f (S m + i)%nat).
+   Proof.
+     intros.
+     destruct (lt_dec 0 n).
+     - apply sum_n_m_Series1; trivial; lia.
+     - assert (n=0)%nat by lia.
+       setoid_rewrite H1.
+       assert (Hm : (0 < S m)%nat) by lia.
+       generalize (Series_incr_n f _ Hm H0); intros.
+       rewrite Series_ext with (b := f); [|now setoid_rewrite Nat.add_0_l].
+       rewrite H2.
+       unfold Rminus.
+       rewrite Rplus_assoc, Rplus_opp_r, Rplus_0_r.
+       replace (pred (S m)) with m by lia.
+       now rewrite <- sum_n_Reals.
+   Qed.
+
+   Lemma Rmax_list_sum_series_eps (f : nat -> R) :
+     ex_series f ->
+     forall (eps : posreal),
+     exists (NN : nat),
+     forall (n N : nat),
+       (N >= NN)%nat ->
+       (n >= N)%nat ->
+        Rmax_list
+          (map
+             (fun k : nat =>
+                Rabs (sum_n_m f k n))
+             (seq N (S (n - N)))) < eps.
+   Proof.
+     intros.
+     generalize (Cauchy_ex_series _ H eps); intros.
+     destruct H0.
+     exists x.
+     intros.
+     apply Rmax_list_map_seq_lt_gen; try lia.
+     intros.
+     specialize (H0 (N+k)%nat n).
+     destruct (le_dec (N + k)%nat n).
+     - apply H0; lia.
+     - assert (n < N + k)%nat by lia.
+       rewrite sum_n_m_zero; try lia.
+   Qed.
+
+   (* to handle out of range limit *)
+   Lemma Rmax_list_sum_series_eps2(f : nat -> R) :
+     ex_series f ->
+     forall (eps : posreal),
+     exists (NN : nat),
+     forall (n N : nat),
+       (N >= NN)%nat ->
+       (n > (S N))%nat ->
+        Rmax_list
+          (map
+             (fun k : nat =>
+                Rabs (sum_n_m f (S k) (n-1)%nat))
+             (seq N (S ((n-1) - N)))) < eps.
+   Proof.
+     intros.
+     generalize (Cauchy_ex_series _ H eps); intros.
+     destruct H0.
+     exists x.
+     intros.
+     apply Rmax_list_map_seq_lt_gen; try lia.
+     intros.
+     specialize (H0 (S (N + k)) (n - 1)%nat).
+     destruct (lt_dec (n-1)%nat (S (N + k))).
+     - rewrite sum_n_m_zero; try lia.
+       unfold zero; simpl.
+       cbn.
+       rewrite Rabs_R0.
+       apply cond_pos.
+     - apply H0; lia.
+   Qed.
+End Series.
+
+
+
+Section tails.
+
+  (* Vraious properties of tail of a series. *)
+
+  Definition tail_series (a : nat -> R) := fun n => Series(fun k => a((n+k)%nat)).
+
+   Lemma tail_succ_sub {a : nat -> R} (ha : ex_series a) :
+      forall n, a n = tail_series a n - tail_series a (S n).
+  Proof.
+    intros n. unfold tail_series.
+    rewrite Series_incr_1.
+    setoid_rewrite plus_n_Sm.
+    ring_simplify. f_equal; lia.
+    now rewrite <-ex_series_incr_n.
+  Qed.
+
+  Lemma tail_series_nonneg_le {a : nat -> R}(ha : ex_series a)(ha' : forall n, 0 <= a n):
+    forall n, 0 <= tail_series a (S n) <= tail_series a n.
+  Proof.
+    intros n.
+    split.
+    + unfold tail_series.
+      apply Series_nonneg.
+      now rewrite <-ex_series_incr_n.
+      intros. apply ha'.
+    + generalize (tail_succ_sub ha); intros.
+      setoid_rewrite H in ha'.
+      specialize (ha' n); lra.
+  Qed.
+
+
+  Lemma tail_series_pos_lt {a : nat -> R}(ha : ex_series a)(ha' : forall n, 0 < a n):
+    forall n, 0 < tail_series a (S n) < tail_series a n.
+  Proof.
+    intros n.
+    split.
+    + unfold tail_series.
+      apply Series_pos.
+      now rewrite <-ex_series_incr_n.
+      intros. apply ha'.
+    + generalize (tail_succ_sub ha); intros.
+      setoid_rewrite H in ha'.
+      specialize (ha' n); lra.
+  Qed.
+
+  Lemma tail_series_nonneg_eventually_pos (a : nat -> R) :
+    (forall n, 0 <= a n) ->
+    (forall n, exists h, 0 < a (n + h)%nat) ->
+    ex_series a ->
+    forall n, 0 < tail_series a n.
+  Proof.
+    intros. unfold tail_series.
+    destruct (H0 n).
+    eapply Rlt_le_trans; eauto.
+    apply Rle_trans with
+        (r2 := sum_f_R0 (fun k => a (n+k)%nat) x).
+    - destruct (Nat.eq_dec 0%nat x).
+      + rewrite <- e.
+        now simpl.
+      + replace (x) with (S (x - 1)) at 2 by lia.
+        simpl.
+        replace (a ( n + x)%nat) with (0 + a (n + x)%nat) by lra.
+        apply Rplus_le_compat.
+        * rewrite <- sum_n_Reals.
+          apply sum_n_nneg.
+          intros.
+          apply H.
+        * now replace (S (x - 1)) with (x) by lia.
+    - apply sum_f_R0_nonneg_le_Series.
+      + now apply ex_series_incr_n.
+      + intros; apply H.
+  Qed.
+
+  Lemma rudin_12_b_aux1_nonneg {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 <= a n)
+        (ha'' : forall n, exists h, 0 < a (n + h)%nat):
+    forall n, R_sqrt.sqrt(tail_series a n) + R_sqrt.sqrt(tail_series a (S n)) <= 2*R_sqrt.sqrt(tail_series a n).
+  Proof.
+    intros n.
+    replace (2*sqrt(tail_series a n)) with (sqrt(tail_series a n) + sqrt(tail_series a n)) by lra.
+    apply Rplus_le_compat_l with (r := sqrt (tail_series a n)).
+    apply sqrt_le_1_alt.
+    generalize (tail_series_nonneg_le ha ha' n); intros.
+    lra.
+  Qed.
+
+  Lemma rudin_12_b_aux2_nonneg {a : nat -> R} (ha : ex_series a)(ha' : forall n, 0 <= a n):
+      forall n, a n = (sqrt(tail_series a n) + sqrt(tail_series a (S n)))*(sqrt(tail_series a n) - sqrt(tail_series a (S n))).
+  Proof.
+     intros n.
+    rewrite Rsqr_plus_minus.
+    rewrite Rsqr_sqrt;[| apply Series_nonneg].
+    rewrite Rsqr_sqrt;[| apply Series_nonneg].
+    now apply tail_succ_sub.
+    now rewrite <-ex_series_incr_n.
+    intros. apply ha'.
+    now rewrite <-ex_series_incr_n.
+    intros. apply ha'.
+  Qed.
+
+  Lemma rudin_12_b_aux3_nonneg {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 <= a n)
+    (ha'' : forall n, exists h, 0 < a (n + h)%nat) :
+    forall n, a n*/sqrt(tail_series a n) <= 2*(sqrt(tail_series a n) - sqrt(tail_series a (S n))).
+  Proof.
+    intros n.
+    generalize (tail_series_nonneg_le ha ha'); intros.
+    assert (hr1 : 0 < sqrt(tail_series a n)).
+    {
+      apply sqrt_lt_R0. specialize (H n).
+      destruct H.
+      apply tail_series_nonneg_eventually_pos; auto.
+    }
+    assert (hr2 : 0 <> sqrt(tail_series a n)) by lra.
+    replace (a n) with ((sqrt(tail_series a n) + sqrt(tail_series a (S n)))*(sqrt(tail_series a n) - sqrt(tail_series a (S n))))
+                       by (symmetry; rewrite rudin_12_b_aux2_nonneg; trivial).
+    rewrite <-Rmult_1_r.
+    rewrite <-Rinv_r with (r := (sqrt(tail_series a n)));[| congruence].
+    rewrite <-Rmult_assoc.
+    apply Rmult_le_compat_r.
+    ++ left. now apply Rinv_pos.
+    ++ rewrite Rmult_comm.
+       rewrite Rmult_comm with (r1 := 2).
+       rewrite Rmult_assoc. apply Rmult_le_compat_l.
+       enough (sqrt(tail_series a (S n)) <= sqrt(tail_series a n)) by lra.
+       apply sqrt_le_1_alt.
+       apply (H n).
+       apply rudin_12_b_aux1_nonneg; trivial.
+  Qed.
+
+  Lemma rudin_12_b_aux4_nonneg {a : nat -> R}(ha : ex_series a) (ha' : forall n, 0 <= a n)
+   (ha'' : forall n, exists h, 0 < a (n + h)%nat):
+    forall m, sum_f_R0 (fun n => a n */ sqrt(tail_series a n)) m <= 2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a(S m))).
+  Proof.
+    intros m.
+    induction m; simpl.
+    + apply (rudin_12_b_aux3_nonneg ha ha' ha'').
+    + replace (2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a(S(S m))))) with
+          (2*(sqrt(tail_series a 0%nat) - sqrt(tail_series a (S m))) + 2*((sqrt(tail_series a (S m))) - sqrt(tail_series a(S(S m))))) by lra.
+      apply (Rplus_le_compat _ _ _ _ IHm).
+      apply (rudin_12_b_aux3_nonneg); auto.
+  Qed.
+
+  Lemma is_lim_seq_inv_pos_p_infty {a : nat -> R}(ha: is_lim_seq a 0) (ha' : forall n, 0 < a n):
+    is_lim_seq (fun n => / a n) p_infty.
+  Proof.
+    rewrite is_lim_seq_p_infty_Reals.
+    rewrite is_lim_seq_Reals in ha.
+    unfold SeqProp.cv_infty. unfold Rseries.Un_cv in ha.
+    unfold R_dist in ha. setoid_rewrite Rminus_0_r in ha.
+    assert (ha'' : forall n, 0 <= a n) by (intros; left; trivial).
+    intros M. specialize (ha (/(1+Rabs (M)))).
+    assert (/(1 + Rabs(M)) > 0).
+    {
+      apply Rlt_gt.
+      apply Rinv_pos.
+      replace (0) with (0+0) by lra.
+      apply Rplus_lt_le_compat; try lra.
+      apply Rabs_pos.
+    }
+    specialize (ha H).
+    destruct ha as [N HN].
+    exists N; intros n Hn.
+    eapply Rlt_trans with (r2 := 1 + Rabs M).
+    rewrite <-Rplus_0_l at 1.
+    apply Rplus_lt_le_compat; [lra|].
+    apply Rle_abs.
+    specialize (HN n Hn). rewrite Rabs_pos_eq in HN; firstorder.
+    replace (1 + Rabs M) with (//(1 + Rabs M)).
+    apply Rinv_lt_contravar; trivial.
+    apply Rmult_lt_0_compat; firstorder.
+    rewrite Rinv_involutive; trivial.
+    enough (0 < 1 + Rabs M) by lra.
+    replace 0 with (0 + 0) by lra.
+    apply Rplus_lt_le_compat; try lra.
+    apply Rabs_pos.
+  Qed.
+
+  (* No worst convergent series exsits. *)
+
+   Lemma no_worst_converge_nonneg (a: nat -> R) :
+     (forall n, 0 <= a n) ->
+         (forall n, exists h, 0 < a (n + h)%nat) ->
+    ex_series a ->
+    exists (b : nat -> R),
+      (forall n, 0 < b n) /\
+      is_lim_seq b p_infty /\
+      ex_series (fun n => a n * b n).
+   Proof.
+     intros Ha1 Hpos Ha2.
+     pose (r := fun n => tail_series a n).
+     assert (Hr : is_lim_seq r 0).
+     {
+       generalize (zerotails a Ha2); intros.
+       unfold r.
+       setoid_rewrite is_lim_seq_incr_1.
+       now setoid_rewrite <-Nat.add_succ_l in H.
+     }
+     assert (Hr' : is_lim_seq (fun n => sqrt(r n)) 0).
+     {
+       generalize (is_lim_seq_continuous (sqrt) r 0); intros.
+       cut_to H; trivial.
+       now rewrite sqrt_0 in H.
+       apply Sqrt_reg.continuity_pt_sqrt; lra.
+     }
+     exists (fun n => 1/sqrt(tail_series a n)).
+     split.
+     + intros n.
+       apply Rdiv_lt_0_compat; try lra.
+       apply sqrt_lt_R0.
+       apply tail_series_nonneg_eventually_pos; auto.
+     + split.
+       ** unfold Rdiv.
+          setoid_rewrite Rmult_1_l.
+          apply (is_lim_seq_inv_pos_p_infty Hr'); intros.
+          apply sqrt_lt_R0.
+          unfold r. apply tail_series_nonneg_eventually_pos; auto.
+       ** unfold Rdiv. setoid_rewrite Rmult_1_l.
+          rewrite <-ex_finite_lim_series.
+          apply ex_finite_lim_seq_incr with (M := 2*(sqrt(r 0%nat))).
+          -- intros. do 2 rewrite sum_n_Reals.
+             simpl. apply Rplus_le_compat1_l.
+             apply Rmult_le_pos;[apply Ha1|left].
+             apply Rinv_pos.
+             apply sqrt_lt_R0.
+             unfold r.
+             apply tail_series_nonneg_eventually_pos; auto.
+          -- intros n. rewrite sum_n_Reals.
+             eapply Rle_trans.
+             apply (rudin_12_b_aux4_nonneg Ha2 Ha1); intros; try auto.
+             apply Rmult_le_compat_l; try lra.
+             replace (sqrt (r 0%nat)) with (sqrt(r 0%nat) - 0) by lra.
+             unfold r; simpl. apply Rplus_le_compat_l.
+             apply Ropp_le_contravar.
+             rewrite <-sqrt_0. apply sqrt_le_1_alt.
+             left. apply tail_series_nonneg_eventually_pos; auto.
+    Qed.
+
+
+ Lemma no_worst_converge_pos (a: nat -> R) :
+   (forall n, 0 < a n) ->
+    ex_series a ->
+    exists (b : nat -> R),
+      (forall n, 0 < b n) /\
+      is_lim_seq b p_infty /\
+      ex_series (fun n => a n * b n).
+ Proof.
+   intros.
+   assert (Ha : forall n, 0 <= a n) by (intros n ; left; auto).
+   generalize (no_worst_converge_nonneg a Ha); intros Hn.
+   apply Hn; auto.
+   intros. exists 0%nat.
+   apply H.
+ Qed.
+
+ Definition eventually_pos_dec (a : nat -> R) :
+   {forall n : nat, exists h : nat, 0 < a (n + h)%nat} +{~(forall n : nat, exists h : nat, 0 < a (n + h)%nat)}.
+ Proof.
+   apply EM_dec'.
+   apply Classical_Prop.classic.
+ Qed.
+
+ Theorem no_worst_converge_iff (a : nat -> R):
+   (forall n, 0 <= a n) ->
+   ex_series a <->
+   exists (b : nat -> R),
+     (forall n, 0 < b n) /\
+     is_lim_seq b p_infty /\
+     ex_series (fun n => a n * b n).
+ Proof.
+   intros.
+   split; intros.
+   --- destruct (eventually_pos_dec a) as [H1|H2].
+       + apply no_worst_converge_nonneg; auto.
+       + push_neg_in H2.
+         destruct H2 as [N0 HN0].
+         exists (fun n => 1 + INR n).
+         split.
+         -- intros n.
+            rewrite Rplus_comm.
+            apply INRp1_pos.
+         -- split.
+            ++ generalize (is_lim_seq_INR); intros.
+               eapply is_lim_seq_le_p_loc with (u := fun n => INR n); auto.
+               exists 0%nat. intros; lra.
+            ++ setoid_rewrite Rmult_plus_distr_l.
+               setoid_rewrite Rmult_1_r.
+               apply ex_series_plus with (b := fun n => (a n)*(INR n)); trivial.
+               apply ex_series_incr_n  with (n := N0).
+               assert (forall n, a (N0 + n)%nat = 0).
+               {
+                 intros.
+                 apply Rle_antisym.
+                 - apply Rge_le, HN0.
+                 - apply H.
+               }
+               apply ex_series_ext with
+                   (a0 := const 0); try (apply ex_series_const0).
+               intros.
+               unfold const.
+               rewrite H1.
+               lra.
+  --- destruct H0 as [b [Hb1 [Hb2 Hb3]]].
+      rewrite is_lim_seq_p_infty_Reals in Hb2.
+      destruct (Hb2 1%R) as [N0 HN0].
+      apply ex_series_incr_n with (n := N0).
+      apply ex_series_incr_n with (n := N0) in Hb3.
+      apply (ex_series_le (fun n => a (N0 + n)%nat) (fun n => a (N0 + n)%nat * b (N0 + n)%nat)); auto.
+      intros n.
+      rewrite Rabs_pos_eq; trivial.
+      rewrite <-Rmult_1_r at 1.
+      apply Rmult_le_compat; try (trivial; lra).
+      left. apply HN0; lia.
+ Qed.
+
+  Lemma no_best_diverge_pos (gamma : nat -> R) :
+   0 < gamma 0%nat ->
+   (forall n, 0 <= gamma n) ->
+   is_lim_seq (sum_n gamma) p_infty ->
+   exists (rho : nat -> posreal),
+     is_lim_seq rho 0 /\ is_lim_seq (sum_n (fun n => rho n * gamma n)) p_infty.
+ Proof.
+   intros Ha0 Ha1 Ha2.
+   pose (s := sum_n gamma).
+   assert (forall n, 0 < s n).
+   {
+     unfold s; intros.
+     induction n.
+     - now rewrite sum_O.
+     - rewrite sum_Sn.
+       unfold plus; simpl.
+       specialize (Ha1 (S n)).
+       lra.
+   }
+    assert (Hs1 : is_lim_seq (fun n => /(s n)) 0).
+     {
+       replace (Finite 0) with (Rbar_inv p_infty) by now simpl.
+       apply is_lim_seq_inv; trivial; try discriminate.
+     }
+     assert (forall n m, (n <= m)%nat -> (s n <= s m)).
+     {
+       intros.
+       unfold s.
+       destruct (lt_dec n m).
+       - unfold sum_n.
+         apply Rge_le.
+         rewrite sum_n_m_Chasles with (m0 := n); try lia.
+         apply Rle_ge.
+         replace (sum_n_m gamma 0 n) with ((sum_n_m gamma 0 n) + 0) at 1 by lra.
+         unfold plus; simpl.
+         apply Rplus_le_compat_l.
+         apply sum_n_m_pos; trivial.
+       - assert (n = m) by lia.
+         now rewrite H1.
+     }
+     assert (Hs2 : forall n, 0 < / (s n)).
+     {
+       intros.
+       now apply Rinv_0_lt_compat.
+     }
+     exists (fun n => mkposreal _ (Hs2 n)).
+     split; trivial.
+     assert (forall N k, sum_n_m (fun n => (gamma n)/(s n)) (S N) (S N + k) >= 1 - (s N) / (s (S N + k)%nat)).
+     {
+       intros.
+       apply Rge_trans with (r2 := sum_n_m (fun n => (gamma n)/(s (S N + k)%nat)) (S N) (S N + k)).
+       - apply Rle_ge.
+         apply sum_n_m_le_loc; intros; try lia.
+         unfold Rdiv.
+         apply Rmult_le_compat_l; trivial.
+         apply Rinv_le_contravar; trivial.
+         apply H0.
+         lia.
+       - unfold Rdiv.
+         rewrite sum_n_m_ext with (b := (fun n : nat => scal (/ s (S N + k)%nat) (gamma n))).
+         + rewrite sum_n_m_scal_l.
+           rewrite sum_n_m_sum_n; try lia.
+           unfold s.
+           unfold scal; simpl.
+           unfold mult; simpl.
+           rewrite Rmult_comm.
+           replace (1 - sum_n gamma N * / sum_n gamma (S (N + k))) with
+               ((sum_n gamma (S (N + k))%nat - sum_n gamma N) * / sum_n gamma (S (N + k))).
+           * apply Rmult_ge_compat_r.
+             left; apply Hs2.
+             right.
+             unfold minus; simpl.
+             unfold plus; simpl.
+             unfold opp; simpl.
+             now ring_simplify.
+           * field.
+             apply Rgt_not_eq.
+             apply H.
+         + intros.
+           unfold scal; simpl.
+           unfold mult; simpl.
+           now rewrite Rmult_comm.
+     }
+     simpl.
+     generalize (ex_lim_seq_incr  (sum_n (fun n : nat => / s n * gamma n)) ); intros.
+     cut_to  H2.
+   - destruct H2.
+     destruct x; trivial.
+     + assert (ex_finite_lim_seq  (sum_n (fun n : nat => / s n * gamma n)) )
+         by (now exists (r)).
+       apply ex_lim_seq_cauchy_corr in H3.
+       unfold ex_lim_seq_cauchy in H3.
+       assert (0 < /2) by lra.
+       specialize (H3 (mkposreal _ H4)).
+       destruct H3 as [N ?].
+       assert (forall k, s (S N + k)%nat < (s N)/(1 - mkposreal _ H4)).
+       {
+         intros.
+         specialize (H3 N (S N + k)%nat).
+         cut_to H3; try lia.
+         assert (1 - s N / s (S N + k)%nat < mkposreal _ H4).
+         {
+           specialize (H1 N k).
+           apply Rge_le in H1.
+           eapply Rle_lt_trans.
+           apply H1.
+           rewrite sum_n_m_ext with (b := fun n => / s n * gamma n) by (intros; unfold Rdiv; now rewrite Rmult_comm).
+           generalize (sum_n_m_sum_n (fun n : nat => / s n * gamma n) N (S N + k)); intros.
+           cut_to H5; try lia.
+           rewrite H5.
+           unfold minus; simpl.
+           unfold plus, opp; simpl.
+           rewrite Rabs_minus_sym in H3.
+           replace (S (N + k))%nat with (S N + k)%nat by lia.
+           rewrite Rabs_right in H3; trivial.
+           unfold minus, plus, opp in H5; simpl in H5.
+           unfold Rminus.
+           replace (S N + k)%nat with (S (N + k))%nat by lia.
+           rewrite <- H5.
+           apply Rle_ge.
+           apply sum_n_m_pos.
+           intros.
+           apply Rmult_le_pos; trivial.
+           left; now apply Rinv_0_lt_compat.
+         }
+         assert (s N / (s (S N + k)%nat) > 1 - mkposreal _ H4) by lra.
+         apply Rmult_gt_compat_r with (r :=  s (S N + k)%nat ) in H6; [| apply H].
+         unfold Rdiv in H6.
+         rewrite Rmult_assoc in H6.
+         rewrite Rinv_l in H6; [| apply Rgt_not_eq, H].
+         simpl in H6; simpl; lra.
+       }
+       assert (ex_finite_lim_seq s).
+       {
+         rewrite ex_finite_lim_seq_incr_n with (N := (S N)).
+         apply ex_finite_lim_seq_incr with (M := (s N)/(1 - mkposreal _ H4)).
+         - intros.
+           unfold s.
+           replace (S N + S n)%nat with (S (S N + n))%nat by lia.
+           rewrite sum_Sn.
+           replace (sum_n gamma (S N + n)) with (sum_n gamma (S N + n) + 0) at 1 by lra.
+           unfold plus; simpl.
+           apply Rplus_le_compat_l; trivial.
+         - intros.
+           left; apply H5.
+       }
+       destruct H6.
+       unfold s in H6.
+       apply is_lim_seq_unique in H6.
+       apply is_lim_seq_unique in Ha2.
+       rewrite Ha2 in H6.
+       discriminate.
+     + apply is_lim_seq_spec in H2; unfold is_lim_seq' in H2.
+       specialize (H2 0).
+       destruct H2.
+       specialize (H2 x).
+       cut_to H2; try lia.
+       assert (0 <= sum_n (fun n : nat => / s n * gamma n) x).
+       {
+         apply sum_n_nneg.
+         intros.
+         apply Rmult_le_pos; trivial.
+         - now left.
+       }
+       lra.
+     - intros.
+       rewrite sum_Sn.
+       unfold plus; simpl.
+       assert (0 <= / s (S n) * gamma (S n)).
+       + apply Rmult_le_pos; trivial.
+         now left.
+       + lra.
+ Qed.
+
+  Lemma sum_shift_diff (X : nat -> R) (m a : nat) :
+     sum_n X (a + S m) - sum_n X m =
+     sum_n (fun n0 : nat => X (n0 + S m)%nat) a.
+   Proof.
+     rewrite <-sum_n_m_shift.
+     rewrite sum_n_m_sum_n; try lia.
+     reflexivity.
+   Qed.
+
+ Lemma is_lim_seq_sum_shift_inf1 (f : nat -> R) (N : nat) :
+   is_lim_seq (sum_n f) p_infty <->
+   is_lim_seq (sum_n (fun n => f (n + (S N))%nat)) p_infty.
+ Proof.
+   generalize (sum_shift_diff f N); intros.
+   generalize (is_lim_seq_ext _ _ p_infty H); intros.
+   split; intros.
+   - apply H0.
+     apply is_lim_seq_minus with (l1 := p_infty) (l2 := sum_n f N).
+     + now apply is_lim_seq_incr_n with (N := S N) in H1.
+     + apply is_lim_seq_const.
+     + unfold is_Rbar_minus, is_Rbar_plus.
+       now simpl.
+   - symmetry in H.
+     generalize (is_lim_seq_ext _ _ p_infty H); intros.
+     apply H2 in H1.
+     apply is_lim_seq_incr_n with (N := S N).
+     apply is_lim_seq_ext with (u := fun a : nat => (sum_n f (a + S N) - sum_n f N) + (sum_n f N)).
+     + intros; lra.
+     + apply is_lim_seq_plus with (l1 := p_infty) (l2 := sum_n f N); trivial.
+       apply is_lim_seq_const.
+       unfold is_Rbar_plus; now simpl.
+  Qed.
+
+ Lemma is_lim_seq_sum_shift_inf (f : nat -> R) (N : nat) :
+   is_lim_seq (sum_n f) p_infty <->
+   is_lim_seq (sum_n (fun n => f (n + N)%nat)) p_infty.
+ Proof.
+   destruct N.
+   - split; apply is_lim_seq_ext; intros; apply sum_n_ext; intros; f_equal; lia.
+   - apply is_lim_seq_sum_shift_inf1.
+ Qed.
+
+  Lemma no_best_diverge (gamma : nat -> R) :
+   (forall n, 0 <= gamma n) ->
+   is_lim_seq (sum_n gamma) p_infty ->
+   exists (rho : nat -> posreal),
+     is_lim_seq rho 0 /\ is_lim_seq (sum_n (fun n => rho n * gamma n)) p_infty.
+  Proof.
+    intros.
+    assert (exists N, 0 < gamma N).
+    {
+      apply is_lim_seq_spec in H0.
+      unfold is_lim_seq' in H0.
+      specialize (H0 0).
+      destruct H0 as [N ?].
+      specialize (H0 N).
+      cut_to H0; try lia.
+      now apply pos_ind_sum with (N := N).
+    }
+    destruct H1 as [N ?].
+    generalize (no_best_diverge_pos (fun n => gamma (n + N)%nat)); intros.
+    cut_to H2; trivial.
+    - destruct H2 as [rho [? ?]].
+      assert (0 < 1) by lra.
+      exists (fun n => if (lt_dec n N) then (mkposreal _ H4) else rho (n - N)%nat).
+      split.
+      + apply is_lim_seq_incr_n with (N := N).
+        apply is_lim_seq_ext with (u := rho); trivial.
+        intros.
+        match_destr; try lia.
+        now replace (n + N - N)%nat with (n) by lia.
+      + rewrite is_lim_seq_sum_shift_inf with (N := N).
+        apply is_lim_seq_ext with (u := sum_n (fun n => rho n * gamma (n + N)%nat)); trivial.
+        intros.
+        apply sum_n_ext; intros.
+        match_destr; try lia.
+        now replace (n0 + N - N)%nat with (n0) by lia.
+    - now rewrite <- is_lim_seq_sum_shift_inf.
+  Qed.
+  (* No best divergent series exists. *)
+
+  Theorem no_best_diverge_iff (gamma : nat -> R) :
+   (forall n, 0 <= gamma n) ->
+   is_lim_seq (sum_n gamma) p_infty <->
+   exists (rho : nat -> posreal),
+     is_lim_seq rho 0 /\ is_lim_seq (sum_n (fun n => rho n * gamma n)) p_infty.
+  Proof.
+    intros.
+    split; intros.
+    - now apply no_best_diverge.
+    - destruct H0 as [? [? ?]].
+      apply is_lim_seq_spec in H0.
+      unfold is_lim_seq' in H0.
+      assert (0 < 1) by lra.
+      destruct (H0 (mkposreal _ H2)) as [? ?].
+      rewrite is_lim_seq_sum_shift_inf with (N := x0) in H1.
+      rewrite is_lim_seq_sum_shift_inf with (N := x0).
+      assert (forall n, x (n + x0)%nat < 1).
+      {
+        intros.
+        specialize (H3 (n + x0)%nat).
+        cut_to H3; try lia.
+        rewrite Rminus_0_r in H3.
+        rewrite Rabs_right in H3; [|left; apply cond_pos].
+        apply H3.
+      }
+      apply is_lim_seq_le_p_loc with (u :=  (sum_n (fun n : nat => x (n + x0)%nat * gamma (n + x0)%nat))); trivial.
+      exists (0%nat); intros.
+      apply sum_n_le_loc.
+      intros.
+      replace (gamma (n0 + x0)%nat) with (1 *  gamma (n0 + x0)%nat) at 2 by lra.
+      apply Rmult_le_compat_r; trivial.
+      now left.
+   Qed.
+
+ End tails.

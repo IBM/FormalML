@@ -474,7 +474,7 @@ Qed.
     intros.
     eapply ex_lim_seq_ext.
     - intros.
-      apply (RealAdd.sum_n_m_shift α (S nk) n).
+      apply (sum_n_m_shift α (S nk) n).
     - unfold sum_n in H.
       apply (ex_lim_seq_incr_n _ (S nk)) in H.
       simpl in H.
@@ -1252,7 +1252,7 @@ Proof.
     cut_to H13; [|lia].
     specialize (H5 (S Nsigma) (n-1)%nat).
     cut_to H5; try lia.
-    rewrite Rabs_pos_eq in H5; [|apply RealAdd.sum_n_m_pos; intros; apply H2; try lia].
+    rewrite Rabs_pos_eq in H5; [|apply sum_n_m_pos; intros; apply H2; try lia].
     specialize (H6 (n - 1)%nat).
     rewrite Rminus_0_r in H6.
     assert (0 < max_prod_fun (pos_sq_fun F) (S Nsigma) (n - 1)).
