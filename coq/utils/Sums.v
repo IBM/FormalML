@@ -1413,6 +1413,38 @@ Proof.
     lia.
   Qed.
 
+ Lemma is_lim_seq_max (f g : nat -> R) (l : Rbar) :
+   is_lim_seq f l ->
+   is_lim_seq g l ->
+   is_lim_seq (fun n => Rmax (f n) (g n)) l.
+ Proof.
+   intros.
+   apply is_lim_seq_spec.
+   apply is_lim_seq_spec in H.
+   apply is_lim_seq_spec in H0.
+   unfold is_lim_seq' in *; intros.
+   destruct l; intros.
+   - destruct (H eps); destruct (H0 eps).
+     exists (max x x0); intros.
+     specialize (H1 n); specialize (H2 n).
+     cut_to H1; try lia.
+     cut_to H2; try lia.
+     unfold Rmax; match_destr.
+   - destruct (H M); destruct (H0 M).
+     exists (max x x0); intros.
+     specialize (H1 n); specialize (H2 n).
+     cut_to H1; try lia.
+     cut_to H2; try lia.
+     unfold Rmax; match_destr.
+   - destruct (H M); destruct (H0 M).
+     exists (max x x0); intros.
+     specialize (H1 n); specialize (H2 n).
+     cut_to H1; try lia.
+     cut_to H2; try lia.
+     unfold Rmax; match_destr.
+ Qed.
+
+
 End Sequences.
 
 Section Series.
@@ -2539,5 +2571,41 @@ Section tails.
       apply Rmult_le_compat_r; trivial.
       now left.
    Qed.
+
+   Lemma no_worst_converge_div (a : nat -> R) :
+    (forall n, 0 <= a n) ->
+    ex_series a ->
+    exists (b : nat -> R),
+      (forall n, 0 < b n) /\
+      is_lim_seq b 0 /\
+      ex_series (fun n => a n / Rsqr (b n)).
+    Proof.
+      intros apos aconv.
+      destruct (no_worst_converge_iff a apos).
+      specialize (H aconv).
+      destruct H as [? [? [? ?]]].
+      exists (fun n => sqrt (/ (x n))).
+      split.
+      - intros.
+        apply sqrt_lt_R0.
+        now apply Rinv_0_lt_compat.
+      - split.
+        + replace (0) with (sqrt 0) by apply sqrt_0.
+          apply is_lim_seq_continuous.
+          apply continuity_pt_sqrt; lra.
+          replace (Finite 0) with (Rbar_inv p_infty); [| now simpl].
+          apply is_lim_seq_inv; trivial; discriminate.
+        + apply ex_series_ext with
+              (a0 := fun n => a n * x n); trivial.
+          intros.
+          unfold Rdiv.
+          f_equal.
+          rewrite Rsqr_sqrt.
+          * rewrite Rinv_involutive; trivial.
+            now apply Rgt_not_eq, Rlt_gt.
+          * left.
+            now apply Rinv_0_lt_compat.
+   Qed.
+
 
  End tails.

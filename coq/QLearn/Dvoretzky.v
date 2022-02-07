@@ -1150,41 +1150,6 @@ Section Derman_Sacks.
     apply H11.
   Qed.
 
-   Lemma no_worst_converge_div (a : nat -> R) :
-    (forall n, 0 <= a n) ->
-    ex_series a ->
-    exists (b : nat -> R),
-      (forall n, 0 < b n) /\
-      is_lim_seq b 0 /\
-      ex_series (fun n => a n / Rsqr (b n)).
-    Proof.
-      intros apos aconv.
-      destruct (no_worst_converge_iff a apos).
-      specialize (H aconv).
-      destruct H as [? [? [? ?]]].
-      exists (fun n => sqrt (/ (x n))).
-      split.
-      - intros.
-        apply sqrt_lt_R0.
-        now apply Rinv_0_lt_compat.
-      - split.
-        + replace (0) with (sqrt 0) by apply sqrt_0.
-          apply is_lim_seq_continuous.
-          apply continuity_pt_sqrt; lra.
-          replace (Finite 0) with (Rbar_inv p_infty); [| now simpl].
-          apply is_lim_seq_inv; trivial; discriminate.
-        + apply ex_series_ext with
-              (a0 := fun n => a n * x n); trivial.
-          intros.
-          unfold Rdiv.
-          f_equal.
-          rewrite Rsqr_sqrt.
-          * rewrite Rinv_involutive; trivial.          
-            now apply Rgt_not_eq, Rlt_gt.
-          * left.
-            now apply Rinv_0_lt_compat.
-   Qed.
-
  Lemma DS_Dvor_11_12_Y_fun (a : nat -> Ts -> R) {Y : nat -> Ts -> R}
        (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
        (rvy : forall n, RandomVariable _ borel_sa (Y n))
@@ -1433,38 +1398,6 @@ Section Derman_Sacks.
         now apply FiniteExpectation_le.
   Qed.
  
-
- Lemma is_lim_seq_max (f g : nat -> R) (l : Rbar) :
-   is_lim_seq f l ->
-   is_lim_seq g l ->
-   is_lim_seq (fun n => Rmax (f n) (g n)) l.
- Proof.
-   intros.
-   apply is_lim_seq_spec.
-   apply is_lim_seq_spec in H.
-   apply is_lim_seq_spec in H0.
-   unfold is_lim_seq' in *; intros.
-   destruct l; intros.
-   - destruct (H eps); destruct (H0 eps).
-     exists (max x x0); intros.
-     specialize (H1 n); specialize (H2 n).
-     cut_to H1; try lia.
-     cut_to H2; try lia.
-     unfold Rmax; match_destr.
-   - destruct (H M); destruct (H0 M).
-     exists (max x x0); intros.
-     specialize (H1 n); specialize (H2 n).
-     cut_to H1; try lia.
-     cut_to H2; try lia.
-     unfold Rmax; match_destr.
-   - destruct (H M); destruct (H0 M).
-     exists (max x x0); intros.
-     specialize (H1 n); specialize (H2 n).
-     cut_to H1; try lia.
-     cut_to H2; try lia.
-     unfold Rmax; match_destr.
- Qed.
-
  Theorem Dvoretzky_DS
         (X Y : nat -> Ts -> R)
         (T : nat -> Ts -> R)
@@ -2489,37 +2422,60 @@ Theorem Dvoretzky_DS_scale_prop
      now apply DS_Tdn_adapted.
  Qed.
 
- Corollary Dvoretzky_DS_simple_vec_theta (theta : R)
-           (X0:Ts->R) 
-        (Y : nat -> Ts -> R)
-        (T : forall (n:nat), vector R n->R)
+ Corollary Dvoretzky_DS_simple_vec_theta
+        (* Given an underlying probability space (Ts, dom, ps_P) *)
+        (*{Ts : Type}
+        {dom: SigmaAlgebra Ts}
+        {prts: ProbSpace dom}*)
+
+        (* and a filtration F of sub-σ-algebras of dom *)
         {F : nat -> SigmaAlgebra Ts}
         (isfilt : IsFiltration F)
         (filt_sub : forall n, sa_sub (F n) dom)
-        {rvT:(forall n, RandomVariable (Rvector_borel_sa n) borel_sa (T n))}
-        {adaptX : IsAdapted borel_sa (DS_Xdn X0 T Y) F}
-        {alpha beta gamma : nat -> R}
-        (hpos1 : forall n, 0 <= alpha n)
-        (hpos2 : forall n, 0 <= beta n)
-        (hpos3 : forall n, 0 <= gamma n)
-        (rvy : forall n, RandomVariable dom borel_sa (Y n))
-        {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
-  (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
-                     (fun x : Ts => const 0 x)) ->
-  (forall n omega, (Rabs (DS_Tdn X0 T Y n omega - theta)) <= Rmax (alpha n) ((1+beta n)*(Rabs (DS_Xdn X0 T Y n omega - theta)) - gamma n)) ->
-  ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
-  is_lim_seq alpha 0 ->
-  ex_finite_lim_seq (sum_n beta) ->
-  is_lim_seq (sum_n gamma) p_infty ->
-  almost _ (fun omega => is_lim_seq (fun n => (DS_Xdn X0 T Y n omega)) theta).
- Proof.
-   intros.
-   eapply (Dvoretzky_DS_theta theta
-                 (DS_Xdn X0 T Y) Y
-                 (DS_Tdn X0 T Y)
-                 isfilt filt_sub
-                 hpos1 hpos2 hpos3
 
+        (* Let Xn, Wn, Tn be such that *)
+        (X0: Ts -> R)
+        (* Wn is measurable *)
+        (W : nat -> Ts -> R)
+        (rvW : forall n, RandomVariable dom borel_sa (W n))
+        (* Tn is measurable for all n*)
+        (T : forall n, vector R n->R)
+        {rvT: forall n, (RandomVariable (Rvector_borel_sa n) borel_sa (T n))}
+
+        (* The sequence {Xn = Tn + Wn} is F-adapted *)
+        {adaptX : let X' := DS_Xdn X0 T W in IsAdapted borel_sa X' F}
+
+        (* The conditional expectation of W_n wrt F_n is zero almost surely. *)
+        (H7 : forall n, almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (W n)) (const 0))
+        (* And its square has finite expectation *)
+        {svy2 : forall n, IsFiniteExpectation prts (rvsqr (W n))}
+        (* And it's series of expectations of it's square converges. *)
+        (H8 : ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (W n)))))
+        (*alpha beta gamma are nonnegative real number sequences *)
+        {alpha beta gamma : nat -> R}
+        (H10 : forall n, 0 <= alpha n)
+        (H11 : forall n, 0 <= beta n)
+        (H12 : forall n, 0 <= gamma n)
+        (* the limit of alpha is zero*)
+        (H13 : is_lim_seq alpha 0)
+        (* the limit of partial sums of beta is finite*)
+        (H14 : ex_finite_lim_seq (sum_n beta))
+        (* the limit of partial sums of gamma goes to +infinity*)
+        (H15 : is_lim_seq (sum_n gamma) p_infty)
+        (*theta is a real number such that*)
+        (theta : R)
+        (* it satisfies the following bound for Tn for all n *)
+        (H16 : let T' := DS_Tdn X0 T W in
+              let X' := DS_Xdn X0 T W in
+         forall n omega, (Rabs (T' n omega - theta)) <= Rmax (alpha n) ((1+beta n)*(Rabs (X' n omega - theta)) - gamma n))
+   : let X' := DS_Xdn X0 T W in
+     almost _ (fun omega => is_lim_seq (fun n => (X' n omega)) theta).
+ Proof.
+   eapply (Dvoretzky_DS_theta theta
+                 (DS_Xdn X0 T W) W
+                 (DS_Tdn X0 T W)
+                 isfilt filt_sub
+                 H10 H11 H12
           ); trivial.
    - intros ??.
      unfold DS_Tdn, DS_Xdn; simpl.
