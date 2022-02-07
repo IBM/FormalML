@@ -491,6 +491,109 @@ Proof.
 Qed.
 
 
+Lemma Rsqrt_le_to_Rsqr: forall r x : nonnegreal, x <= r² <-> Rsqrt x <= r.
+Proof.
+  intros.
+  unfold Rsqrt.
+  match_destr.
+  destruct a as [? eqq].
+  rewrite eqq.
+  split; intros HH.
+  - apply Rsqr_le_abs_0 in HH.
+    destruct r; destruct x; simpl in *.
+    now repeat (rewrite Rabs_pos_eq in HH by lra).
+  - apply Rsqr_le_abs_1.
+    destruct r; destruct x; simpl in *.
+    now repeat (rewrite Rabs_pos_eq by lra).
+Qed.
+
+Lemma Rsqrt_lt_to_Rsqr: forall r x : nonnegreal, x < r² <-> Rsqrt x < r.
+Proof.
+  intros.
+  unfold Rsqrt.
+  match_destr.
+  destruct a as [? eqq].
+  rewrite eqq.
+  split; intros HH.
+  - apply Rsqr_lt_abs_0 in HH.
+    destruct r; destruct x; simpl in *.
+    now repeat (rewrite Rabs_pos_eq in HH by lra).
+  - apply Rsqr_lt_abs_1.
+    destruct r; destruct x; simpl in *.
+    now repeat (rewrite Rabs_pos_eq by lra).
+Qed.
+
+
+Lemma Rsqr_pos (a : posreal) :
+  0 < Rsqr a.
+Proof.
+  generalize (Rle_0_sqr a); intros.
+  destruct H; trivial.
+  generalize (cond_pos a); intros.
+  symmetry in H; apply Rsqr_eq_0 in H.
+  lra.
+Qed.
+
+Lemma mkpos_Rsqr (a : posreal) :
+  Rsqr a = mkposreal _ (Rsqr_pos a).
+Proof.
+  now simpl.
+Qed.
+
+
+Lemma Rplus_le_compat1_l (a b : R) :
+  0 <= b -> a <= a + b.
+Proof.
+  intros.
+  replace (a) with (a + 0) at 1 by lra.
+  now apply Rplus_le_compat_l.
+Qed.
+
+
+Lemma Rmult_pos_parts {x y}: (0 < x * y) ->
+                             (0 < x /\ 0 < y) \/ (x < 0 /\ y < 0).
+Proof.
+  intros HH.
+  destruct (Rlt_dec 0 x)
+  ; destruct (Rlt_dec 0 y).
+  - lra.
+  - apply Rnot_lt_le in n.
+    destruct n; [| subst; lra].
+    apply Rlt_not_le in HH.
+    elim HH.
+    apply Rmult_le_0_l; lra.
+  - apply Rnot_lt_le in n.
+    destruct n; [| subst; lra].
+    apply Rlt_not_le in HH.
+    elim HH.
+    apply Rmult_le_0_r; lra.
+  - apply Rnot_lt_le in n.
+    apply Rnot_lt_le in n0.
+    destruct n; [| subst; lra].
+    destruct n0; [| subst; lra].
+    lra.
+Qed.
+
+Lemma Rmult_le_pos_from_neg: forall r1 r2 : R, r1 <= 0 -> r2 <= 0 -> 0 <= r1 * r2.
+Proof.
+  intros.
+  assert (0 <= (- r1) * (- r2)).
+  {
+    apply Rmult_le_pos; lra.
+  }
+  lra.
+Qed.
+
+Lemma Rmult_nnneg_neg {x y:R} :
+  (~ 0 <= x * y) -> x < 0 \/ y < 0.
+Proof.
+  intros HH.
+  apply Rnot_le_lt in HH.
+  destruct (Rle_dec 0 x); [| lra].
+  destruct (Rle_dec 0 y); [| lra].
+  generalize (Rmult_le_pos _ _ r r0)
+  ; lra.
+Qed.
 
 End extra.
 
@@ -1047,6 +1150,40 @@ Section expprops.
       rewrite H0.
       now right.
   Qed.
+
+Lemma exp_ineq1 : forall x : R, x <> 0 -> 1 + x < exp x.
+Proof.
+  assert (Hd : forall c : R,
+             derivable_pt_lim (fun x : R => exp x - (x + 1)) c (exp c - 1)).
+  intros.
+  apply derivable_pt_lim_minus; [apply derivable_pt_lim_exp | ].
+  replace (1) with (1 + 0) at 1 by lra.
+  apply derivable_pt_lim_plus;
+    [apply derivable_pt_lim_id | apply derivable_pt_lim_const].
+  intros x xdz; destruct (Rtotal_order x 0)  as [xlz|[xez|xgz]].
+  - destruct (MVT_cor2 _ _ x 0 xlz (fun c _ => Hd c)) as [c [HH1 HH2]].
+    rewrite exp_0 in HH1.
+    assert (H1 : 0 < x * exp c - x); [| lra].
+    assert (H2 : x * exp 0  < x * exp c); [| rewrite exp_0 in H2; lra].
+    apply Rmult_lt_gt_compat_neg_l; auto.
+    now apply exp_increasing.
+  - now case xdz.
+  - destruct (MVT_cor2 _ _ 0 x xgz (fun c _ => Hd c)) as [c [HH1 HH2]].
+    rewrite exp_0 in HH1.
+    assert (H1 : 0 < x * exp c - x); [| lra].
+    assert (H2 : x * exp 0  < x * exp c); [| rewrite exp_0 in H2; lra].
+    apply Rmult_lt_compat_l; auto.
+    now apply exp_increasing.
+Qed.
+
+Lemma exp_ineq1_le (x : R) : 1 + x <= exp x.
+Proof.
+  destruct (Req_EM_T x 0) as [xeq|?].
+  - rewrite xeq, exp_0; lra.
+  - left.
+    now apply exp_ineq1.
+Qed.
+
 
 End expprops.
 
@@ -2053,6 +2190,21 @@ Lemma convex_power_abs (e:R):  1 <= e -> forall c x y : R, convex (fun a : R => 
         apply Rabs_pos.
   Qed.
 
+
+Lemma Rinv_power (x : R) (n : R) : 0 < x -> / power x n = power (/ x) n.
+Proof.
+  intros.
+  assert (x <> 0) by lra.
+  assert (power x n <> 0) by (generalize (power_pos x n); lra).
+  apply (Rmult_eq_reg_l (power x n)); trivial.
+  rewrite Rinv_r by trivial.
+  rewrite power_mult_distr.
+  + rewrite Rinv_r; trivial.
+    rewrite power_base_1; trivial.
+  + lra.
+  + left.
+    now apply Rinv_pos.
+Qed.
 
 End power.
 
@@ -3568,37 +3720,8 @@ Proof.
     + apply Rmax_lub; eauto.
 Qed.
 
-Lemma Rsqrt_le_to_Rsqr: forall r x : nonnegreal, x <= r² <-> Rsqrt x <= r.
-Proof.
-  intros.
-  unfold Rsqrt.
-  match_destr.
-  destruct a as [? eqq].
-  rewrite eqq.
-  split; intros HH.
-  - apply Rsqr_le_abs_0 in HH.
-    destruct r; destruct x; simpl in *.
-    now repeat (rewrite Rabs_pos_eq in HH by lra).
-  - apply Rsqr_le_abs_1.
-    destruct r; destruct x; simpl in *.
-    now repeat (rewrite Rabs_pos_eq by lra).
-Qed.
 
-Lemma Rsqrt_lt_to_Rsqr: forall r x : nonnegreal, x < r² <-> Rsqrt x < r.
-Proof.
-  intros.
-  unfold Rsqrt.
-  match_destr.
-  destruct a as [? eqq].
-  rewrite eqq.
-  split; intros HH.
-  - apply Rsqr_lt_abs_0 in HH.
-    destruct r; destruct x; simpl in *.
-    now repeat (rewrite Rabs_pos_eq in HH by lra).
-  - apply Rsqr_lt_abs_1.
-    destruct r; destruct x; simpl in *.
-    now repeat (rewrite Rabs_pos_eq by lra).
-Qed.
+Section Rbar.
 
 Lemma Rbar_mult_1_r (x:Rbar) : Rbar_mult x 1 = x.
 Proof.  
@@ -3776,22 +3899,129 @@ Proof.
   - simpl; lra.
 Qed.
 
-Lemma Rsqr_pos (a : posreal) :
-  0 < Rsqr a.
+Lemma Rbar_power_le (x y p : Rbar) :
+  0 <= p ->
+  Rbar_le 0 x ->
+  Rbar_le x y ->
+  Rbar_le (Rbar_power x p) (Rbar_power y p).
 Proof.
-  generalize (Rle_0_sqr a); intros.
-  destruct H; trivial.
-  generalize (cond_pos a); intros.
-  symmetry in H; apply Rsqr_eq_0 in H.
-  lra.
+  intros.
+  destruct x; destruct y; simpl in *; trivial; try tauto.
+  apply Rle_power_l; trivial; lra.
 Qed.
 
-Lemma mkpos_Rsqr (a : posreal) :
-  Rsqr a = mkposreal _ (Rsqr_pos a).
+Lemma Rbar_abs_nneg (x : Rbar) :
+  Rbar_le 0 (Rbar_abs x).
 Proof.
-  now simpl.
+  unfold Rbar_abs; destruct x; simpl; try tauto.
+  apply Rabs_pos.
+Qed.
+Definition Rbar_max (x y : Rbar) : Rbar :=
+  if Rbar_le_dec x y then y else x.
+
+Lemma Rbar_mult_r_plus_distr (c:R) x y:
+  Rbar_mult c (Rbar_plus x y) =
+  Rbar_plus (Rbar_mult c x) (Rbar_mult c y).
+Proof.
+  destruct x; destruct y; simpl;
+    try
+      solve [
+        f_equal; lra
+      |
+      destruct (Rle_dec 0 c); trivial
+      ; destruct (Rle_lt_or_eq_dec 0 c r0); simpl; trivial
+      ; subst
+      ; f_equal; lra
+      |
+      destruct (Rle_dec 0 c); trivial
+      ; simpl; try (f_equal; lra)
+      ; destruct (Rle_lt_or_eq_dec 0 c r); simpl; trivial
+      ; f_equal; lra
+      ].
 Qed.
 
+
+Lemma Rbar_abs_mult_distr (x y : Rbar) :
+  Rbar_abs (Rbar_mult x y) = Rbar_mult (Rbar_abs x) (Rbar_abs y).
+Proof.
+  destruct x; destruct y; simpl; trivial
+  ; try solve[(unfold Rabs
+               ; destruct (Rcase_abs r)
+               ; destruct (Rle_dec 0 r)
+               ; try lra
+               ; destruct (Rle_dec 0 (- r))
+               ; try lra
+               ; destruct (Rle_dec 0 (Rabs r))
+               ; simpl; try lra
+               ; (try destruct (Rle_lt_or_eq_dec 0 r r1)
+                  ; simpl
+                  ; (try destruct (Rle_lt_or_eq_dec 0 (- r) r2)
+                     ; simpl)
+                  ; try lra
+                  ; (try destruct (Rle_lt_or_eq_dec 0 (- r) r1)
+                     ; simpl)
+                  ; try lra; trivial
+                 )
+               ; try rewrite Rabs_R0
+               ; trivial)].
+  now rewrite Rabs_mult.
+Qed.
+
+Lemma Rbar_mult_plus_distr_fin_r (a b:Rbar) (c:R) :
+  Rbar_mult (Rbar_plus a b) c = Rbar_plus (Rbar_mult a c) (Rbar_mult b c).
+Proof.
+  destruct a; destruct b; simpl
+  ; try (simpl; f_equal; lra)
+  ; (try destruct (Rle_dec 0 c)
+     ; try (simpl; f_equal; lra)
+     ; (try destruct (Rle_lt_or_eq_dec 0 c r0)
+        ; try (simpl; trivial; f_equal; lra)))
+  ; simpl; subst
+  ; try (f_equal; lra)
+  ; (try destruct (Rle_lt_or_eq_dec 0 c r)
+     ; try (simpl; trivial; f_equal; lra)).
+Qed.
+
+Lemma Rbar_minus_plus_fin (x:Rbar) (y:R) :
+  Rbar_minus (Rbar_plus x y) y = x.
+Proof.
+  destruct x; simpl; trivial.
+  f_equal; lra.
+Qed.
+
+Lemma scale_Rbar_max0 (c:posreal) x : (Rbar_max (Rbar_mult c x) 0 = Rbar_mult c (Rbar_max x 0)).
+Proof.
+  unfold Rbar_max, Rbar_mult.
+  destruct x; simpl
+  ; destruct c as [c cpos]; simpl
+  ; destruct (Rle_dec 0 c); try lra.
+  - destruct (Rle_dec 0 r)
+    ; destruct (Rbar_le_dec (c * r) 0)
+    ; simpl in *
+    ; try f_equal; try lra
+    ; destruct (Rbar_le_dec r 0)
+    ; simpl in *; try f_equal; try lra.
+    + assert (0 <= c * r)
+        by now apply Rmult_le_pos.
+      lra.
+    + assert (r = 0) by lra.
+      subst.
+      lra.
+    + assert (c * r <= 0)
+        by now apply Rmult_le_0_l.
+      tauto.
+  - destruct (Rle_lt_or_eq_dec 0 c r); simpl.
+    destruct (Rbar_le_dec p_infty 0); try f_equal; trivial; try lra.
+    lra.
+  - destruct (Rle_lt_or_eq_dec 0 c r); simpl.
+    destruct (Rbar_le_dec m_infty 0); try f_equal; trivial; try lra.
+    lra.
+Qed.
+
+End Rbar.
+
+
+Section Rsqrt_abs.
 
 Definition Rsqrt_abs (r : R) : R := Rsqrt (mknonnegreal (Rabs r) (Rabs_pos r)).
 
@@ -3829,9 +4059,9 @@ Proof.
     now simpl.
 Qed.
 
-(* TODO(Kody):
-       Move these to someplace more canonical. Like RealAdd.
-       Delete identical copies in mdp.v *)
+End Rsqrt_abs.
+
+
 Lemma nonneg_pf_irrel r1 (cond1 cond2:0 <= r1) :
   mknonnegreal r1 cond1 = mknonnegreal r1 cond2.
 Proof.
@@ -3846,40 +4076,6 @@ Proof.
   intros; subst.
   apply nonneg_pf_irrel.
 Qed.
-
-Lemma Rinv_power (x : R) (n : R) : 0 < x -> / power x n = power (/ x) n.
-Proof.
-  intros.
-  assert (x <> 0) by lra.
-  assert (power x n <> 0) by (generalize (power_pos x n); lra).
-  apply (Rmult_eq_reg_l (power x n)); trivial.
-  rewrite Rinv_r by trivial.
-  rewrite power_mult_distr.
-  + rewrite Rinv_r; trivial.
-    rewrite power_base_1; trivial.
-  + lra.
-  + left.
-    now apply Rinv_pos.
-Qed.
-
-Lemma Rbar_power_le (x y p : Rbar) :
-  0 <= p ->
-  Rbar_le 0 x ->
-  Rbar_le x y ->
-  Rbar_le (Rbar_power x p) (Rbar_power y p).
-Proof.
-  intros.
-  destruct x; destruct y; simpl in *; trivial; try tauto.
-  apply Rle_power_l; trivial; lra.
-Qed.
-
-Lemma Rbar_abs_nneg (x : Rbar) :
-  Rbar_le 0 (Rbar_abs x).
-Proof.
-  unfold Rbar_abs; destruct x; simpl; try tauto.
-  apply Rabs_pos.
-Qed.
-
 
 Lemma ex_series_is_lim_seq (f : nat -> R) :
   ex_series f -> is_lim_seq (sum_n f) (Series f).
@@ -3908,14 +4104,6 @@ Lemma ex_finite_lim_seq_abs (f : nat -> R) :
 Proof.
   do 2 rewrite ex_finite_lim_series.
   apply ex_series_Rabs.
-Qed.
-
-Lemma Rplus_le_compat1_l (a b : R) :
-  0 <= b -> a <= a + b.
-Proof.
-  intros.
-  replace (a) with (a + 0) at 1 by lra.
-  now apply Rplus_le_compat_l.
 Qed.
 
 Lemma series_abs_bounded (f : nat -> R) :
@@ -3955,39 +4143,6 @@ Lemma ex_series_const0 : ex_series (const 0).
     intros; unfold const.
     now rewrite Rabs_R0.
   Qed.
-
-Lemma exp_ineq1 : forall x : R, x <> 0 -> 1 + x < exp x.
-Proof.
-  assert (Hd : forall c : R,
-             derivable_pt_lim (fun x : R => exp x - (x + 1)) c (exp c - 1)).
-  intros.
-  apply derivable_pt_lim_minus; [apply derivable_pt_lim_exp | ].
-  replace (1) with (1 + 0) at 1 by lra.
-  apply derivable_pt_lim_plus;
-    [apply derivable_pt_lim_id | apply derivable_pt_lim_const].
-  intros x xdz; destruct (Rtotal_order x 0)  as [xlz|[xez|xgz]].
-  - destruct (MVT_cor2 _ _ x 0 xlz (fun c _ => Hd c)) as [c [HH1 HH2]].
-    rewrite exp_0 in HH1.
-    assert (H1 : 0 < x * exp c - x); [| lra].
-    assert (H2 : x * exp 0  < x * exp c); [| rewrite exp_0 in H2; lra].
-    apply Rmult_lt_gt_compat_neg_l; auto.
-    now apply exp_increasing.
-  - now case xdz.
-  - destruct (MVT_cor2 _ _ 0 x xgz (fun c _ => Hd c)) as [c [HH1 HH2]].
-    rewrite exp_0 in HH1.
-    assert (H1 : 0 < x * exp c - x); [| lra].
-    assert (H2 : x * exp 0  < x * exp c); [| rewrite exp_0 in H2; lra].
-    apply Rmult_lt_compat_l; auto.
-    now apply exp_increasing.
-Qed.
-
-Lemma exp_ineq1_le (x : R) : 1 + x <= exp x.
-Proof.
-  destruct (Req_EM_T x 0) as [xeq|?].
-  - rewrite xeq, exp_0; lra.
-  - left.
-    now apply exp_ineq1.
-Qed.
 
 Definition bounded (x : nat -> R) := exists c : R, forall n, Rabs (x n) <= c.
 
@@ -4302,153 +4457,6 @@ Proof.
   now apply is_lim_seq_unique in H.
 Qed.
 
-Definition Rbar_max (x y : Rbar) : Rbar :=
-  if Rbar_le_dec x y then y else x.
-
-Lemma Rbar_mult_r_plus_distr (c:R) x y:
-  Rbar_mult c (Rbar_plus x y) =
-  Rbar_plus (Rbar_mult c x) (Rbar_mult c y).
-Proof.
-  destruct x; destruct y; simpl;
-    try
-      solve [
-        f_equal; lra
-      |
-      destruct (Rle_dec 0 c); trivial
-      ; destruct (Rle_lt_or_eq_dec 0 c r0); simpl; trivial
-      ; subst
-      ; f_equal; lra
-      |
-      destruct (Rle_dec 0 c); trivial
-      ; simpl; try (f_equal; lra)
-      ; destruct (Rle_lt_or_eq_dec 0 c r); simpl; trivial
-      ; f_equal; lra
-      ].
-Qed.
-
-
-Lemma Rbar_abs_mult_distr (x y : Rbar) :
-  Rbar_abs (Rbar_mult x y) = Rbar_mult (Rbar_abs x) (Rbar_abs y).
-Proof.
-  destruct x; destruct y; simpl; trivial
-  ; try solve[(unfold Rabs
-               ; destruct (Rcase_abs r)
-               ; destruct (Rle_dec 0 r)
-               ; try lra
-               ; destruct (Rle_dec 0 (- r))
-               ; try lra
-               ; destruct (Rle_dec 0 (Rabs r))
-               ; simpl; try lra
-               ; (try destruct (Rle_lt_or_eq_dec 0 r r1)
-                  ; simpl
-                  ; (try destruct (Rle_lt_or_eq_dec 0 (- r) r2)
-                     ; simpl)
-                  ; try lra
-                  ; (try destruct (Rle_lt_or_eq_dec 0 (- r) r1)
-                     ; simpl)
-                  ; try lra; trivial
-                 )
-               ; try rewrite Rabs_R0
-               ; trivial)].
-  now rewrite Rabs_mult.
-Qed.
-
-Lemma Rbar_mult_plus_distr_fin_r (a b:Rbar) (c:R) :
-  Rbar_mult (Rbar_plus a b) c = Rbar_plus (Rbar_mult a c) (Rbar_mult b c).
-Proof.
-  destruct a; destruct b; simpl
-  ; try (simpl; f_equal; lra)
-  ; (try destruct (Rle_dec 0 c)
-     ; try (simpl; f_equal; lra)
-     ; (try destruct (Rle_lt_or_eq_dec 0 c r0)
-        ; try (simpl; trivial; f_equal; lra)))
-  ; simpl; subst
-  ; try (f_equal; lra)
-  ; (try destruct (Rle_lt_or_eq_dec 0 c r)
-     ; try (simpl; trivial; f_equal; lra)).
-Qed.
-
-Lemma Rbar_minus_plus_fin (x:Rbar) (y:R) :
-  Rbar_minus (Rbar_plus x y) y = x.
-Proof.
-  destruct x; simpl; trivial.
-  f_equal; lra.
-Qed.
-
-Lemma scale_Rbar_max0 (c:posreal) x : (Rbar_max (Rbar_mult c x) 0 = Rbar_mult c (Rbar_max x 0)).
-Proof.
-  unfold Rbar_max, Rbar_mult.
-  destruct x; simpl
-  ; destruct c as [c cpos]; simpl
-  ; destruct (Rle_dec 0 c); try lra.
-  - destruct (Rle_dec 0 r)
-    ; destruct (Rbar_le_dec (c * r) 0)
-    ; simpl in *
-    ; try f_equal; try lra
-    ; destruct (Rbar_le_dec r 0)
-    ; simpl in *; try f_equal; try lra.
-    + assert (0 <= c * r)
-        by now apply Rmult_le_pos.
-      lra.
-    + assert (r = 0) by lra.
-      subst.
-      lra.
-    + assert (c * r <= 0)
-        by now apply Rmult_le_0_l.
-      tauto.
-  - destruct (Rle_lt_or_eq_dec 0 c r); simpl.
-    destruct (Rbar_le_dec p_infty 0); try f_equal; trivial; try lra.
-    lra.
-  - destruct (Rle_lt_or_eq_dec 0 c r); simpl.
-    destruct (Rbar_le_dec m_infty 0); try f_equal; trivial; try lra.
-    lra.
-Qed.
-
-
-Lemma Rmult_nnneg_neg {x y:R} :
-  (~ 0 <= x * y) -> x < 0 \/ y < 0.
-Proof.
-  intros HH.
-  apply Rnot_le_lt in HH.
-  destruct (Rle_dec 0 x); [| lra].
-  destruct (Rle_dec 0 y); [| lra].
-  generalize (Rmult_le_pos _ _ r r0)
-  ; lra.
-Qed.
-
-Lemma Rmult_pos_parts {x y}: (0 < x * y) ->
-                             (0 < x /\ 0 < y) \/ (x < 0 /\ y < 0).
-Proof.
-  intros HH.
-  destruct (Rlt_dec 0 x)
-  ; destruct (Rlt_dec 0 y).
-  - lra.
-  - apply Rnot_lt_le in n.
-    destruct n; [| subst; lra].
-    apply Rlt_not_le in HH.
-    elim HH.
-    apply Rmult_le_0_l; lra.
-  - apply Rnot_lt_le in n.
-    destruct n; [| subst; lra].
-    apply Rlt_not_le in HH.
-    elim HH.
-    apply Rmult_le_0_r; lra.
-  - apply Rnot_lt_le in n.
-    apply Rnot_lt_le in n0.
-    destruct n; [| subst; lra].
-    destruct n0; [| subst; lra].
-    lra.
-Qed.
-
-Lemma Rmult_le_pos_from_neg: forall r1 r2 : R, r1 <= 0 -> r2 <= 0 -> 0 <= r1 * r2.
-Proof.
-  intros.
-  assert (0 <= (- r1) * (- r2)).
-  {
-    apply Rmult_le_pos; lra.
-  }
-  lra.
-Qed.
 
 Ltac rbar_prover :=
   repeat progress (try match goal with
@@ -4456,9 +4464,9 @@ Ltac rbar_prover :=
           | [|- context [Rle_lt_or_eq_dec ?x ?y ?z]] => destruct (Rle_lt_or_eq_dec x y z)
           | [H: 0 = ?x * ?y |- _] => symmetry in H; apply Rmult_integral in H
           | [H: ?x * ?y = 0 |- _] => apply Rmult_integral in H
-          | [H: ~ 0 <= ?x * ?xy |- _] => 
+          | [H: ~ 0 <= ?x * ?xy |- _] =>
             solve [apply Rmult_nnneg_neg in H; rbar_prover]
-          | [H: 0 < ?x * ?xy |- _] => 
+          | [H: 0 < ?x * ?xy |- _] =>
             solve [apply Rmult_pos_parts in H; rbar_prover]
           | [H: ~ 0 <= ?x * ?y |- _ ] =>
             solve [elim H; solve [ apply Rmult_le_pos; lra
@@ -4468,7 +4476,7 @@ Ltac rbar_prover :=
           ; try subst
           ; try f_equal
           ; try lra).
-  
+
 Lemma Rbar_mult_assoc (a b c:Rbar) :
   Rbar_mult a (Rbar_mult b c) = Rbar_mult (Rbar_mult a b) c.
 Proof.
@@ -4549,6 +4557,8 @@ Proof.
         lra.
 Qed.
 
+
+
 Lemma is_LimInf_seq_const_plus (f : nat -> R) (g : R) (l:Rbar) :
   is_LimInf_seq (fun n => g + f n) l ->
   is_LimInf_seq f (Rbar_minus l g).
@@ -4588,7 +4598,8 @@ Proof.
   apply is_LimInf_seq_const_plus in i.
   apply is_LimInf_seq_unique in i.
   rewrite i.
-  destruct x; simpl; rbar_prover.
+  destruct x; simpl; try (reflexivity; lra).
+  rbar_prover.
 Qed.
 
   Lemma LimInf_seq_const_minus (f : nat -> R) (g : R) :
