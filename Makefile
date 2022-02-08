@@ -27,7 +27,7 @@ GLOB_FILES_FOR_DOC = $(MODULES:%=%.glob)
 doc: coq
 	mkdir -p documentation/html
 	rm -f documentation/html/*.html
-	cd coq && coq2html -d ../documentation/html -base FormalML $(COQ_FILES_FOR_DOC) $(GLOB_FILES_FOR_DOC)
+	cd coq && coq2html -d ../documentation/html -base FormalML -external http://coquelicot.saclay.inria.fr/html/ Coquelicot $(COQ_FILES_FOR_DOC) $(GLOB_FILES_FOR_DOC)
 
 test: coq ocaml
 	./bin/nnopt
