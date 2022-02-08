@@ -205,7 +205,6 @@ Section sum'.
   (n < N)%nat ->
   sum_f_R0' f N = sum_f_R0'  (fun x : nat => if equiv_dec x n then 0 else f x) N + (f n).
 Proof.
-  Proof.
     intros ltm.
     repeat rewrite (sum_f_R0'_split_on _ N n ltm).
     destruct (n == n); unfold equiv, complement in *; subst; [| intuition].
