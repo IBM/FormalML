@@ -2591,7 +2591,7 @@ Section Results.
         (* And it's series of expectations of it's square converges. *)
         (H8 : ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (W n)))))
 
-        (*alpha beta gamma are nonnegative real number sequences *)
+        (*alpha beta gamma are nonnegative real number functions *)
         {alpha beta gamma : nat -> Ts -> R}
         (H10 : forall n x, 0 <= alpha n x)
         (H11 : forall n x, 0 <= beta n x )
