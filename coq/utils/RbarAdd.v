@@ -1025,7 +1025,7 @@ Qed.
           now apply sum_Rbar_n_nneg_nneg.
   Qed.
 
-
+(*
   (* Fubini for nonnegative reals *)
   Lemma Series_Series_seq_pair (f:nat->nat->R) :
     (forall a b, 0 <= (f a b)) ->
@@ -1034,7 +1034,7 @@ Qed.
   Proof.
     intros.
     apply Rle_antisym.
-Admitted.
+*)
 (*
     - apply Elim_seq_le_bound; intros.
       replace (sum_Rbar_n
@@ -1331,7 +1331,7 @@ Admitted.
     - now intros.
     - now intros.
   Qed.
-
+(*
   Lemma Series_nneg_nested_swap (f:nat->nat->R) :
     (forall a b, 0 <= (f a b)) ->
     Series (fun i : nat => Series (fun j : nat => (f i j))) =
@@ -1341,7 +1341,7 @@ Admitted.
     rewrite Series_Series_seq_pair.
     rewrite Series_Series_seq_pair.
     - apply Rle_antisym.
-      + Admitted.
+*)
   (*
         apply Elim_seq_le_bound; intros.
         destruct (sum_Rbar_n_iso_swap f n H).

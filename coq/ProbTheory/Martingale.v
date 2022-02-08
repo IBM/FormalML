@@ -2644,6 +2644,7 @@ Proof.
     apply Rmax_r.
 Qed.
 
+(*
 Lemma double_series_interchange (f : nat -> nat -> R) :
   (forall n m, 0 <= f n m) ->
   Series (fun n => Series (fun m => f n m)) =
@@ -2677,8 +2678,6 @@ Proof.
   rewrite <- ex_series_Lim_seq.  
   
   
-  Admitted.
-
 Lemma zerotails_eps2k_double_sum_eq (a : nat -> R) (pf:ex_series a) {anneg:NonnegativeFunction a}:
   Series (fun k => Series (fun x => a (S (x+ (zerotails_eps2k_fun a pf k)%nat)))) =
     Series (fun n => zerotails_incr_mult a pf n * (a n)).
@@ -2722,4 +2721,4 @@ Proof.
   now rewrite Rmult_comm.
  Qed.
 
-  
+  *)
