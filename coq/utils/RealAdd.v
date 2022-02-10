@@ -905,22 +905,17 @@ Section sum_n.
       unfold plus in *; simpl in *; lra.
   Qed.
     
-  (* TODO(Kody) : Maybe get rid of Functional Extensionality? *)
-  Lemma Series_nonneg {a : nat -> R} : ex_series a -> (forall n, 0 <= a n) -> 0 <= Series a.
+  Lemma Series_nonneg {a : nat -> R} : (forall n, 0 <= a n) -> 0 <= Series a.
   Proof.
-    intros Ha Hpos.
-    generalize (Series_le (fun n => 0) a).
-    intros H.
-    assert (forall n, 0 <= 0 <= a n) by (intro n; split ; try (lra ; trivial) ; try (trivial)).
-    specialize (H H0 Ha).
-    assert (Series (fun _ => 0) = 0).
+    intros Hnneg.
     unfold Series.
-    assert (sum_n (fun _ => 0) = (fun _ => 0))
-      by (apply FunctionalExtensionality.functional_extensionality ; intros ; apply sum_n_zero).
-    rewrite H1. now rewrite Lim_seq_const.
-    now rewrite H1 in H.
+    generalize (Lim_seq_le_loc (fun _ => 0) (sum_n a)).
+    rewrite Lim_seq_const; intros.
+    cut_to H.
+    - destruct (Lim_seq (sum_n a)); simpl in *; trivial; lra.
+    - exists 0%nat; intros.
+      apply sum_n_nneg; intros; trivial.
   Qed.
-
 
   Lemma Series_pos {a : nat -> R} : ex_series a -> (forall n, 0 < a n) -> 0 < Series a.
   Proof.
@@ -928,13 +923,10 @@ Section sum_n.
     rewrite Series_incr_1 ; trivial.
     apply Rplus_lt_le_0_compat ; trivial.
     apply Series_nonneg.
-    + now rewrite <-ex_series_incr_1.
-    + intros n. left. apply (Hpos (S n)).
+    intros n. left. apply (Hpos (S n)).
   Qed.
 
 End sum_n.
-
-
 
 Section expprops.
 

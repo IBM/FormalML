@@ -1992,7 +1992,6 @@ Section tails.
     split.
     + unfold tail_series.
       apply Series_nonneg.
-      now rewrite <-ex_series_incr_n.
       intros. apply ha'.
     + generalize (tail_succ_sub ha); intros.
       setoid_rewrite H in ha'.
@@ -2062,9 +2061,7 @@ Section tails.
     rewrite Rsqr_sqrt;[| apply Series_nonneg].
     rewrite Rsqr_sqrt;[| apply Series_nonneg].
     now apply tail_succ_sub.
-    now rewrite <-ex_series_incr_n.
     intros. apply ha'.
-    now rewrite <-ex_series_incr_n.
     intros. apply ha'.
   Qed.
 

@@ -2596,7 +2596,6 @@ Proof.
     simpl.
     unfold zerotails_incr_mult.
     apply Series_nonneg.
-    + apply zerotails_incr_mult_ex.
     + intros.
       match_destr; lra.
   - destruct IHM.
