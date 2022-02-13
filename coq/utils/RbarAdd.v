@@ -1382,9 +1382,6 @@ Qed.
       now rewrite <- H2.
     generalize (is_finite_Elim_seq_nneg_nested (fun i j => f j i)); intros.    
     cut_to H4; trivial.
-    - Search ELim_seq.
-    - intros.
-      apply H.
 
  Admitted.
 
