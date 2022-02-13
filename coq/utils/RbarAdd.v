@@ -1360,32 +1360,18 @@ Qed.
     + apply ELim_seq_const.
   Qed.
     
-  Lemma Series_nneg_nested_swap (f:nat->nat->R) :
-    (forall a b, 0 <= (f a b)) ->
-    is_finite (ELim_seq 
-      (sum_Rbar_n (fun i : nat => ELim_seq (sum_Rbar_n (fun j : nat => (f i j)))))) ->
-    Series (fun i : nat => Series (fun j : nat => (f i j))) =
-    Series (fun i : nat => Series (fun j : nat => (f j i))).
+  Lemma ELim_seq_Lim_seq_Rbar (f : nat -> Rbar) :
+    (forall n, is_finite (f n)) ->
+    ELim_seq f = Lim_seq f.
   Proof.
     intros.
-    unfold Series.
-    generalize (is_finite_Elim_seq_nneg_nested f); intros.
-    cut_to H1; trivial.
-    f_equal.
-    generalize (ELim_seq_sum_nneg_nested_swap f); intros.
-    cut_to H2; try now simpl.
-    assert (is_finite
-            (ELim_seq
-            (sum_Rbar_n
-               (fun i : nat =>
-                ELim_seq (sum_Rbar_n (fun j : nat => Finite (f j i))))))) by
-      now rewrite <- H2.
-    generalize (is_finite_Elim_seq_nneg_nested (fun i j => f j i)); intros.    
-    cut_to H4; trivial.
+    generalize (Elim_seq_fin f); intros.
+    rewrite ELim_seq_ext with (v := fun n => Finite (real (f n))); trivial.
+    intros.
+    now rewrite H.
+  Qed.
 
- Admitted.
-
-    Lemma sum_Rbar_n_finite_sum_n f n:
+  Lemma sum_Rbar_n_finite_sum_n f n:
     sum_Rbar_n (fun x => Finite (f x)) (S n) = Finite (sum_n f n).
   Proof.
     rewrite sum_n_fold_right_seq.
@@ -1406,6 +1392,46 @@ Qed.
     apply ELim_seq_ext; intros.
     now rewrite sum_Rbar_n_finite_sum_n.
   Qed.    
+
+  Lemma Series_nneg_nested_swap (f:nat->nat->R) :
+    (forall a b, 0 <= (f a b)) ->
+    is_finite (ELim_seq 
+      (sum_Rbar_n (fun i : nat => ELim_seq (sum_Rbar_n (fun j : nat => (f i j)))))) ->
+    Series (fun i : nat => Series (fun j : nat => (f i j))) =
+    Series (fun i : nat => Series (fun j : nat => (f j i))).
+  Proof.
+    intros.
+    unfold Series.
+    generalize (is_finite_Elim_seq_nneg_nested f); intros.
+    cut_to H1; trivial.
+    f_equal.
+    generalize (ELim_seq_sum_nneg_nested_swap f); intros.
+    cut_to H2; try now simpl.
+    generalize (is_finite_Elim_seq_nneg_nested (fun i j => f j i)); intros.          
+    cut_to H3; trivial; try (intros; now simpl).
+    - do 2 rewrite Lim_seq_sum_Elim.
+      rewrite ELim_seq_ext with
+          (v :=  (sum_Rbar_n
+                    (fun i : nat =>
+                       ELim_seq (sum_Rbar_n (fun j : nat => Finite (f i j)))))).
+      symmetry.
+      rewrite ELim_seq_ext with
+          (v := (sum_Rbar_n
+                   (fun i : nat =>
+                      ELim_seq (sum_Rbar_n (fun j : nat => Finite (f j i)))))).
+      symmetry; trivial.
+      + intros.
+        apply sum_Rbar_n_proper; trivial.
+        unfold pointwise_relation; simpl; intros.
+        rewrite Lim_seq_sum_Elim.
+        now rewrite H3.
+      + intros.
+        apply sum_Rbar_n_proper; trivial.
+        unfold pointwise_relation; simpl; intros.
+        rewrite Lim_seq_sum_Elim.
+        now rewrite H1.        
+   - now rewrite <- H2.
+  Qed.
 
   Lemma lim_seq_sum_singleton_is_one f :
     (forall n1 n2, n1 <> n2 -> f n1 = 0 \/ f n2 = 0) ->
