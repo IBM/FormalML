@@ -2,6 +2,7 @@
 
 Require Export LibUtils.
 Require Export BasicUtils.
+Require Export ClassicUtils.
 Require Export Assoc.
 Require Export CoquelicotAdd.
 Require Export improper_integrals.
