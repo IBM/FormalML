@@ -2217,3 +2217,16 @@ Lemma map_const_repeat {A B} (c:A) (l:list B) : map (fun _ => c) l = repeat c (l
 Proof.
   induction l; simpl; congruence.
 Qed.
+
+Lemma filter_le_length {A:Type} (f1 f2:A->bool) (l:list A) :
+  (forall x, In x l -> f1 x = true -> f2 x = true) ->
+  (length (filter f1 l) <= length (filter f2 l))%nat.
+Proof.
+  induction l; simpl; trivial; intros.
+  cut_to IHl; [| firstorder].
+  specialize (H a).
+  destruct (f1 a).
+  - rewrite H by tauto.
+    simpl; lia.
+  - destruct (f2 a); simpl; lia.
+Qed.

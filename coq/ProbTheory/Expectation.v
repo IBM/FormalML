@@ -946,28 +946,6 @@ Section Expectation.
     ; right; lra.
   Defined.
 
-  Lemma pow2_pos n : 0 < pow 2 n.
-  Proof.
-    apply pow_lt.
-    lra.
-  Qed.
-
-  Lemma pow_nzero a n : a <> 0 -> pow a n <> 0.
-  Proof.
-    intros.
-    induction n; simpl.
-    - lra.
-    - intros eqq.
-      apply Rmult_integral in eqq.
-      intuition.
-  Qed.
-
-  Lemma pow2_nzero n : pow 2 n <> 0.
-  Proof.
-    apply pow_nzero.
-    lra.
-  Qed.
-
   Lemma simple_approx_vals (X:Ts->Rbar) (n:nat) :
     forall (omega:Ts), 
       In (simple_approx X n omega)

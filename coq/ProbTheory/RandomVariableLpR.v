@@ -2491,12 +2491,6 @@ Section complete.
       rewrite Rabs_pos_eq; try lra.
  Qed.
   
-  Lemma series_is_lim_seq (f:nat -> R) (l:R) :
-    is_lim_seq (sum_n f) l <-> is_series f l.
-  Proof.
-    easy.
-   Qed.
-
   Lemma series_sum_le (f : nat -> R) (x: R) :
     is_series f x ->
     (forall n, 0 <= f n) ->

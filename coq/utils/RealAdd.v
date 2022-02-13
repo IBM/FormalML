@@ -4076,6 +4076,12 @@ Proof.
   now apply Series_correct in H.
 Qed.
 
+Lemma series_is_lim_seq (f:nat -> R) (l:R) :
+  is_lim_seq (sum_n f) l <-> is_series f l.
+Proof.
+  easy.
+Qed.
+
 Lemma ex_series_Lim_seq (f : nat -> R) :
   ex_series f -> Lim_seq (sum_n f) = Series f.
 Proof.
@@ -5761,3 +5767,32 @@ Section convex2.
    Qed.
 
 End convex2.
+
+Definition inv_2_pow_posreal (k:nat) : posreal.
+Proof.
+  exists (/ (2 ^ k)).
+  apply Rinv_0_lt_compat.
+  apply pow_lt; lra.
+Defined.
+
+Lemma pow2_pos n : 0 < pow 2 n.
+Proof.
+  apply pow_lt.
+  lra.
+Qed.
+
+Lemma pow_nzero a n : a <> 0 -> pow a n <> 0.
+Proof.
+  intros.
+  induction n; simpl.
+  - lra.
+  - intros eqq.
+    apply Rmult_integral in eqq.
+    intuition.
+Qed.
+
+Lemma pow2_nzero n : pow 2 n <> 0.
+Proof.
+  apply pow_nzero.
+  lra.
+Qed.
