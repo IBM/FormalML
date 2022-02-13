@@ -1331,38 +1331,62 @@ Qed.
     - now intros.
     - now intros.
   Qed.
-(*
+  
+  Lemma is_finite_witness (x : Rbar) :
+    is_finite x ->
+    exists (r:R), x = Finite r.
+  Proof.
+    intros.
+    unfold is_finite in H.
+    now exists (real x).
+  Qed.
+
+  Lemma is_finite_Elim_seq_nneg_nested (f:nat->nat->Rbar) :
+    (forall a b, Rbar_le 0(f a b)) ->
+    is_finite (ELim_seq
+      (sum_Rbar_n (fun i : nat => ELim_seq (sum_Rbar_n (fun j : nat => (f i j)))))) ->
+    forall i, is_finite (ELim_seq (sum_Rbar_n (fun j : nat => (f i j)))).
+  Proof.
+    intros.
+    apply is_finite_witness in H0.
+    destruct H0.
+    generalize (Elim_seq_sum_pos_fin_n_fin (fun i : nat => ELim_seq (sum_Rbar_n (fun j : nat => (f i j)))) x); intros.
+    apply H1; trivial.
+    intros.
+    replace (Finite 0) with (ELim_seq (fun _ => 0)).
+    + apply ELim_seq_le; intros.
+      apply sum_Rbar_n_nneg_nneg; intros.
+      apply H.
+    + apply ELim_seq_const.
+  Qed.
+    
   Lemma Series_nneg_nested_swap (f:nat->nat->R) :
     (forall a b, 0 <= (f a b)) ->
+    is_finite (ELim_seq 
+      (sum_Rbar_n (fun i : nat => ELim_seq (sum_Rbar_n (fun j : nat => (f i j)))))) ->
     Series (fun i : nat => Series (fun j : nat => (f i j))) =
     Series (fun i : nat => Series (fun j : nat => (f j i))).
   Proof.
     intros.
-    rewrite Series_Series_seq_pair.
-    rewrite Series_Series_seq_pair.
-    - apply Rle_antisym.
-*)
-  (*
-        apply Elim_seq_le_bound; intros.
-        destruct (sum_Rbar_n_iso_swap f n H).
-        eapply Rbar_le_trans.
-        * apply H0.
-        * apply Elim_seq_incr_elem; intros.
-          apply sum_Rbar_n_pos_Sn; intros.
-          now destruct (iso_b n1).
-      + apply Elim_seq_le_bound; intros.
-        destruct (sum_Rbar_n_iso_swap (fun a b => f b a) n).
-        * now intros.
-        * eapply Rbar_le_trans.
-          -- apply H0.
-          -- apply Elim_seq_incr_elem; intros.
-             apply sum_Rbar_n_pos_Sn; intros.
-             now destruct (iso_b n1).
-    - now intros.
-    - now intros.
-  Qed.
-*)
+    unfold Series.
+    generalize (is_finite_Elim_seq_nneg_nested f); intros.
+    cut_to H1; trivial.
+    f_equal.
+    generalize (ELim_seq_sum_nneg_nested_swap f); intros.
+    cut_to H2; try now simpl.
+    assert (is_finite
+            (ELim_seq
+            (sum_Rbar_n
+               (fun i : nat =>
+                ELim_seq (sum_Rbar_n (fun j : nat => Finite (f j i))))))) by
+      now rewrite <- H2.
+    generalize (is_finite_Elim_seq_nneg_nested (fun i j => f j i)); intros.    
+    cut_to H4; trivial.
+    - Search ELim_seq.
+    - intros.
+      apply H.
 
+ Admitted.
 
     Lemma sum_Rbar_n_finite_sum_n f n:
     sum_Rbar_n (fun x => Finite (f x)) (S n) = Finite (sum_n f n).
