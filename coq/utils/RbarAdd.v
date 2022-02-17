@@ -1858,7 +1858,44 @@ Proof.
     apply Rmax_r.
 Qed.
 
-(*
+Lemma zerotails_eps2k_double_sum_finite  (a : nat -> R) (pf:ex_series a) {anneg: forall x, 0 <= a x}:
+  is_finite
+    (ELim_seq
+       (sum_Rbar_n
+          (fun i : nat =>
+             ELim_seq
+               (sum_Rbar_n
+                  (fun x : nat => a (S (x+ (zerotails_eps2k_fun a pf i)%nat))))))).
+  Proof.
+    generalize (zerotails_eps2k_fun_shifted_bound a pf); intros.
+    generalize (zerotails_eps2k_double_sum_ex a pf); intros.
+    rewrite <- ex_finite_lim_series in H0.
+    rewrite ex_finite_lim_seq_correct in H0.
+    destruct H0.
+    rewrite <- ELim_seq_incr_1.
+    rewrite ELim_seq_ext with
+        (v := fun n => Finite (sum_n  (fun k : nat => Series (fun x : nat => a (S (x + zerotails_eps2k_fun a pf k)))) n)).
+    now rewrite Elim_seq_fin.
+    intros.
+    rewrite <- sum_Rbar_n_finite_sum_n.
+    apply sum_Rbar_n_proper; trivial.
+    unfold pointwise_relation; intros.
+    rewrite <- ex_series_Lim_seq.
+    - rewrite <- ELim_seq_incr_1.
+      rewrite ELim_seq_ext with
+          (v := fun n => Finite (sum_n (fun x : nat => a (S (x + zerotails_eps2k_fun a pf a0))) n)).
+      + now rewrite Elim_seq_fin.
+      + intros.
+        now rewrite sum_Rbar_n_finite_sum_n.
+    - generalize (ex_series_incr_n a); intros.
+      apply ex_series_ext with
+          (a1 := (fun x : nat => a (S (zerotails_eps2k_fun a pf a0) + x)%nat)).
+      + intros.
+        f_equal.
+        lia.
+      + now apply ex_series_incr_n.
+  Qed.
+
 Lemma zerotails_eps2k_double_sum_eq (a : nat -> R) (pf:ex_series a) {anneg: forall x, 0 <= a x}:
   Series (fun k => Series (fun x => a (S (x+ (zerotails_eps2k_fun a pf k)%nat)))) =
     Series (fun n => zerotails_incr_mult a pf n * (a n)).
@@ -1892,52 +1929,66 @@ Proof.
        (fun k : nat =>
         a n * (if le_dec (S (zerotails_eps2k_fun a pf k)) n then 1 else 0)))).
   {
-    symmetry.
     apply Series_nneg_nested_swap.
     - intros.
       apply Rmult_le_pos; trivial.
       match_destr; lra.
-    - cut (
-          is_finite
-            (ELim_seq
-               (sum_Rbar_n
-                  (fun i : nat =>
-                     a i * ELim_seq
-                             (sum_Rbar_n
-                                (fun j : nat =>
-                                   (if le_dec (S (zerotails_eps2k_fun a pf j)) i then 1 else 0))))))).
-      {
-        admit.
-      }
-      cut (
-          is_finite
-            (ELim_seq
-               (sum_Rbar_n
-                  (fun i : nat =>
-                     a i * zerotails_incr_mult a pf i)))).
-      {
-        admit.
-      }
-
-      cut (
-          is_finite
-            (ELim_seq
-               (sum_Rbar_n
-                  (fun i : nat =>
-                     a i *
-                       (sum_n (fun n0 : nat => if le_dec (S (zerotails_eps2k_fun a pf n0)) i then 1 else 0) i))))).
-      {
-        admit.
-      }
-      
-      
-
-
-      
-  }  
+    - rewrite ELim_seq_ext with
+          (v :=  (sum_Rbar_n
+                    (fun i : nat =>
+                       ELim_seq
+                         (sum_Rbar_n
+                            (fun x : nat => a (S (x+ (zerotails_eps2k_fun a pf i)%nat))))))).
+      + apply zerotails_eps2k_double_sum_finite; trivial.
+      + intros.
+        apply sum_Rbar_n_proper; trivial.
+        unfold pointwise_relation; simpl; intros.
+        rewrite <- ELim_seq_incr_1.
+        rewrite ELim_seq_ext with
+            (v := (fun n => Finite (sum_n (fun j : nat => a j * (if le_dec (S (zerotails_eps2k_fun a pf a0)) j then 1 else 0)) n))).
+        rewrite Elim_seq_fin.
+        rewrite <- ELim_seq_incr_1.        
+        rewrite ELim_seq_ext with
+            (v := (fun n => Finite (sum_n (fun x : nat => a (S (x + zerotails_eps2k_fun a pf a0))) n))).
+        rewrite Elim_seq_fin.
+        * rewrite ex_series_Lim_seq.
+          rewrite ex_series_Lim_seq.
+          -- rewrite (Series_incr_n_aux
+                        (fun n0 : nat =>
+                           a n0 * (if le_dec (S (zerotails_eps2k_fun a pf a0))%nat n0 then 1 else 0))
+                        (S (zerotails_eps2k_fun a pf a0))).
+             ++ apply Rbar_finite_eq.
+                apply Series_ext; intros.
+                match_destr.
+                ** field_simplify.
+                   f_equal.
+                   lia.
+                ** elim n1.
+                   lia.
+             ++ intros.
+                match_destr; try lra.
+                unfold zerotails_eps2k_fun in *.
+                lia.
+          -- apply ex_series_ext with
+                 (a1 := fun x => a ((S (zerotails_eps2k_fun a pf a0)) + x)%nat).
+             ++ intros; f_equal; lia.
+             ++ now apply ex_series_incr_n.
+          -- apply (ex_series_le (fun j : nat => a j * (if le_dec (S (zerotails_eps2k_fun a pf a0)) j then 1 else 0)) a); trivial.
+             intros.
+             unfold norm; simpl.
+             unfold abs; simpl.
+             rewrite Rabs_right.
+             ++ replace (a n0) with ((a n0) * 1) at 2 by lra.
+                apply Rmult_le_compat_l; trivial.
+                match_destr; lra.
+             ++ apply Rle_ge, Rmult_le_pos; trivial.
+                match_destr; lra.
+        * intros; now rewrite sum_Rbar_n_finite_sum_n.
+        * intros; now rewrite sum_Rbar_n_finite_sum_n.          
+  }
   apply Series_ext; intros.
   rewrite Series_scal_l.
   now rewrite Rmult_comm.
  Qed.
-*)
+
 End zeroprop.
