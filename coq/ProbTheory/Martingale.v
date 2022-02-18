@@ -2376,30 +2376,20 @@ Section martingale.
           rewrite 
      *)
 
-    Definition upcrossing_bound_k a b k m : Ts -> R
-      := EventIndicator 
-           (classic_dec
-              (fun x => (match upcrossing_times a b (2 * k - 1) x with
-                         | Some x => (x < m)%nat
-                         | None => False
-                         end /\
-                         match upcrossing_times a b (2 * k) x with
-                         | Some x => (m <= x)%nat
-                         | None => True
-                         end))).
-
-    Lemma upcrossing_times_even_ge a b k0 a0 :
+    Lemma upcrossing_times_even_ge a b k0 a0 n :
+      (upcrossing_var_expr a b (S n) a0 k0 >= 0)%nat ->
       match upcrossing_times a b (2 * S k0) a0 with
       | Some x => M x a0 >= b
-      | None => True
+      | None => False
       end.
     Proof.
     Admitted.
     
-    Lemma upcrossing_times_odd_le a b k0 a0 :
+    Lemma upcrossing_times_odd_le a b k0 a0 n :
+      (upcrossing_var_expr a b (S n) a0 k0 >= 0)%nat ->
       match upcrossing_times a b (2 * S k0 - 1) a0 with
       | Some x => M x a0 <= a
-      | None => True
+      | None => False
       end.
     Proof.
     Admitted.
@@ -2439,16 +2429,18 @@ Section martingale.
       clear Hin' H.
       subst.
       unfold rvsum.
-      assert (forall k0,
+      assert (forall k0 n,
+               (upcrossing_var_expr a b (S n) a0 k0 >= 0)%nat ->                 
                match upcrossing_times a b (2 * (S k0)) a0, upcrossing_times a b (2 * (S k0) - 1) a0 with
                | Some N2, Some N1 => M N2 a0 - M N1 a0 >= b-a
-               | _, _ => True
+               | _, _ => False
                end) .
       {
         intros.
-        generalize (upcrossing_times_even_ge a b k0 a0)
-        ; generalize (upcrossing_times_odd_le a b k0 a0).
-        repeat match_option; lra.
+        generalize (upcrossing_times_even_ge a b k0 a0 n0 H)
+        ; generalize (upcrossing_times_odd_le a b k0 a0 n0 H).
+        repeat match_option.
+        lra.
       }
       assert ( 
           @Hierarchy.sum_n 
@@ -2468,23 +2460,33 @@ Section martingale.
         admit.
       }
       rewrite H0.
-      (*
-        something is not quite right here, it is possible the above assert is not quite right.
-
-      transitivity
+      destruct  (le_dec 1 (upcrossing_var_expr a b (S n) a0 k)).
+      - transitivity
         (@Hierarchy.sum_n_m Hierarchy.R_AbelianGroup
            (fun _ => b - a)
            1 (upcrossing_var_expr a b (S n) a0 k)).
-      - rewrite Hierarchy.sum_n_m_const.
-        replace (S (upcrossing_var_expr a b (S n) a0 k) - 1)%nat with (upcrossing_var_expr a b (S n) a0 k) by lia.
-        lra.
-      - apply sum_n_m_le_loc; intros.
-        + 
-        + destruct n0; [lia |].
-          specialize (H n0).
-          match_option; try lra.
-
-      *)
+        + rewrite Hierarchy.sum_n_m_const.
+          replace (S (upcrossing_var_expr a b (S n) a0 k) - 1)%nat with (upcrossing_var_expr a b (S n) a0 k) by lia.
+          lra.
+        + apply sum_n_m_le_loc; trivial.
+          intros.
+          specialize (H (n0-1)%nat n).
+          assert (upcrossing_var_expr a b (S n) a0 (n0 - 1) >= 0)%nat by lia.
+          specialize (H H3).
+          replace (S (n0 -1)) with (n0) in H by lia.
+          match_option.
+          * rewrite eqq in H.
+            match_option.
+            -- rewrite eqq0 in H.
+               lra.
+            -- now rewrite eqq0 in H.
+          * now rewrite eqq in H.
+      - assert ((upcrossing_var_expr a b (S n) a0 k)%nat = 0%nat) by lia.
+        rewrite H1.
+        simpl.
+        rewrite Rmult_0_r.
+        rewrite Hierarchy.sum_n_m_zero; try lia.
+        unfold Hierarchy.zero; simpl; lra.
     Admitted.
 
     Lemma upcrossing_bound_transform_ge a b n : a < b ->
