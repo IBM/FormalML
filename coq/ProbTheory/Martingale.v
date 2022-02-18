@@ -2374,8 +2374,20 @@ Section martingale.
           simpl in eqq0.
 
           rewrite 
-*)
-          
+     *)
+
+    Definition upcrossing_bound_k a b k m : Ts -> R
+      := EventIndicator 
+           (classic_dec
+              (fun x => (match upcrossing_times a b (2 * k - 1) x with
+                         | Some x => (x < m)%nat
+                         | None => False
+                         end /\
+                         match upcrossing_times a b (2 * k) x with
+                         | Some x => (m <= x)%nat
+                         | None => True
+                         end))).
+    
     Lemma upcrossing_bound_transform_ge_Sn a b n :
       rv_le (rvscale (b-a) (upcrossing_var a b (S n))) (martingale_transform (upcrossing_bound a b) M (S n)).
     Proof.
@@ -2411,7 +2423,33 @@ Section martingale.
       clear Hin' H.
       subst.
       unfold rvsum.
-      
+      assert (forall k0,
+               match upcrossing_times a b (2 * (S k0)) a0, upcrossing_times a b (2 * (S k0) - 1) a0 with
+               | Some N2, Some N1 => M N2 a0 - M N1 a0 >= b-a
+               | _, _ => True
+               end) .
+      {
+        intros.
+        admit.
+      }
+      assert ( 
+          @Hierarchy.sum_n 
+            Hierarchy.R_AbelianGroup
+            (fun n0 : nat => 
+                             upcrossing_bound a b (S n0) a0 * (M (S n0) a0 + -1 * M n0 a0)) n =
+          @Hierarchy.sum_n_m 
+            Hierarchy.R_AbelianGroup
+            (fun k0 =>
+               match upcrossing_times a b (2 * k0) a0, upcrossing_times a b (2 * k0 - 1) a0 with
+              | Some N2, Some N1 => M N2 a0 - M N1 a0
+              | _, _ => 0
+              end) 
+            1 
+            (upcrossing_var_expr a b (S n) a0 k)).
+      {
+        admit.
+      }
+      rewrite H0.
     Admitted.
 
     Lemma upcrossing_bound_transform_ge a b n :
