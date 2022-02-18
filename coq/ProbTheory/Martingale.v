@@ -2387,11 +2387,27 @@ Section martingale.
                          | Some x => (m <= x)%nat
                          | None => True
                          end))).
+
+    Lemma upcrossing_times_even_ge a b k0 a0 :
+      match upcrossing_times a b (2 * S k0) a0 with
+      | Some x => M x a0 >= b
+      | None => True
+      end.
+    Proof.
+    Admitted.
     
-    Lemma upcrossing_bound_transform_ge_Sn a b n :
+    Lemma upcrossing_times_odd_le a b k0 a0 :
+      match upcrossing_times a b (2 * S k0 - 1) a0 with
+      | Some x => M x a0 <= a
+      | None => True
+      end.
+    Proof.
+    Admitted.
+
+    Lemma upcrossing_bound_transform_ge_Sn a b n : a < b ->
       rv_le (rvscale (b-a) (upcrossing_var a b (S n))) (martingale_transform (upcrossing_bound a b) M (S n)).
     Proof.
-      intros ?.
+      intros altb ?.
       unfold martingale_transform.
       rv_unfold.
       generalize (Rmax_list_In (map INR (map (upcrossing_var_expr a b (S n) a0) (seq 0 (S n)))))
@@ -2430,7 +2446,9 @@ Section martingale.
                end) .
       {
         intros.
-        admit.
+        generalize (upcrossing_times_even_ge a b k0 a0)
+        ; generalize (upcrossing_times_odd_le a b k0 a0).
+        repeat match_option; lra.
       }
       assert ( 
           @Hierarchy.sum_n 
@@ -2450,6 +2468,23 @@ Section martingale.
         admit.
       }
       rewrite H0.
+      (*
+        something is not quite right here, it is possible the above assert is not quite right.
+
+      transitivity
+        (@Hierarchy.sum_n_m Hierarchy.R_AbelianGroup
+           (fun _ => b - a)
+           1 (upcrossing_var_expr a b (S n) a0 k)).
+      - rewrite Hierarchy.sum_n_m_const.
+        replace (S (upcrossing_var_expr a b (S n) a0 k) - 1)%nat with (upcrossing_var_expr a b (S n) a0 k) by lia.
+        lra.
+      - apply sum_n_m_le_loc; intros.
+        + 
+        + destruct n0; [lia |].
+          specialize (H n0).
+          match_option; try lra.
+
+      *)
     Admitted.
 
     Lemma upcrossing_bound_transform_ge a b n :
