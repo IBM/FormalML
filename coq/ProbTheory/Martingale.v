@@ -2562,7 +2562,12 @@ Section martingale.
       rewrite H0.
       destruct k.
       - simpl.
-        admit.
+        unfold upcrossing_var_expr.
+        replace (2  * 0)%nat with (0)%nat by lia.
+        simpl.
+        rewrite Hierarchy.sum_n_m_zero; try lia.
+        unfold Hierarchy.zero; simpl.
+        lra.
       - destruct  (le_dec 1 (upcrossing_var_expr a b (S n) a0 (S k))).
         + transitivity
             (@Hierarchy.sum_n_m Hierarchy.R_AbelianGroup
