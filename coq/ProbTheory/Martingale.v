@@ -2376,23 +2376,123 @@ Section martingale.
           rewrite 
      *)
 
+    Lemma upcrossing_times_even_ge_some a b k0 a0 :
+      match upcrossing_times a b (2 * S k0) a0 with
+      | Some x => M x a0 >= b
+      | None => True
+      end.
+    Proof.
+      intros.
+      induction k0.
+      - match_case; intros.
+        + replace (2 * 1)%nat with (2)%nat in H by lia.
+          simpl in H.
+          match_case_in H; intros; rewrite H0 in H; try congruence.
+          unfold hitting_time_from in H.
+          match_case_in H; intros; rewrite H1 in H; try congruence.
+          invcs H.
+          unfold hitting_time in H1.
+          apply classic_min_of_some in H1.
+          simpl in H1.
+          now unfold id in H1.
+      - match_case; intros; simpl in H; match_case_in H; intros;rewrite H0 in H; try congruence.
+        + match_case_in H; intros.
+          * match_case_in H1; intros; try lia.
+            rewrite H2 in H1.
+            replace (k0 + S (S (k0 + 0)))%nat with (S (S (2 * k0)))%nat in H2 by lia.
+            invcs H2.
+            replace (k0 + (k0 + 0))%nat with (k0 + k0)%nat in H1 by lia.
+            rewrite Nat.even_succ in H1.
+            unfold Nat.odd in H1.
+            generalize (plus_self_even k0); intros.
+            now rewrite H2 in H1.
+          * rewrite H1 in H.
+            unfold hitting_time_from in H.
+            match_case_in H; intros; rewrite H2 in H; try congruence.
+            invcs H.
+            unfold hitting_time in H2.
+            apply classic_min_of_some in H2.
+            simpl in H2.
+            now unfold id in H2.
+    Qed.
+
+    Lemma upcrossing_times_odd_le_some a b k0 a0 :
+      match upcrossing_times a b (2 * S k0 - 1) a0 with
+      | Some x => M x a0 <= a
+      | None => True
+      end.
+    Proof.
+      intros.
+      induction k0.
+      - match_case; intros.
+        + replace (2 * 1)%nat with (2)%nat in H by lia.
+          simpl in H.
+          unfold hitting_time in H.
+          apply classic_min_of_some in H.
+          simpl in H.
+          now unfold id in H.
+      - match_case; intros; simpl in H; match_case_in H; intros;rewrite H0 in H; try congruence.
+        + unfold hitting_time in H.
+          apply classic_min_of_some in H.
+          simpl in H.
+          now unfold id in H.
+        + replace  (k0 + S (S (k0 + 0)))%nat with ((S k0) + (S k0))%nat in H0 by lia.
+          match_case_in H; intros; rewrite H1 in H; try congruence.
+          rewrite <- H0 in H.
+          generalize (plus_self_even (S k0)); intros.
+          rewrite H2 in H.
+          unfold hitting_time_from in H.
+          match_case_in H; intros; rewrite H3 in H; try congruence.
+          invcs H.
+          unfold hitting_time in H3.
+          apply classic_min_of_some in H3.
+          simpl in H3.
+          now unfold id in H3.
+    Qed.
+
     Lemma upcrossing_times_even_ge a b k0 a0 n :
-      (upcrossing_var_expr a b (S n) a0 k0 >= 0)%nat ->
+      (upcrossing_var_expr a b (S n) a0 (S k0) > 0)%nat ->
       match upcrossing_times a b (2 * S k0) a0 with
       | Some x => M x a0 >= b
       | None => False
       end.
     Proof.
-    Admitted.
+      intros.
+      generalize (upcrossing_times_even_ge_some a b k0 a0); intros.
+      match_case; intros.
+      - now rewrite H1 in H0.
+      - unfold upcrossing_var_expr in H.
+        match_case_in H; intros; rewrite H1 in H; lia.
+    Qed.
     
+    Lemma upcrossing_times_none a b k a0 :
+      (k > 0)%nat ->
+      upcrossing_times a b k a0 = None ->
+      upcrossing_times a b (S k) a0 = None.
+    Proof.
+      intros.
+      simpl.
+      rewrite H0.
+      match_destr; try lia.
+    Qed.
+
     Lemma upcrossing_times_odd_le a b k0 a0 n :
-      (upcrossing_var_expr a b (S n) a0 k0 >= 0)%nat ->
+      (upcrossing_var_expr a b (S n) a0 (S k0) > 0)%nat ->
       match upcrossing_times a b (2 * S k0 - 1) a0 with
       | Some x => M x a0 <= a
       | None => False
       end.
     Proof.
-    Admitted.
+      intros.
+      generalize (upcrossing_times_odd_le_some a b k0 a0); intros.      
+      match_case; intros.
+      - now rewrite H1 in H0.
+      - unfold upcrossing_var_expr in H.
+        match_case_in H; intros; rewrite H2 in H; try lia.
+        apply upcrossing_times_none in H1; try lia.
+        replace (S (2 * S k0 - 1)) with (2 * S k0)%nat in H1 by lia.
+        congruence.
+    Qed.
 
     Lemma upcrossing_bound_transform_ge_Sn a b n : a < b ->
       rv_le (rvscale (b-a) (upcrossing_var a b (S n))) (martingale_transform (upcrossing_bound a b) M (S n)).
@@ -2430,7 +2530,7 @@ Section martingale.
       subst.
       unfold rvsum.
       assert (forall k0 n,
-               (upcrossing_var_expr a b (S n) a0 k0 >= 0)%nat ->                 
+               (upcrossing_var_expr a b (S n) a0 (S k0) > 0)%nat ->                 
                match upcrossing_times a b (2 * (S k0)) a0, upcrossing_times a b (2 * (S k0) - 1) a0 with
                | Some N2, Some N1 => M N2 a0 - M N1 a0 >= b-a
                | _, _ => False
@@ -2460,33 +2560,36 @@ Section martingale.
         admit.
       }
       rewrite H0.
-      destruct  (le_dec 1 (upcrossing_var_expr a b (S n) a0 k)).
-      - transitivity
-        (@Hierarchy.sum_n_m Hierarchy.R_AbelianGroup
-           (fun _ => b - a)
-           1 (upcrossing_var_expr a b (S n) a0 k)).
-        + rewrite Hierarchy.sum_n_m_const.
-          replace (S (upcrossing_var_expr a b (S n) a0 k) - 1)%nat with (upcrossing_var_expr a b (S n) a0 k) by lia.
-          lra.
-        + apply sum_n_m_le_loc; trivial.
-          intros.
-          specialize (H (n0-1)%nat n).
-          assert (upcrossing_var_expr a b (S n) a0 (n0 - 1) >= 0)%nat by lia.
-          specialize (H H3).
-          replace (S (n0 -1)) with (n0) in H by lia.
-          match_option.
-          * rewrite eqq in H.
+      destruct k.
+      - simpl.
+        admit.
+      - destruct  (le_dec 1 (upcrossing_var_expr a b (S n) a0 (S k))).
+        + transitivity
+            (@Hierarchy.sum_n_m Hierarchy.R_AbelianGroup
+                                (fun _ => b - a)
+                                1 (upcrossing_var_expr a b (S n) a0 (S k))).
+          * rewrite Hierarchy.sum_n_m_const.
+            replace (S (upcrossing_var_expr a b (S n) a0 (S k)) - 1)%nat with (upcrossing_var_expr a b (S n) a0 (S k)) by lia.
+            lra.
+          * apply sum_n_m_le_loc; trivial.
+            intros.
+            specialize (H (n0-1)%nat n).
+            replace (S (n0 -1)) with (n0) in H by lia.
+            assert (upcrossing_var_expr a b (S n) a0 n0 > 0)%nat by admit.
+            specialize (H H3).
             match_option.
-            -- rewrite eqq0 in H.
-               lra.
-            -- now rewrite eqq0 in H.
-          * now rewrite eqq in H.
-      - assert ((upcrossing_var_expr a b (S n) a0 k)%nat = 0%nat) by lia.
-        rewrite H1.
-        simpl.
-        rewrite Rmult_0_r.
-        rewrite Hierarchy.sum_n_m_zero; try lia.
-        unfold Hierarchy.zero; simpl; lra.
+            -- rewrite eqq in H.
+               match_option.
+               ++ rewrite eqq0 in H.
+                  lra.
+               ++ now rewrite eqq0 in H.
+            -- now rewrite eqq in H.
+        + assert ((upcrossing_var_expr a b (S n) a0 (S k))%nat = 0%nat) by lia.
+          rewrite H1.
+          simpl.
+          rewrite Rmult_0_r.
+          rewrite Hierarchy.sum_n_m_zero; try lia.
+          unfold Hierarchy.zero; simpl; lra.
     Admitted.
 
     Lemma upcrossing_bound_transform_ge a b n : a < b ->
