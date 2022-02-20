@@ -2494,6 +2494,14 @@ Section martingale.
         congruence.
     Qed.
 
+    Lemma upcrossing_var_expr_gt0 a b n a0 k :
+      (upcrossing_var_expr a b (S n) a0 (S k) > 0)%nat ->
+      forall n0,
+        (1 <= n0 <= S k)%nat ->
+        (upcrossing_var_expr a b (S n) a0 n0 > 0)%nat.
+    Proof.
+      Admitted.
+      
     Lemma upcrossing_bound_transform_ge_Sn a b n : a < b ->
       rv_le (rvscale (b-a) (upcrossing_var a b (S n))) (martingale_transform (upcrossing_bound a b) M (S n)).
     Proof.
@@ -2580,7 +2588,13 @@ Section martingale.
             intros.
             specialize (H (n0-1)%nat n).
             replace (S (n0 -1)) with (n0) in H by lia.
-            assert (upcrossing_var_expr a b (S n) a0 n0 > 0)%nat by admit.
+            assert (upcrossing_var_expr a b (S n) a0 n0 > 0)%nat.
+            {
+              unfold upcrossing_var_expr in H1.
+              match_destr_in H1 ; try lia.
+              match_destr_in H1; try lia.
+              apply upcrossing_var_expr_gt0 with (k := k); lia.
+            }
             specialize (H H3).
             match_option.
             -- rewrite eqq in H.
@@ -3365,3 +3379,5 @@ Section MartingaleDifferenceSeq.
   Qed.
 
 End MartingaleDifferenceSeq.
+
+  
