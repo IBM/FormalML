@@ -2476,6 +2476,48 @@ Section martingale.
       match_destr; try lia.
     Qed.
 
+    Lemma upcrossing_times_some a b k a0 n0 n1:
+      (k > 0)%nat ->
+      upcrossing_times a b k a0 = Some n0 ->
+      upcrossing_times a b (S k) a0 = Some n1 ->
+      (n0 < n1)%nat.
+    Proof.
+      intros.
+      simpl in *.
+      destruct k; try lia.
+      rewrite H0 in H1.
+      match_destr_in H1; unfold hitting_time_from in H1;
+        match_destr_in H1; invcs H1; lia.
+    Qed.
+
+    Lemma upcrossing_times_some_S a b k a0 n0:
+      (k > 0)%nat ->
+      upcrossing_times a b (S k) a0 = Some n0 ->
+      exists n1,
+        upcrossing_times a b k a0 = Some n1.
+    Proof.
+      intros.
+      simpl in H0.
+      match_destr_in H0; try lia.
+      match_destr_in H0.
+      now exists n.
+    Qed.
+
+    Lemma upcrossing_times_some2 a b k a0 n0 n1:
+      (k > 0)%nat ->
+      upcrossing_times a b k a0 = Some n0 ->
+      upcrossing_times a b (S (S k)) a0 = Some n1 ->
+      (n0 < n1)%nat.
+    Proof.
+      intros.
+      generalize (upcrossing_times_some_S a b (S k) a0 n1); intros.
+      cut_to H2; try lia; trivial.
+      destruct H2.
+      generalize (upcrossing_times_some a b k a0 n0 x H H0 H2); intros.
+      generalize (upcrossing_times_some a b (S k) a0 x n1); intros.
+      cut_to H4; try lia; trivial.      
+    Qed.
+
     Lemma upcrossing_times_odd_le a b k0 a0 n :
       (upcrossing_var_expr a b (S n) a0 (S k0) > 0)%nat ->
       match upcrossing_times a b (2 * S k0 - 1) a0 with
@@ -2494,13 +2536,48 @@ Section martingale.
         congruence.
     Qed.
 
+    Lemma upcrossing_var_expr_0 a b n a0 k :
+      (0 < k)%nat ->
+      (upcrossing_var_expr a b (S n) a0 k = 0)%nat ->
+      (upcrossing_var_expr a b (S n) a0 (S k) = 0)%nat.
+    Proof.
+      intros.
+      unfold upcrossing_var_expr in *.
+      match_case_in H0; intros; rewrite H1 in H0.
+      - match_case_in H0; intros; rewrite H2 in H0; try lia.
+        assert (n0 > S n)%nat by lia.
+        match_case; intros.
+        generalize (upcrossing_times_some2 a b (2 * k)%nat a0 n0 n2); intros.
+        replace (S (S (2 * k))) with (2 * S k)%nat in H5 by lia.
+        cut_to H5; try lia; trivial.
+        match_destr; try lra; try lia.
+      - generalize (upcrossing_times_none a b (2 * k)%nat a0); intros.
+        cut_to H2; try lia; trivial.
+        generalize (upcrossing_times_none a b (S (2 * k)) a0); intros.
+        cut_to H3; try lia; trivial.
+        replace (2 * S k)%nat with (S (S (2 * k))) by lia.
+        now rewrite H3.
+   Qed.
+
     Lemma upcrossing_var_expr_gt0 a b n a0 k :
       (upcrossing_var_expr a b (S n) a0 (S k) > 0)%nat ->
-      forall n0,
-        (1 <= n0 <= S k)%nat ->
-        (upcrossing_var_expr a b (S n) a0 n0 > 0)%nat.
+      forall h,
+        (S h <= S k)%nat ->
+        (upcrossing_var_expr a b (S n) a0 (S h) > 0)%nat.
     Proof.
-      Admitted.
+      intros.
+      case_eq (upcrossing_var_expr a b (S n) a0 (S h)); intros; try lia.
+      assert (forall hh, (upcrossing_var_expr a b (S n) a0 ((S h)+hh)%nat = 0)%nat).
+      {
+        intros; induction hh.
+        - now replace (S h + 0)%nat with (S h) by lia.
+        - replace (S h + S hh)%nat with (S (S h + hh)) by lia.
+          apply upcrossing_var_expr_0; try lia.
+      }
+      specialize (H2 (S k - S h)%nat).
+      replace (S h + (S k - S h))%nat with (S k) in H2 by lia.
+      lia.
+    Qed.
       
     Lemma upcrossing_bound_transform_ge_Sn a b n : a < b ->
       rv_le (rvscale (b-a) (upcrossing_var a b (S n))) (martingale_transform (upcrossing_bound a b) M (S n)).
@@ -2593,7 +2670,8 @@ Section martingale.
               unfold upcrossing_var_expr in H1.
               match_destr_in H1 ; try lia.
               match_destr_in H1; try lia.
-              apply upcrossing_var_expr_gt0 with (k := k); lia.
+              replace (n0) with (S (n0 - 1)) by lia.
+              apply upcrossing_var_expr_gt0 with (k := k); try lia.
             }
             specialize (H H3).
             match_option.
