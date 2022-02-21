@@ -2696,15 +2696,16 @@ Section martingale.
     Admitted.
 
     Lemma upcrossing_bound_transform_ge a b n : a < b ->
+      (forall m x, M m x >= a) -> 
       rv_le (rvscale (b-a) (upcrossing_var a b n)) (martingale_transform (upcrossing_bound a b) M n).
     Proof.
-      intros ??.
+      intros Mgea ??.
       destruct n.
       - simpl.
         unfold upcrossing_var; simpl.
         rv_unfold; lra.
-      - apply upcrossing_bound_transform_ge_Sn; trivial.
-        Admitted.    
+      - now apply upcrossing_bound_transform_ge_Sn.
+    Qed.
 
     End doob_upcrossing_times.
 
@@ -2991,8 +2992,14 @@ Section martingale.
         - trivial.
       }
       Unshelve.
-
-      generalize (upcrossing_bound_transform_ge Y sas a b (S n) altb); intros leup.
+      assert (Ygea: forall m x, Y m x >= a).
+      {
+        intros.
+        unfold Y, ϕ.
+        unfold Rmax.
+        match_destr; lra.
+      }
+      generalize (upcrossing_bound_transform_ge Y sas a b (S n) altb Ygea); intros leup.
       assert (nneg1:NonnegativeFunction (rvscale (b - a) (upcrossing_var Y a b (S n)))).
       {
         apply scale_nneg_nnf.
@@ -3193,7 +3200,7 @@ Section martingale.
           reflexivity.
         - right.
           apply FiniteExpectation_pf_irrel.
-      Qed.
+     Qed.
   End doob_upcrossing_ineq.
 
   Section mart_conv.
