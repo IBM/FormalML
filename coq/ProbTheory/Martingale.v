@@ -2579,10 +2579,12 @@ Section martingale.
       lia.
     Qed.
       
-    Lemma upcrossing_bound_transform_ge_Sn a b n : a < b ->
+    Lemma upcrossing_bound_transform_ge_Sn a b n : 
+      a < b ->
+      (forall m x, M m x >= a) ->
       rv_le (rvscale (b-a) (upcrossing_var a b (S n))) (martingale_transform (upcrossing_bound a b) M (S n)).
     Proof.
-      intros altb ?.
+      intros altb Mgea ?.
       unfold martingale_transform.
       rv_unfold.
       generalize (Rmax_list_In (map INR (map (upcrossing_var_expr a b (S n) a0) (seq 0 (S n)))))
@@ -2631,7 +2633,8 @@ Section martingale.
           @Hierarchy.sum_n 
             Hierarchy.R_AbelianGroup
             (fun n0 : nat => 
-                             upcrossing_bound a b (S n0) a0 * (M (S n0) a0 + -1 * M n0 a0)) n =
+                             upcrossing_bound a b (S n0) a0 * (M (S n0) a0 + -1 * M n0 a0)) n
+          >=
           @Hierarchy.sum_n_m 
             Hierarchy.R_AbelianGroup
             (fun k0 =>
@@ -2644,7 +2647,9 @@ Section martingale.
       {
         admit.
       }
-      rewrite H0.
+      apply Rge_le.
+      eapply Rge_trans.
+      apply H0.
       destruct k.
       - simpl.
         unfold upcrossing_var_expr.
@@ -2658,10 +2663,8 @@ Section martingale.
             (@Hierarchy.sum_n_m Hierarchy.R_AbelianGroup
                                 (fun _ => b - a)
                                 1 (upcrossing_var_expr a b (S n) a0 (S k))).
-          * rewrite Hierarchy.sum_n_m_const.
-            replace (S (upcrossing_var_expr a b (S n) a0 (S k)) - 1)%nat with (upcrossing_var_expr a b (S n) a0 (S k)) by lia.
-            lra.
-          * apply sum_n_m_le_loc; trivial.
+          * apply Rle_ge.
+            apply sum_n_m_le_loc; trivial.
             intros.
             specialize (H (n0-1)%nat n).
             replace (S (n0 -1)) with (n0) in H by lia.
@@ -2681,6 +2684,9 @@ Section martingale.
                   lra.
                ++ now rewrite eqq0 in H.
             -- now rewrite eqq in H.
+          * rewrite Hierarchy.sum_n_m_const.
+            replace (S (upcrossing_var_expr a b (S n) a0 (S k)) - 1)%nat with (upcrossing_var_expr a b (S n) a0 (S k)) by lia.
+            lra.
         + assert ((upcrossing_var_expr a b (S n) a0 (S k))%nat = 0%nat) by lia.
           rewrite H1.
           simpl.
@@ -2697,8 +2703,8 @@ Section martingale.
       - simpl.
         unfold upcrossing_var; simpl.
         rv_unfold; lra.
-      - now apply upcrossing_bound_transform_ge_Sn.
-    Qed.
+      - apply upcrossing_bound_transform_ge_Sn; trivial.
+        Admitted.    
 
     End doob_upcrossing_times.
 
