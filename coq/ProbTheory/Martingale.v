@@ -2578,6 +2578,90 @@ Section martingale.
       replace (S h + (S k - S h))%nat with (S k) in H2 by lia.
       lia.
     Qed.
+
+    Lemma upcrossing_bound_range a b a0 k :
+      match upcrossing_times a b (2 * k - 1) a0, upcrossing_times a b (2 * k) a0 with 
+      | Some N1, Some N2 =>
+        forall n, (N1 < n <= N2)%nat ->
+                  upcrossing_bound a b n a0 = 1
+      | _, _ => True
+      end.
+     Proof.
+       match_case; intros.
+       match_case; intros.       
+       unfold upcrossing_bound.
+       unfold EventIndicator.
+       match_destr.
+       unfold pre_union_of_collection in n2.
+       assert (
+          (exists n : nat,
+          match upcrossing_times a b (2 * n - 1) a0 with
+          | Some x => (x < n1)%nat
+          | None => False
+          end /\
+          match upcrossing_times a b (2 * n) a0 with
+          | Some x => (n1 <= x)%nat
+          | None => True
+          end)).
+       {
+         exists k.
+         rewrite H.
+         split; try lia.
+         rewrite H0; try lia.
+       }
+       easy.
+     Qed.
+
+     Lemma telescope_sum (f : nat -> R) n h :
+       @Hierarchy.sum_n_m 
+         Hierarchy.R_AbelianGroup
+         (fun n1 : nat => f (S n1) + -1 * f n1) n (n + h)%nat = f (n + (S h))%nat - f n.
+     Proof.
+       induction h.
+       - replace (n + 0)%nat with (n) by lia.
+         rewrite Hierarchy.sum_n_n.
+         replace (n + 1)%nat with (S n) by lia.
+         lra.
+       - replace (n + S h)%nat with (S (n + h)) by lia.
+         rewrite Hierarchy.sum_n_Sm; try lia.
+         rewrite IHh.
+         unfold Hierarchy.plus; simpl.
+         replace (S (n + h)) with (n + S h)%nat by lia.
+         replace (S (n + S h)) with (n + S (S h))%nat by lia.
+         lra.
+      Qed.
+         
+    Lemma transform_upcrossing a b a0 k :
+      (k > 0)%nat ->
+      match upcrossing_times a b (2 * k - 1) a0, upcrossing_times a b (2 * k) a0 with 
+      | Some N1, Some N2 =>
+        @Hierarchy.sum_n_m  
+          Hierarchy.R_AbelianGroup
+          (fun n0 : nat => upcrossing_bound a b (S n0) a0 * (M (S n0) a0 + -1 * M n0 a0))
+          N1 (N2-1)%nat = M N2 a0 - M N1 a0
+      | _, _ => True
+      end.
+    Proof.
+      intros.
+       match_case; intros.
+       match_case; intros.
+       assert (up: (n < n0)%nat).
+       {
+         apply (upcrossing_times_some a b (2 * k - 1) a0); try lia; trivial.
+         now replace (S (2 * k - 1)) with (2 * k)%nat by lia.
+       }
+       rewrite (@Hierarchy.sum_n_m_ext_loc Hierarchy.R_AbelianGroup) with
+           (b := fun n1 => M (S n1) a0 + -1 * M n1 a0).
+       - pose (h := (n0 - 1 - n)%nat).
+         replace (n0-1)%nat with (n + h)%nat by lia.
+         rewrite (telescope_sum (fun n => M n a0)).
+         now replace (n + S h)%nat with n0 by lia.
+       - intros.
+         generalize (upcrossing_bound_range a b a0 k); intros.
+         rewrite H0, H1 in H3.
+         specialize (H3 (S k0)).
+         rewrite H3; try lra; try lia.
+     Qed.
       
     Lemma upcrossing_bound_transform_ge_Sn a b n : 
       a < b ->
@@ -2645,6 +2729,8 @@ Section martingale.
             1 
             (upcrossing_var_expr a b (S n) a0 k)).
       {
+        unfold upcrossing_bound.
+        
         admit.
       }
       apply Rge_le.
