@@ -4,6 +4,7 @@
  This repository contains
   - a partial formalization of key results from https://arxiv.org/abs/1804.07795
   - The CertRL library as reported in https://arxiv.org/abs/2009.11403
+  - a formalization of Dvoretzky's stochastic approximation theorem as reported in https://arxiv.org/abs/2202.05959
 
  ## Getting Started
 
