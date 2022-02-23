@@ -2704,61 +2704,74 @@ Section martingale.
       match_case; intros.
       - match_destr.
         destruct p as [? [? ?]].
+        destruct x.
+        {
+          replace (2 * 0 - 1)%nat with (0%nat) in H3 by lia.
+          replace (2 * 0)%nat with (0%nat) in H4 by lia.
+          simpl in H3.
+          simpl in H4.
+          lia.
+        }
         destruct H2.
         match_case_in H3; intros; rewrite H6 in H3; try easy.
         assert (n2 < n0)%nat by lia.
-        assert (2 * x - 1 < 2 * k + 1)%nat.
+        assert (2 * S x - 1 < 2 * k + 1)%nat.
         {
           generalize (upcrossing_times_monotonic a b a0 n2 n0); intros; trivial; try lia.
-          specialize (H8 (2 * x - 1)%nat (2 * k + 1)%nat).
+          specialize (H8 (2 * S x - 1)%nat (2 * k + 1)%nat).
           apply H8; trivial; try lia.
-          admit.
         }
         match_case_in H4; intros; rewrite H9 in H4.
         + assert (n < n3)%nat by lia.
-          assert (2 * k < 2 * x)%nat.
+          assert (2 * k < 2 * S x)%nat.
           {
             generalize (upcrossing_times_monotonic a b a0 n n3); intros; trivial; try lia.
-            specialize (H11 (2 * k)%nat (2 * x)%nat).
+            specialize (H11 (2 * k)%nat (2 * S x)%nat).
             apply H11; trivial; try lia.
-            admit.
           }
           lia.
-        + assert (2 * x < 2 * k + 1)%nat by lia.
-          apply upcrossing_times_none_plus with (h := (2 * k - 2 * x)%nat) in H9.
-          replace (S (2 * x) + (2 * k - 2*x))%nat with (2 * k + 1)%nat in H9 by lia.
+        + assert (2 * S x < 2 * k + 1)%nat by lia.
+          apply upcrossing_times_none_plus with (h := (2 * k - 2 * S x)%nat) in H9.
+          replace (S (2 * S x) + (2 * k - 2* S x))%nat with (2 * k + 1)%nat in H9 by lia.
           congruence.
      - match_destr.
        destruct p as [? [? ?]].
+       destruct x.
+       {
+         replace (2 * 0 - 1)%nat with (0%nat) in H3 by lia.
+         replace (2 * 0)%nat with (0%nat) in H4 by lia.
+         simpl in H3.
+         simpl in H4.
+         lia.
+       }
        match_case_in H3; intros; rewrite H5 in H3; try easy.
        match_case_in H4; intros; rewrite H6 in H4.
        + assert (n < n2)%nat by lia.
-         assert (2 * k < 2 * x)%nat.
+         assert (2 * k < 2 * S x)%nat.
          {
            generalize (upcrossing_times_monotonic a b a0 n n2); intros.
-           specialize (H8 (2 * k)%nat (2 * x)%nat).
+           specialize (H8 (2 * k)%nat (2 * S x)%nat).
            apply H8; trivial; try lia.
-           admit.
          }
-         assert (2 * k + 1 < 2*x)%nat by lia.
-         apply upcrossing_times_none_plus with (h := (2 * x - 2 * k - 2)%nat) in H1; try lia.
-         replace (S (2 * k + 1) + (2 * x - 2 * k - 2))%nat with (2 * x)%nat in H1 by lia.
+         assert (2 * k + 1 < 2*S x)%nat by lia.
+         apply upcrossing_times_none_plus with (h := (2 * S x - 2 * k - 2)%nat) in H1; try lia.
+         replace (S (2 * k + 1) + (2 * S x - 2 * k - 2))%nat with (2 * S x)%nat in H1 by lia.
          congruence.
-       + destruct (lt_dec (2 * x)%nat (2 *  k)%nat).
-         * apply upcrossing_times_none_plus with (h := (2 * k - 2 * x - 1)%nat) in H6.
-           replace (S (2 * x) + (2 * k - 2* x-1))%nat with (2 * k)%nat in H6 by lia.
+       + destruct (lt_dec (2 * S x)%nat (2 *  k)%nat).
+         * apply upcrossing_times_none_plus with (h := (2 * k - 2 * S x - 1)%nat) in H6.
+           replace (S (2 * S x) + (2 * k - 2* S x-1))%nat with (2 * k)%nat in H6 by lia.
            congruence.
-         * destruct (lt_dec (2 * k)%nat (2 * x)%nat).
-           -- assert (2 * k + 1 <= 2 * x - 1)%nat by lia.
-              destruct (lt_dec (2 * k + 1)%nat (2 * x - 1)%nat).
-              ++ apply upcrossing_times_none_plus with (h := (2 * x - 2 * k - 3)%nat) in H1; try lia.
-                 replace (S (2 * k + 1) + (2 * x - 2* k - 3))%nat with (2 * x - 1)%nat in H1 by lia.
+         * destruct (lt_dec (2 * k)%nat (2 * S x)%nat).
+           -- assert (2 * k + 1 <= 2 * S x - 1)%nat by lia.
+              destruct (lt_dec (2 * k + 1)%nat (2 * S x - 1)%nat).
+              ++ apply upcrossing_times_none_plus with (h := (2 * S x - 2 * k - 3)%nat) in H1; try lia.
+                 replace (S (2 * k + 1) + (2 * S x - 2* k - 3))%nat with (2 * S x - 1)%nat in H1 by lia.
                  congruence.
-              ++ assert ( 2 * k + 1 = 2  * x - 1)%nat by lia.
+              ++ assert ( 2 * k + 1 = 2  * S x - 1)%nat by lia.
                  rewrite H8 in H1; congruence.
-           -- assert (2 * x = 2 * k)%nat by lia.
+           -- assert (2 * S x = 2 * k)%nat by lia.
               rewrite H7 in H6; congruence.
-       Admitted.
+     Qed.
 
     Lemma upcrossing_bound_range0_init a b a0 :
       match upcrossing_times a b (1%nat) a0 with
@@ -2773,35 +2786,32 @@ Section martingale.
       - unfold upcrossing_bound, EventIndicator.
         match_destr.
         destruct p as [? [? ?]].
+        destruct x.
+        {
+          replace (2 * 0 - 1)%nat with (0%nat) in H1 by lia.
+          replace (2 * 0)%nat with (0%nat) in H2 by lia.
+          simpl in H1.
+          simpl in H2.
+          lia.
+        }
         match_case_in H1; intros; rewrite H3 in H1; try easy.
         match_case_in H2; intros; rewrite H4 in H2.
         + assert (n1 < n)%nat by lia.
-          assert (2 * x - 1 < 1)%nat.
+          assert (2 * S x - 1 < 1)%nat.
           {
             generalize (upcrossing_times_monotonic a b a0 n1 n); intros.
-            specialize (H6 (2 * x - 1)%nat 1%nat).
+            specialize (H6 (2 * S x - 1)%nat 1%nat).
             apply H6; trivial; try lia.
-            admit.
           }
-          assert (x = 0)%nat by lia.
-          replace (2 * x)%nat with (0%nat) in H4 by lia.
-          replace (2 * x - 1)%nat with (0%nat) in H3 by lia.
-          assert (n1 < n2)%nat by lia.
-          rewrite H3 in H4.
-          invcs H4.
           lia.
         + assert (n1 < n)%nat by lia.
-          assert (2 * x - 1 < 1)%nat.
+          assert (2 * S x - 1 < 1)%nat.
           {
              generalize (upcrossing_times_monotonic a b a0 n1 n); intros.
-             specialize (H6 (2 * x - 1)%nat 1%nat).
+             specialize (H6 (2 * S x - 1)%nat 1%nat).
              apply H6; trivial; try lia.
-             admit.
           }
-          assert (x = 0)%nat by lia.
-          replace (2 * x)%nat with (0%nat) in H4 by lia.
-          replace (2 * x - 1)%nat with (0%nat) in H3 by lia.
-          congruence.
+          lia.
      -  unfold upcrossing_bound, EventIndicator.
         match_destr.
         destruct p as [? [? ?]].
@@ -2827,7 +2837,7 @@ Section martingale.
             -- apply upcrossing_times_none_plus with (h := (2 * S (S x) - 3)%nat) in H; try lia.
                replace (2 + (2 * S (S x) - 3))%nat with (2 * S (S x) - 1)%nat in H by lia.
                congruence.
-    Admitted.
+    Qed.
 
     Lemma upcrossing_bound_range10 a b a0 n :
       (forall k,
@@ -2850,8 +2860,6 @@ Section martingale.
          + rewrite H3 in H; easy.
        - match_case_in H1; intros; rewrite H3 in H1; easy.
      Qed.
-
-
 
      Lemma telescope_sum (f : nat -> R) n h :
        @Hierarchy.sum_n_m 
