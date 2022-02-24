@@ -3142,62 +3142,6 @@ Section martingale.
        rewrite H2; try lra; lia.
     Qed.
 
-(*
-    Lemma one_upcrossing_bound_S_k a b a0 (f : nat -> Ts -> R) N1 N2 k :
-      (k > 0)%nat ->
-      (N1 < N2) %nat ->
-      upcrossing_times a b (2 * k - 1)%nat a0 = Some N1 ->
-      upcrossing_times a b (2%nat) a0 = Some N2 ->
-      @Hierarchy.sum_n 
-        Hierarchy.R_AbelianGroup
-        (fun n0 : nat => 
-           upcrossing_bound a b (S n0) a0 * f (S n0) a0) (N2-1)%nat =
-      @Hierarchy.sum_n_m 
-        Hierarchy.R_AbelianGroup
-        (fun n0 => f (S n0) a0) N1 (N2-1)%nat.
-    Proof.
-      intros.
-      destruct N1.
-      {
-        unfold Hierarchy.sum_n.
-        apply Hierarchy.sum_n_m_ext_loc.
-        intros.
-        generalize (upcrossing_bound_range a b a0 1); intros.
-        replace (2 * 1 - 1)%nat with (1%nat) in H3 by lia.
-        replace (2 * 1)%nat with (2%nat) in H3 by lia.
-        rewrite H0 in H3.
-        rewrite H1 in H3.
-        specialize (H3 (S k)).
-        rewrite H3; try lra.
-        lia.
-      }
-      unfold Hierarchy.sum_n.
-      rewrite Hierarchy.sum_n_m_Chasles with (m := N1); try lia.
-      generalize (upcrossing_bound_range0_init a b a0); intros.
-      rewrite H0 in H2.
-      rewrite (@Hierarchy.sum_n_m_ext_loc Hierarchy.R_AbelianGroup) with
-          (b := fun n0 => 0); trivial.
-      - rewrite Hierarchy.sum_n_m_const.
-        rewrite Rmult_0_r.
-        rewrite (@Hierarchy.sum_n_m_ext_loc Hierarchy.R_AbelianGroup) with
-            (b := fun n0 => f (S n0) a0); trivial.
-        + unfold Hierarchy.plus; simpl.
-          lra.
-        + intros.
-          generalize (upcrossing_bound_range a b a0 1); intros.
-          replace (2 * 1 - 1)%nat with (1%nat) in H4 by lia.
-          replace (2 * 1)%nat with (2%nat) in H4 by lia.
-          rewrite H0 in H4.
-          rewrite H1 in H4.
-          specialize (H4 (S k)).
-          rewrite H4; try lra.
-          lia.
-     - intros.
-       rewrite H2; try lra; lia.
-    Qed.
-
-*)
-
     Lemma upcrossing_bound_transform_helper a b a0 k :
          upcrossing_times a b (2 * (S k))%nat a0 <> None ->
          @Hierarchy.sum_n 
@@ -3299,6 +3243,17 @@ Section martingale.
         tauto.
     Qed.
 
+    Lemma upcrossing_bound_transform_ge_0 a b n : 
+      a < b ->
+      (forall m x, M m x >= a) ->
+      NonnegativeFunction (martingale_transform (upcrossing_bound a b) M (S n)).
+    Proof.
+      intros aleb mgea ?.
+      unfold martingale_transform.
+      rv_unfold.
+      unfold rvsum.
+      Admitted.
+
     Lemma upcrossing_bound_transform_ge_Sn a b n : 
       a < b ->
       (forall m x, M m x >= a) ->
@@ -3365,9 +3320,40 @@ Section martingale.
             1 
             (upcrossing_var_expr a b (S n) a0 k)).
       {
-        unfold upcrossing_bound.
-        
-        admit.
+        case_eq (upcrossing_var_expr a b (S n) a0 k); intros.
+        - rewrite Hierarchy.sum_n_m_zero; try lia.
+          unfold Hierarchy.zero; simpl.
+          apply Rle_ge.
+          now apply upcrossing_bound_transform_ge_0.
+        - generalize (upcrossing_bound_transform_helper a b a0 n0); intros.
+          match_case_in H1; intros; rewrite H3 in H1.
+          + destruct (lt_dec (n1-1)%nat n).
+            * unfold Hierarchy.sum_n.
+              rewrite Hierarchy.sum_n_m_Chasles with (m := (n1-1)%nat); try lia.
+              unfold Hierarchy.sum_n in H1.
+              rewrite H1; try congruence.
+              apply Rle_ge.
+              apply Rplus_le_compat1_l.
+              admit.
+            * assert (n <= n1 - 1)%nat by lia.
+              unfold upcrossing_var_expr in H0.
+              match_case_in H0; intros.
+              -- rewrite H5 in H0.
+                 match_destr_in H0.
+                 rewrite H0 in H5.
+                 rewrite H5 in H3.
+                 invcs H3.
+                 assert (n = n1 - 1)%nat by lia.
+                 rewrite H0.
+                 rewrite H1; try congruence.
+                 now right.
+              -- rewrite H5 in H0.
+                 lia.
+          + unfold upcrossing_var_expr in H0.
+            match_case_in H0; intros; rewrite H4 in H0.
+            * match_destr_in H0.
+              rewrite H0 in H4; congruence.
+            * lia.
       }
       apply Rge_le.
       eapply Rge_trans.
