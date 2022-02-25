@@ -3243,17 +3243,6 @@ Section martingale.
         tauto.
     Qed.
 
-    Lemma upcrossing_bound_transform_ge_0 a b n : 
-      a < b ->
-      (forall m x, M m x >= a) ->
-      NonnegativeFunction (martingale_transform (upcrossing_bound a b) M (S n)).
-    Proof.
-      intros aleb mgea ?.
-      unfold martingale_transform.
-      rv_unfold.
-      unfold rvsum.
-      Admitted.
-
     Lemma upcrossing_bound_transform_ge_Sn a b n : 
       a < b ->
       (forall m x, M m x >= a) ->
@@ -3324,7 +3313,121 @@ Section martingale.
         - rewrite Hierarchy.sum_n_m_zero; try lia.
           unfold Hierarchy.zero; simpl.
           apply Rle_ge.
-          now apply upcrossing_bound_transform_ge_0.
+          generalize (upcrossing_bound_range0_init a b a0); intros.
+          unfold Hierarchy.sum_n.
+          match_case_in H1; intros; rewrite H3 in H1.
+          + destruct (lt_dec n n0).
+            * unfold Hierarchy.sum_n.
+              rewrite  (@Hierarchy.sum_n_m_ext_loc  Hierarchy.R_AbelianGroup) with
+                  (b := fun n1 => Hierarchy.zero).
+              -- rewrite Hierarchy.sum_n_m_const_zero.
+                 unfold Hierarchy.zero; simpl; lra.
+              -- intros.
+                 rewrite H1; try lia.
+                 unfold Hierarchy.zero; simpl; lra.
+            * destruct n0.
+              -- rewrite (@Hierarchy.sum_n_m_ext_loc  Hierarchy.R_AbelianGroup) with
+                   (b := fun n2 =>  (M (S n2) a0 + -1 * M n2 a0)).
+                 ++ generalize (telescope_sum (fun n => M n a0) 0 n); intros.
+                    replace (0 + n)%nat with n in H4 by lia.
+                    replace (0 + S n)%nat with (S n) in H4 by lia.
+                    rewrite H4.
+                    assert (M (0%nat) a0 = a).
+                    {
+                      unfold upcrossing_times, hitting_time in H3.
+                      apply classic_min_of_some in H3.
+                      simpl in H3.
+                      unfold id in H3; simpl in H3.
+                      specialize (Mgea (0%nat) a0).
+                      lra.
+                    }
+                    rewrite H5.
+                    specialize (Mgea (S n) a0); lra.
+                 ++ intros.
+                    assert (upcrossing_bound a b (S k0) a0 = 1).
+                    {
+                      unfold upcrossing_bound, EventIndicator.
+                      match_destr.
+                      unfold pre_union_of_collection in n0.
+                      assert (exists n, match upcrossing_times a b (2 * n - 1)%nat a0 with
+                              | Some x => (x < S k0)%nat
+                              | None => False
+                              end /\
+                              match upcrossing_times a b (2 * n) a0 with
+                              | Some x => (S k0 <= x)%nat
+                              | None => True
+                              end).
+                      {
+                        exists (1%nat).
+                        replace (2 * 1 - 1)%nat with 1%nat by lia.
+                        rewrite H3.
+                        split; try lia.
+                        match_case; intros.
+                        assert (n < n2)%nat by admit.
+                        lia.
+                      }
+                      easy.
+                    }
+                    rewrite H5; lra.
+              -- rewrite Hierarchy.sum_n_m_Chasles with (m := (S n0-1)%nat); try lia.
+                 rewrite  (@Hierarchy.sum_n_m_ext_loc  Hierarchy.R_AbelianGroup) with
+                     (b := fun n1 => Hierarchy.zero).
+                 ++ rewrite Hierarchy.sum_n_m_const_zero.
+                    rewrite Hierarchy.plus_zero_l.
+                    rewrite (@Hierarchy.sum_n_m_ext_loc  Hierarchy.R_AbelianGroup) with
+                        (b := fun n2 =>  (M (S n2) a0 + -1 * M n2 a0)).
+                    ** generalize (telescope_sum (fun n => M n a0) (S (S n0 - 1)) (n - (S (S n0 - 1)))); intros.
+                       replace  (S (S n0 - 1) + (n - S (S n0 - 1)))%nat with n in H4 by lia.
+                       rewrite H4.
+                       replace (S (S n0 - 1)) with (S n0) by lia.
+                       assert (M (S n0) a0 = a).
+                       {
+                         unfold upcrossing_times, hitting_time in H3.
+                         apply classic_min_of_some in H3.
+                         simpl in H3.
+                         unfold id in H3; simpl in H3.
+                         specialize (Mgea (S n0) a0).
+                         lra.
+                       }
+                       rewrite H5.
+                       specialize (Mgea (S n0 + S (n - S n0))%nat a0); lra.
+                    ** intros.
+                       assert (upcrossing_bound a b (S k0) a0 = 1).
+                       {
+                         unfold upcrossing_bound, EventIndicator.
+                         match_destr.
+                         unfold pre_union_of_collection in n2.
+                         assert (exists n, match upcrossing_times a b (2 * n - 1)%nat a0 with
+                                           | Some x => (x < S k0)%nat
+                                           | None => False
+                                           end /\
+                                           match upcrossing_times a b (2 * n) a0 with
+                                           | Some x => (S k0 <= x)%nat
+                                           | None => True
+                                           end).
+                         {
+                           exists (1%nat).
+                           replace (2 * 1 - 1)%nat with 1%nat by lia.
+                           rewrite H3.
+                           split; try lia.
+                           match_case; intros.
+                           unfold upcrossing_var_expr in H0.
+                           assert (n < n3)%nat by admit.
+                           lia.
+                         }
+                         easy.
+                    }
+                    rewrite H5; lra.
+                 ++ intros.
+                    rewrite H1; try lia.
+                    unfold Hierarchy.zero; simpl; lra.
+          + rewrite  (@Hierarchy.sum_n_m_ext_loc  Hierarchy.R_AbelianGroup) with
+                (b := fun n1 => Hierarchy.zero).
+            * rewrite Hierarchy.sum_n_m_const_zero.
+              unfold Hierarchy.zero; simpl; lra.
+            * intros.
+              rewrite H1; try lia.
+              unfold Hierarchy.zero; simpl; lra.
         - generalize (upcrossing_bound_transform_helper a b a0 n0); intros.
           match_case_in H1; intros; rewrite H3 in H1.
           + destruct (lt_dec (n1-1)%nat n).
