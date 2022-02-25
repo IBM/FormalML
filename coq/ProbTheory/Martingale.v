@@ -2628,23 +2628,11 @@ Section martingale.
        unfold EventIndicator.
        match_destr.
        unfold pre_union_of_collection in n2.
-       assert (
-          (exists n : nat,
-          match upcrossing_times a b (2 * n - 1) a0 with
-          | Some x => (x < n1)%nat
-          | None => False
-          end /\
-          match upcrossing_times a b (2 * n) a0 with
-          | Some x => (n1 <= x)%nat
-          | None => True
-          end)).
-       {
-         exists k.
-         rewrite H.
-         split; try lia.
-         rewrite H0; try lia.
-       }
-       easy.
+       elim n2.
+       exists k.
+       rewrite H.
+       split; try lia.
+       rewrite H0; try lia.
      Qed.
 
      Lemma upcrossing_times_monotonic_l a b a0 n0 n1 m0 m1 :
@@ -3243,6 +3231,19 @@ Section martingale.
         tauto.
     Qed.
 
+    Lemma upcrossing_bound_transform_ge_0 a b a0 n0 n : 
+      a < b ->
+      (forall m x, M m x >= a) ->
+      upcrossing_bound a b n0 a0 = 0 ->
+      0 <=
+      @Hierarchy.sum_n_m 
+        Hierarchy.R_AbelianGroup        
+        (fun n2 : nat => upcrossing_bound a b (S n2) a0 * (M (S n2) a0 + -1 * M n2 a0))
+        n0 n.
+    Proof.
+      intros.
+      Admitted.
+
     Lemma upcrossing_bound_transform_ge_Sn a b n : 
       a < b ->
       (forall m x, M m x >= a) ->
@@ -3349,24 +3350,14 @@ Section martingale.
                       unfold upcrossing_bound, EventIndicator.
                       match_destr.
                       unfold pre_union_of_collection in n0.
-                      assert (exists n, match upcrossing_times a b (2 * n - 1)%nat a0 with
-                              | Some x => (x < S k0)%nat
-                              | None => False
-                              end /\
-                              match upcrossing_times a b (2 * n) a0 with
-                              | Some x => (S k0 <= x)%nat
-                              | None => True
-                              end).
-                      {
-                        exists (1%nat).
-                        replace (2 * 1 - 1)%nat with 1%nat by lia.
-                        rewrite H3.
-                        split; try lia.
-                        match_case; intros.
-                        assert (n < n2)%nat by admit.
-                        lia.
-                      }
-                      easy.
+                      elim n0.
+                      exists (1%nat).
+                      replace (2 * 1 - 1)%nat with 1%nat by lia.
+                      rewrite H3.
+                      split; try lia.
+                      match_case; intros.
+                      assert (n < n2)%nat by admit.
+                      lia.
                     }
                     rewrite H5; lra.
               -- rewrite Hierarchy.sum_n_m_Chasles with (m := (S n0-1)%nat); try lia.
@@ -3397,25 +3388,15 @@ Section martingale.
                          unfold upcrossing_bound, EventIndicator.
                          match_destr.
                          unfold pre_union_of_collection in n2.
-                         assert (exists n, match upcrossing_times a b (2 * n - 1)%nat a0 with
-                                           | Some x => (x < S k0)%nat
-                                           | None => False
-                                           end /\
-                                           match upcrossing_times a b (2 * n) a0 with
-                                           | Some x => (S k0 <= x)%nat
-                                           | None => True
-                                           end).
-                         {
-                           exists (1%nat).
-                           replace (2 * 1 - 1)%nat with 1%nat by lia.
-                           rewrite H3.
-                           split; try lia.
-                           match_case; intros.
-                           unfold upcrossing_var_expr in H0.
-                           assert (n < n3)%nat by admit.
-                           lia.
-                         }
-                         easy.
+                         elim n2.
+                         exists (1%nat).
+                         replace (2 * 1 - 1)%nat with 1%nat by lia.
+                         rewrite H3.
+                         split; try lia.
+                         match_case; intros.
+                         unfold upcrossing_var_expr in H0.
+                         assert (n < n3)%nat by admit.
+                         lia.
                     }
                     rewrite H5; lra.
                  ++ intros.
@@ -3437,6 +3418,7 @@ Section martingale.
               rewrite H1; try congruence.
               apply Rle_ge.
               apply Rplus_le_compat1_l.
+              apply upcrossing_bound_transform_ge_0; trivial.
               admit.
             * assert (n <= n1 - 1)%nat by lia.
               unfold upcrossing_var_expr in H0.
