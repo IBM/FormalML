@@ -2855,8 +2855,7 @@ Section martingale.
       intros.
       destruct (le_dec k k2); try lia.
       destruct (lt_dec k k2).
-      - generalize (upcrossing_times_none_plus a b k (k2 - k - 1)%nat a0 H); intros.
-        now replace (S k + (k2 - k - 1))%nat with k2 in H1 by lia.
+      - now apply (upcrossing_times_none_plus_alt a b k k2 a0) in H; try lia.
       - assert (k = k2) by lia.
         now rewrite H1 in H.
     Qed.
@@ -2938,9 +2937,7 @@ Section martingale.
            }
            lia.
          + destruct (lt_dec (2 * k + 1)%nat (2 * S x - 1)).
-           * generalize (upcrossing_times_none_plus a b (2 * k + 1)%nat (2 * S x - 1 - (2 * k + 1) - 1)%nat a0 H8); intros.
-             replace  (S (2 * k + 1) + (2 * S x - 1 - (2 * k + 1) - 1))%nat with (2 * S x - 1)%nat in H9 by lia.
-             congruence.
+           * now apply upcrossing_times_none_plus_alt with (kk := (2*S x - 1)%nat) in H8.
            * assert (2 * k + 1 = 2 * S x - 1)%nat by lia.
              rewrite H9 in H8.
              congruence.
@@ -3358,6 +3355,7 @@ Section martingale.
         n0 n.
     Proof.
       intros.
+      case_eq (upcrossing_var_expr a b (S n) a0 n0); intros.
       Admitted.
 
     Lemma upcrossing_bound_transform_ge_Sn a b n : 
