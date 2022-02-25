@@ -3527,8 +3527,18 @@ Section martingale.
                          rewrite H3.
                          split; try lia.
                          match_case; intros.
-                         unfold upcrossing_var_expr in H0.
-                         assert (n < n3)%nat by admit.
+                         assert (n < n3)%nat.
+                         {
+                           assert (n > 0)%nat by lia.
+                           specialize (Hin 1%nat).
+                           cut_to Hin; try lia.
+                           rewrite H0 in Hin.
+                           assert (upcrossing_var_expr a b (S n) a0 1 = 0)%nat by lia.
+                           unfold upcrossing_var_expr in H7.
+                           rewrite H5 in H7.
+                           match_destr_in H7.
+                           lia.
+                         }
                          lia.
                     }
                     rewrite H5; lra.
@@ -3635,7 +3645,7 @@ Section martingale.
           rewrite Rmult_0_r.
           rewrite Hierarchy.sum_n_m_zero; try lia.
           unfold Hierarchy.zero; simpl; lra.
-    Admitted.
+    Qed.
 
     Lemma upcrossing_bound_transform_ge a b n : a < b ->
       (forall m x, M m x >= a) -> 
