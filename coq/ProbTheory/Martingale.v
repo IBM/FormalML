@@ -3441,7 +3441,8 @@ Section martingale.
               -- intros.
                  rewrite H1; try lia.
                  unfold Hierarchy.zero; simpl; lra.
-            * destruct n0.
+            * assert (ngtn0: (n >= n0)%nat) by lia.
+              destruct n0.
               -- rewrite (@Hierarchy.sum_n_m_ext_loc  Hierarchy.R_AbelianGroup) with
                    (b := fun n2 =>  (M (S n2) a0 + -1 * M n2 a0)).
                  ++ generalize (telescope_sum (fun n => M n a0) 0 n); intros.
@@ -3471,7 +3472,24 @@ Section martingale.
                       rewrite H3.
                       split; try lia.
                       match_case; intros.
-                      assert (n < n2)%nat by admit.
+                      assert (n < n2)%nat.
+                      {
+                        destruct n.
+                        - case_eq (upcrossing_times a b 1%nat a0); intros.
+                          + generalize (upcrossing_times_monotonic a b a0 n n2 1%nat (2 * 1)%nat); intros.
+                            cut_to H7; try lia; trivial.
+                          + apply upcrossing_times_none in H6.
+                            replace (2 * 1)%nat with 2%nat in H5 by lia.
+                            congruence.
+                        - specialize (Hin 1%nat).
+                          cut_to Hin; try lia.
+                          rewrite H0 in Hin.
+                          assert (upcrossing_var_expr a b (S (S n)) a0 1 = 0)%nat by lia.
+                          unfold upcrossing_var_expr in H6.
+                          rewrite H5 in H6.
+                          match_destr_in H6.
+                          lia.
+                     }
                       lia.
                     }
                     rewrite H5; lra.
