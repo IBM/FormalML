@@ -2661,6 +2661,48 @@ Section martingale.
        rewrite H0; try lia.
      Qed.
 
+    Lemma upcrossing_bound_range_none a b a0 k :
+      match upcrossing_times a b (2 * k - 1) a0, upcrossing_times a b (2 * k) a0 with 
+      | Some N1, None =>
+        forall n, (N1 < n)%nat ->
+                  upcrossing_bound a b n a0 = 1
+      | _, _ => True
+      end.
+     Proof.
+       match_case; intros.
+       match_case; intros.       
+       unfold upcrossing_bound.
+       unfold EventIndicator.
+       match_destr.
+       unfold pre_union_of_collection in n1.
+       elim n1.
+       exists k.
+       rewrite H.
+       split; try lia.
+       rewrite H0; try lia.
+     Qed.
+
+    Lemma upcrossing_bound_range_full a b a0 k :
+      match upcrossing_times a b (2 * k - 1) a0, upcrossing_times a b (2 * k) a0 with 
+      | Some N1, Some N2 =>
+        forall n, (N1 < n <= N2)%nat ->
+                  upcrossing_bound a b n a0 = 1
+      | Some N1, None =>
+        forall n, (N1 < n)%nat ->
+                  upcrossing_bound a b n a0 = 1
+      | _, _ => True
+      end.
+     Proof.
+       generalize (upcrossing_bound_range a b a0 k); intros.
+       generalize (upcrossing_bound_range_none a b a0 k); intros.       
+       match_case; intros.
+       match_case; intros.
+       - rewrite H1, H2 in H.
+         now apply H.
+       - rewrite H1, H2 in H0.
+         now apply H0.
+    Qed.
+
      Lemma upcrossing_times_monotonic_l a b a0 n0 n1 m0 m1 :
        (m0 > 0)%nat ->
        upcrossing_times a b m0 a0 = Some n0 ->
@@ -3123,6 +3165,92 @@ Section martingale.
          rewrite H4; try lra; try lia.
      Qed.
 
+    Lemma transform_upcrossing2_none a b a0 k N3 :
+      (k > 0)%nat ->
+      match upcrossing_times a b (2 * k - 1) a0, upcrossing_times a b (2 * k) a0 with 
+      | Some N1, None =>
+        (N1 < N3)%nat ->
+        @Hierarchy.sum_n_m  
+          Hierarchy.R_AbelianGroup
+          (fun n0 : nat => upcrossing_bound a b (S n0) a0 * (M (S n0) a0 + -1 * M n0 a0))
+          N1 (N3-1)%nat = M N3 a0 - M N1 a0
+      | _, _ => True
+      end.
+    Proof.
+      intros.
+       match_case; intros.
+       match_case; intros.
+       rewrite (@Hierarchy.sum_n_m_ext_loc Hierarchy.R_AbelianGroup) with
+           (b := fun n1 => M (S n1) a0 + -1 * M n1 a0).
+       - pose (h := (N3 - 1 - n)%nat).
+         replace (N3-1)%nat with (n + h)%nat by lia.
+         rewrite (telescope_sum (fun n => M n a0)).
+         now replace (n + S h)%nat with N3 by lia.
+       - intros.
+         generalize (upcrossing_bound_range_none a b a0 k); intros.
+         rewrite H0, H1 in H4.
+         specialize (H4 (S k0)).
+         rewrite H4; try lra; try lia.
+     Qed.
+
+     Lemma transform_upcrossing_zero_01 a b a0 k N3 :
+      (k > 0)%nat ->
+      (forall m x, M m x >= a) ->
+      match upcrossing_times a b (2 * k) a0,
+            upcrossing_times a b (2 * k + 1) a0 with
+      | Some NN0, Some N1 =>
+        (NN0 < N3 <= N1)%nat ->
+        @Hierarchy.sum_n_m  
+          Hierarchy.R_AbelianGroup
+          (fun n0 : nat => upcrossing_bound a b (S n0) a0 * (M (S n0) a0 + -1 * M n0 a0))
+          NN0 (N3-1)%nat = 0
+      | _, _ => True
+      end.
+    Proof.
+      intros.
+      match_case; intros.
+      match_case; intros.
+      rewrite  (@Hierarchy.sum_n_m_ext_loc  Hierarchy.R_AbelianGroup) with
+          (b := fun n1 => Hierarchy.zero).
+      - rewrite Hierarchy.sum_n_m_const_zero.
+        unfold Hierarchy.zero; now simpl.
+      - intros.
+        generalize (upcrossing_bound_range10 a b a0 (S k0) k H); intros.
+        rewrite H1, H2 in H5.
+        rewrite H5.
+        * unfold Hierarchy.zero; simpl; lra.
+        * split; try lia.
+    Qed.
+
+     Lemma transform_upcrossing_zero_01_none a b a0 k N3 :
+      (k > 0)%nat ->
+      (forall m x, M m x >= a) ->
+      match upcrossing_times a b (2 * k) a0,
+            upcrossing_times a b (2 * k + 1) a0 with
+      | Some NN0, None =>
+        (NN0 < N3 )%nat ->
+        @Hierarchy.sum_n_m  
+          Hierarchy.R_AbelianGroup
+          (fun n0 : nat => upcrossing_bound a b (S n0) a0 * (M (S n0) a0 + -1 * M n0 a0))
+          NN0 (N3-1)%nat = 0
+      | _, _ => True
+      end.
+    Proof.
+      intros.
+      match_case; intros.
+      match_case; intros.
+      rewrite  (@Hierarchy.sum_n_m_ext_loc  Hierarchy.R_AbelianGroup) with
+          (b := fun n1 => Hierarchy.zero).
+      - rewrite Hierarchy.sum_n_m_const_zero.
+        unfold Hierarchy.zero; now simpl.
+      - intros.
+        generalize (upcrossing_bound_range10_none a b a0 (S k0) k H); intros.
+        rewrite H1, H2 in H5.
+        rewrite H5.
+        * unfold Hierarchy.zero; simpl; lra.
+        * try lia.
+    Qed.
+
     Lemma transform_upcrossing_pos a b a0 k N3 :
       (k > 0)%nat ->
       (forall m x, M m x >= a) ->
@@ -3152,6 +3280,130 @@ Section martingale.
       }
       specialize (H0 N3 a0); lra.
     Qed.
+
+     Lemma transform_upcrossing_pos_01 a b a0 k N3 :
+      (k > 0)%nat ->
+      (forall m x, M m x >= a) ->
+      match upcrossing_times a b (2 * k) a0,
+            upcrossing_times a b (2 * k + 1) a0, 
+            upcrossing_times a b (2 * (S k)) a0 with 
+      | Some NN0, Some N1, Some N2 =>
+        (N1 < N3 <= N2)%nat ->
+        @Hierarchy.sum_n_m  
+          Hierarchy.R_AbelianGroup
+          (fun n0 : nat => upcrossing_bound a b (S n0) a0 * (M (S n0) a0 + -1 * M n0 a0))
+          NN0 (N3-1)%nat >= 0
+      | _, _, _ => True
+      end.
+    Proof.
+      intros.
+      match_case; intros.
+      match_case; intros.
+      match_case; intros.
+      assert (n0pos : (n0 > 0)%nat).
+      {
+        generalize (upcrossing_times_monotonic a b a0 n n0 (2 * k)%nat (2 * k + 1)%nat); intros.
+        cut_to H5; try lia; trivial.
+      }
+      rewrite Hierarchy.sum_n_m_Chasles with (m := (n0-1)%nat).
+      - rewrite  (@Hierarchy.sum_n_m_ext_loc  Hierarchy.R_AbelianGroup) with
+            (b := fun n1 => Hierarchy.zero).
+        + rewrite Hierarchy.sum_n_m_const_zero.
+          rewrite Hierarchy.plus_zero_l.
+          replace (S (n0 - 1)) with n0 by lia.
+          generalize (transform_upcrossing_pos a b a0 (S k) N3); intros.
+          cut_to H5; try lia; trivial.
+          replace (2 * S k - 1)%nat with (2 * k + 1)%nat in H5 by lia.
+          rewrite H2, H3 in H5.
+          now apply H5.
+        + intros.
+          generalize (upcrossing_bound_range10 a b a0 (S k0) k H); intros.
+          rewrite H1, H2 in H6.
+          rewrite H6.
+          * unfold Hierarchy.zero; simpl; lra.
+          * split; try lia.
+    - replace (S (n0 - 1)) with n0 by lia.
+      generalize (upcrossing_times_monotonic a b a0 n n0 (2 * k)%nat (2 * k + 1)%nat); intros.
+      cut_to H5; try lia; trivial.
+    - lia.
+   Qed.
+
+    Lemma transform_upcrossing_pos_none a b a0 k N3 :
+      (k > 0)%nat ->
+      (forall m x, M m x >= a) ->
+      match upcrossing_times a b (2 * k - 1) a0, upcrossing_times a b (2 * k) a0 with 
+      | Some N1, None =>
+        (N1 < N3)%nat ->
+        @Hierarchy.sum_n_m  
+          Hierarchy.R_AbelianGroup
+          (fun n0 : nat => upcrossing_bound a b (S n0) a0 * (M (S n0) a0 + -1 * M n0 a0))
+          N1 (N3-1)%nat >= 0
+      | _, _ => True
+      end.
+    Proof.
+      intros.
+      generalize (transform_upcrossing2_none a b a0 k N3 H); intros.
+      match_case; intros.
+      match_case; intros.
+      rewrite H2, H3 in H1.
+      rewrite H1; trivial.
+      assert (M n a0 = a).
+      {
+        generalize (upcrossing_times_odd_le_some a b (k-1)%nat a0); intros.
+        replace (S (k - 1)) with k in H5 by lia.
+        rewrite H2 in H5.
+        specialize (H0 n a0).
+        lra.
+      }
+      specialize (H0 N3 a0); lra.
+    Qed.
+
+     Lemma transform_upcrossing_pos_01_none a b a0 k N3 :
+      (k > 0)%nat ->
+      (forall m x, M m x >= a) ->
+      match upcrossing_times a b (2 * k) a0,
+            upcrossing_times a b (2 * k + 1) a0, 
+            upcrossing_times a b (2 * (S k)) a0 with 
+      | Some NN0, Some N1, None =>
+        (N1 < N3)%nat ->
+        @Hierarchy.sum_n_m  
+          Hierarchy.R_AbelianGroup
+          (fun n0 : nat => upcrossing_bound a b (S n0) a0 * (M (S n0) a0 + -1 * M n0 a0))
+          NN0 (N3-1)%nat >= 0
+      | _, _, _ => True
+      end.
+    Proof.
+      intros.
+      match_case; intros.
+      match_case; intros.
+      match_case; intros.
+      assert (n0pos : (n0 > 0)%nat).
+      {
+        generalize (upcrossing_times_monotonic a b a0 n n0 (2 * k)%nat (2 * k + 1)%nat); intros.
+        cut_to H5; try lia; trivial.
+      }
+      rewrite Hierarchy.sum_n_m_Chasles with (m := (n0-1)%nat).
+      - rewrite  (@Hierarchy.sum_n_m_ext_loc  Hierarchy.R_AbelianGroup) with
+            (b := fun n1 => Hierarchy.zero).
+        + rewrite Hierarchy.sum_n_m_const_zero.
+          rewrite Hierarchy.plus_zero_l.
+          replace (S (n0 - 1)) with n0 by lia.
+          generalize (transform_upcrossing_pos_none a b a0 (S k) N3); intros.
+          cut_to H5; try lia; trivial.
+          replace (2 * S k - 1)%nat with (2 * k + 1)%nat in H5 by lia.
+          rewrite H2, H3 in H5.
+          now apply H5.
+        + intros.
+          generalize (upcrossing_bound_range10 a b a0 (S k0) k H); intros.
+          rewrite H1, H2 in H6.
+          rewrite H6.
+          * unfold Hierarchy.zero; simpl; lra.
+          * split; try lia.
+    - replace (S (n0 - 1)) with n0 by lia.
+      generalize (upcrossing_times_monotonic a b a0 n n0 (2 * k)%nat (2 * k + 1)%nat); intros.
+      cut_to H5; try lia; trivial.
+    - lia.
+   Qed.
 
     Lemma one_upcrossing_bound a b a0 (f : nat -> Ts -> R) N1 N2 :
       (N1 < N2) %nat ->
@@ -3347,6 +3599,7 @@ Section martingale.
     Lemma upcrossing_bound_transform_ge_0 a b a0 n0 n : 
       a < b ->
       (forall m x, M m x >= a) ->
+      
       upcrossing_bound a b (S n0) a0 = 0 ->
       0 <=
       @Hierarchy.sum_n_m 
@@ -3559,7 +3812,6 @@ Section martingale.
               rewrite H1; try congruence.
               apply Rle_ge.
               apply Rplus_le_compat1_l.
-              apply upcrossing_bound_transform_ge_0; trivial.
               assert (n1 > 0)%nat.
               {
                 case_eq (upcrossing_times a b (2 * S n0 - 1) a0); intros.
@@ -3570,6 +3822,7 @@ Section martingale.
                   congruence.
               }
               replace (S (n1 - 1)) with n1 by lia.
+              apply upcrossing_bound_transform_ge_0; trivial.
               apply upcrossing_bound_range10_full with (k := S n0); try lia.
               rewrite H3.
               match_case; intros.
