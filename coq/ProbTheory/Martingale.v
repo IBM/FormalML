@@ -3708,6 +3708,22 @@ Section martingale.
           lia.
      Qed.
 
+    Lemma upcrossing_var_expr_lt_0 a b n a0 k :
+      (upcrossing_var_expr a b (S n) a0 k < k)%nat ->
+      (upcrossing_var_expr a b (S n) a0 k = 0%nat)%nat.
+    Proof.
+      unfold upcrossing_var_expr; intros.
+      match_case; intros.
+      rewrite H0 in H.
+      match_destr; lia.
+    Qed.
+
+    Lemma upcrossing_var_expr_not0 a b n a0 k :
+      (upcrossing_var_expr a b (S n) a0 (S k) <> 0)%nat ->
+      ((S k) <= n)%nat.
+    Proof.
+      Admitted.
+
     Lemma upcrossing_bound_transform_ge_Sn a b n : 
       a < b ->
       (forall m x, M m x >= a) ->
@@ -3920,6 +3936,11 @@ Section martingale.
               }
               replace (S (n1 - 1)) with n1 by lia.
               apply upcrossing_bound_transform_ge_0 with (k := S n0); trivial; try lia.
+              specialize (Hin (S (S n0))).              
+              rewrite H0 in Hin.
+              cut_to Hin.
+              apply upcrossing_var_expr_lt_0; try lia.
+              
               admit.
             * assert (n <= n1 - 1)%nat by lia.
               unfold upcrossing_var_expr in H0.
