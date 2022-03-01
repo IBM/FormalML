@@ -3708,11 +3708,23 @@ Section martingale.
           lia.
      Qed.
 
+    Lemma upcrossing_var_var_expr_le a b n a0 k :
+      upcrossing_var a b (S n) a0 = INR k ->
+      forall j, (upcrossing_var_expr a b (S n) a0 j <= k)%nat.
+    Proof.
+      Admitted.
+
     Lemma upcrossing_var_var_expr_Sn a b n a0 k :
       upcrossing_var a b (S n) a0 = INR k ->
       upcrossing_var_expr a b (S n) a0 (S k) = 0%nat.
     Proof.
-      Admitted.
+      intros.
+      generalize (upcrossing_var_var_expr_le a b n a0 k H (S k)); intros.
+      unfold upcrossing_var_expr in *.
+      match_case; intros.
+      rewrite H1 in H0.
+      match_destr; try lia.
+    Qed.
 
     Lemma upcrossing_bound_transform_ge_Sn a b n : 
       a < b ->
