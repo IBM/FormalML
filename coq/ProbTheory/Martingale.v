@@ -3655,7 +3655,6 @@ Section martingale.
           right; apply H5.
           lia.
      Qed.
-
     
     Lemma upcrossing_var_var_expr_le a b n a0 k :
       upcrossing_var a b (S n) a0 <= INR k ->
@@ -3903,7 +3902,14 @@ Section martingale.
               }
               replace (S (n1 - 1)) with n1 by lia.
               apply upcrossing_bound_transform_ge_0 with (k := S n0); trivial; try lia.
-              admit.
+              specialize (Hin (S (S n0))).
+              rewrite H0 in Hin.
+              unfold upcrossing_var_expr.
+              match_case; intros.
+              unfold upcrossing_var_expr in Hin.
+              rewrite H5 in Hin.
+              match_destr.
+              lia.
             * assert (n <= n1 - 1)%nat by lia.
               unfold upcrossing_var_expr in H0.
               match_case_in H0; intros.
@@ -3970,7 +3976,7 @@ Section martingale.
           rewrite Rmult_0_r.
           rewrite Hierarchy.sum_n_m_zero; try lia.
           unfold Hierarchy.zero; simpl; lra.
-    Admitted.
+    Qed.
 
     Lemma upcrossing_bound_transform_ge a b n : a < b ->
       (forall m x, M m x >= a) -> 
