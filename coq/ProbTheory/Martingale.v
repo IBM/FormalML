@@ -2132,6 +2132,44 @@ Section martingale.
     
     Definition upcrossing_var a b n (ts:Ts) : R
       := Rmax_list (map INR (map (upcrossing_var_expr a b n ts) (seq 0 (S n)))).
+ 
+    Lemma upcrossing_times_gt a b k ts :
+      match upcrossing_times a b (S k) ts with
+      | Some n => (n >= k)%nat
+      | _ => True
+      end.
+    Proof.
+      induction k.
+      - simpl.
+        match_destr.
+        lia.
+      - replace (S k) with (k + 1)%nat in * by lia.
+        simpl.
+        match_case; intros.
+        match_case_in H; intros; try lia.
+        rewrite H0 in H.
+        rewrite H0 in IHk.
+        match_case_in IHk; intros; rewrite H1 in IHk; rewrite H1 in H; try congruence.
+        unfold hitting_time_from in H.
+        match_destr_in H; match_destr_in H; invcs H; lia.
+    Qed.
+
+    Lemma upcrossing_var_expr_gt a b n (ts:Ts):
+      forall k,
+        (k > n)%nat -> 
+        upcrossing_var_expr a b n ts k = 0%nat.
+    Proof.
+      intros.
+      unfold upcrossing_var_expr.
+      match_case; intros.
+      match_destr.
+      destruct k; try lia.
+      replace (2 * S k)%nat with (S (S (2 * k))) in H0 by lia.
+      generalize (upcrossing_times_gt a b (S (2 * k)) ts); intros.
+      rewrite H0 in H1.
+      lia.
+    Qed.
+        
 
     Global Instance upcrossing_var_nneg a b n : NonnegativeFunction (upcrossing_var a b n).
     Proof.
