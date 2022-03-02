@@ -2320,94 +2320,6 @@ Section martingale.
       now rewrite plus_self_even.
     Qed.
 
-    (*
-    Lemma upcrossing_transform_part_nneg a b a0 :
-      a < b ->
-      forall n0,
-        0 <= upcrossing_bound a b (S n0) a0 * (M (S n0) a0 + -1 * M n0 a0).
-    Proof.
-      intros altb; intros.
-      unfold upcrossing_bound.
-      unfold EventIndicator.
-      match_destr; [| lra].
-      field_simplify.
-      destruct p as [? [??]].
-      match_option_in H; [| tauto].
-      destruct x; [simpl in *; lia |].
-      replace (2 * S x - 1)%nat with (x + S x)%nat in eqq by lia.
-      replace (2 * S x)%nat with  (S (x + S x))%nat in H0 by lia.
-      simpl in H0.
-      rewrite eqq in H0.
-      rewrite plus_self_and_one_odd in H0.
-      rewrite NPeano.Nat.add_succ_r in H0, eqq.
-      simpl in H0, eqq.
-      destruct x; simpl in eqq.
-      - unfold hitting_time, classic_min_of in eqq.
-        match_destr_in eqq.
-        destruct s as [?[??]].
-        simpl in *.
-        invcs eqq.
-        unfold id in *.
-        unfold hitting_time_from, hitting_time, classic_min_of in H0.
-        destruct (classic_min_of_sumbool
-                    (fun k : nat => event_ge borel_sa (fun x : R => x) b (M (k + S n) a0))).
-        + destruct s as [? [??]]; simpl in *.
-          assert (n <= n0 <= x + n)%nat by lia.
-          destruct (Nat.eq_dec n n0).
-          * subst.
-          destruct x; simpl in *.
-          * admit.
-          * specialize (n2 (n0- S n))%nat.
-            cut_to n2; try lia.
-            replace (n0 - S n + S n)%nat with n0 in n2.
-            
-
-          
-        
-        match_option_in H0.
-        + unfold hitting_time_from in eqq.
-          match_option_in eqq.
-          invcs eqq.
-          unfold hitting_time, classic_min_of in eqq0.
-          match_destr_in eqq0.
-          destruct s as [? [??]]; simpl in *.
-          invcs eqq0.
-          specialize (n2 (n0 - S n))%nat.
-          assert (n0 <= n3 + n)%nat by lia.
-          admit.
-          assert (n <= n0)%nat by lia.
-          
-          
-
-          
-          n0 - n3 <= n <= n0
-                          
-                          destruct n3.
-          -- simpl in *.
-             assert (n = n0) by lia.
-             subst.
-             lra.
-          -- specialize (n2 (n0 - S n))%nat.
-             cut_to n2; try lia.
-             replace (n0 - S n + S n)%nat with n0 in n2.
-             
-             
-             
-      - rewrite plus_self_and_one_odd in H0.
-        unfold hitting_time_from, hitting_time, classic_min_of in H0.
-        destruct (classic_min_of_sumbool (fun k : nat => event_ge borel_sa id b (M (k + S n) a0))).
-        + destruct s as [? [??]]; simpl in *.
-          unfold id in *.
-          replace (x + S x)%nat with (S (x + x))%nat in eqq by lia.
-          match_option_in eqq.
-          match_option_in eqq0.
-          rewrite plus_self_even in eqq.
-          rewrite Nat.even_succ, <- NPeano.Nat.negb_even, plus_self_even in eqq0.
-          simpl in eqq0.
-
-          rewrite 
-     *)
-
     Lemma upcrossing_times_even_ge_some a b k0 a0 :
       match upcrossing_times a b (2 * S k0) a0 with
       | Some x => M x a0 >= b
@@ -2584,31 +2496,35 @@ Section martingale.
     Qed.
 
     Lemma upcrossing_times_some_S a b k a0 n0:
-      (k > 0)%nat ->
       upcrossing_times a b (S k) a0 = Some n0 ->
       exists n1,
         upcrossing_times a b k a0 = Some n1.
     Proof.
       intros.
-      simpl in H0.
-      match_destr_in H0; try lia.
-      match_destr_in H0.
-      now exists n.
+      simpl in H.
+      match_destr_in H.
+      - simpl; eauto.
+      - match_destr_in H.
+        now exists n.
     Qed.
 
     Lemma upcrossing_times_some2 a b k a0 n0 n1:
-      (k > 0)%nat ->
       upcrossing_times a b k a0 = Some n0 ->
       upcrossing_times a b (S (S k)) a0 = Some n1 ->
       (n0 < n1)%nat.
     Proof.
       intros.
-      generalize (upcrossing_times_some_S a b (S k) a0 n1); intros.
-      cut_to H2; try lia; trivial.
-      destruct H2.
-      generalize (upcrossing_times_some a b k a0 n0 x H H0 H2); intros.
-      generalize (upcrossing_times_some a b (S k) a0 x n1); intros.
-      cut_to H4; try lia; trivial.      
+      destruct (upcrossing_times_some_S a b (S k) a0 n1 H0); intros.
+      destruct (lt_dec 0 k).
+      - generalize (upcrossing_times_some a b k a0 n0 x l H H1); intros.
+        generalize (upcrossing_times_some a b (S k) a0 x n1); intros.
+        cut_to H3; try lia; trivial.
+      - destruct k; try lia.
+        simpl in *.
+        rewrite H1 in H0.
+        invcs H.
+        generalize (hitting_time_from_ge _ _ _ _ _ _ H0).
+        lia.
     Qed.
 
     Lemma upcrossing_times_odd_le a b k0 a0 n :
@@ -3740,18 +3656,36 @@ Section martingale.
           lia.
      Qed.
 
+    
     Lemma upcrossing_var_var_expr_le a b n a0 k :
-      upcrossing_var a b (S n) a0 = INR k ->
+      upcrossing_var a b (S n) a0 <= INR k ->
       forall j, (upcrossing_var_expr a b (S n) a0 j <= k)%nat.
     Proof.
-      Admitted.
+      intros upk j.
+      destruct (le_dec j (S n)).
+      - unfold upcrossing_var, upcrossing_var_expr in *.
+        match_option; [| lia].
+        match_destr; [| lia].
+        apply INR_le.
+        eapply Rmax_list_le; try apply upk.
+        apply in_map.
+        apply in_map_iff.
+        exists j.
+        split.
+        + rewrite eqq.
+          match_destr; lia.
+        + apply in_seq.
+          lia.
+      - rewrite (upcrossing_var_expr_gt a b (S n) a0 j); lia.
+    Qed.
 
     Lemma upcrossing_var_var_expr_Sn a b n a0 k :
       upcrossing_var a b (S n) a0 = INR k ->
       upcrossing_var_expr a b (S n) a0 (S k) = 0%nat.
     Proof.
       intros.
-      generalize (upcrossing_var_var_expr_le a b n a0 k H (S k)); intros.
+      assert (leH:  upcrossing_var a b (S n) a0 <= INR k) by lra.
+      generalize (upcrossing_var_var_expr_le a b n a0 k leH (S k)); intros.
       unfold upcrossing_var_expr in *.
       match_case; intros.
       rewrite H1 in H0.
@@ -3782,15 +3716,16 @@ Section martingale.
       destruct H1 as [_ ?].
       assert (k <= S n)%nat by lia; clear H1.
       assert (Hin : forall x1,
-                 (x1 <= n)%nat ->
                  (upcrossing_var_expr a b (S n) a0 x1 <= kk)%nat).
       {
         intros.
-        apply INR_le.
-        subst.
-        apply Hin'.
-        apply in_map.
-        apply in_seq; lia.
+        destruct (le_dec x1 (S n)).
+        - apply INR_le.
+          subst.
+          apply Hin'.
+          apply in_map.
+          apply in_seq; lia.
+        - rewrite upcrossing_var_expr_gt; lia.
       }
       clear Hin' H.
       subst.
@@ -3880,7 +3815,6 @@ Section martingale.
                             replace (2 * 1)%nat with 2%nat in H5 by lia.
                             congruence.
                         - specialize (Hin 1%nat).
-                          cut_to Hin; try lia.
                           rewrite H0 in Hin.
                           assert (upcrossing_var_expr a b (S (S n)) a0 1 = 0)%nat by lia.
                           unfold upcrossing_var_expr in H6.
@@ -3929,7 +3863,6 @@ Section martingale.
                          {
                            assert (n > 0)%nat by lia.
                            specialize (Hin 1%nat).
-                           cut_to Hin; try lia.
                            rewrite H0 in Hin.
                            assert (upcrossing_var_expr a b (S n) a0 1 = 0)%nat by lia.
                            unfold upcrossing_var_expr in H7.
