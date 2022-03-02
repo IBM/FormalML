@@ -2131,34 +2131,28 @@ Section martingale.
          end.
     
     Definition upcrossing_var a b n (ts:Ts) : R
-      := Rmax_list (map INR (map (upcrossing_var_expr a b n ts) (seq 0 n))).
+      := Rmax_list (map INR (map (upcrossing_var_expr a b n ts) (seq 0 (S n)))).
 
     Global Instance upcrossing_var_nneg a b n : NonnegativeFunction (upcrossing_var a b n).
     Proof.
       unfold upcrossing_var; intros ?.
       destruct n; simpl; try reflexivity.
-      match_destr; try reflexivity.
-      apply Rmax_l.
+      match_destr
+      ; apply Rmax_l.
     Qed.
 
     Lemma upcrossing_var_is_nat a b n ts :
       { x | INR x = upcrossing_var a b n ts}.
     Proof.
       unfold upcrossing_var.
-      generalize (upcrossing_var_expr a b n ts); intros.
-      induction n.
-      - simpl.
-        exists 0%nat; simpl; trivial.
-      - rewrite seq_Sn.
-        destruct IHn.
-        simpl.
-        rewrite map_app; simpl.
-        destruct n; [simpl; eauto |].
-        rewrite Rmax_list_app.
-        + rewrite <- e.
-          unfold Rmax.
-          match_destr; eauto.
-        + simpl; congruence.
+      generalize (map (upcrossing_var_expr a b n ts) (seq 0 (S n))); intros.
+      induction l; simpl.
+      - exists 0%nat; trivial.
+      - destruct IHl as [? eqq].
+        match_destr; [eauto|].
+        rewrite <- eqq.
+        unfold Rmax.
+        match_destr; eauto.
     Qed.
 
     Definition upcrossing_var_nat a b n ts : nat
@@ -3734,10 +3728,10 @@ Section martingale.
       intros altb Mgea ?.
       unfold martingale_transform.
       rv_unfold.
-      generalize (Rmax_list_In (map INR (map (upcrossing_var_expr a b (S n) a0) (seq 0 (S n)))))
+      generalize (Rmax_list_In (map INR (map (upcrossing_var_expr a b (S n) a0) (seq 0 (S (S n))))))
       ; intros HH.
       cut_to HH; [| simpl; congruence].
-      generalize (Rmax_spec_map (map (upcrossing_var_expr a b (S n) a0) (seq 0 (S n))) INR)
+      generalize (Rmax_spec_map (map (upcrossing_var_expr a b (S n) a0) (seq 0 (S (S n)))) INR)
       ; intros Hin'.
       apply in_map_iff in HH.
       destruct HH as [kk [??]].
@@ -3748,7 +3742,7 @@ Section martingale.
       destruct H0 as [k [??]].
       apply in_seq in H1.
       destruct H1 as [_ ?].
-      assert (k <= n)%nat by lia; clear H1.
+      assert (k <= S n)%nat by lia; clear H1.
       assert (Hin : forall x1,
                  (x1 <= n)%nat ->
                  (upcrossing_var_expr a b (S n) a0 x1 <= kk)%nat).
@@ -4155,7 +4149,7 @@ Section martingale.
         repeat rewrite map_map.
         apply map_ext_in; intros c ?.
         apply in_seq in H.
-        assert (c < m)%nat by lia.
+        assert (c < S m)%nat by lia.
         f_equal.
 
         unfold upcrossing_var_expr.
