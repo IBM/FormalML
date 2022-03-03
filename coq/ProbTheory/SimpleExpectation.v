@@ -16,7 +16,7 @@ Import ListNotations.
 
 Set Bullet Behavior "Strict Subproofs".
 
-Section SimpleExpectation.
+Section SimpleExpectation_sec.
   Context 
     {Ts:Type}
     {dom: SigmaAlgebra Ts}
@@ -1172,7 +1172,7 @@ Section SimpleExpectation.
       apply frf_vals_complete.
   Qed.
 
-End SimpleExpectation.
+End SimpleExpectation_sec.
 Section EventRestricted.
   
   Context {Ts:Type} 

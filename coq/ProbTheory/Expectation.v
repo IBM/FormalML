@@ -15,7 +15,7 @@ Import ListNotations.
 
 Set Bullet Behavior "Strict Subproofs".
 
-Section Expectation.
+Section Expectation_sec.
   
   Context 
     {Ts:Type}
@@ -4097,9 +4097,9 @@ Section Expectation.
     apply Expectation_pos_pofrf.
   Qed.
 
-End Expectation.
+End Expectation_sec.
 
-Section almost.
+Section almost_sec.
 
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}
@@ -4602,8 +4602,7 @@ Proof.
   now rewrite SimpleExpectation_EventIndicator.
 Qed.
 
-End almost.
-
+End almost_sec.
 
 Section EventRestricted.
     Context {Ts:Type} 
