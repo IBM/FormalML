@@ -4553,7 +4553,6 @@ Section martingale.
         replace (Finite (K + Rabs a)) with (Rbar_plus K (Rabs a)) by reflexivity.
         apply Rbar_plus_le_compat; try reflexivity.
         red in sup.
-        admit.
       }
 
       
@@ -4614,7 +4613,6 @@ Section martingale.
         replace (Finite (K + Rabs a)) with (Rbar_plus K (Rabs a)) by reflexivity.
         apply Rbar_plus_le_compat; try reflexivity.
         red in sup.
-        admit.
       }
       assert (ps_P (fun omega => (ELimInf_seq (fun n => (M n omega))) < (ELimSup_seq (fun n => (M n omega))) )).
           
