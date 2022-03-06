@@ -967,6 +967,15 @@ Section martingale.
       apply H.
     Qed.    
 
+    Lemma is_stopping_time_alt_adapted (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts) :
+      is_stopping_time_alt rt sas ->
+      IsAdapted borel_sa (fun n => EventIndicator (stopping_time_pre_event_alt_dec rt n)) sas.
+    Proof.
+      intros ??.
+      apply EventIndicator_pre_rv.
+      apply H.
+    Qed.    
+
     Lemma is_adapted_stopping_time (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts) :
       IsAdapted borel_sa (fun n => EventIndicator (stopping_time_pre_event_dec rt n)) sas ->
       is_stopping_time rt sas.
@@ -4495,12 +4504,115 @@ Section martingale.
       {rv:forall n, RandomVariable dom borel_sa (M n)}
       {isfe:forall n, IsFiniteExpectation prts (M n)}
       {adapt:IsAdapted borel_sa M sas}
-        {filt:IsFiltration sas}
-        {sub:IsSubAlgebras dom sas}
-        {mart:IsMartingale Rle M sas}.
+      {filt:IsFiltration sas}
+      {sub:IsSubAlgebras dom sas}
+      {mart:IsMartingale Rle M sas}.
 
 
-(*    Lemma upcrossing_var_lim_isfe K a b :
+    Lemma upcrossing_var_expr_incr a b n omega x :
+      (upcrossing_var_expr M a b n omega x <=
+         upcrossing_var_expr M a b (S n) omega x)%nat.
+    Proof.
+      unfold upcrossing_var_expr.
+      match_destr.
+      repeat match_destr; lia.
+    Qed.
+
+    (* Move this to ListAdd *)
+    Lemma incl_seq (s1 n1 s2 n2:nat) :
+      incl (seq s1 (S n1)) (seq s2 n2) <-> ((s2 <= s1)%nat /\ (s1 + S n1 <= s2 + n2)%nat).
+    Proof.
+      transitivity (forall a, (s1 <= a < s1 + S n1)%nat -> (s2 <= a < s2 + n2)%nat).
+      - split.
+        + intros.
+          apply in_seq.
+          apply H.
+          now apply in_seq.
+        + intros ???.
+          apply in_seq.
+          apply H.
+          now apply in_seq.
+      - split.
+        + intros.
+          split.
+          * specialize (H s1); lia.
+          * specialize (H (s1 + n1))%nat; lia.
+        + lia.
+    Qed.
+        
+
+    Lemma upcrossing_var_incr a b n omega : upcrossing_var M a b n omega <= upcrossing_var M a b (S n) omega.
+    Proof.
+      unfold upcrossing_var.
+      transitivity (Rmax_list (map INR (map (upcrossing_var_expr M a b n omega) (seq 0 (S (S n)))))).
+      - apply Rmax_list_incl.
+        + simpl; congruence.
+        + repeat apply incl_map.
+          apply incl_seq; lia.
+      - repeat rewrite map_map.
+        apply Rmax_list_fun_le; intros.
+        apply le_INR.
+        apply upcrossing_var_expr_incr.
+    Qed.
+
+    Lemma pos_fun_part_nneg_tri (x a:Ts->R) :
+      rv_le (pos_fun_part (rvminus x a)) (rvplus (pos_fun_part x) (neg_fun_part a)).
+    Proof.
+      rv_unfold; simpl; intros ?.
+      unfold Rmax; repeat match_destr; lra.
+    Qed.
+
+    Global Instance Rmax_list_rv  {Tss : Type} (domm : SigmaAlgebra Tss) (l : list (Tss-> R))
+           {rvl:forall x, In x l -> RandomVariable domm borel_sa x}
+      :
+      RandomVariable domm borel_sa (fun omega => Rmax_list (map (fun a => a omega) l)).
+    Proof.
+      induction l; simpl.
+      - apply rvconst.
+      - destruct l; simpl.
+        + apply rvl; simpl; tauto.
+        + apply rvmax_rv.
+          * apply rvl; simpl; tauto.
+          * apply IHl; simpl in *; eauto.
+    Qed.
+
+    Instance upcrossing_var_rv a b :
+      forall n : nat, RandomVariable dom borel_sa (upcrossing_var M a b n).
+    Proof.
+      intros n.
+      unfold upcrossing_var.
+      cut (RandomVariable dom borel_sa
+                          (fun ts : Ts => Rmax_list (map (fun a => a ts) (map (fun x ts => INR (upcrossing_var_expr M a b n ts x)) (seq 0 (S n)))))).
+      - apply RandomVariable_proper; try reflexivity.
+        intros ?.
+        now repeat rewrite map_map.
+      - apply Rmax_list_rv; intros.
+        apply in_map_iff in H.
+        destruct H as [?[??]]; subst.
+        unfold upcrossing_var_expr.
+        generalize (upcrossing_times_is_stop M sas a b (2 * x0)%nat).
+        intros HH.
+        apply is_stopping_time_as_alt in HH; trivial.
+        apply is_stopping_time_alt_adapted in HH.
+        red in HH.
+        generalize (HH n); intros HH2.
+        generalize (rvscale_rv _ (INR x0) _ HH2).
+        apply RandomVariable_proper_le; try reflexivity
+        ; try apply sub.
+        intros ?.
+        rv_unfold.
+        match_destr; unfold stopping_time_pre_event_alt in *.
+        + match_destr; try tauto.
+          match_destr; try lia.
+          lra.
+        + match_destr.
+          * match_destr.
+            -- congruence.
+            -- simpl; lra.
+          * simpl; lra.
+    Qed.
+(*
+    Lemma upcrossing_var_lim_isfe K a b :
       is_ELimSup_seq (fun n => NonnegExpectation (pos_fun_part (M n))) K ->
       a < b ->
       IsFiniteExpectation prts (rvlim (upcrossing_var M a b)).
@@ -4508,15 +4620,40 @@ Section martingale.
       intros.
       unfold rvlim.
 
-      generalize (Fatou (upcrossing_var M a b) _); intros HH.
-      
-      assert Rbar_le (Rbar_mult (b-a) (NonnegExpectation (upcrossing_var M a b (S n))))
-                        (K + Rabs a)).
+      assert (upcross_limeq:
+               rv_eq
+                 (fun omega => Lim_seq.LimInf_seq (fun n : nat => upcrossing_var M a b n omega))
+                 (fun omega => Lim_seq.Lim_seq (fun n : nat => upcrossing_var M a b n omega))).
       {
+        intros omega.
+        rewrite lim_seq_lim_inf; trivial.
+        apply Lim_seq.ex_lim_seq_incr; intros.
+        apply upcrossing_var_incr.
+      } 
 
-      U∞[a, b] := limn→∞ Un[a, b].
+      cut (
+          IsFiniteExpectation prts
+                              (fun omega : Ts => Lim_seq.LimInf_seq (fun n : nat => upcrossing_var M a b n omega))).
+      {
+        apply IsFiniteExpectation_proper.
+        intros ?.
+        now rewrite upcross_limeq.
+      } 
+
+      generalize (Fatou (upcrossing_var M a b) _); intros HHf.
+      cut_to HHf.
+      - unfold IsFiniteExpectation.
+        rewrite Expectation_pos_pofrf with (nnf:=(@LimInf_seq_pos Ts (upcrossing_var M a b) (upcrossing_var_nneg M a b))).
+        generalize (NonnegExpectation_pos _  (nnf:=(@LimInf_seq_pos Ts (upcrossing_var M a b) (upcrossing_var_nneg M a b)))); intros Hpos.
+        match_destr.
+        simpl in HHf.
+        admit.
+      - 
+
+
       
-      assert (HH:forall a b n, a < b ->
+      
+      assert (HH:forall n, 
                 Rbar_le (Rbar_mult (b-a) (NonnegExpectation (upcrossing_var M a b (S n))))
                         (K + Rabs a)).
       {
@@ -4554,8 +4691,22 @@ Section martingale.
         apply Rbar_plus_le_compat; try reflexivity.
         red in sup.
       }
+*)
+
 
       
+      
+
+
+      
+      
+
+        
+      
+            
+        
+      
+(*
     Theorem martingale_convergence (K:R) :
       is_ELimSup_seq (fun n => NonnegExpectation (pos_fun_part (M n))) K ->
       exists (Minf : Ts -> R),
