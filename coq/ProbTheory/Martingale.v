@@ -4611,100 +4611,225 @@ Section martingale.
             -- simpl; lra.
           * simpl; lra.
     Qed.
-(*
-    Lemma upcrossing_var_lim_isfe K a b :
+
+    (* TODO: move this *)
+    Lemma ELimSup_ELim_seq_le f : Rbar_le (ELim_seq f) (ELimSup_seq f).
+    Proof.
+      unfold ELim_seq.
+      generalize (ELimSup_ELimInf_seq_le f).
+      destruct (ELimInf_seq f)
+      ; destruct (ELimSup_seq f)
+      ; simpl; try lra.
+    Qed.
+
+    Lemma ELimInf_ELim_seq_le f : Rbar_le (ELimInf_seq f) (ELim_seq f).
+    Proof.
+      unfold ELim_seq.
+      generalize (ELimSup_ELimInf_seq_le f).
+      destruct (ELimInf_seq f)
+      ; destruct (ELimSup_seq f)
+      ; simpl; try lra.
+    Qed.
+
+    Lemma upcrossing_var_lim_isfe (K:R) a b :
       is_ELimSup_seq (fun n => NonnegExpectation (pos_fun_part (M n))) K ->
       a < b ->
-      IsFiniteExpectation prts (rvlim (upcrossing_var M a b)).
+      Rbar_IsFiniteExpectation prts (Rbar_rvlim (upcrossing_var M a b)).
     Proof.
       intros.
-      unfold rvlim.
+      unfold IsFiniteExpectation.
 
-      assert (upcross_limeq:
-               rv_eq
-                 (fun omega => Lim_seq.LimInf_seq (fun n : nat => upcrossing_var M a b n omega))
-                 (fun omega => Lim_seq.Lim_seq (fun n : nat => upcrossing_var M a b n omega))).
-      {
-        intros omega.
-        rewrite lim_seq_lim_inf; trivial.
-        apply Lim_seq.ex_lim_seq_incr; intros.
-        apply upcrossing_var_incr.
-      } 
+      unfold Rbar_IsFiniteExpectation.
+      rewrite (Rbar_Expectation_pos_pofrf _ (nnf:=(@Rbar_rvlim_nnf Ts (fun (n : nat) (ts : Ts) => Finite (upcrossing_var M a b n ts))
+               (upcrossing_var_nneg M a b)))).
+      rewrite <- (monotone_convergence_Rbar_rvlim (fun (n : nat) ts => upcrossing_var M a b n ts)).
+      - cut (is_finite ( ELim_seq (fun n : nat => Rbar_NonnegExpectation (fun ts : Ts => upcrossing_var M a b n ts) (pofrf:=(upcrossing_var_nneg M a b n)))))
+        ; [match_destr |].
+        rewrite <- ELim_seq_incr_1.
 
-      cut (
-          IsFiniteExpectation prts
-                              (fun omega : Ts => Lim_seq.LimInf_seq (fun n : nat => upcrossing_var M a b n omega))).
-      {
-        apply IsFiniteExpectation_proper.
-        intros ?.
-        now rewrite upcross_limeq.
-      } 
-
-      generalize (Fatou (upcrossing_var M a b) _); intros HHf.
-      cut_to HHf.
-      - unfold IsFiniteExpectation.
-        rewrite Expectation_pos_pofrf with (nnf:=(@LimInf_seq_pos Ts (upcrossing_var M a b) (upcrossing_var_nneg M a b))).
-        generalize (NonnegExpectation_pos _  (nnf:=(@LimInf_seq_pos Ts (upcrossing_var M a b) (upcrossing_var_nneg M a b)))); intros Hpos.
-        match_destr.
-        simpl in HHf.
-        admit.
-      - 
-
-
-      
-      
-      assert (HH:forall n, 
-                Rbar_le (Rbar_mult (b-a) (NonnegExpectation (upcrossing_var M a b (S n))))
-                        (K + Rabs a)).
-      {
-        intros a b n altb.
-        rewrite (upcrossing_inequality M sas a b n altb).
-        transitivity ((NonnegExpectation (fun x : Ts => pos_fun_part (rvminus (M (S n)) (const a)) x))).
+        cut (is_finite
+                (ELim_seq
+                   (fun n : nat => (Rbar_mult (b-a)) (Rbar_NonnegExpectation (fun ts : Ts => upcrossing_var M a b (S n) ts))))).
         {
-          rewrite <- (Rbar_plus_0_r (NonnegExpectation (fun x : Ts => pos_fun_part (rvminus (M (S n)) (const a)) x))) at 2.
-          apply Rbar_plus_le_compat; try reflexivity.
-          rewrite <- Rbar_opp_le.
-          rewrite Rbar_opp_involutive.
-          simpl Rbar_opp; rewrite Ropp_0.
-          apply NonnegExpectation_pos.
+          rewrite ELim_seq_scal_l.
+          - destruct (ELim_seq
+                        (fun n : nat => Rbar_NonnegExpectation (fun ts : Ts => upcrossing_var M a b (S n) ts))); simpl
+            ; unfold is_finite; rbar_prover.
+          - red; match_destr; trivial; lra.
         }
-        transitivity (NonnegExpectation (rvplus (pos_fun_part (M (S n))) (rvabs (const a)))).
+
+        cut (is_finite
+               (ELim_seq
+                  (fun n : nat => (Rbar_mult (b-a) (Rbar_NonnegExpectation (fun ts : Ts => upcrossing_var M a b (S n) ts))))
+)).
         {
-          apply NonnegExpectation_le; intros ?.
-          rv_unfold; simpl.
+          intros.
+          unfold is_finite in *.
+          unfold Rbar_minus, Rbar_plus in *.
+          destruct (ELim_seq
+    (fun n : nat =>
+       Rbar_mult (b - a) (Rbar_NonnegExpectation (fun ts : Ts => upcrossing_var M a b (S n) ts))))
+          ; trivial; simpl in *.
+        }
+
+        cut (Rbar_lt
+                (ELim_seq
+                   (fun n : nat =>
+                         (Rbar_mult (b - a)
+                                    (Rbar_NonnegExpectation (fun ts : Ts => upcrossing_var M a b (S n) ts)))
+                      )) p_infty).
+
+        {
+          unfold Rbar_lt, is_finite.
+          match_case; simpl; try tauto.
+          assert (Rbar_le 0 (ELim_seq
+                               (fun n : nat =>
+                                  Rbar_mult (b - a) (Rbar_NonnegExpectation (fun ts : Ts => upcrossing_var M a b (S n) ts))))).
+          {
+            apply ELim_seq_nneg; intros.
+            apply Rbar_mult_nneg_compat.
+            - simpl; lra.
+            - apply Rbar_NonnegExpectation_pos.
+          }
+          intros eqq; rewrite eqq in H1.
+          simpl in H1; tauto.
+        } 
+        
+        cut (Rbar_lt
+                (ELim_seq
+                   (fun n : nat =>
+                      (Rbar_minus 
+                         (Rbar_mult (b - a)
+                                    (Rbar_NonnegExpectation (fun ts : Ts => upcrossing_var M a b (S n) ts)))
+                         (Rmax (- a) 0))
+                      )) p_infty).
+
+        {
+          intros.
+          {
+            rewrite ELim_seq_minus in H1.
+            shelve.
+            - apply ex_Elim_seq_scal_l.
+              + red; match_destr; trivial; lra.
+              + apply ex_Elim_seq_incr; intros.
+                apply Rbar_NonnegExpectation_le; intros ?.
+                apply upcrossing_var_incr.
+              + exists 0%nat; intros.
+                red; match_destr; lra.
+            - apply ex_Elim_seq_const.
+            - rewrite ELim_seq_const.
+              do 2 red.
+              destruct ((ELim_seq
+                           (fun n : nat =>
+                              Rbar_mult (b - a)
+                                        (Rbar_NonnegExpectation (fun ts : Ts => upcrossing_var M a b (S n) ts))))); simpl
+              ; rbar_prover.
+          }
+          Unshelve.
+          rewrite ELim_seq_const in H1.
+          unfold Rbar_minus, Rbar_plus in H1.
+          destruct ((ELim_seq
+                (fun n : nat =>
+                 Rbar_mult (b - a)
+                           (Rbar_NonnegExpectation (fun ts : Ts => upcrossing_var M a b (S n) ts))))); simpl in *; trivial.
+        } 
           
-          unfold Rmax.
-          generalize (Rabs_pos a); intros.
-          repeat match_destr; simpl; try lra
-          ; unfold Rabs
-          ; match_destr; try lra.
-        }
-        rewrite NonnegExpectation_sum by try typeclasses eauto.
-        unfold rvabs, const.
-        assert (eqq:(NonnegExpectation (fun _ : Ts => Rabs a)) = Rabs a).
+        
+        cut (Rbar_lt (ELim_seq
+                          (fun n =>
+                             Rbar_minus
+                               (Rbar_minus (NonnegExpectation (pos_fun_part (rvminus (M (S n)) (const a))))
+                                         (NonnegExpectation (pos_fun_part (rvminus (M 0%nat) (const a))))) (Rmax (- a) 0))) p_infty).
         {
-          rewrite <- (NonnegExpectation_const (Rabs a)) with (nnc:=Rabs_pos a).
-          apply NonnegExpectation_ext; reflexivity.
+          intros.
+          eapply Rbar_le_lt_trans; try apply H1.
+          apply ELim_seq_le; intros.
+          apply Rbar_plus_le_compat; try reflexivity.
+          eapply upcrossing_inequality; eauto.
         }
-        rewrite eqq.
-        replace (Finite (K + Rabs a)) with (Rbar_plus K (Rabs a)) by reflexivity.
-        apply Rbar_plus_le_compat; try reflexivity.
-        red in sup.
-      }
-*)
 
+        cut (Rbar_lt         
+               (ELim_seq
+                  (fun n : nat =>
+                     Rbar_minus
+                       (NonnegExpectation (fun x : Ts => pos_fun_part (rvminus (M (S n)) (const a)) x)) (Rmax (- a) 0))) p_infty).
+        {
+          intros.
+          eapply Rbar_le_lt_trans; try apply H1.
+          apply ELim_seq_le; intros.
+          apply Rbar_plus_le_compat; try reflexivity.
 
-      
-      
+          unfold Rbar_minus.
+          apply (Rbar_le_trans _ (Rbar_plus (NonnegExpectation (fun x : Ts => pos_fun_part (rvminus (M (S n)) (const a)) x)) 0)).
+          - apply Rbar_plus_le_compat; try reflexivity.
+            rewrite <- Rbar_opp_le.
+            rewrite Rbar_opp_involutive.
+            replace (Rbar_opp (Finite 0)) with (Finite 0)
+              by (simpl; f_equal; lra).
+            apply NonnegExpectation_pos.
+          - rewrite Rbar_plus_0_r.
+            reflexivity.
+        } 
 
+        cut (Rbar_lt         
+               (ELim_seq
+                  (fun n : nat =>
+                     Rbar_minus
+                       (NonnegExpectation (rvplus (pos_fun_part (M (S n))) (neg_fun_part (const a)))) (Rmax (- a) 0))) p_infty).
+        {
+          intros.
+          eapply Rbar_le_lt_trans; try apply H1.
+          apply ELim_seq_le; intros.
+          apply Rbar_plus_le_compat; try reflexivity.
 
-      
-      
+          apply NonnegExpectation_le.
+          apply pos_fun_part_nneg_tri.
+        } 
 
-        
-      
-            
-        
+        cut (Rbar_lt         
+               (ELim_seq
+                  (fun n : nat =>
+                     Rbar_minus 
+                       (Rbar_plus (NonnegExpectation (pos_fun_part (M (S n)))) (Rmax (- a) 0)) (Rmax (- a) 0))) p_infty).
+        {
+          intros.
+          eapply Rbar_le_lt_trans; try apply H1.
+          apply ELim_seq_le; intros.
+          rewrite NonnegExpectation_sum; try typeclasses eauto.
+          unfold neg_fun_part, const; simpl.
+          apply Rbar_plus_le_compat; try reflexivity.
+          apply refl_refl.
+          
+          assert (nnc :  0 <= Rmax (- a) 0) by apply Rmax_r.
+          rewrite <- (NonnegExpectation_const (Rmax (- a) 0)) with (nnc0:=nnc).
+          f_equal.
+        }
+
+        cut (Rbar_lt         
+               (ELim_seq
+                  (fun n : nat =>
+                       (NonnegExpectation (pos_fun_part (M (S n)))))) p_infty).
+
+        { 
+          intros.
+          eapply Rbar_le_lt_trans; try apply H1.
+          apply ELim_seq_le; intros.
+          rewrite Rbar_minus_plus_fin.
+          reflexivity.
+        }
+        rewrite (ELim_seq_incr_1
+                   (fun n : nat => NonnegExpectation (fun x : Ts => pos_fun_part (M n) x))).
+        eapply Rbar_le_lt_trans.
+        + apply ELimSup_ELim_seq_le.
+        + apply is_ELimSup_seq_unique in H.
+          rewrite H.
+          now simpl.
+      - intros.
+        apply Real_Rbar_rv.
+        apply upcrossing_var_rv.
+      - intros ??; simpl.
+        apply upcrossing_var_incr.
+    Qed.        
       
 (*
     Theorem martingale_convergence (K:R) :
