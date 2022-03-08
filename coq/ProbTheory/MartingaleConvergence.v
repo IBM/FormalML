@@ -2865,7 +2865,7 @@ Section mct.
     Theorem martingale_convergence (K:R) :
       is_ELimSup_seq (fun n => NonnegExpectation (pos_fun_part (M n))) K ->
       RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
-        IsFiniteExpectation prts (Rbar_rvlim M) /\
+        Rbar_IsFiniteExpectation prts (Rbar_rvlim M) /\
           almost prts (fun omega => is_Elim_seq (fun n => M n omega) (Rbar_rvlim M omega)).
     Proof.
       intros sup.
@@ -2873,22 +2873,19 @@ Section mct.
       - apply Rbar_rvlim_rv; intros.
         apply Real_Rbar_rv.
         apply rv.
-      - cut (IsFiniteExpectation prts
+      - cut (Rbar_IsFiniteExpectation prts
                                  (fun omega : Ts => ELimInf_seq (fun n : nat => (M n) omega))).
         {
           intros HH2.
-          eapply IsFiniteExpectation_proper_almostR2; try eapply HH2.
-          - apply finite_part_rv.
-            apply Rbar_lim_inf_rv; intros.
+          eapply Rbar_IsFiniteExpectation_proper_almostR2; try eapply HH2.
+          - apply Rbar_lim_inf_rv; intros.
             now apply Real_Rbar_rv.
-          - apply finite_part_rv.
-            apply Rbar_rvlim_rv; intros.
+          - apply Rbar_rvlim_rv; intros.
             now apply Real_Rbar_rv.
           - generalize (upcrossing_var_lim_ex K sup).
             apply almost_impl; apply all_almost; intros ??.
             unfold Rbar_rvlim.
             symmetry.
-            f_equal.
             apply is_Elim_seq_unique.
             now apply ex_Elim_seq_is_Elim_seq_inf.
         } 
@@ -2922,12 +2919,6 @@ Section mct.
             unfold Rbar_max, Rmax.
             match_destr; f_equal ; match_destr; simpl in *; lra.
         }
-        apply Rbar_finexp_finexp.
-        {
-          apply Rbar_lim_inf_rv; intros.
-          now apply Real_Rbar_rv.
-        } 
-
         apply Rbar_IsFiniteExpectation_from_fin_parts.
         {
           eapply Rbar_le_lt_trans; try apply posle.
@@ -3130,5 +3121,63 @@ Section mct.
     Qed.
         
   End mart_conv.
+
+  Section mart_conv_sup.
+
+    Local Existing Instance Rbar_le_pre.
+    
+    Context
+      (M : nat -> Ts -> R) (sas : nat -> SigmaAlgebra Ts)
+      {rv:forall n, RandomVariable dom borel_sa (M n)}
+      {isfe:forall n, IsFiniteExpectation prts (M n)}
+      {adapt:IsAdapted borel_sa M sas}
+      {filt:IsFiltration sas}
+      {sub:IsSubAlgebras dom sas}
+      {mart:IsMartingale prts Rge M sas}.
+
+    Theorem sup_martingale_convergence (K:R) :
+      is_ELimSup_seq (fun n => NonnegExpectation (neg_fun_part (M n))) K ->
+      RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
+        Rbar_IsFiniteExpectation prts (Rbar_rvlim M) /\
+          almost prts (fun omega => is_Elim_seq (fun n => M n omega) (Rbar_rvlim M omega)).
+    Proof.
+      intros.
+      apply is_sub_martingale_neg in mart.
+      destruct (martingale_convergence (fun n : nat => rvopp (M n)) sas K) as [? [??]].
+      - revert H.
+        apply is_ELimSup_seq_ext; intros.
+        apply NonnegExpectation_ext; intros ?.
+        rv_unfold; simpl.
+        f_equal; lra.
+      - repeat split; unfold Rbar_rvlim in *.
+        + typeclasses eauto.
+        + cut (Rbar_IsFiniteExpectation prts (Rbar_rvopp (Rbar_rvopp (fun x : Ts => ELim_seq (fun n : nat => M n x))))).
+          {
+            apply Rbar_IsFiniteExpectation_proper; intros ?.
+            unfold Rbar_rvopp.
+            now rewrite Rbar_opp_involutive.
+          }
+          apply Rbar_IsFiniteExpectation_opp; [typeclasses eauto |].
+          revert H1.
+          apply Rbar_IsFiniteExpectation_proper; intros ?.
+          unfold Rbar_rvopp.
+          rewrite <- (ELim_seq_opp (fun n : nat => M n a)); simpl.
+          rv_unfold.
+          apply ELim_seq_ext; intros.
+          f_equal; lra.
+        + revert H2.
+          apply almost_impl; apply all_almost; intros ??.
+          apply is_Elim_seq_opp.
+          rewrite <- ELim_seq_opp.
+          replace (ELim_seq (fun n : nat => Rbar_opp (M n x))) with
+            (ELim_seq (fun n : nat => rvopp (M n) x)).
+          * revert H2.
+            apply is_Elim_seq_ext; intros.
+            unfold Rbar_opp; rv_unfold; f_equal; lra.
+          * apply ELim_seq_ext; intros.
+            unfold Rbar_opp; rv_unfold; f_equal; lra.
+    Qed.
+
+  End mart_conv_sup.
 
 End mct.
