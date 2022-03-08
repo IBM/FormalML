@@ -4112,7 +4112,9 @@ Section rv_almost.
     almostR2 prts RR f1 f2 ->
     exists f1', almostR2 prts eq f1 f1' /\
                (forall x, RR (f1' x) (f2 x)) /\
-               (RandomVariable dom Rbar_borel_sa f1 -> RandomVariable dom Rbar_borel_sa f3 -> RandomVariable dom Rbar_borel_sa f1').
+             (RandomVariable dom Rbar_borel_sa f1 -> RandomVariable dom Rbar_borel_sa f3 -> RandomVariable dom Rbar_borel_sa f1') /\ 
+               (forall x, f1' x = f1 x \/ f1' x = f3 x)
+.
   Proof.
     intros bound aP.
     destruct (almost_witness _ aP) as [x Px].
@@ -4137,7 +4139,11 @@ Section rv_almost.
     - intros.
       eapply Rbar_rvchoice_rv; trivial.
       + apply EventIndicator_rv.
+    - intros.
+      unfold Rbar_rvchoice.
+      match_destr; eauto.
   Qed.
+
 
   Lemma almostR2_map_Rbar_split_l_refl
         {Ts:Type}
@@ -4147,7 +4153,9 @@ Section rv_almost.
     almostR2 prts RR f1 f2 ->
     exists f1', almostR2 prts eq f1 f1' /\
                (forall x, RR (f1' x) (f2 x)) /\
-               (RandomVariable dom Rbar_borel_sa f1 -> RandomVariable dom Rbar_borel_sa f2 -> RandomVariable dom Rbar_borel_sa f1').
+             (RandomVariable dom Rbar_borel_sa f1 -> RandomVariable dom Rbar_borel_sa f2 -> RandomVariable dom Rbar_borel_sa f1') /\
+             (forall x, f1' x = f1 x \/ f1' x = f2 x)
+.
   Proof.
     intros.
     now apply (almostR2_map_Rbar_split_l_bounded _ (f3:=f2)).
@@ -4162,11 +4170,12 @@ Section rv_almost.
     almostR2 prts RR f1 f2 ->
     exists f1', almostR2 prts eq f1 f1' /\
                (forall x, RR (f1' x) (f2 x)) /\
-               (RandomVariable dom Rbar_borel_sa f1 -> RandomVariable dom Rbar_borel_sa f1').
+             (RandomVariable dom Rbar_borel_sa f1 -> RandomVariable dom Rbar_borel_sa f1') /\ 
+           (forall x, f1' x = f1 x \/ f1' x = c).
   Proof.
     intros cle almRR.
     destruct (@almostR2_map_Rbar_split_l_bounded _ _ prts f1 f2 (const c) RR)
-      as [?[?[??]]]; trivial.
+      as [?[?[?[??]]]]; trivial.
     eexists; repeat split; eauto.
     intros; apply H1; trivial.
     apply rvconst.
@@ -4181,7 +4190,8 @@ Section rv_almost.
     almostR2 prts RR f1 f2 ->
     exists f2', almostR2 prts eq f2 f2' /\
                (forall x, RR (f1 x) (f2' x)) /\
-               (RandomVariable dom Rbar_borel_sa f2 -> RandomVariable dom Rbar_borel_sa f3 -> RandomVariable dom Rbar_borel_sa f2').
+             (RandomVariable dom Rbar_borel_sa f2 -> RandomVariable dom Rbar_borel_sa f3 -> RandomVariable dom Rbar_borel_sa f2') /\
+             (forall x, f2' x = f2 x \/ f2' x = f3 x).
   Proof.
     intros bound aP.
     apply almostR2_flip in aP.
@@ -4196,11 +4206,13 @@ Section rv_almost.
     almostR2 prts RR f1 f2 ->
     exists f2', almostR2 prts eq f2 f2' /\
                (forall x, RR (f1 x) (f2' x)) /\
-               (RandomVariable dom Rbar_borel_sa f1 -> RandomVariable dom Rbar_borel_sa f2 -> RandomVariable dom Rbar_borel_sa f2').
+             (RandomVariable dom Rbar_borel_sa f1 -> RandomVariable dom Rbar_borel_sa f2 -> RandomVariable dom Rbar_borel_sa f2') /\
+             (forall x, f2' x = f2 x \/ f2' x = f1 x).
+
   Proof.
     intros.
     destruct (almostR2_map_Rbar_split_r_bounded _ (f1:=f1) (f2:=f2) (f3:=f1) (RR:=RR))
-      as [?[?[??]]]; trivial.
+      as [?[?[?[??]]]]; trivial.
     eexists; repeat split; eauto.
   Qed.
 
@@ -4213,11 +4225,13 @@ Section rv_almost.
     almostR2 prts RR f1 f2 ->
     exists f2', almostR2 prts eq f2 f2' /\
                (forall x, RR (f1 x) (f2' x)) /\
-               (RandomVariable dom Rbar_borel_sa f2 -> RandomVariable dom Rbar_borel_sa f2').
+             (RandomVariable dom Rbar_borel_sa f2 -> RandomVariable dom Rbar_borel_sa f2') /\
+             (forall x, f2' x = f2 x \/ f2' x = c).
+
   Proof.
     intros cle almRR.
     destruct (@almostR2_map_Rbar_split_r_bounded _ _ prts f1 f2 (const c) RR)
-      as [?[?[??]]]; trivial.
+      as [?[?[?[??]]]]; trivial.
     eexists; repeat split; eauto.
     intros; apply H1; trivial.
     apply rvconst.
@@ -4646,7 +4660,8 @@ Section rv_almost.
   Proof.
     intros alm.
     assert (m_infty_le:forall a : Ts, Rbar_le m_infty (y a)) by now simpl.
-    apply (almostR2_map_Rbar_split_l_const_bounded prts m_infty m_infty_le alm).
+    destruct (almostR2_map_Rbar_split_l_const_bounded prts m_infty m_infty_le alm).
+    exists x0 ; tauto.
   Qed.
 
   Lemma almostR2_Rbar_le_split_r {Ts:Type} 
@@ -4665,7 +4680,8 @@ Section rv_almost.
       intros.
       now destruct (x a); simpl.
     } 
-    apply (almostR2_map_Rbar_split_r_const_bounded prts p_infty le_p_infty alm).
+    destruct (almostR2_map_Rbar_split_r_const_bounded prts p_infty le_p_infty alm).
+    exists x0; tauto.
   Qed.
 
 End rv_almost.

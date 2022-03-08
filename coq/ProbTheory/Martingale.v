@@ -4993,7 +4993,7 @@ Section martingale.
         reflexivity.
     Qed.
 
-    Lemma Rbar_opp_Rbar_min x y :
+    Lemma Rbar_opp_max_min x y :
       Rbar_opp (Rbar_max x y) = Rbar_min (Rbar_opp x) (Rbar_opp y).
     Proof.
       unfold Rbar_max, Rbar_min, Rbar_opp, Rmin.
@@ -5006,43 +5006,61 @@ Section martingale.
       ; try lra.
     Qed.
 
-        (*
-    Lemma ELimInf_seq_neg_fun_part f :
-      Rbar_rv_le
-        (fun x : Ts => Rbar_neg_fun_part (fun omega : Ts => ELimInf_seq (fun n : nat => f n omega)) x)
-        (fun x : Ts => (fun omega : Ts => ELimInf_seq (fun n : nat => (Rbar_neg_fun_part (f n)) omega)) x).
+    Lemma Rbar_opp_min_max x y :
+      Rbar_opp (Rbar_min x y) = Rbar_max (Rbar_opp x) (Rbar_opp y).
     Proof.
-      intros ?.
-      unfold Rbar_neg_fun_part; simpl.
-
-      unfold Rbar_max at 1.
-      match_destr.
-      - cut (Rbar_le (ELimInf_seq (fun _ => 0)) (ELimInf_seq (fun n : nat => Rbar_max (f n a) 0))).
-        {
-          rewrite ELimInf_seq_const; simpl.
-          match_destr; simpl; try tauto.
-        }
-        apply ELimInf_le.
-        exists 0%nat; intros.
-        unfold Rbar_max.
-        match_destr; [reflexivity |].
-        simpl; match_destr; simpl in *; lra.
-      - apply ELimInf_le.
-        exists 0%nat.
-        intros; simpl.
-        unfold Rbar_max.
-        match_destr.
-        reflexivity.
+      unfold Rbar_max, Rbar_min, Rbar_opp, Rmin.
+      destruct x; destruct y; simpl in *
+      ; repeat (destruct (Rbar_le_dec _ _))
+      ; repeat (destruct (Rle_dec _ _))
+      ; simpl in *
+      ; f_equal
+      ; trivial
+      ; try lra.
     Qed.
-*)
 
-    Lemma ELimInf_seq_neg_fun_part f :
+    Lemma Rbar_opp0 : Rbar_opp 0 = 0.
+    Proof.
+      simpl; f_equal; lra.
+    Qed.
+    
+    Lemma ELimInf_seq_sup_neg_fun_part f :
       Rbar_rv_le 
-        (Rbar_neg_fun_part (fun omega : Ts => ELimInf_seq (fun n : nat => f n omega)))
+        (Rbar_neg_fun_part (fun omega : Ts => ELimSup_seq (fun n : nat => f n omega)))
         (fun omega : Ts =>
            ELimInf_seq (fun n : nat => Rbar_neg_fun_part (fun x : Ts => f n x) omega)).
     Proof.
-    Admitted.
+      intros ts.
+      generalize (ELimInf_seq_pos_fun_part (fun n => Rbar_rvopp (f n)) ts); intros.
+      etransitivity; [etransitivity |]; [| apply H |]
+      ; apply refl_refl
+      ; unfold Rbar_neg_fun_part, Rbar_pos_fun_part.
+      - f_equal.
+        rewrite <- ELimInf_seq_opp.
+        apply ELimInf_seq_ext_loc.
+        exists 0%nat; intros.
+        unfold Rbar_opp, Rbar_rvopp.
+        match_destr.
+      - apply ELimInf_seq_ext_loc.
+        exists 0%nat; intros.
+        unfold Rbar_opp, Rbar_rvopp.
+        match_destr.
+    Qed.        
+
+    Lemma ELimInf_seq_neg_fun_part f ts :
+      ex_Elim_seq (fun n => f n ts) ->
+      Rbar_le 
+        ((Rbar_neg_fun_part (fun omega : Ts => ELimInf_seq (fun n : nat => f n omega))) ts)
+           (ELimInf_seq (fun n : nat => Rbar_neg_fun_part (fun x : Ts => f n x) ts)).
+    Proof.
+      intros.
+      rewrite <- (ELimInf_seq_sup_neg_fun_part f ts).
+      unfold Rbar_neg_fun_part.
+      rewrite <- Rbar_opp0.
+      repeat rewrite <- Rbar_opp_min_max.
+      apply ex_Elim_LimSup_LimInf_seq in H.
+      now rewrite H.
+    Qed.
 
     Lemma Rbar_is_finite_expectation_isfe_minus1
           (rv_X1 rv_X2 : Ts -> Rbar)
@@ -5070,6 +5088,31 @@ Section martingale.
           f_equal; lra.
       - apply Rbar_is_finite_expectation_isfe_plus; trivial.
     Qed.
+    
+    Lemma Rbar_NonnegExpectation_almostR2_le 
+          (rv_X1 rv_X2 : Ts -> Rbar)
+          {rv1:RandomVariable dom Rbar_borel_sa rv_X1}
+          {rv2:RandomVariable dom Rbar_borel_sa rv_X2}
+          {nnf1 : Rbar_NonnegativeFunction rv_X1}
+          {nnf2 : Rbar_NonnegativeFunction rv_X2} :
+      almostR2 _ Rbar_le rv_X1 rv_X2 ->
+      Rbar_le (Rbar_NonnegExpectation rv_X1) (Rbar_NonnegExpectation rv_X2).
+  Proof.
+    intros.
+    destruct (almostR2_map_Rbar_split_l_const_bounded _ 0 nnf2 H)
+      as [f1 [? [? [??]]]].
+    specialize (H2 rv1).
+    assert (nnf1':Rbar_NonnegativeFunction f1).
+    {
+      intros x.
+      destruct (H3 x); subst; rewrite H4; trivial.
+      reflexivity.
+    }
+    transitivity (Rbar_NonnegExpectation f1).
+    - apply refl_refl.
+      now apply Rbar_NonnegExpectation_almostR2_proper.
+    - now apply Rbar_NonnegExpectation_le.
+  Qed.
 
     Theorem martingale_convergence (K:R) :
       is_ELimSup_seq (fun n => NonnegExpectation (pos_fun_part (M n))) K ->
@@ -5161,8 +5204,16 @@ Section martingale.
                          (fun omega : Ts =>
                             ELimInf_seq (fun n : nat => Rbar_neg_fun_part (fun x : Ts => M n x) omega)))).
         {
-          apply Rbar_NonnegExpectation_le.
-          apply  ELimInf_seq_neg_fun_part.
+          apply Rbar_NonnegExpectation_almostR2_le.
+          - apply Rbar_neg_fun_part_rv.
+            apply Rbar_lim_inf_rv; intros.
+            now apply Real_Rbar_rv.
+          - apply Rbar_lim_inf_rv; intros.
+            apply Rbar_neg_fun_part_rv.
+            now apply Real_Rbar_rv.
+          - generalize (upcrossing_var_lim_ex K sup).
+            apply almost_impl; apply all_almost; intros ??.
+            now apply ELimInf_seq_neg_fun_part.
         }
         eapply Rbar_le_lt_trans; try apply le1.
         eapply Rbar_le_lt_trans; try apply HH2.
