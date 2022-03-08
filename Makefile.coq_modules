@@ -97,6 +97,7 @@ PROB_THEORY = \
 	SigmaAlgebras \
 	VectorRandomVariable \
 	Martingale \
+	MartingaleConvergence \
 	Gaussian \
 	ProductSpace \
 	ProductSpaceDep
