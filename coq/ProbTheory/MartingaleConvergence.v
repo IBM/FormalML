@@ -2746,6 +2746,44 @@ Section mct.
         tauto.
     Qed.
 
+    Lemma upcrossing_times_none_bounds a b (n:nat) ts :
+      upcrossing_times M a b n ts = None ->
+      (exists i, forall (j:nat), (i <= j)%nat -> a < M j ts)
+      \/ (exists i, forall j, (i <= j)%nat -> M j ts < b).
+    Proof.
+      destruct n; simpl; [congruence |].
+      induction n; simpl; intros eqq.
+      - unfold hitting_time in eqq.
+        generalize (classic_min_of_none _ eqq); intros nle.
+        unfold event_le, id in nle; simpl in nle.
+        left.
+        exists 0%nat; intros.
+        specialize (nle j).
+        lra.
+      - destruct (match n with
+          | 0%nat => hitting_time M (event_le borel_sa id a) ts
+          | S _ =>
+              match upcrossing_times M a b n ts with
+              | Some old =>
+                  if Nat.even n
+                  then hitting_time_from M (S old) (event_le borel_sa id a) ts
+                  else hitting_time_from M (S old) (event_ge borel_sa id b) ts
+              | None => None
+              end
+                  end); [| auto].
+        match_destr_in eqq
+        ; unfold hitting_time_from in eqq
+        ; match_option_in eqq
+        ;  unfold hitting_time in eqq0
+        ; generalize (classic_min_of_none _ eqq0); intros nle
+        ; unfold event_le, event_ge, id in nle; simpl in nle
+        ; [left | right]
+        ; exists (S n0)%nat; intros
+        ; specialize (nle (j - S n0))%nat
+        ; replace (j - S n0 + S n0)%nat with j in nle by lia
+        ; lra.
+    Qed.
+          
     Corollary upcrossing_var_lim_ex (K:R) :
         is_ELimSup_seq (fun n => NonnegExpectation (pos_fun_part (M n))) K ->
         almost prts (fun ts => ex_Elim_seq (fun n => M n ts)).
@@ -2762,8 +2800,67 @@ Section mct.
       destruct (is_finite_witness _ H0) as [nmax eqq].
       elimtype False.
       unfold Rbar_rvlim in eqq.
+
+      generalize (Elim_seq_incr_elem
+                    (fun n : nat => upcrossing_var M (Qreals.Q2R a) (Qreals.Q2R b) n x))
+      ; intros HHle.
+      cut_to HHle; [| intros; apply upcrossing_var_incr].
+      rewrite eqq in HHle.
+      simpl in HHle.
+      (* I think nmax must be an integer anyway, but it does not really matter *)
+      (* assert (ELim_seq (fun n : nat => upcrossing_var M (Qreals.Q2R a) (Qreals.Q2R b) n x) <- nmax *)
+      assert (nmax_nneg:0 <= nmax).
+      {
+        cut (Rbar_le 0 nmax); [trivial |].
+        rewrite <- eqq.
+        apply ELim_seq_nneg; intros.
+        apply upcrossing_var_nneg.
+      } 
       
-    Admitted.
+      assert (HHle2:
+               forall j n, (upcrossing_var_expr M (Qreals.Q2R a) (Qreals.Q2R b) (S n) x j <= (Z.to_nat (up nmax)))%nat).
+      {
+        intros.
+        apply upcrossing_var_var_expr_le.
+        rewrite HHle.
+        rewrite INR_up_pos by lra.
+        left.
+        apply archimed.
+      } 
+      unfold upcrossing_var_expr in HHle2.
+
+      specialize (HHle2 (S (Z.to_nat (up nmax))%nat)).
+      assert (HHle3:
+          (match
+              upcrossing_times M (Qreals.Q2R a) (Qreals.Q2R b) (2 * S (Z.to_nat (up nmax))) x
+            with
+            | Some upn => S (Z.to_nat (up nmax))
+            | None => 0
+            end <= Z.to_nat (up nmax))%nat).
+      {
+        match_option; [| lia].
+        rewrite eqq0 in HHle2.
+        specialize (HHle2 n).
+        match_destr_in HHle2.
+        lia.
+      }
+      match_option_in HHle3; try lia.
+
+      apply upcrossing_times_none_bounds in eqq0.
+      destruct eqq0 as [[i alt]|[i bgt]].
+      + apply Rbar_lt_not_le in age.
+        apply age.
+        rewrite <- (ELimInf_seq_const (Qreals.Q2R a)).
+        apply ELimInf_le; simpl.
+        exists i; intros.
+        now left; apply alt.
+      + apply Rbar_lt_not_le in blt.
+        apply blt.
+        rewrite <- (ELimSup_seq_const (Qreals.Q2R b)).
+        apply ELimSup_le; simpl.
+        exists i; intros.
+        now left; apply bgt.
+    Qed.
 
     Theorem martingale_convergence (K:R) :
       is_ELimSup_seq (fun n => NonnegExpectation (pos_fun_part (M n))) K ->
