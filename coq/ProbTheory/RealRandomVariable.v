@@ -3399,6 +3399,13 @@ Section RbarRandomVariables.
     f_equal; lra.
   Qed.
 
+  Lemma pos_fun_part_nneg_tri (x a:Ts->R) :
+    rv_le (pos_fun_part (rvminus x a)) (rvplus (pos_fun_part x) (neg_fun_part a)).
+  Proof.
+    rv_unfold; simpl; intros ?.
+    unfold Rmax; repeat match_destr; lra.
+  Qed.
+    
   Lemma Rbar_rvlim_plus_min (f1 f2 : Ts -> R) :
     rv_eq
       (Rbar_rvlim
@@ -3465,6 +3472,21 @@ Section RbarRandomVariables.
     now apply rv_Rbar_measurable.
   Qed.
 
+  Global Instance Rmax_list_rv  (l : list (Ts-> R))
+         {rvl:forall x, In x l -> RandomVariable dom borel_sa x}
+    :
+    RandomVariable dom borel_sa (fun omega => Rmax_list (map (fun a => a omega) l)).
+  Proof.
+    induction l; simpl.
+    - apply rvconst.
+    - destruct l; simpl.
+      + apply rvl; simpl; tauto.
+      + apply rvmax_rv.
+          * apply rvl; simpl; tauto.
+          * apply IHl; simpl in *; eauto.
+  Qed.
+
+  
  Lemma event_Rbar_gt_sa x1 x2
         {rv1:RandomVariable dom Rbar_borel_sa x1}
         {rv2:RandomVariable dom Rbar_borel_sa x2}
@@ -5192,3 +5214,4 @@ Section zmBoundedVariance.
     }.
 End zmBoundedVariance.
  *)
+

@@ -1338,6 +1338,32 @@ Proof.
   - now rewrite H0 in H.
 Qed.
 
+Lemma IsFiniteExpectation_from_parts f :
+  IsFiniteExpectation prts (pos_fun_part f) ->
+  IsFiniteExpectation prts (neg_fun_part f) ->
+  IsFiniteExpectation prts f.
+Proof.
+  unfold IsFiniteExpectation.
+  repeat rewrite (Expectation_pos_pofrf _).
+  unfold Expectation.
+  repeat match_destr.
+Qed.
+
+Lemma IsFiniteExpectation_from_fin_parts f :
+  Rbar_lt (NonnegExpectation (pos_fun_part f)) p_infty ->
+  Rbar_lt (NonnegExpectation (neg_fun_part f)) p_infty ->
+  IsFiniteExpectation prts f.
+Proof.
+  unfold IsFiniteExpectation.
+  unfold Expectation; intros.
+  generalize (NonnegExpectation_pos (fun x : Ts => pos_fun_part f x)); intros.
+  generalize (NonnegExpectation_pos (fun x : Ts => neg_fun_part f x)); intros.
+  destruct (NonnegExpectation (fun x : Ts => pos_fun_part f x))
+  ; destruct (NonnegExpectation (fun x : Ts => neg_fun_part f x))
+  ; simpl in *; try tauto.
+Qed.
+
+
 Global Instance IsFiniteExpectation_indicator f {P} (dec:dec_pre_event P)
        {rv : RandomVariable dom borel_sa f}:
   sa_sigma P ->

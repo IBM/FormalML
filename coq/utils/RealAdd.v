@@ -4950,7 +4950,36 @@ Section Qinr.
                 apply Rle_abs.
           }
   Qed.
-  
+
+  Lemma Qs_between_Rbars (x y:Rbar) :
+      Rbar_lt x y ->
+      exists (a b:Q),
+        Rbar_lt x (Qreals.Q2R a) /\
+          (a < b)%Q /\
+          Rbar_lt (Qreals.Q2R b) y.
+    Proof.
+      destruct x; destruct y; simpl in *; intros ltxy; try tauto.
+      - destruct (Q_dense r r0 ltxy) as [a [??]].
+        destruct (Q_dense _ _ H0) as [b [??]].
+        exists a, b.
+        repeat split; trivial.
+        now apply Qreals.Rlt_Qlt.
+      - destruct (Q_dense r (r+1) ltac:(lra)) as [a [??]].
+        exists a, (a + 1)%Q.
+        repeat split; trivial.
+        rewrite <- (Qplus_0_r a) at 1.
+        apply Qplus_lt_r.
+        reflexivity.
+      - destruct (Q_dense (r-1) r ltac:(lra)) as [a [??]].
+        exists (a - 1)%Q, a.
+        repeat split; trivial.
+        rewrite <- (Qplus_0_r a) at 2.
+        apply Qplus_lt_r.
+        reflexivity.
+      - exists 0%Q; exists 1%Q.
+        repeat split; trivial.
+    Qed.
+
   Lemma ln_nneg x :
     1 <= x -> 0 <= ln x.
   Proof.
@@ -5795,4 +5824,35 @@ Lemma pow2_nzero n : pow 2 n <> 0.
 Proof.
   apply pow_nzero.
   lra.
+Qed.
+
+Lemma Rbar_opp_max_min x y :
+  Rbar_opp (Rbar_max x y) = Rbar_min (Rbar_opp x) (Rbar_opp y).
+Proof.
+  unfold Rbar_max, Rbar_min, Rbar_opp, Rmin.
+  destruct x; destruct y; simpl in *
+  ; repeat (destruct (Rbar_le_dec _ _))
+  ; repeat (destruct (Rle_dec _ _))
+  ; simpl in *
+  ; f_equal
+  ; trivial
+  ; try lra.
+Qed.
+
+Lemma Rbar_opp_min_max x y :
+  Rbar_opp (Rbar_min x y) = Rbar_max (Rbar_opp x) (Rbar_opp y).
+Proof.
+  unfold Rbar_max, Rbar_min, Rbar_opp, Rmin.
+  destruct x; destruct y; simpl in *
+  ; repeat (destruct (Rbar_le_dec _ _))
+  ; repeat (destruct (Rle_dec _ _))
+  ; simpl in *
+  ; f_equal
+  ; trivial
+  ; try lra.
+Qed.
+
+Lemma Rbar_opp0 : Rbar_opp 0 = 0.
+Proof.
+  simpl; f_equal; lra.
 Qed.

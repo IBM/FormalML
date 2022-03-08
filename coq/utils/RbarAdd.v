@@ -1992,3 +1992,21 @@ Proof.
  Qed.
 
 End zeroprop.
+
+Lemma ELimSup_ELim_seq_le f : Rbar_le (ELim_seq f) (ELimSup_seq f).
+Proof.
+  unfold ELim_seq.
+  generalize (ELimSup_ELimInf_seq_le f).
+  destruct (ELimInf_seq f)
+  ; destruct (ELimSup_seq f)
+  ; simpl; try lra.
+Qed.
+
+Lemma ELimInf_ELim_seq_le f : Rbar_le (ELimInf_seq f) (ELim_seq f).
+Proof.
+  unfold ELim_seq.
+  generalize (ELimSup_ELimInf_seq_le f).
+  destruct (ELimInf_seq f)
+  ; destruct (ELimSup_seq f)
+  ; simpl; try lra.
+Qed.

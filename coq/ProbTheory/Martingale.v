@@ -1,4 +1,4 @@
-Require Import QArith PairEncoding.
+Require Import QArith.
 Require Import Morphisms.
 Require Import Equivalence.
 Require Import Program.Basics.
@@ -15,7 +15,6 @@ Require Import Event.
 Require Import Almost DVector.
 Require Import utils.Utils.
 Require Import List.
-Require Import NumberIso.
 Require Import PushNeg.
 Require Import Reals.
 Require Import Coquelicot.Rbar.
@@ -4519,30 +4518,7 @@ Section martingale.
       unfold upcrossing_var_expr.
       match_destr.
       repeat match_destr; lia.
-    Qed.
-
-    (* Move this to ListAdd *)
-    Lemma incl_seq (s1 n1 s2 n2:nat) :
-      incl (seq s1 (S n1)) (seq s2 n2) <-> ((s2 <= s1)%nat /\ (s1 + S n1 <= s2 + n2)%nat).
-    Proof.
-      transitivity (forall a, (s1 <= a < s1 + S n1)%nat -> (s2 <= a < s2 + n2)%nat).
-      - split.
-        + intros.
-          apply in_seq.
-          apply H.
-          now apply in_seq.
-        + intros ???.
-          apply in_seq.
-          apply H.
-          now apply in_seq.
-      - split.
-        + intros.
-          split.
-          * specialize (H s1); lia.
-          * specialize (H (s1 + n1))%nat; lia.
-        + lia.
-    Qed.
-        
+    Qed.        
 
     Lemma upcrossing_var_incr a b n omega : upcrossing_var M a b n omega <= upcrossing_var M a b (S n) omega.
     Proof.
@@ -4556,27 +4532,6 @@ Section martingale.
         apply Rmax_list_fun_le; intros.
         apply le_INR.
         apply upcrossing_var_expr_incr.
-    Qed.
-
-    Lemma pos_fun_part_nneg_tri (x a:Ts->R) :
-      rv_le (pos_fun_part (rvminus x a)) (rvplus (pos_fun_part x) (neg_fun_part a)).
-    Proof.
-      rv_unfold; simpl; intros ?.
-      unfold Rmax; repeat match_destr; lra.
-    Qed.
-
-    Global Instance Rmax_list_rv  {Tss : Type} (domm : SigmaAlgebra Tss) (l : list (Tss-> R))
-           {rvl:forall x, In x l -> RandomVariable domm borel_sa x}
-      :
-      RandomVariable domm borel_sa (fun omega => Rmax_list (map (fun a => a omega) l)).
-    Proof.
-      induction l; simpl.
-      - apply rvconst.
-      - destruct l; simpl.
-        + apply rvl; simpl; tauto.
-        + apply rvmax_rv.
-          * apply rvl; simpl; tauto.
-          * apply IHl; simpl in *; eauto.
     Qed.
 
     Instance upcrossing_var_rv a b :
@@ -4613,25 +4568,6 @@ Section martingale.
             -- congruence.
             -- simpl; lra.
           * simpl; lra.
-    Qed.
-
-    (* TODO: move this *)
-    Lemma ELimSup_ELim_seq_le f : Rbar_le (ELim_seq f) (ELimSup_seq f).
-    Proof.
-      unfold ELim_seq.
-      generalize (ELimSup_ELimInf_seq_le f).
-      destruct (ELimInf_seq f)
-      ; destruct (ELimSup_seq f)
-      ; simpl; try lra.
-    Qed.
-
-    Lemma ELimInf_ELim_seq_le f : Rbar_le (ELimInf_seq f) (ELim_seq f).
-    Proof.
-      unfold ELim_seq.
-      generalize (ELimSup_ELimInf_seq_le f).
-      destruct (ELimInf_seq f)
-      ; destruct (ELimSup_seq f)
-      ; simpl; try lra.
     Qed.
 
     Lemma upcrossing_var_lim_isfe (K:R) a b :
@@ -4846,22 +4782,6 @@ Section martingale.
         apply upcrossing_var_rv.
       - eapply upcrossing_var_lim_isfe; eauto.
     Qed.
-
-    Lemma almost_forallQ (Pn:Q->pre_event Ts) :
-      (forall n : Q, almost prts (Pn n)) -> almost prts (fun ts => forall n, Pn n ts).
-    Proof.
-      intros.
-      cut (almost prts (fun ts => forall (a:nat),
-                            Pn (iso_b a) ts)).
-      {
-        apply almost_impl; apply all_almost; intros ???.
-        generalize (H0 (iso_f n)).
-        now rewrite iso_b_f.
-      }
-
-      apply almost_forall; intros.
-      apply H.
-    Qed.      
       
     Corollary upcrossing_var_lim_isf_allQ (K:R) :
         is_ELimSup_seq (fun n => NonnegExpectation (pos_fun_part (M n))) K ->
@@ -4881,35 +4801,6 @@ Section martingale.
         tauto.
     Qed.
 
-    Lemma Qs_between_Rbars (x y:Rbar) :
-      Rbar_lt x y ->
-      exists (a b:Q),
-        Rbar_lt x (Qreals.Q2R a) /\
-          (a < b)%Q /\
-          Rbar_lt (Qreals.Q2R b) y.
-    Proof.
-      destruct x; destruct y; simpl in *; intros ltxy; try tauto.
-      - destruct (Q_dense r r0 ltxy) as [a [??]].
-        destruct (Q_dense _ _ H0) as [b [??]].
-        exists a, b.
-        repeat split; trivial.
-        now apply Qreals.Rlt_Qlt.
-      - destruct (Q_dense r (r+1) ltac:(lra)) as [a [??]].
-        exists a, (a + 1)%Q.
-        repeat split; trivial.
-        rewrite <- (Qplus_0_r a) at 1.
-        apply Qplus_lt_r.
-        reflexivity.
-      - destruct (Q_dense (r-1) r ltac:(lra)) as [a [??]].
-        exists (a - 1)%Q, a.
-        repeat split; trivial.
-        rewrite <- (Qplus_0_r a) at 2.
-        apply Qplus_lt_r.
-        reflexivity.
-      - exists 0%Q; exists 1%Q.
-        repeat split; trivial.
-    Qed.
-
     Corollary upcrossing_var_lim_ex (K:R) :
         is_ELimSup_seq (fun n => NonnegExpectation (pos_fun_part (M n))) K ->
         almost prts (fun ts => ex_Elim_seq (fun n => M n ts)).
@@ -4924,195 +4815,10 @@ Section martingale.
       destruct (Qs_between_Rbars _ _ r) as [a [b [age [ab blt]]]].
       specialize (H0 a b ab).
       destruct (is_finite_witness _ H0) as [nmax eqq].
+      elimtype False.
+      unfold Rbar_rvlim in eqq.
+      
     Admitted.
-
-    Lemma IsFiniteExpectation_from_parts f :
-      IsFiniteExpectation prts (pos_fun_part f) ->
-      IsFiniteExpectation prts (neg_fun_part f) ->
-      IsFiniteExpectation prts f.
-    Proof.
-      unfold IsFiniteExpectation.
-      repeat rewrite (Expectation_pos_pofrf _).
-      unfold Expectation.
-      repeat match_destr.
-    Qed.
-
-    Lemma IsFiniteExpectation_from_fin_parts f :
-      Rbar_lt (NonnegExpectation (pos_fun_part f)) p_infty ->
-      Rbar_lt (NonnegExpectation (neg_fun_part f)) p_infty ->
-      IsFiniteExpectation prts f.
-    Proof.
-      unfold IsFiniteExpectation.
-      unfold Expectation; intros.
-      generalize (NonnegExpectation_pos (fun x : Ts => pos_fun_part f x)); intros.
-      generalize (NonnegExpectation_pos (fun x : Ts => neg_fun_part f x)); intros.
-      destruct (NonnegExpectation (fun x : Ts => pos_fun_part f x))
-      ; destruct (NonnegExpectation (fun x : Ts => neg_fun_part f x))
-      ; simpl in *; try tauto.
-    Qed.
-
-    Lemma Rbar_IsFiniteExpectation_from_fin_parts (f:Ts->Rbar) :
-      Rbar_lt (Rbar_NonnegExpectation (Rbar_pos_fun_part f)) p_infty ->
-      Rbar_lt (Rbar_NonnegExpectation (Rbar_neg_fun_part f)) p_infty ->
-      Rbar_IsFiniteExpectation prts f.
-    Proof.
-      unfold Rbar_IsFiniteExpectation.
-      unfold Rbar_Expectation; intros.
-      generalize (Rbar_NonnegExpectation_pos (fun x : Ts => Rbar_pos_fun_part f x)); intros.
-      generalize (Rbar_NonnegExpectation_pos (fun x : Ts => Rbar_neg_fun_part f x)); intros.
-      destruct (Rbar_NonnegExpectation (fun x : Ts => Rbar_pos_fun_part f x))
-      ; destruct (Rbar_NonnegExpectation (fun x : Ts => Rbar_neg_fun_part f x))
-      ; simpl in *; try tauto.
-    Qed.
-
-    Lemma ELimInf_seq_pos_fun_part f :
-      Rbar_rv_le
-        (fun x : Ts => Rbar_pos_fun_part (fun omega : Ts => ELimInf_seq (fun n : nat => f n omega)) x)
-        (fun x : Ts => (fun omega : Ts => ELimInf_seq (fun n : nat => (Rbar_pos_fun_part (f n)) omega)) x).
-    Proof.
-      intros ?.
-      unfold Rbar_pos_fun_part; simpl.
-
-      unfold Rbar_max at 1.
-      match_destr.
-      - cut (Rbar_le (ELimInf_seq (fun _ => 0)) (ELimInf_seq (fun n : nat => Rbar_max (f n a) 0))).
-        {
-          rewrite ELimInf_seq_const; simpl.
-          match_destr; simpl; try tauto.
-        }
-        apply ELimInf_le.
-        exists 0%nat; intros.
-        unfold Rbar_max.
-        match_destr; [reflexivity |].
-        simpl; match_destr; simpl in *; lra.
-      - apply ELimInf_le.
-        exists 0%nat.
-        intros; simpl.
-        unfold Rbar_max.
-        match_destr.
-        reflexivity.
-    Qed.
-
-    Lemma Rbar_opp_max_min x y :
-      Rbar_opp (Rbar_max x y) = Rbar_min (Rbar_opp x) (Rbar_opp y).
-    Proof.
-      unfold Rbar_max, Rbar_min, Rbar_opp, Rmin.
-      destruct x; destruct y; simpl in *
-      ; repeat (destruct (Rbar_le_dec _ _))
-      ; repeat (destruct (Rle_dec _ _))
-      ; simpl in *
-      ; f_equal
-      ; trivial
-      ; try lra.
-    Qed.
-
-    Lemma Rbar_opp_min_max x y :
-      Rbar_opp (Rbar_min x y) = Rbar_max (Rbar_opp x) (Rbar_opp y).
-    Proof.
-      unfold Rbar_max, Rbar_min, Rbar_opp, Rmin.
-      destruct x; destruct y; simpl in *
-      ; repeat (destruct (Rbar_le_dec _ _))
-      ; repeat (destruct (Rle_dec _ _))
-      ; simpl in *
-      ; f_equal
-      ; trivial
-      ; try lra.
-    Qed.
-
-    Lemma Rbar_opp0 : Rbar_opp 0 = 0.
-    Proof.
-      simpl; f_equal; lra.
-    Qed.
-    
-    Lemma ELimInf_seq_sup_neg_fun_part f :
-      Rbar_rv_le 
-        (Rbar_neg_fun_part (fun omega : Ts => ELimSup_seq (fun n : nat => f n omega)))
-        (fun omega : Ts =>
-           ELimInf_seq (fun n : nat => Rbar_neg_fun_part (fun x : Ts => f n x) omega)).
-    Proof.
-      intros ts.
-      generalize (ELimInf_seq_pos_fun_part (fun n => Rbar_rvopp (f n)) ts); intros.
-      etransitivity; [etransitivity |]; [| apply H |]
-      ; apply refl_refl
-      ; unfold Rbar_neg_fun_part, Rbar_pos_fun_part.
-      - f_equal.
-        rewrite <- ELimInf_seq_opp.
-        apply ELimInf_seq_ext_loc.
-        exists 0%nat; intros.
-        unfold Rbar_opp, Rbar_rvopp.
-        match_destr.
-      - apply ELimInf_seq_ext_loc.
-        exists 0%nat; intros.
-        unfold Rbar_opp, Rbar_rvopp.
-        match_destr.
-    Qed.        
-
-    Lemma ELimInf_seq_neg_fun_part f ts :
-      ex_Elim_seq (fun n => f n ts) ->
-      Rbar_le 
-        ((Rbar_neg_fun_part (fun omega : Ts => ELimInf_seq (fun n : nat => f n omega))) ts)
-           (ELimInf_seq (fun n : nat => Rbar_neg_fun_part (fun x : Ts => f n x) ts)).
-    Proof.
-      intros.
-      rewrite <- (ELimInf_seq_sup_neg_fun_part f ts).
-      unfold Rbar_neg_fun_part.
-      rewrite <- Rbar_opp0.
-      repeat rewrite <- Rbar_opp_min_max.
-      apply ex_Elim_LimSup_LimInf_seq in H.
-      now rewrite H.
-    Qed.
-
-    Lemma Rbar_is_finite_expectation_isfe_minus1
-          (rv_X1 rv_X2 : Ts -> Rbar)
-          {rv1:RandomVariable dom Rbar_borel_sa rv_X1}
-          {rv2:RandomVariable dom Rbar_borel_sa rv_X2}
-          {isfe1:Rbar_IsFiniteExpectation prts rv_X2}
-          {isfe2:Rbar_IsFiniteExpectation prts (Rbar_rvminus rv_X1 rv_X2)} :
-      Rbar_IsFiniteExpectation prts rv_X1.
-    Proof.
-      assert (rv3: RandomVariable dom Rbar_borel_sa (Rbar_rvminus rv_X1 rv_X2))
-        by (apply Rbar_rvminus_rv; trivial).
-
-      cut (Rbar_IsFiniteExpectation prts (Rbar_rvplus (Rbar_rvminus rv_X1 rv_X2) rv_X2)).
-      - intros HH.
-        eapply Rbar_IsFiniteExpectation_proper_almostR2; try eapply HH; trivial.
-        + apply Rbar_rvplus_rv; trivial.
-        + apply finexp_almost_finite in isfe1; trivial.
-          apply finexp_almost_finite in isfe2; trivial.
-          unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp in *.
-          revert isfe1; apply almost_impl.
-          revert isfe2; apply almost_impl.
-          apply all_almost; intros ???.
-          destruct (rv_X2 x); try congruence.
-          destruct (rv_X1 x); simpl in *; try congruence.
-          f_equal; lra.
-      - apply Rbar_is_finite_expectation_isfe_plus; trivial.
-    Qed.
-    
-    Lemma Rbar_NonnegExpectation_almostR2_le 
-          (rv_X1 rv_X2 : Ts -> Rbar)
-          {rv1:RandomVariable dom Rbar_borel_sa rv_X1}
-          {rv2:RandomVariable dom Rbar_borel_sa rv_X2}
-          {nnf1 : Rbar_NonnegativeFunction rv_X1}
-          {nnf2 : Rbar_NonnegativeFunction rv_X2} :
-      almostR2 _ Rbar_le rv_X1 rv_X2 ->
-      Rbar_le (Rbar_NonnegExpectation rv_X1) (Rbar_NonnegExpectation rv_X2).
-  Proof.
-    intros.
-    destruct (almostR2_map_Rbar_split_l_const_bounded _ 0 nnf2 H)
-      as [f1 [? [? [??]]]].
-    specialize (H2 rv1).
-    assert (nnf1':Rbar_NonnegativeFunction f1).
-    {
-      intros x.
-      destruct (H3 x); subst; rewrite H4; trivial.
-      reflexivity.
-    }
-    transitivity (Rbar_NonnegExpectation f1).
-    - apply refl_refl.
-      now apply Rbar_NonnegExpectation_almostR2_proper.
-    - now apply Rbar_NonnegExpectation_le.
-  Qed.
 
     Theorem martingale_convergence (K:R) :
       is_ELimSup_seq (fun n => NonnegExpectation (pos_fun_part (M n))) K ->
@@ -5290,8 +4996,7 @@ Section martingale.
           apply eqq1.
         }
 
-
-        generalize (fun n => Rbar_is_finite_expectation_isfe_minus1
+        generalize (fun n => Rbar_is_finite_expectation_isfe_minus1 _
                       (Rbar_pos_fun_part (fun x : Ts => M n x))
                       (fun x : Ts => M n x)); intros isfepos.
         

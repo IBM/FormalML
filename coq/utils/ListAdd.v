@@ -2230,3 +2230,24 @@ Proof.
     simpl; lia.
   - destruct (f2 a); simpl; lia.
 Qed.
+
+Lemma incl_seq (s1 n1 s2 n2:nat) :
+  incl (seq s1 (S n1)) (seq s2 n2) <-> ((s2 <= s1)%nat /\ (s1 + S n1 <= s2 + n2)%nat).
+Proof.
+  transitivity (forall a, (s1 <= a < s1 + S n1)%nat -> (s2 <= a < s2 + n2)%nat).
+  - split.
+    + intros.
+      apply in_seq.
+      apply H.
+      now apply in_seq.
+    + intros ???.
+      apply in_seq.
+      apply H.
+      now apply in_seq.
+  - split.
+    + intros.
+      split.
+      * specialize (H s1); lia.
+      * specialize (H (s1 + n1))%nat; lia.
+    + lia.
+Qed.

@@ -1,3 +1,4 @@
+Require Import QArith NumberIso.
 Require Import Morphisms.
 Require Import Equivalence.
 Require Import Program.Basics.
@@ -104,6 +105,16 @@ Section almost.
       split; auto.
   Qed.
 
+  Lemma almost_impl' {P1 P2:Ts->Prop} :
+    almost P1 ->
+    almost (fun x => P1 x -> P2 x) ->
+    almost P2.
+  Proof.
+    intros a1 a2.
+    generalize (almost_and a1 a2).
+    apply almost_proper; intros ?[??]; auto.
+  Qed.
+
   Lemma almost_forall {Pn:nat -> pre_event Ts} :
     (forall n, almost (Pn n)) ->
     almost (pre_inter_of_collection Pn).
@@ -120,15 +131,23 @@ Section almost.
       apply H0.
   Qed.
 
-  Lemma almost_impl' {P1 P2:Ts->Prop} :
-    almost P1 ->
-    almost (fun x => P1 x -> P2 x) ->
-    almost P2.
-  Proof.
-    intros a1 a2.
-    generalize (almost_and a1 a2).
-    apply almost_proper; intros ?[??]; auto.
-  Qed.
+  Lemma almost_forallQ (Pn:Q->pre_event Ts) :
+      (forall n : Q, almost (Pn n)) -> almost (fun ts => forall n, Pn n ts).
+    Proof.
+      intros.
+      cut (almost (fun ts => forall (a:nat),
+                            Pn (iso_b a) ts)).
+      {
+        intros HH.
+        eapply almost_impl'; try eapply HH.
+        apply all_almost; intros ???.
+        generalize (H0 (iso_f n)).
+        now rewrite iso_b_f.
+      }
+
+      apply almost_forall; intros.
+      apply H.
+    Qed.      
   
   Lemma almost_or_l (P1 P2:Ts->Prop) :
     almost P1 ->
