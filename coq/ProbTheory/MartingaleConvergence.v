@@ -3178,6 +3178,24 @@ Section mct.
             unfold Rbar_opp; rv_unfold; f_equal; lra.
     Qed.
 
+    Corollary pos_sup_martingale_convergence :
+      (forall n, NonnegativeFunction (M n)) ->
+      RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
+        Rbar_IsFiniteExpectation prts (Rbar_rvlim M) /\
+          almost prts (fun omega => is_Elim_seq (fun n => M n omega) (Rbar_rvlim M omega)).
+    Proof.
+      intros.
+      apply (sup_martingale_convergence 0).
+      eapply is_ELimSup_seq_ext
+      ; try apply is_ELimSup_seq_const; intros n; simpl.
+      symmetry.
+      rewrite <- (NonnegExpectation_const 0 ltac:(lra)).
+      apply NonnegExpectation_ext; intros ?.
+      unfold Rmax, const; match_destr.
+      specialize (H n a).
+      lra.
+    Qed.
+
   End mart_conv_sup.
 
 End mct.
