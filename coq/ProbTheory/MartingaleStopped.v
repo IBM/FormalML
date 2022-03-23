@@ -154,5 +154,98 @@ Section stopped_process.
         unfold stopping_time_pre_event in *; congruence.
   Qed.
 
-  
+  Context 
+    {dom: SigmaAlgebra Ts}
+    (prts: ProbSpace dom).
+
+  Section process_stopped_at_props.
+    
+    Context (Y : nat -> Ts -> R) (F : nat -> SigmaAlgebra Ts)
+            {filt:IsFiltration F}
+            {sub:IsSubAlgebras dom F}
+            (T:Ts -> option nat)
+            (is_stop:is_stopping_time T F).
+
+    Global Instance process_stopped_at_rv
+           {rv:forall n, RandomVariable dom borel_sa (Y n)} :
+      forall n, RandomVariable dom borel_sa (process_stopped_at Y T n).
+    Proof.
+      intros.
+      eapply RandomVariable_proper; try apply process_stopped_at_as_alt; try reflexivity.
+      destruct n; simpl; trivial.
+      apply rvplus_rv.
+      - apply rvsum_rv; intros.
+        apply rvmult_rv; trivial.
+        apply EventIndicator_pre_rv.
+        eapply sub.
+        apply is_stop.
+      - apply rvmult_rv; trivial.
+        apply EventIndicator_pre_rv.
+        apply sa_complement.
+        eapply sub.
+        apply is_stopping_time_as_alt; trivial.
+    Qed.
+
+    Global Instance process_stopped_at_adapted 
+           {adapt:IsAdapted borel_sa Y F} :
+      IsAdapted borel_sa (process_stopped_at Y T) F.
+    Proof.
+      intros n.
+      eapply (RandomVariable_proper _ (F n)); try apply process_stopped_at_as_alt; try reflexivity.
+      destruct n; simpl; trivial.
+      apply rvplus_rv.
+      - apply rvsum_rv_loc; intros.
+        apply rvmult_rv; trivial.
+        + eapply (RandomVariable_proper_le (F m) _); try reflexivity.
+          * apply is_filtration_le; trivial; lia.
+          * apply adapt.
+        + apply EventIndicator_pre_rv.
+          generalize (is_stop m).
+          apply is_filtration_le; trivial; lia.
+      - apply rvmult_rv; trivial.
+        apply EventIndicator_pre_rv.
+        apply sa_complement.
+        apply is_stopping_time_as_alt in is_stop; trivial.
+        generalize (is_stop n).
+        apply is_filtration_le; trivial; lia.
+    Qed.
+
+    Global Instance process_stopped_at_isfe
+           {rv:forall n, RandomVariable dom borel_sa (Y n)}
+           {isfe:forall n, IsFiniteExpectation prts (Y n)} :
+      forall n, IsFiniteExpectation prts (process_stopped_at Y T n).
+    Proof.
+      intros n.
+      eapply IsFiniteExpectation_proper; try apply process_stopped_at_as_alt.
+      unfold process_stopped_at_alt.
+      destruct n; trivial.
+      apply IsFiniteExpectation_plus.
+      - apply rvsum_rv_loc; intros.
+        apply rvmult_rv; trivial.
+        apply EventIndicator_pre_rv.
+        eapply sub.
+        apply is_stop.
+      - apply rvmult_rv; trivial.
+        apply EventIndicator_pre_rv.
+        apply sa_complement.
+        apply is_stopping_time_as_alt in is_stop; trivial.
+        eapply sub.
+        apply is_stop.
+      - apply IsFiniteExpectation_sum; intros.
+        + apply rvmult_rv; trivial.
+          apply EventIndicator_pre_rv.
+          eapply sub.
+          apply is_stop.
+        + apply IsFiniteExpectation_indicator; trivial.
+          eapply sub.
+          apply is_stop.
+      - apply IsFiniteExpectation_indicator; trivial.
+        apply sa_complement.
+        apply is_stopping_time_as_alt in is_stop; trivial.
+        eapply sub.
+        apply is_stop.
+    Qed.
+
+  End process_stopped_at_props.
+
 End stopped_process.
