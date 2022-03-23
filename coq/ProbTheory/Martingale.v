@@ -1355,27 +1355,6 @@ Section martingale.
     
   End stopping_times.
 
-  Definition process_under (Y : nat -> Ts -> R) (T:Ts -> option nat) (x : Ts) : R
-    := match T x with
-       | None => 0
-       | Some n => Y n x
-       end.
-
-  Definition lift1_min (x:nat) (y : option nat)
-      := match y with
-         | None => x
-         | Some b => min x b
-         end.
-
-  Lemma lift1_lift2_min (x:nat) (y : option nat) :
-    lift2_min (Some x) y = Some (lift1_min x y).
-  Proof.
-    destruct y; reflexivity.
-  Qed.
-  
-  Definition process_stopped_at (Y : nat -> Ts -> R) (T:Ts -> option nat) (n:nat) (x : Ts) : R
-    := Y (lift1_min n (T x)) x.
-
   Definition martingale_transform (H X : nat -> Ts -> R) (n:nat) : Ts -> R
     := match n with
        | 0%nat => const 0

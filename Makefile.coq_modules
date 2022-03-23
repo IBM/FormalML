@@ -98,6 +98,7 @@ PROB_THEORY = \
 	VectorRandomVariable \
 	Martingale \
 	MartingaleConvergence \
+	MartingaleStopped \
 	Gaussian \
 	ProductSpace \
 	ProductSpaceDep
