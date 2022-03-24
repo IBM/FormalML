@@ -500,8 +500,7 @@ Section stopped_process.
     Proof.
       intros.
       rewrite process_stopped_at_expectation_0.
-      apply is_martingale_expectation with (sas := F) (rv0 := rv) (adapt0 := adapt) (filt0 := filt) (sub0 := sub).
-      apply mart.
+      now apply is_martingale_expectation with (sas := F) (rv0 := rv) (adapt0 := adapt) (filt0 := filt) (sub0 := sub).
     Qed.
 
   End process_stopped_at_props_ext.
