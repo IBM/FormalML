@@ -471,11 +471,7 @@ Section stopped_process.
         apply process_stopped_at_super_martingale.
     Qed.
 
-    Lemma process_stopped_at_0
-          {rv:forall n, RandomVariable dom borel_sa (Y n)}
-          {isfe:forall n, IsFiniteExpectation prts (Y n)} 
-          {adapt:IsAdapted borel_sa Y F}
-          {mart:IsMartingale prts eq Y F} :
+    Lemma process_stopped_at_0 :
       rv_eq ((process_stopped_at Y T) 0%nat)
             (Y 0).
      Proof.
