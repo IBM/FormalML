@@ -481,15 +481,13 @@ Section stopped_process.
       intros.
       replace (FiniteExpectation prts (Y 0)) with
           (FiniteExpectation prts ((process_stopped_at Y T) 0%nat)).
-      - generalize (process_stopped_at_adapted Y F T); intros.
-        generalize (process_stopped_at_rv Y F T); intros.        
-        apply is_martingale_expectation with (sas := F) (adapt0 := H) (rv0 := H0) (filt0 := filt) (sub0 := sub).
-        admit.
+      - apply is_martingale_expectation with (sas := F) (adapt0 :=(process_stopped_at_adapted Y F T)) (rv0 :=  (process_stopped_at_rv Y F T)) (filt0 := filt) (sub0 := sub).
+        apply process_stopped_at_martingale.
       - apply FiniteExpectation_ext.
         intros x.
         unfold process_stopped_at, lift1_min.
         match_destr.
-    Admitted.
+    Qed.
 
     Lemma process_stopped_at_expectation
           {rv:forall n, RandomVariable dom borel_sa (Y n)}
