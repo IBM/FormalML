@@ -880,17 +880,17 @@ Section martingale.
                 end).
 
 
-    Definition is_stopping_time (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts)
-      := forall n, sa_sigma (SigmaAlgebra := sas n) (stopping_time_pre_event rt n).
+    Class IsStoppingTime (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts)
+      := is_stopping_time : forall n, sa_sigma (SigmaAlgebra := sas n) (stopping_time_pre_event rt n).
 
     Definition is_stopping_time_alt (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts)
       := forall n, sa_sigma (SigmaAlgebra := sas n) (stopping_time_pre_event_alt rt n).
 
     (* For filtrations, the two definitions coincide *)
     Lemma is_stopping_time_as_alt  (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts) {filt:IsFiltration sas}:
-      is_stopping_time rt sas <-> is_stopping_time_alt rt sas.
+      IsStoppingTime rt sas <-> is_stopping_time_alt rt sas.
     Proof.
-      unfold is_stopping_time, stopping_time_pre_event, is_stopping_time_alt, stopping_time_pre_event_alt.
+      unfold IsStoppingTime, stopping_time_pre_event, is_stopping_time_alt, stopping_time_pre_event_alt.
       split; intros HH n.
       - assert (pre_event_equiv
                   (fun x : Ts => match rt x with
@@ -948,7 +948,7 @@ Section martingale.
     Qed.
 
     Example is_stopping_time_constant (c:option nat) (sas: nat -> SigmaAlgebra Ts)
-      : is_stopping_time (const c) sas.
+      : IsStoppingTime (const c) sas.
     Proof.
       intros ?.
       unfold stopping_time_pre_event, const.
@@ -958,8 +958,8 @@ Section martingale.
       - tauto.
     Qed.
     
-    Lemma is_stopping_time_adapted (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts) :
-      is_stopping_time rt sas ->
+    Instance is_stopping_time_adapted (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts) :
+      IsStoppingTime rt sas ->
       IsAdapted borel_sa (fun n => EventIndicator (stopping_time_pre_event_dec rt n)) sas.
     Proof.
       intros ??.
@@ -978,7 +978,7 @@ Section martingale.
 
     Lemma is_adapted_stopping_time (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts) :
       IsAdapted borel_sa (fun n => EventIndicator (stopping_time_pre_event_dec rt n)) sas ->
-      is_stopping_time rt sas.
+      IsStoppingTime rt sas.
     Proof.
       intros ??.
       specialize (H n).
@@ -1004,9 +1004,9 @@ Section martingale.
           (rt1 rt2:Ts->option nat)
           (sas: nat -> SigmaAlgebra Ts)
           {filt:IsFiltration sas}:
-      is_stopping_time rt1 sas ->
-      is_stopping_time rt2 sas ->
-      is_stopping_time (fun x => lift2_min (rt1 x) (rt2 x)) sas.
+      IsStoppingTime rt1 sas ->
+      IsStoppingTime rt2 sas ->
+      IsStoppingTime (fun x => lift2_min (rt1 x) (rt2 x)) sas.
     Proof.
       intros s1 s2.
       apply is_stopping_time_as_alt in s1; trivial.
@@ -1024,11 +1024,10 @@ Section martingale.
 
     Lemma is_stopping_time_max
           (rt1 rt2:Ts->option nat)
-          (sas: nat -> SigmaAlgebra Ts)
-          {filt:IsFiltration sas}:
-      is_stopping_time rt1 sas ->
-      is_stopping_time rt2 sas ->
-      is_stopping_time (fun x => lift2 max (rt1 x) (rt2 x)) sas.
+          (sas: nat -> SigmaAlgebra Ts) {filt:IsFiltration sas}:
+      IsStoppingTime rt1 sas ->
+      IsStoppingTime rt2 sas ->
+      IsStoppingTime (fun x => lift2 max (rt1 x) (rt2 x)) sas.
     Proof.
       intros s1 s2.
       apply is_stopping_time_as_alt in s1; trivial.
@@ -1048,9 +1047,9 @@ Section martingale.
           (rt1 rt2:Ts->option nat)
           (sas: nat -> SigmaAlgebra Ts)
           {filt:IsFiltration sas}:
-      is_stopping_time rt1 sas ->
-      is_stopping_time rt2 sas ->
-      is_stopping_time (fun x => lift2 plus (rt1 x) (rt2 x)) sas.
+      IsStoppingTime rt1 sas ->
+      IsStoppingTime rt2 sas ->
+      IsStoppingTime (fun x => lift2 plus (rt1 x) (rt2 x)) sas.
     Proof.
       intros s1 s2 n.
       unfold is_stopping_time, stopping_time_pre_event in *.
@@ -1102,7 +1101,7 @@ Section martingale.
       := forall n, sa_sigma (SigmaAlgebra:=sas n) (pre_event_inter a (stopping_time_pre_event rt n)).
 
     Program Global Instance past_before_sa  (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts)
-            (stop:is_stopping_time rt sas)
+            (stop:IsStoppingTime rt sas)
       :
       SigmaAlgebra Ts
       := {|
@@ -1136,7 +1135,7 @@ Section martingale.
     Lemma past_before_stopping_sa_sigma
           (rt:Ts->option nat)
           (sas: nat -> SigmaAlgebra Ts)
-          (stop:is_stopping_time rt sas) :
+          (stop:IsStoppingTime rt sas) :
       forall n, sa_sigma (SigmaAlgebra:=past_before_sa rt sas stop) (stopping_time_pre_event rt n).
     Proof.
       intros n k.
@@ -1155,8 +1154,8 @@ Section martingale.
     Lemma past_before_sa_le (rt1 rt2:Ts->option nat)
           (sas: nat -> SigmaAlgebra Ts)
           {filt: IsFiltration sas}
-          (stop1:is_stopping_time rt1 sas)
-          (stop2:is_stopping_time rt2 sas) :
+          (stop1:IsStoppingTime rt1 sas)
+          (stop2:IsStoppingTime rt2 sas) :
       (forall x, match rt1 x, rt2 x with
            | Some a, Some b => (a <= b)%nat
            | Some _, None => True
@@ -1222,8 +1221,8 @@ Section martingale.
     Lemma past_before_sa_eq_in (rt1 rt2:Ts->option nat)
           (sas: nat -> SigmaAlgebra Ts)
           {filt: IsFiltration sas}
-          (stop1:is_stopping_time rt1 sas)
-          (stop2:is_stopping_time rt2 sas) :
+          (stop1:IsStoppingTime rt1 sas)
+          (stop2:IsStoppingTime rt2 sas) :
       sa_sigma (SigmaAlgebra:=past_before_sa rt1 sas stop1) (fun x => rt1 x = rt2 x).
     Proof.
       simpl.
@@ -1246,8 +1245,8 @@ Section martingale.
     Lemma past_before_sa_eq_in' (rt1 rt2:Ts->option nat)
           (sas: nat -> SigmaAlgebra Ts)
           {filt: IsFiltration sas}
-          (stop1:is_stopping_time rt1 sas)
-          (stop2:is_stopping_time rt2 sas) :
+          (stop1:IsStoppingTime rt1 sas)
+          (stop2:IsStoppingTime rt2 sas) :
       sa_sigma (SigmaAlgebra:=past_before_sa rt2 sas stop2) (fun x => rt1 x = rt2 x).
     Proof.
       generalize (past_before_sa_eq_in rt2 rt1 sas stop2 stop1).
@@ -1283,13 +1282,13 @@ Section martingale.
     Lemma is_stopping_time_lim (rtn:nat->Ts->option nat)
           (sas: nat -> SigmaAlgebra Ts)
           {filt: IsFiltration sas}
-          (stop:forall n, is_stopping_time (rtn n) sas)
+          (stop:forall n, IsStoppingTime (rtn n) sas)
           (rt:Ts->option nat) :
       (forall omega, is_Elim_seq (fun n => (opt_nat_as_Rbar (rtn n omega))) (opt_nat_as_Rbar (rt omega))) ->
-      is_stopping_time rt sas.
+      IsStoppingTime rt sas.
     Proof.
       intros islim n.
-      unfold is_stopping_time in stop.
+      unfold IsStoppingTime in stop.
       unfold stopping_time_pre_event in *.
       generalize (fun k => stop k n); intros stop'.
 
@@ -1785,7 +1784,7 @@ Section martingale.
         (X : nat -> Ts -> R) (sas:nat->SigmaAlgebra Ts)
         {filt:IsFiltration sas}
         {adaptX:IsAdapted borel_sa X sas}
-        (B:event borel_sa) : is_stopping_time (hitting_time X B) sas.
+        (B:event borel_sa) : IsStoppingTime (hitting_time X B) sas.
   Proof.
     unfold hitting_time.
     intros ?.
@@ -1847,7 +1846,7 @@ Section martingale.
         (X : nat -> Ts -> R) (sas:nat->SigmaAlgebra Ts)
         {filt:IsFiltration sas}
         {adaptX:IsAdapted borel_sa X sas}
-        (B:event borel_sa) n : is_stopping_time (hitting_time_n X B n) sas.
+        (B:event borel_sa) n : IsStoppingTime (hitting_time_n X B n) sas.
   Proof.
     induction n; simpl.
     - now apply hitting_time_is_stop.
@@ -1872,7 +1871,7 @@ Section martingale.
           -- rewrite eqq0.
              f_equal; lia.
       + apply sa_countable_union; intros.
-        unfold is_stopping_time, stopping_time_pre_event in IHn.
+        unfold IsStoppingTime, stopping_time_pre_event in IHn.
         * destruct (lt_dec n0 a).
           -- apply sa_inter.
              ++ apply sa_sigma_const.
@@ -1893,7 +1892,7 @@ Section martingale.
                    generalize (hitting_time_is_stop (fun k => X (k + S n0)) (fun k => (sas (k + S n0))) B)%nat
                    ; intros HH.
                    red in HH.
-                   unfold is_stopping_time, stopping_time_pre_event, hitting_time in HH.
+                   unfold IsStoppingTime, stopping_time_pre_event, hitting_time in HH.
                    generalize (HH (a - S n0)%nat).
                    assert ((Init.Nat.add (Init.Nat.sub a (S n0)) (S n0)) = a) by lia.
                    now rewrite H1.
@@ -1905,10 +1904,10 @@ Section martingale.
     Lemma is_stopping_time_compose_incr (sas : nat -> SigmaAlgebra Ts) (t1: Ts -> option nat) (t2 : nat -> Ts -> option nat)
           {filt:IsFiltration sas} :
 
-      is_stopping_time t1 sas ->
-      (forall old, is_stopping_time (t2 old) sas) ->
+      IsStoppingTime t1 sas ->
+      (forall old, IsStoppingTime (t2 old) sas) ->
       (forall old n ts, t2 old ts = Some n -> old <= n)%nat ->
-      is_stopping_time (fun ts =>
+      IsStoppingTime (fun ts =>
                           match (t1 ts) with
                           | Some old => t2 old ts
                           | None => None
@@ -1988,7 +1987,7 @@ Section martingale.
           (X : nat -> Ts -> R) (old:nat) (sas:nat->SigmaAlgebra Ts)
           {filt:IsFiltration sas}
           {adaptX:IsAdapted borel_sa X sas}
-          (B:event borel_sa) : is_stopping_time (hitting_time_from X old B) sas.
+          (B:event borel_sa) : IsStoppingTime (hitting_time_from X old B) sas.
     Proof.
     unfold hitting_time_from, hitting_time.
     intros ?.

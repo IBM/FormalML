@@ -164,7 +164,7 @@ Section stopped_process.
             {filt:IsFiltration F}
             {sub:IsSubAlgebras dom F}
             (T:Ts -> option nat)
-            (is_stop:is_stopping_time T F).
+            {is_stop:IsStoppingTime T F}.
 
     Global Instance process_stopped_at_rv
            {rv:forall n, RandomVariable dom borel_sa (Y n)} :
@@ -246,6 +246,231 @@ Section stopped_process.
         apply is_stop.
     Qed.
 
+    Instance process_stopped_at_alt_rv
+             {rv:forall n, RandomVariable dom borel_sa (Y n)} :
+      forall n, RandomVariable dom borel_sa (process_stopped_at_alt Y T n).
+    Proof.
+      intros.
+      generalize (process_stopped_at_rv n).
+      apply RandomVariable_proper; try reflexivity.
+      now rewrite process_stopped_at_as_alt.
+    Qed.
+
+    Instance process_stopped_at_alt_isfe
+           {rv:forall n, RandomVariable dom borel_sa (Y n)}
+           {isfe:forall n, IsFiniteExpectation prts (Y n)} :
+      forall n, IsFiniteExpectation prts (process_stopped_at_alt Y T n).
+    Proof.
+      intros.
+      generalize (process_stopped_at_isfe n).
+      apply IsFiniteExpectation_proper.
+      now rewrite process_stopped_at_as_alt.
+    Qed.
+
+    Instance process_stopped_at_alt_adapted 
+           {adapt:IsAdapted borel_sa Y F} :
+      IsAdapted borel_sa (process_stopped_at_alt Y T) F.
+    Proof.
+      intros n.
+      generalize (process_stopped_at_adapted n).
+      apply RandomVariable_proper; try reflexivity.
+      now rewrite process_stopped_at_as_alt.
+    Qed.
+
+    Lemma process_stopped_at_alt_diff1_eq n :
+      rv_eq (rvminus
+               (process_stopped_at_alt Y T (S n))
+               (process_stopped_at_alt Y T n))
+            (rvmult
+               (rvminus
+                  (Y (S n))
+                  (Y n))
+               (EventIndicator (classic_dec (pre_event_complement (stopping_time_pre_event_alt T n%nat))))).
+    Proof.
+      intros ts.
+      unfold process_stopped_at_alt.
+      rv_unfold; unfold rvsum.
+      destruct n.
+      - rewrite Hierarchy.sum_O.
+        repeat match_destr
+        ; unfold stopping_time_pre_event, stopping_time_pre_event_alt, pre_event_complement in *
+        ; try rewrite s in *; try lia; try lra.
+        match_option_in n0; try tauto.
+        rewrite eqq in n.
+        assert (n1 <> 0%nat) by congruence.
+        lia.
+      - rewrite Hierarchy.sum_Sn.
+        unfold Hierarchy.plus; simpl.
+        field_simplify.
+        repeat match_destr
+        ; unfold stopping_time_pre_event, stopping_time_pre_event_alt, pre_event_complement in *
+        ; try rewrite s in *; try lia; try lra.
+        + match_destr_in p; try tauto.
+          assert (n2 <> S n) by congruence.
+          lia.
+        + match_destr_in p; try tauto.
+          assert (n2 <> S n) by congruence.
+          lia.
+    Qed.        
+
+    Instance process_stopped_at_alt_diff1_rv
+             {rv:forall n, RandomVariable dom borel_sa (Y n)} n
+:
+      RandomVariable dom borel_sa
+                     (rvmult (rvminus (Y (S n)) (Y n))
+                             (EventIndicator
+                                (classic_dec (pre_event_complement (stopping_time_pre_event_alt T n))))).
+    Proof.
+      apply rvmult_rv.
+      - typeclasses eauto.
+      - apply EventIndicator_pre_rv.
+        apply sa_complement.
+        apply is_stopping_time_as_alt in is_stop; trivial.
+        eapply sub.
+        apply is_stop.
+    Qed.
+
+    Instance process_stopped_at_alt_diff1_isfe n
+             {rv:forall n, RandomVariable dom borel_sa (Y n)}
+             {isfe:forall n, IsFiniteExpectation prts (Y n)} :
+      IsFiniteExpectation prts
+            (rvmult (rvminus (Y (S n)) (Y n))
+               (EventIndicator
+                  (classic_dec (pre_event_complement (stopping_time_pre_event_alt T n))))).
+    Proof.
+      apply IsFiniteExpectation_indicator; try typeclasses eauto.
+      apply sa_complement.
+      apply is_stopping_time_as_alt in is_stop; trivial.
+      eapply sub.
+      apply is_stop.
+    Qed.
+
+    Lemma process_stopped_at_sub_martingale
+          {rv:forall n, RandomVariable dom borel_sa (Y n)}
+          {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+          {adapt:IsAdapted borel_sa Y F}
+          {mart:IsMartingale prts Rle Y F} :
+      IsMartingale prts Rle (process_stopped_at Y T) F.
+    Proof.
+      cut (IsMartingale prts Rle (process_stopped_at_alt Y T) F).
+      {
+        apply is_martingale_eq_proper; try reflexivity.
+        intros.
+        apply all_almost; intros.
+        now rewrite process_stopped_at_as_alt.
+      } 
+      intros n.
+      generalize (process_stopped_at_alt_diff1_eq n); intros eqq1.
+      generalize (FiniteConditionalExpectation_ext
+                    prts (sub n)
+                    _ _
+                    eqq1)
+      ; intros eqq2; clear eqq1.
+
+      generalize (FiniteCondexp_minus prts (sub n)  (process_stopped_at_alt Y T (S n)) (process_stopped_at_alt Y T n)); intros HH.
+      apply almostR2_prob_space_sa_sub_lift in HH; revert HH.
+      apply almost_impl.
+      generalize (FiniteCondexp_minus prts (sub n)  (Y (S n)) (Y n)); intros HH.
+      apply almostR2_prob_space_sa_sub_lift in HH; revert HH.
+      apply almost_impl.
+
+      assert (rv':RandomVariable (F n) borel_sa
+                                 (EventIndicator (classic_dec (pre_event_complement (stopping_time_pre_event_alt T n))))).
+      {
+        apply EventIndicator_pre_rv.
+        apply sa_complement.
+        apply is_stopping_time_as_alt; trivial.
+      } 
+
+      assert (rvm':RandomVariable dom borel_sa
+                                  (rvmult
+                                     (EventIndicator
+                                        (classic_dec (pre_event_complement (stopping_time_pre_event_alt T n))))
+                                     (rvminus (Y (S n)) (Y n)))).
+      {
+        generalize (process_stopped_at_alt_diff1_rv n).
+        apply RandomVariable_proper; try reflexivity.
+        apply rvmult_comm.
+      }
+
+      generalize (FiniteCondexp_factor_out prts (sub n)
+                                             (rvminus (Y (S n)) (Y n))
+                                             (EventIndicator
+                                                (classic_dec (pre_event_complement (stopping_time_pre_event_alt T n))))); intros HH.
+      apply almostR2_prob_space_sa_sub_lift in HH; revert HH.
+      apply almost_impl.
+      generalize (mart n).
+      apply almost_impl.
+      apply all_almost; intros ts martle eqq3 eqq4 eqq5.
+      rewrite eqq2, eqq3 in eqq5.
+      unfold rvmult in eqq5.
+      rewrite eqq4 in eqq5.
+      clear eqq2 eqq3 eqq4.
+      rv_unfold.
+
+      assert (rvYn:RandomVariable (F n) borel_sa (Y n))
+        by apply adapt.
+      rewrite (FiniteCondexp_id _ _ (Y n)) in eqq5.
+      assert (rvYn':RandomVariable (F n) borel_sa (process_stopped_at_alt Y T n))
+        by apply process_stopped_at_alt_adapted.
+      rewrite (FiniteCondexp_id _ _ (process_stopped_at_alt Y T n)) in eqq5.
+      rewrite (Rplus_comm (FiniteConditionalExpectation prts (sub n) (process_stopped_at_alt Y T (S n)) ts)) in eqq5.
+      apply Radd_minus in eqq5.
+      rewrite <- eqq5.
+      match_destr; lra.
+    Qed.
+
+    Lemma process_stopped_at_opp n :
+      rv_eq (rvopp (process_stopped_at Y T n))
+            (process_stopped_at (fun n => rvopp (Y n)) T n).
+    Proof.
+      reflexivity.
+    Qed.
+            
   End process_stopped_at_props.
+
+  Section process_stopped_at_props_ext.
+
+      Context (Y : nat -> Ts -> R) (F : nat -> SigmaAlgebra Ts)
+            {filt:IsFiltration F}
+            {sub:IsSubAlgebras dom F}
+            (T:Ts -> option nat)
+            {is_stop:IsStoppingTime T F}.
+
+  Lemma process_stopped_at_super_martingale
+          {rv:forall n, RandomVariable dom borel_sa (Y n)}
+          {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+          {adapt:IsAdapted borel_sa Y F}
+          {mart:IsMartingale prts Rge Y F} :
+      IsMartingale prts Rge (process_stopped_at Y T) F.
+    Proof.
+      apply is_sub_martingale_neg.
+      cut (IsMartingale prts Rle (process_stopped_at (fun n => rvopp (Y n)) T) F).
+      {
+        apply is_martingale_eq_proper; try reflexivity.
+      }
+      eapply process_stopped_at_sub_martingale.
+      apply is_super_martingale_neg.
+      revert mart.
+      apply is_martingale_eq_proper; try reflexivity.
+      intros; apply all_almost; intros.
+      rv_unfold; lra.
+    Qed.
+
+    Lemma process_stopped_at_martingale
+          {rv:forall n, RandomVariable dom borel_sa (Y n)}
+          {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+          {adapt:IsAdapted borel_sa Y F}
+          {mart:IsMartingale prts eq Y F} :
+      IsMartingale prts eq (process_stopped_at Y T) F.
+    Proof.
+      apply is_martingale_sub_super_eq.
+      - apply process_stopped_at_sub_martingale.
+        now apply is_martingale_eq_any.
+      - eapply is_martingale_eq_any in mart.
+        apply process_stopped_at_super_martingale.
+    Qed.
+
+  End process_stopped_at_props_ext.
 
 End stopped_process.

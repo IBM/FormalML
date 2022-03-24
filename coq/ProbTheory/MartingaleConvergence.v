@@ -57,7 +57,7 @@ Section mct.
                             end
                     end.
 
-    Lemma upcrossing_times_is_stop a b n : is_stopping_time (upcrossing_times a b n) sas.
+    Lemma upcrossing_times_is_stop a b n : IsStoppingTime (upcrossing_times a b n) sas.
     Proof.
       destruct n; simpl.
       - apply is_stopping_time_constant.
@@ -191,7 +191,7 @@ Section mct.
           {
             destruct (le_dec n0 m)%nat.
             - apply sa_inter.
-              + generalize (upcrossing_times_is_stop a b (2 * n - 1) n0); unfold is_stopping_time, stopping_time_pre_event.
+              + generalize (upcrossing_times_is_stop a b (2 * n - 1) n0); unfold IsStoppingTime, stopping_time_pre_event.
                 eapply is_filtration_le; trivial.
               + apply sa_sigma_const; eauto.
             - eapply sa_proper; try eapply sa_none.
@@ -222,11 +222,9 @@ Section mct.
           apply sa_complement.
           apply sa_countable_union; intros.
           {
-           (* generalize (upcrossing_times_is_stop a b (2 * n) n0); unfold is_stopping_time, stopping_time_pre_event. *)
-            
             destruct (le_dec n0 m)%nat.
             - apply sa_inter.
-              + generalize (upcrossing_times_is_stop a b (2 * n) n0); unfold is_stopping_time, stopping_time_pre_event.
+              + generalize (upcrossing_times_is_stop a b (2 * n) n0); unfold IsStoppingTime, stopping_time_pre_event.
                 eapply is_filtration_le; trivial.
               + apply sa_sigma_const; lia.
             - eapply sa_proper; try eapply sa_none.
