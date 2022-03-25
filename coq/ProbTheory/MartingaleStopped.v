@@ -485,8 +485,8 @@ Section stopped_process.
            {isfe:forall n, IsFiniteExpectation prts (Y n)} :
        FiniteExpectation prts ((process_stopped_at Y T) 0%nat) = FiniteExpectation prts (Y 0).
      Proof.
-       generalize process_stopped_at_0; intros.
-       now rewrite <- (FiniteExpectation_ext _ _ _ H).
+       apply FiniteExpectation_ext.
+       apply process_stopped_at_0.
      Qed.
      
      Lemma process_stopped_at_sub_martinagle_expectation_0
