@@ -480,7 +480,16 @@ Section stopped_process.
        match_destr.
      Qed.
        
-    Lemma process_stopped_at_sub_martinagle_expectation_0
+     Lemma expectation_process_stopped_at_0 
+           {rv:forall n, RandomVariable dom borel_sa (Y n)}
+           {isfe:forall n, IsFiniteExpectation prts (Y n)} :
+       FiniteExpectation prts ((process_stopped_at Y T) 0%nat) = FiniteExpectation prts (Y 0).
+     Proof.
+       generalize process_stopped_at_0; intros.
+       now rewrite <- (FiniteExpectation_ext _ _ _ H).
+     Qed.
+     
+     Lemma process_stopped_at_sub_martinagle_expectation_0
           {rv:forall n, RandomVariable dom borel_sa (Y n)}
           {isfe:forall n, IsFiniteExpectation prts (Y n)} 
           {adapt:IsAdapted borel_sa Y F}
@@ -488,8 +497,7 @@ Section stopped_process.
       forall n, FiniteExpectation prts ((process_stopped_at Y T) n) >= FiniteExpectation prts (Y 0).
     Proof.
       intros.
-      generalize process_stopped_at_0; intros.
-      rewrite <- (FiniteExpectation_ext _ _ _ H).
+      rewrite <- expectation_process_stopped_at_0.
       apply Rle_ge.
       apply is_sub_martingale_expectation with (sas := F) (adapt0 :=process_stopped_at_adapted Y F T) 
                                            (rv0 := process_stopped_at_rv Y F T) 
@@ -505,8 +513,7 @@ Section stopped_process.
        forall n, FiniteExpectation prts ((process_stopped_at Y T) n) <= FiniteExpectation prts (Y 0).
      Proof.
       intros.
-      generalize process_stopped_at_0; intros.
-      rewrite <- (FiniteExpectation_ext _ _ _ H).
+      rewrite <- expectation_process_stopped_at_0.
       apply Rge_le.
       apply is_super_martingale_expectation with (sas := F) (adapt0 :=process_stopped_at_adapted Y F T) 
                                            (rv0 := process_stopped_at_rv Y F T) 
@@ -522,8 +529,7 @@ Section stopped_process.
       forall n, FiniteExpectation prts ((process_stopped_at Y T) n) = FiniteExpectation prts (Y 0).
     Proof.
       intros.
-      generalize process_stopped_at_0; intros.
-      rewrite <- (FiniteExpectation_ext _ _ _ H).
+      rewrite <- expectation_process_stopped_at_0.
       apply is_martingale_expectation with (sas := F) (adapt0 :=process_stopped_at_adapted Y F T) 
                                            (rv0 := process_stopped_at_rv Y F T) 
                                            (filt0 := filt) (sub0 := sub).
