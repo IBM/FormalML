@@ -31,12 +31,6 @@ Section stopped_process.
   
   Context {Ts:Type}.
 
-    Definition process_under (Y : nat -> Ts -> R) (T:Ts -> option nat) (x : Ts) : R
-    := match T x with
-       | None => 0
-       | Some n => Y n x
-       end.
-
     Definition lift1_min (x:nat) (y : option nat)
       := match y with
          | None => x
@@ -548,6 +542,22 @@ Section stopped_process.
       now apply is_martingale_expectation with (sas := F) (rv0 := rv) (adapt0 := adapt) (filt0 := filt) (sub0 := sub).
     Qed.
 
+  End process_stopped_at_props_ext.
+
+  Section process_under_props.
+
+    Context (Y : nat -> Ts -> R) (F : nat -> SigmaAlgebra Ts)
+            {filt:IsFiltration F}
+            {sub:IsSubAlgebras dom F}
+            (T:Ts -> option nat)
+            {is_stop:IsStoppingTime T F}.
+
+    Definition process_under (Y : nat -> Ts -> R) (T:Ts -> option nat) (x : Ts) : R
+      := match T x with
+         | None => 0
+         | Some n => Y n x
+         end.
+
     Lemma process_stopped_at_fin_limit :
       forall ts, T ts <> None -> is_lim_seq (fun n => process_stopped_at Y T n ts) (process_under Y T ts).
     Proof.
@@ -571,10 +581,128 @@ Section stopped_process.
       now apply process_stopped_at_fin_limit.
     Qed.
 
-  End process_stopped_at_props_ext.
+    Global Instance process_under_rv
+             {rv:forall n, RandomVariable dom borel_sa (Y n)} :
+      RandomVariable dom borel_sa (process_under Y T).
+    Proof.
+      unfold process_under.
+      apply measurable_rv; intros ?.
+      apply (sa_proper
+               _
+               (pre_event_union
+                  (fun omega => T omega = None /\ 0 <= r)
+                  (fun omega => exists n, stopping_time_pre_event T n omega /\ Y n omega <= r)
+               )
+            ).
+      - intros ?.
+        unfold pre_event_union.
+        split; intros.
+        + destruct H.
+          * destruct H.
+            now rewrite H.
+          * destruct H as [? [??]].
+            now rewrite H.
+        + match_option_in H; try tauto.
+          right.
+          eauto.
+      - apply sa_union.
+        + apply sa_inter.
+          * apply (sa_proper
+                     _
+                     (pre_event_complement (fun omega => exists n, T omega = Some n))
+                  ).
+            -- intros ?.
+               unfold pre_event_complement.
+               split; intros ?.
+               ++ destruct (T x); trivial.
+                  elim H; eauto.
+               ++ rewrite H.
+                  intros [??]; congruence.
+            -- apply sa_complement.
+               apply sa_countable_union; intros.
+               eapply sub.
+               apply is_stop.
+          * apply sa_sigma_const.
+            lra.
+        + apply sa_countable_union; intros.
+          apply sa_inter.
+          * eapply sub.
+            apply is_stop.
+          * now apply rv_measurable.
+    Qed.
+
+  End process_under_props.
 
   Section opt_stop_thm.
+
+    Context (Y : nat -> Ts -> R) (F : nat -> SigmaAlgebra Ts)
+            {filt:IsFiltration F}
+            {sub:IsSubAlgebras dom F}
+            (T:Ts -> option nat)
+            {is_stop:IsStoppingTime T F}.
+
+    Section variant_a.
+
+      Context (N:nat)
+              (Nbound:almost prts (fun ts => match T ts with
+                                          | Some k => (k <= N)%nat
+                                          | None => False
+                                          end)).
+      
+    Instance optional_stopping_time_a_isfe
+             {rv:forall n, RandomVariable dom borel_sa (Y n)}
+             {isfe:forall n, IsFiniteExpectation prts (Y n)} :
+      IsFiniteExpectation prts (process_under Y T).
+    Proof.
+      intros.
+      apply (IsFiniteExpectation_abs_bound_almost _ _
+                                                  (rvsum (fun k => rvabs (Y k)) N)).
+      - revert Nbound.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        unfold process_under, rvsum; rv_unfold.
+        match_destr; try tauto.
+        induction N.
+        + rewrite Hierarchy.sum_O.
+          now replace n with 0%nat by lia.
+        + rewrite Hierarchy.sum_Sn.
+          unfold Hierarchy.plus; simpl.
+          destruct (Nat.eq_dec n (S n0)).
+          * subst.
+            assert (0 <= @Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n0 : nat => Rabs (Y n0 x)) n0).
+            {
+              apply sum_n_nneg; intros.
+              apply Rabs_pos.
+            }
+            lra.
+          * cut_to IHn0; try lia.
+            assert (0 <= Rabs (Y (S n0) x)) by apply Rabs_pos.
+            lra.
+      - apply IsFiniteExpectation_sum; intros.
+        + typeclasses eauto.
+        + now apply IsFiniteExpectation_abs.
+    Qed.
+
+    Lemma optional_stopping_time_a
+          {rv:forall n, RandomVariable dom borel_sa (Y n)}
+          {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+          {adapt:IsAdapted borel_sa Y F}
+          {mart:IsMartingale prts eq Y F} :
+          FiniteExpectation prts (Y 0%nat) = FiniteExpectation prts (process_under Y T).
+    Proof.
+      rewrite <- (process_stopped_at_martingale_expectation_0 Y F T N).
+      apply FiniteExpectation_proper_almostR2.
+      - typeclasses eauto.
+      - typeclasses eauto.
+      - revert Nbound.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        unfold process_stopped_at, lift1_min, process_under.
+        match_destr; try tauto.
+        now rewrite min_r.
+    Qed.
+    End variant_a.
+
   End opt_stop_thm.    
 
-    
 End stopped_process.
