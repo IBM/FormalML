@@ -28,6 +28,7 @@ Section stopped_process.
   Local Open Scope R.
   Local Existing Instance Rge_pre.
   Local Existing Instance Rbar_le_pre.
+  Local Existing Instance Rle_pre.
   
   Context {Ts:Type}.
 
@@ -683,6 +684,17 @@ Section stopped_process.
         + now apply IsFiniteExpectation_abs.
     Qed.
 
+    Lemma optional_stopping_time_a_stopped_eq :
+      almostR2 prts eq (process_stopped_at Y T N) (process_under Y T).
+    Proof.
+      revert Nbound.
+      apply almost_impl.
+      apply all_almost; intros ??.
+      unfold process_stopped_at, lift1_min, process_under.
+      match_destr; try tauto.
+      now rewrite min_r.
+    Qed.
+
     Lemma optional_stopping_time_a
           {rv:forall n, RandomVariable dom borel_sa (Y n)}
           {isfe:forall n, IsFiniteExpectation prts (Y n)} 
@@ -694,13 +706,44 @@ Section stopped_process.
       apply FiniteExpectation_proper_almostR2.
       - typeclasses eauto.
       - typeclasses eauto.
-      - revert Nbound.
-        apply almost_impl.
-        apply all_almost; intros ??.
-        unfold process_stopped_at, lift1_min, process_under.
-        match_destr; try tauto.
-        now rewrite min_r.
+      - apply optional_stopping_time_a_stopped_eq.
     Qed.
+    
+    Lemma optional_stopping_time_sub_a
+          {rv:forall n, RandomVariable dom borel_sa (Y n)}
+          {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+          {adapt:IsAdapted borel_sa Y F}
+          {mart:IsMartingale prts Rle Y F} :
+      FiniteExpectation prts (process_under Y T) >= FiniteExpectation prts (Y 0%nat).
+    Proof.
+      rewrite <- (process_stopped_at_sub_martinagle_expectation_0 Y F T N).
+      apply Rle_ge.
+      apply FiniteExpectation_ale.
+      - typeclasses eauto.
+      - typeclasses eauto.
+      - generalize optional_stopping_time_a_stopped_eq.
+        apply almostR2_subrelation.
+        intros ???; lra.
+    Qed.
+
+    Lemma optional_stopping_time_super_a
+          {rv:forall n, RandomVariable dom borel_sa (Y n)}
+          {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+          {adapt:IsAdapted borel_sa Y F}
+          {mart:IsMartingale prts Rge Y F} :
+      FiniteExpectation prts (process_under Y T) <= FiniteExpectation prts (Y 0%nat).
+    Proof.
+      rewrite <- (process_stopped_at_super_martinagle_expectation_0 Y F T N).
+      apply FiniteExpectation_ale.
+      - typeclasses eauto.
+      - typeclasses eauto.
+      - generalize optional_stopping_time_a_stopped_eq; intros HH.
+        symmetry in HH.
+        revert HH.
+        apply almostR2_subrelation.
+        intros ???; lra.
+    Qed.
+
     End variant_a.
 
   End opt_stop_thm.    
