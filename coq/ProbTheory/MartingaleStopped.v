@@ -480,7 +480,41 @@ Section stopped_process.
        match_destr.
      Qed.
        
-    Lemma process_stopped_at_expectation_0
+    Lemma process_stopped_at_sub_martinagle_expectation_0
+          {rv:forall n, RandomVariable dom borel_sa (Y n)}
+          {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+          {adapt:IsAdapted borel_sa Y F}
+          {mart:IsMartingale prts Rle Y F} :
+      forall n, FiniteExpectation prts ((process_stopped_at Y T) n) >= FiniteExpectation prts (Y 0).
+    Proof.
+      intros.
+      generalize process_stopped_at_0; intros.
+      rewrite <- (FiniteExpectation_ext _ _ _ H).
+      apply Rle_ge.
+      apply is_sub_martingale_expectation with (sas := F) (adapt0 :=process_stopped_at_adapted Y F T) 
+                                           (rv0 := process_stopped_at_rv Y F T) 
+                                           (filt0 := filt) (sub0 := sub); try lia.
+      now apply process_stopped_at_sub_martingale.
+    Qed.
+
+     Lemma process_stopped_at_super_martinagle_expectation_0
+          {rv:forall n, RandomVariable dom borel_sa (Y n)}
+          {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+          {adapt:IsAdapted borel_sa Y F}
+          {mart:IsMartingale prts Rge Y F} :
+       forall n, FiniteExpectation prts ((process_stopped_at Y T) n) <= FiniteExpectation prts (Y 0).
+     Proof.
+      intros.
+      generalize process_stopped_at_0; intros.
+      rewrite <- (FiniteExpectation_ext _ _ _ H).
+      apply Rge_le.
+      apply is_super_martingale_expectation with (sas := F) (adapt0 :=process_stopped_at_adapted Y F T) 
+                                           (rv0 := process_stopped_at_rv Y F T) 
+                                           (filt0 := filt) (sub0 := sub); try lia.
+      now apply process_stopped_at_super_martingale.
+    Qed.
+
+    Lemma process_stopped_at_martingale_expectation_0
           {rv:forall n, RandomVariable dom borel_sa (Y n)}
           {isfe:forall n, IsFiniteExpectation prts (Y n)} 
           {adapt:IsAdapted borel_sa Y F}
@@ -496,7 +530,7 @@ Section stopped_process.
       apply process_stopped_at_martingale.
     Qed.
 
-    Lemma process_stopped_at_expectation
+    Lemma process_stopped_at_martingale_expectation
           {rv:forall n, RandomVariable dom borel_sa (Y n)}
           {isfe:forall n, IsFiniteExpectation prts (Y n)} 
           {adapt:IsAdapted borel_sa Y F}
@@ -504,7 +538,7 @@ Section stopped_process.
       forall s t, FiniteExpectation prts ((process_stopped_at Y T) s) = FiniteExpectation prts (Y t).
     Proof.
       intros.
-      rewrite process_stopped_at_expectation_0.
+      rewrite process_stopped_at_martingale_expectation_0.
       now apply is_martingale_expectation with (sas := F) (rv0 := rv) (adapt0 := adapt) (filt0 := filt) (sub0 := sub).
     Qed.
 
@@ -534,6 +568,7 @@ Section stopped_process.
   End process_stopped_at_props_ext.
 
   Section opt_stop_thm.
+  End opt_stop_thm.    
 
     
 End stopped_process.
