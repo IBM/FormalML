@@ -17,7 +17,7 @@ Require Import utils.Utils.
 Require Import List.
 Require Import PushNeg.
 Require Import Reals.
-Require Import Coquelicot.Rbar.
+Require Import Coquelicot.Rbar Coquelicot.Lim_seq.
 
 Require Import Martingale.
 
@@ -508,6 +508,32 @@ Section stopped_process.
       now apply is_martingale_expectation with (sas := F) (rv0 := rv) (adapt0 := adapt) (filt0 := filt) (sub0 := sub).
     Qed.
 
+    Lemma process_stopped_at_fin_limit :
+      forall ts, T ts <> None -> is_lim_seq (fun n => process_stopped_at Y T n ts) (process_under Y T ts).
+    Proof.
+      intros.
+      unfold process_stopped_at, process_under.
+      case_eq (T ts); [intros | congruence].
+      simpl.
+      apply (is_lim_seq_incr_n _ n).
+      apply (is_lim_seq_ext (fun n0 : nat => Y n ts)).
+      - intros.
+        now rewrite min_r by lia.
+      - apply is_lim_seq_const.
+    Qed.
+
+    Lemma process_stopped_at_almost_fin_limit :
+      almost prts (fun ts => T ts <> None) ->
+      almost prts (fun ts => is_lim_seq (fun n => process_stopped_at Y T n ts) (process_under Y T ts)).
+    Proof.
+      apply almost_impl.
+      apply all_almost; intros ??.
+      now apply process_stopped_at_fin_limit.
+    Qed.
+
   End process_stopped_at_props_ext.
 
+  Section opt_stop_thm.
+
+    
 End stopped_process.
