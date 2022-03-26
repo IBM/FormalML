@@ -484,7 +484,7 @@ Section stopped_process.
        apply process_stopped_at_0.
      Qed.
      
-     Lemma process_stopped_at_sub_martinagle_expectation_0
+     Lemma process_stopped_at_sub_martingale_expectation_0
           {rv:forall n, RandomVariable dom borel_sa (Y n)}
           {isfe:forall n, IsFiniteExpectation prts (Y n)} 
           {adapt:IsAdapted borel_sa Y F}
@@ -500,7 +500,7 @@ Section stopped_process.
       now apply process_stopped_at_sub_martingale.
     Qed.
 
-     Lemma process_stopped_at_super_martinagle_expectation_0
+     Lemma process_stopped_at_super_martingale_expectation_0
           {rv:forall n, RandomVariable dom borel_sa (Y n)}
           {isfe:forall n, IsFiniteExpectation prts (Y n)} 
           {adapt:IsAdapted borel_sa Y F}
@@ -716,7 +716,7 @@ Section stopped_process.
           {mart:IsMartingale prts Rle Y F} :
       FiniteExpectation prts (process_under Y T) >= FiniteExpectation prts (Y 0%nat).
     Proof.
-      rewrite <- (process_stopped_at_sub_martinagle_expectation_0 Y F T N).
+      rewrite <- (process_stopped_at_sub_martingale_expectation_0 Y F T N).
       apply Rle_ge.
       apply FiniteExpectation_ale.
       - typeclasses eauto.
@@ -733,7 +733,7 @@ Section stopped_process.
           {mart:IsMartingale prts Rge Y F} :
       FiniteExpectation prts (process_under Y T) <= FiniteExpectation prts (Y 0%nat).
     Proof.
-      rewrite <- (process_stopped_at_super_martinagle_expectation_0 Y F T N).
+      rewrite <- (process_stopped_at_super_martingale_expectation_0 Y F T N).
       apply FiniteExpectation_ale.
       - typeclasses eauto.
       - typeclasses eauto.
