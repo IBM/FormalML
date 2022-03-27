@@ -841,8 +841,9 @@ Section stopped_process.
         generalize (Dominated_convergence_almost prts (process_stopped_at Y T)
                                                  (Rbar_rvlim (process_stopped_at Y T))); intros domc.
         specialize (domc (const K) _ _ _).
-        specialize (domc (fun n=> (@IsFiniteExpectation_Rbar Ts dom prts (fun x : Ts => process_stopped_at Y T n x)
-               (@process_stopped_at_isfe Y F filt sub T is_stop rv isfe n))) _).
+        specialize (domc (fun n => 
+                            (IsFiniteExpectation_Rbar prts (fun x : Ts => process_stopped_at Y T n x)
+                                                      (process_stopped_at_isfe Y F T n))) _).
         cut_to domc.
         - apply is_Elim_seq_unique in domc.
           rewrite Elim_seq_fin in domc.
