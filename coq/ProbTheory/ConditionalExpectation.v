@@ -2567,7 +2567,7 @@ Qed.
     
     clear H13 H14 H15.
     cut_to H12.
-    apply is_Elim_seq_unique in H12.
+    apply is_lim_seq_unique in H12.
     rewrite (Rbar_FinExp_FinExp _) in H12.
     erewrite (FiniteExpectation_pf_irrel _) in H12.
     rewrite <- H12.
@@ -2628,14 +2628,14 @@ Qed.
     specialize (H13 (rvmult (rvabs f) g) _ _ _ _ _ _).    
     clear H14 H15.
     cut_to H13.
-    apply is_Elim_seq_unique in H13.
+    apply is_lim_seq_unique in H13.
 
     rewrite (FiniteExpectation_Expectation _ _).
     f_equal.
     rewrite (Rbar_FinExp_FinExp _) in H13.
     erewrite (FiniteExpectation_pf_irrel _) in H13.
     rewrite <- H13.
-    - apply ELim_seq_ext.
+    - apply Lim_seq_ext.
       intros.
       generalize (simple_approx_frf g); intros.
       generalize (simple_approx_rv g); intros.      

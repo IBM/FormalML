@@ -3475,7 +3475,7 @@ Theorem Dominated_convergence
           {isfeg: Rbar_IsFiniteExpectation g} :
     (forall n, Rbar_rv_le (Rbar_rvabs (fn n)) g) ->
     (forall x, is_Elim_seq (fun n => fn n x) (f x)) ->
-    is_Elim_seq (fun n => Rbar_FiniteExpectation (fn n)) (Rbar_FiniteExpectation f).
+    is_lim_seq (fun n => Rbar_FiniteExpectation (fn n)) (Rbar_FiniteExpectation f).
   Proof.
     intros le1 lim1.
     assert (forall n, Rbar_NonnegativeFunction (Rbar_rvplus g (fn n))).
@@ -3627,7 +3627,6 @@ Theorem Dominated_convergence
         now rewrite x_plus_x_div_2.
       }
       rewrite <- H15.
-      rewrite is_Elim_seq_fin.
       apply Lim_seq_correct.
       now apply ex_lim_LimSup_LimInf_seq.
       Unshelve.
@@ -3669,7 +3668,7 @@ Theorem Dominated_convergence
     Rbar_IsFiniteExpectation g ->
     (forall n, almostR2 prts Rbar_le (Rbar_rvabs (fn n)) g) ->
     (almost prts (fun x => is_Elim_seq (fun n => fn n x) (f x))) ->
-    is_Elim_seq (fun n => Rbar_FiniteExpectation (fn n)) (Rbar_FiniteExpectation f).
+    is_lim_seq (fun n => Rbar_FiniteExpectation (fn n)) (Rbar_FiniteExpectation f).
   Proof.
     intros isfeg ale islim.
 
@@ -3709,8 +3708,8 @@ Theorem Dominated_convergence
       eapply (Rbar_IsFiniteExpectation_proper_almostR2 (fn n)); trivial; typeclasses eauto.
     } 
     
-    cut (is_Elim_seq (fun n : nat => Rbar_FiniteExpectation (fn' n)) (Rbar_FiniteExpectation f)).
-    - apply is_Elim_seq_ext; intros.
+    cut (is_lim_seq (fun n : nat => Rbar_FiniteExpectation (fn' n)) (Rbar_FiniteExpectation f)).
+    - apply is_lim_seq_ext; intros.
       f_equal.
       now apply Rbar_FiniteExpectation_proper_almostR2.
     - destruct (almost_and prts (almost_forall _ eqqfn) islim) as [p [pone ph]].
@@ -3769,7 +3768,7 @@ Theorem Dominated_convergence
         }
         rewrite eqq1.
         revert HH.
-        apply is_Elim_seq_ext; intros.
+        apply is_lim_seq_ext; intros.
         f_equal.
         apply Rbar_FiniteExpectation_proper_almostR2; trivial.
         exists p; split; trivial; intros.

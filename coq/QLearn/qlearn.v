@@ -4295,8 +4295,7 @@ End rv_expressible.
       } 
       specialize (H1 isfefn' (Rbar_IsFiniteExpectation_const prts 0) (Rbar_IsFiniteExpectation_const prts 1)).
       cut_to H1.
-      - apply is_Elim_seq_fin in H1.
-        generalize (fun n => Expectation_EventIndicator (classic_dec (event_gt dom (rvabs (f n)) eps)) ); intros.
+      - generalize (fun n => Expectation_EventIndicator (classic_dec (event_gt dom (rvabs (f n)) eps)) ); intros.
         apply is_lim_seq_ext with (v := (fun n : nat => ps_P (event_gt dom (rvabs (f n)) eps))) in H1.
         + replace (Rbar_FiniteExpectation prts (const 0)) with (0) in H1; trivial.
           now rewrite Rbar_FiniteExpectation_const.
@@ -4375,7 +4374,6 @@ End rv_expressible.
       specialize (H1 isfefn' (Rbar_IsFiniteExpectation_const prts 1) (Rbar_IsFiniteExpectation_const prts 1)).
       cut_to H1.
       - generalize (fun n => Expectation_EventIndicator (classic_dec (event_lt dom (rvabs (f n)) eps)) ); intros.
-        apply is_Elim_seq_fin in H1.
         apply is_lim_seq_ext with (v := (fun n : nat => ps_P (event_lt dom (rvabs (f n)) eps))) in H1.
         + now rewrite Rbar_FiniteExpectation_const in H1.
         + intros.

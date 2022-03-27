@@ -846,8 +846,7 @@ Section stopped_process.
                             (IsFiniteExpectation_Rbar prts (fun x : Ts => process_stopped_at Y T n x)
                                                       (process_stopped_at_isfe Y F T n))) _).
         cut_to domc.
-        - apply is_Elim_seq_unique in domc.
-          rewrite Elim_seq_fin in domc.
+        - apply is_lim_seq_unique in domc.
           rewrite <- Rbar_finite_eq, <- domc.
           rewrite Lim_seq_ext with
               (v := (fun n => FiniteExpectation prts (Y 0))).
