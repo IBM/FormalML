@@ -862,8 +862,7 @@ Section stopped_process.
           apply almost_impl, all_almost.
           unfold impl; intros; simpl.
           now unfold rvabs in H0.
-        - generalize (process_stopped_at_almost_fin_limit Y T Tfin); intros.
-          revert H0.
+        - revert HH.
           apply almost_impl, all_almost.
           unfold impl; intros.
           unfold Rbar_rvlim.
