@@ -862,11 +862,15 @@ Section stopped_process.
           apply almost_impl, all_almost.
           unfold impl; intros; simpl.
           now unfold rvabs in H0.
-        - apply all_almost.
-          intros.
+        - generalize (process_stopped_at_almost_fin_limit Y T Tfin); intros.
+          revert H0.
+          apply almost_impl, all_almost.
+          unfold impl; intros.
           unfold Rbar_rvlim.
           apply ELim_seq_correct.
           rewrite ex_Elim_seq_fin.
+          unfold ex_lim_seq.
+          now exists (process_under Y T x).
      Admitted.
 
     End variant_b.
