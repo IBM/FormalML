@@ -752,6 +752,21 @@ Section stopped_process.
               (K:R)
               (Kbound: forall n, almost prts (fun ω => Rabs (Y n ω) < K)).
 
+      Lemma Kbound_stopped :
+        forall n : nat, almostR2 prts Rle (rvabs (process_stopped_at Y T n)) (const K).
+      Proof.
+        apply almost_forall in Kbound.
+        intros.
+        revert Kbound.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        unfold process_stopped_at.
+        unfold const, rvabs.
+        red in H.
+        left.
+        apply H.
+      Qed.
+
       Instance optional_stopping_time_b_isfe
                {rv:forall n, RandomVariable dom borel_sa (Y n)}
                {isfe:forall n, IsFiniteExpectation prts (Y n)} :
@@ -759,16 +774,7 @@ Section stopped_process.
       Proof.
         apply (Dominated_convergence1_almost prts (process_stopped_at Y T) _ (const K)).
         - typeclasses eauto.
-        - apply almost_forall in Kbound.
-          intros.
-          revert Kbound.
-          apply almost_impl.
-          apply all_almost; intros ??.
-          unfold process_stopped_at.
-          unfold const, rvabs.
-          red in H.
-          left.
-          apply H.
+        - apply Kbound_stopped.
         - now apply process_stopped_at_almost_fin_limit.
       Qed.
 
@@ -786,36 +792,82 @@ Section stopped_process.
         now rewrite <- Elim_seq_fin.
       Qed.
 
-    (*
+      Existing Instance IsFiniteExpectation_Rbar.
+      Lemma FinExp_Rbar_FinExp (f:Ts->R) 
+            {rv:RandomVariable dom borel_sa f}
+            {isfe:IsFiniteExpectation prts f}:
+        Rbar_FiniteExpectation prts f =
+        FiniteExpectation prts f.
+      Proof.
+        unfold FiniteExpectation, Rbar_FiniteExpectation.
+        destruct IsFiniteExpectation_Finite.
+        destruct Rbar_IsFiniteExpectation_Finite.        
+        unfold proj1_sig.
+        rewrite Expectation_Rbar_Expectation in e.
+        rewrite e in e0.
+        now invcs e0.
+     Qed.
+
       Lemma optional_stopping_time_b
           {rv:forall n, RandomVariable dom borel_sa (Y n)}
           {isfe:forall n, IsFiniteExpectation prts (Y n)} 
           {adapt:IsAdapted borel_sa Y F}
           {mart:IsMartingale prts eq Y F} :
-          FiniteExpectation prts (Y 0%nat) = FiniteExpectation prts (process_under Y T).
+        FiniteExpectation prts (Y 0%nat) = FiniteExpectation prts (process_under Y T).
       Proof.
         generalize (process_stopped_at_almost_fin_limit Y T Tfin)
         ; intros HH.
-        assert (isfelim:IsFiniteExpectation prts (rvlim (process_stopped_at Y T))).
+        generalize Kbound_stopped; intros Kbound_stopped.
+        assert (isfelim:Rbar_IsFiniteExpectation prts (Rbar_rvlim (process_stopped_at Y T))).
         {
           admit.
         } 
         assert (FiniteExpectation prts (process_under Y T) =
-                  FiniteExpectation prts (rvlim (process_stopped_at Y T))).
+                  Rbar_FiniteExpectation prts (Rbar_rvlim (process_stopped_at Y T))).
         {
-          apply FiniteExpectation_proper_almostR2.
+          rewrite <- FinExp_Rbar_FinExp; try typeclasses eauto.
+          apply Rbar_FiniteExpectation_proper_almostR2.
           - typeclasses eauto.
-          - apply rvlim_rv. typeclasses eauto.
+          - apply Rbar_rvlim_rv. typeclasses eauto.
+          - unfold almostR2, Rbar_rvlim.
+            revert HH.
+            apply almost_impl, all_almost.
+            unfold impl; intros.
+            apply is_lim_seq_unique in H.
+            rewrite Elim_seq_fin.
+            now rewrite H.
         }
-        
-        assert (FiniteExpectation prts (process_under Y T)
-      rewrite <- (process_stopped_at_martingale_expectation_0 Y F T N).
-      apply FiniteExpectation_proper_almostR2.
-      - typeclasses eauto.
-      - typeclasses eauto.
-      - apply optional_stopping_time_a_stopped_eq.
-    Qed.
-    *)
+        rewrite H.
+        generalize (Dominated_convergence_almost prts (process_stopped_at Y T)
+                                                 (Rbar_rvlim (process_stopped_at Y T))); intros domc.
+        specialize (domc (const K) _ _ _).
+        specialize (domc (fun n=> (@IsFiniteExpectation_Rbar Ts dom prts (fun x : Ts => process_stopped_at Y T n x)
+               (@process_stopped_at_isfe Y F filt sub T is_stop rv isfe n))) _).
+        cut_to domc.
+        - apply is_Elim_seq_unique in domc.
+          rewrite Elim_seq_fin in domc.
+          rewrite <- Rbar_finite_eq, <- domc.
+          rewrite Lim_seq_ext with
+              (v := (fun n => FiniteExpectation prts (Y 0))).
+          + now rewrite Lim_seq_const.
+          + intros.
+            rewrite FinExp_Rbar_FinExp; try typeclasses eauto.
+            now rewrite process_stopped_at_martingale_expectation_0 with (adapt := adapt).
+        - apply Rbar_IsFiniteExpectation_const.
+        - intros.
+          unfold almostR2.
+          specialize (Kbound_stopped n).
+          revert Kbound_stopped.
+          apply almost_impl, all_almost.
+          unfold impl; intros; simpl.
+          now unfold rvabs in H0.
+        - apply all_almost.
+          intros.
+          unfold Rbar_rvlim.
+          apply ELim_seq_correct.
+          rewrite ex_Elim_seq_fin.
+     Admitted.
+
     End variant_b.
 
   End opt_stop_thm.    
