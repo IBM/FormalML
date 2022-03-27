@@ -820,7 +820,24 @@ Section stopped_process.
         generalize Kbound_stopped; intros Kbound_stopped.
         assert (isfelim:Rbar_IsFiniteExpectation prts (Rbar_rvlim (process_stopped_at Y T))).
         {
-          admit.
+          cut (Rbar_IsFiniteExpectation
+                 prts
+                 (process_under Y T)).
+          {
+            intros HH2.
+            eapply Rbar_IsFiniteExpectation_proper_almostR2; try eapply HH2.
+            - typeclasses eauto.
+            - typeclasses eauto.
+            - revert HH.
+              apply almost_impl.
+              apply all_almost; intros ??.
+              unfold Rbar_rvlim.
+              apply is_lim_seq_unique in H.
+              rewrite Elim_seq_fin.
+              congruence.
+          }
+          apply IsFiniteExpectation_Rbar.
+          apply optional_stopping_time_b_isfe.
         } 
         assert (FiniteExpectation prts (process_under Y T) =
                   Rbar_FiniteExpectation prts (Rbar_rvlim (process_stopped_at Y T))).
@@ -871,7 +888,7 @@ Section stopped_process.
           rewrite ex_Elim_seq_fin.
           unfold ex_lim_seq.
           now exists (process_under Y T x).
-     Admitted.
+      Qed.
 
     End variant_b.
 
