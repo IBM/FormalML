@@ -792,22 +792,6 @@ Section stopped_process.
         now rewrite <- Elim_seq_fin.
       Qed.
 
-      Existing Instance IsFiniteExpectation_Rbar.
-      Lemma FinExp_Rbar_FinExp (f:Ts->R) 
-            {rv:RandomVariable dom borel_sa f}
-            {isfe:IsFiniteExpectation prts f}:
-        Rbar_FiniteExpectation prts f =
-        FiniteExpectation prts f.
-      Proof.
-        unfold FiniteExpectation, Rbar_FiniteExpectation.
-        destruct IsFiniteExpectation_Finite.
-        destruct Rbar_IsFiniteExpectation_Finite.        
-        unfold proj1_sig.
-        rewrite Expectation_Rbar_Expectation in e.
-        rewrite e in e0.
-        now invcs e0.
-     Qed.
-
       Lemma optional_stopping_time_b
           {rv:forall n, RandomVariable dom borel_sa (Y n)}
           {isfe:forall n, IsFiniteExpectation prts (Y n)} 

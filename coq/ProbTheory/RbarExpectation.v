@@ -2301,6 +2301,7 @@ Qed.
     now rewrite Expectation_Rbar_Expectation.
   Qed.  
 
+
   Lemma finiteExp_Rbar_rvabs 
         (f : Ts -> Rbar) 
         {rv : RandomVariable dom Rbar_borel_sa f}:
@@ -2801,6 +2802,21 @@ Qed.
               | [|- context [proj1_sig ?x]] => destruct x; simpl
               | [H: context [proj1_sig ?x] |- _] => destruct x; simpl in H
               end.
+
+  Lemma FinExp_Rbar_FinExp (f:Ts->R) 
+        {rv:RandomVariable dom borel_sa f}
+        {isfe:IsFiniteExpectation prts f}:
+    Rbar_FiniteExpectation f =
+    FiniteExpectation prts f.
+  Proof.
+    unfold FiniteExpectation, Rbar_FiniteExpectation.
+    destruct IsFiniteExpectation_Finite.
+    destruct Rbar_IsFiniteExpectation_Finite.        
+    unfold proj1_sig.
+    rewrite Expectation_Rbar_Expectation in e.
+    rewrite e in e0.
+    now invcs e0.
+  Qed.
 
   Lemma Rbar_FiniteExpectation_const (c:R) : Rbar_FiniteExpectation (const c) = c.
   Proof.
