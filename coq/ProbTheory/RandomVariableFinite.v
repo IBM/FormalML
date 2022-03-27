@@ -1131,6 +1131,38 @@ Lemma Fatou_FiniteExpectation
     apply IsFiniteExpectation_abs_bound_almost with (g := g); trivial.
   Qed.
 
+  Instance Dominated_convergence1_almost
+          (fn : nat -> Ts -> R)
+          (f g : Ts -> R)
+          {rvn : forall n, RandomVariable dom borel_sa (fn n)}
+          {rvf : RandomVariable dom borel_sa f}
+          {rvg : RandomVariable dom borel_sa g} 
+          (isfeg : IsFiniteExpectation g)
+          (le_fn_g : forall n, almostR2 prts Rle (rvabs (fn n)) g)
+          (lim : almost prts (fun x => is_lim_seq (fun n => fn n x) (f x))) :
+    IsFiniteExpectation f.
+  Proof.
+    intros.
+    assert (almostR2 prts Rbar_le (rvabs f) g).
+    {
+      apply almost_forall in le_fn_g.
+      revert le_fn_g.
+      apply almost_impl.
+      destruct lim as [? [? ?]].
+      exists x; split; trivial.
+      intros.
+      specialize (H0 x0 H1).
+      intros ?.
+      red in H2.
+      apply is_lim_seq_abs in H0.
+      unfold rvabs.
+      apply is_lim_seq_le with (u := (fun n : nat => Rabs (fn n x0)) )
+                               (v := (fun n => g x0)); trivial.
+      apply is_lim_seq_const.
+    }
+    apply IsFiniteExpectation_abs_bound_almost with (g := g); trivial.
+  Qed.
+
   Lemma FiniteExpectation_simple (rv_X : Ts -> R)
         {rvx_rv : RandomVariable dom borel_sa rv_X}
         {frf : FiniteRangeFunction rv_X}

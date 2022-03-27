@@ -745,6 +745,78 @@ Section stopped_process.
     Qed.
 
     End variant_a.
+    
+    Section variant_b.
+
+      Context (Tfin:almost prts (fun ts => T ts <> None))
+              (K:R)
+              (Kbound: forall n, almost prts (fun ω => Rabs (Y n ω) < K)).
+
+      Instance optional_stopping_time_b_isfe
+               {rv:forall n, RandomVariable dom borel_sa (Y n)}
+               {isfe:forall n, IsFiniteExpectation prts (Y n)} :
+        IsFiniteExpectation prts (process_under Y T).
+      Proof.
+        apply (Dominated_convergence1_almost prts (process_stopped_at Y T) _ (const K)).
+        - typeclasses eauto.
+        - apply almost_forall in Kbound.
+          intros.
+          revert Kbound.
+          apply almost_impl.
+          apply all_almost; intros ??.
+          unfold process_stopped_at.
+          unfold const, rvabs.
+          red in H.
+          left.
+          apply H.
+        - now apply process_stopped_at_almost_fin_limit.
+      Qed.
+
+      (* this should replace the existing rvlim *)
+      Global Instance rvlim_rv' (f: nat -> Ts -> R)
+             {rv : forall n, RandomVariable dom borel_sa (f n)} :
+        RandomVariable dom borel_sa (rvlim f).
+      Proof.
+        intros.
+        unfold rvlim.
+        apply Rbar_real_rv.
+        generalize (Rbar_rvlim_rv f).
+        apply RandomVariable_proper; try reflexivity.
+        intros ?.
+        now rewrite <- Elim_seq_fin.
+      Qed.
+
+    (*
+      Lemma optional_stopping_time_b
+          {rv:forall n, RandomVariable dom borel_sa (Y n)}
+          {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+          {adapt:IsAdapted borel_sa Y F}
+          {mart:IsMartingale prts eq Y F} :
+          FiniteExpectation prts (Y 0%nat) = FiniteExpectation prts (process_under Y T).
+      Proof.
+        generalize (process_stopped_at_almost_fin_limit Y T Tfin)
+        ; intros HH.
+        assert (isfelim:IsFiniteExpectation prts (rvlim (process_stopped_at Y T))).
+        {
+          admit.
+        } 
+        assert (FiniteExpectation prts (process_under Y T) =
+                  FiniteExpectation prts (rvlim (process_stopped_at Y T))).
+        {
+          apply FiniteExpectation_proper_almostR2.
+          - typeclasses eauto.
+          - apply rvlim_rv. typeclasses eauto.
+        }
+        
+        assert (FiniteExpectation prts (process_under Y T)
+      rewrite <- (process_stopped_at_martingale_expectation_0 Y F T N).
+      apply FiniteExpectation_proper_almostR2.
+      - typeclasses eauto.
+      - typeclasses eauto.
+      - apply optional_stopping_time_a_stopped_eq.
+    Qed.
+    *)
+    End variant_b.
 
   End opt_stop_thm.    
 
