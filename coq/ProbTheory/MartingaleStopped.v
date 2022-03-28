@@ -1393,6 +1393,112 @@ Section stopped_process.
       Qed.
       
     End variant_c.
-  End opt_stop_thm.    
+  End opt_stop_thm.
 
 End stopped_process.
+
+
+Local Existing Instance Rge_pre.
+Local Existing Instance Rle_pre.
+
+Section optional_stopping_time_thm.
+  (** * Optional Stopping Theorem (Fair Games Theorem) *)
+  (** This presents a statement and proof of the optional stopping time theorem, 
+     also known as the fair games theorem, for discrete-time (sub/super)-martingales
+     over general probability spaces. *)
+  
+  Context   (**r Given *)
+    {Ts:Type} (**r a sample space, *)
+    {σ: SigmaAlgebra Ts} (**r a σ-Algebra over the sample space, *)
+    (prts: ProbSpace σ) (**r and a probability space defined over the σ-Algebra *)
+    
+    (**r and given *)
+    (F : nat -> SigmaAlgebra Ts) (**r a sequence of σ-algebra *)
+    {filt:IsFiltration F} (**r that form a filtration *)
+    {sub:IsSubAlgebras σ F} (**r and are all contained in the base σ-algebra *)
+    
+    (**r and given *)
+    (τ:Ts -> option nat) (**r a random time *)
+    {is_stop:IsStoppingTime τ F} (**r that is a stopping time with respect to the given filtration *)
+    
+    (**r and given *)
+    (Y : nat -> Ts -> R) (**r a stochastic process *)
+    {rv:forall n, RandomVariable σ borel_sa (Y n)} (**r all of whose components are measurable *)
+    {isfe:forall n, IsFiniteExpectation prts (Y n)} (**r and have finite expectation (∀ n, E (Y n) < ∞) *)
+    {adapt:IsAdapted borel_sa Y F} (**r , where the process is adapted to the filtration *)
+
+    (conditions:    (**r and  one of these conditions holds: *)
+      (exists (N:nat), (**r There is a natural number [N] such that *)
+          almost prts (fun ω => match τ ω with (**r  τ <= N almost surely *)
+                             | Some k => (k <= N)%nat 
+                             | None => False
+                             end))
+        
+      \/ (**r OR *)
+        (almost prts (fun ω => τ ω <> None) (**r the stopping time is almost surely finite *)
+         /\ exists (K:R), (**r and there is a real number [K], such that *)
+            (forall n, almost prts (fun ω => Rabs (Y n ω) < K))) (**r  ∀ n, | (Y n) | < K, almost surely *)
+      \/ (**r OR *)
+        (Rbar_IsFiniteExpectation (**r E(τ) < ∞ *)
+           prts
+           (fun ω => match τ ω with
+                  | Some n => INR n
+                  | None => p_infty
+                  end)
+         /\ exists (K:R), (**r and there is a real number [K], such that *)
+          forall n, almost prts (fun ω => Rabs (Y (S n) ω - Y n ω) <= K)) (**r ∀ n, | Y (n + 1) - Y n | <= K, almost surely *)
+    ).
+    
+
+  Instance optional_stopping_time_isfe : IsFiniteExpectation prts (process_under Y τ). (**r The process Y stopped at time τ has finite expectation *)
+
+  Proof.
+    destruct conditions as [[??]|[[?[??]]|[?[??]]]].
+    - eapply optional_stopping_time_a_isfe; eauto.
+    - eapply optional_stopping_time_b_isfe; eauto.
+    - eapply optional_stopping_time_c_isfe; eauto.
+  Qed.
+
+  Theorem optional_stopping_time
+          {mart:IsMartingale prts eq Y F} (**r If the stochastic process is a martingale with respect to the filtration *)
+    : (**r then the expectation of the stopped process is the same as when the process started  *)
+    FiniteExpectation prts (process_under Y τ) = FiniteExpectation prts (Y 0%nat).
+  Proof.
+    destruct conditions as [[??]|[[?[??]]|[?[??]]]].
+    - rewrite (optional_stopping_time_a prts Y F τ x H); eauto.
+      apply FiniteExpectation_pf_irrel.
+    - rewrite <- (optional_stopping_time_b prts Y F τ H x H0); eauto.
+      apply FiniteExpectation_pf_irrel.
+    - rewrite <- (optional_stopping_time_c prts Y F τ H x H0); eauto.
+      apply FiniteExpectation_pf_irrel.
+  Qed.
+    
+  Theorem optional_stopping_time_sub
+          {mart:IsMartingale prts Rle Y F} (**r If the stochastic process is a sub-martingale with respect to the filtration *)
+    : (**r then the expectation of the stopped process is greater than or equal to when the process started  *)
+    FiniteExpectation prts (process_under Y τ) >= FiniteExpectation prts (Y 0%nat).
+  Proof.
+    destruct conditions as [[??]|[[?[??]]|[?[??]]]].
+    - rewrite <- (optional_stopping_time_sub_a prts Y F τ x H); eauto.
+      right; apply FiniteExpectation_pf_irrel.
+    - rewrite <- (optional_stopping_time_sub_b prts Y F τ H x H0); eauto.
+      right; apply FiniteExpectation_pf_irrel.
+    - rewrite <- (optional_stopping_time_sub_c prts Y F τ H x H0); eauto.
+      right; apply FiniteExpectation_pf_irrel.
+  Qed.
+    
+  Theorem optional_stopping_time_super
+          {mart:IsMartingale prts Rge Y F} (**r If the stochastic process is a super-martingale with respect to the filtration *)
+    : (**r then the expectation of the stopped process is less than or equal to when the process started  *)
+    FiniteExpectation prts (process_under Y τ) <= FiniteExpectation prts (Y 0%nat).
+  Proof.
+    destruct conditions as [[??]|[[?[??]]|[?[??]]]].
+    - rewrite <- (optional_stopping_time_super_a prts Y F τ x H); eauto.
+      right; apply FiniteExpectation_pf_irrel.
+    - rewrite <- (optional_stopping_time_super_b prts Y F τ H x H0); eauto.
+      right; apply FiniteExpectation_pf_irrel.
+    - rewrite <- (optional_stopping_time_super_c prts Y F τ H x H0); eauto.
+      right; apply FiniteExpectation_pf_irrel.
+  Qed.
+
+End optional_stopping_time_thm.
