@@ -347,47 +347,6 @@ Proof.
   - firstorder.
 Qed.
 
-(*
-Section prob.
-  Local Open Scope R.
-  Local Open Scope prob.
-
-  Definition Pr {Ts:Type} {Td:Type}
-             {doms: SigmaAlgebra Ts}
-             {dom: ProbSpace doms}
-             {cod: SigmaAlgebra Td}
-             {rv:RandomVariable dom cod}
-             (S:Td->Prop)
-    := ps_P (fun x:Ts => S (rv_X x)).
-
-  Context {Ts:Type} {Td:Type}
-          {doms: SigmaAlgebra Ts}
-          {dom: ProbSpace doms}
-          {cod: SigmaAlgebra Td}
-          {rv:RandomVariable dom cod}.
-
-  Definition independent (A B:Td->Prop) :=
-    Pr (A ∩ B) = (Pr A * Pr B).
-
-  Notation "a ⊥ b" := (independent a b) (at level 50) : prob. (* \perp *)
-
-  Lemma pr_all : Pr Ω = R1.
-  Proof.
-    unfold Pr; simpl.
-    rewrite (ps_proper _ Ω) by firstorder. 
-    apply ps_all.
-  Qed.
-  
-  Lemma pr_none : Pr ∅ = R0.
-  Proof.
-    unfold Pr; simpl.
-    rewrite (ps_proper _ ∅) by firstorder.
-    apply ps_none.
-  Qed.
-
-End prob.
- *)
-
 Require Import Classical ClassicalFacts.
 
 Section classic.
@@ -1184,3 +1143,83 @@ Section sa_sub.
 
 End sa_sub.
 
+Section indep.
+  Local Open Scope R.
+  Local Open Scope prob.
+  
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts:ProbSpace dom).
+
+  Definition independent_events (A B : event dom)
+    := ps_P (A ∩ B) = ps_P A * ps_P B.
+
+  Definition independent_event_collection (A:nat->event dom)
+    := forall (l:list nat),
+      NoDup l ->
+      ps_P (list_inter (map A l)) =
+        fold_right Rmult 1 (map ps_P (map A l)).
+  
+  Definition pairwise_independent_event_collection (A:nat->event dom)
+    := forall i j, i <> j ->
+              independent_events (A i) (A j).
+
+  Lemma independent_event_collection_pairwise_independent (A:nat -> event dom) :
+    independent_event_collection A -> pairwise_independent_event_collection A.
+  Proof.
+    intros ind i j ijne.
+    specialize (ind [i; j]).
+    cut_to ind.
+    - simpl in ind.
+      autorewrite with prob in ind.
+      now rewrite Rmult_1_r in ind.
+    - repeat constructor; simpl; intuition.
+  Qed.
+
+  Notation "a ⟂ b" := (independent_events a b) (at level 50) : prob. (* \perp *)
+
+  Lemma independent_events_symm  (A B : event dom) :
+    A ⟂ B -> B ⟂ A.
+  Proof.
+    unfold independent_events; intros.
+    rewrite event_inter_comm.
+    lra.
+  Qed.
+    
+  Lemma independent_events_complement_r (A B : event dom) :
+    A ⟂ B -> A ⟂ ¬ B.
+  Proof.
+    unfold independent_events; intros.
+    assert (eqq1:A === (A ∩ B) ∪ (A ∩ ¬ B)).
+    {
+      intros ?; simpl.
+      split; [| firstorder].
+      intros.
+      destruct (classic (proj1_sig B x)); firstorder.
+    }
+    generalize (ps_proper _ _ eqq1); intros eqq2.
+    rewrite ps_disjoint_union in eqq2 by firstorder.
+    assert (eqq3:ps_P (A ∩ ¬ B) = ps_P A - ps_P (A ∩ B)) by lra.
+    rewrite eqq3, H.
+    rewrite ps_complement.
+    lra.
+  Qed.
+
+  Lemma independent_events_complement_l (A B : event dom) :
+    A ⟂ B -> ¬ A ⟂ B.
+  Proof.
+    intros.
+    apply independent_events_symm.
+    apply independent_events_complement_r.
+    now apply independent_events_symm.
+  Qed.    
+
+  Lemma independent_events_complement_lr (A B : event dom) :
+    A ⟂ B -> ¬ A ⟂ ¬ B.
+  Proof.
+    intros.
+    apply independent_events_complement_l.
+    now apply independent_events_complement_r.
+  Qed.    
+
+End indep.
