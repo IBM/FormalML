@@ -946,6 +946,453 @@ Section stopped_process.
 
     End variant_b.
 
+    Section variant_c.
+
+      Context (ETfin:Rbar_IsFiniteExpectation
+                       prts
+                       (fun ts => match T ts with
+                               | Some n => INR n
+                               | None => p_infty
+                               end))
+      
+              (K:R)
+              (Kbound: forall n, almost prts (fun ω => Rabs (Y (S n) ω - Y n ω) <= K)).
+
+      Instance optional_stopping_time_sub_c_ET_rv : RandomVariable dom Rbar_borel_sa
+                                      (fun ts => match T ts with
+                                              | Some n => INR n
+                                              | None => p_infty
+                                              end).
+      Proof.
+        apply Rbar_measurable_rv.
+        intros ?.
+        red in is_stop.
+        destruct r.
+        - destruct (Rle_dec 0 r).
+          + destruct (archimed r).
+            apply Rgt_lt in H.
+            apply (sa_proper
+                     _
+                     (pre_list_union
+                        (map (stopping_time_pre_event T)
+                             (seq 0 (Z.to_nat (up r)))))).
+            {
+              intros ?.
+              unfold stopping_time_pre_event, pre_list_union.
+              split.
+              - intros [? [??]].
+                apply in_map_iff in H1.
+                destruct H1 as [?[??]]; subst.
+                rewrite H2; simpl.
+                apply in_seq in H3.
+                destruct H3 as [_ ?].
+                simpl in H1.
+                unfold lt in H1.
+                apply le_INR in H1.
+                rewrite INR_up_pos in H1 by lra.
+                rewrite S_INR in H1.
+                lra.
+              - match_option; simpl; try tauto.
+                intros le1.
+                exists (fun ts => T ts = Some n).
+                split; trivial.
+                apply in_map_iff.
+                eexists; split; trivial.
+                apply in_seq.
+                split; try lia.
+                simpl.
+                rewrite <- INR_up_pos in H, H0 by lra.
+                case_eq (Z.to_nat (up r)); intros.
+                * rewrite H1 in *.
+                  simpl in *; lra.
+                * simpl.
+                  rewrite H1 in *.
+                  assert (INR n < INR (S n0)) by lra.
+                  now apply INR_lt in H2.
+            }
+            apply sa_pre_list_union; intros.
+            apply in_map_iff in H1.
+            destruct H1 as [? [??]]; subst.
+            eapply sub; apply is_stop.
+          + apply (sa_proper _ (pre_event_none)).
+            * intros ?.
+              unfold pre_event_none.
+              split; [tauto | intros].
+              match_destr_in H.
+              simpl in H.
+              generalize (pos_INR n0).
+              lra.
+            * apply sa_none.
+        - apply (sa_proper _ (pre_Ω)).
+          + intros ?.
+            unfold pre_Ω.
+            split; [intros | trivial].
+            match_destr.
+          + apply sa_all.
+        - apply (sa_proper _ (pre_event_none)).
+          + intros ?.
+            unfold pre_event_none.
+            split; [tauto | intros].
+            match_destr_in H.
+          + apply sa_none.
+      Qed.
+
+      Lemma optional_stopping_time_sub_c_Kbound_stopped_telescope :
+        forall n : nat, rv_eq (process_stopped_at Y T n)
+                          (rvplus
+                             (Y 0%nat)
+                             (fun ts => match lift1_min n (T ts) with
+                              | 0%nat => 0%R
+                              | S n =>
+                                  rvsum (fun k => rvminus (Y (S k)) (Y k)) n ts
+                              end)).
+      Proof.
+        unfold process_stopped_at.
+        intros n ts.
+        rv_unfold; unfold rvsum.
+        induction (lift1_min n (T ts)); try lra.
+        destruct n0.
+        - rewrite Hierarchy.sum_O; lra.
+        - rewrite Hierarchy.sum_Sn.
+          unfold Hierarchy.plus; simpl.
+          lra.
+      Qed.
+
+      Lemma Rabs_sum_n_triang f n :
+        Rabs (@Hierarchy.sum_n Hierarchy.R_AbelianGroup f n) <= @Hierarchy.sum_n Hierarchy.R_AbelianGroup  (fun k => Rabs (f k)) n.
+      Proof.
+        induction n.
+        - now repeat rewrite Hierarchy.sum_O.
+        - repeat rewrite Hierarchy.sum_Sn.
+          unfold Hierarchy.plus; simpl.
+          rewrite Rabs_triang.
+          lra.
+      Qed.
+
+      Definition optional_stopping_time_sub_c_Kbound
+        := (Rbar_rvplus 
+              (Rbar_rvabs (Y 0%nat))
+              (Rbar_rvmult (const (Finite K)) (fun ts => match T ts with
+                                 | Some n => INR n
+                                 | None => p_infty
+                                 end))).
+
+      Instance optional_stopping_time_sub_c_Kbound_rv
+               {rv:forall n, RandomVariable dom borel_sa (Y n)}
+        :
+        RandomVariable dom Rbar_borel_sa optional_stopping_time_sub_c_Kbound.
+      Proof.
+        apply Rbar_rvplus_rv.
+        - apply Rbar_rvabs_rv.
+          now apply Real_Rbar_rv.
+        - apply Rbar_rvmult_rv; typeclasses eauto.
+      Qed.
+    
+      Instance optional_stopping_time_sub_c_Kbound_isfe
+               {rv:forall n, RandomVariable dom borel_sa (Y n)}
+               {isfe:forall n, IsFiniteExpectation prts (Y n)} :
+        Rbar_IsFiniteExpectation prts optional_stopping_time_sub_c_Kbound.
+      Proof.
+        apply Rbar_is_finite_expectation_isfe_plus.
+        - apply Rbar_rvabs_rv.
+          now apply Real_Rbar_rv.
+        - apply Rbar_rvmult_rv; typeclasses eauto.
+        - unfold Rbar_rvabs; simpl.
+          apply IsFiniteExpectation_Rbar.
+          apply IsFiniteExpectation_abs; trivial.
+        - apply Rbar_IsFiniteExpectation_scale.
+          typeclasses eauto.
+      Qed.
+
+      Lemma optional_stopping_time_sub_c_Kbound_stopped :
+        forall n : nat, almostR2 prts Rbar_le (rvabs (process_stopped_at Y T n))
+                          optional_stopping_time_sub_c_Kbound.
+      Proof.
+        intros.
+        transitivity (rvabs (rvplus
+                             (Y 0%nat)
+                             (fun ts => match lift1_min n (T ts) with
+                              | 0%nat => 0%R
+                              | S n =>
+                                  rvsum (fun k => rvminus (Y (S k)) (Y k)) n ts
+                                     end))).
+        {
+          apply all_almost; intros ?.
+          right.
+          unfold rvabs; f_equal.
+          apply optional_stopping_time_sub_c_Kbound_stopped_telescope.
+        }
+
+        transitivity (Rbar_rvplus
+                        (Rbar_rvabs (Y 0))
+                        (Rbar_rvabs (fun ts : Ts =>
+                                  match lift1_min n (T ts) with
+                                  | 0%nat => 0
+                                  | S n0 => rvsum (fun k : nat => rvminus (Y (S k)) (Y k)) n0 ts
+                                  end))).
+        {
+          apply all_almost; intros.
+          unfold rvabs; rv_unfold.
+          unfold Rbar_rvplus, Rbar_rvabs.
+          simpl.
+          destruct (lift1_min n (T x)); simpl
+          ; apply Rabs_triang.
+        }
+        unfold optional_stopping_time_sub_c_Kbound.
+        unfold Rbar_rvplus.
+        apply almostR2_Rbar_le_plus_proper; try reflexivity.
+        rv_unfold.
+        unfold Rbar_rvabs, Rbar_rvmult.
+        transitivity (fun omega : Ts =>
+                        Rabs
+                          (INR (lift1_min n (T omega)) * K)).
+        {
+          apply almost_forall in Kbound.
+          revert Kbound.
+          apply almost_impl.
+          apply all_almost; intros ??.
+          transitivity (Rabs
+                          match lift1_min n (T x) with
+                          | 0%nat => 0
+                          | S n0 => rvsum (fun (k : nat) (omega0 : Ts) => K) n0 x
+                          end).
+          {
+            match_destr; try reflexivity.
+            red in H.
+            unfold rvsum.
+            simpl.
+            rewrite Rabs_sum_n_triang.
+            transitivity (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun _ => K) n0).
+            {
+              apply sum_n_le_loc; intros.
+              replace (Y (S n1) x + -1 * Y n1 x)
+                with (Y (S n1) x - Y n1 x)
+                by lra.
+              auto.
+            }
+            rewrite Rabs_pos_eq; try reflexivity.
+            apply sum_n_nneg; intros.
+            rewrite <- (H 0%nat).
+            apply Rabs_pos.
+          }
+
+          transitivity (Rabs
+                          match lift1_min n (T x) with
+                          | 0%nat => 0
+                          | S n0 => (INR (S n0) * K)
+                          end).
+          { 
+            match_destr; try reflexivity.
+            unfold rvsum.
+            now rewrite Hierarchy.sum_n_const.
+          }
+
+          destruct (lift1_min n (T x)); simpl; try lra.
+          rewrite Rmult_0_l; reflexivity.
+        }
+        apply finexp_almost_finite in ETfin.
+        - revert ETfin.
+          apply almost_impl.
+          generalize (Kbound 0%nat).
+          apply almost_impl.
+          apply all_almost; intros ???.
+          match_option_in H0.
+          unfold lift1_min.
+          rewrite Rabs_mult.
+          assert (0 <= K).
+          {
+            rewrite <- H.
+            apply Rabs_pos.
+          } 
+          repeat rewrite Rabs_pos_eq; trivial.
+          + rewrite Rmult_comm.
+            apply Rmult_le_compat_l; trivial.
+            apply le_INR.
+            apply Nat.le_min_r.
+          + apply pos_INR.
+        - intros ?.
+          apply optional_stopping_time_sub_c_ET_rv.
+      Qed.
+
+      Lemma optional_stopping_time_c_Tfin : almost prts (fun ts : Ts => T ts <> None).
+      Proof.
+        apply finexp_almost_finite in ETfin.
+        revert ETfin.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        match_destr_in H.
+        typeclasses eauto.
+      Qed.
+      
+      Instance optional_stopping_time_c_isfe
+               {rv:forall n, RandomVariable dom borel_sa (Y n)}
+               {isfe:forall n, IsFiniteExpectation prts (Y n)} :
+        IsFiniteExpectation prts (process_under Y T).
+      Proof.
+        apply (Dominated_convergence1_almost prts (process_stopped_at Y T) _ optional_stopping_time_sub_c_Kbound).
+        - apply Rbar_finexp_finexp; typeclasses eauto.
+        - intros n.
+          generalize (optional_stopping_time_sub_c_Kbound_stopped n).
+          apply almost_impl.
+          generalize optional_stopping_time_sub_c_Kbound_isfe; intros HH.
+          apply finexp_almost_finite in HH; [| typeclasses eauto].
+          revert HH.
+          apply almost_impl.
+          apply all_almost; intros ???.
+          rewrite <- H in H0 |- *.
+          now simpl in *.
+        - apply process_stopped_at_almost_fin_limit.
+          apply optional_stopping_time_c_Tfin.
+      Qed.
+
+      Instance optional_stopping_time_c_isfe'
+               {rv:forall n, RandomVariable dom borel_sa (Y n)}
+            {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+            {adapt:IsAdapted borel_sa Y F} :
+        Rbar_IsFiniteExpectation prts (Rbar_rvlim (process_stopped_at Y T)).
+      Proof.
+        generalize (process_stopped_at_almost_fin_limit Y T optional_stopping_time_c_Tfin)
+        ; intros HH.
+        generalize Kbound_stopped; intros Kbound_stopped.
+
+        cut (Rbar_IsFiniteExpectation
+               prts
+               (process_under Y T)).
+        {
+          intros HH2.
+          eapply Rbar_IsFiniteExpectation_proper_almostR2; try eapply HH2.
+          - typeclasses eauto.
+          - typeclasses eauto.
+          - revert HH.
+            apply almost_impl.
+            apply all_almost; intros ??.
+            unfold Rbar_rvlim.
+            apply is_lim_seq_unique in H.
+            rewrite Elim_seq_fin.
+            congruence.
+        }
+        apply IsFiniteExpectation_Rbar.
+        apply optional_stopping_time_c_isfe.
+      Qed.
+        
+      Lemma optional_stopping_time_c_eq
+            {rv:forall n, RandomVariable dom borel_sa (Y n)}
+            {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+            {adapt:IsAdapted borel_sa Y F} :
+        FiniteExpectation prts (process_under Y T) =
+          Rbar_FiniteExpectation prts (Rbar_rvlim (process_stopped_at Y T)).
+      Proof.
+        generalize (process_stopped_at_almost_fin_limit Y T optional_stopping_time_c_Tfin)
+        ; intros HH.
+        rewrite <- FinExp_Rbar_FinExp; try typeclasses eauto.
+        apply Rbar_FiniteExpectation_proper_almostR2.
+        - typeclasses eauto.
+        - apply Rbar_rvlim_rv. typeclasses eauto.
+        - unfold almostR2, Rbar_rvlim.
+          revert HH.
+          apply almost_impl, all_almost.
+          unfold impl; intros.
+          apply is_lim_seq_unique in H.
+          rewrite Elim_seq_fin.
+          now rewrite H.
+      Qed.
+
+      Lemma optional_stopping_time_c_helper
+            {rv:forall n, RandomVariable dom borel_sa (Y n)}
+            {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+            {adapt:IsAdapted borel_sa Y F} :
+      is_lim_seq
+        (fun n : nat => Rbar_FiniteExpectation prts (fun x : Ts => process_stopped_at Y T n x) (isfe:= (IsFiniteExpectation_Rbar prts (fun x : Ts => process_stopped_at Y T n x)
+                                                      (process_stopped_at_isfe Y F T n))))
+        (Rbar_FiniteExpectation prts
+                                (Rbar_rvlim (fun (n : nat) (x : Ts) => process_stopped_at Y T n x))).
+      Proof.
+        generalize (process_stopped_at_almost_fin_limit Y T optional_stopping_time_c_Tfin)
+        ; intros HH.
+        generalize Kbound_stopped; intros Kbound_stopped.
+        apply (Dominated_convergence_almost prts (process_stopped_at Y T)
+                                                 (Rbar_rvlim (process_stopped_at Y T)) (optional_stopping_time_sub_c_Kbound)).
+        - typeclasses eauto.
+        - intros.
+          apply optional_stopping_time_sub_c_Kbound_stopped.
+        - revert HH.
+          apply almost_impl, all_almost.
+          unfold impl; intros.
+          unfold Rbar_rvlim.
+          apply ELim_seq_correct.
+          rewrite ex_Elim_seq_fin.
+          unfold ex_lim_seq.
+          now exists (process_under Y T x).
+      Qed.
+
+      Lemma optional_stopping_time_c_helper'
+            {rv:forall n, RandomVariable dom borel_sa (Y n)}
+            {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+            {adapt:IsAdapted borel_sa Y F} :
+        Lim_seq 
+        (fun n : nat => Rbar_FiniteExpectation prts (fun x : Ts => process_stopped_at Y T n x) (isfe:= (IsFiniteExpectation_Rbar prts (fun x : Ts => process_stopped_at Y T n x)
+                                                      (process_stopped_at_isfe Y F T n)))) = 
+        Finite (Rbar_FiniteExpectation prts
+                                (Rbar_rvlim (fun (n : nat) (x : Ts) => process_stopped_at Y T n x))).
+      Proof.
+        apply is_lim_seq_unique.
+        apply optional_stopping_time_c_helper.
+      Qed.
+
+      Lemma optional_stopping_time_c
+          {rv:forall n, RandomVariable dom borel_sa (Y n)}
+          {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+          {adapt:IsAdapted borel_sa Y F}
+          {mart:IsMartingale prts eq Y F} :
+         FiniteExpectation prts (process_under Y T) = FiniteExpectation prts (Y 0%nat).
+      Proof.        
+        rewrite optional_stopping_time_c_eq.
+        rewrite <- Rbar_finite_eq, <- optional_stopping_time_c_helper'.
+        rewrite <- (Lim_seq_const (FiniteExpectation prts (Y 0))).
+        apply Lim_seq_ext; intros.
+        rewrite FinExp_Rbar_FinExp; try typeclasses eauto.
+        now rewrite process_stopped_at_martingale_expectation_0 with (adapt := adapt).
+      Qed.
+
+      Lemma optional_stopping_time_sub_c
+          {rv:forall n, RandomVariable dom borel_sa (Y n)}
+          {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+          {adapt:IsAdapted borel_sa Y F}
+          {mart:IsMartingale prts Rle Y F} :
+        FiniteExpectation prts (process_under Y T) >= FiniteExpectation prts (Y 0%nat).
+      Proof.
+        rewrite optional_stopping_time_c_eq. 
+        apply Rle_ge.
+        cut (Rbar_ge (Rbar_FiniteExpectation prts (Rbar_rvlim (fun (n : nat) (x : Ts) => process_stopped_at Y T n x)))
+                     (FiniteExpectation prts (Y 0))); [trivial |].
+          rewrite <- optional_stopping_time_c_helper'.
+          rewrite <- (Lim_seq_const (FiniteExpectation prts (Y 0))).
+          apply Lim_seq_le_loc.
+          exists 0%nat; intros.
+          rewrite FinExp_Rbar_FinExp; try typeclasses eauto.
+          apply Rge_le.
+          now apply process_stopped_at_sub_martingale_expectation_0 with (adapt := adapt).
+      Qed.
+
+      Lemma optional_stopping_time_super_c
+          {rv:forall n, RandomVariable dom borel_sa (Y n)}
+          {isfe:forall n, IsFiniteExpectation prts (Y n)} 
+          {adapt:IsAdapted borel_sa Y F}
+          {mart:IsMartingale prts Rge Y F} :
+        FiniteExpectation prts (process_under Y T) <= FiniteExpectation prts (Y 0%nat).
+      Proof.
+        rewrite optional_stopping_time_c_eq. 
+        cut (Rbar_le (Rbar_FiniteExpectation prts (Rbar_rvlim (fun (n : nat) (x : Ts) => process_stopped_at Y T n x)))
+                     (FiniteExpectation prts (Y 0))); [trivial |].
+        rewrite <- optional_stopping_time_c_helper'.
+          rewrite <- (Lim_seq_const (FiniteExpectation prts (Y 0))).
+          apply Lim_seq_le_loc.
+          exists 0%nat; intros.
+          rewrite FinExp_Rbar_FinExp; try typeclasses eauto.
+          now apply process_stopped_at_super_martingale_expectation_0 with (adapt := adapt).
+      Qed.
+      
+    End variant_c.
   End opt_stop_thm.    
 
 End stopped_process.

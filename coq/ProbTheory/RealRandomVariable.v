@@ -4459,6 +4459,21 @@ Section rv_almost.
       apply Rplus_le_compat; auto.
   Qed.
 
+  Global Instance almostR2_Rbar_le_plus_proper
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) : Proper (almostR2 prts Rbar_le ==> almostR2 prts Rbar_le ==> almostR2 prts Rbar_le) Rbar_rvplus.
+  Proof.
+    unfold almostR2 in *.
+    intros x1 x2 [Px [Pxall eq_onx]] y1 y2 [Py [Pyall eq_ony]].
+    exists (Px ∩ Py).
+    split.
+    - now apply ps_one_inter.
+    - intros a [Pxa Pya].
+      unfold rvplus.
+      apply Rbar_plus_le_compat; auto.
+  Qed.
+
   Global Instance almostR2_le_lt_plus_proper
          {Ts:Type} 
          {dom: SigmaAlgebra Ts}

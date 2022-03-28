@@ -2748,6 +2748,26 @@ Qed.
     ; typeclasses eauto.
   Qed.
 
+  
+  Global Instance Rbar_IsFiniteExpectation_scale c f :
+    Rbar_IsFiniteExpectation f ->
+    Rbar_IsFiniteExpectation (Rbar_rvmult (const (Finite c)) f).
+  Proof.
+    intros isfe.
+    destruct (Req_EM_T c 0) as [e|ne].
+    - subst.
+      generalize (Rbar_IsFiniteExpectation_const 0).
+      apply Rbar_IsFiniteExpectation_proper; intros ?.
+      unfold Rbar_rvmult, const.
+      now rewrite Rbar_mult_0_l.
+    - generalize (Rbar_Expectation_scale (Finite c) f ne)
+      ; simpl; intros HH.
+      unfold Rbar_IsFiniteExpectation, const in *.
+      rewrite HH.
+      match_option_in isfe.
+      match_destr_in isfe; simpl; rbar_prover.
+  Qed.
+
   (* TODO: This shold hold for Rbar *)
   Lemma Rbar_Expectation_const (c:R) :
     Rbar_Expectation (const c) = Some (Finite c).
@@ -3804,6 +3824,7 @@ Theorem Dominated_convergence
           now rewrite Rbar_mult_0_r.
   Qed.
 
+  
 End almost.
 
 Section sa_sub.

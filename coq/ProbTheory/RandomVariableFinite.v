@@ -1395,6 +1395,17 @@ Proof.
   ; simpl in *; try tauto.
 Qed.
 
+Global Instance IsFiniteExpectation_abs f
+       {rv:RandomVariable dom borel_sa f} :
+  IsFiniteExpectation prts f -> IsFiniteExpectation prts (rvabs f).
+Proof.
+  intros.
+  apply IsFiniteExpectation_parts in H.
+  rewrite rv_pos_neg_abs.
+  apply IsFiniteExpectation_plus; try tauto
+  ; typeclasses eauto.
+Qed.
+
 
 Global Instance IsFiniteExpectation_indicator f {P} (dec:dec_pre_event P)
        {rv : RandomVariable dom borel_sa f}:
