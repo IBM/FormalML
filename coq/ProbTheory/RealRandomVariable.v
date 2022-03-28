@@ -5139,94 +5139,38 @@ Section adapted.
 
 End adapted.
 
-
-
-(*
-Section prob.
-  Local Open Scope R.
-  Local Open Scope prob.
+Section indep.
 
   Context {Ts:Type} {Td:Type}
           {dom: SigmaAlgebra Ts}
-          {prts: ProbSpace dom}
-          {cod: SigmaAlgebra Td}
-          {rv_X: Ts -> Td}.
+          {prts: ProbSpace dom}.
 
-  Definition Pr 
-             (S:Td->Prop)
-    := ps_P (fun x:Ts => S (rv_X x)).
+  Definition independent_rvs
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y}
+    := forall x y, independent_events prts (event_le dom X x) (event_le dom Y y).
 
-  Definition independent (A B:Td->Prop) :=
-    Pr (A ∩ B) = (Pr A * Pr B).
+  Definition independent_rv_collection
+             (X : nat -> Ts -> R)
+             {rv_X : forall n, RandomVariable dom borel_sa (X n)}
+    := forall (l:nat->R),
+      independent_event_collection prts (fun n => (event_le dom (X n) (l n))).
+  
+  Definition pairwise_independent_rv_collection
+             (X : nat -> Ts -> R)
+             {rv_X : forall n, RandomVariable dom borel_sa (X n)}
+    := forall (l:nat->R),
+      pairwise_independent_event_collection prts (fun n => (event_le dom (X n) (l n))).
 
-  Notation "a ⊥ b" := (independent a b) (at level 50) : prob. (* \perp *)
-
-  Lemma pr_all : Pr Ω = R1.
+  Lemma independent_rv_collection_pairwise_independent
+        (X:nat -> Ts -> R)
+        {rv_X : forall n, RandomVariable dom borel_sa (X n)} :
+    independent_rv_collection X -> pairwise_independent_rv_collection X.
   Proof.
-    unfold Pr; simpl.
-    rewrite (ps_proper _ Ω) by firstorder. 
-    apply ps_all.
+    unfold independent_rv_collection, pairwise_independent_rv_collection; intros.
+    apply independent_event_collection_pairwise_independent.
+    apply H.
   Qed.
   
-  Lemma pr_none : Pr ∅ = R0.
-  Proof.
-    unfold Pr; simpl.
-    rewrite (ps_proper _ ∅) by firstorder.
-    apply ps_none.
-  Qed.
-
-
-End prob.
-
-
-Section lebesgueintegration.
-  
-
-  Class MeasurableFunction {Ts: Type} (dom: SigmaAlgebra Ts) :=
-    {
-    measure_mu: event Ts -> R;
-
-    measure_none : measure_mu event_none = R0 ;
-    measure_ge_zero: forall A : event Ts, sa_sigma A -> 0 <= measure_mu A;
-    
-    measure_coutably_additive: forall collection: nat -> event Ts,
-        (forall n : nat, sa_sigma (collection n)) ->
-        collection_is_pairwise_disjoint collection ->
-        sum_of_probs_equals measure_mu collection (measure_mu (union_of_collection collection))
-
-    }.
-
-
-  (* See https://en.wikipedia.org/wiki/Lebesgue_integration#Towards_a_formal_definition *)
-  Definition F_star {dom:SigmaAlgebra R} (measure: MeasurableFunction dom) (f: R -> R) (t: R) :=
-    measure_mu (fun (x: R) => (f x) > t).
-
-  (* The integral $\int f d\mu defined in terms of the Riemann integral.
-   * note that this definition assumes that f : R -> R+
-   * Again, see https://en.wikipedia.org/wiki/Lebesgue_integration#Towards_a_formal_definition *)
-  Definition Lebesgue_integrable_pos {dom: SigmaAlgebra R}
-             (f : R -> R)
-             (f_nonneg : forall x:R, f x > 0)
-             (measure: MeasurableFunction dom)
-             (a b : R) :=
-    (Riemann_integrable (F_star measure f) a b).
-End lebesgueintegration.
-
-Instance ProbSpace_Measurable {T:Type} {sa: SigmaAlgebra T} (ps:ProbSpace sa) : MeasurableFunction sa
-  := {
-  measure_mu := ps_P ;
-  measure_none := (ps_none ps) ;
-  measure_ge_zero := ps_pos ;
-  measure_coutably_additive := ps_countable_disjoint_union ; 
-    }.
-
-Section zmBoundedVariance.
-  (* TODO finish this definition *)
-  Class ZeroMeanVoundedVariance (t: nat -> R) :=
-    {
-    has_zero_mean: Prop;
-    has_bounded_variance: Prop;
-    }.
-End zmBoundedVariance.
- *)
-
+End indep.
