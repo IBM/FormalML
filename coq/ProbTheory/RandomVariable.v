@@ -886,4 +886,44 @@ Section indep.
     apply H.
   Qed.
 
+  Lemma rv_preimage_compose {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
+             (X1 : Ts -> Td1) (X2 : Td1 -> Td2)
+             {rv1:RandomVariable dom cod1 X1}
+             {rv2:RandomVariable cod1 cod2 X2} e :
+    rv_preimage (X2 ∘ X1) e === rv_preimage X1 (rv_preimage X2 e).
+  Proof.
+    intros ?; simpl.
+    reflexivity.
+  Qed.
+
+  Lemma independent_rv_collection_compose
+        {Idx} {Td1:Idx -> Type} (cod1:forall (i:Idx), SigmaAlgebra (Td1 i))
+        (X1 : forall (i:Idx), Ts -> Td1 i)
+        {rv1 : forall (i:Idx), RandomVariable dom (cod1 i) (X1 i)}
+        {Td2:Idx -> Type} (cod2:forall (i:Idx), SigmaAlgebra (Td2 i))
+        (X2 : forall (i:Idx), Td1 i -> Td2 i)
+        {rv2 : forall (i:Idx), RandomVariable (cod1 i) (cod2 i) (X2 i)} :
+    independent_rv_collection cod1 X1 ->
+    independent_rv_collection cod2 (fun i => (X2 i) ∘ (X1 i)).
+  Proof.
+    intros indep ???.
+    specialize (indep (fun i => rv_preimage (X2 i) (l i)) l0 H).
+    etransitivity; [etransitivity |]; [| apply indep |].
+    - apply ps_proper.
+      intros ?; simpl.
+      split; intros HH ? inn
+      ; apply in_map_iff in inn
+      ; destruct inn as [? [??]]
+      ; subst
+      ; apply rv_preimage_compose
+      ; apply HH
+      ; apply in_map_iff
+      ; eauto.
+    - f_equal.
+      repeat rewrite map_map.
+      apply map_ext; intros.
+      now rewrite rv_preimage_compose.
+  Qed.
+        
+  
 End indep.
