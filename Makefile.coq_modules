@@ -77,6 +77,7 @@ PROB_THEORY = \
 	DiscreteProbSpace \
 	Dynkin \
 	Event \
+	Independence \
 	ProbSpace \
 	FunctionsToReal \
 	Measures \

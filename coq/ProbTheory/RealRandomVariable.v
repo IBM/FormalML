@@ -5145,30 +5145,30 @@ Section indep.
           {dom: SigmaAlgebra Ts}
           {prts: ProbSpace dom}.
 
-  Definition independent_rvs
+  Definition independent_real_rvs
              (X Y : Ts -> R)
              {rv_X : RandomVariable dom borel_sa X}
              {rv_Y : RandomVariable dom borel_sa Y}
     := forall x y, independent_events prts (event_le dom X x) (event_le dom Y y).
 
-  Definition independent_rv_collection
+  Definition independent_real_rv_collection
              (X : nat -> Ts -> R)
              {rv_X : forall n, RandomVariable dom borel_sa (X n)}
     := forall (l:nat->R),
       independent_event_collection prts (fun n => (event_le dom (X n) (l n))).
   
-  Definition pairwise_independent_rv_collection
+  Definition pairwise_independent_real_rv_collection
              (X : nat -> Ts -> R)
              {rv_X : forall n, RandomVariable dom borel_sa (X n)}
     := forall (l:nat->R),
       pairwise_independent_event_collection prts (fun n => (event_le dom (X n) (l n))).
 
-  Lemma independent_rv_collection_pairwise_independent
+  Lemma independent_real_rv_collection_pairwise_independent
         (X:nat -> Ts -> R)
         {rv_X : forall n, RandomVariable dom borel_sa (X n)} :
-    independent_rv_collection X -> pairwise_independent_rv_collection X.
+    independent_real_rv_collection X -> pairwise_independent_real_rv_collection X.
   Proof.
-    unfold independent_rv_collection, pairwise_independent_rv_collection; intros.
+    unfold independent_real_rv_collection, pairwise_independent_real_rv_collection; intros.
     apply independent_event_collection_pairwise_independent.
     apply H.
   Qed.

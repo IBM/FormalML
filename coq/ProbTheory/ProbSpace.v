@@ -1220,6 +1220,44 @@ Section indep.
     intros.
     apply independent_events_complement_l.
     now apply independent_events_complement_r.
-  Qed.    
+  Qed.
+
+  Lemma independent_events_all_r (A : event dom) : A ⟂ Ω.
+  Proof.
+    red.
+    now rewrite ps_all, event_inter_true_r, Rmult_1_r.
+  Qed.
+
+  Lemma independent_events_all_l (A : event dom) : Ω ⟂ A.
+  Proof.
+    red.
+    now rewrite ps_all, event_inter_true_l, Rmult_1_l.
+  Qed.
+
+  Lemma independent_events_none_r (A : event dom) : A ⟂ ∅.
+  Proof.
+    red.
+    now rewrite event_inter_false_r, ps_none, Rmult_0_r.
+  Qed.
+
+  Lemma independent_events_nonel_l (A : event dom) : ∅ ⟂ A.
+  Proof.
+    red.
+    now rewrite event_inter_false_l, ps_none, Rmult_0_l.
+  Qed.
+
+  Lemma independent_events_self (A : event dom) :
+    A ⟂ A ->
+    ps_P A = 0 \/ ps_P A = 1.
+  Proof.
+    unfold independent_events.
+    rewrite event_inter_self.
+    intros.
+    destruct (Req_EM_T (ps_P A) 0); try tauto.
+    apply (f_equal (fun x => x * / ps_P A)) in H.
+    rewrite Rmult_assoc in H.
+    repeat rewrite Rinv_r in H by trivial.
+    lra.
+  Qed.
 
 End indep.
