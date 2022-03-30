@@ -860,17 +860,30 @@ Section indep.
     := forall (A:event cod1) (B:event cod2),
       independent_events prts (rv_preimage X1 A) (rv_preimage X2 B).
 
-  Definition independent_sa_collection {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+  Definition independent_rv_collection
+             {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
              (X : forall (i:Idx), Ts -> Td i)
              {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)}
     := 
     forall (l:forall i, event (cod i)),
       independent_event_collection prts (fun i => rv_preimage (X i) (l i)).
   
-  Definition pairwise_independent_sa_collection {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+  Definition pairwise_independent_rv_collection
+             {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
              (X : forall (i:Idx), Ts -> Td i)
              {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)}
     := forall (l:forall i, event (cod i)),
       pairwise_independent_event_collection prts (fun i => rv_preimage (X i) (l i)).
-  
+
+  Lemma independent_rv_collection_pairwise_independent
+        {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+        (X : forall (i:Idx), Ts -> Td i)
+        {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)} :
+    independent_rv_collection cod X -> pairwise_independent_rv_collection cod X.
+  Proof.
+    unfold independent_rv_collection, pairwise_independent_rv_collection; intros.
+    apply independent_event_collection_pairwise_independent.
+    apply H.
+  Qed.
+
 End indep.
