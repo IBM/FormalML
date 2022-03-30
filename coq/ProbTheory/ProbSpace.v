@@ -1154,17 +1154,17 @@ Section indep.
   Definition independent_events (A B : event dom)
     := ps_P (A ∩ B) = ps_P A * ps_P B.
 
-  Definition independent_event_collection (A:nat->event dom)
-    := forall (l:list nat),
+  Definition independent_event_collection {Idx} (A:Idx->event dom)
+    := forall (l:list Idx),
       NoDup l ->
       ps_P (list_inter (map A l)) =
         fold_right Rmult 1 (map ps_P (map A l)).
   
-  Definition pairwise_independent_event_collection (A:nat->event dom)
+  Definition pairwise_independent_event_collection {Idx} (A:Idx->event dom)
     := forall i j, i <> j ->
               independent_events (A i) (A j).
 
-  Lemma independent_event_collection_pairwise_independent (A:nat -> event dom) :
+  Lemma independent_event_collection_pairwise_independent {Idx} (A:Idx -> event dom) :
     independent_event_collection A -> pairwise_independent_event_collection A.
   Proof.
     intros ind i j ijne.

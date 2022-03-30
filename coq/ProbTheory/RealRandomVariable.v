@@ -5151,20 +5151,20 @@ Section indep.
              {rv_Y : RandomVariable dom borel_sa Y}
     := forall x y, independent_events prts (event_le dom X x) (event_le dom Y y).
 
-  Definition independent_real_rv_collection
-             (X : nat -> Ts -> R)
+  Definition independent_real_rv_collection {Idx}
+             (X : Idx -> Ts -> R)
              {rv_X : forall n, RandomVariable dom borel_sa (X n)}
-    := forall (l:nat->R),
+    := forall (l:Idx->R),
       independent_event_collection prts (fun n => (event_le dom (X n) (l n))).
   
-  Definition pairwise_independent_real_rv_collection
-             (X : nat -> Ts -> R)
+  Definition pairwise_independent_real_rv_collection {Idx}
+             (X : Idx -> Ts -> R)
              {rv_X : forall n, RandomVariable dom borel_sa (X n)}
-    := forall (l:nat->R),
+    := forall (l:Idx->R),
       pairwise_independent_event_collection prts (fun n => (event_le dom (X n) (l n))).
 
-  Lemma independent_real_rv_collection_pairwise_independent
-        (X:nat -> Ts -> R)
+  Lemma independent_real_rv_collection_pairwise_independent {Idx}
+        (X:Idx -> Ts -> R)
         {rv_X : forall n, RandomVariable dom borel_sa (X n)} :
     independent_real_rv_collection X -> pairwise_independent_real_rv_collection X.
   Proof.

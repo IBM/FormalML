@@ -847,3 +847,30 @@ Section prod_space.
   Qed.
 
 End prod_space.
+
+Section indep.
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts:ProbSpace dom).
+
+  Definition independent_rvs {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
+             (X1 : Ts -> Td1) (X2 : Ts -> Td2)
+             {rv1:RandomVariable dom cod1 X1}
+             {rv2:RandomVariable dom cod2 X2}
+    := forall (A:event cod1) (B:event cod2),
+      independent_events prts (rv_preimage X1 A) (rv_preimage X2 B).
+
+  Definition independent_sa_collection {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+             (X : forall (i:Idx), Ts -> Td i)
+             {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)}
+    := 
+    forall (l:forall i, event (cod i)),
+      independent_event_collection prts (fun i => rv_preimage (X i) (l i)).
+  
+  Definition pairwise_independent_sa_collection {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+             (X : forall (i:Idx), Ts -> Td i)
+             {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)}
+    := forall (l:forall i, event (cod i)),
+      pairwise_independent_event_collection prts (fun i => rv_preimage (X i) (l i)).
+  
+End indep.

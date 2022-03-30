@@ -26,12 +26,12 @@ Section sigma_indep.
     := forall (A:event dom1) (B:event dom2),
       independent_events prts (event_sa_sub sub1 A) (event_sa_sub sub2 B).
 
-  Definition independent_sa_collection (doms:nat->SigmaAlgebra Ts) {sub:IsSubAlgebras dom doms}
+  Definition independent_sa_collection {Idx} (doms:Idx->SigmaAlgebra Ts) {sub:IsSubAlgebras dom doms}
     := 
     forall (l:forall n, event (doms n)),
       independent_event_collection prts (fun n => event_sa_sub (sub n) (l n)).
   
-  Definition pairwise_independent_sa_collection (doms:nat->SigmaAlgebra Ts) {sub:IsSubAlgebras dom doms}
+  Definition pairwise_independent_sa_collection {Idx} (doms:Idx->SigmaAlgebra Ts) {sub:IsSubAlgebras dom doms}
     := forall (l:forall n, event (doms n)),
       pairwise_independent_event_collection prts (fun n => event_sa_sub (sub n) (l n)).
 

@@ -1124,7 +1124,7 @@ End dec.
 Section filtration.
   Context {Ts:Type}.
 
-  Class IsSubAlgebras (dom:SigmaAlgebra Ts) (sas:nat->SigmaAlgebra Ts)
+  Class IsSubAlgebras {Idx} (dom:SigmaAlgebra Ts) (sas:Idx->SigmaAlgebra Ts)
     := is_sub_algebras : forall n, sa_sub (sas n) dom.
     
   Class IsFiltration (sas:nat->SigmaAlgebra Ts)
@@ -1145,16 +1145,16 @@ Section filtration.
       reflexivity.
     Qed.
 
-  Global Instance IsSubAlgebras_proper :
-    Proper (sa_sub ==> pointwise_relation _ sa_sub --> impl) IsSubAlgebras.
+  Global Instance IsSubAlgebras_proper {Idx} :
+    Proper (sa_sub ==> pointwise_relation _ sa_sub --> impl) (@IsSubAlgebras Idx).
   Proof.
     unfold IsSubAlgebras.
     intros ????????.
     now rewrite <- H0, H1.
   Qed.
 
-  Global Instance IsSubAlgebras_eq_proper' :
-    Proper (sa_equiv ==> pointwise_relation _ sa_equiv ==> impl) IsSubAlgebras.
+  Global Instance IsSubAlgebras_eq_proper' {Idx} :
+    Proper (sa_equiv ==> pointwise_relation _ sa_equiv ==> impl) (@IsSubAlgebras Idx).
   Proof.
     intros ??????.
     apply IsSubAlgebras_proper.
@@ -1164,8 +1164,8 @@ Section filtration.
       reflexivity.
   Qed.
 
-  Global Instance IsSubAlgebras_eq_proper :
-    Proper (sa_equiv ==> pointwise_relation _ sa_equiv ==> iff) IsSubAlgebras.
+  Global Instance IsSubAlgebras_eq_proper {Idx} :
+    Proper (sa_equiv ==> pointwise_relation _ sa_equiv ==> iff) (@IsSubAlgebras Idx).
   Proof.
     intros ??????.
     split; apply IsSubAlgebras_eq_proper'; trivial
