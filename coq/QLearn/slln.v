@@ -3635,8 +3635,10 @@ Qed.
                        (EventIndicator
                           (classic_dec (event_inter (event_lt dom Y (INR k + 1)) (event_ge dom Y (INR k))))))) 
           (S n)).
-   Proof.
-     Admitted.
+ Proof.
+   Search EventIndicator.
+ Admitted.
+ Locate expectation_indicator_sum_gen.
    
   Lemma Ash_6_2_4_helper1 (Y : Ts -> R) 
         (rv : RandomVariable dom borel_sa Y)
@@ -3745,5 +3747,111 @@ Qed.
       rewrite NonnegExpectation_EventIndicator.
       now simpl.
   Qed.
+
+  Lemma Ash_6_2_4_helper3 (Y : Ts -> R) 
+        (rv : RandomVariable dom borel_sa Y)
+        (nny: NonnegativeFunction Y) :
+    Lim_seq (fun n => sum_n_m
+                        (fun k => ps_P (event_ge dom Y (INR k)))
+                        1 n) =
+    Lim_seq (fun n => sum_n
+                        (fun k => (INR k) * (ps_P (event_inter (event_lt dom Y (INR k + 1))
+                                                               (event_ge dom Y (INR k)))))
+                        n).
+  Proof.
+  Admitted.
+
+  Lemma Ash_6_2_4_helper4 (Y : Ts -> R)
+        (rv : RandomVariable dom borel_sa Y)
+        (nny: NonnegativeFunction Y) :
+    Lim_seq (fun n => sum_n
+                        (fun k => (ps_P (event_inter (event_lt dom Y (INR k + 1))
+                                                     (event_ge dom Y (INR k)))))
+                        n) = 1.
+   Proof.
+     Admitted.
+    
+
+  Lemma Ash_6_2_4  (Y : Ts -> R) 
+        (rv : RandomVariable dom borel_sa Y)
+        (nny: NonnegativeFunction Y) :
+    (Rbar_le (Lim_seq (fun n => sum_n_m
+                                 (fun k => ps_P (event_ge dom Y (INR k)))
+                                 1 n) )
+             (NonnegExpectation Y)) /\
+    
+    (Rbar_le (NonnegExpectation Y)
+             (Rbar_plus 1 
+                        (Lim_seq (fun n => sum_n_m
+                                             (fun k => ps_P (event_ge dom Y (INR k)))
+                                             1 n) ))).
+  Proof.
+    rewrite Ash_6_2_4_helper3; trivial.
+    rewrite <- Elim_seq_fin.
+    split.
+    - rewrite ELim_seq_ext with
+          (v :=  (fun n : nat =>
+                    sum_Rbar_n
+                      (fun k : nat =>
+                         INR k * ps_P (event_inter (event_lt dom Y (INR k + 1)) 
+                                                   (event_ge dom Y (INR k)))) 
+                      (S n))).
+      + apply Ash_6_2_4_helper1.
+      + intros.
+        now rewrite sum_Rbar_n_finite_sum_n.
+    - rewrite ELim_seq_ext with
+          (v :=  (fun n : nat =>
+                    sum_Rbar_n
+                      (fun k : nat =>
+                         INR k * ps_P (event_inter (event_lt dom Y (INR k + 1)) 
+                                                   (event_ge dom Y (INR k)))) 
+                      (S n))).
+      + rewrite <- Ash_6_2_4_helper4 with (Y := Y) (rv := rv); trivial.
+        generalize (Ash_6_2_4_helper2 Y rv nny); intros.
+        eapply Rbar_le_trans.
+        * apply H.
+        * replace (Lim_seq
+                     (fun n : nat =>
+                        sum_n
+                          (fun k : nat => ps_P (event_inter (event_lt dom Y (INR k + 1)) 
+                                                            (event_ge dom Y (INR k))))
+                          n))
+            with
+              (ELim_seq
+                 (fun n : nat =>
+                    sum_Rbar_n
+                      (fun k : nat => ps_P (event_inter (event_lt dom Y (INR k + 1)) 
+                                                        (event_ge dom Y (INR k))))
+                      (S n))).
+          -- rewrite <- ELim_seq_plus.
+             ++ apply ELim_seq_le.
+                intros.
+                replace
+                  (Rbar_plus
+                     (sum_Rbar_n
+                        (fun k : nat => ps_P (event_inter (event_lt dom Y (INR k + 1)) (event_ge dom Y (INR k))))
+                        (S n))
+                     (sum_Rbar_n
+                        (fun k : nat =>
+                           INR k * ps_P (event_inter (event_lt dom Y (INR k + 1)) (event_ge dom Y (INR k)))) 
+                        (S n)))
+                  with
+                     (sum_Rbar_n
+                        (fun k : nat =>
+                           (INR k + 1) * ps_P (event_inter (event_lt dom Y (INR k + 1)) (event_ge dom Y (INR k)))) 
+                        (S n)).
+                ** apply Rbar_le_refl.
+                ** admit.
+             ++ admit.
+             ++ admit.
+             ++ admit.
+          -- rewrite <- Elim_seq_fin.
+             apply ELim_seq_ext.
+             intros.
+             now rewrite sum_Rbar_n_finite_sum_n.
+        + intros.
+          now rewrite sum_Rbar_n_finite_sum_n.          
+     Admitted.
+
             
 End slln_extra.
