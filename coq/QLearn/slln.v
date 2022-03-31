@@ -3851,11 +3851,31 @@ Qed.
            lra.
        + intros.
          apply is_Elim_seq_fin.
-         admit.
+         pose (n:=Z.to_nat(up (Y omega))).
+         apply is_lim_seq_spec.
+         unfold is_lim_seq'.
+         intros.
+         exists n.
+         intros.
+         unfold rvmult, EventIndicator.
+         match_destr.
+         * rewrite Rmult_1_r.
+           rewrite Rminus_eq_0.
+           rewrite Rabs_R0.
+           apply cond_pos.
+         * simpl in n1.
+           destruct (archimed (Y omega)).
+           assert (INR n0 > Y omega).
+           {
+             apply le_INR in H2.
+             subst n.
+             specialize (nny omega).
+             rewrite INR_up_pos in H2; lra.
+           }
+           lra.
      - intros.
        now rewrite RbarExpectation.NNExpectation_Rbar_NNExpectation.       
-   Admitted.           
-
+   Qed.
 
  Lemma partition_expectation (Y : Ts -> R)
         (rv : RandomVariable dom borel_sa Y)
