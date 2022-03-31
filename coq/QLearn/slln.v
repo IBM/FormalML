@@ -3622,6 +3622,16 @@ Qed.
         now rewrite S_INR.
    Qed.
             
+  Lemma Ash_6_2_4_partition (Y : Ts -> R)
+        (rv : RandomVariable dom borel_sa Y)
+        (nny: NonnegativeFunction Y) :
+    Lim_seq (fun n => sum_n
+                        (fun k => (ps_P (event_inter (event_lt dom Y (INR k + 1))
+                                                     (event_ge dom Y (INR k)))))
+                        n) = 1.
+   Proof.
+     Admitted.
+    
  Lemma partition_expectation (Y : Ts -> R)
         (rv : RandomVariable dom borel_sa Y)
         (nny: NonnegativeFunction Y) :
@@ -3761,16 +3771,6 @@ Qed.
   Proof.
   Admitted.
 
-  Lemma Ash_6_2_4_helper4 (Y : Ts -> R)
-        (rv : RandomVariable dom borel_sa Y)
-        (nny: NonnegativeFunction Y) :
-    Lim_seq (fun n => sum_n
-                        (fun k => (ps_P (event_inter (event_lt dom Y (INR k + 1))
-                                                     (event_ge dom Y (INR k)))))
-                        n) = 1.
-   Proof.
-     Admitted.
-    
 
   Lemma Ash_6_2_4  (Y : Ts -> R) 
         (rv : RandomVariable dom borel_sa Y)
@@ -3806,7 +3806,7 @@ Qed.
                          INR k * ps_P (event_inter (event_lt dom Y (INR k + 1)) 
                                                    (event_ge dom Y (INR k)))) 
                       (S n))).
-      + rewrite <- Ash_6_2_4_helper4 with (Y := Y) (rv := rv); trivial.
+      + rewrite <- Ash_6_2_4_partition with (Y := Y) (rv := rv); trivial.
         generalize (Ash_6_2_4_helper2 Y rv nny); intros.
         eapply Rbar_le_trans.
         * apply H.
