@@ -3622,6 +3622,41 @@ Qed.
         now rewrite S_INR.
    Qed.
 
+  Lemma sum_disj_event_ind_mult (Y : Ts -> R) 
+        (rv : RandomVariable dom borel_sa Y)
+        (nny: NonnegativeFunction Y) :
+    forall x n,
+      sum_n
+        (fun x0 : nat =>
+           (EventIndicator
+             (classic_dec (event_inter (event_ge dom Y (INR x0)) (event_lt dom Y (INR x0 + 1)) )) x) *
+           (Y x))
+             n =
+      (EventIndicator (classic_dec (event_lt dom Y (INR n + 1))) x) * (Y x).
+   Proof.
+     induction n.
+     - rewrite sum_O.
+       unfold EventIndicator, event_inter, pre_event_inter.
+       match_destr; match_destr; simpl in *.
+       + lra.
+       + unfold NonnegativeFunction in nny.
+         intuition.
+     - rewrite sum_Sn.
+       rewrite IHn.
+         unfold EventIndicator, event_inter, pre_event_inter.
+      replace (S n) with (n+1)%nat by lia.
+      match_destr; match_destr; match_destr; unfold plus; simpl in *; try lra.
+      + replace (INR n + 1) with (INR (n+1)) in e; try lra.
+        replace (n+1)%nat with (S n) by lia.
+        now rewrite S_INR.
+      + replace (INR n + 1) with (INR (n+1)) in e; try lra.
+        replace (n+1)%nat with (S n) by lia.
+        now rewrite S_INR.
+      + replace (INR n + 1) with (INR (n+1)) in n0; try lra.
+        replace (n+1)%nat with (S n) by lia.
+        now rewrite S_INR.
+   Qed.
+
   (* move this *)
   Lemma ForallOrdPairs_app_inv {A} {P} (l1 l2:list A) :
     ForallOrdPairs P (l1 ++ l2) ->
@@ -3769,6 +3804,59 @@ Qed.
         lia.
   Qed.        
     
+ Lemma partition_expectation0 (Y : Ts -> R)
+        (rv : RandomVariable dom borel_sa Y)
+        (nny: NonnegativeFunction Y) :
+   NonnegExpectation Y =
+   ELim_seq
+     (fun n : nat =>
+        NonnegExpectation
+          (rvmult Y 
+                  (EventIndicator
+                     (classic_dec (event_lt dom Y (INR n + 1)) )))).
+   Proof.
+     generalize (RbarExpectation.Rbar_monotone_convergence 
+                   Y 
+                   (fun n => rvmult Y
+                                    (EventIndicator
+                                       (classic_dec (event_lt dom Y (INR n + 1)) )))); intros.
+     assert (RandomVariable dom Rbar_borel_sa (fun x : Ts => Y x)) by typeclasses eauto.
+     assert (Rbar_NonnegativeFunction Y) by apply nny.
+     specialize (H H0 H1).
+     rewrite RbarExpectation.NNExpectation_Rbar_NNExpectation.
+     rewrite ELim_seq_ext with
+         (v := (fun n : nat =>
+         RbarExpectation.Rbar_NonnegExpectation
+           (fun omega : Ts =>
+            rvmult Y (EventIndicator (classic_dec (event_lt dom Y (INR n + 1)))) omega))).
+     - rewrite H.
+       + apply  RbarExpectation.Rbar_NonnegExpectation_ext.
+         reflexivity.
+       + intros.
+         typeclasses eauto.
+       + intros n x.
+         specialize (nny x).
+         unfold rvmult, EventIndicator; simpl.
+         match_destr; lra.
+       + intros n x.
+         unfold rvmult, EventIndicator.
+         match_destr; match_destr; simpl; try lra.
+         * unfold event_lt in e; simpl in e.
+           replace (INR (S n)) with (INR n + 1) in n0.
+           -- unfold event_lt in n0; simpl in n0.
+              lra.
+           -- simpl.
+              match_destr; simpl; lra.
+         * specialize (nny x).
+           lra.
+       + intros.
+         apply is_Elim_seq_fin.
+         admit.
+     - intros.
+       now rewrite RbarExpectation.NNExpectation_Rbar_NNExpectation.       
+   Admitted.           
+
+
  Lemma partition_expectation (Y : Ts -> R)
         (rv : RandomVariable dom borel_sa Y)
         (nny: NonnegativeFunction Y) :
@@ -3784,6 +3872,11 @@ Qed.
                                                     (event_lt dom Y (INR k + 1)) ))))) 
           (S n)).
  Proof.
+   rewrite partition_expectation0 with (rv := rv).
+   apply ELim_seq_ext.
+   intros.
+   
+     
  Admitted.
    
   Lemma Ash_6_2_4_helper1 (Y : Ts -> R) 
