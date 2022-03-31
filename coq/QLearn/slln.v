@@ -3549,5 +3549,201 @@ Qed.
       rewrite H4.
       now rewrite Rbar_mult_0_r.
   Qed.
-  
+
+  Lemma NonnegExpectation_EventIndicator
+        {P : event dom}
+        (dec : forall x : Ts, {P x} + {~ P x}): 
+      NonnegExpectation (EventIndicator dec) = ps_P P.
+  Proof.
+    generalize (Expectation_EventIndicator dec); intros.
+    rewrite Expectation_pos_pofrf with (nnf := EventIndicator_pos dec) in H.
+    now inversion H.
+  Qed.
+
+  Lemma sum_Rbar_n_le (f g : nat -> Rbar) (n : nat) :
+    (forall n, Rbar_le 0 (f n)) ->
+    (forall n, Rbar_le 0 (g n)) ->    
+    (forall n, Rbar_le (f n) (g n)) ->
+    Rbar_le (sum_Rbar_n f n) (sum_Rbar_n g n).
+  Proof.
+    intros.
+    induction n.
+    - simpl.
+      lra.
+    - rewrite sum_Rbar_n_Sn; trivial.
+      rewrite sum_Rbar_n_Sn; trivial.
+      now apply Rbar_plus_le_compat.
+   Qed.
+
+  Lemma sum_Rbar_n_pos (f : nat -> Rbar) :
+    (forall n, Rbar_le 0 (f n)) ->
+    forall n, Rbar_le 0 (sum_Rbar_n f n).
+  Proof.
+    intros.
+    induction n.
+    - simpl.
+      lra.
+    - rewrite sum_Rbar_n_Sn; trivial.
+      replace (Rbar.Finite 0) with (Rbar_plus (Rbar.Finite 0) (Rbar.Finite 0)).
+      + now apply Rbar_plus_le_compat.
+      + now rewrite Rbar_plus_0_r.
+   Qed.
+
+  Lemma sum_disj_event_ind (Y : Ts -> R) 
+        (rv : RandomVariable dom borel_sa Y)
+        (nny: NonnegativeFunction Y) :
+    forall x n,
+      sum_n
+        (fun x0 : nat =>
+           EventIndicator
+             (classic_dec (event_inter (event_lt dom Y (INR x0 + 1)) (event_ge dom Y (INR x0)))) x) n =
+      EventIndicator (classic_dec (event_lt dom Y (INR n + 1))) x.
+  Proof.
+    induction n.
+    - rewrite sum_O.
+      unfold EventIndicator, event_inter, pre_event_inter.
+      match_destr; match_destr; simpl in *.
+      + lra.
+      + unfold NonnegativeFunction in nny.
+        intuition.
+    - rewrite sum_Sn.
+      rewrite IHn.
+      unfold EventIndicator, event_inter, pre_event_inter.
+      replace (S n) with (n+1)%nat by lia.
+      match_destr; match_destr; match_destr; unfold plus; simpl in *; try lra.
+      + replace (INR n + 1) with (INR (n+1)) in e; try lra.
+        replace (n+1)%nat with (S n) by lia.
+        now rewrite S_INR.
+      + replace (INR n + 1) with (INR (n+1)) in e; try lra.
+        replace (n+1)%nat with (S n) by lia.
+        now rewrite S_INR.
+      + replace (INR n + 1) with (INR (n+1)) in n0; try lra.
+        replace (n+1)%nat with (S n) by lia.
+        now rewrite S_INR.
+   Qed.
+            
+ Lemma partition_expectation (Y : Ts -> R)
+        (rv : RandomVariable dom borel_sa Y)
+        (nny: NonnegativeFunction Y) :
+   NonnegExpectation Y =
+   ELim_seq
+     (fun n : nat =>
+        sum_Rbar_n
+          (fun k : nat =>
+             NonnegExpectation
+               (rvmult Y 
+                       (EventIndicator
+                          (classic_dec (event_inter (event_lt dom Y (INR k + 1)) (event_ge dom Y (INR k))))))) 
+          (S n)).
+   Proof.
+     Admitted.
+   
+  Lemma Ash_6_2_4_helper1 (Y : Ts -> R) 
+        (rv : RandomVariable dom borel_sa Y)
+        (nny: NonnegativeFunction Y) :
+    Rbar_le
+      (ELim_seq (fun n => sum_Rbar_n (fun k => (INR k) * (ps_P (event_inter (event_lt dom Y (INR k + 1))
+                                                                        (event_ge dom Y (INR k))))) 
+                                    (S n)))
+      (NonnegExpectation Y).
+  Proof.
+    rewrite ELim_seq_ext  with
+        (v := fun n => sum_Rbar_n (fun k => Rbar_mult (INR k)
+                                                      (NonnegExpectation
+                                                         (EventIndicator
+                                                            (classic_dec
+                                                               (event_inter (event_lt dom Y (INR k + 1))
+                                                                            (event_ge dom Y (INR k)))))))
+                                  (S n)).
+    - rewrite partition_expectation with (rv := rv).
+      apply ELim_seq_le; intros.
+      apply sum_Rbar_n_le; intros.
+      + replace (Rbar.Finite 0) with (Rbar_mult (INR n0) (Rbar.Finite 0)).
+        * apply Rbar_mult_le_compat_l.
+          -- apply pos_INR.
+          -- apply NonnegExpectation_pos.
+        * now rewrite Rbar_mult_0_r.
+      + apply NonnegExpectation_pos.
+      + destruct n0.
+        * unfold INR.
+          rewrite Rbar_mult_0_l.
+          apply NonnegExpectation_pos.
+          * assert (0 < INR (S n0)).
+            {
+              replace 0 with (INR (0%nat)).
+              - apply lt_INR.
+                lia.
+              - now simpl.
+            }
+            replace (INR (S n0)) with (pos (mkposreal _ H)) by now simpl.
+            rewrite <- NonnegExpectation_scale.
+            apply NonnegExpectation_le.
+            intro x.
+            unfold rvscale, rvmult.
+            unfold EventIndicator.
+            match_case; intros.
+            -- destruct e.
+               unfold proj1_sig, event_ge in p0.
+               lra.
+            -- lra.
+     - intros.
+       apply sum_Rbar_n_proper; trivial.
+       intro x.
+       rewrite NonnegExpectation_EventIndicator.
+       now simpl.
+  Qed.
+    
+ Lemma Ash_6_2_4_helper2 (Y : Ts -> R) 
+        (rv : RandomVariable dom borel_sa Y)
+        (nny: NonnegativeFunction Y) :
+    Rbar_le
+      (NonnegExpectation Y)
+      (ELim_seq (fun n => sum_Rbar_n (fun k => (INR k + 1) * (ps_P (event_inter (event_lt dom Y (INR k + 1))
+                                                                        (event_ge dom Y (INR k))))) 
+                                    (S n))).
+  Proof.
+    rewrite ELim_seq_ext  with
+        (v := fun n => sum_Rbar_n (fun k => Rbar_mult (INR k + 1)
+                                                      (NonnegExpectation
+                                                         (EventIndicator
+                                                            (classic_dec
+                                                               (event_inter (event_lt dom Y (INR k + 1))
+                                                                            (event_ge dom Y (INR k)))))))
+                                  (S n)).
+    - rewrite partition_expectation with (rv := rv).
+      apply ELim_seq_le; intros.
+      apply sum_Rbar_n_le; intros.
+      + apply NonnegExpectation_pos.
+      + replace (Rbar.Finite 0) with (Rbar_mult (INR n0 + 1) (Rbar.Finite 0)).
+        * apply Rbar_mult_le_compat_l.
+          -- rewrite <- S_INR.
+             apply pos_INR.
+          -- apply NonnegExpectation_pos.
+        * now rewrite Rbar_mult_0_r.
+      + rewrite <- S_INR.
+        assert (0 < INR (S n0)).
+        {
+          replace 0 with (INR (0%nat)).
+          - apply lt_INR.
+            lia.
+          - now simpl.
+        }
+        replace (INR (S n0)) with (pos (mkposreal _ H)) by now simpl.
+        rewrite <- NonnegExpectation_scale.
+        apply NonnegExpectation_le.
+        intro x.
+        unfold rvscale, rvmult.
+        unfold EventIndicator.
+        match_case; intros.
+        * destruct e.
+          unfold proj1_sig, event_lt in p.
+          left; lra.
+        * lra.
+    - intros.
+      apply sum_Rbar_n_proper; trivial.
+      intro x.
+      rewrite NonnegExpectation_EventIndicator.
+      now simpl.
+  Qed.
+            
 End slln_extra.
