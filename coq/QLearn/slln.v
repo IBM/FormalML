@@ -3621,16 +3621,152 @@ Qed.
         replace (n+1)%nat with (S n) by lia.
         now rewrite S_INR.
    Qed.
-            
+
+  (* move this *)
+  Lemma ForallOrdPairs_app_inv {A} {P} (l1 l2:list A) :
+    ForallOrdPairs P (l1 ++ l2) ->
+    ForallOrdPairs P l1 /\
+      ForallOrdPairs P l2 /\
+      Forall (fun a1 => (Forall (fun b1 => P a1 b1) l2)) l1.
+  Proof.
+    induction l1; simpl; intros.
+    - repeat split; trivial.
+      constructor.
+    - invcs H.
+      destruct (IHl1 H3) as [? [??]].
+      repeat split; trivial.
+      + constructor; trivial.
+        apply Forall_app_inv in H2; tauto.
+      + constructor; trivial.
+        apply Forall_app_inv in H2; tauto.
+  Qed.        
+    
+          
+  Lemma ps_disjoint_collection_take_union {T:Type} {σ:SigmaAlgebra T} (ps:ProbSpace σ) (E : nat -> event σ) (n : nat) :
+    ForallOrdPairs event_disjoint (collection_take E (S n)) ->
+    sum_n (fun k => ps_P (E k)) n = ps_P (list_union (collection_take E (S n))).
+    induction n; unfold collection_take; intros disj.
+    - simpl; now rewrite sum_O, list_union_singleton.
+    - rewrite seq_Sn in *.
+      rewrite sum_Sn, IHn.
+      + rewrite map_app.
+        rewrite list_union_app.
+        unfold plus; simpl.
+        rewrite list_union_singleton.
+        rewrite ps_disjoint_union; trivial.
+        intros ? [? [??]] inn2; simpl in *.
+        destruct H; subst.
+        * invcs disj.
+          rewrite Forall_forall in H2.
+          eelim H2; eauto.
+          apply in_map.
+          apply in_app_iff; simpl; tauto.
+        * apply in_map_iff in H.
+          destruct H as [? [??]]; subst.
+          invcs disj.
+          rewrite map_app in H4.
+          generalize (ForallOrdPairs_app_in H4)
+          ; intros HH.
+          eapply (HH (E x1) (E (S n))); simpl; eauto.
+          now apply in_map.
+      + rewrite map_app in disj.
+        apply ForallOrdPairs_app_inv in disj.
+        tauto.
+  Qed.
+
   Lemma Ash_6_2_4_partition (Y : Ts -> R)
         (rv : RandomVariable dom borel_sa Y)
         (nny: NonnegativeFunction Y) :
     Lim_seq (fun n => sum_n
-                        (fun k => (ps_P (event_inter (event_lt dom Y (INR k + 1))
-                                                     (event_ge dom Y (INR k)))))
+                        (fun k => (ps_P (event_inter (event_ge dom Y (INR k))
+                                                     (event_lt dom Y (INR k + 1)))))
                         n) = 1.
-   Proof.
-     Admitted.
+  Proof.
+    erewrite Lim_seq_ext
+    ; [| intros; rewrite ps_disjoint_collection_take_union; [reflexivity |]].
+    - rewrite (Lim_seq_ext _
+                           (fun n => ps_P (event_lt dom Y (INR n + 1)))).
+      + rewrite lim_ascending.
+        * rewrite (ps_proper _ Ω).
+          -- now rewrite ps_all.
+          -- split; intros; simpl; [now red |].
+             destruct (archimed (Y x)).
+             exists (Z.to_nat (up (Y x))).
+             rewrite INR_up_pos; try lra.
+             specialize (nny x).
+             lra.
+        * intros ??.
+          rewrite S_INR; simpl; lra.
+      + intros.
+        rewrite <- S_INR.
+        generalize (S n); clear n; intros n.
+        apply ps_proper
+        ; intros ?; simpl; split.
+        * intros [? [??]].
+          apply in_map_iff in H.
+          destruct H as [? [??]]; subst.
+          destruct H0; simpl in *.
+          apply in_seq in H1.
+          eapply Rlt_le_trans; try apply H0.
+          rewrite <- S_INR.
+          apply le_INR.
+          lia.
+        * intros.
+          eexists; split.
+          -- apply in_map.
+             apply in_seq.
+             assert (Z.to_nat (up (Y x))-1 < n)%nat.
+             {
+               destruct (archimed (Y x)).
+               apply INR_lt.
+               specialize (nny x).
+               rewrite minus_INR.
+               - simpl.
+                 rewrite INR_up_pos by lra.
+                 lra.
+               - cut (0 < Z.to_nat (up (Y x)))%nat; try lia.
+                 apply INR_lt.
+                 rewrite INR_up_pos by lra.
+                 simpl.
+                 lra.
+             }
+             simpl.
+             split; try apply H0.
+             lia.
+          -- { destruct (archimed (Y x)).
+               split; simpl.
+               - specialize (nny x).
+                 rewrite minus_INR.
+                 + simpl.
+                   rewrite INR_up_pos by lra.
+                   lra.
+                 + cut (0 < Z.to_nat (up (Y x)))%nat; try lia.
+                   apply INR_lt.
+                   rewrite INR_up_pos by lra.
+                   simpl.
+                   lra.
+               - specialize (nny x).
+                 rewrite minus_INR.
+                 + simpl.
+                   rewrite INR_up_pos by lra.
+                   lra.
+                 + cut (0 < Z.to_nat (up (Y x)))%nat; try lia.
+                   apply INR_lt.
+                   rewrite INR_up_pos by lra.
+                   simpl.
+                   lra.
+             }
+    - apply collection_take_preserves_disjoint.
+      intros ????[??][??]; simpl in *.
+      apply H.
+      apply le_antisym.
+      + assert (INR n1 < INR (S n2)) by (rewrite S_INR; lra).
+        apply INR_lt in H4.
+        lia.
+      + assert (INR n2 < INR (S n1)) by (rewrite S_INR; lra).
+        apply INR_lt in H4.
+        lia.
+  Qed.        
     
  Lemma partition_expectation (Y : Ts -> R)
         (rv : RandomVariable dom borel_sa Y)
