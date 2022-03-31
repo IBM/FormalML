@@ -3998,8 +3998,37 @@ Qed.
                 intros.
                 now rewrite sum_Rbar_n_finite_sum_n.                
              ++ rewrite ex_Elim_seq_fin.
-                admit.
-             ++ admit.
+                apply ex_lim_seq_incr.
+                intros.
+                rewrite sum_Sn.
+                generalize (ps_pos  (event_inter (event_ge dom Y (INR (S n))) (event_lt dom Y (INR (S n) + 1)))); intros.
+                unfold plus; simpl.
+                simpl in H0; lra.
+             ++ apply ex_Elim_seq_incr.
+                intros.
+                replace (S n) with (n + 1)%nat by lia.
+                rewrite sum_Rbar_n_Sn.
+                ** replace (sum_Rbar_n
+                              (fun k : nat =>
+                                 INR k * ps_P (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1)))) 
+                              (n + 1)) with
+                       (Rbar_plus
+                          (sum_Rbar_n
+                             (fun k : nat =>
+                                INR k * ps_P (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1)))) 
+                             (n + 1))
+                          0) at 1.
+                   --- apply Rbar_plus_le_compat.
+                       +++ apply Rbar_le_refl.
+                       +++ apply Rmult_le_pos.
+                           *** apply pos_INR.
+                           *** apply ps_pos.
+                   --- now rewrite Rbar_plus_0_r.
+                ** intros.
+                   simpl.
+                   apply Rmult_le_pos.
+                   --- apply pos_INR.
+                   --- apply ps_pos.
              ++ apply ex_Rbar_plus_pos.
                 ** apply Elim_seq_pos.
                    intros.
@@ -4031,7 +4060,6 @@ Qed.
                 lra.
         + intros.
           now rewrite sum_Rbar_n_finite_sum_n.          
-     Admitted.
-
+    Qed.
             
 End slln_extra.
