@@ -3884,7 +3884,32 @@ Qed.
        sum_Rbar_n (fun k =>  NonnegExpectation (Y k)) (S n) =
        NonnegExpectation (rvsum Y n).
    Proof.
-     Admitted.
+     unfold sum_Rbar_n, rvsum.
+     induction n.
+     - simpl; rewrite Rbar_plus_0_r.
+       apply NonnegExpectation_ext; intros ?.
+       now rewrite sum_O.
+     - rewrite seq_Sn.
+       rewrite map_app.
+       rewrite list_Rbar_sum_nneg_plus.
+       + rewrite IHn.
+         simpl.
+         rewrite Rbar_plus_0_r.
+         rewrite <- NonnegExpectation_sum by typeclasses eauto.
+         apply NonnegExpectation_ext.
+         unfold rvplus.
+         intros ?.
+         rewrite sum_Sn.
+         reflexivity.
+       + apply Forall_forall; intros.
+         apply in_map_iff in H.
+         destruct H as [? [??]]; subst.
+         apply NonnegExpectation_pos.
+       + apply Forall_forall; intros.
+         apply in_map_iff in H.
+         destruct H as [? [??]]; subst.
+         apply NonnegExpectation_pos.
+   Qed.
 
  Lemma partition_expectation (Y : Ts -> R)
         (rv : RandomVariable dom borel_sa Y)
