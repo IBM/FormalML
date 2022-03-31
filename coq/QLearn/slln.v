@@ -3628,11 +3628,11 @@ Qed.
     forall x n,
       sum_n
         (fun x0 : nat =>
+           (Y x) *
            (EventIndicator
-             (classic_dec (event_inter (event_ge dom Y (INR x0)) (event_lt dom Y (INR x0 + 1)) )) x) *
-           (Y x))
+             (classic_dec (event_inter (event_ge dom Y (INR x0)) (event_lt dom Y (INR x0 + 1)) )) x))
              n =
-      (EventIndicator (classic_dec (event_lt dom Y (INR n + 1))) x) * (Y x).
+      (Y x)* (EventIndicator (classic_dec (event_lt dom Y (INR n + 1))) x).
    Proof.
      induction n.
      - rewrite sum_O.
@@ -3877,6 +3877,15 @@ Qed.
        now rewrite RbarExpectation.NNExpectation_Rbar_NNExpectation.       
    Qed.
 
+   Lemma sum_Rbar_n_NNexp (Y : nat -> Ts -> R) 
+        (rv : forall n, RandomVariable dom borel_sa (Y n))
+        (nny: forall n, NonnegativeFunction (Y n)) :
+     forall n,
+       sum_Rbar_n (fun k =>  NonnegExpectation (Y k)) (S n) =
+       NonnegExpectation (rvsum Y n).
+   Proof.
+     Admitted.
+
  Lemma partition_expectation (Y : Ts -> R)
         (rv : RandomVariable dom borel_sa Y)
         (nny: NonnegativeFunction Y) :
@@ -3895,9 +3904,14 @@ Qed.
    rewrite partition_expectation0 with (rv := rv).
    apply ELim_seq_ext.
    intros.
-   
-     
- Admitted.
+   rewrite sum_Rbar_n_NNexp.
+   - apply NonnegExpectation_ext.
+     intro x.
+     unfold rvmult, rvsum.
+     rewrite  <- sum_disj_event_ind_mult; trivial.
+   - intros.
+     typeclasses eauto.
+  Qed.
    
   Lemma Ash_6_2_4_helper1 (Y : Ts -> R) 
         (rv : RandomVariable dom borel_sa Y)
