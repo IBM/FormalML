@@ -3779,19 +3779,19 @@ Qed.
              NonnegExpectation
                (rvmult Y 
                        (EventIndicator
-                          (classic_dec (event_inter (event_lt dom Y (INR k + 1)) (event_ge dom Y (INR k))))))) 
+                          (classic_dec (event_inter (event_ge dom Y (INR k))
+                                                    (event_lt dom Y (INR k + 1)) ))))) 
           (S n)).
  Proof.
-   Search EventIndicator.
  Admitted.
- Locate expectation_indicator_sum_gen.
    
   Lemma Ash_6_2_4_helper1 (Y : Ts -> R) 
         (rv : RandomVariable dom borel_sa Y)
         (nny: NonnegativeFunction Y) :
     Rbar_le
-      (ELim_seq (fun n => sum_Rbar_n (fun k => (INR k) * (ps_P (event_inter (event_lt dom Y (INR k + 1))
-                                                                        (event_ge dom Y (INR k))))) 
+      (ELim_seq (fun n => sum_Rbar_n (fun k => (INR k) * (ps_P (event_inter (event_ge dom Y (INR k))
+                                                                            (event_lt dom Y (INR k + 1))
+                                                                        ))) 
                                     (S n)))
       (NonnegExpectation Y).
   Proof.
@@ -3800,8 +3800,9 @@ Qed.
                                                       (NonnegExpectation
                                                          (EventIndicator
                                                             (classic_dec
-                                                               (event_inter (event_lt dom Y (INR k + 1))
-                                                                            (event_ge dom Y (INR k)))))))
+                                                               (event_inter (event_ge dom Y (INR k))
+                                                                            (event_lt dom Y (INR k + 1))
+                                                                            )))))
                                   (S n)).
     - rewrite partition_expectation with (rv := rv).
       apply ELim_seq_le; intros.
@@ -3831,7 +3832,7 @@ Qed.
             unfold EventIndicator.
             match_case; intros.
             -- destruct e.
-               unfold proj1_sig, event_ge in p0.
+               unfold proj1_sig, event_ge in p.
                lra.
             -- lra.
      - intros.
@@ -3846,8 +3847,9 @@ Qed.
         (nny: NonnegativeFunction Y) :
     Rbar_le
       (NonnegExpectation Y)
-      (ELim_seq (fun n => sum_Rbar_n (fun k => (INR k + 1) * (ps_P (event_inter (event_lt dom Y (INR k + 1))
-                                                                        (event_ge dom Y (INR k))))) 
+      (ELim_seq (fun n => sum_Rbar_n (fun k => (INR k + 1) * (ps_P (event_inter (event_ge dom Y (INR k))
+                                                                                (event_lt dom Y (INR k + 1))
+                                                                        ))) 
                                     (S n))).
   Proof.
     rewrite ELim_seq_ext  with
@@ -3855,8 +3857,9 @@ Qed.
                                                       (NonnegExpectation
                                                          (EventIndicator
                                                             (classic_dec
-                                                               (event_inter (event_lt dom Y (INR k + 1))
-                                                                            (event_ge dom Y (INR k)))))))
+                                                               (event_inter (event_ge dom Y (INR k))
+                                                                            (event_lt dom Y (INR k + 1))
+                                                                            )))))
                                   (S n)).
     - rewrite partition_expectation with (rv := rv).
       apply ELim_seq_le; intros.
@@ -3884,7 +3887,7 @@ Qed.
         unfold EventIndicator.
         match_case; intros.
         * destruct e.
-          unfold proj1_sig, event_lt in p.
+          unfold proj1_sig, event_lt in p0.
           left; lra.
         * lra.
     - intros.
@@ -3901,8 +3904,9 @@ Qed.
                         (fun k => ps_P (event_ge dom Y (INR k)))
                         1 n) =
     Lim_seq (fun n => sum_n
-                        (fun k => (INR k) * (ps_P (event_inter (event_lt dom Y (INR k + 1))
-                                                               (event_ge dom Y (INR k)))))
+                        (fun k => (INR k) * (ps_P (event_inter (event_ge dom Y (INR k))
+                                                               (event_lt dom Y (INR k + 1))
+                                                               )))
                         n).
   Proof.
   Admitted.
@@ -3929,8 +3933,9 @@ Qed.
           (v :=  (fun n : nat =>
                     sum_Rbar_n
                       (fun k : nat =>
-                         INR k * ps_P (event_inter (event_lt dom Y (INR k + 1)) 
-                                                   (event_ge dom Y (INR k)))) 
+                         INR k * ps_P (event_inter (event_ge dom Y (INR k))
+                                                   (event_lt dom Y (INR k + 1)) 
+                                                   )) 
                       (S n))).
       + apply Ash_6_2_4_helper1.
       + intros.
@@ -3939,8 +3944,9 @@ Qed.
           (v :=  (fun n : nat =>
                     sum_Rbar_n
                       (fun k : nat =>
-                         INR k * ps_P (event_inter (event_lt dom Y (INR k + 1)) 
-                                                   (event_ge dom Y (INR k)))) 
+                         INR k * ps_P (event_inter (event_ge dom Y (INR k))
+                                                   (event_lt dom Y (INR k + 1)) 
+                                                   )) 
                       (S n))).
       + rewrite <- Ash_6_2_4_partition with (Y := Y) (rv := rv); trivial.
         generalize (Ash_6_2_4_helper2 Y rv nny); intros.
@@ -3949,15 +3955,17 @@ Qed.
         * replace (Lim_seq
                      (fun n : nat =>
                         sum_n
-                          (fun k : nat => ps_P (event_inter (event_lt dom Y (INR k + 1)) 
-                                                            (event_ge dom Y (INR k))))
+                          (fun k : nat => ps_P (event_inter (event_ge dom Y (INR k))
+                                                            (event_lt dom Y (INR k + 1)) 
+                                                            ))
                           n))
             with
               (ELim_seq
                  (fun n : nat =>
                     sum_Rbar_n
-                      (fun k : nat => ps_P (event_inter (event_lt dom Y (INR k + 1)) 
-                                                        (event_ge dom Y (INR k))))
+                      (fun k : nat => ps_P (event_inter (event_ge dom Y (INR k))
+                                                        (event_lt dom Y (INR k + 1)) 
+                                                        ))
                       (S n))).
           -- rewrite <- ELim_seq_plus.
              ++ apply ELim_seq_le.
@@ -3965,16 +3973,19 @@ Qed.
                 replace
                   (Rbar_plus
                      (sum_Rbar_n
-                        (fun k : nat => ps_P (event_inter (event_lt dom Y (INR k + 1)) (event_ge dom Y (INR k))))
+                        (fun k : nat => ps_P (event_inter (event_ge dom Y (INR k))
+                                                          (event_lt dom Y (INR k + 1)) ))
                         (S n))
                      (sum_Rbar_n
                         (fun k : nat =>
-                           INR k * ps_P (event_inter (event_lt dom Y (INR k + 1)) (event_ge dom Y (INR k)))) 
+                           INR k * ps_P (event_inter (event_ge dom Y (INR k))
+                                                     (event_lt dom Y (INR k + 1)) )) 
                         (S n)))
                   with
                      (sum_Rbar_n
                         (fun k : nat =>
-                           (INR k + 1) * ps_P (event_inter (event_lt dom Y (INR k + 1)) (event_ge dom Y (INR k)))) 
+                           (INR k + 1) * ps_P (event_inter  (event_ge dom Y (INR k))
+                                                            (event_lt dom Y (INR k + 1)))) 
                         (S n)).
                 ** apply Rbar_le_refl.
                 ** admit.
