@@ -3596,7 +3596,7 @@ Qed.
       sum_n
         (fun x0 : nat =>
            EventIndicator
-             (classic_dec (event_inter (event_lt dom Y (INR x0 + 1)) (event_ge dom Y (INR x0)))) x) n =
+             (classic_dec (event_inter (event_ge dom Y (INR x0)) (event_lt dom Y (INR x0 + 1)) )) x) n =
       EventIndicator (classic_dec (event_lt dom Y (INR n + 1))) x.
   Proof.
     induction n.
@@ -3645,6 +3645,7 @@ Qed.
   Lemma ps_disjoint_collection_take_union {T:Type} {σ:SigmaAlgebra T} (ps:ProbSpace σ) (E : nat -> event σ) (n : nat) :
     ForallOrdPairs event_disjoint (collection_take E (S n)) ->
     sum_n (fun k => ps_P (E k)) n = ps_P (list_union (collection_take E (S n))).
+  Proof.
     induction n; unfold collection_take; intros disj.
     - simpl; now rewrite sum_O, list_union_singleton.
     - rewrite seq_Sn in *.
@@ -3911,6 +3912,16 @@ Qed.
   Proof.
   Admitted.
 
+  Lemma Elim_seq_pos (f : nat -> Rbar) :
+    (forall n, Rbar_le 0 (f n)) ->
+    Rbar_le 0 (ELim_seq f).
+  Proof.
+    intros.
+    replace (Rbar.Finite 0) with (ELim_seq (fun n => 0)).
+    - intros.
+      now apply ELim_seq_le.
+    - apply ELim_seq_const.
+  Qed.
 
   Lemma Ash_6_2_4  (Y : Ts -> R) 
         (rv : RandomVariable dom borel_sa Y)
@@ -3950,52 +3961,74 @@ Qed.
                       (S n))).
       + rewrite <- Ash_6_2_4_partition with (Y := Y) (rv := rv); trivial.
         generalize (Ash_6_2_4_helper2 Y rv nny); intros.
-        eapply Rbar_le_trans.
+        replace  (Rbar_plus
+       (Lim_seq
+          (fun n : nat =>
+           sum_n
+             (fun k : nat => ps_P (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1))))
+             n))
+       (ELim_seq
+          (fun n : nat =>
+           sum_Rbar_n
+             (fun k : nat =>
+              INR k * ps_P (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1)))) 
+             (S n))))
+          with
+             (ELim_seq
+           (fun n : nat =>
+            sum_Rbar_n
+              (fun k : nat =>
+               (INR k + 1) * ps_P (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1))))
+              (S n))).
         * apply H.
-        * replace (Lim_seq
-                     (fun n : nat =>
-                        sum_n
-                          (fun k : nat => ps_P (event_inter (event_ge dom Y (INR k))
-                                                            (event_lt dom Y (INR k + 1)) 
-                                                            ))
-                          n))
-            with
-              (ELim_seq
-                 (fun n : nat =>
-                    sum_Rbar_n
-                      (fun k : nat => ps_P (event_inter (event_ge dom Y (INR k))
-                                                        (event_lt dom Y (INR k + 1)) 
-                                                        ))
-                      (S n))).
-          -- rewrite <- ELim_seq_plus.
-             ++ apply ELim_seq_le.
-                intros.
-                replace
-                  (Rbar_plus
-                     (sum_Rbar_n
-                        (fun k : nat => ps_P (event_inter (event_ge dom Y (INR k))
-                                                          (event_lt dom Y (INR k + 1)) ))
-                        (S n))
-                     (sum_Rbar_n
-                        (fun k : nat =>
-                           INR k * ps_P (event_inter (event_ge dom Y (INR k))
-                                                     (event_lt dom Y (INR k + 1)) )) 
-                        (S n)))
-                  with
-                     (sum_Rbar_n
-                        (fun k : nat =>
-                           (INR k + 1) * ps_P (event_inter  (event_ge dom Y (INR k))
-                                                            (event_lt dom Y (INR k + 1)))) 
-                        (S n)).
-                ** apply Rbar_le_refl.
-                ** admit.
-             ++ admit.
-             ++ admit.
-             ++ admit.
+        * rewrite ELim_seq_ext with
+             (v := fun n =>
+                     Rbar_plus 
+                      (sum_Rbar_n
+                         (fun k : nat =>
+                            ps_P (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1)))) 
+                         (S n))
+                      (sum_Rbar_n
+                         (fun k : nat =>
+                            (INR k) * ps_P (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1)))) 
+                         (S n))).                      
           -- rewrite <- Elim_seq_fin.
-             apply ELim_seq_ext.
-             intros.
-             now rewrite sum_Rbar_n_finite_sum_n.
+             rewrite <- ELim_seq_plus.
+             ++ apply ELim_seq_ext.
+                intros.
+                now rewrite sum_Rbar_n_finite_sum_n.                
+             ++ rewrite ex_Elim_seq_fin.
+                admit.
+             ++ admit.
+             ++ apply ex_Rbar_plus_pos.
+                ** apply Elim_seq_pos.
+                   intros.
+                   apply sum_n_nneg.
+                   intros.
+                   apply ps_pos.
+                ** apply Elim_seq_pos.
+                   intros.
+                   rewrite sum_Rbar_n_finite_sum_n.                
+                   apply sum_n_nneg.
+                   intros.
+                   apply Rmult_le_pos.
+                   --- apply pos_INR.
+                   --- apply ps_pos.
+          -- intros.
+             do 3 rewrite sum_Rbar_n_finite_sum_n.          
+             simpl.
+             rewrite sum_n_ext with
+                 (b := (fun x : nat => 
+                          plus
+                           ( ps_P (event_inter (event_ge dom Y (INR x)) (event_lt dom Y (INR x + 1))))
+                           (INR x * ps_P (event_inter (event_ge dom Y (INR x)) (event_lt dom Y (INR x + 1)))))).
+             ++ rewrite sum_n_plus.
+                unfold plus; simpl.
+                apply Rbar_finite_eq.
+                lra.
+             ++ intros.
+                unfold plus; simpl.
+                lra.
         + intros.
           now rewrite sum_Rbar_n_finite_sum_n.          
      Admitted.
