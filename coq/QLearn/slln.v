@@ -4064,17 +4064,6 @@ Qed.
   Proof.
   Admitted.
 
-  Lemma Elim_seq_pos (f : nat -> Rbar) :
-    (forall n, Rbar_le 0 (f n)) ->
-    Rbar_le 0 (ELim_seq f).
-  Proof.
-    intros.
-    replace (Rbar.Finite 0) with (ELim_seq (fun n => 0)).
-    - intros.
-      now apply ELim_seq_le.
-    - apply ELim_seq_const.
-  Qed.
-
   Lemma Ash_6_2_4  (Y : Ts -> R) 
         (rv : RandomVariable dom borel_sa Y)
         (nny: NonnegativeFunction Y) :
@@ -4182,12 +4171,12 @@ Qed.
                    --- apply pos_INR.
                    --- apply ps_pos.
              ++ apply ex_Rbar_plus_pos.
-                ** apply Elim_seq_pos.
+                ** apply ELim_seq_nneg.
                    intros.
                    apply sum_n_nneg.
                    intros.
                    apply ps_pos.
-                ** apply Elim_seq_pos.
+                ** apply ELim_seq_nneg.
                    intros.
                    rewrite sum_Rbar_n_finite_sum_n.                
                    apply sum_n_nneg.
