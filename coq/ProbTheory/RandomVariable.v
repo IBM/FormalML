@@ -901,6 +901,12 @@ Section indep.
       forall i j,
         ps_P (rv_preimage (X i) A) = ps_P (rv_preimage (X j) A).        
 
+  Definition iid_rv_collection {Td} (cod:SigmaAlgebra Td)
+             {Idx} (X : forall (i:Idx), Ts -> Td)
+             {rv : forall (i:Idx), RandomVariable dom cod (X i)}
+    := independent_rv_collection (const cod) X (rv := rv) /\
+       identically_distributed_rv_collection cod X.
+
   Lemma rv_preimage_compose {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
              (X1 : Ts -> Td1) (X2 : Td1 -> Td2)
              {rv1:RandomVariable dom cod1 X1}
