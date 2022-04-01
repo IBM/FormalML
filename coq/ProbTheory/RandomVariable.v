@@ -886,6 +886,13 @@ Section indep.
     apply H.
   Qed.
 
+  Definition identically_distributed_rvs {Td} (cod:SigmaAlgebra Td)
+             (X1 X2 : Ts -> Td)
+             {rv1:RandomVariable dom cod X1}
+             {rv2:RandomVariable dom cod X2}
+    := forall (A:event cod),
+      ps_P (rv_preimage X1 A) = ps_P (rv_preimage X2 A).
+
   Lemma rv_preimage_compose {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
              (X1 : Ts -> Td1) (X2 : Td1 -> Td2)
              {rv1:RandomVariable dom cod1 X1}
