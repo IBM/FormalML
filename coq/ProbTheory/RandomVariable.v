@@ -893,13 +893,11 @@ Section indep.
     := forall (A:event cod),
       ps_P (rv_preimage X1 A) = ps_P (rv_preimage X2 A).
 
-
   Definition identically_distributed_rv_collection {Td} (cod:SigmaAlgebra Td)
              {Idx} (X : forall (i:Idx), Ts -> Td)
              {rv : forall (i:Idx), RandomVariable dom cod (X i)}
-    := forall (A : event cod),
-      forall i j,
-        ps_P (rv_preimage (X i) A) = ps_P (rv_preimage (X j) A).        
+    := forall i j,
+      identically_distributed_rvs cod (X i) (X j).
 
   Definition iid_rv_collection {Td} (cod:SigmaAlgebra Td)
              {Idx} (X : forall (i:Idx), Ts -> Td)
