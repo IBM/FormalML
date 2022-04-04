@@ -4227,8 +4227,14 @@ Qed.
               ELim_seq (fun m1 => sum_Rbar_n
                           (fun  k => (EventIndicator (classic_dec (fun k0 => k0 >= S nn)%nat)) k *
                                      (ps_P (event_inter (event_ge dom Y (INR k))
-                                                        (event_lt dom Y (INR k + 1))))) m1)) m0)).
-    - rewrite ELim_seq_sum_nneg_nested_swap.
+                                                        (event_lt dom Y (INR k + 1))))) (S m1))) (S m0))).
+    - rewrite ELim_seq_incr_1.
+      erewrite ELim_seq_ext.
+      2: {
+        intros; apply sum_Rbar_n_proper; [intros ?| reflexivity].
+        rewrite ELim_seq_incr_1; reflexivity.
+      } 
+      rewrite ELim_seq_sum_nneg_nested_swap.
       + rewrite <- Elim_seq_fin.
         rewrite <- ELim_seq_incr_1.
         apply ELim_seq_ext.
@@ -4286,8 +4292,9 @@ Qed.
         * apply EventIndicator_pos.
         * apply ps_pos.
     - intros.
-      admit.
-
+      rewrite <- sum_Rbar_n_finite_sum_n.
+      apply sum_Rbar_n_proper; trivial.
+      intros ?.
   Admitted.
 
   Lemma Ash_6_2_4  (Y : Ts -> R) 
