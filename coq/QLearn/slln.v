@@ -3676,7 +3676,6 @@ Qed.
         apply Forall_app_inv in H2; tauto.
   Qed.        
     
-          
   Lemma ps_disjoint_collection_take_union {T:Type} {σ:SigmaAlgebra T} (ps:ProbSpace σ) (E : nat -> event σ) (n : nat) :
     ForallOrdPairs event_disjoint (collection_take E (S n)) ->
     sum_n (fun k => ps_P (E k)) n = ps_P (list_union (collection_take E (S n))).
@@ -3710,30 +3709,14 @@ Qed.
         tauto.
   Qed.
 
-  Lemma Ash_6_2_4_partition (Y : Ts -> R)
+  Lemma ps_partition_intervals (Y : Ts -> R)
         (rv : RandomVariable dom borel_sa Y)
         (nny: NonnegativeFunction Y) :
-    Lim_seq (fun n => sum_n
-                        (fun k => (ps_P (event_inter (event_ge dom Y (INR k))
-                                                     (event_lt dom Y (INR k + 1)))))
-                        n) = 1.
-  Proof.
-    erewrite Lim_seq_ext
-    ; [| intros; rewrite ps_disjoint_collection_take_union; [reflexivity |]].
-    - rewrite (Lim_seq_ext _
-                           (fun n => ps_P (event_lt dom Y (INR n + 1)))).
-      + rewrite lim_ascending.
-        * rewrite (ps_proper _ Ω).
-          -- now rewrite ps_all.
-          -- split; intros; simpl; [now red |].
-             destruct (archimed (Y x)).
-             exists (Z.to_nat (up (Y x))).
-             rewrite INR_up_pos; try lra.
-             specialize (nny x).
-             lra.
-        * intros ??.
-          rewrite S_INR; simpl; lra.
-      + intros.
+    forall n : nat,
+      ps_P (list_union (collection_take (fun k : nat => event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1))) (S n))) =
+      ps_P (event_lt dom Y (INR n + 1)).
+   Proof.
+        intros.
         rewrite <- S_INR.
         generalize (S n); clear n; intros n.
         apply ps_proper
@@ -3792,6 +3775,32 @@ Qed.
                    simpl.
                    lra.
              }
+     Qed.
+
+  Lemma Ash_6_2_4_partitioN (Y : Ts -> R)
+        (rv : RandomVariable dom borel_sa Y)
+        (nny: NonnegativeFunction Y) :
+    Lim_seq (fun n => sum_n
+                        (fun k => (ps_P (event_inter (event_ge dom Y (INR k))
+                                                     (event_lt dom Y (INR k + 1)))))
+                        n) = 1.
+  Proof.
+    erewrite Lim_seq_ext
+    ; [| intros; rewrite ps_disjoint_collection_take_union; [reflexivity |]].
+    - rewrite (Lim_seq_ext _
+                           (fun n => ps_P (event_lt dom Y (INR n + 1)))).
+      + rewrite lim_ascending.
+        * rewrite (ps_proper _ Ω).
+          -- now rewrite ps_all.
+          -- split; intros; simpl; [now red |].
+             destruct (archimed (Y x)).
+             exists (Z.to_nat (up (Y x))).
+             rewrite INR_up_pos; try lra.
+             specialize (nny x).
+             lra.
+        * intros ??.
+          rewrite S_INR; simpl; lra.
+      + now apply ps_partition_intervals.
     - apply collection_take_preserves_disjoint.
       intros ????[??][??]; simpl in *.
       apply H.
@@ -4050,33 +4059,250 @@ Qed.
       now simpl.
   Qed.
 
+  Lemma Rbar_plus_fin (a b : Rbar) (c : R) :
+    Rbar_plus a c = Rbar_plus b c -> a = b.
+  Proof.
+    intros.
+    destruct a; destruct b; simpl; try easy.
+    simpl in H.
+    apply Rbar_finite_eq in H.
+    apply Rbar_finite_eq.
+    lra.
+  Qed.
+  
+  Lemma Ash_6_2_4_helper3a (Y : Ts -> R) 
+        (rv : RandomVariable dom borel_sa Y)
+        (nny: NonnegativeFunction Y) :
+    forall n,
+      Rbar.Finite (ps_P (event_ge dom Y (INR n))) =
+      Lim_seq (fun m => sum_n
+                          (fun  k => (EventIndicator (classic_dec (fun k0 => k0 >= n)%nat)) k *
+                                      (ps_P (event_inter (event_ge dom Y (INR k))
+                                                         (event_lt dom Y (INR k + 1)))))
+
+                          m).
+   Proof.
+     generalize (Ash_6_2_4_partitioN Y rv nny); intros.
+     destruct n.
+     - rewrite Lim_seq_ext with
+           (v := fun m =>
+                    sum_n
+                      (fun k : nat =>
+                         ps_P (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1)))) m).
+       + rewrite H.
+         assert (event_equiv
+                   (event_ge dom Y (INR 0))
+                   Ω).
+         * intro x.
+           simpl.
+           unfold pre_Ω.
+           specialize (nny x).
+           lra.
+         * rewrite H0.
+           apply Rbar_finite_eq.
+           apply ps_all.
+       + intros.
+         apply sum_n_ext; intros.
+         unfold EventIndicator.
+         match_destr; try lra.
+         lia.
+     - intros.
+       assert (ps_P (event_lt dom Y (INR (S n))) =
+               sum_n
+                 (fun  k => ps_P (event_inter (event_ge dom Y (INR k))
+                                              (event_lt dom Y (INR k + 1))))
+                 n).
+       {
+         rewrite ps_disjoint_collection_take_union.
+         - rewrite ps_partition_intervals; trivial.
+           now rewrite S_INR.
+         - apply collection_take_preserves_disjoint.
+           intros ????[??][??]; simpl in *.
+           assert (INR n1 < INR n2 + 1) by lra.
+           assert (INR n2 < INR n1 + 1) by lra.           
+           rewrite <- S_INR in H5.
+           rewrite <- S_INR in H6.
+           apply INR_lt in H5.
+           apply INR_lt in H6.
+           lia.
+       }
+       rewrite <- Lim_seq_incr_n with (N := S n) in H.
+       rewrite Lim_seq_ext with
+           (v := fun n0 =>
+                   plus
+                     (sum_n_m
+                        (fun k : nat =>
+                           ps_P
+                             (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1))))
+                        0 n)
+                     (sum_n_m
+                        (fun k : nat =>
+                           ps_P
+                             (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1))))
+                        (S n) (n0 + S n)) ) in H.
+       + rewrite Lim_seq_plus in H.
+         * rewrite Lim_seq_const in H.
+           unfold sum_n in H0.
+           rewrite <- H0 in H.
+           apply Rbar_plus_fin with (c := ps_P (event_lt dom Y (INR (S n)))).
+           rewrite Rbar_plus_comm in H.
+           unfold sum_n.
+           rewrite <- Lim_seq_incr_n with (N := S n).
+           rewrite Lim_seq_ext with
+               (v := (fun n0 : nat =>
+            sum_n_m
+              (fun k : nat =>
+               ps_P
+                 (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1))))
+              (S n) (n0 + S n))).
+           -- rewrite H.
+              replace (S n) with (n + 1)%nat by lia.
+              simpl.
+              assert (event_equiv
+                        (event_ge dom Y (INR (n + 1)))
+                        (event_complement (event_lt dom Y (INR (n + 1))))).
+              {
+                intro x.
+                simpl.
+                unfold pre_event_complement.
+                lra.
+              }
+              rewrite H1.
+              rewrite ps_complement.
+              apply Rbar_finite_eq.
+              lra.
+           -- intros.
+              rewrite sum_split with (m := n); try lia.
+              rewrite sum_n_m_ext_loc with (b := fun _ => zero).
+              ++ rewrite sum_n_m_const_zero.
+                 rewrite plus_zero_l.
+                 apply sum_n_m_ext_loc; intros.
+                 unfold EventIndicator.
+                 match_destr; try lra.
+                 lia.
+              ++ intros.
+                 unfold zero; simpl.
+                 unfold EventIndicator.
+                 match_destr; try lra.
+                 lia.
+         * apply ex_lim_seq_const.
+         * apply ex_lim_seq_incr.
+           intros.
+           replace (S n0 + S n)%nat with (S (n0 + S n)) by lia.
+           rewrite sum_n_Sm; try lia.
+           replace (S n) with (n + 1)%nat by lia.
+           replace (S (n0 + (n + 1))) with (n0 + (n+1) + 1)%nat by lia.
+           unfold plus; simpl.
+           apply Rplus_le_pos_l.
+           apply ps_pos.
+         * apply ex_Rbar_plus_pos.
+           -- rewrite Lim_seq_const; simpl.
+              apply sum_n_m_pos; intros.
+              apply ps_pos.
+           -- apply Lim_seq_pos; intros.
+              apply sum_n_m_pos; intros.
+              apply ps_pos.
+       + intros.
+         unfold sum_n.
+         rewrite sum_split with (m := n); try lia.
+         reflexivity.
+    Qed.
+
   Lemma Ash_6_2_4_helper3 (Y : Ts -> R) 
         (rv : RandomVariable dom borel_sa Y)
         (nny: NonnegativeFunction Y) :
-    Lim_seq (fun n => sum_n_m
-                        (fun k => ps_P (event_ge dom Y (INR k)))
-                        1 n) =
+    Lim_seq (fun n => sum_n
+                        (fun k => ps_P (event_ge dom Y (INR k + 1)))
+                        n) =
     Lim_seq (fun n => sum_n
                         (fun k => (INR k) * (ps_P (event_inter (event_ge dom Y (INR k))
                                                                (event_lt dom Y (INR k + 1))
                                                                )))
                         n).
   Proof.
+    rewrite <- Elim_seq_fin.
+    rewrite ELim_seq_ext with
+        (v := (fun m0 => sum_Rbar_n
+           (fun nn => 
+              ELim_seq (fun m1 => sum_Rbar_n
+                          (fun  k => (EventIndicator (classic_dec (fun k0 => k0 >= S nn)%nat)) k *
+                                     (ps_P (event_inter (event_ge dom Y (INR k))
+                                                        (event_lt dom Y (INR k + 1))))) m1)) m0)).
+    - rewrite ELim_seq_sum_nneg_nested_swap.
+      + rewrite <- Elim_seq_fin.
+        rewrite <- ELim_seq_incr_1.
+        apply ELim_seq_ext.
+        intros.
+        rewrite <- sum_Rbar_n_finite_sum_n.
+        apply sum_Rbar_n_proper; trivial.
+        unfold pointwise_relation.
+        intros.
+        rewrite <- ELim_seq_incr_n with (N := S a).
+        rewrite ELim_seq_ext with
+            (v := fun _ =>
+                     INR a * ps_P (event_inter (event_ge dom Y (INR a)) (event_lt dom Y (INR a + 1)))).
+        * now rewrite ELim_seq_const.
+        * intros.
+          destruct a.
+          -- simpl.
+             rewrite Rmult_0_l.
+             replace (n0 + 1)%nat with (S n0) by lia.
+             rewrite sum_Rbar_n_finite_sum_n.
+             rewrite sum_n_ext_loc with
+                 (b := fun _ => @zero R_AbelianGroup).
+             ++ unfold sum_n.
+                rewrite sum_n_m_const_zero.
+                reflexivity.
+             ++ intros.
+                unfold EventIndicator.
+                match_destr; try lia.
+                rewrite Rmult_0_l.
+                reflexivity.
+          -- replace (n0 + S (S a))%nat with (S (n0 + S a)) by lia.
+             rewrite sum_Rbar_n_finite_sum_n.
+             unfold sum_n.
+             rewrite sum_split with (m := a); try lia.
+             rewrite plus_comm.
+             rewrite sum_n_m_ext_loc with (b := (fun _ => @zero R_AbelianGroup)).
+             ++ rewrite sum_n_m_const_zero.
+                rewrite plus_zero_l.
+                rewrite sum_n_m_ext_loc with
+                    (b := fun x =>   ps_P
+       (event_inter (event_ge dom Y (INR (S a))) (event_lt dom Y (INR (S a) + 1)))).
+                ** rewrite sum_n_m_const.
+                   now replace (S a - 0)%nat with (S a) by lia.
+                ** intros.
+                   unfold EventIndicator.
+                   match_destr; try lra.
+                   lia.
+             ++ intros.
+                unfold EventIndicator.
+                match_destr; try lia.
+                rewrite Rmult_0_l.
+                reflexivity.
+      + intros.
+        simpl.
+        apply Rmult_le_pos.
+        * apply EventIndicator_pos.
+        * apply ps_pos.
+    - intros.
+      admit.
+
   Admitted.
 
   Lemma Ash_6_2_4  (Y : Ts -> R) 
         (rv : RandomVariable dom borel_sa Y)
         (nny: NonnegativeFunction Y) :
-    (Rbar_le (Lim_seq (fun n => sum_n_m
-                                 (fun k => ps_P (event_ge dom Y (INR k)))
-                                 1 n) )
+    (Rbar_le (Lim_seq (fun n => sum_n
+                                 (fun k => ps_P (event_ge dom Y (INR k + 1)))
+                                 n) )
              (NonnegExpectation Y)) /\
     
     (Rbar_le (NonnegExpectation Y)
              (Rbar_plus 1 
-                        (Lim_seq (fun n => sum_n_m
-                                             (fun k => ps_P (event_ge dom Y (INR k)))
-                                             1 n) ))).
+                        (Lim_seq (fun n => sum_n
+                                             (fun k => ps_P (event_ge dom Y (INR k + 1)))
+                                             n) ))).
   Proof.
     rewrite Ash_6_2_4_helper3; trivial.
     rewrite <- Elim_seq_fin.
@@ -4100,26 +4326,26 @@ Qed.
                                                    (event_lt dom Y (INR k + 1)) 
                                                    )) 
                       (S n))).
-      + rewrite <- Ash_6_2_4_partition with (Y := Y) (rv := rv); trivial.
+      + rewrite <- (Ash_6_2_4_partitioN Y rv nny).
         generalize (Ash_6_2_4_helper2 Y rv nny); intros.
         replace  (Rbar_plus
        (Lim_seq
           (fun n : nat =>
            sum_n
-             (fun k : nat => ps_P (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1))))
+             (fun k : nat => ps_P (event_inter (event_ge dom Y (INR k) ) (event_lt dom Y (INR k + 1) )))
              n))
        (ELim_seq
           (fun n : nat =>
            sum_Rbar_n
              (fun k : nat =>
-              INR k * ps_P (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1)))) 
+              INR k * ps_P (event_inter (event_ge dom Y (INR k) ) (event_lt dom Y (INR k + 1)))) 
              (S n))))
           with
              (ELim_seq
            (fun n : nat =>
             sum_Rbar_n
               (fun k : nat =>
-               (INR k + 1) * ps_P (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1))))
+               (INR k + 1) * ps_P (event_inter (event_ge dom Y (INR k) ) (event_lt dom Y (INR k + 1) )))
               (S n))).
         * apply H.
         * rewrite ELim_seq_ext with
