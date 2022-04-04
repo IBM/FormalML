@@ -4295,7 +4295,22 @@ Qed.
       rewrite <- sum_Rbar_n_finite_sum_n.
       apply sum_Rbar_n_proper; trivial.
       intros ?.
-  Admitted.
+      generalize (Ash_6_2_4_helper3a Y rv nny (S a)); intros.
+      rewrite <- Elim_seq_fin in H.
+      rewrite ELim_seq_ext with
+          (v :=  
+             (fun x : nat => 
+                (Rbar.Finite (
+         sum_n
+           (fun k : nat =>
+            EventIndicator (classic_dec (fun k0 : nat => (k0 >= S a)%nat)) k *
+            ps_P (event_inter (event_ge dom Y (INR k)) (event_lt dom Y (INR k + 1))))
+           x)))).
+      + rewrite <- H.
+        now rewrite S_INR.
+      + intros.
+        now rewrite <- sum_Rbar_n_finite_sum_n.
+  Qed.
 
   Lemma Ash_6_2_4  (Y : Ts -> R) 
         (rv : RandomVariable dom borel_sa Y)
