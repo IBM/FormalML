@@ -2760,3 +2760,275 @@ Section sa_sub.
   Qed.
 
 End sa_sub.
+
+Section indep.
+
+    Context {Ts:Type} 
+            {dom: SigmaAlgebra Ts}
+            (prts:ProbSpace dom).
+
+    Instance list_sum_map_rv {A} f (l:list A)
+             {rv : forall x, RandomVariable dom borel_sa (f x)} :
+      RandomVariable dom borel_sa (fun omega => list_sum (map (fun x => f x omega) l)).
+    Proof.
+      induction l.
+      - simpl.
+        apply rvconst.
+      - apply rvplus_rv; trivial.
+    Qed.
+
+    Instance list_sum_map_frf {A} (f:A->Ts->R) (l:list A)
+             {frf : forall x, FiniteRangeFunction (f x)} :
+      FiniteRangeFunction (fun omega => list_sum (map (fun x => f x omega) l)).
+    Proof.
+      induction l; simpl.
+      - apply frfconst.
+      - apply frfplus; trivial.
+    Qed.
+
+    Lemma SimpleExpectation_list_sum_map_all {A} f (l:list A)
+          {rvX : forall x, RandomVariable dom borel_sa (f x)}
+          {frfX : forall x, FiniteRangeFunction (f x)}
+
+      :
+      SimpleExpectation (fun omega => list_sum (map (fun x => f x omega) l)) =
+        list_sum (map (fun x => SimpleExpectation (f x)) l).
+    Proof.
+      induction l; simpl.
+      - rewrite <- (SimpleExpectation_const 0 _).
+        now apply SimpleExpectation_ext.
+      - rewrite <- IHl.
+        rewrite sumSimpleExpectation.
+        now apply SimpleExpectation_ext.
+    Qed.
+
+    Lemma SimpleExpectation_list_sum_map_all' {A} f (l:list A)
+          {rvX : forall x, RandomVariable dom borel_sa (f x)}
+          {frfX : forall x, FiniteRangeFunction (f x)}
+          {rvs : RandomVariable dom borel_sa (fun omega => list_sum (map (fun x => f x omega) l))}
+          {frfs : FiniteRangeFunction (fun omega => list_sum (map (fun x => f x omega) l))}
+
+      :
+      SimpleExpectation (fun omega => list_sum (map (fun x => f x omega) l)) =
+        list_sum (map (fun x => SimpleExpectation (f x)) l).
+    Proof.
+      rewrite <- SimpleExpectation_list_sum_map_all.
+      apply SimpleExpectation_pf_irrel.
+    Qed.
+
+  Lemma SimpleExpectation_indep (X Y:Ts -> R)
+        {rvX : RandomVariable dom borel_sa X}
+        {frfX : FiniteRangeFunction X}
+        {rvY : RandomVariable dom borel_sa Y}
+        {frfY : FiniteRangeFunction Y} :
+    independent_rvs prts borel_sa borel_sa X Y ->
+    SimpleExpectation (rvmult X Y) =
+      SimpleExpectation X * SimpleExpectation Y.
+  Proof.
+    intros indep.
+    generalize (frf_indicator_sum X); intros eqqX.
+    generalize (frf_indicator_sum Y); intros eqqY.
+    assert (eqqXY : rv_eq (rvmult X Y) (rvmult (frf_indicator X) (frf_indicator Y)))
+      by now apply rvmult_proper.
+    unfold frf_indicator in eqqXY.
+    assert (eqq2:rv_eq (rvmult X Y)
+               (fun omega : Ts =>
+                list_sum
+                  (map (fun c : R =>
+                          list_sum
+                            (map (fun c : R => scale_val_indicator X c omega) (nodup Req_EM_T (@frf_vals _ _ X _))) *
+  
+
+                            scale_val_indicator Y c omega) (nodup Req_EM_T (@frf_vals _ _ Y _))))).
+    {
+      rewrite eqqXY; intros ?.
+      unfold rvmult.
+      now rewrite list_sum_const_mul.
+    }
+
+    assert (eqq3:rv_eq (rvmult X Y)
+                       (fun omega : Ts =>
+                          list_sum
+                            (map (fun c : R =>
+                                    list_sum
+                                      (map (fun d : R => scale_val_indicator X d omega * scale_val_indicator Y c omega) (nodup Req_EM_T (@frf_vals _ _ X _)))
+                                 ) (nodup Req_EM_T (@frf_vals _ _ Y _))))).
+    {
+      rewrite eqq2; intros ?.
+      f_equal.
+      apply map_ext; intros ?.
+      rewrite Rmult_comm.
+      rewrite <- list_sum_const_mul.
+      f_equal; apply map_ext; intros ?.
+      now rewrite Rmult_comm.
+    }
+    assert (eqq4:rv_eq (rvmult X Y)
+                       (fun omega : Ts =>
+                          list_sum
+                            (map (fun c : R =>
+                                    list_sum
+                                      (map (fun d : R => rvscale (c*d)
+                                                              (EventIndicator (classic_dec (fun omega => X omega = d /\ Y omega = c))) omega) (nodup Req_EM_T (@frf_vals _ _ X _)))
+                                 ) (nodup Req_EM_T (@frf_vals _ _ Y _))))).
+    {
+      rewrite eqq3; intros ?.
+      f_equal.
+      apply map_ext; intros ?.
+      f_equal; apply map_ext; intros ?.
+      unfold scale_val_indicator, val_indicator, rvscale.
+      unfold EventIndicator.
+      repeat match_destr; try lra.
+    }       
+
+    rewrite (SimpleExpectation_transport _ eqq4).
+    assert (frfs : forall c d, FiniteRangeFunction (EventIndicator (classic_dec (fun omega0 : Ts => X omega0 = d /\ Y omega0 = c)))).
+    {
+      typeclasses eauto.
+    }       
+
+    assert (rvs : forall c d, RandomVariable dom borel_sa (EventIndicator (classic_dec (fun omega0 : Ts => X omega0 = d /\ Y omega0 = c)))).
+    {
+      intros.
+      apply EventIndicator_pre_rv.
+      now apply sa_sigma_inter_pts.
+    }       
+
+    transitivity (
+           list_sum
+             (map
+                (fun c : R =>
+                   list_sum
+                     (map
+                        (fun d : R =>
+                           Rmult (c * d)
+                                 (SimpleExpectation (EventIndicator
+                                                       (classic_dec (fun omega0 : Ts => X omega0 = d /\ Y omega0 = c)))))
+                        (nodup Req_EM_T (@frf_vals _ _ X _)))
+                                 ) (nodup Req_EM_T (@frf_vals _ _ Y _)))).
+    {
+      rewrite (SimpleExpectation_list_sum_map_all' _ _).
+      f_equal.
+      apply map_ext; intros.
+      rewrite (SimpleExpectation_list_sum_map_all' _ _).
+      f_equal.
+      apply map_ext; intros.
+      rewrite scaleSimpleExpectation.
+      reflexivity.
+    }
+
+    assert (saXd : forall d, sa_sigma (fun omega => X omega = d)).
+    {
+      intros.
+      apply sa_le_pt.
+      now apply sa_le_le_rv.
+    } 
+    assert (saYc : forall c, sa_sigma (fun omega => Y omega = c)).
+    {
+      intros.
+      apply sa_le_pt.
+      now apply sa_le_le_rv.
+    } 
+
+    assert (saYXcd : forall c d, sa_sigma (fun omega0 : Ts => X omega0 = d /\ Y omega0 = c)).
+    {
+      intros.
+      now apply sa_inter.
+    } 
+    
+    transitivity 
+      (list_sum
+             (map
+                (fun c : R =>
+                   list_sum
+                     (map
+                        (fun d : R =>
+                           Rmult (c * d)
+                                 (ps_P (exist _ _ (saYXcd c d))))
+                        (nodup Req_EM_T (@frf_vals _ _ X _)))
+                ) (nodup Req_EM_T (@frf_vals _ _ Y _)))).
+    {
+      f_equal; apply map_ext; intros.
+      f_equal; apply map_ext; intros.
+      f_equal.
+      etransitivity
+      ; [| apply SimpleExpectation_pre_EventIndicator].
+      apply SimpleExpectation_ext.
+      reflexivity.
+    } 
+
+    transitivity 
+      (list_sum
+             (map
+                (fun c : R =>
+                   list_sum
+                     (map
+                        (fun d : R =>
+                           (c * ps_P (exist _ _ (saYc c)) * (d * ps_P (exist _ _ (saXd d)))))
+                        (nodup Req_EM_T (@frf_vals _ _ X _)))
+                ) (nodup Req_EM_T (@frf_vals _ _ Y _)))).
+    {
+      f_equal; apply map_ext; intros.
+      f_equal; apply map_ext; intros.
+      field_simplify.
+      repeat rewrite Rmult_assoc.
+      do 2 f_equal.
+      unfold independent_rvs, independent_events, rv_preimage, event_preimage in indep.
+      clear eqq2 eqq3 eqq4.
+      specialize (indep (exist _ _ (borel_singleton a0)) (exist _ _ (borel_singleton a))).
+      etransitivity; [| etransitivity]; [| eapply indep | ].
+      - apply ps_proper.
+        intros ?; simpl.
+        reflexivity.
+      - simpl; intros.
+        rewrite Rmult_comm.
+        f_equal.
+        + apply ps_proper; intros ?; simpl.
+          reflexivity.
+        + apply ps_proper; intros ?; simpl.
+          reflexivity.
+    }
+    clear eqqXY eqq2 eqq3 eqq4.
+    transitivity
+      (list_sum
+         (map
+            (fun c : R =>
+               c * ps_P (exist sa_sigma (fun omega : Ts => Y omega = c) (saYc c)))
+            (nodup Req_EM_T (@frf_vals _ _ Y _)))
+      * 
+        (list_sum
+           (map
+              (fun d : R =>
+                 (d * ps_P (exist sa_sigma (fun omega : Ts => X omega = d) (saXd d))))
+              (nodup Req_EM_T (@frf_vals _ _ X _))))).
+    {
+      rewrite Rmult_comm.
+      rewrite <- list_sum_const_mul.
+      f_equal; apply map_ext; intros.
+      rewrite Rmult_comm.
+      rewrite list_sum_const_mul.
+      rewrite (Rmult_comm).
+      f_equal.
+      rewrite Rmult_comm.
+      reflexivity.
+    }
+    rewrite Rmult_comm.
+    f_equal.
+    - rewrite (SimpleExpectation_transport _ eqqX).
+      unfold frf_indicator.
+      rewrite (SimpleExpectation_list_sum_map_all' _ _).
+      f_equal; apply map_ext; intros.
+      unfold scale_val_indicator.
+      rewrite <- (SimpleExpectation_pre_EventIndicator _ (classic_dec _)).
+      rewrite  scaleSimpleExpectation.
+      apply SimpleExpectation_pf_irrel.
+    - rewrite (SimpleExpectation_transport _ eqqY).
+      unfold frf_indicator.
+      rewrite (SimpleExpectation_list_sum_map_all' _ _).
+      f_equal; apply map_ext; intros.
+      unfold scale_val_indicator.
+      rewrite <- (SimpleExpectation_pre_EventIndicator _ (classic_dec _)).
+      rewrite  scaleSimpleExpectation.
+      apply SimpleExpectation_pf_irrel.
+  Qed.
+
+End indep.
