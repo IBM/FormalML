@@ -944,5 +944,28 @@ Section indep.
       now rewrite rv_preimage_compose.
   Qed.
         
+  Lemma independent_rv_compose
+        {Tdx Tdy Tdf Tdg : Type}
+        (codx: SigmaAlgebra Tdx)
+        (cody: SigmaAlgebra Tdy)
+        (codf: SigmaAlgebra Tdf)
+        (codg: SigmaAlgebra Tdg)        
+        (X : Ts -> Tdx)
+        (Y : Ts -> Tdy)
+        (f : Tdx -> Tdf)
+        (g : Tdy -> Tdg)
+        {rvx: RandomVariable dom codx X}
+        {rvy: RandomVariable dom cody Y}
+        {rvf: RandomVariable codx codf f}
+        {rvg: RandomVariable cody codg g} :
+    independent_rvs codx cody X Y ->
+    independent_rvs codf codg (f ∘ X) (g ∘ Y).
+  Proof.
+    unfold independent_rvs.
+    intros indep A B.
+    unfold independent_events.
+    do 2 rewrite rv_preimage_compose.
+    apply indep.
+  Qed.
   
 End indep.

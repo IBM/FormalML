@@ -5157,6 +5157,40 @@ Section indep.
     := forall (l:Idx->R),
       independent_event_collection prts (fun n => (event_le dom (X n) (l n))).
   
+  Lemma indep_abs
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y} :
+    independent_rvs prts borel_sa borel_sa X Y -> 
+    independent_rvs prts borel_sa borel_sa (Rabs ∘ X) (Rabs ∘ Y).
+  Proof.
+    apply independent_rv_compose.
+  Qed.
+
+  Lemma indep_pos_part
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y} :
+    independent_rvs prts borel_sa borel_sa X Y -> 
+    independent_rvs prts borel_sa borel_sa 
+                    ((fun x => Rmax x 0) ∘ X) 
+                    ((fun x => Rmax x 0) ∘ Y).
+  Proof.
+    apply independent_rv_compose.
+  Qed.
+
+  Lemma indep_neg_part
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y} :
+    independent_rvs prts borel_sa borel_sa X Y -> 
+    independent_rvs prts borel_sa borel_sa 
+                    ((fun x => Rmax (- x) 0) ∘ X) 
+                    ((fun x => Rmax (- x) 0) ∘ Y).
+  Proof.
+    apply independent_rv_compose.
+  Qed.
+
   Definition pairwise_independent_real_rv_collection {Idx}
              (X : Idx -> Ts -> R)
              {rv_X : forall n, RandomVariable dom borel_sa (X n)}
