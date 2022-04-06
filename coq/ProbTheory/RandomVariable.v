@@ -1,7 +1,7 @@
 Require Export Program.Basics Program.
 Require Import List Morphisms Lia.
 
-Require Export LibUtils BasicUtils ProbSpace SigmaAlgebras.
+Require Export LibUtils BasicUtils ProbSpace SigmaAlgebras Independence.
 Require Classical.
 Require Import ClassicalDescription.
 
@@ -1005,6 +1005,34 @@ Section indep.
     unfold independent_events.
     do 2 rewrite rv_preimage_compose.
     apply indep.
+  Qed.
+
+  Lemma independent_rv_sas  {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
+        (X1 : Ts -> Td1) (X2 : Ts -> Td2)
+        {rv1:RandomVariable dom cod1 X1}
+        {rv2:RandomVariable dom cod2 X2} :
+    independent_rvs cod1 cod2 X1 X2 <->
+    independent_sas prts (pullback_rv_sub _ _ _ rv1) (pullback_rv_sub _ _ _ rv2).
+  Proof.
+    unfold independent_rvs, independent_sas.
+    split.
+    - intros HH A B.
+      unfold independent_events in *.
+      destruct A as [? [?[??]]].
+      destruct B as [? [?[??]]].
+      specialize (HH (exist _ _ s) (exist _ _ s0)).
+      etransitivity; [etransitivity |]; [| apply HH |].
+      + apply ps_proper; intros ?; simpl.
+        apply pre_event_inter_proper
+        ; intros ?; simpl; auto.
+      + f_equal; apply ps_proper; intros ?; simpl; firstorder.
+    - intros HH A B.
+      specialize (HH (exist _ _ (pullback_sa_pullback _ X1 A (proj2_sig A)))
+                     (exist _ _ (pullback_sa_pullback _ X2 B (proj2_sig B)))).
+      etransitivity; [etransitivity |]; [| apply HH |].
+      + apply ps_proper; intros ?; simpl.
+        reflexivity.
+      + f_equal; apply ps_proper; intros ?; simpl; reflexivity.
   Qed.
   
 End indep.
