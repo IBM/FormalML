@@ -122,6 +122,15 @@ Section Const.
         apply sa_none.
     Qed.
 
+    Lemma rv_preimage_const c A :
+      event_equiv (rv_preimage (const c) A) Ω
+      \/ event_equiv (rv_preimage (const c) A) event_none.
+    Proof.
+      destruct (sa_pre_dec A c)
+      ; [left | right]
+      ; split; intros ?; repeat red; tauto.
+    Qed.
+
 End Const.
 
 Instance id_rv {Ts} {dom:SigmaAlgebra Ts} : RandomVariable dom dom (fun x => x).
@@ -860,15 +869,35 @@ Section indep.
     := forall (A:event cod1) (B:event cod2),
       independent_events prts (rv_preimage X1 A) (rv_preimage X2 B).
 
-  Lemma independent_rvs_const {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
+  Lemma independent_rvs_symm {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
+             (X1 : Ts -> Td1) (X2 : Ts -> Td2)
+             {rv1:RandomVariable dom cod1 X1}
+             {rv2:RandomVariable dom cod2 X2} :
+    independent_rvs cod1 cod2 X1 X2 <-> independent_rvs cod2 cod1 X2 X1.
+  Proof.
+    split; intros ???; symmetry; apply H.
+  Qed.
+  
+  Lemma independent_rvs_const_l {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
              (c1 : Td1) (X2 : Ts -> Td2)
              {rv2:RandomVariable dom cod2 X2} :
     independent_rvs cod1 cod2 (const c1) X2.
   Proof.
     unfold independent_rvs; intros.
-    destruct (classic (A c1)).
-    - assert (event_equiv (rv_preimage (const c1) A)  Ω).
-    Admitted.    
+    destruct (rv_preimage_const dom cod1 c1 A)
+    ; rewrite H.
+    - apply independent_events_all_l.
+    - apply independent_events_none_l.
+  Qed.
+
+  Lemma independent_rvs_const_r {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
+             (X1 : Ts -> Td1) (c2 : Td2)
+             {rv1:RandomVariable dom cod1 X1} :
+    independent_rvs cod1 cod2 X1 (const c2).
+  Proof.
+    apply independent_rvs_symm.
+    apply independent_rvs_const_l.
+  Qed.
 
   Definition independent_rv_collection
              {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))

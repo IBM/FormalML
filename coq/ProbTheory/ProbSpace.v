@@ -1279,7 +1279,7 @@ Section indep.
     now rewrite event_inter_false_r, ps_none, Rmult_0_r.
   Qed.
 
-  Lemma independent_events_nonel_l (A : event dom) : ∅ ⟂ A.
+  Lemma independent_events_none_l (A : event dom) : ∅ ⟂ A.
   Proof.
     red.
     now rewrite event_inter_false_l, ps_none, Rmult_0_l.
