@@ -860,6 +860,16 @@ Section indep.
     := forall (A:event cod1) (B:event cod2),
       independent_events prts (rv_preimage X1 A) (rv_preimage X2 B).
 
+  Lemma independent_rvs_const {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
+             (c1 : Td1) (X2 : Ts -> Td2)
+             {rv2:RandomVariable dom cod2 X2} :
+    independent_rvs cod1 cod2 (const c1) X2.
+  Proof.
+    unfold independent_rvs; intros.
+    destruct (classic (A c1)).
+    - assert (event_equiv (rv_preimage (const c1) A)  Ω).
+    Admitted.    
+
   Definition independent_rv_collection
              {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
              (X : forall (i:Idx), Ts -> Td i)
