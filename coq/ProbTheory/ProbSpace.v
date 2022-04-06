@@ -1178,14 +1178,53 @@ Section indep.
 
   Notation "a ⟂ b" := (independent_events a b) (at level 50) : prob. (* \perp *)
 
-  Lemma independent_events_symm  (A B : event dom) :
-    A ⟂ B -> B ⟂ A.
+  Global Instance independent_events_symm : Symmetric independent_events.
   Proof.
-    unfold independent_events; intros.
+    unfold independent_events; intros ???.
     rewrite event_inter_comm.
     lra.
   Qed.
-    
+
+  Global Instance independent_events_proper : Proper (event_equiv ==> event_equiv ==> iff) independent_events.
+  Proof.
+    intros ??????.
+    unfold independent_events.
+    rewrite H, H0.
+    reflexivity.
+  Qed.
+
+  Global Instance independent_event_collection_proper {Idx} :
+    Proper (pointwise_relation _ event_equiv ==> iff) (@independent_event_collection Idx).
+  Proof.
+    intros ???.
+    unfold independent_event_collection.
+    split; intros HH l nd; specialize (HH l nd)
+    ; (etransitivity; [etransitivity |]; [| apply HH |])
+    ; clear HH nd.
+    - apply ps_proper.
+      induction l; simpl; try reflexivity.
+      repeat rewrite list_inter_cons.
+      now rewrite IHl, (H a).
+    - f_equal; repeat rewrite map_map; apply map_ext; intros.
+      now rewrite (H a).
+    - apply ps_proper.
+      induction l; simpl; try reflexivity.
+      repeat rewrite list_inter_cons.
+      now rewrite IHl, (H a).
+    - f_equal; repeat rewrite map_map; apply map_ext; intros.
+      now rewrite (H a).
+  Qed.
+
+  Global Instance pairwise_independent_event_collection_proper {Idx} :
+    Proper (pointwise_relation _ event_equiv ==> iff) (@pairwise_independent_event_collection Idx).
+  Proof.
+    intros ???.
+    unfold pairwise_independent_event_collection.
+    split; intros HH i j neq; specialize (HH i j neq).
+    - now rewrite <- H.
+    - now rewrite H.
+  Qed.
+  
   Lemma independent_events_complement_r (A B : event dom) :
     A ⟂ B -> A ⟂ ¬ B.
   Proof.
