@@ -4,6 +4,7 @@ Require Import List Morphisms Lia.
 Require Export LibUtils BasicUtils ProbSpace SigmaAlgebras Independence.
 Require Classical.
 Require Import ClassicalDescription.
+Require Import ClassicalChoice ChoiceFacts.
 
 
 Import ListNotations.
@@ -1034,5 +1035,81 @@ Section indep.
         reflexivity.
       + f_equal; apply ps_proper; intros ?; simpl; reflexivity.
   Qed.
+
+  Global Instance pullback_sa_issub
+           {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+           (X : forall (i:Idx), Ts -> Td i)
+           {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)} :
+    IsSubAlgebras dom (fun n : Idx => pullback_sa (cod n) (X n)).
+  Proof.
+    now intros ?; apply pullback_rv_sub.
+  Qed.
   
+  Lemma independent_rv_collection_sas
+             {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+             (X : forall (i:Idx), Ts -> Td i)
+             {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)} :
+    independent_rv_collection cod X <->
+      independent_sa_collection prts (fun n => pullback_sa (cod n) (X n)).
+  Proof.
+    unfold independent_rv_collection, independent_sa_collection.
+    split.
+    - intros HH A l nd.
+
+      assert (HHc:forall n, 
+               exists ye,
+                 (sa_sigma (SigmaAlgebra:=cod n) ye /\
+                   forall a, A n a <-> ye (X n a))).
+      {
+        intros.
+        destruct (A n).
+        eauto.
+      }
+      apply non_dep_dep_functional_choice in HHc; try (red; apply choice).
+      destruct HHc as [ye HHc].
+      specialize (HH (fun n => (exist _ _ (proj1 (HHc n)))) l nd).
+      etransitivity; [etransitivity |]; [| apply HH |].
+      + apply ps_proper; intros ?; simpl.
+        split; intros HH2 a inna.
+        * apply in_map_iff in inna.
+          destruct inna as [? [??]]; subst; simpl.
+          apply HHc.
+          apply (HH2 (((fun n : Idx => event_sa_sub (pullback_sa_issub cod X n) (A n)))
+                             x0)).
+          apply in_map_iff; eauto.
+        * apply in_map_iff in inna.
+          destruct inna as [? [??]]; subst; simpl.
+          apply HHc.
+          apply (HH2 ((fun i : Idx => rv_preimage (X i) (exist sa_sigma (ye i) (proj1 (HHc i)))) x0)).
+          apply in_map_iff.
+          exists x0; eauto.
+      + f_equal.
+        repeat rewrite map_map.
+        apply map_ext; intros.
+        apply ps_proper; intros ?; simpl.
+        split; apply HHc.
+    - intros HH A l nd.
+      specialize (HH (fun n => (exist _ _ (pullback_sa_pullback _ (X n) (A n) (proj2_sig (A n)))))).
+      etransitivity; [etransitivity |]; [| apply (HH l nd) |].
+      + apply ps_proper; intros ?; simpl.
+        split; intros HH2 a inna.
+        * apply in_map_iff in inna.
+          destruct inna as [? [??]]; subst; simpl.
+          red.
+          apply (HH2 (rv_preimage (X x0) (A x0))).
+          apply in_map_iff; eauto.
+        * apply in_map_iff in inna.
+          destruct inna as [? [??]]; subst; simpl.
+          apply (HH2
+                   ((fun n : Idx =>
+                      event_sa_sub (pullback_sa_issub cod X n)
+                                   (exist (pullback_sa_sigma (cod n) (X n)) (pre_event_preimage (X n) (A n))
+                                          (pullback_sa_pullback (cod n) (X n) (A n) (proj2_sig (A n))))) x0)).
+          apply in_map_iff; eauto.
+      + f_equal.
+        repeat rewrite map_map.
+        apply map_ext; intros.
+        apply ps_proper; intros ?; simpl; reflexivity.
+  Qed.
+
 End indep.
