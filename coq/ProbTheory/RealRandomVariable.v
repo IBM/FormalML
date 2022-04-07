@@ -909,9 +909,6 @@ Section RealRandomVariables.
              (rv : RandomVariable dom borel_sa rv_X) :
         RandomVariable dom borel_sa (pos_fun_part rv_X).
       Proof.
-        apply measurable_rv.
-        apply pos_fun_part_measurable.
-        apply rv_measurable.
         typeclasses eauto.
       Qed.
 
@@ -919,24 +916,6 @@ Section RealRandomVariables.
              (rv_X : Ts -> R)
              (rv : RandomVariable dom borel_sa rv_X) :
         RandomVariable dom borel_sa (neg_fun_part rv_X).
-      Proof.
-        apply measurable_rv.
-        apply neg_fun_partmeasurable.
-        now apply rv_measurable.
-      Qed.
-
-      Global Instance positive_part_rv'
-             (rv_X : Ts -> R)
-             (rv : RandomVariable dom borel_sa rv_X) :
-        RandomVariable dom borel_sa (fun x => (pos_fun_part rv_X) x).
-      Proof.
-        typeclasses eauto.
-      Qed.
-
-      Global Instance negative_part_rv'
-             (rv_X : Ts -> R)
-             (rv : RandomVariable dom borel_sa rv_X) :
-        RandomVariable dom borel_sa (fun x => neg_fun_part rv_X x).
       Proof.
         apply measurable_rv.
         apply neg_fun_partmeasurable.
