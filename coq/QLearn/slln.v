@@ -3562,8 +3562,15 @@ Qed.
   Proof.
     Admitted.
 
+  Instance rv_collection (X : nat -> Ts -> R)
+           {rv : forall n, RandomVariable dom borel_sa (X n)} :
+    forall (n:nat), RandomVariable dom (const borel_sa n) (X n).
+  Proof.
+    intros.
+    now unfold const.
+  Qed.
+
   Lemma filtration_history_indep (X : nat -> Ts -> R) (n : nat) (P : pre_event Ts) (dec : dec_pre_event P)
-        {rvc : forall (n:nat), RandomVariable dom (const borel_sa n) (X (n))} 
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
         {rvdec : RandomVariable dom borel_sa (EventIndicator dec)} :
     independent_rv_collection Prts (const borel_sa) X ->    
@@ -3575,7 +3582,6 @@ Qed.
   Existing Instance IsFiniteExpectation_simple.
 
   Lemma is_condexp_indep (X : nat -> Ts -> R) (n : nat)
-        {rvc : forall (n:nat), RandomVariable dom (const borel_sa n) (X (n))}
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
         (isfe : IsFiniteExpectation Prts (X (S n))) :
     independent_rv_collection Prts (const borel_sa) X ->
@@ -3629,11 +3635,11 @@ Qed.
                f_equal.
                now rewrite FiniteExpectation_const.
             -- apply independent_rvs_const_l.
-          * now apply filtration_history_indep with (rvc := rvc).
+          * now apply filtration_history_indep.
      Qed.
 
   Lemma Ash_6_2_2_indep_0 (X : nat -> Ts -> R)
-        {rvc : forall (n:nat), RandomVariable dom (const borel_sa n) (X (n))}
+        {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
         {isfe : forall k, IsFiniteExpectation Prts (X k)}
         {isfe2 : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k))}
         {isfes:forall n, IsFiniteExpectation Prts (rvsqr (rvscale (/ (INR (S n))) (X n)))} :
@@ -3644,11 +3650,6 @@ Qed.
     almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvscale (/ INR (S n)) (rvsum X n)) x) 0). 
   Proof.
     intros.
-    assert (rv:forall n, RandomVariable dom borel_sa (X n)).
-    {
-      intros.
-      apply rvc.
-    }
     apply (Ash_6_2_2 X (fun n => INR (S n))); trivial.
     - intros.
       generalize (is_condexp_indep X n (isfe (S n)) H0); intros.
