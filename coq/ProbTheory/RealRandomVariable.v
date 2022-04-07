@@ -5197,8 +5197,8 @@ Section indep.
              {rv_Y : RandomVariable dom borel_sa Y} :
     independent_rvs prts borel_sa borel_sa X Y -> 
     independent_rvs prts borel_sa borel_sa 
-                    (fun x => pos_fun_part X x)
-                    (fun x => pos_fun_part Y x).
+                    (pos_fun_part X)
+                    (pos_fun_part Y).
   Proof.
     intros.
     generalize (indep_pos_part X Y H).
@@ -5223,8 +5223,8 @@ Section indep.
              {rv_Y : RandomVariable dom borel_sa Y} :
     independent_rvs prts borel_sa borel_sa X Y -> 
     independent_rvs prts borel_sa borel_sa 
-                    (fun x => neg_fun_part X x)
-                    (fun x => neg_fun_part Y x).
+                    (neg_fun_part X)
+                    (neg_fun_part Y).
   Proof.
     intros.
     generalize (indep_neg_part X Y H).
