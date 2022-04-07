@@ -5167,6 +5167,18 @@ Section indep.
     apply independent_rv_compose.
   Qed.
 
+  Lemma indep_rvabs
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y} :
+    independent_rvs prts borel_sa borel_sa X Y -> 
+    independent_rvs prts borel_sa borel_sa (rvabs X) (rvabs Y).
+  Proof.
+    intros.
+    generalize (indep_abs X Y H).
+    now apply independent_rvs_proper.
+  Qed.
+
   Lemma indep_pos_part
              (X Y : Ts -> R)
              {rv_X : RandomVariable dom borel_sa X}
@@ -5179,6 +5191,20 @@ Section indep.
     apply independent_rv_compose.
   Qed.
 
+  Lemma indep_pos_fun_part
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y} :
+    independent_rvs prts borel_sa borel_sa X Y -> 
+    independent_rvs prts borel_sa borel_sa 
+                    (fun x => pos_fun_part X x)
+                    (fun x => pos_fun_part Y x).
+  Proof.
+    intros.
+    generalize (indep_pos_part X Y H).
+    now apply independent_rvs_proper.
+  Qed.
+
   Lemma indep_neg_part
              (X Y : Ts -> R)
              {rv_X : RandomVariable dom borel_sa X}
@@ -5189,6 +5215,20 @@ Section indep.
                     ((fun x => Rmax (- x) 0) ∘ Y).
   Proof.
     apply independent_rv_compose.
+  Qed.
+
+  Lemma indep_neg_fun_part
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y} :
+    independent_rvs prts borel_sa borel_sa X Y -> 
+    independent_rvs prts borel_sa borel_sa 
+                    (fun x => neg_fun_part X x)
+                    (fun x => neg_fun_part Y x).
+  Proof.
+    intros.
+    generalize (indep_neg_part X Y H).
+    now apply independent_rvs_proper.
   Qed.
 
   Definition pairwise_independent_real_rv_collection {Idx}
