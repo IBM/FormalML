@@ -17,9 +17,9 @@ Class RandomVariable {Ts:Type} {Td:Type}
       (cod: SigmaAlgebra Td)
       (rv_X: Ts -> Td)
   :=
-    (* for every element B in the sigma algebra, 
+  (* for every element B in the sigma algebra, 
        the preimage of rv_X on B is an event in the probability space *)
-    rv_preimage_sa: forall (B: event cod), sa_sigma (event_preimage rv_X B).
+  rv_preimage_sa: forall (B: event cod), sa_sigma (event_preimage rv_X B).
 
 Definition rv_preimage
            {Ts:Type}
@@ -75,8 +75,8 @@ Qed.
 
 Class HasPreimageSingleton {Td} (σ:SigmaAlgebra Td)
   := sa_preimage_singleton :
-       forall {Ts} {σs:SigmaAlgebra Ts} (rv_X:Ts->Td) {rv : RandomVariable σs σ rv_X} c,
-         sa_sigma (pre_event_preimage rv_X (pre_event_singleton c)).
+    forall {Ts} {σs:SigmaAlgebra Ts} (rv_X:Ts->Td) {rv : RandomVariable σs σ rv_X} c,
+      sa_sigma (pre_event_preimage rv_X (pre_event_singleton c)).
 
 Definition preimage_singleton {Ts Td} {σs:SigmaAlgebra Ts} {σd:SigmaAlgebra Td} {has_pre:HasPreimageSingleton σd}
            (rv_X:Ts->Td) 
@@ -90,9 +90,9 @@ Section Const.
   Class ConstantRangeFunction
         (rv_X:Ts -> Td)
     := { 
-    frf_val : Td;
-    frf_val_complete : forall x, rv_X x = frf_val
-      }.
+      frf_val : Td;
+      frf_val_complete : forall x, rv_X x = frf_val
+    }.
   
   Global Program Instance crvconst c : ConstantRangeFunction (const c)
     := { frf_val := c }.
@@ -108,29 +108,29 @@ Section Const.
           (cod: SigmaAlgebra Td).
   
   Global Instance rvconst c : RandomVariable dom cod (const c).
-    Proof.
-      red; intros.
-      destruct (sa_dec B c).
-      - assert (pre_event_equiv (fun _ : Ts => B c)
-                            (fun _ : Ts => True))
-          by (red; intuition).
-        rewrite H0.
-        apply sa_all.
-      - assert (pre_event_equiv (fun _ : Ts => B c)
-                            event_none)
+  Proof.
+    red; intros.
+    destruct (sa_dec B c).
+    - assert (pre_event_equiv (fun _ : Ts => B c)
+                              (fun _ : Ts => True))
         by (red; intuition).
-        rewrite H0.
-        apply sa_none.
-    Qed.
+      rewrite H0.
+      apply sa_all.
+    - assert (pre_event_equiv (fun _ : Ts => B c)
+                              event_none)
+        by (red; intuition).
+      rewrite H0.
+      apply sa_none.
+  Qed.
 
-    Lemma rv_preimage_const c A :
-      event_equiv (rv_preimage (const c) A) Ω
-      \/ event_equiv (rv_preimage (const c) A) event_none.
-    Proof.
-      destruct (sa_pre_dec A c)
-      ; [left | right]
-      ; split; intros ?; repeat red; tauto.
-    Qed.
+  Lemma rv_preimage_const c A :
+    event_equiv (rv_preimage (const c) A) Ω
+    \/ event_equiv (rv_preimage (const c) A) event_none.
+  Proof.
+    destruct (sa_pre_dec A c)
+    ; [left | right]
+    ; split; intros ?; repeat red; tauto.
+  Qed.
 
 End Const.
 
@@ -147,7 +147,7 @@ Instance compose_rv {Ts1 Ts2 Ts3} {dom1 dom2 dom3}
          (g : Ts2 -> Ts3)
          {rvf : RandomVariable dom1 dom2 f}
          {rvg : RandomVariable dom2 dom3 g} :
-         RandomVariable dom1 dom3 (compose g f).
+  RandomVariable dom1 dom3 (compose g f).
 Proof.
   intros ?.
   apply (rvf (exist _ _ (rvg B))).
@@ -159,9 +159,9 @@ Section Simple.
   Class FiniteRangeFunction
         (rv_X:Ts->Td)
     := { 
-    frf_vals : list Td ;
-    frf_vals_complete : forall x, In (rv_X x) frf_vals;
-      }.
+      frf_vals : list Td ;
+      frf_vals_complete : forall x, In (rv_X x) frf_vals;
+    }.
 
   Lemma FiniteRangeFunction_ext (x y:Ts->Td) :
     rv_eq x y ->
@@ -173,13 +173,13 @@ Section Simple.
     exists frf_vals0.
     intros.
     now rewrite <- H.
-    Defined.
+  Defined.
 
   Global Program Instance frf_crv (rv_X:Ts->Td) {crv:ConstantRangeFunction rv_X} :
     FiniteRangeFunction rv_X
     := {
-    frf_vals := [frf_val]
-      }.
+      frf_vals := [frf_val]
+    }.
   Next Obligation.
     left.
     rewrite (@frf_val_complete _ _ _ crv).
@@ -187,7 +187,7 @@ Section Simple.
   Qed.
 
   Global Program Instance frf_fun (rv_X : Ts -> Td) (f : Td -> Td)
-          (frf:FiniteRangeFunction rv_X) : 
+         (frf:FiniteRangeFunction rv_X) : 
     FiniteRangeFunction (fun v => f (rv_X v)) :=
     {frf_vals := map f frf_vals}.
   Next Obligation.
@@ -218,80 +218,80 @@ Section Simple.
   Qed.
 
 
-Lemma frf_singleton_rv (rv_X : Ts -> Td)
+  Lemma frf_singleton_rv (rv_X : Ts -> Td)
         (frf:FiniteRangeFunction rv_X) 
         (dom: SigmaAlgebra Ts)
         (cod: SigmaAlgebra Td) :
     (forall (c : Td), In c frf_vals -> sa_sigma (pre_event_preimage rv_X (pre_event_singleton c))) ->
     RandomVariable dom cod rv_X.
-Proof.
-  intros Fs.
-  intros x.
-  unfold event_preimage, pre_event_preimage in *.
-  unfold pre_event_singleton in *.
+  Proof.
+    intros Fs.
+    intros x.
+    unfold event_preimage, pre_event_preimage in *.
+    unfold pre_event_singleton in *.
 
-  destruct frf.
-  assert (exists ld, incl ld frf_vals0 /\
-                (forall d: Td, In d ld -> x d) /\
-                (forall d: Td, In d frf_vals0 -> x d -> In d ld)).
-  {
-    clear frf_vals_complete0 Fs.
-    induction frf_vals0.
-    - exists nil.
-      split.
-      + intros ?; trivial.
-      + split.
-        * simpl; tauto.
-        * intros ??.
-          auto.
-    - destruct IHfrf_vals0 as [ld [ldincl [In1 In2]]].
-      destruct (Classical_Prop.classic (x a)).
-      + exists (a::ld).
-        split; [| split].
-        * red; simpl; intros ? [?|?]; eauto.
-        * simpl; intros ? [?|?].
-          -- congruence.
-          -- eauto.
-        * intros ? [?|?]; simpl; eauto.
-      + exists ld.
-        split; [| split].
-        * red; simpl; eauto.
+    destruct frf.
+    assert (exists ld, incl ld frf_vals0 /\
+                    (forall d: Td, In d ld -> x d) /\
+                    (forall d: Td, In d frf_vals0 -> x d -> In d ld)).
+    {
+      clear frf_vals_complete0 Fs.
+      induction frf_vals0.
+      - exists nil.
+        split.
+        + intros ?; trivial.
+        + split.
+          * simpl; tauto.
+          * intros ??.
+            auto.
+      - destruct IHfrf_vals0 as [ld [ldincl [In1 In2]]].
+        destruct (Classical_Prop.classic (x a)).
+        + exists (a::ld).
+          split; [| split].
+          * red; simpl; intros ? [?|?]; eauto.
+          * simpl; intros ? [?|?].
+            -- congruence.
+            -- eauto.
+          * intros ? [?|?]; simpl; eauto.
+        + exists ld.
+          split; [| split].
+          * red; simpl; eauto.
+          * eauto.
+          * simpl; intros ? [?|?] ?.
+            -- congruence.
+            -- eauto.
+    } 
+    destruct H as [ld [ld_incl ld_iff]].
+    apply sa_proper with (x0:=pre_list_union (map (fun d omega => rv_X omega = d) ld)).
+    - intros e.
+      split; intros HH.
+      + destruct HH as [? [??]].
+        apply in_map_iff in H.
+        destruct H as [? [??]]; subst.
+        now apply ld_iff.
+      + red; simpl.
+        apply ld_iff in HH.
+        eexists; split.
+        * apply in_map_iff; simpl.
+          eexists; split; [reflexivity |]; eauto.
+        * reflexivity.
         * eauto.
-        * simpl; intros ? [?|?] ?.
-          -- congruence.
-          -- eauto.
-  } 
-  destruct H as [ld [ld_incl ld_iff]].
-  apply sa_proper with (x0:=pre_list_union (map (fun d omega => rv_X omega = d) ld)).
-  - intros e.
-    split; intros HH.
-    + destruct HH as [? [??]].
+    - apply sa_pre_list_union; intros.
       apply in_map_iff in H.
       destruct H as [? [??]]; subst.
-      now apply ld_iff.
-    + red; simpl.
-      apply ld_iff in HH.
-      eexists; split.
-      * apply in_map_iff; simpl.
-        eexists; split; [reflexivity |]; eauto.
-      * reflexivity.
-      * eauto.
-  - apply sa_pre_list_union; intros.
-    apply in_map_iff in H.
-    destruct H as [? [??]]; subst.
-    apply Fs.
-    now apply ld_incl.
-Qed.
+      apply Fs.
+      now apply ld_incl.
+  Qed.
 
-Instance rv_fun_simple {dom: SigmaAlgebra Ts}
-         {cod: SigmaAlgebra Td}
-         (x : Ts -> Td) (f : Td -> Td)
-         {rvx : RandomVariable dom cod x}
-         {frfx : FiniteRangeFunction x} :
-      (forall (c : Td), In c frf_vals -> sa_sigma (pre_event_preimage x (pre_event_singleton c))) ->
-     RandomVariable dom cod (fun u => f (x u)).    
-Proof.
-  intros Hsingleton.
+  Instance rv_fun_simple {dom: SigmaAlgebra Ts}
+           {cod: SigmaAlgebra Td}
+           (x : Ts -> Td) (f : Td -> Td)
+           {rvx : RandomVariable dom cod x}
+           {frfx : FiniteRangeFunction x} :
+    (forall (c : Td), In c frf_vals -> sa_sigma (pre_event_preimage x (pre_event_singleton c))) ->
+    RandomVariable dom cod (fun u => f (x u)).    
+  Proof.
+    intros Hsingleton.
     generalize (frf_fun x f frfx); intros.
     apply frf_singleton_rv with (frf:=X); trivial.
     destruct X.
@@ -300,11 +300,11 @@ Proof.
     simpl in cinn.
     unfold pre_event_preimage, pre_event_singleton.
     assert (pre_event_equiv (fun omega : Ts => f (x omega) = c)
-                        (pre_list_union
-                           (map (fun sval =>
-                                   (fun omega =>
-                                      (x omega = sval) /\ (f sval = c)))
-                                frf_vals1))).
+                            (pre_list_union
+                               (map (fun sval =>
+                                       (fun omega =>
+                                          (x omega = sval) /\ (f sval = c)))
+                                    frf_vals1))).
     { 
       intro v.
       unfold pre_list_union.
@@ -334,8 +334,8 @@ Proof.
     destruct H0.
     rewrite <- H0.
     assert (pre_event_equiv (fun omega : Ts => x omega = x1 /\ f x1 = c)
-                        (pre_event_inter (fun omega => x omega = x1)
-                                     (fun _ => f x1 = c))).
+                            (pre_event_inter (fun omega => x omega = x1)
+                                             (fun _ => f x1 = c))).
     {
       intro u.
       now unfold event_inter.
@@ -357,8 +357,8 @@ Section Finite.
   Program Instance Finite_FiniteRangeFunction {fin:Finite Ts}  (rv_X:Ts->Td)
     : FiniteRangeFunction rv_X
     := {| 
-    frf_vals := map rv_X elms
-      |}.
+      frf_vals := map rv_X elms
+    |}.
   Next Obligation.
     generalize (finite x); intros.
     apply in_map_iff; eauto.
@@ -421,7 +421,7 @@ Section Event_restricted.
   Context {Ts:Type} {Td:Type} {σ:SigmaAlgebra Ts} {cod : SigmaAlgebra Td}.
 
   Global Program Instance Restricted_FiniteRangeFunction (e:event σ) (f : Ts -> Td)
-    (frf: FiniteRangeFunction f) :
+         (frf: FiniteRangeFunction f) :
     FiniteRangeFunction (event_restricted_function e f) :=
     { frf_vals := frf_vals }.
   Next Obligation.
@@ -430,15 +430,15 @@ Section Event_restricted.
   Qed.
 
   Global Program Instance Restricted_RandomVariable (e:event σ) (f : Ts -> Td)
-          (rv : RandomVariable σ cod f) :
+         (rv : RandomVariable σ cod f) :
     RandomVariable (event_restricted_sigma e) cod (event_restricted_function e f).
   Next Obligation.
     red in rv.
     unfold event_preimage in *.
     unfold event_restricted_function.
     assert (HH:sa_sigma
-                (fun a : Ts =>
-                   e a /\ proj1_sig B (f a))).
+                 (fun a : Ts =>
+                    e a /\ proj1_sig B (f a))).
     - apply sa_inter.
       + destruct e; auto.
       + apply rv.
@@ -472,9 +472,9 @@ Section Event_restricted.
     intros.
     destruct (excluded_middle_informative (B default)).
     - eapply sa_proper with
-          (y:=
-             (event_union (event_complement P) 
-                          (event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))))).
+        (y:=
+           (event_union (event_complement P) 
+                        (event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))))).
       + intros x.
         unfold event_preimage, event_complement, event_restricted_event_lift, event_union, pre_event_union; simpl.
         split; intros HH.
@@ -500,7 +500,7 @@ Section Event_restricted.
           now destruct P; simpl.
         * unfold proj1_sig; match_destr.
     - eapply sa_proper with
-          (y := event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))).
+        (y := event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))).
       + intros x.
         unfold event_preimage, event_restricted_event_lift, event_union, pre_event_union; simpl.        
         split; intros HH.
@@ -521,7 +521,7 @@ Section Event_restricted.
       + unfold event_restricted_event_lift; simpl.
         generalize (sa_pre_event_restricted_event_lift P (exist _ (event_preimage f B) (rv B))); intros.
         apply H.
-    Qed.
+  Qed.
 
   Global Instance lift_event_restricted_domain_fun_frf (default:Td) {P:event σ} (f:event_restricted_domain P -> Td) :
     FiniteRangeFunction f -> 
@@ -537,13 +537,13 @@ Section Event_restricted.
     - now left.
   Qed.
 
- End Event_restricted.
+End Event_restricted.
 
 Section pullback.
 
   Instance pullback_rv {Ts:Type} {Td:Type}
-      (cod: SigmaAlgebra Td)
-      (f: Ts -> Td) : RandomVariable (pullback_sa cod f) cod f.
+           (cod: SigmaAlgebra Td)
+           (f: Ts -> Td) : RandomVariable (pullback_sa cod f) cod f.
   Proof.
     red; intros.
     apply pullback_sa_pullback.
@@ -608,7 +608,7 @@ Section pullback.
       now apply pullback_sa_compose_sub_rv.
     - now apply pullback_sa_compose_sub_rv.
   Qed.
-    
+  
 End pullback.
 
 Section sa_sub.
@@ -621,7 +621,7 @@ Section sa_sub.
   Instance RandomVariable_sa_sub {Td} {cod : SigmaAlgebra Td}
            x
            {rv_x:RandomVariable dom2 cod x}
-  : RandomVariable dom cod x.
+    : RandomVariable dom cod x.
   Proof.
     intros e.
     specialize (rv_x e).
@@ -632,16 +632,16 @@ End sa_sub.
 
 
 Section filtration.
-    Context {Ts:Type}.
+  Context {Ts:Type}.
 
-    Global Instance filtrate_sa_rv {Td} {doms: nat -> SigmaAlgebra Ts} {cod: SigmaAlgebra Td} (rv:Ts->Td) n :
-      RandomVariable (doms n) cod rv ->
-      RandomVariable (filtrate_sa doms n) cod rv.
-    Proof.
-      eapply RandomVariable_proper_le; try reflexivity.
-      apply filtrate_sa_sub.
-    Qed.
-    
+  Global Instance filtrate_sa_rv {Td} {doms: nat -> SigmaAlgebra Ts} {cod: SigmaAlgebra Td} (rv:Ts->Td) n :
+    RandomVariable (doms n) cod rv ->
+    RandomVariable (filtrate_sa doms n) cod rv.
+  Proof.
+    eapply RandomVariable_proper_le; try reflexivity.
+    apply filtrate_sa_sub.
+  Qed.
+  
 End filtration.
 
 Section filtration_history.
@@ -665,7 +665,7 @@ Section filtration_history.
   Qed.
 
   Instance filtration_history_sa_le_rv
-        (n : nat) (j:nat) (jlt: (j <= n)%nat) :
+           (n : nat) (j:nat) (jlt: (j <= n)%nat) :
     RandomVariable (filtration_history_sa n) cod (X j).
   Proof.
     eapply (RandomVariable_proper_le (filtration_history_sa j))
@@ -687,7 +687,7 @@ Section filtration_history.
   Qed.
 
   Lemma filtration_history_sa_sub {dom:SigmaAlgebra Ts}
-    {rv:forall n, RandomVariable dom cod (X n)} :
+        {rv:forall n, RandomVariable dom cod (X n)} :
     forall n, sa_sub (filtration_history_sa n) dom.
   Proof.
     intros.
@@ -713,7 +713,7 @@ Section filtration_history.
   Qed.
   
   Lemma filtration_history_limit_sa_sub (dom:SigmaAlgebra Ts)
-    {rv:forall n, RandomVariable dom cod (X n)} :
+        {rv:forall n, RandomVariable dom cod (X n)} :
     sa_sub filtration_history_limit_sa dom.
   Proof.
     intros.
@@ -871,17 +871,17 @@ Section indep.
       independent_events prts (rv_preimage X1 A) (rv_preimage X2 B).
 
   Lemma independent_rvs_symm {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
-             (X1 : Ts -> Td1) (X2 : Ts -> Td2)
-             {rv1:RandomVariable dom cod1 X1}
-             {rv2:RandomVariable dom cod2 X2} :
+        (X1 : Ts -> Td1) (X2 : Ts -> Td2)
+        {rv1:RandomVariable dom cod1 X1}
+        {rv2:RandomVariable dom cod2 X2} :
     independent_rvs cod1 cod2 X1 X2 <-> independent_rvs cod2 cod1 X2 X1.
   Proof.
     split; intros ???; symmetry; apply H.
   Qed.
   
   Lemma independent_rvs_const_l {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
-             (c1 : Td1) (X2 : Ts -> Td2)
-             {rv2:RandomVariable dom cod2 X2} :
+        (c1 : Td1) (X2 : Ts -> Td2)
+        {rv2:RandomVariable dom cod2 X2} :
     independent_rvs cod1 cod2 (const c1) X2.
   Proof.
     unfold independent_rvs; intros.
@@ -892,8 +892,8 @@ Section indep.
   Qed.
 
   Lemma independent_rvs_const_r {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
-             (X1 : Ts -> Td1) (c2 : Td2)
-             {rv1:RandomVariable dom cod1 X1} :
+        (X1 : Ts -> Td1) (c2 : Td2)
+        {rv1:RandomVariable dom cod1 X1} :
     independent_rvs cod1 cod2 X1 (const c2).
   Proof.
     apply independent_rvs_symm.
@@ -925,7 +925,7 @@ Section indep.
     apply independent_event_collection_pairwise_independent.
     apply H.
   Qed.
-
+  
   Definition identically_distributed_rvs {Td} (cod:SigmaAlgebra Td)
              (X1 X2 : Ts -> Td)
              {rv1:RandomVariable dom cod X1}
@@ -943,12 +943,12 @@ Section indep.
              {Idx} (X : forall (i:Idx), Ts -> Td)
              {rv : forall (i:Idx), RandomVariable dom cod (X i)}
     := independent_rv_collection (const cod) X (rv := rv) /\
-       identically_distributed_rv_collection cod X.
+         identically_distributed_rv_collection cod X.
 
   Lemma rv_preimage_compose {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
-             (X1 : Ts -> Td1) (X2 : Td1 -> Td2)
-             {rv1:RandomVariable dom cod1 X1}
-             {rv2:RandomVariable cod1 cod2 X2} e :
+        (X1 : Ts -> Td1) (X2 : Td1 -> Td2)
+        {rv1:RandomVariable dom cod1 X1}
+        {rv2:RandomVariable cod1 cod2 X2} e :
     rv_preimage (X2 ∘ X1) e === rv_preimage X1 (rv_preimage X2 e).
   Proof.
     intros ?; simpl.
@@ -983,7 +983,7 @@ Section indep.
       apply map_ext; intros.
       now rewrite rv_preimage_compose.
   Qed.
-        
+  
   Lemma independent_rv_compose
         {Tdx Tdy Tdf Tdg : Type}
         (codx: SigmaAlgebra Tdx)
@@ -1008,12 +1008,12 @@ Section indep.
     apply indep.
   Qed.
 
-  Lemma independent_rv_sas  {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
+  Lemma independent_rv_sas {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
         (X1 : Ts -> Td1) (X2 : Ts -> Td2)
         {rv1:RandomVariable dom cod1 X1}
         {rv2:RandomVariable dom cod2 X2} :
     independent_rvs cod1 cod2 X1 X2 <->
-    independent_sas prts (pullback_rv_sub _ _ _ rv1) (pullback_rv_sub _ _ _ rv2).
+      independent_sas prts (pullback_rv_sub _ _ _ rv1) (pullback_rv_sub _ _ _ rv2).
   Proof.
     unfold independent_rvs, independent_sas.
     split.
@@ -1037,18 +1037,18 @@ Section indep.
   Qed.
 
   Global Instance pullback_sa_issub
-           {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
-           (X : forall (i:Idx), Ts -> Td i)
-           {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)} :
+         {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+         (X : forall (i:Idx), Ts -> Td i)
+         {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)} :
     IsSubAlgebras dom (fun n : Idx => pullback_sa (cod n) (X n)).
   Proof.
     now intros ?; apply pullback_rv_sub.
   Qed.
   
   Lemma independent_rv_collection_sas
-             {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
-             (X : forall (i:Idx), Ts -> Td i)
-             {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)} :
+        {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+        (X : forall (i:Idx), Ts -> Td i)
+        {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)} :
     independent_rv_collection cod X <->
       independent_sa_collection prts (fun n => pullback_sa (cod n) (X n)).
   Proof.
@@ -1059,7 +1059,7 @@ Section indep.
       assert (HHc:forall n, 
                exists ye,
                  (sa_sigma (SigmaAlgebra:=cod n) ye /\
-                   forall a, A n a <-> ye (X n a))).
+                    forall a, A n a <-> ye (X n a))).
       {
         intros.
         destruct (A n).
@@ -1075,7 +1075,7 @@ Section indep.
           destruct inna as [? [??]]; subst; simpl.
           apply HHc.
           apply (HH2 (((fun n : Idx => event_sa_sub (pullback_sa_issub cod X n) (A n)))
-                             x0)).
+                        x0)).
           apply in_map_iff; eauto.
         * apply in_map_iff in inna.
           destruct inna as [? [??]]; subst; simpl.
@@ -1102,9 +1102,9 @@ Section indep.
           destruct inna as [? [??]]; subst; simpl.
           apply (HH2
                    ((fun n : Idx =>
-                      event_sa_sub (pullback_sa_issub cod X n)
-                                   (exist (pullback_sa_sigma (cod n) (X n)) (pre_event_preimage (X n) (A n))
-                                          (pullback_sa_pullback (cod n) (X n) (A n) (proj2_sig (A n))))) x0)).
+                       event_sa_sub (pullback_sa_issub cod X n)
+                                    (exist (pullback_sa_sigma (cod n) (X n)) (pre_event_preimage (X n) (A n))
+                                           (pullback_sa_pullback (cod n) (X n) (A n) (proj2_sig (A n))))) x0)).
           apply in_map_iff; eauto.
       + f_equal.
         repeat rewrite map_map.
@@ -1112,13 +1112,13 @@ Section indep.
         apply ps_proper; intros ?; simpl; reflexivity.
   Qed.
 
-    Lemma pairwise_independent_rv_collection_sas
-             {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
-             (X : forall (i:Idx), Ts -> Td i)
-             {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)} :
+  Lemma pairwise_independent_rv_collection_sas
+        {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+        (X : forall (i:Idx), Ts -> Td i)
+        {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)} :
     pairwise_independent_rv_collection cod X <->
       pairwise_independent_sa_collection prts (fun n => pullback_sa (cod n) (X n)).
-    Proof.
+  Proof.
     unfold independent_rv_collection, independent_sa_collection.
     split.
     - intros HH A  i j neq.
@@ -1126,7 +1126,7 @@ Section indep.
       assert (HHc:forall n, 
                exists ye,
                  (sa_sigma (SigmaAlgebra:=cod n) ye /\
-                   forall a, A n a <-> ye (X n a))).
+                    forall a, A n a <-> ye (X n a))).
       {
         intros.
         destruct (A n).
@@ -1152,6 +1152,77 @@ Section indep.
         now split; intros HH2.
       + f_equal
         ; apply ps_proper; intros ?; simpl; reflexivity.
+  Qed.
+  
+  Lemma independent_rvs_proper
+        {Td1} (cod1:SigmaAlgebra Td1) (cod1':SigmaAlgebra Td1)
+        (eqqs1:sa_equiv cod1 cod1')
+        {Td2} (cod2:SigmaAlgebra Td2) (cod2':SigmaAlgebra Td2)
+        (eqqs2:sa_equiv cod2 cod2')
+        (X1 X1' : Ts -> Td1) (eqqx1:rv_eq X1 X1')
+        (X2 X2' : Ts -> Td2) (eqqx2: rv_eq X2 X2')
+        {rv1:RandomVariable dom cod1 X1}
+        {rv2:RandomVariable dom cod2 X2}
+        {rv1':RandomVariable dom cod1' X1'}
+        {rv2':RandomVariable dom cod2' X2'} :
+    independent_rvs cod1 cod2 X1 X2 <-> independent_rvs cod1' cod2' X1' X2'.
+  Proof.
+    split; intros HH
+    ; apply independent_rv_sas in HH
+    ; apply independent_rv_sas
+    ; revert HH
+    ; apply independent_sas_proper
+    ; apply pullback_sa_sigma_proper
+    ; repeat red; intros
+    ; firstorder.
+  Qed.    
+      
+  Lemma independent_rv_collection_proper
+        {Idx} {Td:Idx -> Type}
+        (cod:forall (i:Idx), SigmaAlgebra (Td i))
+        (cod':forall (i:Idx), SigmaAlgebra (Td i))
+        (eqqs:forall i, sa_equiv (cod i) (cod' i))
+        (X : forall (i:Idx), Ts -> Td i)
+        (X' : forall (i:Idx), Ts -> Td i)
+        (eqqx:forall i, rv_eq (X i) (X' i))
+        {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)}
+        {rv' : forall (i:Idx), RandomVariable dom (cod' i) (X' i)} :
+    independent_rv_collection cod X <-> independent_rv_collection cod' X'.
+  Proof.
+    split; intros HH l
+    ; apply independent_rv_collection_sas in HH
+    ; apply independent_rv_collection_sas
+    ; revert HH
+    ; apply independent_sa_collection_proper
+    ; intros ?
+    ; apply pullback_sa_sigma_proper
+    ; repeat red; intros
+    ; firstorder.
+    symmetry; apply eqqx.
+  Qed.
+
+  Lemma pairwise_independent_rv_collection_proper
+        {Idx} {Td:Idx -> Type}
+        (cod:forall (i:Idx), SigmaAlgebra (Td i))
+        (cod':forall (i:Idx), SigmaAlgebra (Td i))
+        (eqqs:forall i, sa_equiv (cod i) (cod' i))
+        (X : forall (i:Idx), Ts -> Td i)
+        (X' : forall (i:Idx), Ts -> Td i)
+        (eqqx:forall i, rv_eq (X i) (X' i))
+        {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)}
+        {rv' : forall (i:Idx), RandomVariable dom (cod' i) (X' i)} :
+    pairwise_independent_rv_collection cod X <-> pairwise_independent_rv_collection cod' X'.
+  Proof.
+    split; intros HH l
+    ; apply pairwise_independent_rv_collection_sas in HH
+    ; apply pairwise_independent_rv_collection_sas
+    ; revert HH
+    ; apply pairwise_independent_sa_collection_proper
+    ; intros ?
+    ; apply pullback_sa_sigma_proper
+    ; repeat red; intros
+    ; firstorder.
+    symmetry; apply eqqx.
   Qed.
 
 End indep.
