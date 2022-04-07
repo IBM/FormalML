@@ -10,6 +10,7 @@ Require QArith.
 Require Import BorelSigmaAlgebra.
 Require Import utils.Utils.
 Require Import ConditionalExpectation.
+Require Import Independence.
 
 Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
@@ -3550,6 +3551,139 @@ Qed.
       now rewrite Rbar_mult_0_r.
   Qed.
 
+  Lemma independent_expectation_prod (X Y : Ts -> R)
+        {rvx : RandomVariable dom borel_sa X}
+        {rvy : RandomVariable dom borel_sa Y}        
+        {isfex : IsFiniteExpectation Prts X}
+        {isfey : IsFiniteExpectation Prts Y}
+        {isfexy : IsFiniteExpectation Prts (rvmult X Y)}:    
+    independent_rvs Prts borel_sa borel_sa X Y ->
+    FiniteExpectation Prts (rvmult X Y) = FiniteExpectation Prts X * FiniteExpectation Prts Y.
+  Proof.
+    Admitted.
+
+  Lemma filtration_history_indep (X : nat -> Ts -> R) (n : nat) (P : pre_event Ts) (dec : dec_pre_event P)
+        {rvc : forall (n:nat), RandomVariable dom (const borel_sa n) (X (n))} 
+        {rv : forall n, RandomVariable dom borel_sa (X n)} 
+        {rvdec : RandomVariable dom borel_sa (EventIndicator dec)} :
+    independent_rv_collection Prts (const borel_sa) X ->    
+    @sa_sigma _ (filtration_history_sa X n) P ->
+    independent_rvs Prts borel_sa borel_sa (X (S n)) (EventIndicator dec).
+  Proof.
+    Admitted.
+
+  Existing Instance IsFiniteExpectation_simple.
+
+  Lemma is_condexp_indep (X : nat -> Ts -> R) (n : nat)
+        {rvc : forall (n:nat), RandomVariable dom (const borel_sa n) (X (n))}
+        {rv : forall n, RandomVariable dom borel_sa (X n)} 
+        (isfe : IsFiniteExpectation Prts (X (S n))) :
+    independent_rv_collection Prts (const borel_sa) X ->
+    almostR2 Prts eq
+             (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+             (const (FiniteExpectation Prts (X (S n)))).
+    Proof.
+      intros.
+      apply almost_prob_space_sa_sub_lift with (sub := (filtration_history_sa_sub X n)).
+      apply (is_conditional_expectation_unique 
+               Prts
+               (filtration_history_sa_sub X n)
+               (X (S n))
+               (ConditionalExpectation Prts (filtration_history_sa_sub X n) (X (S n)))
+               (const (FiniteExpectation Prts (X (S n))))).
+      - now apply Condexp_cond_exp.
+      - unfold is_conditional_expectation; intros.
+        assert (rv_eq
+                  (Rbar_rvmult (fun x : Ts => const (FiniteExpectation Prts (X (S n))) x)
+                               (fun x : Ts => EventIndicator dec x))
+                  (fun x => Rbar.Finite 
+                              ((rvmult (const (FiniteExpectation Prts (X (S n))))
+                                       (EventIndicator dec)) x))).
+        + intros x.
+          now unfold Rbar_rvmult, rvmult; simpl.
+        + rewrite H1.
+          rewrite <- RbarExpectation.Expectation_Rbar_Expectation.
+          assert (RandomVariable dom borel_sa (EventIndicator dec)).
+          {
+            apply (RandomVariable_sa_sub (filtration_history_sa_sub X n)).
+            now apply EventIndicator_pre_rv.
+          }
+          assert (IsFiniteExpectation Prts (rvmult (X (S n)) (EventIndicator dec))).
+          {
+            apply IsFiniteExpectation_indicator; trivial.
+            eapply (@filtration_history_is_sub_algebra _ _ _ X dom _).
+            eauto.
+          }
+          assert (IsFiniteExpectation Prts (rvmult (const (FiniteExpectation Prts (X (S n)))) (EventIndicator dec))).
+          {
+            apply IsFiniteExpectation_indicator; trivial; try typeclasses eauto.
+            eapply (@filtration_history_is_sub_algebra _ _ _ X dom _).
+            eauto.
+          }
+          rewrite FiniteExpectation_Expectation with (isfe0 := H3).
+          rewrite FiniteExpectation_Expectation with (isfe0 := H4).
+          f_equal.
+          erewrite independent_expectation_prod.
+          * erewrite independent_expectation_prod.
+            -- apply Rbar_finite_eq.
+               f_equal.
+               now rewrite FiniteExpectation_const.
+            -- apply independent_rvs_const_l.
+          * now apply filtration_history_indep with (rvc := rvc).
+     Qed.
+
+  Lemma Ash_6_2_2_indep_0 (X : nat -> Ts -> R)
+        {rvc : forall (n:nat), RandomVariable dom (const borel_sa n) (X (n))}
+        {isfe : forall k, IsFiniteExpectation Prts (X k)}
+        {isfe2 : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k))}
+        {isfes:forall n, IsFiniteExpectation Prts (rvsqr (rvscale (/ (INR (S n))) (X n)))} :
+    (forall i, FiniteExpectation Prts (X i) = 0) ->
+    independent_rv_collection Prts (const borel_sa) X ->
+    (forall i j, Expectation (rvmult (X i) (X j)) = Some (Rbar.Finite 0)) ->
+    ex_series (fun n => FiniteExpectation Prts (rvsqr (rvscale (/ INR (S n)) (X n)))) ->
+    almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvscale (/ INR (S n)) (rvsum X n)) x) 0). 
+  Proof.
+    intros.
+    assert (rv:forall n, RandomVariable dom borel_sa (X n)).
+    {
+      intros.
+      apply rvc.
+    }
+    apply (Ash_6_2_2 X (fun n => INR (S n))); trivial.
+    - intros.
+      generalize (is_condexp_indep X n (isfe (S n)) H0); intros.
+      assert (rv_eq (fun x:Ts => (const 0 x))
+                    (const (FiniteExpectation Prts (X (S n))))).
+      {
+        intro x.
+        unfold const.
+        now rewrite H.
+      }
+      revert H3.
+      unfold almostR2.
+      apply almost_impl, all_almost; intros.
+      unfold impl.
+      now rewrite H4.
+    - intros.
+      split.
+      + apply lt_0_INR; lia.
+      + apply le_INR; lia.
+    - apply is_lim_seq_spec.
+      unfold is_lim_seq'.
+      intros.
+      exists (Z.to_nat(up M)).
+      intros.
+      destruct (archimed M).
+      apply le_INR in H3.
+      destruct (Rge_dec M 0).
+      + rewrite INR_up_pos in H3; trivial.
+        assert (n < S n)%nat by lia.
+        apply lt_INR in H6.
+        lra.
+      + generalize (pos_INR (S n)); intros.
+        lra.
+   Qed.
+      
   Lemma NonnegExpectation_EventIndicator
         {P : event dom}
         (dec : forall x : Ts, {P x} + {~ P x}): 
@@ -4451,4 +4585,11 @@ Qed.
           now rewrite sum_Rbar_n_finite_sum_n.          
     Qed.
             
+  Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (X n)} :
+    (forall n, Expectation (X n) = Some (Rbar.Finite 0)) ->
+    iid_rv_collection Prts borel_sa X ->
+    almost Prts (fun omega => is_lim_seq (fun n => ((rvsum X n) omega)/(INR (S n))) 0).
+    Admitted.
+
 End slln_extra.
