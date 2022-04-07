@@ -1112,4 +1112,46 @@ Section indep.
         apply ps_proper; intros ?; simpl; reflexivity.
   Qed.
 
+    Lemma pairwise_independent_rv_collection_sas
+             {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+             (X : forall (i:Idx), Ts -> Td i)
+             {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)} :
+    pairwise_independent_rv_collection cod X <->
+      pairwise_independent_sa_collection prts (fun n => pullback_sa (cod n) (X n)).
+    Proof.
+    unfold independent_rv_collection, independent_sa_collection.
+    split.
+    - intros HH A  i j neq.
+
+      assert (HHc:forall n, 
+               exists ye,
+                 (sa_sigma (SigmaAlgebra:=cod n) ye /\
+                   forall a, A n a <-> ye (X n a))).
+      {
+        intros.
+        destruct (A n).
+        eauto.
+      }
+      apply non_dep_dep_functional_choice in HHc; try (red; apply choice).
+      destruct HHc as [ye HHc].
+      specialize (HH (fun n => (exist _ _ (proj1 (HHc n)))) i j neq).
+      etransitivity; [etransitivity |]; [| apply HH |].
+      + apply ps_proper; intros ?; simpl.
+        split; intros HH2.
+        * destruct HH2.
+          now split; simpl; apply HHc.
+        * destruct HH2.
+          now split; simpl in *; apply HHc.
+      + f_equal
+        ; apply ps_proper; intros ?; simpl
+        ; split; apply HHc.
+    - intros HH A i j neq.
+      specialize (HH (fun n => (exist _ _ (pullback_sa_pullback _ (X n) (A n) (proj2_sig (A n)))))).
+      etransitivity; [etransitivity |]; [| apply (HH i j neq) |].
+      + apply ps_proper; intros ?; simpl.
+        now split; intros HH2.
+      + f_equal
+        ; apply ps_proper; intros ?; simpl; reflexivity.
+  Qed.
+
 End indep.
