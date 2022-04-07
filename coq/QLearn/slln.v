@@ -3645,7 +3645,6 @@ Qed.
         {isfes:forall n, IsFiniteExpectation Prts (rvsqr (rvscale (/ (INR (S n))) (X n)))} :
     (forall i, FiniteExpectation Prts (X i) = 0) ->
     independent_rv_collection Prts (const borel_sa) X ->
-    (forall i j, Expectation (rvmult (X i) (X j)) = Some (Rbar.Finite 0)) ->
     ex_series (fun n => FiniteExpectation Prts (rvsqr (rvscale (/ INR (S n)) (X n)))) ->
     almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvscale (/ INR (S n)) (rvsum X n)) x) 0). 
   Proof.
@@ -3660,11 +3659,11 @@ Qed.
         unfold const.
         now rewrite H.
       }
-      revert H3.
+      revert H2.
       unfold almostR2.
       apply almost_impl, all_almost; intros.
       unfold impl.
-      now rewrite H4.
+      now rewrite H3.
     - intros.
       split.
       + apply lt_0_INR; lia.
@@ -3675,11 +3674,11 @@ Qed.
       exists (Z.to_nat(up M)).
       intros.
       destruct (archimed M).
-      apply le_INR in H3.
+      apply le_INR in H2.
       destruct (Rge_dec M 0).
-      + rewrite INR_up_pos in H3; trivial.
+      + rewrite INR_up_pos in H2; trivial.
         assert (n < S n)%nat by lia.
-        apply lt_INR in H6.
+        apply lt_INR in H5.
         lra.
       + generalize (pos_INR (S n)); intros.
         lra.
