@@ -3551,6 +3551,223 @@ Qed.
       now rewrite Rbar_mult_0_r.
   Qed.
 
+  Lemma independent_expectation_prod_nneg (X Y : Ts -> R)
+        {rvx : RandomVariable dom borel_sa X}
+        {rvy : RandomVariable dom borel_sa Y}        
+        {nnx : NonnegativeFunction X}
+        {nny : NonnegativeFunction Y} :
+    independent_rvs Prts borel_sa borel_sa X Y ->
+    ex_Rbar_mult (NonnegExpectation X) (NonnegExpectation Y) ->
+    NonnegExpectation (rvmult X Y) = Rbar_mult (NonnegExpectation X) (NonnegExpectation Y).
+  Proof.
+    intros.
+    assert (forall n, RandomVariable dom borel_sa (simple_approx X n)).
+    {
+      intros.
+      apply simple_approx_rv; trivial.
+      now apply Real_Rbar_rv.
+    }
+    assert (forall n, RandomVariable dom borel_sa (simple_approx Y n)).
+    {
+      intros.
+      apply simple_approx_rv; trivial.
+      now apply Real_Rbar_rv.
+    }
+    assert (forall n, FiniteRangeFunction (simple_approx X n)).
+    {
+      intros.
+      apply simple_approx_frf.
+    }
+    assert (forall n, FiniteRangeFunction (simple_approx Y n)).
+    {
+      intros.
+      apply simple_approx_frf.
+    }
+    assert (forall n, NonnegativeFunction (simple_approx X n)) by (intros n x; apply simple_approx_pos).
+    assert (forall n, NonnegativeFunction (simple_approx Y n)) by (intros n x; apply simple_approx_pos).    
+    assert (forall n, NonnegativeFunction (rvmult (simple_approx X n) (simple_approx Y n))).
+    {
+      intros.
+      apply NonNegMult; intro x; apply simple_approx_pos.
+   }
+    assert (forall n,
+               real (NonnegExpectation (rvmult (simple_approx X n) (simple_approx Y n))) =
+               real (NonnegExpectation (simple_approx X n)) *
+               real (NonnegExpectation (simple_approx Y n))).
+    {
+      intros.
+      do 3 erewrite frf_NonnegExpectation.
+      simpl.
+      apply SimpleExpectation_indep.
+      admit.
+    }
+    generalize (monotone_convergence X (simple_approx X) _ _ _ (fun n => simple_approx_pos _ n)); intros.
+    generalize (monotone_convergence Y (simple_approx Y) _ _ _ (fun n => simple_approx_pos _ n)); intros.    
+    generalize (monotone_convergence (rvmult X Y) (fun n => rvmult (simple_approx X n) (simple_approx Y n)) _ _ _ H5); intros.
+    rewrite <- H7, <- H8, <- H9.
+    - rewrite Lim_seq_ext with
+          (v := fun n =>
+               NonnegExpectation (simple_approx X n) *
+               NonnegExpectation (simple_approx Y n)); trivial.
+      rewrite Lim_seq_mult; trivial.
+      + apply ex_lim_seq_incr.
+        intros.
+        generalize (NonnegExpectation_le (simple_approx X n) (simple_approx X (S n))); intros.
+        erewrite <- (simple_expectation_real (simple_approx X n)) in H10.
+        erewrite <- (simple_expectation_real (simple_approx X (S n))) in H10.
+        simpl in H10.
+        apply H10.
+        intro x.
+        now apply simple_approx_increasing.
+      + apply ex_lim_seq_incr.
+        intros.
+        generalize (NonnegExpectation_le (simple_approx Y n) (simple_approx Y (S n))); intros.
+        erewrite <- (simple_expectation_real (simple_approx Y n)) in H10.
+        erewrite <- (simple_expectation_real (simple_approx Y (S n))) in H10.
+        simpl in H10.
+        apply H10.
+        intro x.
+        now apply simple_approx_increasing.
+      + replace  (Lim_seq
+                    (fun n : nat => NonnegExpectation (simple_approx (fun x : Ts => X x) n)))
+          with
+            (NonnegExpectation X).
+        * replace  (Lim_seq
+                      (fun n : nat => NonnegExpectation (simple_approx (fun x : Ts => Y x) n)))
+            with
+              (NonnegExpectation Y); trivial.
+          rewrite <- NonnegExpectation_simple_approx; trivial.
+        * rewrite <- NonnegExpectation_simple_approx; trivial.
+    - intros n x.
+      unfold rvmult.
+      apply Rmult_le_compat; try apply simple_approx_pos.
+      + generalize (simple_approx_le X); intros.
+        simpl in H10.
+        now apply H10.
+      + generalize (simple_approx_le Y); intros.
+        simpl in H10.
+        now apply H10.
+    - intros n x.
+      unfold rvmult.
+      apply Rmult_le_compat; try apply simple_approx_pos.
+      + now apply simple_approx_increasing.
+      + now apply simple_approx_increasing.
+    - intros.
+      apply simple_expectation_real; typeclasses eauto.
+    - intros.
+      unfold rvmult.
+      apply is_lim_seq_mult'.
+      + generalize (simple_approx_lim_seq X); intros.
+        now apply H10.
+      + generalize (simple_approx_lim_seq Y); intros.
+        now apply H10.
+    - intros n x.
+      now apply (simple_approx_le Y).
+    - intros n x.
+      now apply simple_approx_increasing.
+    - intros.
+      apply simple_expectation_real; typeclasses eauto.
+    - intro.
+      generalize (simple_approx_lim_seq Y); intros.
+      now apply H10.
+    - intros n x.
+      now apply (simple_approx_le X).
+    - intros n x.
+      now apply simple_approx_increasing.
+    - intros.
+      apply simple_expectation_real; typeclasses eauto.
+    - intro.
+      generalize (simple_approx_lim_seq X); intros.
+      now apply H10.
+    Admitted.
+
+   Lemma pos_parts_mult (X Y : Ts -> R) :
+     rv_eq (fun x => nonneg (pos_fun_part (rvmult X Y) x))
+           (rvplus (rvmult (pos_fun_part X) (pos_fun_part Y))
+                   (rvmult (neg_fun_part X) (neg_fun_part Y))).
+     Proof.
+       intro x.
+       rv_unfold.
+       generalize (rv_pos_neg_id X); intros.
+       generalize (rv_pos_neg_id Y); intros.       
+       simpl.
+       rewrite H at 1.
+       rewrite Rmult_comm.
+       rewrite H0 at 1.
+       rv_unfold.
+       simpl.
+       unfold Rmax.
+       match_destr; match_destr; match_destr; match_destr; match_destr; try lra.
+       - assert (0 < - X x) by lra.
+         assert (0 < - Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+       - assert (0 < X x) by lra.
+         assert (0 < Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+       - assert (0 < X x) by lra.
+         assert (0 < - Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+       - assert (0 < - X x) by lra.
+         assert (0 < Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+    Qed.
+
+   Lemma neg_parts_mult (X Y : Ts -> R) :
+     rv_eq (fun x => nonneg (neg_fun_part (rvmult X Y) x))
+           (rvplus (rvmult (pos_fun_part X) (neg_fun_part Y))
+                   (rvmult (neg_fun_part X) (pos_fun_part Y))).
+     Proof.
+       intro x.
+       rv_unfold.
+       generalize (rv_pos_neg_id X); intros.
+       generalize (rv_pos_neg_id Y); intros.       
+       simpl.
+       rewrite H at 1.
+       rewrite Rmult_comm.
+       rewrite H0 at 1.
+       rv_unfold.
+       simpl.
+       unfold Rmax.
+       match_destr; match_destr; match_destr; match_destr; match_destr; try lra.
+       - assert (0 < - X x) by lra.
+         assert (0 < Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+       - assert (0 < X x) by lra.
+         assert (0 < - Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+       - assert (0 < - X x) by lra.
+         assert (0 < - Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+       - assert (0 < X x) by lra.
+         assert (0 < Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+    Qed.
+
+   Lemma Finite_expectation_pos_neg_parts (X : Ts -> R) 
+         {rvx : RandomVariable dom borel_sa X}
+         {isfe : IsFiniteExpectation Prts X} :
+     FiniteExpectation Prts X = NonnegExpectation(pos_fun_part X) -
+                                NonnegExpectation(neg_fun_part X).
+   Proof.
+     unfold FiniteExpectation, proj1_sig.
+     match_destr.
+     unfold Expectation in e.
+     rewrite <- (Expectation_pos_part_finite _ X) in e.
+     rewrite <- (Expectation_neg_part_finite _ X) in e.     
+     simpl in e.
+     invcs e.
+     simpl.
+     ring.
+  Qed.
+
   Lemma independent_expectation_prod (X Y : Ts -> R)
         {rvx : RandomVariable dom borel_sa X}
         {rvy : RandomVariable dom borel_sa Y}        
@@ -3560,7 +3777,44 @@ Qed.
     independent_rvs Prts borel_sa borel_sa X Y ->
     FiniteExpectation Prts (rvmult X Y) = FiniteExpectation Prts X * FiniteExpectation Prts Y.
   Proof.
-    Admitted.
+    intros.
+    generalize (independent_expectation_prod_nneg (pos_fun_part X) (pos_fun_part Y)
+                                                  (indep_pos_part X Y H)); intros.
+    generalize (independent_expectation_prod_nneg (neg_fun_part X) (neg_fun_part Y)
+                                                  (indep_neg_part X Y H)); intros.
+    generalize (independent_expectation_prod_nneg (pos_fun_part X) (neg_fun_part Y)
+                                                  (indep_pos_neg_part X Y H)); intros.
+    generalize (independent_expectation_prod_nneg (neg_fun_part X) (pos_fun_part Y)
+                                                  (indep_neg_pos_part X Y H)); intros.
+    rewrite  Finite_expectation_pos_neg_parts; try typeclasses eauto.
+    rewrite  Finite_expectation_pos_neg_parts; try typeclasses eauto.
+    rewrite  Finite_expectation_pos_neg_parts; try typeclasses eauto.
+    generalize (pos_parts_mult X Y); intros.
+    generalize (neg_parts_mult X Y); intros.    
+    rewrite (NonnegExpectation_ext _ _ H4).
+    rewrite (NonnegExpectation_ext _ _ H5).
+    rewrite NonnegExpectation_sum; try typeclasses eauto.
+    rewrite NonnegExpectation_sum; try typeclasses eauto.
+    rewrite H0, H1, H2, H3.
+    - rewrite <- (Expectation_pos_part_finite _ X); trivial.
+      rewrite <- (Expectation_pos_part_finite _ Y); trivial.
+      rewrite <- (Expectation_neg_part_finite _ X); trivial.
+      rewrite <- (Expectation_neg_part_finite _ Y); trivial.
+      simpl.
+      ring.
+    - rewrite <- (Expectation_neg_part_finite _ X); trivial.
+      rewrite <- (Expectation_pos_part_finite _ Y); trivial.
+      now simpl.
+    - rewrite <- (Expectation_pos_part_finite _ X); trivial.
+      rewrite <- (Expectation_neg_part_finite _ Y); trivial.             
+      now simpl.
+    - rewrite <- (Expectation_neg_part_finite _ X); trivial.
+      rewrite <- (Expectation_neg_part_finite _ Y); trivial.
+      now simpl.
+    - rewrite <- (Expectation_pos_part_finite _ X); trivial.
+      rewrite <- (Expectation_pos_part_finite _ Y); trivial.             
+      now simpl.
+   Qed.
 
   Instance rv_collection (X : nat -> Ts -> R)
            {rv : forall n, RandomVariable dom borel_sa (X n)} :
