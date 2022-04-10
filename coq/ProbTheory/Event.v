@@ -740,7 +740,7 @@ Section pre_ev.
       red; unfold pre_Ω; intuition.
   Qed.
 
-  Lemma sa_sigma_const_classic {T} (s: SigmaAlgebra T) P : sa_sigma (fun _ : T => P).
+  Lemma  sa_sigma_const_classic {T} (s: SigmaAlgebra T) P : sa_sigma (fun _ : T => P).
   Proof.
     apply sa_sigma_const.
     apply classic.
@@ -1789,7 +1789,7 @@ Section event.
 
   Hint Resolve sa_all sa_none sa_complement : prob.
 
-  Definition event_const {P} : event σ
+  Definition event_const P : event σ
     := exist _ _ (sa_sigma_const σ (classic P)).
 
   Definition list_collection  (l:list (event σ)) (d:event σ) : nat -> event σ
