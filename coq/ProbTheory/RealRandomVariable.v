@@ -5146,6 +5146,7 @@ Section indep.
     apply independent_rv_compose.
   Qed.
 
+(*
   Lemma indep_rvabs
              (X Y : Ts -> R)
              {rv_X : RandomVariable dom borel_sa X}
@@ -5157,7 +5158,7 @@ Section indep.
     generalize (indep_abs X Y H).
     now apply independent_rvs_proper.
   Qed.
-
+*)
   Lemma indep_pos_part
              (X Y : Ts -> R)
              {rv_X : RandomVariable dom borel_sa X}
@@ -5169,7 +5170,7 @@ Section indep.
   Proof.
     apply independent_rv_compose.
   Qed.
-
+(*
   Lemma indep_pos_fun_part
              (X Y : Ts -> R)
              {rv_X : RandomVariable dom borel_sa X}
@@ -5183,7 +5184,7 @@ Section indep.
     generalize (indep_pos_part X Y H).
     now apply independent_rvs_proper.
   Qed.
-
+*)
   Lemma indep_pos_neg_part
              (X Y : Ts -> R)
              {rv_X : RandomVariable dom borel_sa X}
@@ -5195,7 +5196,7 @@ Section indep.
   Proof.
     apply independent_rv_compose.
   Qed.
-
+(*
   Lemma indep_pos_neg_fun_part
              (X Y : Ts -> R)
              {rv_X : RandomVariable dom borel_sa X}
@@ -5209,7 +5210,7 @@ Section indep.
     generalize (indep_pos_neg_part X Y H).
     now apply independent_rvs_proper.
   Qed.
-
+*)
   Lemma indep_neg_pos_part
              (X Y : Ts -> R)
              {rv_X : RandomVariable dom borel_sa X}
@@ -5222,6 +5223,7 @@ Section indep.
     apply independent_rv_compose.
   Qed.
 
+(*
   Lemma indep_neg_pos_fun_part
              (X Y : Ts -> R)
              {rv_X : RandomVariable dom borel_sa X}
@@ -5235,7 +5237,8 @@ Section indep.
     generalize (indep_neg_pos_part X Y H).
     now apply independent_rvs_proper.
   Qed.
-
+ *)
+  
   Lemma indep_neg_part
              (X Y : Ts -> R)
              {rv_X : RandomVariable dom borel_sa X}
@@ -5248,6 +5251,7 @@ Section indep.
     apply independent_rv_compose.
   Qed.
 
+(*
   Lemma indep_neg_fun_part
              (X Y : Ts -> R)
              {rv_X : RandomVariable dom borel_sa X}
@@ -5261,7 +5265,7 @@ Section indep.
     generalize (indep_neg_part X Y H).
     now apply independent_rvs_proper.
   Qed.
-
+*)
   Definition pairwise_independent_real_rv_collection {Idx}
              (X : Idx -> Ts -> R)
              {rv_X : forall n, RandomVariable dom borel_sa (X n)}
