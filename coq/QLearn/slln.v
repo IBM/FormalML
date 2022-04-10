@@ -3824,6 +3824,13 @@ Qed.
     now unfold const.
   Qed.
 
+  Lemma independent_sum (X : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (X n)} :
+    independent_rv_collection Prts (const borel_sa) X ->
+    forall n,
+      independent_rvs Prts borel_sa borel_sa (rvsum X n) (X (S n)).
+  Admitted.
+  
   Lemma independent_sum_variance (X : nat -> Ts -> R) (n:nat)
         {rv: forall n, RandomVariable dom borel_sa (X n)}
         {isl2 : forall n, IsLp Prts 2 (X n)} 
@@ -3878,14 +3885,27 @@ Qed.
       rewrite FiniteExpectation_plus.
       rewrite (FiniteExpectation_ext_alt _ _ _ H1).
       symmetry.
-      erewrite FiniteExpectation_plus'.
-      Unshelve.
-      + erewrite FiniteExpectation_plus'.
-        Unshelve.
-        * erewrite FiniteExpectation_scale'.
-          Unshelve.
-          -- unfold Rsqr.
-  Admitted.
+      assert (RandomVariable dom borel_sa (rvsum X n)) by typeclasses eauto.
+      assert (IsFiniteExpectation Prts (rvmult (rvsum X n) (X (S n)))).
+      {
+        apply is_L2_mult_finite; try typeclasses eauto.
+        apply IsLp_sum; trivial.
+        lra.
+      }
+      erewrite FiniteExpectation_plus'; try typeclasses eauto.
+      + rewrite FiniteExpectation_plus.
+        * rewrite FiniteExpectation_scale.
+          replace (FiniteExpectation Prts (rvmult (rvsum X n) (X (S n)))) with
+              (FiniteExpectation Prts (rvsum X n) *
+               FiniteExpectation Prts (X (S n))).
+          -- unfold Rsqr; ring.
+          -- symmetry.
+             apply independent_expectation_prod with (rvx := H2) (rvy := (rv (S n))).
+             generalize (independent_sum X H); intros.
+             specialize (H4 n).
+             revert H4.
+             now apply independent_rvs_proper.
+  Qed.
 
   Lemma filtration_history_indep (X : nat -> Ts -> R) (n : nat) (P : pre_event Ts) (dec : dec_pre_event P)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
