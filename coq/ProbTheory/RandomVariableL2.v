@@ -116,6 +116,31 @@ Section L2.
     apply is_L2_mult_finite; trivial; now apply isfe_sqr_islp2.
   Qed.
 
+  Lemma variance_l2 (f : Ts -> R)
+        (rv : RandomVariable dom borel_sa f) 
+        {isl2: IsLp prts 2 f} :
+    FiniteExpectation prts (rvsqr (rvminus f (const (FiniteExpectation prts f)))) =
+    FiniteExpectation prts (rvsqr f) - Rsqr (FiniteExpectation prts f).
+  Proof.
+    assert (rv_eq (rvsqr (rvminus f (const (FiniteExpectation prts f))))
+                  (rvplus (rvplus (rvsqr f) 
+                                   (rvscale (- 2 * FiniteExpectation prts f)
+                                            f))
+                          (const (Rsqr (FiniteExpectation prts f))))).
+    {
+      intro x.
+      rv_unfold.
+      unfold Rsqr.
+      ring.
+    }
+    rewrite (FiniteExpectation_ext prts _ _ H).
+    do 2 rewrite FiniteExpectation_plus.
+    rewrite FiniteExpectation_scale.
+    rewrite FiniteExpectation_const.
+    unfold Rsqr.
+    ring.
+  Qed.
+
   Lemma isfe_sqr_seq (X : nat -> Ts -> R)
            (rv : forall n, RandomVariable dom borel_sa (X n)) :
     (forall n, IsFiniteExpectation prts (rvsqr (X n))) ->
