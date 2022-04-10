@@ -3824,6 +3824,72 @@ Qed.
     now unfold const.
   Qed.
 
+  Lemma independent_sum_variance (X : nat -> Ts -> R) (n:nat)
+        {rv: forall n, RandomVariable dom borel_sa (X n)}
+        {isl2 : forall n, IsLp Prts 2 (X n)} 
+        {isfe : forall n, IsFiniteExpectation Prts (rvsqr (rvsum X n))}:
+    independent_rv_collection Prts (const borel_sa) X ->
+    FiniteExpectation Prts (rvsqr (rvsum X n)) -
+    Rsqr (FiniteExpectation Prts (rvsum X n)) =
+    sum_n (fun n => FiniteExpectation Prts (rvsqr (X n))
+                    - Rsqr (FiniteExpectation Prts (X n))) n.
+  Proof.
+    intros.
+    induction n.
+    - rewrite sum_O.
+      assert (rv_eq (rvsum X 0%nat) (X 0%nat)).
+      {
+        intro x.
+        unfold rvsum.
+        now rewrite sum_O.
+      }
+      assert (rv_eq (rvsqr (rvsum X 0)) (rvsqr (X 0%nat))).
+      {
+        intro x.
+        unfold rvsqr, rvsum.
+        now rewrite sum_O.
+      }
+      rewrite (FiniteExpectation_ext _ _ _ H1).
+      now rewrite (FiniteExpectation_ext _ _ _ H0).
+    - assert (rv_eq (rvsum X (S n))
+                    (rvplus (rvsum X n) (X (S n)))).
+      {
+        intro x.
+        unfold rvsum, rvplus.
+        rewrite sum_Sn.
+        now unfold plus; simpl.
+      }
+      assert (rv_eq (rvsqr (rvsum X (S n)))
+                    (rvplus (rvsqr (rvsum X n))
+                            (rvplus (rvscale 2 (rvmult (rvsum X n) (X (S n))))
+                                    (rvsqr (X (S n)))))).
+      {
+        intro x.
+        unfold rvsum, rvsqr, rvmult, rvplus, rvscale.
+        rewrite sum_Sn.
+        unfold plus; simpl.
+        unfold Rsqr.
+        ring.
+      }
+      rewrite sum_Sn.
+      unfold plus; simpl.
+      rewrite <- IHn.
+      rewrite (FiniteExpectation_ext _ _ _ H0).
+      rewrite FiniteExpectation_plus.
+      rewrite (FiniteExpectation_ext_alt _ _ _ H1).
+      replace (FiniteExpectation 
+                 Prts
+                 (rvplus (rvsqr (rvsum X n))
+                         (rvplus (rvscale 2 (rvmult (rvsum X n) (X (S n))))
+                                 (rvsqr (X (S n)))))) with
+          (FiniteExpectation Prts (rvsqr (rvsum X n)) +
+           2 * (FiniteExpectation Prts (rvsum X n) *
+                FiniteExpectation Prts (X (S n))) +
+           FiniteExpectation Prts (rvsqr (X (S n)))).
+      + unfold Rsqr.
+        ring.
+      + Admitted.
+
   Lemma filtration_history_indep (X : nat -> Ts -> R) (n : nat) (P : pre_event Ts) (dec : dec_pre_event P)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
         {rvdec : RandomVariable dom borel_sa (EventIndicator dec)} :
