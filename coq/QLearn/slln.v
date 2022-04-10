@@ -3877,18 +3877,15 @@ Qed.
       rewrite (FiniteExpectation_ext _ _ _ H0).
       rewrite FiniteExpectation_plus.
       rewrite (FiniteExpectation_ext_alt _ _ _ H1).
-      replace (FiniteExpectation 
-                 Prts
-                 (rvplus (rvsqr (rvsum X n))
-                         (rvplus (rvscale 2 (rvmult (rvsum X n) (X (S n))))
-                                 (rvsqr (X (S n)))))) with
-          (FiniteExpectation Prts (rvsqr (rvsum X n)) +
-           2 * (FiniteExpectation Prts (rvsum X n) *
-                FiniteExpectation Prts (X (S n))) +
-           FiniteExpectation Prts (rvsqr (X (S n)))).
-      + unfold Rsqr.
-        ring.
-      + Admitted.
+      symmetry.
+      erewrite FiniteExpectation_plus'.
+      Unshelve.
+      + erewrite FiniteExpectation_plus'.
+        Unshelve.
+        * erewrite FiniteExpectation_scale'.
+          Unshelve.
+          -- unfold Rsqr.
+  Admitted.
 
   Lemma filtration_history_indep (X : nat -> Ts -> R) (n : nat) (P : pre_event Ts) (dec : dec_pre_event P)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
