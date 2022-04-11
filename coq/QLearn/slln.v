@@ -3830,7 +3830,107 @@ Qed.
     forall n,
       independent_rvs Prts borel_sa borel_sa (rvsum X n) (X (S n)).
   Admitted.
-  
+
+
+  Lemma independent_sum_prod (X : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (X n)} 
+        {isl2 : forall n, IsLp Prts 2 (X n)} 
+        {isfe : forall n j, IsFiniteExpectation Prts (rvmult (rvsum X n) (X (n + S j)%nat))} :
+    (forall n j, independent_rvs Prts borel_sa borel_sa (X n) (X (n + S j)%nat)) ->
+    forall n j,
+        FiniteExpectation Prts (rvmult (rvsum X n) (X (n + S j)%nat)) =
+        FiniteExpectation Prts (rvsum X n) * FiniteExpectation Prts (X (n + S j)%nat).
+  Proof.
+    intro H.
+    induction n.
+    - intros.
+      assert (rv_eq (rvsum X 0%nat) (X 0%nat)).
+      {
+        intro x.
+        unfold rvsum.
+        now rewrite sum_O.
+      }
+      rewrite (FiniteExpectation_ext _ _ _ H0).
+      assert (rv_eq (rvmult (rvsum X 0%nat) (X (0 + S j)%nat))
+                    (rvmult (X 0%nat) (X (0 + S j)%nat))).
+      {
+        intro x.
+        unfold rvmult, rvsum.
+        now rewrite sum_O.
+      }
+      rewrite (FiniteExpectation_ext _ _ _ H1).
+      apply independent_expectation_prod with (rvx := rv 0%nat) (rvy := rv (0 + S j)%nat).
+      apply H.
+    - intro j.
+      assert (rv_eq (rvsum X (S n))
+                    (rvplus (rvsum X n) (X (S n)))).
+      {
+        intro x.
+        unfold rvsum, rvplus.
+        now rewrite sum_Sn.
+      }
+      rewrite (FiniteExpectation_ext _ _ _ H0).
+      assert (rv_eq (rvmult (rvsum X (S n)) (X (S n + S j)%nat))
+                    (rvplus
+                       (rvmult (rvsum X n) (X (S n + S j)%nat))
+                       (rvmult (X (S n)) (X (S n + S j)%nat)))).
+      {
+        intro x.
+        unfold rvmult, rvsum, rvplus.
+        rewrite sum_Sn.
+        unfold plus; simpl.
+        ring.
+      }
+      assert (IsFiniteExpectation Prts
+            (rvplus (rvmult (rvsum X n) (X (S n + S j)%nat))
+                    (rvmult (X (S n)) (X (S n + S j)%nat)))).
+      {
+        apply IsFiniteExpectation_plus; try typeclasses eauto.
+        generalize (isfe n (S j)); intros.
+        revert H2.
+        apply IsFiniteExpectation_proper.
+        intro x.
+        f_equal.
+        f_equal.
+        lia.
+      }        
+      rewrite (FiniteExpectation_ext _ _ _ H1).      
+      rewrite FiniteExpectation_plus.
+      erewrite FiniteExpectation_plus'; try typeclasses eauto.
+      ring_simplify.
+      specialize (IHn (S j)).
+      assert (rv_eq (X (n + S (S j))%nat)
+                    (X (S n + S j)%nat)).
+      {
+        intro x.
+        f_equal.
+        lia.
+      }
+      rewrite (FiniteExpectation_ext _ _ _ H3) in IHn.
+      assert (rv_eq (rvmult (rvsum X n) (X (n + S (S j))%nat))
+                    (rvmult (rvsum X n) (X (S n + S j))%nat)).
+      {
+        intro x.
+        f_equal.
+        f_equal.
+        lia.
+      }
+      erewrite (FiniteExpectation_ext _ _ _ H4) in IHn.      
+      rewrite IHn.
+      assert (forall n, IsFiniteExpectation Prts (X n)) by typeclasses eauto.
+      rewrite independent_expectation_prod with (rvx := rv (S n)) (rvy := rv (S n + S j)%nat) (isfex := H5 (S n)) (isfey := (H5 (S n + S j)%nat)).
+      + admit.
+      + apply H.
+        Unshelve.
+        specialize (isfe n (S j)).
+        revert isfe.
+        apply IsFiniteExpectation_proper.
+        intro x.
+        f_equal.
+        f_equal.
+        lia.
+   Admitted.
+      
   Lemma independent_sum_variance (X : nat -> Ts -> R) (n:nat)
         {rv: forall n, RandomVariable dom borel_sa (X n)}
         {isl2 : forall n, IsLp Prts 2 (X n)} 
