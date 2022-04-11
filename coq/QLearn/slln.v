@@ -3831,17 +3831,19 @@ Qed.
       independent_rvs Prts borel_sa borel_sa (rvsum X n) (X (S n)).
   Admitted.
 
-
   Lemma independent_sum_prod (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
         {isl2 : forall n, IsLp Prts 2 (X n)} 
         {isfe : forall n j, IsFiniteExpectation Prts (rvmult (rvsum X n) (X (n + S j)%nat))} :
-    (forall n j, independent_rvs Prts borel_sa borel_sa (X n) (X (n + S j)%nat)) ->
+    pairwise_independent_rv_collection Prts (const borel_sa) X ->
     forall n j,
         FiniteExpectation Prts (rvmult (rvsum X n) (X (n + S j)%nat)) =
         FiniteExpectation Prts (rvsum X n) * FiniteExpectation Prts (X (n + S j)%nat).
   Proof.
+    unfold pairwise_independent_rv_collection.
     intro H.
+    unfold const in H.
+
     induction n.
     - intros.
       assert (rv_eq (rvsum X 0%nat) (X 0%nat)).
@@ -3860,7 +3862,10 @@ Qed.
       }
       rewrite (FiniteExpectation_ext _ _ _ H1).
       apply independent_expectation_prod with (rvx := rv 0%nat) (rvy := rv (0 + S j)%nat).
-      apply H.
+      specialize (H (0%nat) (0 + S j)%nat).
+      cut_to H; try lia.
+      revert H.
+      now apply independent_rvs_proper.
     - intro j.
       assert (rv_eq (rvsum X (S n))
                     (rvplus (rvsum X n) (X (S n)))).
@@ -3920,7 +3925,10 @@ Qed.
       assert (forall n, IsFiniteExpectation Prts (X n)) by typeclasses eauto.
       rewrite independent_expectation_prod with (rvx := rv (S n)) (rvy := rv (S n + S j)%nat) (isfex := H5 (S n)) (isfey := (H5 (S n + S j)%nat)).
       + f_equal; f_equal; apply FiniteExpectation_pf_irrel.
-      + apply H.
+      + specialize (H (S n) (S n + S j)%nat).
+        cut_to H; try lia.
+        revert H.
+        now apply independent_rvs_proper.
         Unshelve.
         specialize (isfe n (S j)).
         revert isfe.
@@ -3930,13 +3938,12 @@ Qed.
         f_equal.
         lia.
   Qed.
-
       
   Lemma independent_sum_variance (X : nat -> Ts -> R) (n:nat)
         {rv: forall n, RandomVariable dom borel_sa (X n)}
         {isl2 : forall n, IsLp Prts 2 (X n)} 
         {isfe : forall n, IsFiniteExpectation Prts (rvsqr (rvsum X n))}:
-    independent_rv_collection Prts (const borel_sa) X ->
+    pairwise_independent_rv_collection Prts (const borel_sa) X ->
     FiniteExpectation Prts (rvsqr (rvsum X n)) -
     Rsqr (FiniteExpectation Prts (rvsum X n)) =
     sum_n (fun n => FiniteExpectation Prts (rvsqr (X n))
@@ -4000,12 +4007,39 @@ Qed.
               (FiniteExpectation Prts (rvsum X n) *
                FiniteExpectation Prts (X (S n))).
           -- unfold Rsqr; ring.
-          -- symmetry.
-             apply independent_expectation_prod with (rvx := H2) (rvy := (rv (S n))).
-             generalize (independent_sum X H); intros.
-             specialize (H4 n).
-             revert H4.
-             now apply independent_rvs_proper.
+          -- assert (forall n j : nat,
+                        IsFiniteExpectation Prts (rvmult (rvsum X n) (X (n + S j)%nat))).
+             {
+               intros.
+               generalize (isfe_Sum1_r_from_crossmult X (0%nat)); intros.
+               specialize (H4 (n0 + S j)%nat n0).
+               revert H4.
+               apply IsFiniteExpectation_proper.
+               intro x.
+               unfold rvmult.
+               f_equal.
+               unfold rvsum.
+               apply sum_n_ext.
+               intros.
+               f_equal; lia.
+             }
+             generalize (independent_sum_prod X); intros.
+             cut_to H5; trivial.
+             specialize (H5 n 0%nat).
+             assert (rv_eq (X (n + 1)%nat) (X (S n))).
+             {
+               intro x.
+               f_equal; lia.
+             }
+             rewrite (FiniteExpectation_ext _ _ _ H6) in H5.
+             assert (rv_eq  (rvmult (rvsum X n) (X (n + 1)%nat))
+                            (rvmult (rvsum X n) (X (S n)))).
+             {
+               intro x.
+               f_equal; f_equal; lia.
+             }
+             rewrite (FiniteExpectation_ext _ _ _ H7) in H5.                
+             now rewrite H5.
   Qed.
 
   Lemma filtration_history_indep (X : nat -> Ts -> R) (n : nat) (P : pre_event Ts) (dec : dec_pre_event P)
