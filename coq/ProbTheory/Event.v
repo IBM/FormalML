@@ -1736,6 +1736,12 @@ Section event.
     firstorder.
   Qed.
 
+  Lemma event_inter_countable_union_distr_r  (A:event σ) (coll:nat->event σ) :
+    union_of_collection coll ∩ A === union_of_collection (fun n => (coll n) ∩ A).
+  Proof.
+    firstorder.
+  Qed.
+
   Lemma sa_dec (A:event σ) : event_lem A.
   Proof.
     red; intros.
