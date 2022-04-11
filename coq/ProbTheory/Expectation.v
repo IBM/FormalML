@@ -5028,4 +5028,19 @@ Section indep.
       apply independent_rvs_proper; reflexivity.
     Qed.
 
+    Lemma simple_approx_independent' (X Y:Ts->R) n
+      {posx : Rbar_NonnegativeFunction X}
+      {posy : Rbar_NonnegativeFunction Y}
+      {rvx  : RandomVariable dom borel_sa X}
+      {rvy  : RandomVariable dom borel_sa Y}
+      {rvsx  : RandomVariable dom borel_sa (simple_approx X n)}
+      {rvsy  : RandomVariable dom borel_sa (simple_approx Y n)} :
+      independent_rvs prts borel_sa borel_sa X Y ->
+      independent_rvs prts borel_sa borel_sa (simple_approx X n) (simple_approx Y n).
+    Proof.
+      intros.
+      generalize (simple_approx_independent X Y H n).
+      apply independent_rvs_proper; reflexivity.
+    Qed.
+
 End indep.

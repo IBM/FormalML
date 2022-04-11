@@ -3599,7 +3599,7 @@ Qed.
       do 3 erewrite frf_NonnegExpectation.
       simpl.
       apply SimpleExpectation_indep.
-      admit.
+      now apply (simple_approx_independent' _ _ _ _).
     }
     generalize (monotone_convergence X (simple_approx X) _ _ _ (fun n => simple_approx_pos _ n)); intros.
     generalize (monotone_convergence Y (simple_approx Y) _ _ _ (fun n => simple_approx_pos _ n)); intros.    
@@ -3679,7 +3679,7 @@ Qed.
     - intro.
       generalize (simple_approx_lim_seq X); intros.
       now apply H10.
-    Admitted.
+  Qed.
 
    Lemma pos_parts_mult (X Y : Ts -> R) :
      rv_eq (fun x => nonneg (pos_fun_part (rvmult X Y) x))
