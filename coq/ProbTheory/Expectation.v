@@ -4782,3 +4782,250 @@ Section sa_sub.
   Qed.
 
 End sa_sub.
+
+Lemma INR_eq_0 n : INR n = 0 -> n = 0%nat.
+Proof.
+  destruct (PeanoNat.Nat.eq_dec n 0); trivial; intros.
+  now apply not_0_INR in n0.
+Qed.  
+
+Lemma find_ext_in {A} (f g : A -> bool) (l : list A) :
+  (forall x : A, In x l -> f x = g x) -> find f l = find g l.
+Proof.
+  intros HH.
+  induction l; simpl in *; trivial.
+  rewrite HH by firstorder.
+  now rewrite IHl by firstorder.
+Qed.
+
+Section indep.
+    Context {Ts:Type}
+            {dom: SigmaAlgebra Ts}
+            (prts:ProbSpace dom).
+
+    Existing Instance simple_approx_frf.
+    Existing Instance simple_approx_rv.
+
+    Instance simple_approx_borel_rv n :
+        RandomVariable borel_sa borel_sa
+                        (fun Xw : R =>
+                           if Rbar_ge_dec (Finite Xw) (INR n)
+                           then INR n
+                           else
+                             match
+                               find (fun start : R => if Rbar_ge_dec Xw start then true else false)
+                                    (rev (map (fun x : nat => INR x / 2 ^ n) (seq 0 (n * 2 ^ n))))
+                             with
+                             | Some r => r
+                             | None => INR 0
+                             end).
+    Proof.
+      pose (c := fun x => if Rle_dec 0 x then 1 else 0).
+      assert (RandomVariable borel_sa borel_sa
+                             (rvchoice (fun x => if Req_EM_T (c x) 0 then false else true)
+                                       (fun x => x)
+                                       (fun _ => 0))).
+      {
+        subst c.
+        apply rvchoice_rv.
+        - intros ?.
+          apply borel_sa_preimage; trivial; intros.
+          destruct (Rle_dec 1 r).
+          {
+            apply (sa_proper _ pre_Ω).
+            - intros ?; unfold pre_Ω.
+              match_destr; split; try tauto; lra.
+            - apply sa_all.
+          } 
+          destruct (Rlt_dec r 0).
+          {
+            apply (sa_proper _ pre_event_none).
+            - intros ?; unfold pre_event_none.
+              match_destr; split; try tauto; lra.
+            - apply sa_none.
+          } 
+          apply (sa_proper _ (fun omega => omega < 0)).
+          {
+            intros ?.
+            match_destr; lra.
+          }
+          apply sa_ge_lt.
+          apply sa_le_ge.
+          intros ???.
+          apply H.
+          exists r0; tauto.
+        - apply id_rv.
+        - apply rvconst.
+      }
+      assert(Rbar_NonnegativeFunction
+               (fun omega : R =>
+                  rvchoice (fun x : R => if Req_EM_T (c x) 0 then false else true) 
+                           (fun x : R => x) (fun _ : R => 0) omega)).
+      {
+        intros ?.
+        unfold rvchoice.
+        subst c; simpl.
+        destruct (Rle_dec 0 x)
+        ; destruct (Req_EM_T _ _)
+        ; lra.
+      } 
+
+      generalize (simple_approx_rv
+                    (rvchoice (fun x => if Req_EM_T (c x) 0 then false else true)
+                                       (fun x => x)
+                                       (fun _ => 0)) n).
+      apply RandomVariable_proper; try reflexivity.
+      intros ?.
+      unfold simple_approx, rvchoice.
+      subst c.
+
+      case_eq (Rbar_ge_dec a (INR n)); intros; simpl in *.
+      - destruct (Rle_dec 0 a)
+        ; destruct (Req_EM_T _ _)
+        ; try lra.
+        + rewrite H1; trivial.
+        + simpl in r.
+          generalize (pos_INR n); lra.
+      - destruct (Rle_dec 0 a)
+        ; destruct (Req_EM_T _ _)
+        ; try lra.
+        + now rewrite H1.
+        + generalize (pos_INR n); intros.
+
+          destruct (Rbar_ge_dec 0 (INR n)); simpl in *.
+          * assert (eqq:INR n = 0) by lra.
+            apply INR_eq_0 in eqq; subst.
+            now simpl.
+          * assert (n <> 0%nat).
+            {
+              apply INR_not_0; lra.
+            } 
+            generalize (n * 2 ^ n)%nat
+            ; intros nn.
+            { induction nn; [now simpl |].
+              rewrite seq_Sn.
+              repeat rewrite map_app.
+              repeat rewrite rev_app_distr; simpl.
+              assert (0 <= INR nn / 2 ^ n).
+              {
+                apply Rcomplements.Rdiv_le_0_compat.
+                - apply pos_INR.
+                - apply pow_lt; lra.
+              } 
+              destruct (Rbar_ge_dec a (INR nn / 2 ^ n)); simpl in *; [lra |].
+              destruct (Rbar_ge_dec 0 (INR nn / 2 ^ n)); simpl in *; trivial.
+              assert (nn = 0%nat).
+              {
+                apply INR_eq_0.
+                assert (INR nn / 2 ^ n = 0) by lra.
+                destruct nn; simpl; trivial.
+                cut (0 < INR (S nn) / 2 ^ n); [lra |].
+                apply Rdiv_lt_0_compat.
+                - rewrite S_INR.
+                  generalize (pos_INR nn); lra.
+                - apply pow_lt; lra.
+              } 
+              subst; simpl; lra.
+            } 
+    Qed.
+          
+    Lemma simple_approx_independent (X Y:Ts->R)
+      {posx : Rbar_NonnegativeFunction X}
+      {posy : Rbar_NonnegativeFunction Y}
+      {rvx  : RandomVariable dom borel_sa X}
+      {rvy  : RandomVariable dom borel_sa Y} :
+      independent_rvs prts borel_sa borel_sa X Y ->
+      forall n, independent_rvs prts borel_sa borel_sa (simple_approx X n) (simple_approx Y n).
+    Proof.
+      intros.
+
+      assert (rv1:RandomVariable borel_sa borel_sa
+                                 (fun Xw : R =>
+            if Rbar_ge_dec (Finite Xw) (INR n)
+            then INR n
+            else
+             match
+               find (fun start : R => if Rbar_ge_dec Xw start then true else false)
+                 (rev (map (fun x : nat => INR x / 2 ^ n) (seq 0 (n * 2 ^ n))))
+             with
+             | Some r => r
+             | None => INR 0
+             end)).
+      {
+        typeclasses eauto.
+      }
+
+      assert (rv1':RandomVariable dom borel_sa
+          ((fun Xw : R =>
+            if Rbar_ge_dec (Finite Xw) (INR n)
+            then INR n
+            else
+             match
+               find (fun start : R => if Rbar_ge_dec Xw start then true else false)
+                 (rev (map (fun x : nat => INR x / 2 ^ n) (seq 0 (n * 2 ^ n))))
+             with
+             | Some r => r
+             | None => INR 0
+             end) ∘ (fun x : Ts => X x))).
+      {
+        unfold compose.
+        apply simple_approx_rv; trivial.
+        now apply Real_Rbar_rv.
+      }
+
+      assert (rv2:RandomVariable borel_sa borel_sa
+          (fun Xw : R =>
+            if Rbar_ge_dec (Finite Xw) (INR n)
+            then INR n
+            else
+             match
+               find (fun start : R => if Rbar_ge_dec Xw start then true else false)
+                 (rev (map (fun x : nat => INR x / 2 ^ n) (seq 0 (n * 2 ^ n))))
+             with
+             | Some r => r
+             | None => INR 0
+             end)).
+      {
+        typeclasses eauto.
+      } 
+
+      assert (rv2':RandomVariable dom borel_sa
+          ((fun Xw : R =>
+            if Rbar_ge_dec (Finite Xw) (INR n)
+            then INR n
+            else
+             match
+               find (fun start : R => if Rbar_ge_dec Xw start then true else false)
+                 (rev (map (fun x : nat => INR x / 2 ^ n) (seq 0 (n * 2 ^ n))))
+             with
+             | Some r => r
+             | None => INR 0
+             end) ∘ (fun x : Ts => Y x))).
+      {
+        unfold compose.
+        apply simple_approx_rv; trivial.
+        now apply Real_Rbar_rv.
+      }
+
+      generalize (independent_rv_compose prts _ _ _ _ 
+                             X Y (fun Xw =>
+                                if Rbar_ge_dec (Finite Xw) (INR n) then (INR n) else
+                                  match find (fun start => if Rbar_ge_dec (Finite Xw) (Finite start) then true else false) 
+                                             (rev (map (fun x => (INR x / (2^n))) 
+                                                       (seq 0 (n*(2^n))))) with
+                                  | Some r => r
+                                  | None => (INR 0)
+                                  end)
+                             (fun Xw =>
+                                if Rbar_ge_dec (Finite Xw) (INR n) then (INR n) else
+                                  match find (fun start => if Rbar_ge_dec Xw (Finite start) then true else false) 
+                                             (rev (map (fun x => (INR x / (2^n))) 
+                                                       (seq 0 (n*(2^n))))) with
+                                  | Some r => r
+                                  | None => (INR 0)
+                                  end)
+                 H).
+      apply independent_rvs_proper; reflexivity.
+    Qed.
+
+End indep.
