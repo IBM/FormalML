@@ -5044,3 +5044,38 @@ Section indep.
     Qed.
 
 End indep.
+
+Section ident.
+  Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts:ProbSpace dom).
+
+  Existing Instance simple_approx_frf.
+  Existing Instance simple_approx_rv.
+
+  Lemma ident_distr_simple_approx_eq (X Y:Ts->R)
+        {posx : Rbar_NonnegativeFunction X}
+        {posy : Rbar_NonnegativeFunction Y}
+        {rvx  : RandomVariable dom borel_sa X}
+        {rvy  : RandomVariable dom borel_sa Y} :
+    identically_distributed_rvs prts borel_sa X Y ->
+    forall n, SimpleExpectation (simple_approx X n) = SimpleExpectation (simple_approx Y n).
+  Proof.
+    intros.
+    unfold simple_approx.
+    unfold SimpleExpectation.
+    f_equal.
+    apply map_ext; intros.
+    f_equal.
+
+
+    red in H.
+    generalize (simple_approx_borel_rv n (exist sa_sigma _ (borel_singleton a))); intros HH.
+
+    specialize (H (exist _ _ HH)).
+    etransitivity; [etransitivity |]; [| apply H |]
+    ; apply ps_proper; intros ?; simpl
+    ; reflexivity.
+  Qed.
+
+End ident.
