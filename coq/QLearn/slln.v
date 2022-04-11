@@ -3919,7 +3919,7 @@ Qed.
       rewrite IHn.
       assert (forall n, IsFiniteExpectation Prts (X n)) by typeclasses eauto.
       rewrite independent_expectation_prod with (rvx := rv (S n)) (rvy := rv (S n + S j)%nat) (isfex := H5 (S n)) (isfey := (H5 (S n + S j)%nat)).
-      + admit.
+      + f_equal; f_equal; apply FiniteExpectation_pf_irrel.
       + apply H.
         Unshelve.
         specialize (isfe n (S j)).
@@ -3929,7 +3929,8 @@ Qed.
         f_equal.
         f_equal.
         lia.
-   Admitted.
+  Qed.
+
       
   Lemma independent_sum_variance (X : nat -> Ts -> R) (n:nat)
         {rv: forall n, RandomVariable dom borel_sa (X n)}
