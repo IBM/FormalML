@@ -3,7 +3,7 @@ Require Import List Morphisms Lia.
 
 Require Export LibUtils BasicUtils ProbSpace SigmaAlgebras Independence.
 Require Classical.
-Require Import ClassicalDescription.
+Require Import ClassicalDescription EquivDec.
 Require Import ClassicalChoice ChoiceFacts.
 
 
@@ -912,18 +912,78 @@ Section indep.
              {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
              (X : forall (i:Idx), Ts -> Td i)
              {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)}
+    := forall i j, i <> j -> independent_rvs (cod i) (cod j) (X i) (X j).
+
+  Definition pairwise_independent_rv_collection_alt
+             {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+             (X : forall (i:Idx), Ts -> Td i)
+             {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)}
     := forall (l:forall i, event (cod i)),
       pairwise_independent_event_collection prts (fun i => rv_preimage (X i) (l i)).
 
+  Lemma pairwise_independent_rv_collection_as_alt 
+         {Idx} {dec:EqDec Idx eq} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+         (X : forall (i:Idx), Ts -> Td i)
+         {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)} :
+    pairwise_independent_rv_collection cod X <-> pairwise_independent_rv_collection_alt cod X.
+  Proof.
+    split.
+    - intros HH l i j ij.
+      apply (HH _ _ ij).
+    - intros HH i j ij A B.
+      red in HH.
+      assert (Hl:{l : forall i : Idx, event (cod i) |
+                l i = A /\
+                  l j = B}).
+      {
+
+      refine (exist _
+                    (fun (k:Idx) => if k == i
+                       then _
+                       else if k == j
+                            then _
+                            else _
+                    ) _).
+      Unshelve.
+      2: {
+        rewrite e.
+        exact A.
+      }
+      2: {
+        rewrite e.
+        exact B.
+      }
+      2: {
+        exact event_none.
+      }
+      split.
+      - match_destr; [| congruence].
+        red in e.
+        unfold eq_rect_r.
+        symmetry.
+        now rewrite <- eq_rect_eq.
+      - match_destr; [congruence |].
+        match_destr; [| congruence].
+        unfold eq_rect_r.
+        symmetry.
+        now rewrite <- eq_rect_eq.
+      }         
+      destruct Hl as [l [??]]; subst.
+      apply (HH l i j ij).
+  Qed.
+  
   Lemma independent_rv_collection_pairwise_independent
-        {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+        {Idx:Type} {dec:EqDec Idx eq} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
         (X : forall (i:Idx), Ts -> Td i)
         {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)} :
     independent_rv_collection cod X -> pairwise_independent_rv_collection cod X.
   Proof.
-    unfold independent_rv_collection, pairwise_independent_rv_collection; intros.
-    apply independent_event_collection_pairwise_independent.
-    apply H.
+    intros.
+    apply (pairwise_independent_rv_collection_as_alt _).
+    intros ????.
+    specialize (H l).
+    apply independent_event_collection_pairwise_independent in H.
+    now apply H.
   Qed.
   
   Definition identically_distributed_rvs {Td} (cod:SigmaAlgebra Td)
@@ -1113,13 +1173,13 @@ Section indep.
   Qed.
 
   Lemma pairwise_independent_rv_collection_sas
-        {Idx} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
+        {Idx} {dec:EqDec Idx eq} {Td:Idx -> Type} (cod:forall (i:Idx), SigmaAlgebra (Td i))
         (X : forall (i:Idx), Ts -> Td i)
         {rv : forall (i:Idx), RandomVariable dom (cod i) (X i)} :
     pairwise_independent_rv_collection cod X <->
       pairwise_independent_sa_collection prts (fun n => pullback_sa (cod n) (X n)).
   Proof.
-    unfold independent_rv_collection, independent_sa_collection.
+    rewrite (pairwise_independent_rv_collection_as_alt _).
     split.
     - intros HH A  i j neq.
 
@@ -1213,16 +1273,9 @@ Section indep.
         {rv' : forall (i:Idx), RandomVariable dom (cod' i) (X' i)} :
     pairwise_independent_rv_collection cod X <-> pairwise_independent_rv_collection cod' X'.
   Proof.
-    split; intros HH l
-    ; apply pairwise_independent_rv_collection_sas in HH
-    ; apply pairwise_independent_rv_collection_sas
-    ; revert HH
-    ; apply pairwise_independent_sa_collection_proper
-    ; intros ?
-    ; apply pullback_sa_sigma_proper
-    ; repeat red; intros
-    ; firstorder.
-    symmetry; apply eqqx.
+    split; intros HH i j ij
+    ; generalize (HH i j ij)
+    ; now apply independent_rvs_proper.
   Qed.
 
 End indep.
