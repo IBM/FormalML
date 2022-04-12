@@ -5054,8 +5054,8 @@ Section ident.
   Existing Instance simple_approx_rv.
 
   Lemma ident_distr_simple_approx_eq (X Y:Ts->R)
-        {posx : Rbar_NonnegativeFunction X}
-        {posy : Rbar_NonnegativeFunction Y}
+        {posx : NonnegativeFunction X}
+        {posy : NonnegativeFunction Y}
         {rvx  : RandomVariable dom borel_sa X}
         {rvy  : RandomVariable dom borel_sa Y} :
     identically_distributed_rvs prts borel_sa X Y ->
@@ -5068,7 +5068,6 @@ Section ident.
     apply map_ext; intros.
     f_equal.
 
-
     red in H.
     generalize (simple_approx_borel_rv n (exist sa_sigma _ (borel_singleton a))); intros HH.
 
@@ -5076,6 +5075,41 @@ Section ident.
     etransitivity; [etransitivity |]; [| apply H |]
     ; apply ps_proper; intros ?; simpl
     ; reflexivity.
+  Qed.
+
+  Lemma ident_distr_nnexp_eq (X Y:Ts->R)
+        {posx : NonnegativeFunction X}
+        {posy : NonnegativeFunction Y}
+        {rvx  : RandomVariable dom borel_sa X}
+        {rvy  : RandomVariable dom borel_sa Y} :
+    identically_distributed_rvs prts borel_sa X Y ->
+    NonnegExpectation X = NonnegExpectation Y.
+  Proof.
+    intros.
+    generalize (monotone_convergence X (simple_approx X) _ _ _ (fun n => simple_approx_pos _ n)); intros.
+    generalize (monotone_convergence Y (simple_approx Y) _ _ _ (fun n => simple_approx_pos _ n)); intros.    
+    rewrite <- H0, <- H1.
+    - apply Lim_seq_ext.
+      intros.
+      erewrite frf_NonnegExpectation.
+      erewrite frf_NonnegExpectation.
+      now apply ident_distr_simple_approx_eq.
+    - intros n x.
+      now apply (simple_approx_le Y).
+    - intros n x.
+      now apply simple_approx_increasing.
+    - intros.
+      apply simple_expectation_real; typeclasses eauto.
+    - intros.
+      now apply (simple_approx_lim_seq Y).
+    - intros n x.
+      now apply (simple_approx_le X).
+    - intros n x.
+      now apply simple_approx_increasing.
+    - intros.
+      apply simple_expectation_real; typeclasses eauto.
+    - intros.
+      now apply (simple_approx_lim_seq X).
   Qed.
 
 End ident.
