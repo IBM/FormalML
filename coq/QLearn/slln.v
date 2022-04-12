@@ -3641,12 +3641,8 @@ Qed.
     - intros n x.
       unfold rvmult.
       apply Rmult_le_compat; try apply simple_approx_pos.
-      + generalize (simple_approx_le X); intros.
-        simpl in H10.
-        now apply H10.
-      + generalize (simple_approx_le Y); intros.
-        simpl in H10.
-        now apply H10.
+      + now apply (simple_approx_le X).
+      + now apply (simple_approx_le Y).
     - intros n x.
       unfold rvmult.
       apply Rmult_le_compat; try apply simple_approx_pos.
@@ -3657,10 +3653,8 @@ Qed.
     - intros.
       unfold rvmult.
       apply is_lim_seq_mult'.
-      + generalize (simple_approx_lim_seq X); intros.
-        now apply H10.
-      + generalize (simple_approx_lim_seq Y); intros.
-        now apply H10.
+      + now apply (simple_approx_lim_seq X).
+      + now apply (simple_approx_lim_seq Y).
     - intros n x.
       now apply (simple_approx_le Y).
     - intros n x.
@@ -3668,8 +3662,7 @@ Qed.
     - intros.
       apply simple_expectation_real; typeclasses eauto.
     - intro.
-      generalize (simple_approx_lim_seq Y); intros.
-      now apply H10.
+      now apply (simple_approx_lim_seq Y).
     - intros n x.
       now apply (simple_approx_le X).
     - intros n x.
@@ -3677,8 +3670,7 @@ Qed.
     - intros.
       apply simple_expectation_real; typeclasses eauto.
     - intro.
-      generalize (simple_approx_lim_seq X); intros.
-      now apply H10.
+      now apply (simple_approx_lim_seq X).
   Qed.
 
    Lemma pos_parts_mult (X Y : Ts -> R) :
@@ -3814,6 +3806,24 @@ Qed.
     - rewrite <- (Expectation_pos_part_finite _ X); trivial.
       rewrite <- (Expectation_pos_part_finite _ Y); trivial.             
       now simpl.
+   Qed.
+
+    Lemma ident_distr_finite_exp_eq (X Y:Ts->R)
+          {isfex : IsFiniteExpectation Prts X}
+          {isfey : IsFiniteExpectation Prts Y}          
+          {rvx  : RandomVariable dom borel_sa X}
+          {rvy  : RandomVariable dom borel_sa Y} :
+    identically_distributed_rvs Prts borel_sa X Y ->
+    FiniteExpectation Prts X = FiniteExpectation Prts Y.
+   Proof.
+     intros.
+     generalize (ident_distr_nnexp_eq Prts (pos_fun_part X) (pos_fun_part Y) 
+                                      (identially_distributed_pos_part X Y H)); intros.
+     generalize (ident_distr_nnexp_eq Prts (neg_fun_part X) (neg_fun_part Y)
+                                      (identially_distributed_neg_part X Y H)); intros.
+     rewrite Finite_expectation_pos_neg_parts; trivial.
+     rewrite Finite_expectation_pos_neg_parts; trivial.
+     rewrite H0, H1; trivial.
    Qed.
 
   Instance rv_collection (X : nat -> Ts -> R)

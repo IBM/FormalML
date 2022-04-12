@@ -5266,6 +5266,42 @@ Section indep.
     now apply independent_rvs_proper.
   Qed.
 *)
+  Lemma identially_distributed_abs
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y} :
+    identically_distributed_rvs prts borel_sa X Y -> 
+    identically_distributed_rvs prts borel_sa 
+                    (Rabs ∘ X) 
+                    (Rabs ∘ Y).
+  Proof.
+    apply identically_distributed_rv_compose.
+  Qed.
+
+  Lemma identially_distributed_pos_part
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y} :
+    identically_distributed_rvs prts borel_sa X Y -> 
+    identically_distributed_rvs prts borel_sa 
+                    ((fun x => Rmax x 0) ∘ X) 
+                    ((fun x => Rmax x 0) ∘ Y).
+  Proof.
+    apply identically_distributed_rv_compose.
+  Qed.
+
+  Lemma identially_distributed_neg_part
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y} :
+    identically_distributed_rvs prts borel_sa X Y -> 
+    identically_distributed_rvs prts borel_sa 
+                    ((fun x => Rmax (- x) 0) ∘ X) 
+                    ((fun x => Rmax (- x) 0) ∘ Y).
+  Proof.
+    apply identically_distributed_rv_compose.
+  Qed.
+
   Definition pairwise_independent_real_rv_collection {Idx}
              (X : Idx -> Ts -> R)
              {rv_X : forall n, RandomVariable dom borel_sa (X n)}

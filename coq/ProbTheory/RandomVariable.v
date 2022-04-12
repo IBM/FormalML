@@ -1068,6 +1068,25 @@ Section indep.
     apply indep.
   Qed.
 
+    Lemma identically_distributed_rv_compose
+        {Td Tdf : Type}
+        (cod: SigmaAlgebra Td)
+        (codf: SigmaAlgebra Tdf)
+        (X : Ts -> Td)
+        (Y : Ts -> Td)
+        (f : Td -> Tdf)
+        {rvx: RandomVariable dom cod X}
+        {rvy: RandomVariable dom cod Y}
+        {rvf: RandomVariable cod codf f} :
+      identically_distributed_rvs cod X Y ->
+      identically_distributed_rvs codf (f ∘ X) (f ∘ Y).
+  Proof.
+    unfold identically_distributed_rvs.
+    intros ident A.
+    do 2 rewrite rv_preimage_compose.
+    apply ident.
+  Qed.
+
   Lemma independent_rv_sas {Td1} (cod1:SigmaAlgebra Td1) {Td2} (cod2:SigmaAlgebra Td2)
         (X1 : Ts -> Td1) (X2 : Ts -> Td2)
         {rv1:RandomVariable dom cod1 X1}
