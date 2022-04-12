@@ -3817,13 +3817,12 @@ Qed.
     FiniteExpectation Prts X = FiniteExpectation Prts Y.
    Proof.
      intros.
-     generalize (ident_distr_nnexp_eq Prts (pos_fun_part X) (pos_fun_part Y) 
-                                      (identially_distributed_pos_part X Y H)); intros.
-     generalize (ident_distr_nnexp_eq Prts (neg_fun_part X) (neg_fun_part Y)
-                                      (identially_distributed_neg_part X Y H)); intros.
      rewrite Finite_expectation_pos_neg_parts; trivial.
      rewrite Finite_expectation_pos_neg_parts; trivial.
-     rewrite H0, H1; trivial.
+     rewrite (ident_distr_nnexp_eq Prts (pos_fun_part X) (pos_fun_part Y)
+                                   (identially_distributed_pos_part X Y H)).
+     now rewrite (ident_distr_nnexp_eq Prts (neg_fun_part X) (neg_fun_part Y)
+                                   (identially_distributed_neg_part X Y H)).
    Qed.
 
   Instance rv_collection (X : nat -> Ts -> R)
