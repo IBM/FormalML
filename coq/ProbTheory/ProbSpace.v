@@ -854,12 +854,6 @@ Section conditional_probability.
     apply infinite_sum'_scal_r.
   Qed.
 
-  Lemma event_inter_countable_union_distr_r  (A:event σ) (coll:nat->event σ) :
-    union_of_collection coll ∩ A === union_of_collection (fun n => (coll n) ∩ A).
-  Proof.
-    firstorder.
-  Qed.
-
   Global Program Instance cond_prob_space (B:event σ) (pf:0 < ps_P B) : ProbSpace σ
     := {
     ps_P A := cond_prob A B
@@ -1297,6 +1291,40 @@ Section indep.
     rewrite Rmult_assoc in H.
     repeat rewrite Rinv_r in H by trivial.
     lra.
+  Qed.
+
+  Lemma independent_events_disjoint_countable_union (e : nat -> event dom) (B : event dom)
+        (indeps: forall x : nat, independent_events (e x) B)
+        (disj : collection_is_pairwise_disjoint e) :
+    independent_events (union_of_collection e) B.
+  Proof.
+    unfold independent_events in *.
+    rewrite Event.event_inter_countable_union_distr_r.
+    generalize (ps_countable_disjoint_union (fun n : nat => e n) disj)
+    ; intros HH.
+    red in HH.
+    generalize (infinite_sum'_scal_r (ps_P B) HH); intros HH2.
+    assert (disj' : collection_is_pairwise_disjoint (fun n : nat => e n ∩ B)).
+    {
+      apply -> collection_is_pairwise_disjoint_pre in disj.
+      apply <- collection_is_pairwise_disjoint_pre.
+      unfold collection_pre in *.
+      generalize (pre_collection_is_pairwise_disjoint_inter e B disj).
+      apply pre_collection_is_pairwise_disjoint_pre_event_equiv_proper; intros ?.
+      now rewrite pre_event_inter_comm.
+    }       
+    generalize (ps_countable_disjoint_union (fun n : nat => e n ∩ B) disj')
+    ; intros HH3.
+    red in HH3.
+    assert (HH4:infinite_sum'
+              (fun n : nat => ps_P (e n) * ps_P B)
+              (ps_P (union_of_collection (fun n : nat => e n ∩ B)))).
+    {
+      revert HH3.
+      now apply infinite_sum'_ext.
+    }
+    generalize (infinite_sum'_unique HH2 HH4).
+    auto.
   Qed.
 
 End indep.
