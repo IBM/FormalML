@@ -2717,19 +2717,18 @@ End ash.
     event_equiv (event_ge dom rv_X (rv:=rv1) x)
                 (event_ge dom rv_X (rv:=rv2) x).
   Proof.
-    Proof.
-      repeat red; intros.
-      split; intros; trivial.
-    Qed.
-
-    Lemma sqr_pos (eps : posreal) :
-      0 < Rsqr eps.
-    Proof.
-      apply Rsqr_pos_lt.
-      apply Rgt_not_eq.
-      apply cond_pos.
-    Qed.
-
+    repeat red; intros.
+    split; intros; trivial.
+  Qed.
+  
+  Lemma sqr_pos (eps : posreal) :
+    0 < Rsqr eps.
+  Proof.
+    apply Rsqr_pos_lt.
+    apply Rgt_not_eq.
+    apply cond_pos.
+  Qed.
+  
     (*ash 6.2.1 *)
     Lemma vec_Ash_6_2_1_helper {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (m : nat)
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}

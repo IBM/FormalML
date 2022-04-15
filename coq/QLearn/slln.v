@@ -2922,10 +2922,9 @@ Qed.
     event_equiv (event_ge dom rv_X (rv:=rv1) x)
                 (event_ge dom rv_X (rv:=rv2) x).
   Proof.
-    Proof.
-      repeat red; intros.
-      split; intros; trivial.
-    Qed.
+    repeat red; intros.
+    split; intros; trivial.
+  Qed.
 
     Lemma sqr_pos (eps : posreal) :
       0 < Rsqr eps.
