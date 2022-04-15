@@ -329,7 +329,7 @@ Section dynkin.
     now apply generated_lambda_minimal.
   Qed.
 
-  Lemma pi_system_inter (C1 C2 : pre_event T -> Prop) {cp1 : Pi_system C1} {cp2 : Pi_system C2} :
+  Lemma Pi_system_inter (C1 C2 : pre_event T -> Prop) {cp1 : Pi_system C1} {cp2 : Pi_system C2} :
     Pi_system (fun x => exists e1 e2, C1 e1 /\ C2 e2 /\ pre_event_equiv x (pre_event_inter e1 e2)).
     Proof.
       unfold Pi_system in *.
@@ -344,8 +344,6 @@ Section dynkin.
         + now apply cp2.
         + rewrite H2.
           rewrite H4.
-          intro z.
-          unfold pre_event_inter.
           firstorder.
     Qed.
 
