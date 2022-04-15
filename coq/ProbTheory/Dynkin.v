@@ -342,8 +342,7 @@ Section dynkin.
       - now apply cp1.
       - split.
         + now apply cp2.
-        + rewrite H2.
-          rewrite H4.
+        + rewrite H2, H4.
           firstorder.
     Qed.
 
