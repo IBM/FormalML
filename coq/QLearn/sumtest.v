@@ -488,64 +488,77 @@ Proof.
   apply is_lim_RInt_inv0.
 Qed.
 
-Lemma is_RInt_inv_Rsqr (b:R) (pr:1 <= b) :
-    is_RInt (fun x:R => / Rsqr x) 1 b (1 - 1 / b).
+Lemma is_RInt_inv_Rsqr (a b:R) (pr: 0 < a <= b) :
+    is_RInt (fun x:R => / Rsqr x) a b (/ a - / b).
 Proof.
-  replace (1 - 1/b) with ((- Rinv b) - (- Rinv 1)).
+  replace (/a - /b) with ((- / b) - (- / a)).
   apply (@is_RInt_derive) with (f:= fun x => - Rinv x).
-  rewrite Rmin_left by lra.
-  rewrite Rmax_right by lra.
-  intros.
-  replace (/ (Rsqr x)) with (- (- 1 / x^2)).
-  apply is_derive_opp with (f := fun x => / x).
-  apply is_derive_inv with (f := id).
-  apply (@is_derive_id).
-  unfold id; lra.
-  unfold Rsqr.
-  field_simplify; trivial; lra.
-  rewrite Rmin_left by lra.
-  rewrite Rmax_right; intuition.
-  unfold continuous.
-  apply (continuity_pt_filterlim (fun x => / (Rsqr x))).
-  apply continuity_pt_inv.  
-  unfold Rsqr.
-  apply continuity_pt_mult.
-  apply continuity_pt_id.
-  apply continuity_pt_id.
-  apply Rgt_not_eq.
-  apply Rmult_gt_0_compat; lra.
-  field_simplify; trivial; lra.
+  - rewrite Rmin_left by lra.
+    rewrite Rmax_right by lra.
+    intros.
+    replace (/ (Rsqr x)) with (- (- 1 / x^2)).
+    + apply is_derive_opp with (f := fun x => / x).
+      apply is_derive_inv with (f := id).
+      * apply (@is_derive_id).
+      * unfold id; lra.
+    + unfold Rsqr.
+      field_simplify; trivial; lra.
+  - rewrite Rmin_left by lra.
+    rewrite Rmax_right; intuition.
+    unfold continuous.
+    apply (continuity_pt_filterlim (fun x => / (Rsqr x))).
+    apply continuity_pt_inv.  
+    + unfold Rsqr.
+      apply continuity_pt_mult; apply continuity_pt_id.
+    + apply Rgt_not_eq.
+      apply Rmult_gt_0_compat; lra.
+  - field_simplify; trivial; lra.
 Qed.
 
-Lemma is_lim_Rint_inv_Rsqr0 :
-  is_lim (fun b => (1 - 1 / b)) p_infty 1.
+Lemma is_RInt_inv_Rsqr1 (b:R) (pr:1 <= b) :
+  is_RInt (fun x:R => / Rsqr x) 1 b (1 - 1 / b).
 Proof.
-  apply is_lim_minus with (lf := 1) (lg := 0).
-  apply is_lim_const.
-  apply (is_lim_ext Rinv).
-  intros.
-  lra.
-  replace (Finite 0) with (Rbar_inv p_infty).
-  apply is_lim_inv.
-  apply is_lim_id.
-  discriminate.
-  unfold Rbar_inv; trivial.
-  compute.
-  apply f_equal.
-  replace (Rplus R1 (Ropp R0)) with (R1); trivial; lra.
+  replace (1 - 1 / b) with (/ 1 - / b) by lra.
+  apply is_RInt_inv_Rsqr; lra.
 Qed.
 
-Lemma is_lim_Rint_inv_Rsqr :
+Lemma is_lim_Rint_inv_Rsqr0 (a : R) (pr : 0 < a) :
+  is_lim (fun b => (/ a - / b)) p_infty (/ a).
+Proof.
+  apply is_lim_minus with (lf := / a) (lg := 0).
+  - apply is_lim_const.
+  - apply (is_lim_ext Rinv).
+    + intros; lra.
+    + replace (Finite 0) with (Rbar_inv p_infty).
+      * apply is_lim_inv.
+        -- apply is_lim_id.
+        -- discriminate.
+      * unfold Rbar_inv; trivial.
+  - vm_compute.
+    f_equal.
+    apply Rbar_finite_eq.
+    lra.
+Qed.
+
+Lemma is_lim_Rint_inv_Rsqr (a : R) (pr : 0 < a) :
+  is_lim (fun b => RInt (fun x:R => / Rsqr x) a b) p_infty (/ a).
+Proof.
+  apply (is_lim_ext_loc (fun b => /a - /b)).
+  exists (a).
+  - intros.
+    symmetry.
+    apply is_RInt_unique.
+    apply is_RInt_inv_Rsqr.
+    lra.
+  - now apply is_lim_Rint_inv_Rsqr0.
+Qed.  
+
+Lemma is_lim_Rint_inv_Rsqr1 :
   is_lim (fun b => RInt (fun x:R => / Rsqr x) 1 b) p_infty 1.
 Proof.
-  apply (is_lim_ext_loc (fun b => 1 - 1/b)).
-  exists 2.
-  intros.
-  symmetry.
-  apply is_RInt_unique.
-  apply is_RInt_inv_Rsqr.
-  lra.
-  apply is_lim_Rint_inv_Rsqr0.
+  generalize (is_lim_Rint_inv_Rsqr 1); intros.
+  replace (/ 1) with (1) in H by lra.
+  apply H; lra.
 Qed.  
 
 Lemma is_RInt_gen_inv_Rsqr :
