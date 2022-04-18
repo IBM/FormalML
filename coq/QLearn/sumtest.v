@@ -673,70 +673,29 @@ Proof.
   cut_to H0.
   - eapply Rbar_le_trans.
     apply H0.
+    assert (is_lim_seq (fun n : nat => / (INR a + 1 + INR n)) 0).
+    {
+      replace (Finite 0) with (Rbar_inv p_infty) by now simpl.
+      apply is_lim_seq_inv.
+      eapply is_lim_seq_plus.
+      - apply is_lim_seq_const.
+      - apply is_lim_seq_INR.
+      - now simpl.
+      - discriminate.
+    }
+    generalize (is_lim_seq_unique _ _ H1); intros.
     rewrite Lim_seq_minus.
-    + rewrite Lim_seq_const.
-      rewrite Lim_seq_inv.
-      * rewrite Lim_seq_plus.
-        -- rewrite Lim_seq_const.
-           rewrite Lim_seq_INR.
-           simpl; lra.
-        -- apply ex_lim_seq_const.
-        -- apply ex_lim_seq_INR.
-        -- rewrite Lim_seq_const.
-           rewrite Lim_seq_INR.
-           now simpl.
-      * apply ex_lim_seq_plus.
-        -- apply ex_lim_seq_const.
-        -- apply ex_lim_seq_INR.
-        -- rewrite Lim_seq_const.
-           rewrite Lim_seq_INR.
-           now simpl.
-      * rewrite Lim_seq_plus.
-        -- rewrite Lim_seq_const.
-           rewrite Lim_seq_INR.
-           now simpl.
-        -- apply ex_lim_seq_const.
-        -- apply ex_lim_seq_INR.
-        -- rewrite Lim_seq_const, Lim_seq_INR.
-           now simpl.
+    + rewrite H2.
+      rewrite Lim_seq_const.
+      simpl.
+      lra.
     + apply ex_lim_seq_const.
-    + apply ex_lim_seq_inv.
-      * apply ex_lim_seq_plus.
-        -- apply ex_lim_seq_const.
-        -- apply ex_lim_seq_INR.
-        -- rewrite Lim_seq_const.
-           rewrite Lim_seq_INR.
-           now simpl.
-      * rewrite Lim_seq_plus.
-        -- rewrite Lim_seq_const.
-           rewrite Lim_seq_INR.
-           now simpl.
-        -- apply ex_lim_seq_const.
-        -- apply ex_lim_seq_INR.
-        -- rewrite Lim_seq_const, Lim_seq_INR.
-           now simpl.
+    + unfold ex_lim_seq.
+      exists (Finite 0).
+      apply H1.
     + rewrite Lim_seq_const.
-      rewrite Lim_seq_inv.
-      * rewrite Lim_seq_plus.
-        -- rewrite Lim_seq_const, Lim_seq_INR.
-           now simpl.
-        -- apply ex_lim_seq_const.
-        -- apply ex_lim_seq_INR.
-        -- rewrite Lim_seq_const, Lim_seq_INR.
-           now simpl.
-      * apply ex_lim_seq_plus.
-        -- apply ex_lim_seq_const.
-        -- apply ex_lim_seq_INR.
-        -- rewrite Lim_seq_const, Lim_seq_INR.
-           now simpl.
-      * rewrite Lim_seq_plus.
-        -- rewrite Lim_seq_const.
-           rewrite Lim_seq_INR.
-           now simpl.
-        -- apply ex_lim_seq_const.
-        -- apply ex_lim_seq_INR.
-        -- rewrite Lim_seq_const, Lim_seq_INR.
-           now simpl.
+      rewrite H2.
+      now simpl.
   - exists 0%nat.
     intros.
     now apply ub_sum_inv_sq_RInt_val.
