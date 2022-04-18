@@ -11,6 +11,7 @@ Require Import BorelSigmaAlgebra.
 Require Import utils.Utils.
 Require Import ConditionalExpectation.
 Require Import Independence.
+Require Import sumtest.
 
 Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
@@ -5065,6 +5066,44 @@ Qed.
           now rewrite sum_Rbar_n_finite_sum_n.          
     Qed.
             
+  Lemma bound_m_quo :
+    forall x,
+      1 <= x ->
+      (/ x) + (/ Rsqr x) <= 2 / x.
+  Proof.
+    intros.
+    assert (/  Rsqr x <= /x).
+    {
+      apply Rinv_le_contravar; try lra.
+      assert (0 < x) by lra.
+      unfold Rsqr.
+      apply Rmult_le_compat_l with (r := x) in H; lra.
+    }
+    replace (2 / x) with (/ x + / x) by lra.
+    now apply Rplus_le_compat_l.
+  Qed.
+
+  Lemma sum_inv_sq_lim :
+    forall m,
+      Rbar_le
+        (Lim_seq (fun n => sum_n_m (fun k => / Rsqr (INR k)) (S m) (S m + n)%nat))
+        (2 / (INR (S m))).
+    Proof.
+      intros.
+      generalize (ub_lim_sum_inv_sq_alt (S m)); intros.
+      cut_to H; try lia.
+      rewrite Lim_seq_ext with
+          (v := (fun n : nat => sum_n_m (fun k : nat => / (INR k)²) (S m) (S m + n))) in H.
+      - eapply Rbar_le_trans.
+        + apply H.
+        + apply bound_m_quo.
+          replace 1 with (INR 1%nat).
+          * apply le_INR; lia.
+          * now simpl.
+      - intros.
+        now rewrite sum_n_m_Reals; try lia.
+   Qed.
+
   Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} :
     (forall n, Expectation (X n) = Some (Rbar.Finite 0)) ->

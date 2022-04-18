@@ -160,8 +160,7 @@ Lemma RiemannInt_pn2 f (n:nat) (pr1:Riemann_integrable f 1 (2 + INR n)) :
 Proof.
   revert pr1.
   induction n; simpl.
-  - assert (eqq:(2 + 0)=2) by (compute; lra).
-    rewrite eqq.
+  - rewrite Rplus_0_r.
     intros.
     generalize (RiemannInt_p2 _ _ pr1); intros.
     cut_to H0.
@@ -246,6 +245,91 @@ Proof.
         } 
     + intros.
       apply H; lra.
+Qed.
+
+Lemma sum_f_R0_Sn g n :
+  sum_f_R0 g (S n) = sum_f_R0 g n + g (S n).
+Proof.
+  now simpl.
+Qed.
+
+Lemma RInt_p2 f (a : R) (pr1 : ex_RInt f a (a + 1)):
+       (forall x y : R, a <= x -> y <= a + 1 -> x <= y -> f y <= f x) ->
+       RInt f a (a + 1) >= f (a + 1).
+Proof.
+  apply ex_RInt_Reals_0 in pr1.
+  rewrite RInt_Reals with (pr := pr1).
+  apply RiemannInt_p2.
+Qed.
+
+Lemma RInt_pn2_1 f (n:nat) (pr1:ex_RInt f 1 (2 + INR n)) :
+    (forall x y :R, 1 <= x -> y <= (2 + INR n) -> x<=y -> f y <= f x)
+    -> RInt f 1 (2 + INR n) >= sum_f 2 (2+n) (fun j:nat => f (INR j)).
+Proof.
+  apply ex_RInt_Reals_0 in pr1.
+  rewrite RInt_Reals with (pr := pr1).
+  apply RiemannInt_pn2.
+Qed.
+
+Lemma RInt_pn2 f (a n:nat) (pr1:ex_RInt f (INR a) ((INR (a) +1) + INR n)) :
+    (forall x y :R, INR a <= x -> y <= ((INR a+1) + INR n) -> x<=y -> f y <= f x)
+    -> RInt f (INR a) ((INR (a) +1) + INR n) >= sum_f (a+1) (a+1+n) (fun j:nat => f (INR j)).
+Proof.
+  revert pr1.
+  induction n.
+  - simpl.
+    rewrite Rplus_0_r.
+    intros.
+    generalize (RInt_p2 _ _ pr1); intros.
+    replace (a + 0)%nat with a by lia.
+    cut_to H0.
+    + unfold sum_f.
+      replace (a + 1 + 0 - (a + 1))%nat with (0%nat) by lia.
+      simpl.
+      replace (a + 1)%nat with (S a) by lia.
+      rewrite S_INR.
+      apply H0.
+    + intros.
+      apply H; trivial.
+  - intros.
+    assert (leqs:INR a  <= (INR a + 1 + INR n) <= (INR a + 1 + INR (S n))).
+    { destruct n.
+      - simpl; split; intros; lra.
+      - split.
+        + generalize (pos_INR (S n)); lra.
+        + rewrite (S_INR (S n)).
+          lra.
+    }
+    generalize (ex_RInt_Chasles_1 f _ _ _ leqs pr1); intros pr2.
+    specialize (IHn pr2).
+    cut_to IHn.
+    + unfold sum_f in *.
+      replace ((a + 1 + S n - (a + 1)))%nat with ((S n)%nat) by lia.
+      replace ((a + 1 + n - (a + 1))%nat) with (n%nat) in IHn by lia.
+      rewrite sum_f_R0_Sn.
+
+      assert (pr3:ex_RInt f ((INR a + 1) + INR n)
+                                     ((INR a + 1) + INR (S n))).
+      {
+        now apply (ex_RInt_Chasles_2 f (INR a) ((INR a + 1) + INR n) (INR a + 1 + INR (S n))).
+      }
+      generalize (RInt_Chasles f _ _ _ pr2 pr3); intros eqr.
+      rewrite <- eqr.
+      apply Rplus_ge_compat; trivial.
+      clear pr1 eqr.
+      rewrite S_INR in *.
+      replace (INR a + 1 + (INR n + 1)) with
+          (INR a + 1 + INR n + 1) in * by lra.      
+      replace  (INR (S n + (a + 1))) with   (INR a + 1 + INR n + 1) .
+      apply RInt_p2; trivial.
+      * intros.
+        apply H; lra.
+      * rewrite plus_INR.
+        rewrite S_INR.
+        rewrite plus_INR.
+        simpl; lra.
+   + intros.
+     apply H; try lra.
 Qed.
 
 Lemma RiemannInt_pn f (n:nat) (pr1:Riemann_integrable f 1 (2 + INR n)) :
@@ -403,6 +487,14 @@ Proof.
   apply continuity_pt_inv_xsq; lra.
 Qed.
 
+Lemma integrable_inv_sq_2 a b : 1 <= a <= b -> Riemann_integrable f_inv_sq a b.
+Proof.  
+  intros.
+  apply continuity_implies_RiemannInt; trivial; try lra.
+  intros.
+  apply continuity_pt_inv_xsq; lra.
+Qed.
+
 Lemma ub_sum_inv_sq (n:nat) :
    sum_f 2 (2+n) (fun j:nat => f_inv_sq (INR j))
         <= RiemannInt (@integrable_inv_sq (2 + (INR n)) (ale21 n)).
@@ -415,6 +507,40 @@ Proof.
    apply Rmult_lt_0_compat; lra.
    apply Rmult_le_compat; lra.
 Qed.
+
+Lemma ub_sum_inv_sq_RInt (a n:nat) :
+  (1 <= a)%nat ->
+   sum_f (a + 1) (a + 1 +n) (fun j:nat => f_inv_sq (INR j))
+        <= RInt f_inv_sq (INR a) (INR a +1 + (INR n)).
+Proof.
+  intros.
+  assert (1 <= INR a).
+  {
+    replace (1) with (INR 1%nat).
+    - now apply le_INR.
+    - now simpl.
+  }
+  apply Rge_le.
+  apply RInt_pn2.
+   - apply ex_RInt_Reals_1.
+     apply integrable_inv_sq_2.
+     split; try lra.
+     generalize (pos_INR n); intros.
+     lra.
+   - intros.
+     unfold f_inv_sq.
+     apply Rinv_le_contravar; trivial.
+     apply Rmult_lt_0_compat; lra.
+     apply Rmult_le_compat; lra.
+Qed.
+
+Lemma ub_sum_inv_sq_rint (n:nat) :
+   sum_f 2 (2+n) (fun j:nat => f_inv_sq (INR j))
+   <= RInt f_inv_sq 1 (2 + (INR n)).
+ Proof.
+   generalize (ub_sum_inv_sq n); intros.
+   now rewrite <- RInt_Reals in H.
+ Qed.
 
 Lemma lb_sum_inv (n:nat) :
    RiemannInt (@integrable_inv (2 + (INR n)) (ale21 n))
@@ -514,6 +640,155 @@ Proof.
       apply Rmult_gt_0_compat; lra.
   - field_simplify; trivial; lra.
 Qed.
+
+Lemma ub_sum_inv_sq_RInt_val (a n:nat) :
+  (1 <= a)%nat ->
+   sum_f (a + 1) (a + 1 +n) (fun j:nat => f_inv_sq (INR j))
+        <= (/(INR a)) - (/ (INR a +1 + (INR n))).
+Proof.
+  intros.
+  generalize (ub_sum_inv_sq_RInt a n H); intros.
+  generalize (is_RInt_inv_Rsqr (INR a) (INR a + 1 + INR n)); intros.
+  cut_to H1.
+  - generalize (is_RInt_unique _ _ _ _ H1); intros.
+    unfold f_inv_sq in H0.
+    now rewrite H2 in H0.
+  - split.
+    + apply le_INR in H.
+      replace (INR 1%nat) with (1) in H by now simpl.
+      lra.
+    + generalize (pos_INR n); intros.
+      lra.
+ Qed.
+
+Lemma ub_lim_sum_inv_sq (a:nat) :
+  (1 <= a)%nat ->
+  Rbar_le
+    (Lim_seq (fun n => sum_f (a + 1) (a + 1 +n) (fun j:nat => f_inv_sq (INR j))))
+    (/(INR a)).
+Proof.
+  intros.
+  generalize (Lim_seq_le_loc (fun n => sum_f (a + 1) (a + 1 +n) (fun j:nat => f_inv_sq (INR j)))
+                             (fun n => (/(INR a)) - (/ (INR a +1 + (INR n))))); intros.
+  cut_to H0.
+  - eapply Rbar_le_trans.
+    apply H0.
+    rewrite Lim_seq_minus.
+    + rewrite Lim_seq_const.
+      rewrite Lim_seq_inv.
+      * rewrite Lim_seq_plus.
+        -- rewrite Lim_seq_const.
+           rewrite Lim_seq_INR.
+           simpl; lra.
+        -- apply ex_lim_seq_const.
+        -- apply ex_lim_seq_INR.
+        -- rewrite Lim_seq_const.
+           rewrite Lim_seq_INR.
+           now simpl.
+      * apply ex_lim_seq_plus.
+        -- apply ex_lim_seq_const.
+        -- apply ex_lim_seq_INR.
+        -- rewrite Lim_seq_const.
+           rewrite Lim_seq_INR.
+           now simpl.
+      * rewrite Lim_seq_plus.
+        -- rewrite Lim_seq_const.
+           rewrite Lim_seq_INR.
+           now simpl.
+        -- apply ex_lim_seq_const.
+        -- apply ex_lim_seq_INR.
+        -- rewrite Lim_seq_const, Lim_seq_INR.
+           now simpl.
+    + apply ex_lim_seq_const.
+    + apply ex_lim_seq_inv.
+      * apply ex_lim_seq_plus.
+        -- apply ex_lim_seq_const.
+        -- apply ex_lim_seq_INR.
+        -- rewrite Lim_seq_const.
+           rewrite Lim_seq_INR.
+           now simpl.
+      * rewrite Lim_seq_plus.
+        -- rewrite Lim_seq_const.
+           rewrite Lim_seq_INR.
+           now simpl.
+        -- apply ex_lim_seq_const.
+        -- apply ex_lim_seq_INR.
+        -- rewrite Lim_seq_const, Lim_seq_INR.
+           now simpl.
+    + rewrite Lim_seq_const.
+      rewrite Lim_seq_inv.
+      * rewrite Lim_seq_plus.
+        -- rewrite Lim_seq_const, Lim_seq_INR.
+           now simpl.
+        -- apply ex_lim_seq_const.
+        -- apply ex_lim_seq_INR.
+        -- rewrite Lim_seq_const, Lim_seq_INR.
+           now simpl.
+      * apply ex_lim_seq_plus.
+        -- apply ex_lim_seq_const.
+        -- apply ex_lim_seq_INR.
+        -- rewrite Lim_seq_const, Lim_seq_INR.
+           now simpl.
+      * rewrite Lim_seq_plus.
+        -- rewrite Lim_seq_const.
+           rewrite Lim_seq_INR.
+           now simpl.
+        -- apply ex_lim_seq_const.
+        -- apply ex_lim_seq_INR.
+        -- rewrite Lim_seq_const, Lim_seq_INR.
+           now simpl.
+  - exists 0%nat.
+    intros.
+    now apply ub_sum_inv_sq_RInt_val.
+  Qed.
+
+Lemma ub_lim_sum_inv_sq_alt (a:nat) :
+  (1 <= a)%nat ->
+  Rbar_le
+    (Lim_seq (fun n => sum_f a (a +n) (fun j:nat => f_inv_sq (INR j))))
+    (Rbar_plus (/(INR a)) (/ Rsqr (INR a))).
+Proof.
+  intros.
+  generalize (ub_lim_sum_inv_sq a H); intros.
+  rewrite <- Lim_seq_incr_1.
+  - rewrite Lim_seq_ext with
+        (v := fun n => sum_f (a + 1) (a + 1 + n) (fun j : nat => f_inv_sq (INR j)) +
+                        (f_inv_sq (INR a))).
+    + rewrite Lim_seq_plus.
+      * apply Rbar_plus_le_compat.
+        -- now apply ub_lim_sum_inv_sq.
+        -- rewrite Lim_seq_const.
+           unfold f_inv_sq.
+           apply Rbar_le_refl.
+      * apply ex_lim_seq_incr.
+        intros.
+        replace (a + 1 + S n)%nat with (S (a + 1 + n)) by lia.
+        rewrite sum_f_n_Sm; try lia.
+        assert (0 <= f_inv_sq (INR (S (a + 1 + n)))).
+        {
+          unfold f_inv_sq.
+          left.
+          apply Rinv_0_lt_compat.
+          apply Rlt_0_sqr.
+          apply Rgt_not_eq.
+          apply lt_0_INR.
+          lia.
+        }
+        lra.
+      * apply ex_lim_seq_const.
+      * rewrite Lim_seq_const.
+        unfold ex_Rbar_plus.
+        unfold Rbar_plus'.
+        now destruct (Lim_seq
+                        (fun n0 : nat =>
+                           sum_f (a + 1) (a + 1 + n0) 
+                                 (fun j : nat => f_inv_sq (INR j)))).
+    + intros.
+      replace (a + 1)%nat with (S a) by lia.
+      rewrite sum_f_Sn_m; try lia.
+      replace (a + S n)%nat with (S a + n)%nat by lia.
+      ring.
+  Qed.      
 
 Lemma is_RInt_inv_Rsqr1 (b:R) (pr:1 <= b) :
   is_RInt (fun x:R => / Rsqr x) 1 b (1 - 1 / b).
