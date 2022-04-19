@@ -5066,23 +5066,6 @@ Qed.
           now rewrite sum_Rbar_n_finite_sum_n.          
     Qed.
             
-  Lemma bound_m_quo :
-    forall x,
-      1 <= x ->
-      (/ x) + (/ Rsqr x) <= 2 / x.
-  Proof.
-    intros.
-    assert (/  Rsqr x <= /x).
-    {
-      apply Rinv_le_contravar; try lra.
-      assert (0 < x) by lra.
-      unfold Rsqr.
-      apply Rmult_le_compat_l with (r := x) in H; lra.
-    }
-    replace (2 / x) with (/ x + / x) by lra.
-    now apply Rplus_le_compat_l.
-  Qed.
-
   Lemma sum_inv_sq_lim :
     forall m,
       Rbar_le
@@ -5096,13 +5079,37 @@ Qed.
           (v := (fun n : nat => sum_n_m (fun k : nat => / (INR k)²) (S m) (S m + n))) in H.
       - eapply Rbar_le_trans.
         + apply H.
-        + apply bound_m_quo.
-          replace 1 with (INR 1%nat).
-          * apply le_INR; lia.
-          * now simpl.
+        + replace  (Rbar.Finite (2 / INR (S m))) with (Rbar_plus (/ INR (S m)) (/ INR (S m)))
+            by (simpl; apply Rbar_finite_eq; lra).
+          apply Rbar_plus_le_compat.
+          * apply Rbar_le_refl.
+          * rewrite Rbar_le_Rle.
+            assert (1 <= INR (S m)).
+            {
+              replace (1) with (INR 1%nat) by now simpl.
+              apply le_INR; lia.
+            }
+            apply Rinv_le_contravar; try lra.
+            replace (INR (S m)) with (1 * (INR (S m))) at 1 by lra.
+            unfold Rsqr.
+            apply Rmult_le_compat_r; try lra.
       - intros.
         now rewrite sum_n_m_Reals; try lia.
    Qed.
+
+  Lemma id_event_ge
+        {Idx} (X : forall (i:Idx), Ts -> R)
+        {rv : forall (i:Idx), RandomVariable dom borel_sa (X i)} :
+    identically_distributed_rv_collection Prts borel_sa X ->
+    forall (r : R),
+    forall (i j : Idx),
+      ps_P (event_ge dom (rvabs (X i)) r) = ps_P (event_ge dom (rvabs (X j)) r).
+   Proof.
+     intros.
+     specialize (H i j).
+     generalize (identically_distributed_rv_compose Prts borel_sa borel_sa (X i) (X j) Rabs H); intros.
+     unfold identically_distributed_rvs in H0.
+     Admitted.
 
   Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} :
