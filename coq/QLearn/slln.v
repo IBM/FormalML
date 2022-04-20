@@ -5097,7 +5097,7 @@ Qed.
         now rewrite sum_n_m_Reals; try lia.
    Qed.
 
-  Lemma id_event_ge
+  Lemma ident_distrib_event_ge_abs
         {Idx} (X : forall (i:Idx), Ts -> R)
         {rv : forall (i:Idx), RandomVariable dom borel_sa (X i)} :
     identically_distributed_rv_collection Prts borel_sa X ->
@@ -5109,13 +5109,53 @@ Qed.
      specialize (H i j).
      generalize (identically_distributed_rv_compose Prts borel_sa borel_sa (X i) (X j) Rabs H); intros.
      unfold identically_distributed_rvs in H0.
-     Admitted.
+     assert (@sa_sigma _ borel_sa (fun (x : R) => x >= r)).
+     {
+       apply sa_le_ge; intros.
+       simpl; intros.
+       apply H1.
+       now exists r0.
+     }
+     specialize (H0 (exist _ _ H1)).
+     assert (event_equiv
+               (event_ge dom (rvabs (X i)) r)
+               (rv_preimage (Rabs ∘ X i) (exist sa_sigma (fun x : R => x >= r) H1))) by (now simpl).
+     assert (event_equiv
+               (event_ge dom (rvabs (X j)) r)
+               (rv_preimage (Rabs ∘ X j) (exist sa_sigma (fun x : R => x >= r) H1))) by (now simpl).
+     rewrite H2.
+     now rewrite H3.
+   Qed.
 
   Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} :
     (forall n, Expectation (X n) = Some (Rbar.Finite 0)) ->
     iid_rv_collection Prts borel_sa X ->
     almost Prts (fun omega => is_lim_seq (fun n => ((rvsum X n) omega)/(INR (S n))) 0).
-    Admitted.
-
+  Proof.
+    intros.
+    assert (Rbar_le (Lim_seq (fun n => sum_n
+                                         (fun k => ps_P (event_ge dom (rvabs (X k)) (INR k + 1)))
+                                         n) )
+                    (NonnegExpectation (rvabs (X 0%nat)))).
+    {
+      rewrite Lim_seq_ext with
+          (v :=  (fun n => sum_n
+                             (fun k => ps_P (event_ge dom (rvabs (X 0%nat)) (INR k + 1)))
+                             n) ).
+      - apply Ash_6_2_4.
+      - intros.
+        apply sum_n_ext.
+        intros.
+        apply ident_distrib_event_ge_abs.
+        now unfold iid_rv_collection in H0.
+    }
+    assert (IsFiniteExpectation Prts (rvabs (X 0%nat))).
+    {
+      apply IsFiniteExpectation_abs; trivial.
+      unfold IsFiniteExpectation.
+      now rewrite H.
+    }
+  Admitted.
+  
 End slln_extra.
