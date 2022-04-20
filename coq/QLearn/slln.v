@@ -5127,13 +5127,47 @@ Qed.
      now rewrite H3.
    Qed.
 
+   Lemma lim_sum_0 (f : nat -> R) :
+     is_lim_seq f 0 ->
+     is_lim_seq (fun n => (sum_n f n)/(INR (S n))) 0.
+   Proof.
+     intros.
+     apply is_lim_seq_spec.
+     apply is_lim_seq_spec in H.
+     unfold is_lim_seq' in *; intros.
+     assert (0 < eps/2).
+     {
+       generalize (cond_pos eps); intros.
+       lra.
+     }
+     destruct (H (mkposreal _ H0)).
+     pose (y := Rabs (sum_n f x)).
+     pose (N := Z.to_nat(up (y / (eps/2)))).
+     assert (INR (N) > y / (eps/2)).
+     {
+       destruct (archimed (y / (eps/2))).
+       assert (INR N = IZR (up (y / (eps / 2)))).
+       {
+         subst N.
+         rewrite INR_up_pos; trivial.
+         subst y.
+         apply Rle_ge.
+         apply Rdiv_le_0_compat; try lra.
+         apply Rabs_pos.
+       }
+       now rewrite H4.
+     }
+     
+   Admitted.
+
   Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
-        {rv : forall n, RandomVariable dom borel_sa (X n)} :
-    (forall n, Expectation (X n) = Some (Rbar.Finite 0)) ->
+        {rv : forall n, RandomVariable dom borel_sa (X n)} 
+        {isfe : forall n, IsFiniteExpectation Prts (X n)} :
+    (forall n, FiniteExpectation Prts (X n) = 0) ->
     iid_rv_collection Prts borel_sa X ->
     almost Prts (fun omega => is_lim_seq (fun n => ((rvsum X n) omega)/(INR (S n))) 0).
   Proof.
-    intros.
+    intros fe0 iid.
     assert (Rbar_le (Lim_seq (fun n => sum_n
                                          (fun k => ps_P (event_ge dom (rvabs (X k)) (INR k + 1)))
                                          n) )
@@ -5148,14 +5182,124 @@ Qed.
         apply sum_n_ext.
         intros.
         apply ident_distrib_event_ge_abs.
-        now unfold iid_rv_collection in H0.
+        now unfold iid_rv_collection in iid.
     }
-    assert (IsFiniteExpectation Prts (rvabs (X 0%nat))).
+    assert (isfe0: IsFiniteExpectation Prts (rvabs (X 0%nat))).
     {
-      apply IsFiniteExpectation_abs; trivial.
-      unfold IsFiniteExpectation.
-      now rewrite H.
+      now apply IsFiniteExpectation_abs.
     }
+    pose (Y := fun n => rvmult (X n) (EventIndicator (classic_dec (event_lt _ (rvabs (X n)) (INR n + 1))))).
+    assert (isfey: forall n, IsFiniteExpectation Prts (Y n)).
+    {
+      intros.
+      apply IsFiniteExpectation_indicator; trivial.
+      apply sa_le_lt.
+      intros.
+      apply borel_sa_preimage2.
+      assert (RandomVariable dom borel_sa (rvabs (X n))).
+      - now apply rvabs_rv.
+      - apply H0.
+    }
+    assert (isfey0: forall (n:nat), IsFiniteExpectation Prts (rvmult (X 0%nat) (EventIndicator (classic_dec (event_lt _ (rvabs (X 0%nat)) (INR n + 1)))))).
+    {
+      intros.
+      apply IsFiniteExpectation_indicator; trivial.
+      apply sa_le_lt.
+      intros.
+      apply borel_sa_preimage2.
+      assert (RandomVariable dom borel_sa (rvabs (X 0%nat))).
+      - now apply rvabs_rv.
+      - apply H0.
+    }
+    assert (fey0: forall n, FiniteExpectation Prts (Y n) = FiniteExpectation Prts (rvmult (X 0%nat)
+                                                                                          (EventIndicator (classic_dec (event_lt _ (rvabs (X 0%nat)) (INR n + 1)))))).
+    {
+      intros.
+      eapply ident_distr_finite_exp_eq.
+      pose (f := fun x => x * (EventIndicator (classic_dec (event_lt borel_sa (rvabs id) (INR n + 1)))) x).
+      assert (RandomVariable borel_sa borel_sa f).
+      {
+        unfold f.
+        apply rvmult_rv.
+        -  red; intros.
+           apply borel_sa_preimage; trivial; intros.
+           simpl; intros.
+           apply H0.
+           now exists r.
+        -  apply EventIndicator_rv.
+        }
+      destruct iid.
+      generalize (identically_distributed_rv_compose Prts borel_sa borel_sa (X n) (X 0%nat) f (H2 n 0%nat)); intros.
+      revert H3.
+      apply identically_distributed_rvs_proper.
+      - now simpl.
+      - intro x.
+        unfold Y, f.
+        unfold rvmult, rvabs, EventIndicator, compose.
+        f_equal.
+      - intro x.
+        unfold Y, f.
+        unfold rvmult, rvabs, EventIndicator, compose.
+        f_equal.
+    }
+    assert (limexpy: is_lim_seq (fun n =>  FiniteExpectation Prts (Y n)) (FiniteExpectation Prts (X 0%nat))).
+    {
+      eapply is_lim_seq_ext.
+      - intros; symmetry; apply fey0.
+      - eapply is_lim_seq_ext with
+            (u := (fun n : nat =>
+                     RbarExpectation.Rbar_FiniteExpectation 
+                       Prts
+                       (rvmult (X 0%nat) (EventIndicator (classic_dec (event_lt dom (rvabs (X 0%nat)) (INR n + 1))))))).
+        + intros.
+          rewrite RbarExpectation.FinExp_Rbar_FinExp.
+          * reflexivity.
+          * typeclasses eauto.
+        + rewrite <- RbarExpectation.FinExp_Rbar_FinExp; trivial.
+          apply RbarExpectation.Dominated_convergence with (g := rvabs (X 0%nat)).
+          * intros; typeclasses eauto.
+          * typeclasses eauto.
+          * typeclasses eauto.
+          * now apply RbarExpectation.IsFiniteExpectation_Rbar.
+          * intros n x.
+            simpl.
+            unfold rvmult, rvabs, EventIndicator.
+            match_destr.
+            -- now rewrite Rmult_1_r.
+            -- rewrite Rmult_0_r, Rabs_R0.
+               apply Rabs_pos.
+          * intros.
+            rewrite is_Elim_seq_fin.
+            apply is_lim_seq_spec.
+            unfold is_lim_seq'.
+            intros.
+            exists (Z.to_nat(up (Rabs (X 0%nat x)))).
+            intros.
+            unfold rvmult, EventIndicator.
+            match_destr.
+            -- rewrite Rmult_1_r.
+               rewrite RIneq.Rminus_eq_0.
+               rewrite Rabs_R0.
+               apply cond_pos.
+            -- unfold event_lt,rvabs in n0.
+               simpl in n0.
+               destruct (archimed (Rabs (X 0%nat x))).
+               apply le_INR in H0.
+               rewrite INR_up_pos in H0.
+               ++ lra.
+               ++ apply Rle_ge, Rabs_pos.
+    }
+    assert (Rbar.Finite (FiniteExpectation Prts (X 0%nat)) = 0).
+    {
+      now apply Rbar_finite_eq.
+    }
+    rewrite H0 in limexpy; clear H0.
+    assert (limexpysum: is_lim_seq (fun n => (sum_n (fun k => FiniteExpectation Prts (Y k)) n)/(INR (S n))) 0) by now apply lim_sum_0.
+    assert (limsumy:almost Prts (fun omega : Ts => is_lim_seq (fun n : nat => rvsum Y n omega / INR (S n)) 0)).
+    {
+      admit.
+    }
+
   Admitted.
   
 End slln_extra.

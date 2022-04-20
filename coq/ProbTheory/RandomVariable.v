@@ -1312,5 +1312,58 @@ Section indep.
     ; generalize (HH i j ij)
     ; now apply independent_rvs_proper.
   Qed.
+  
+  Lemma identically_distributed_rvs_proper
+        {Td} (cod:SigmaAlgebra Td) (cod':SigmaAlgebra Td)
+        (eqqs:sa_equiv cod cod')
+        (X1 X1' : Ts -> Td) (eqqx1:rv_eq X1 X1')
+        (X2 X2' : Ts -> Td) (eqqx2: rv_eq X2 X2')
+        {rv1:RandomVariable dom cod X1}
+        {rv2:RandomVariable dom cod X2}
+        {rv1':RandomVariable dom cod' X1'}
+        {rv2':RandomVariable dom cod' X2'} :
+    identically_distributed_rvs cod X1 X2 <-> identically_distributed_rvs cod' X1' X2'.
+  Proof.
+    unfold identically_distributed_rvs.
+    split; intros.
+    - destruct (eqqs A).
+      specialize (H (exist _ _ (H1 (proj2_sig A)))).
+      assert (event_equiv (rv_preimage X1' A)
+                          (rv_preimage X1 (exist sa_sigma A (H1 (proj2_sig A))))).
+      {
+        intro x.
+        destruct A.
+        simpl.
+        now rewrite eqqx1.
+      }
+      assert (event_equiv (rv_preimage X2' A)
+                          (rv_preimage X2 (exist sa_sigma A (H1 (proj2_sig A))))).
+      {
+        intro x.
+        destruct A.
+        simpl.
+        now rewrite eqqx2.
+      }
+      now rewrite H2, H3.
+    - destruct (eqqs A).
+      specialize (H (exist _ _ (H0 (proj2_sig A)))).
+      assert (event_equiv (rv_preimage X1 A)
+                          (rv_preimage X1' (exist sa_sigma A (H0 (proj2_sig A))))).
+      {
+        intro x.
+        destruct A.
+        simpl.
+        now rewrite eqqx1.
+      }
+      assert (event_equiv (rv_preimage X2 A)
+                          (rv_preimage X2' (exist sa_sigma A (H0 (proj2_sig A))))).
+      {
+        intro x.
+        destruct A.
+        simpl.
+        now rewrite eqqx2.
+      }
+      now rewrite H2, H3.
+  Qed.
 
 End indep.
