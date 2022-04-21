@@ -5123,8 +5123,7 @@ Qed.
      assert (event_equiv
                (event_ge dom (rvabs (X j)) r)
                (rv_preimage (Rabs ∘ X j) (exist sa_sigma (fun x : R => x >= r) H1))) by (now simpl).
-     rewrite H2.
-     now rewrite H3.
+     now rewrite H2, H3.
    Qed.
 
    Lemma lim_sum_0 (f : nat -> R) :
@@ -5144,6 +5143,13 @@ Qed.
        reflexivity.
    Qed.
 
+   Lemma sum_n_Rplus (u v : nat -> R) (n : nat):
+     sum_n (fun k : nat => u k + v k) n = (sum_n u n) + (sum_n v n).
+   Proof.
+     generalize (sum_n_plus u v n); intros.
+     unfold plus in H; now simpl in H.
+   Qed.
+     
   Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
         {isfe : forall n, IsFiniteExpectation Prts (X n)} :
@@ -5278,10 +5284,65 @@ Qed.
       now apply Rbar_finite_eq.
     }
     rewrite H0 in limexpy; clear H0.
-    assert (limexpysum: is_lim_seq (fun n => (sum_n (fun k => FiniteExpectation Prts (Y k)) n)/(INR (S n))) 0) by now apply lim_sum_0.
+
+    assert (limsumyexp:almost Prts (fun omega : Ts => 
+                                      is_lim_seq (fun n : nat => sum_n (fun k => (Y k omega - (FiniteExpectation Prts (Y k)))) n / INR (S n)) 0)).
+    {
+
+      assert (almost Prts (fun omega => ex_series (fun k => (Y k omega - (FiniteExpectation Prts (Y k)))/(INR (S k))) )).
+      {
+        admit.
+      }
+      revert H0.
+      apply almost_impl, all_almost.      
+      unfold impl; intros.
+      generalize (ash_6_1_3_strong (x := (fun k => (Y k x - (FiniteExpectation Prts (Y k)))/(INR (S k)))) (b := (fun k => INR (S k)))); intros.
+      cut_to H1; trivial.
+      - revert H1.
+        apply is_lim_seq_ext.
+        intros.
+        f_equal.
+        apply sum_n_ext.
+        intros.
+        rewrite Rmult_comm.
+        unfold Rdiv.
+        rewrite Rmult_assoc.
+        rewrite Rinv_l; try lra.
+        apply Rgt_not_eq.
+        apply lt_0_INR; lia.
+      - intros.
+        split.
+        + apply lt_0_INR; lia.
+        + apply le_INR; lia.
+      - apply is_lim_seq_ext with (u := fun k => INR k + 1).
+        + intro; now rewrite S_INR.
+        + apply is_lim_seq_plus with (l1 := p_infty) (l2 := 1).
+          * apply is_lim_seq_INR.
+          * apply is_lim_seq_const.
+          * unfold is_Rbar_plus; now simpl.
+    }
+
     assert (limsumy:almost Prts (fun omega : Ts => is_lim_seq (fun n : nat => rvsum Y n omega / INR (S n)) 0)).
     {
-      admit.
+      assert (limexpysum: is_lim_seq (fun n => (sum_n (fun k => FiniteExpectation Prts (Y k)) n)/(INR (S n))) 0) by now apply lim_sum_0.
+      revert limsumyexp.
+      apply almost_impl, all_almost.
+      unfold impl; intros.
+      generalize (is_lim_seq_plus _ _ _ _ 0 H0 limexpysum); intros.
+      cut_to H1.
+      - revert H1.
+        apply is_lim_seq_ext.
+        intros.
+        unfold rvsum.
+        rewrite <- Rdiv_plus_distr.
+        f_equal.
+        rewrite <- sum_n_Rplus.
+        apply sum_n_ext.
+        intros.
+        lra.
+      - unfold is_Rbar_plus.
+        simpl.
+        now rewrite Rplus_0_r.
     }
 
   Admitted.
