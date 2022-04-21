@@ -5141,7 +5141,6 @@ Qed.
        apply is_lim_seq_incr_1 in H0.
        revert H0.
        apply is_lim_seq_ext.
-       intros.
        reflexivity.
    Qed.
 
