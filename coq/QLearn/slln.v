@@ -5344,6 +5344,32 @@ Qed.
         simpl.
         now rewrite Rplus_0_r.
     }
+    revert limsumy.
+    apply almost_impl, all_almost.
+    unfold impl.
+    intro x.
+    apply is_lim_seq_ext_loc.
+    generalize (Borel_Cantelli Prts (fun n => event_ge dom (rvabs (X n)) (INR n + 1))); intros.
+    cut_to H0.
+    - admit.
+    - intros.
+      apply sa_sigma_event_pre.
+    - generalize (RandomVariableFinite.IsFiniteExpectation_abs Prts (X 0%nat) (isfe 0%nat)); intros.
+      generalize (IsFiniteNonnegExpectation Prts (rvabs (X 0%nat))); intros.
+      rewrite <- H2 in H.
+      rewrite <- FiniteNonnegExpectation with (isfeX := H1) in H.
+      rewrite <- ex_finite_lim_series.
+      apply lim_sum_abs_bounded.
+      rewrite Lim_seq_ext with (v := (sum_n (fun n : nat => (ps_P (event_ge dom (rvabs (X n)) (INR n + 1)))))).
+      + apply bounded_is_finite with (a := 0) (b := (@FiniteExpectation _ _ Prts (rvabs (X 0%nat)) H1)); trivial.
+        apply Lim_seq_pos; intros.
+        apply sum_n_nneg; intros.
+        apply ps_pos.
+      + intros.
+        apply sum_n_ext; intros.
+        rewrite Rabs_right; trivial.
+        apply Rle_ge.
+        apply ps_pos.
 
   Admitted.
   
