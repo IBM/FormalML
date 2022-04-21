@@ -5132,33 +5132,18 @@ Qed.
      is_lim_seq (fun n => (sum_n f n)/(INR (S n))) 0.
    Proof.
      intros.
-     apply is_lim_seq_spec.
-     apply is_lim_seq_spec in H.
-     unfold is_lim_seq' in *; intros.
-     assert (0 < eps/2).
-     {
-       generalize (cond_pos eps); intros.
-       lra.
-     }
-     destruct (H (mkposreal _ H0)).
-     pose (y := Rabs (sum_n f x)).
-     pose (N := Z.to_nat(up (y / (eps/2)))).
-     assert (INR (N) > y / (eps/2)).
-     {
-       destruct (archimed (y / (eps/2))).
-       assert (INR N = IZR (up (y / (eps / 2)))).
-       {
-         subst N.
-         rewrite INR_up_pos; trivial.
-         subst y.
-         apply Rle_ge.
-         apply Rdiv_le_0_compat; try lra.
-         apply Rabs_pos.
-       }
-       now rewrite H4.
-     }
-     
-   Admitted.
+     apply is_lim_seq_ext with (u := fun n => (sum_f_R0 f n)/(INR (S n))).
+     - intros.
+       now rewrite sum_n_Reals.
+     - apply is_lim_seq_Reals in H.
+       generalize (Cesaro_1 f 0 H); intros.
+       apply is_lim_seq_Reals in H0.
+       apply is_lim_seq_incr_1 in H0.
+       revert H0.
+       apply is_lim_seq_ext.
+       intros.
+       reflexivity.
+   Qed.
 
   Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
