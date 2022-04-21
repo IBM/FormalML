@@ -991,7 +991,6 @@ Lemma Fatou_FiniteExpectation
   Qed.
 
   Theorem Borel_Cantelli (E : nat -> event dom) :
-    (forall (n:nat), sa_sigma (E n)) ->
     ex_series (fun n => ps_P (E n)) ->
     ps_P (inter_of_collection 
             (fun k => union_of_collection 
@@ -1009,9 +1008,9 @@ Lemma Fatou_FiniteExpectation
       f_equal; f_equal; lia.
       now rewrite <- ex_series_incr_n with (a := (fun n0 => ps_P (E n0))).
     }
-    generalize (Lim_series_tails (fun n => ps_P (E n)) H0); intros.    
-    unfold ex_series in H0.
-    destruct H0.
+    generalize (Lim_series_tails (fun n => ps_P (E n)) H); intros.    
+    unfold ex_series in H.
+    destruct H.
     assert (ps_P (inter_of_collection 
                     (fun k => union_of_collection 
                                 (fun n => E (n + k)%nat))) =
@@ -1021,15 +1020,15 @@ Lemma Fatou_FiniteExpectation
       rewrite lim_descending; trivial.
       intros n x0.
       unfold union_of_collection; intros.
-      destruct H3.
+      destruct H2.
       exists (S x1).
       now replace (S x1 + n)%nat with (x1 + S n)%nat by lia.
     } 
-    rewrite H2 in H1.
-    rewrite H3.
-    apply Rbar_le_antisym in H1.
-    - symmetry in H1.
-      now rewrite H1.
+    rewrite H1 in H0.
+    rewrite H2.
+    apply Rbar_le_antisym in H0.
+    - symmetry in H0.
+      now rewrite H0.
     - replace (Finite 0) with (Lim_seq (fun _ => 0)) by apply Lim_seq_const.
       apply Lim_seq_le_loc; exists (0%nat); intros.
       apply ps_pos.
@@ -1037,7 +1036,6 @@ Lemma Fatou_FiniteExpectation
       now apply ps_pos.
   Qed.    
 
-  
   Lemma IsFiniteExpectation_abs_id (f : Ts -> R)
           {rvf : RandomVariable dom borel_sa f} :
     IsFiniteExpectation (rvabs f) ->

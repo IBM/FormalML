@@ -5291,7 +5291,34 @@ Qed.
 
       assert (almost Prts (fun omega => ex_series (fun k => (Y k omega - (FiniteExpectation Prts (Y k)))/(INR (S k))) )).
       {
-        admit.
+        assert (forall k, RandomVariable 
+                            dom borel_sa
+                            (rvscale (/ INR (S k)) 
+                                     (rvminus (Y k)
+                                              (const (FiniteExpectation Prts (Y k))))))
+          by (intros; typeclasses eauto).
+        assert (forall k, 
+                   IsFiniteExpectation Prts
+                     (rvsqr (rvscale (/ INR (S k)) 
+                                     (rvminus (Y k)
+                                              (const (FiniteExpectation Prts (Y k))))))).
+        {
+          admit.
+        }
+        generalize (Ash_6_2_1 (fun k : nat => rvscale (/ INR (S k)) 
+                                                      (rvminus (Y k)
+                                                               (const (FiniteExpectation Prts (Y k)))))); intros.
+        cut_to H2.
+        - revert H2.
+          apply almost_impl, all_almost.
+          unfold impl; intros.
+          revert H2.
+          apply ex_series_ext.
+          intros.
+          unfold rvminus, rvopp, rvplus, rvscale, const.
+          field_simplify; trivial; apply Rgt_not_eq; apply lt_0_INR; lia.
+        - admit.
+        - admit.
       }
       revert H0.
       apply almost_impl, all_almost.      
@@ -5344,16 +5371,9 @@ Qed.
         simpl.
         now rewrite Rplus_0_r.
     }
-    revert limsumy.
-    apply almost_impl, all_almost.
-    unfold impl.
-    intro x.
-    apply is_lim_seq_ext_loc.
     generalize (Borel_Cantelli Prts (fun n => event_ge dom (rvabs (X n)) (INR n + 1))); intros.
     cut_to H0.
-    - admit.
-    - intros.
-      apply sa_sigma_event_pre.
+    -  admit.
     - generalize (RandomVariableFinite.IsFiniteExpectation_abs Prts (X 0%nat) (isfe 0%nat)); intros.
       generalize (IsFiniteNonnegExpectation Prts (rvabs (X 0%nat))); intros.
       rewrite <- H2 in H.

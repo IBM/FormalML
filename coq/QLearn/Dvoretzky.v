@@ -1172,11 +1172,6 @@ Section Derman_Sacks.
    destruct H as [α [Hα0 [Hα1 Hα2]]].
    exists α.
    split; trivial.
-   assert (HEsa : forall n, sa_sigma (event_ge dom (rvabs (Y n)) (α n))).
-   {
-     intros.
-     apply sa_sigma_event_pre.
-   }
    pose (frac := fun n => Rbar_div_pos (NonnegExpectation (rvsqr (Y n)))
                                        (mkposreal _ (rsqr_pos (mkposreal _ (Hα0 n))))).
    assert (isfin: forall n, is_finite (NonnegExpectation (rvsqr (Y n)))).
@@ -1212,7 +1207,7 @@ Section Derman_Sacks.
      apply Hα0.
    }
    assert (Hisf : forall n, is_finite(frac n)) by (intros; eapply bounded_is_finite; auto).
-   generalize (Borel_Cantelli prts _ (HEsa)); intros.
+   generalize (Borel_Cantelli prts (fun n => (event_ge dom (rvabs (Y n))(α n)))); intros.
    cut_to H.
    + rewrite almost_alt_eq.
      unfold almost_alt. push_neg.
