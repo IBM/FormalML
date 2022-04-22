@@ -5149,6 +5149,34 @@ Qed.
      generalize (sum_n_plus u v n); intros.
      unfold plus in H; now simpl in H.
    Qed.
+
+   Lemma sqr_scale_comm (X : Ts -> R) (c: R) :
+     rv_eq (rvsqr (rvscale c X))
+           (rvscale (Rsqr c) (rvsqr X)).
+   Proof.
+      intro x.
+      rv_unfold.
+      now rewrite Rsqr_mult.
+   Qed.
+   
+   Instance is_finexp_sqr_scale (X : Ts -> R) (c: R) 
+            {isfe : IsFiniteExpectation Prts (rvsqr X)} :
+     IsFiniteExpectation Prts (rvsqr (rvscale c X)).
+  Proof.
+    generalize (sqr_scale_comm X c); intros.
+    apply (IsFiniteExpectation_proper _ _ _ H).
+    now apply IsFiniteExpectation_scale.
+  Qed.
+
+   Lemma finexp_sqr_scale (X : Ts -> R) (c: R) 
+         {isfe : IsFiniteExpectation Prts (rvsqr X)} :
+     FiniteExpectation Prts (rvsqr (rvscale c X)) = 
+     Rsqr c * FiniteExpectation Prts (rvsqr X).
+   Proof.
+     erewrite FiniteExpectation_ext with (rv_X2 := (rvscale (Rsqr c) (rvsqr X))).
+     - now rewrite FiniteExpectation_scale.
+     - apply sqr_scale_comm.
+  Qed.
      
   Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
@@ -5297,16 +5325,9 @@ Qed.
                                      (rvminus (Y k)
                                               (const (FiniteExpectation Prts (Y k))))))
           by (intros; typeclasses eauto).
-        assert (forall k, 
-                   IsFiniteExpectation Prts
-                     (rvsqr (rvscale (/ INR (S k)) 
-                                     (rvminus (Y k)
-                                              (const (FiniteExpectation Prts (Y k))))))).
-        {
-          intros.
-          assert (rv_le (rvabs (Y k)) (const (INR k + 1))).
+         assert (forall k, rv_le (rvabs (Y k)) (const (INR k + 1))).
           {
-            intro x.
+            intros k x.
             subst Y.
             unfold rvmult, EventIndicator, rvabs, const; simpl.
             match_destr.
@@ -5314,13 +5335,13 @@ Qed.
             - rewrite Rmult_0_r, Rabs_R0, <- S_INR.
               left; apply lt_0_INR; lia.
           }
-          assert (IsFiniteExpectation Prts
-                                      (rvscale (Rsqr (/ INR (S k)))
-                                               (rvsqr 
-                                                  (rvminus (Y k)
-                                              (const (FiniteExpectation Prts (Y k))))))).
+          assert (forall k, IsFiniteExpectation 
+                              Prts
+                              (rvsqr 
+                                 (rvminus (Y k)
+                                          (const (FiniteExpectation Prts (Y k)))))).
           {
-            apply IsFiniteExpectation_scale.
+            intros.
             apply IsFiniteExpectation_bounded with (rv_X1 := const 0) 
                                                    (rv_X3 := const (Rsqr ((INR k + 1) + (Rabs (FiniteExpectation Prts (Y k)))))); try apply IsFiniteExpectation_const.
             - intro x.
@@ -5329,7 +5350,7 @@ Qed.
             - intro x.
               unfold const, rvsqr.
               rewrite rvminus_unfold.
-              specialize (H1 x).
+              specialize (H1 k x).
               unfold rvabs, const in H1.
               apply Rsqr_le_abs_1.
               unfold Rminus.
@@ -5343,27 +5364,83 @@ Qed.
                 * left; apply lt_0_INR; lia.
                 * apply Rabs_pos.
           }
-          revert H2.
-          apply IsFiniteExpectation_proper.
-          intro x.
-          unfold rvsqr, rvscale, const.
-          rewrite rvminus_unfold.
-          now rewrite Rsqr_mult.
-        }
-        generalize (Ash_6_2_1 (fun k : nat => rvscale (/ INR (S k)) 
-                                                      (rvminus (Y k)
-                                                               (const (FiniteExpectation Prts (Y k)))))); intros.
-        cut_to H2.
-        - revert H2.
-          apply almost_impl, all_almost.
-          unfold impl; intros.
-          revert H2.
-          apply ex_series_ext.
-          intros.
-          unfold rvminus, rvopp, rvplus, rvscale, const.
-          field_simplify; trivial; apply Rgt_not_eq; apply lt_0_INR; lia.
+          eapply Ash_6_2_1.
         - admit.
-        - admit.
+        - assert (forall n, IsFiniteExpectation Prts (rvsqr (Y n))).
+          {
+            intros.
+            apply IsFiniteExpectation_bounded with (rv_X1 := const 0) 
+                                                   (rv_X3 := const (Rsqr (INR n + 1))); try apply IsFiniteExpectation_const.
+            - intro x.
+              apply Rle_0_sqr.
+            - intro x.
+              apply Rsqr_le_abs_1.
+              rewrite (Rabs_right (INR n + 1)).
+              + apply H1.
+              + rewrite <- S_INR.
+                apply Rle_ge.
+                left; apply lt_0_INR; lia.
+          }
+          apply ex_series_ext with
+              (a := fun k => 
+                      FiniteExpectation Prts
+                        (rvscale (/ INR (S k))²
+                                 (rvsqr (rvminus 
+                                           (Y k) 
+                                           (const (FiniteExpectation Prts (Y k))))))).
+          + intro.
+            apply FiniteExpectation_ext.
+            rewrite <- sqr_scale_comm.
+            intro x.
+            rv_unfold.
+            f_equal.
+            field.
+            apply Rgt_not_eq.
+            apply lt_0_INR; lia.
+          + assert (forall k,
+                     FiniteExpectation 
+                       Prts
+                        (rvscale (/ INR (S k))²
+                                 (rvsqr (rvminus (Y k) (const (FiniteExpectation Prts (Y k))))))
+                     <= 
+                 FiniteExpectation Prts (rvsqr (Y k))/(Rsqr (INR (S k)))).
+          {
+            intros.
+            erewrite FiniteExpectation_scale.
+            unfold Rdiv.
+            rewrite Rmult_comm.
+            rewrite <- Rsqr_inv.
+            - apply Rmult_le_compat_r.
+              + apply Rle_0_sqr.
+              + assert (IsLp Prts 2 (Y k)) by 
+                  now apply isfe_sqr_islp2.
+                assert (RandomVariable dom borel_sa (Y k)) by typeclasses eauto.
+                generalize (variance_l2 Prts (Y k) H5); intros.
+                replace  (FiniteExpectation 
+                            Prts
+                            (rvsqr (rvminus (Y k) (const (FiniteExpectation Prts (Y k))))))
+                  with
+                    (FiniteExpectation Prts (rvsqr (Y k)) - (FiniteExpectation Prts (Y k))²).
+                * apply Rplus_le_reg_r with
+                      (r := Rsqr (FiniteExpectation Prts (Y k))).
+                  ring_simplify.
+                  replace (FiniteExpectation Prts (rvsqr (Y k))) with
+                      (FiniteExpectation Prts (rvsqr (Y k)) + 0) at 1 by lra.
+                  apply Rplus_le_compat_l.
+                  apply Rle_0_sqr.
+                * admit.
+          - apply Rgt_not_eq.
+            apply lt_0_INR; lia.
+          }
+          apply ex_series_nneg_bounded with
+              (g := (fun k =>  FiniteExpectation Prts (rvsqr (Y k)) / (INR (S k))²)); trivial.
+          * intros.
+            apply FiniteExpectation_pos.
+            intro x.
+            rv_unfold.
+            rewrite <- Rsqr_mult.
+            apply Rle_0_sqr.
+          * admit.
       }
       revert H0.
       apply almost_impl, all_almost.      
