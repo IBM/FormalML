@@ -5178,6 +5178,32 @@ Qed.
      - apply sqr_scale_comm.
   Qed.
      
+  Lemma identically_distributed_sqr
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y} :
+    identically_distributed_rvs Prts borel_sa X Y -> 
+    identically_distributed_rvs Prts borel_sa 
+                    (Rsqr ∘ X) 
+                    (Rsqr ∘ Y).
+  Proof.
+    apply identically_distributed_rv_compose.
+  Qed.
+
+  Lemma identically_distributed_rvsqr
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y} :
+    identically_distributed_rvs Prts borel_sa X Y -> 
+    identically_distributed_rvs Prts borel_sa 
+                    (rvsqr X) 
+                    (rvsqr Y).
+  Proof.
+    intros.
+    generalize (identically_distributed_sqr X Y H).
+    now apply identically_distributed_rvs_proper.
+  Qed.
+
   Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
         {isfe : forall n, IsFiniteExpectation Prts (X n)} :
@@ -5229,11 +5255,10 @@ Qed.
       - now apply rvabs_rv.
       - apply H0.
     }
-    assert (fey0: forall n, FiniteExpectation Prts (Y n) = FiniteExpectation Prts (rvmult (X 0%nat)
+    assert (iidy0: forall n, identically_distributed_rvs Prts borel_sa (Y n) (rvmult (X 0%nat)
                                                                                           (EventIndicator (classic_dec (event_lt _ (rvabs (X 0%nat)) (INR n + 1)))))).
     {
       intros.
-      eapply ident_distr_finite_exp_eq.
       pose (f := fun x => x * (EventIndicator (classic_dec (event_lt borel_sa (rvabs id) (INR n + 1)))) x).
       assert (RandomVariable borel_sa borel_sa f).
       {
@@ -5259,6 +5284,13 @@ Qed.
         unfold Y, f.
         unfold rvmult, rvabs, EventIndicator, compose.
         f_equal.
+    }
+    assert (fey0: forall n, FiniteExpectation Prts (Y n) = FiniteExpectation Prts (rvmult (X 0%nat)
+                                                                                          (EventIndicator (classic_dec (event_lt _ (rvabs (X 0%nat)) (INR n + 1)))))).
+    {
+      intros.
+      eapply ident_distr_finite_exp_eq.
+      apply iidy0.
     }
     assert (limexpy: is_lim_seq (fun n =>  FiniteExpectation Prts (Y n)) (FiniteExpectation Prts (X 0%nat))).
     {
@@ -5412,25 +5444,32 @@ Qed.
             rewrite <- Rsqr_inv.
             - apply Rmult_le_compat_r.
               + apply Rle_0_sqr.
-              + assert (IsLp Prts 2 (Y k)) by 
-                  now apply isfe_sqr_islp2.
-                assert (RandomVariable dom borel_sa (Y k)) by typeclasses eauto.
-                generalize (variance_l2 Prts (Y k) H5); intros.
-                replace  (FiniteExpectation 
-                            Prts
-                            (rvsqr (rvminus (Y k) (const (FiniteExpectation Prts (Y k))))))
-                  with
-                    (FiniteExpectation Prts (rvsqr (Y k)) - (FiniteExpectation Prts (Y k))²).
-                * apply Rplus_le_reg_r with
-                      (r := Rsqr (FiniteExpectation Prts (Y k))).
-                  ring_simplify.
-                  replace (FiniteExpectation Prts (rvsqr (Y k))) with
-                      (FiniteExpectation Prts (rvsqr (Y k)) + 0) at 1 by lra.
-                  apply Rplus_le_compat_l.
-                  apply Rle_0_sqr.
-                * admit.
-          - apply Rgt_not_eq.
-            apply lt_0_INR; lia.
+              + assert (rv_eq (rvsqr (rvminus (Y k) (const (FiniteExpectation Prts (Y k)))))
+                              (rvplus (rvplus (rvsqr (Y k))
+                                              (rvscale (- 2 * FiniteExpectation Prts (Y k))
+                                                       (Y k)))
+                                      (const (Rsqr (FiniteExpectation Prts (Y k)))))).
+                {
+                  intro x.
+                  rv_unfold.
+                  unfold Rsqr.
+                  ring.
+                }
+                rewrite (FiniteExpectation_ext Prts _ _ H4).
+                do 2 rewrite FiniteExpectation_plus.
+                rewrite FiniteExpectation_scale.
+                rewrite FiniteExpectation_const.
+                unfold Rsqr.
+                ring_simplify.
+                apply Rplus_le_reg_r with
+                    (r := (FiniteExpectation Prts (Y k)) ^2 ).
+                ring_simplify.
+                replace (FiniteExpectation Prts (rvsqr (Y k))) with
+                    (FiniteExpectation Prts (rvsqr (Y k)) + 0) at 1 by lra.
+                apply Rplus_le_compat_l.
+                apply pow2_ge_0.
+            - apply Rgt_not_eq.
+              apply lt_0_INR; lia.
           }
           apply ex_series_nneg_bounded with
               (g := (fun k =>  FiniteExpectation Prts (rvsqr (Y k)) / (INR (S k))²)); trivial.
@@ -5440,7 +5479,59 @@ Qed.
             rv_unfold.
             rewrite <- Rsqr_mult.
             apply Rle_0_sqr.
-          * admit.
+          * clear H4.
+            assert (forall k, IsFiniteExpectation Prts
+                      (rvsqr (rvmult (X 0%nat)
+                                     (EventIndicator
+                                        (classic_dec (event_lt dom (rvabs (X 0%nat)) (INR k + 1))))))).
+            {
+              intros.
+              apply IsFiniteExpectation_bounded with (rv_X1 := const 0) 
+                                                   (rv_X3 := const (Rsqr (INR k + 1))); try apply IsFiniteExpectation_const.
+              - intro x.
+                unfold const, rvsqr, rvmult, rvabs, EventIndicator.
+                match_destr; apply Rle_0_sqr.
+              - intro x.
+                unfold const, rvsqr, rvmult, rvabs, EventIndicator.
+                match_case; intros.
+                + rewrite Rmult_1_r.
+                  apply Rsqr_le_abs_1.
+                  rewrite (Rabs_right (INR k + 1)).
+                  * unfold event_lt in e.
+                    simpl in e; lra.
+                  * rewrite <- S_INR.
+                    apply Rle_ge.
+                    left; apply lt_0_INR; lia.
+                + rewrite Rmult_0_r, Rsqr_0.
+                  apply Rle_0_sqr.
+            }
+            assert (forall k,
+                       FiniteExpectation Prts (rvsqr (Y k)) =
+                       FiniteExpectation 
+                         Prts (rvsqr (rvmult (X 0%nat)
+               (EventIndicator
+                  (classic_dec (event_lt dom (rvabs (X 0%nat)) (INR k + 1))))))).
+            {
+              intros.
+              eapply ident_distr_finite_exp_eq.
+              now apply identically_distributed_rvsqr.
+            }
+            assert (forall k,
+                       (FiniteExpectation Prts
+                                          (rvsqr
+                                             (rvmult (X 0%nat)
+                                                     (EventIndicator
+                                                        (classic_dec (event_lt dom (rvabs (X 0%nat)) (INR k + 1)))))))/(Rsqr (INR (S k))) =
+                       (FiniteExpectation Prts (rvsqr (Y k))/(Rsqr (INR (S k))))).
+            {
+              intros.
+              f_equal.
+              symmetry.
+              apply H5.
+            }
+            apply (ex_series_ext _ _ H6).
+            clear H5 H6.
+            admit.
       }
       revert H0.
       apply almost_impl, all_almost.      
