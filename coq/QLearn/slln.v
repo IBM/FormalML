@@ -5204,6 +5204,52 @@ Qed.
     now apply identically_distributed_rvs_proper.
   Qed.
 
+  Lemma event_lt_indicator_sum (X : Ts -> R) (n : nat) 
+        {rv: RandomVariable dom borel_sa X} :
+    rv_eq
+      (EventIndicator (classic_dec (event_lt dom (rvabs X) (INR n + 1))))
+      (rvsum (fun k => EventIndicator (classic_dec 
+                                         (event_inter
+                                            (event_lt dom (rvabs X) (INR k + 1))
+                                            (event_ge dom (rvabs X) (INR k)))))
+             n).
+  Proof.
+    intro x.
+    unfold rvsum, rvabs, EventIndicator, event_lt, event_ge, event_inter, pre_event_inter.
+    assert (0 <= Rabs (X x)) by apply Rabs_pos.
+    induction n.
+    - rewrite sum_O.
+      simpl.
+      match_case; intros; match_case; intros; lra.
+    - rewrite sum_Sn.
+      rewrite S_INR.
+      simpl in *.
+      rewrite <- IHn.
+      unfold plus; simpl.
+      match_case; intros; match_case; intros; match_case; intros; lra.
+  Qed.
+
+  Lemma event_lt_indicator_sum_mult (X Y : Ts -> R) (n : nat) 
+        {rv: RandomVariable dom borel_sa X} :
+    rv_eq
+      (rvmult Y (EventIndicator (classic_dec (event_lt dom (rvabs X) (INR n + 1)))))
+      (rvsum (fun k => rvmult Y (EventIndicator (classic_dec 
+                                         (event_inter
+                                            (event_lt dom (rvabs X) (INR k + 1))
+                                            (event_ge dom (rvabs X) (INR k))))))
+             n).
+   Proof.
+     rewrite event_lt_indicator_sum.
+     intro x.
+     unfold rvmult, rvsum.
+     symmetry.
+     do 2 rewrite sum_n_Reals.
+     rewrite scal_sum.
+     apply sum_f_R0_ext.
+     intros.
+     lra.
+   Qed.
+
   Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
         {isfe : forall n, IsFiniteExpectation Prts (X n)} :
@@ -5531,6 +5577,92 @@ Qed.
             }
             apply (ex_series_ext _ _ H6).
             clear H5 H6.
+            assert (forall k,
+                       rv_eq
+                         (rvsqr
+                            (rvmult (X 0%nat)
+                                    (EventIndicator
+                                       (classic_dec (event_lt dom (rvabs (X 0%nat)) (INR k + 1))))))
+                         (rvmult (rvsqr (X 0%nat))
+                                 (EventIndicator
+                                       (classic_dec (event_lt dom (rvabs (X 0%nat)) (INR k + 1)))))).
+            {
+              intros k x.
+              rv_unfold.
+              rewrite Rsqr_mult.
+              f_equal.
+              match_destr; unfold Rsqr; lra.
+
+            }
+            generalize (fun k => event_lt_indicator_sum_mult (X 0%nat)
+                                                             (rvsqr (X 0%nat))
+                                                             k); intros.
+            assert (forall k,
+                       rv_eq
+                          (rvsqr
+                             (rvmult (X 0%nat)
+                                     (EventIndicator
+                                        (classic_dec (event_lt dom (rvabs (X 0%nat)) (INR k + 1))))))
+                             (rvsum
+            (fun k0 : nat =>
+             rvmult (rvsqr (X 0%nat))
+               (EventIndicator
+                  (classic_dec
+                     (event_inter (event_lt dom (rvabs (X 0%nat)) (INR k0 + 1))
+                        (event_ge dom (rvabs (X 0%nat)) (INR k0)))))) k)).
+            {
+              intros.
+              rewrite H5.
+              now rewrite H6.
+            }
+            generalize (fun k => FiniteExpectation_ext_alt _ _ _ (H7 k)); intros.
+            generalize (fun (k:nat) => Rmult_eq_compat_r (/ (Rsqr (INR (S k)))) _ _ (H8 k)); intros.
+            assert
+              (isfe' : forall n : nat,
+                  IsFiniteExpectation Prts
+                    (rvmult (rvsqr (X 0%nat))
+                       (EventIndicator
+                          (classic_dec
+                             (event_inter
+                                (event_lt dom (rvabs (X 0%nat)) (INR n + 1))
+                                (event_ge dom (rvabs (X 0%nat)) (INR n))))))).
+            {
+              intros.
+              apply IsFiniteExpectation_bounded with (rv_X1 := const 0) 
+                                                   (rv_X3 := const (Rsqr (INR n + 1))); try apply IsFiniteExpectation_const.
+              - intro x.
+                unfold const, rvmult, rvsqr, EventIndicator.
+                match_destr.
+                + rewrite Rmult_1_r.
+                  apply Rle_0_sqr.
+                + rewrite Rmult_0_r; lra.
+              - intro x.
+                unfold const, rvmult, rvsqr, EventIndicator, rvabs.
+                unfold event_inter, event_lt, event_ge, pre_event_inter.
+                simpl.
+                match_case; intros.
+                + rewrite Rmult_1_r.
+                  apply Rsqr_le_abs_1.
+                  rewrite (Rabs_right (INR n + 1)).
+                  * lra.
+                  * rewrite <- S_INR.
+                    apply Rle_ge.
+                    apply pos_INR.
+               + rewrite Rmult_0_r.
+                 apply Rle_0_sqr.
+            }
+            generalize (sum_expectation Prts
+             (fun k0 : nat =>
+             rvmult (rvsqr (X 0%nat))
+               (EventIndicator
+                  (classic_dec
+                     (event_inter (event_lt dom (rvabs (X 0%nat)) (INR k0 + 1))
+                                  (event_ge dom (rvabs (X 0%nat)) (INR k0)))))) _ _); intros.
+            symmetry in H9.
+            unfold Rdiv.
+            apply (ex_series_ext _ _ H9).
+            generalize (fun (k:nat) => Rmult_eq_compat_r (/ (Rsqr (INR (S k)))) _ _ (H10 k)); intros.
+(*            apply (ex_series_ext _ _ H11). *)
             admit.
       }
       revert H0.
