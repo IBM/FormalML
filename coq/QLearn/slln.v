@@ -5303,7 +5303,52 @@ Qed.
                                      (rvminus (Y k)
                                               (const (FiniteExpectation Prts (Y k))))))).
         {
-          admit.
+          intros.
+          assert (rv_le (rvabs (Y k)) (const (INR k + 1))).
+          {
+            intro x.
+            subst Y.
+            unfold rvmult, EventIndicator, rvabs, const; simpl.
+            match_destr.
+            - rewrite Rmult_1_r; lra.
+            - rewrite Rmult_0_r, Rabs_R0, <- S_INR.
+              left; apply lt_0_INR; lia.
+          }
+          assert (IsFiniteExpectation Prts
+                                      (rvscale (Rsqr (/ INR (S k)))
+                                               (rvsqr 
+                                                  (rvminus (Y k)
+                                              (const (FiniteExpectation Prts (Y k))))))).
+          {
+            apply IsFiniteExpectation_scale.
+            apply IsFiniteExpectation_bounded with (rv_X1 := const 0) 
+                                                   (rv_X3 := const (Rsqr ((INR k + 1) + (Rabs (FiniteExpectation Prts (Y k)))))); try apply IsFiniteExpectation_const.
+            - intro x.
+              unfold const, rvsqr.
+              apply Rle_0_sqr.
+            - intro x.
+              unfold const, rvsqr.
+              rewrite rvminus_unfold.
+              specialize (H1 x).
+              unfold rvabs, const in H1.
+              apply Rsqr_le_abs_1.
+              unfold Rminus.
+              eapply Rle_trans.
+              + apply Rabs_triang.
+              + rewrite Rabs_Ropp.
+                rewrite (Rabs_right (INR k + 1 + Rabs (FiniteExpectation Prts (Y k)))); try lra.
+                rewrite <- S_INR.
+                apply Rle_ge.
+                apply Rplus_le_le_0_compat.
+                * left; apply lt_0_INR; lia.
+                * apply Rabs_pos.
+          }
+          revert H2.
+          apply IsFiniteExpectation_proper.
+          intro x.
+          unfold rvsqr, rvscale, const.
+          rewrite rvminus_unfold.
+          now rewrite Rsqr_mult.
         }
         generalize (Ash_6_2_1 (fun k : nat => rvscale (/ INR (S k)) 
                                                       (rvminus (Y k)
