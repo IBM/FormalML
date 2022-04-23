@@ -5250,6 +5250,16 @@ Qed.
      lra.
    Qed.
 
+   Lemma sum_n_pos_incr (f : nat -> R) :
+     (forall n, 0 <= f n) ->
+     forall n, sum_n f n <= sum_n f (S n).
+   Proof.
+     intros.
+     replace (sum_n f n) with (sum_n f n + 0) by lra.
+     rewrite sum_Sn.
+     now apply Rplus_le_compat_l.
+   Qed.
+
   Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
         {isfe : forall n, IsFiniteExpectation Prts (X n)} :
@@ -5473,8 +5483,7 @@ Qed.
             rv_unfold.
             f_equal.
             field.
-            apply Rgt_not_eq.
-            apply lt_0_INR; lia.
+            apply INR_nzero; lia.
           + assert (forall k,
                      FiniteExpectation 
                        Prts
@@ -5514,8 +5523,7 @@ Qed.
                     (FiniteExpectation Prts (rvsqr (Y k)) + 0) at 1 by lra.
                 apply Rplus_le_compat_l.
                 apply pow2_ge_0.
-            - apply Rgt_not_eq.
-              apply lt_0_INR; lia.
+            - apply INR_nzero; lia.
           }
           apply ex_series_nneg_bounded with
               (g := (fun k =>  FiniteExpectation Prts (rvsqr (Y k)) / (INR (S k))²)); trivial.
@@ -5662,8 +5670,43 @@ Qed.
             unfold Rdiv.
             apply (ex_series_ext _ _ H9).
             generalize (fun (k:nat) => Rmult_eq_compat_r (/ (Rsqr (INR (S k)))) _ _ (H10 k)); intros.
-(*            apply (ex_series_ext _ _ H11). *)
-            admit.
+            assert (ex_series 
+                      (fun k =>  
+                         sum_n
+                           (fun n0 : nat =>
+                              FiniteExpectation 
+                                Prts
+                                (rvmult 
+                                   (rvsqr (X 0%nat))
+                                   (EventIndicator
+                                      (classic_dec
+                                         (event_inter (event_lt dom (rvabs (X 0%nat)) (INR n0 + 1))
+                                                      (event_ge dom (rvabs (X 0%nat)) (INR n0))))))) k *
+                         / (INR (S k))²)).
+            {
+              rewrite <- ex_finite_lim_series.
+              rewrite ex_finite_lim_seq_correct.
+              split.
+              - apply ex_lim_seq_incr; intros.
+                apply sum_n_pos_incr.
+                intros.
+                apply Rmult_le_pos.
+                + apply sum_n_nneg; intros.
+                  apply FiniteExpectation_pos.
+                  typeclasses eauto.
+                + left.
+                  apply Rinv_0_lt_compat.
+                  apply Rsqr_pos_lt.
+                  apply INR_nzero; lia.
+              - admit.
+            }
+            revert H12.
+            apply ex_series_ext.
+            intros.
+            rewrite H11.
+            f_equal.
+            apply FiniteExpectation_ext; intro x.
+            f_equal.
       }
       revert H0.
       apply almost_impl, all_almost.      
@@ -5680,8 +5723,7 @@ Qed.
         unfold Rdiv.
         rewrite Rmult_assoc.
         rewrite Rinv_l; try lra.
-        apply Rgt_not_eq.
-        apply lt_0_INR; lia.
+        apply INR_nzero; lia.
       - intros.
         split.
         + apply lt_0_INR; lia.
