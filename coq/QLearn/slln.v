@@ -5097,6 +5097,86 @@ Qed.
         now rewrite sum_n_m_Reals; try lia.
    Qed.
 
+    Lemma eq_Rbar_le (x y : Rbar) :
+      x = y -> Rbar_le x y.
+    Proof.
+      intros.
+      rewrite H.
+      apply Rbar_le_refl.
+   Qed.
+
+  Lemma sum_n_ge_m (f : nat -> R) :
+    forall n m,
+      sum_n_m f m (m + n)%nat =
+      sum_n (fun k =>
+               (if (le_dec m k) then 1 else 0) * (f k))
+            (m + n)%nat.
+   Proof.
+     intros.
+     destruct m.
+     - unfold sum_n.
+       apply sum_n_m_ext.
+       intros.
+       match_case; intros.
+       lra.
+     - induction n.
+       + replace (S m + 0)%nat with (S m) by lia.
+         rewrite sum_n_n.
+         rewrite sum_Sn.
+         unfold plus; simpl.
+         match_case; intros; try lia.
+         rewrite sum_n_ext_loc with (b := fun _ => 0).
+         * rewrite sum_n_zero; lra.
+         * intros.
+           match_case; intros; try lia.
+           lra.
+       + replace (S m + S n)%nat with (S (S m + n)) by lia.
+         rewrite sum_n_Sm; try lia.
+         rewrite sum_Sn; try lia.
+         rewrite IHn.
+         f_equal.
+         match_case; intros; try lia.
+         lra.
+    Qed.
+
+  Lemma sum_Rbar_n_ge_m (f : nat -> R) :
+    forall n m,
+      Rbar.Finite(sum_n_m f m (m + n)%nat) = 
+      sum_Rbar_n (fun k =>
+               (if (le_dec m k) then 1 else 0) * (f k))
+            (S (m + n)).
+   Proof.
+     intros.
+     rewrite sum_n_ge_m.
+     now rewrite sum_Rbar_n_finite_sum_n.
+    Qed.
+
+    Lemma sum_inv_sq_Elim :
+      forall m,
+        Rbar_le
+          (ELim_seq (sum_Rbar_n (fun j : nat => (if le_dec m j then 1 else 0) / (INR (S j))²)))
+          (2 / (INR (S m))).
+    Proof.
+      intros.
+      rewrite <- ELim_seq_incr_n with (N := (S m)).
+      rewrite ELim_seq_ext with
+          (v := (fun n => Rbar.Finite (sum_n_m (fun k => / Rsqr (INR k)) (S m) ((S m) + n)%nat))).
+      - rewrite Elim_seq_fin.
+        apply sum_inv_sq_lim.
+      - intros.
+        replace (n + (S m))%nat with (S (m + n)) by lia.
+        unfold Rdiv.
+        rewrite <- sum_Rbar_n_ge_m.
+        replace (m + n)%nat with (n + m)%nat by lia.
+        rewrite sum_n_m_shift.
+        replace (S m + n)% nat with (n + S m)%nat by lia.
+        rewrite sum_n_m_shift.
+        apply Rbar_finite_eq.
+        apply sum_n_ext.
+        intros.
+        f_equal; f_equal; f_equal; lia.
+   Qed.
+
   Lemma ident_distrib_event_ge_abs
         {Idx} (X : forall (i:Idx), Ts -> R)
         {rv : forall (i:Idx), RandomVariable dom borel_sa (X i)} :
@@ -5698,7 +5778,84 @@ Qed.
                   apply Rinv_0_lt_compat.
                   apply Rsqr_pos_lt.
                   apply INR_nzero; lia.
-              - admit.
+              - rewrite Lim_seq_sum_Elim.
+                rewrite ELim_seq_ext with
+                    (v := sum_Rbar_n
+                             (fun x : nat =>
+                                (ELim_seq
+                                   (sum_Rbar_n
+                                      (fun n0 : nat =>
+              (if (le_dec n0 x) then 1 else 0) *
+              FiniteExpectation Prts
+                (rvmult (rvsqr (X 0%nat))
+                   (EventIndicator
+                      (classic_dec
+                         (event_inter
+                            (event_lt dom (rvabs (X 0%nat)) (INR n0 + 1))
+                            (event_ge dom (rvabs (X 0%nat)) (INR n0))))))
+                                / (INR (S x))²))))).
+                * rewrite ELim_seq_sum_nneg_nested_swap.
+                  -- rewrite ELim_seq_ext with
+                         (v := sum_Rbar_n (fun i => Rbar_mult
+                  (FiniteExpectation Prts
+                   (rvmult (rvsqr (X 0%nat))
+                      (EventIndicator
+                         (classic_dec
+                            (event_inter
+                               (event_lt dom (rvabs (X 0%nat)) (INR i + 1))
+                               (event_ge dom (rvabs (X 0%nat)) (INR i)))))))
+                  (ELim_seq (sum_Rbar_n (fun j => (if (le_dec i j) then 1 else 0)/ (INR (S j))²))))).
+                     ++ admit.
+                     ++ intros.
+                        apply sum_Rbar_n_proper; trivial.
+                        intro x.
+                        rewrite ELim_seq_ext with
+                            (v := fun n =>
+                                    (Rbar_mult
+                                       (FiniteExpectation 
+                                          Prts
+                                          (rvmult (rvsqr (X 0%nat))
+                                                  (EventIndicator
+                                                     (classic_dec 
+                                                        (event_inter (event_lt dom (rvabs (X 0%nat)) (INR x + 1))
+                                                                     (event_ge dom (rvabs (X 0%nat)) (INR x)))))))
+                                       ((sum_Rbar_n (fun j : nat => (if le_dec x j then 1 else 0) / (INR (S j))²)) n))).
+                        ** rewrite ELim_seq_scal_l; trivial.
+                           admit.
+                        ** intros.
+                           assert (forall j,
+                                      Rbar.Finite ((if le_dec x j then 1 else 0) *
+                                      (FiniteExpectation Prts
+                                                        (rvmult (rvsqr (X 0%nat))
+                                                                (EventIndicator
+                                                                   (classic_dec (event_inter (event_lt dom (rvabs (X 0%nat)) (INR x + 1)) (event_ge dom (rvabs (X 0%nat)) (INR x))))))) /
+                                                                                                                                                                                        (INR (S j))²) =
+                                      Rbar.Finite ((FiniteExpectation Prts
+                                                         (rvmult (rvsqr (X 0%nat))
+                                                                 (EventIndicator
+                                                                    (classic_dec (event_inter (event_lt dom (rvabs (X 0%nat)) (INR x + 1)) (event_ge dom (rvabs (X 0%nat)) (INR x))))))) *
+                                      ((if le_dec x j then 1 else 0) / (INR (S j))²))).
+                           {
+                             intros.
+                             apply Rbar_finite_eq.
+                             unfold Rdiv.
+                             ring.
+                           }
+                           rewrite (sum_Rbar_n_proper _ _ H12) with (y := n0); trivial.
+                           admit.
+                  -- intros.
+                     apply Rmult_le_pos.
+                     ++ apply Rmult_le_pos.
+                        ** match_destr;lra.
+                        ** apply FiniteExpectation_pos.
+                           admit.
+                     ++ left; apply Rinv_0_lt_compat.
+                        apply Rlt_0_sqr.
+                        apply INR_nzero; lia.
+                * intros.
+                  apply sum_Rbar_n_proper; trivial.
+                  intro x.
+                  
             }
             revert H12.
             apply ex_series_ext.
