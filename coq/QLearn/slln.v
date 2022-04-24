@@ -5230,6 +5230,17 @@ Qed.
      unfold plus in H; now simpl in H.
    Qed.
 
+   Lemma sum_n_Rscal_r (f : nat -> R) (c:R)  (n : nat):
+     (sum_n f n) * c  = (sum_n (fun k => (f k) * c) n).
+   Proof.
+     induction n.
+     - now do 2 rewrite sum_O.
+     - do 2 rewrite sum_Sn.
+       rewrite <- IHn.
+       unfold plus; simpl.
+       now ring.
+   Qed.
+
    Lemma sqr_scale_comm (X : Ts -> R) (c: R) :
      rv_eq (rvsqr (rvscale c X))
            (rvscale (Rsqr c) (rvsqr X)).
@@ -5920,7 +5931,32 @@ Qed.
                 * intros.
                   apply sum_Rbar_n_proper; trivial.
                   intro x.
-                  admit.
+                  generalize (ELim_seq_ind_le (fun n0 : nat =>
+                                                 FiniteExpectation Prts
+                                                                   (rvmult (rvsqr (X 0%nat))
+                                                                           (EventIndicator
+                                                                              (classic_dec
+                                                                                 (event_inter (event_lt dom (rvabs (X 0%nat)) (INR n0 + 1)) (event_ge dom (rvabs (X 0%nat)) (INR n0)))))) /
+                                                                   (INR (S x))²) x); intros.
+                  rewrite ELim_seq_ext with
+                      (v :=  (sum_Rbar_n
+             (fun n0 : nat =>
+              (if le_dec n0 x then 1 else 0) *
+              (FiniteExpectation Prts
+                 (rvmult (rvsqr (X 0%nat))
+                    (EventIndicator
+                       (classic_dec
+                          (event_inter (event_lt dom (rvabs (X 0%nat)) (INR n0 + 1)) (event_ge dom (rvabs (X 0%nat)) (INR n0)))))) /
+               (INR (S x))²)))).
+                  -- rewrite H12.
+                     unfold Rdiv.
+                     rewrite sum_n_Rscal_r.
+                     now unfold Rdiv.
+                  -- intros; apply sum_Rbar_n_proper; trivial.
+                     intro z.
+                     apply Rbar_finite_eq.
+                     unfold Rdiv.
+                     ring.
             }
             revert H12.
             apply ex_series_ext.
