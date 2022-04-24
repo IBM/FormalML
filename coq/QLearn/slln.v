@@ -5855,7 +5855,7 @@ Qed.
                 * intros.
                   apply sum_Rbar_n_proper; trivial.
                   intro x.
-                  
+                  admit.
             }
             revert H12.
             apply ex_series_ext.
