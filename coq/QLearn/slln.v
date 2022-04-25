@@ -5390,6 +5390,24 @@ Qed.
      now apply Rbar_mult_le_compat_r.
    Qed.
 
+   Lemma scale_pos_sum_Rbar_n (f : nat -> Rbar) (c : R) :
+     (0 < c) ->
+     (forall n, Rbar_le 0 (f n)) ->
+     forall n,
+       Rbar_mult c (sum_Rbar_n f n) = sum_Rbar_n (fun k => Rbar_mult c (f k)) n.
+   Proof.
+     induction n.
+     - unfold sum_Rbar_n; simpl.
+       now rewrite Rmult_0_r.
+     - rewrite sum_Rbar_n_Sn; trivial.
+       rewrite sum_Rbar_n_Sn.
+       + rewrite <- IHn.
+         now rewrite Rbar_mult_r_plus_distr.
+       + intros.
+         apply Rbar_mult_le_nneg; trivial.
+         simpl; lra.
+   Qed.
+   
   Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
         {isfe : forall n, IsFiniteExpectation Prts (X n)} :
@@ -5954,7 +5972,84 @@ Qed.
                                       typeclasses eauto.
                                 }
                                 generalize (fun i => FiniteExpectation_le _ _ _ (H12 i)); intros.
-                                admit.
+                                apply Rbar_le_trans with
+                                    (y :=  (ELim_seq
+                                              (sum_Rbar_n
+                                                 (fun i : nat =>
+                                                    2 * 
+                                                      (FiniteExpectation 
+                                                         Prts
+                                                         (rvmult (rvabs (X 0%nat))
+                                                                 (EventIndicator
+                                                                    (classic_dec
+                                                                       (event_inter (event_lt dom (rvabs (X 0%nat)) (INR i + 1)) 
+                                                                                    (event_ge dom (rvabs (X 0%nat)) (INR i))))))))))).
+                                *** apply ELim_seq_le; intros.
+                                    apply sum_Rbar_n_le; intros.
+                                    ---- apply Rbar_mult_le_nneg.
+                                         ++++ apply FiniteExpectation_pos.
+                                              typeclasses eauto.
+                                         ++++ unfold Rdiv.
+                                              apply Rmult_le_pos; try lra.
+                                              left; apply Rinv_0_lt_compat.
+                                              apply lt_0_INR; lia.
+                                    ---- apply Rmult_le_pos; try lra.
+                                         apply FiniteExpectation_pos.
+                                         typeclasses eauto.                                         
+                                    ---- rewrite S_INR.
+                                         apply Rbar_le_trans with
+                                             (y := Rbar_mult (FiniteExpectation Prts
+          (rvscale (INR n0 + 1)
+             (rvmult (rvabs (X 0%nat))
+                (EventIndicator
+                   (classic_dec
+                      (event_inter (event_lt dom (rvabs (X 0%nat)) (INR n0 + 1)) (event_ge dom (rvabs (X 0%nat)) (INR n0))))))))
+                                                            (2 / (INR n0 + 1))).
+                                         ++++ apply Rbar_mult_le_compat_r.
+                                              **** apply Rdiv_le_0_compat; try lra.
+                                                   rewrite <- S_INR.
+                                                   apply lt_0_INR; lia.
+                                              **** apply H14.
+                                         ++++ rewrite FiniteExpectation_scale.
+                                              right.
+                                              field.
+                                              rewrite <- S_INR.
+                                              apply INR_nzero; lia.
+                                *** replace (ELim_seq
+       (sum_Rbar_n
+          (fun i : nat =>
+           2 *
+           FiniteExpectation Prts
+             (rvmult (rvabs (X 0%nat))
+                (EventIndicator
+                   (classic_dec
+                      (event_inter (event_lt dom (rvabs (X 0%nat)) (INR i + 1)) (event_ge dom (rvabs (X 0%nat)) (INR i)))))))))
+                                      with
+                                        (Rbar_mult 2 
+                                                   (ELim_seq
+                                                      (sum_Rbar_n
+                                                         (fun i : nat =>
+                                                            FiniteExpectation 
+                                                              Prts
+                                                              (rvmult (rvabs (X 0%nat))
+                                                                      (EventIndicator
+                                                                         (classic_dec
+                                                                            (event_inter (event_lt dom (rvabs (X 0%nat)) (INR i + 1)) (event_ge dom (rvabs (X 0%nat)) (INR i)))))))))).
+                                    ---- replace  (Rbar.Finite (2 * FiniteExpectation Prts (rvabs (X 0%nat)))) with
+                                             (Rbar_mult 2 (FiniteExpectation Prts (rvabs (X 0%nat)))); [| now simpl].
+                                         apply Rbar_mult_le_compat_l; try (simpl; lra).
+                                         admit.
+                                    ---- rewrite <- ELim_seq_scal_l.
+                                         ++++ apply ELim_seq_ext; intros.
+                                              rewrite scale_pos_sum_Rbar_n; try lra.
+                                              **** apply sum_Rbar_n_proper; trivial.
+                                                   intro x.
+                                                   now simpl.
+                                              **** intros.
+                                                   apply FiniteExpectation_pos.
+                                                   typeclasses eauto.
+                                         ++++ unfold ex_Rbar_mult.
+                                              match_destr.
                      ++ intros.
                         apply sum_Rbar_n_proper; trivial.
                         intro x.
