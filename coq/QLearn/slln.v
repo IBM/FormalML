@@ -5407,7 +5407,78 @@ Qed.
          apply Rbar_mult_le_nneg; trivial.
          simpl; lra.
    Qed.
-   
+
+   Existing Instance Rbar_le_pre.
+
+   Lemma indicator_lim_seq (X : Ts -> R)
+         {rv : RandomVariable dom borel_sa (rvabs X)}
+         {isfe : forall x, IsFiniteExpectation Prts
+           (rvmult (rvabs X)
+              (EventIndicator (classic_dec (event_lt dom (rvabs X) (INR x + 1)))))} 
+         {isfe0 : IsFiniteExpectation Prts (rvabs X)} :
+     Lim_seq
+       (fun x : nat =>
+          FiniteExpectation Prts
+                            (rvmult (rvabs X)
+                                    (EventIndicator
+                                       (classic_dec (event_lt dom (rvabs X) (INR x + 1)))))) =
+     FiniteExpectation Prts (rvabs X).
+   Proof.
+     apply monotone_convergence_FiniteExpectation; trivial.
+     - typeclasses eauto.
+     - intros; typeclasses eauto.
+     - intros; typeclasses eauto.
+     - intros n x.
+       rv_unfold.
+       match_destr; try lra.
+       rewrite Rmult_0_r.
+       apply Rabs_pos.
+     - intros n x.
+       rv_unfold.
+       unfold event_lt.
+       match_case; intros.
+       + match_case; intros; try lra.
+         simpl in *.
+         generalize n0; intros.
+         generalize e; intros.
+         match_case_in n0; intros.
+         * rewrite H1 in n1.
+           rewrite H1 in e0.
+           simpl in e0.
+           lra.
+         * rewrite H1 in n1.
+           rewrite H1 in e0.
+           lra.
+       + match_case; intros; try lra.
+         rewrite Rmult_0_r, Rmult_1_r.
+         apply Rabs_pos.
+     - intros.
+       apply is_lim_seq_spec.
+       unfold is_lim_seq'.
+       intros.
+       unfold rvabs.
+       exists (Z.to_nat (up (Rabs (X omega)))).
+       intros.
+       unfold event_lt.
+       unfold rvmult, EventIndicator.
+       match_destr.
+       * rewrite Rmult_1_r.
+         rewrite Rminus_eq_0.
+         rewrite Rabs_R0.
+         apply cond_pos.
+       * simpl in n0.
+         destruct (archimed (Rabs (X omega))).
+         assert (INR n > Rabs (X omega)).
+         {
+           apply le_INR in H.
+           rewrite INR_up_pos in H.
+           - lra.
+           - apply Rle_ge.
+             apply Rabs_pos.
+         }
+         lra.
+    Qed.
+
   Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
         {isfe : forall n, IsFiniteExpectation Prts (X n)} :
@@ -6038,7 +6109,37 @@ Qed.
                                     ---- replace  (Rbar.Finite (2 * FiniteExpectation Prts (rvabs (X 0%nat)))) with
                                              (Rbar_mult 2 (FiniteExpectation Prts (rvabs (X 0%nat)))); [| now simpl].
                                          apply Rbar_mult_le_compat_l; try (simpl; lra).
-                                         admit.
+                                         apply refl_refl.
+                                         rewrite <- ELim_seq_incr_1.
+                                         erewrite ELim_seq_ext with
+                                             (v := fun n => FiniteExpectation 
+                                                     Prts
+                                                     (rvmult (rvabs (X 0%nat))
+                                                             (EventIndicator
+                                                                (classic_dec
+                                                                   (event_lt dom (rvabs (X 0%nat)) (INR n + 1)))))).
+                                         ++++ rewrite Elim_seq_fin.
+                                              erewrite <- indicator_lim_seq.
+                                              reflexivity.
+                                         ++++ intros.
+                                              generalize (event_lt_indicator_sum_mult (X 0%nat) (rvabs (X 0%nat)) n); intros.
+                                              erewrite (FiniteExpectation_ext_alt _ _ _ H15).
+                                              rewrite sum_Rbar_n_finite_sum_n.
+                                              apply Rbar_finite_eq.
+                                              generalize sum_expectation; intros.
+                                              assert (forall n,
+                                                         RandomVariable dom borel_sa (rvmult (rvabs (X 0%nat))
+          (EventIndicator
+             (classic_dec
+                (event_inter (event_lt dom (rvabs (X 0%nat)) (INR n + 1))
+                             (event_ge dom (rvabs (X 0%nat)) (INR n))))))).
+                                              {
+                                                intros.
+                                                typeclasses eauto.
+                                              }  
+                                              erewrite sum_expectation.
+                                              apply FiniteExpectation_ext.
+                                              reflexivity.
                                     ---- rewrite <- ELim_seq_scal_l.
                                          ++++ apply ELim_seq_ext; intros.
                                               rewrite scale_pos_sum_Rbar_n; try lra.
