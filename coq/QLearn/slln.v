@@ -5477,7 +5477,89 @@ Qed.
              apply Rabs_pos.
          }
          lra.
-    Qed.
+   Qed.
+
+   
+ Lemma BC_exist_N_not_ge (Y : nat -> Ts -> R) (α : nat -> R)
+       (rv: forall n k, RandomVariable dom borel_sa (rvabs (Y (n + k)%nat))) :
+   ps_P
+     (inter_of_collection
+        (fun k : nat =>
+           union_of_collection
+             (fun n : nat => event_ge dom (rvabs (Y (n + k)%nat)) (α (n + k)%nat)))) =
+   0 ->
+  almost Prts
+    (fun omega : Ts =>
+     exists N : nat,
+       forall n : nat, (N <= n)%nat -> rvabs (Y n) omega < (α n)).
+   Proof.
+     intros.
+     rewrite almost_alt_eq.
+     unfold almost_alt. push_neg.
+     simpl in H. eexists.
+     split; [apply H|intros omega ?H].
+     simpl. intros n. specialize (H0 n).
+     destruct H0 as [n0 [Hn0 HZ]]. exists (n0-n)%nat.
+     now replace ((n0 - n + n)%nat) with n0 by lia.
+   Qed.
+
+   Lemma lim_avg_tails0 (X : nat -> R) (N:nat):
+     is_lim_seq (fun n : nat => sum_n_m X 0 N / INR (S (n + S N))) 0.
+   Proof.
+     unfold Rdiv.
+     replace (Rbar.Finite 0) with (Rbar_mult (sum_n_m X 0 N) 0) by now rewrite Rbar_mult_0_r.
+     apply is_lim_seq_scal_l.
+     replace (Rbar.Finite 0) with (Rbar_inv p_infty) by now simpl.
+     apply is_lim_seq_inv; try discriminate.
+     rewrite <- is_lim_seq_incr_n with (N := S N) (u := fun n => INR (S n)).
+     rewrite <- is_lim_seq_incr_1.
+     apply is_lim_seq_INR.
+   Qed.
+
+   Lemma lim_avg_tails (X : nat -> R) (l:R) (N:nat):
+     is_lim_seq (fun n => sum_n_m X 0 n / INR (S n)) l <->
+     is_lim_seq (fun n => sum_n_m X N n / INR (S n)) l.
+   Proof.
+     destruct N; try easy.
+     split; intros.
+     - apply is_lim_seq_incr_n with (N := S N) in H.
+       apply is_lim_seq_incr_n with (N := S N).
+       apply is_lim_seq_ext   with 
+           (u := fun n => minus
+                            (sum_n_m X 0 (n + S N) / INR (S (n + S N)))
+                            ((sum_n_m X 0 N) / INR (S (n + S N)))).
+       + intros.
+         rewrite sum_n_m_Chasles with (m := N); try lia.
+         unfold minus, plus, opp.
+         simpl.
+         field.
+         match_destr.
+         rewrite <- S_INR.
+         apply INR_nzero; lia.
+       + apply is_lim_seq_minus with (l1 := l) (l2 := 0); trivial.
+         * apply lim_avg_tails0.
+         * unfold is_Rbar_minus, is_Rbar_plus; simpl.
+           f_equal.
+           apply Rbar_finite_eq; lra.
+   -  apply is_lim_seq_incr_n with (N := S N) in H.
+      apply is_lim_seq_incr_n with (N := S N).
+      apply is_lim_seq_ext with
+          (u := fun n => plus
+                           (sum_n_m X 0 N / INR (S (n + S N)))
+                           (sum_n_m X (S N) (n + S N) / INR (S (n + S N)))).
+      + intros.
+        symmetry.
+        rewrite sum_n_m_Chasles with (m := N); try lia.
+        unfold plus; simpl; field.
+        match_destr.
+        rewrite <- S_INR.
+        apply INR_nzero; lia.
+      + apply is_lim_seq_plus with (l1 := 0) (l2 := l); trivial.
+        * apply lim_avg_tails0.
+        * unfold is_Rbar_plus; simpl.
+          f_equal.
+          apply Rbar_finite_eq; lra.          
+  Qed.
 
   Lemma Ash_6_2_5_0 (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
@@ -6322,7 +6404,40 @@ Qed.
     }
     generalize (Borel_Cantelli Prts (fun n => event_ge dom (rvabs (X n)) (INR n + 1))); intros.
     cut_to H0.
-    -  admit.
+    - 
+      assert (almost Prts (fun omega =>
+                             exists N, forall n, (N <= n)%nat ->
+                                                 X n omega = Y n omega)).
+      {
+        generalize (BC_exist_N_not_ge X (fun k => INR k + 1) _ H0).
+        apply almost_impl, all_almost.
+        unfold impl; intros.
+        destruct H1.
+        exists x0; intros.
+        specialize (H1 n H2).
+        subst Y; simpl.
+        unfold rvmult, EventIndicator, rvabs.
+        match_destr; try lra.
+        unfold rvabs in H1; lra.
+      }
+      revert H1.
+      apply almost_impl.
+      revert limsumy.
+      apply almost_impl.
+      apply all_almost.
+      unfold impl; intros.
+      destruct H2.
+      unfold rvsum, sum_n.
+      unfold rvsum, sum_n in H1.
+      rewrite lim_avg_tails with (N := x0).
+      rewrite lim_avg_tails with (N := x0) in H1.
+      apply is_lim_seq_ext_loc with
+          (u := (fun n : nat => sum_n_m (fun n0 : nat => Y n0 x) x0 n / INR (S n)) ); trivial.
+      exists x0; intros.
+      f_equal.
+      apply sum_n_m_ext_loc.
+      intros.
+      now rewrite H2.
     - generalize (RandomVariableFinite.IsFiniteExpectation_abs Prts (X 0%nat) (isfe 0%nat)); intros.
       generalize (IsFiniteNonnegExpectation Prts (rvabs (X 0%nat))); intros.
       rewrite <- H2 in H.
@@ -6341,5 +6456,28 @@ Qed.
         apply ps_pos.
 
   Admitted.
-  
+
+ Lemma BC (Y : nat -> Ts -> R) (α : nat -> R)
+       (rv: forall n k, RandomVariable dom borel_sa (rvabs (Y (n + k)%nat))) :
+   ps_P
+     (inter_of_collection
+        (fun k : nat =>
+           union_of_collection
+             (fun n : nat => event_ge dom (rvabs (Y (n + k)%nat)) (α (n + k)%nat)))) =
+   0 ->
+  almost Prts
+    (fun omega : Ts =>
+     exists N : nat,
+       forall n : nat, (N <= n)%nat -> rvabs (Y n) omega < (α n)).
+   Proof.
+     intros.
+     rewrite almost_alt_eq.
+     unfold almost_alt. push_neg.
+     simpl in H. eexists.
+     split; [apply H|intros omega ?H].
+     simpl. intros n. specialize (H0 n).
+     destruct H0 as [n0 [Hn0 HZ]]. exists (n0-n)%nat.
+     now replace ((n0 - n + n)%nat) with n0 by lia.
+   Qed.
+
 End slln_extra.
