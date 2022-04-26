@@ -6457,27 +6457,4 @@ Qed.
 
   Admitted.
 
- Lemma BC (Y : nat -> Ts -> R) (α : nat -> R)
-       (rv: forall n k, RandomVariable dom borel_sa (rvabs (Y (n + k)%nat))) :
-   ps_P
-     (inter_of_collection
-        (fun k : nat =>
-           union_of_collection
-             (fun n : nat => event_ge dom (rvabs (Y (n + k)%nat)) (α (n + k)%nat)))) =
-   0 ->
-  almost Prts
-    (fun omega : Ts =>
-     exists N : nat,
-       forall n : nat, (N <= n)%nat -> rvabs (Y n) omega < (α n)).
-   Proof.
-     intros.
-     rewrite almost_alt_eq.
-     unfold almost_alt. push_neg.
-     simpl in H. eexists.
-     split; [apply H|intros omega ?H].
-     simpl. intros n. specialize (H0 n).
-     destruct H0 as [n0 [Hn0 HZ]]. exists (n0-n)%nat.
-     now replace ((n0 - n + n)%nat) with n0 by lia.
-   Qed.
-
 End slln_extra.
