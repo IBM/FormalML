@@ -306,11 +306,9 @@ Section sigma_indep.
       now specialize (H4 z).
     }
     rewrite H5.
-    specialize (H0 (exist _ _ sub1) (exist _ _ sub2) H1 H3).
-    rewrite H0.
+    rewrite (H0 (exist _ _ sub1) (exist _ _ sub2) H1 H3).
     now rewrite H.
   Qed.
-    
 
 End sigma_indep.
 
