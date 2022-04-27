@@ -301,8 +301,7 @@ Section sigma_indep.
     assert (event_equiv A (event_inter (exist _ _ sub1) (exist _ _ sub2))).
     {
       destruct A.
-      simpl in H4.
-      intro z; simpl.
+      intro z.
       now specialize (H4 z).
     }
     rewrite H5.
