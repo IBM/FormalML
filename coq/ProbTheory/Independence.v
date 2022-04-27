@@ -283,6 +283,35 @@ Section sigma_indep.
    *)
 
 
+  Lemma independent_coll_inter3 (dom1 dom2 dom3: pre_event Ts -> Prop)
+        (sub1:pre_event_sub dom1 (@sa_sigma _ dom))
+        (sub2:pre_event_sub dom2 (@sa_sigma _ dom)) :
+
+    (forall A B C : event dom, dom1 A -> dom2 B -> dom3 C -> 
+                              ps_P ((A ∩ B)  ∩ C ) = ps_P A * ps_P B * ps_P C) ->
+    independent_eventcoll dom1 dom2 ->
+    independent_eventcoll (fun x => exists e1 e2, dom1 e1 /\ dom2 e2 /\ pre_event_equiv x (pre_event_inter e1 e2)) dom3.
+  Proof.
+    unfold independent_eventcoll in *.
+    intros.
+    unfold independent_events.
+    destruct H1 as [? [? [? [? ?]]]].
+    specialize (sub1 x H1).
+    specialize (sub2 x0 H3).
+    assert (event_equiv A (event_inter (exist _ _ sub1) (exist _ _ sub2))).
+    {
+      destruct A.
+      simpl in H4.
+      intro z; simpl.
+      now specialize (H4 z).
+    }
+    rewrite H5.
+    specialize (H0 (exist _ _ sub1) (exist _ _ sub2) H1 H3).
+    rewrite H0.
+    now rewrite H.
+  Qed.
+    
+
 End sigma_indep.
 
   
