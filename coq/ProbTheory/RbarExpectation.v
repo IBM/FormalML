@@ -6,6 +6,7 @@ Require Import Morphisms EquivDec Program.
 Require Import Coquelicot.Coquelicot.
 Require Import Classical_Prop.
 Require Import Classical.
+Require Import IndefiniteDescription ClassicalDescription.
 Require Import RealRandomVariable.
 
 Require Import Utils.
@@ -4365,6 +4366,270 @@ Qed.
     apply ex_Elim_LimSup_LimInf_seq in H.
     now rewrite H.
   Qed.
+
+Section rv_expressible.
+  Existing Instance simple_approx_frf.
+  Existing Instance simple_approx_rv.
+
+  Lemma Rbar_le_incr0 (f : nat -> Rbar) :
+    (forall n, Rbar_le (f n) (f (S n))) ->
+    forall n k, (Rbar_le (f n) (f (n + k)%nat)).
+  Proof.
+    intros.
+    induction k.
+    - replace (n + 0)%nat with n by lia.
+      apply Rbar_le_refl.
+    - eapply Rbar_le_trans.
+      apply IHk.
+      replace (n + S k)%nat with (S (n + k)%nat) by lia.
+      apply H.
+  Qed.
+
+  Lemma Rbar_le_incr (f : nat -> Rbar) :
+    (forall n, Rbar_le (f n) (f (S n))) ->
+    forall n m, (n<=m)%nat -> Rbar_le (f n) (f m).
+  Proof.
+    intros.
+    replace (m) with (n + (m-n))%nat by lia.
+    now apply Rbar_le_incr0.
+  Qed.
+
+  Lemma is_ELim_seq_sup_seq_incr_R (f : nat -> Rbar) (l : R) :
+    (forall n, Rbar_le (f n) (f (S n))) ->
+    (is_ELimSup_seq f l) <-> is_sup_seq f l.
+  Proof.
+    intros.
+    unfold is_ELimSup_seq, is_sup_seq.
+    split; intros; destruct (H0 eps); split; generalize (cond_pos eps); intros eps_pos.
+    - intros.
+      simpl.
+      destruct H2.
+      destruct (le_dec x n).
+      + now apply H2.
+      + specialize (H2 x).
+        cut_to H2; try lia; simpl in H2.
+        assert (n <= x)%nat by lia.
+        assert (Rbar_le (f n) (f x)) by now apply Rbar_le_incr.
+        eapply Rbar_le_lt_trans.
+        * apply H4.
+        * apply H2.
+    - destruct (H1 0%nat) as [? [? ?]].
+      now exists x.
+    - intros.
+      destruct H2.
+      exists (max x N).
+      split; try lia.
+      assert (Rbar_le (f x) (f (Init.Nat.max x N))).
+      {
+        destruct (le_dec N x).
+        - rewrite Nat.max_l; try lia.
+          apply Rbar_le_refl.
+        - rewrite Nat.max_r; try lia.
+          assert (x <= N)%nat by lia.
+          now apply Rbar_le_incr.
+      }
+      eapply Rbar_lt_le_trans.
+      * apply H2.
+      * apply H3.
+    - exists (0%nat).
+      intros.
+      apply H1.
+   Qed.
+
+  Lemma is_ELim_seq_sup_seq_incr (f : nat -> Rbar) (l : Rbar) :
+    (forall n, Rbar_le (f n) (f (S n))) ->
+    (is_ELimSup_seq f l) <-> is_sup_seq f l.
+  Proof.
+    intros.
+    destruct l.
+    - now apply is_ELim_seq_sup_seq_incr_R.
+    - unfold is_ELimSup_seq, is_sup_seq.
+      split; intros.
+      + destruct (H0 M 0%nat) as [? [? ?]].
+        now exists x.
+      + destruct (H0 M).
+        exists (max x N).
+        split; try lia.
+        assert (Rbar_le (f x) (f (Init.Nat.max x N))).
+        {
+          destruct (le_dec N x).
+          - rewrite Nat.max_l; try lia.
+            apply Rbar_le_refl.
+          - rewrite Nat.max_r; try lia.
+            assert (x <= N)%nat by lia.
+            now apply Rbar_le_incr.
+        }
+      eapply Rbar_lt_le_trans.
+      * apply H1.
+      * apply H2.
+    - unfold is_ELimSup_seq, is_sup_seq.
+      split; intros.
+      + destruct (H0 M).
+        destruct (le_dec x n).
+        * now apply H1.
+        * assert (n <= x)%nat by lia.
+          apply Rbar_le_lt_trans with (y := f x).
+          -- now apply Rbar_le_incr.
+          -- apply H1; try lia.
+      + exists (0%nat).
+        intros.
+        apply H0.
+   Qed.        
+
+  Lemma nneg_measurable_is_expressible {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (Y : Ts -> Rbar)
+        {rv_X : RandomVariable dom cod X}
+        {pos_Y : Rbar_NonnegativeFunction Y}
+        {rv_y : RandomVariable (pullback_sa cod X) Rbar_borel_sa Y} :
+    exists g : Td -> Rbar, 
+      RandomVariable cod Rbar_borel_sa g /\
+      forall x, Y x = g (X x).
+  Proof.
+    generalize (simple_approx_pos Y); intros.
+    generalize (simple_approx_increasing Y pos_Y); intros.
+    generalize (simple_approx_lim_seq Y pos_Y); intros.
+    generalize (fun n => frf_measurable_is_expressible' X (simple_approx Y n)); intros.
+    exists (fun (z : Td) => ELimSup_seq (fun n => (proj1_sig (X0 n)) z)).
+    assert (forall x, is_ELimSup_seq (fun n : nat => (` (X0 n)) (X x)) (Y x)).
+    {
+      intros.
+      apply is_ELim_seq_sup_seq_incr.
+      - intros.
+        simpl.
+        destruct (X0 n) as [? [? ?]].
+        destruct (X0 (S n)) as [? [? ?]].
+        simpl.
+        rewrite <- (e x), <- (e0 x).
+        apply H0.
+      - unfold is_sup_seq.
+        match_case; intros.
+        + split.
+          * intros.
+            destruct (X0 n); simpl.
+            destruct a.
+            rewrite <- H4.
+            generalize (simple_approx_le Y pos_Y n x); intros.
+            generalize (cond_pos eps); intros.
+            rewrite H2 in H5.
+            simpl in H5.
+            lra.
+          * specialize (H1 x).
+            rewrite H2 in H1.
+            apply is_lim_seq_spec in H1.
+            destruct (H1 eps).
+            exists x0.
+            specialize (H3 x0).
+            cut_to H3; try lia.
+            generalize (simple_approx_le Y pos_Y x0 x); intros.          
+            destruct (X0 x0).
+            simpl.
+            destruct a.
+            rewrite <- H6.
+            rewrite Rabs_left1 in H3.
+            -- lra.
+            -- rewrite H2 in H4.
+               simpl in H4.
+               lra.
+      + specialize (H1 x).
+        rewrite H2 in H1.
+        apply is_lim_seq_spec in H1.
+        destruct (H1 M).
+        exists x0.
+        destruct (X0 x0).
+        simpl.
+        destruct a.
+        rewrite <- H5.
+        apply H3; lia.
+      + specialize (H1 x).
+        rewrite H2 in H1.
+        destruct (X0 n).
+        simpl.
+        destruct a.
+        rewrite <- H4.
+        apply is_lim_seq_spec in H1.
+        destruct (H1 M).
+        destruct (le_dec x1 n).
+        * now apply H5.
+        * assert (n <= x1)%nat by lia.
+          apply Rle_lt_trans with (r2 := simple_approx Y x1 x).
+          replace (x1) with (n + (x1 - n))%nat by lia.
+          now apply simple_approx_increasing2.
+          apply H5; lia.
+    }
+    split.
+    - apply Rbar_measurable_rv.
+      apply Rbar_lim_sup_measurable.
+      intros.
+      simpl.
+      apply rv_Rbar_measurable.
+      apply Real_Rbar_rv.
+      destruct (X0 n) as [? [? ?]].
+      now simpl.
+    - intros.
+      specialize (H2 x).
+      apply is_ELimSup_seq_unique in H2.
+      now rewrite <- H2.
+   Qed.
+
+  Lemma nneg_measurable_is_expressible' {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (Y : Ts -> Rbar)
+        {rv_X : RandomVariable dom cod X}
+        {pos_Y : Rbar_NonnegativeFunction Y}
+        {rv_y : RandomVariable (pullback_sa cod X) Rbar_borel_sa Y} :
+      { g : Td -> Rbar | 
+        RandomVariable cod Rbar_borel_sa g /\
+        forall x, Y x = g (X x)}.
+    Proof.
+      apply constructive_indefinite_description.
+      now apply nneg_measurable_is_expressible.
+    Qed.
+
+  Lemma measurable_is_expressible {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (Y : Ts -> Rbar)
+        {rv_X : RandomVariable dom cod X}
+        {rv_y : RandomVariable (pullback_sa cod X) Rbar_borel_sa Y} :
+    exists g : Td -> Rbar, 
+      RandomVariable cod Rbar_borel_sa g /\
+      forall x, Y x = g (X x).
+  Proof.
+    assert ( RandomVariable (pullback_sa cod X) Rbar_borel_sa (Rbar_pos_fun_part Y)) 
+      by typeclasses eauto.
+    assert ( RandomVariable (pullback_sa cod X) Rbar_borel_sa (Rbar_neg_fun_part Y))
+      by typeclasses eauto.           
+    generalize (nneg_measurable_is_expressible' X (Rbar_pos_fun_part Y)); intros.
+    generalize (nneg_measurable_is_expressible' X (Rbar_neg_fun_part Y)); intros.
+    generalize (Rbar_rv_pos_neg_id Y); intros.
+    exists (Rbar_rvminus (proj1_sig X0) (proj1_sig X1)).
+    split.
+    - destruct X0; destruct X1.
+      now apply Rbar_rvminus_rv.
+    - intros.
+      rewrite H1.
+      unfold rvplus, rvopp.
+      destruct X0 as [? [? ?]].
+      destruct X1 as [? [? ?]].
+      rv_unfold; simpl.
+      unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
+      now rewrite <- e, <- e0.
+   Qed.
+      
+  Lemma measurable_is_expressible' {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (Y : Ts -> Rbar)
+        {rv_X : RandomVariable dom cod X}
+        {rv_y : RandomVariable (pullback_sa cod X) Rbar_borel_sa Y} :
+      { g : Td -> Rbar | 
+        RandomVariable cod Rbar_borel_sa g /\
+        forall x, Y x = g (X x)}.
+    Proof.
+      apply constructive_indefinite_description.
+      now apply measurable_is_expressible.
+    Qed.
+
+End rv_expressible.
 
 End more_stuff.
 
