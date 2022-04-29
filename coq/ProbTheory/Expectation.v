@@ -5143,8 +5143,7 @@ Section rv_expressible.
     now apply Rbar_le_incr0.
   Qed.
 
-  (* should be generalized to Rbar *)
-  Lemma is_ELim_seq_sup_seq_incr (f : nat -> Rbar) (l : R) :
+  Lemma is_ELim_seq_sup_seq_incr_R (f : nat -> Rbar) (l : R) :
     (forall n, Rbar_le (f n) (f (S n))) ->
     (is_ELimSup_seq f l) <-> is_sup_seq f l.
   Proof.
@@ -5185,6 +5184,46 @@ Section rv_expressible.
       intros.
       apply H1.
    Qed.
+
+  Lemma is_ELim_seq_sup_seq_incr (f : nat -> Rbar) (l : Rbar) :
+    (forall n, Rbar_le (f n) (f (S n))) ->
+    (is_ELimSup_seq f l) <-> is_sup_seq f l.
+  Proof.
+    intros.
+    destruct l.
+    - now apply is_ELim_seq_sup_seq_incr_R.
+    - unfold is_ELimSup_seq, is_sup_seq.
+      split; intros.
+      + destruct (H0 M 0%nat) as [? [? ?]].
+        now exists x.
+      + destruct (H0 M).
+        exists (max x N).
+        split; try lia.
+        assert (Rbar_le (f x) (f (Init.Nat.max x N))).
+        {
+          destruct (le_dec N x).
+          - rewrite Nat.max_l; try lia.
+            apply Rbar_le_refl.
+          - rewrite Nat.max_r; try lia.
+            assert (x <= N)%nat by lia.
+            now apply Rbar_le_incr.
+        }
+      eapply Rbar_lt_le_trans.
+      * apply H1.
+      * apply H2.
+    - unfold is_ELimSup_seq, is_sup_seq.
+      split; intros.
+      + destruct (H0 M).
+        destruct (le_dec x n).
+        * now apply H1.
+        * assert (n <= x)%nat by lia.
+          apply Rbar_le_lt_trans with (y := f x).
+          -- now apply Rbar_le_incr.
+          -- apply H1; try lia.
+      + exists (0%nat).
+        intros.
+        apply H0.
+   Qed.        
 
   Lemma nneg_measurable_is_expressible {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
