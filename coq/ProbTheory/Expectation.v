@@ -5120,8 +5120,31 @@ Section rv_expressible.
   Existing Instance simple_approx_frf.
   Existing Instance simple_approx_rv.
 
+  Lemma Rbar_le_incr0 (f : nat -> Rbar) :
+    (forall n, Rbar_le (f n) (f (S n))) ->
+    forall n k, (Rbar_le (f n) (f (n + k)%nat)).
+  Proof.
+    intros.
+    induction k.
+    - replace (n + 0)%nat with n by lia.
+      apply Rbar_le_refl.
+    - eapply Rbar_le_trans.
+      apply IHk.
+      replace (n + S k)%nat with (S (n + k)%nat) by lia.
+      apply H.
+  Qed.
+
+  Lemma Rbar_le_incr (f : nat -> Rbar) :
+    (forall n, Rbar_le (f n) (f (S n))) ->
+    forall n m, (n<=m)%nat -> Rbar_le (f n) (f m).
+  Proof.
+    intros.
+    replace (m) with (n + (m-n))%nat by lia.
+    now apply Rbar_le_incr0.
+  Qed.
+
   (* should be generalized to Rbar *)
-  Lemma is_ELim_seq_sup_seq_incr (f : nat -> R) (l : R) :
+  Lemma is_ELim_seq_sup_seq_incr (f : nat -> Rbar) (l : R) :
     (forall n, Rbar_le (f n) (f (S n))) ->
     (is_ELimSup_seq f l) <-> is_sup_seq f l.
   Proof.
@@ -5136,24 +5159,28 @@ Section rv_expressible.
       + specialize (H2 x).
         cut_to H2; try lia; simpl in H2.
         assert (n <= x)%nat by lia.
-        assert (f n <= f x) by now apply le_incr.
-        lra.
+        assert (Rbar_le (f n) (f x)) by now apply Rbar_le_incr.
+        eapply Rbar_le_lt_trans.
+        * apply H4.
+        * apply H2.
     - destruct (H1 0%nat) as [? [? ?]].
       now exists x.
     - intros.
       destruct H2.
       exists (max x N).
       split; try lia.
-      assert (f x <= f (Init.Nat.max x N)).
+      assert (Rbar_le (f x) (f (Init.Nat.max x N))).
       {
         destruct (le_dec N x).
-        - now rewrite Nat.max_l.
+        - rewrite Nat.max_l; try lia.
+          apply Rbar_le_refl.
         - rewrite Nat.max_r; try lia.
           assert (x <= N)%nat by lia.
-          now apply le_incr.
+          now apply Rbar_le_incr.
       }
-      simpl; simpl in H2.
-      lra.
+      eapply Rbar_lt_le_trans.
+      * apply H2.
+      * apply H3.
     - exists (0%nat).
       intros.
       apply H1.
