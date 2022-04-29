@@ -5227,13 +5227,13 @@ Section rv_expressible.
 
   Lemma nneg_measurable_is_expressible {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
-        (X : Ts -> Td) (Y : Ts -> R)
+        (X : Ts -> Td) (Y : Ts -> Rbar)
         {rv_X : RandomVariable dom cod X}
         {pos_Y : Rbar_NonnegativeFunction Y}
-        {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+        {rv_y : RandomVariable (pullback_sa cod X) Rbar_borel_sa Y} :
     exists g : Td -> Rbar, 
       RandomVariable cod Rbar_borel_sa g /\
-      forall x, Rbar.Finite(Y x) = g (X x).
+      forall x, Y x = g (X x).
   Proof.
     generalize (simple_approx_pos Y); intros.
     generalize (simple_approx_increasing Y pos_Y); intros.
@@ -5251,32 +5251,60 @@ Section rv_expressible.
         simpl.
         rewrite <- (e x), <- (e0 x).
         apply H0.
-      - intros.
-        unfold is_sup_seq; intros.
-        split.
-        + intros.
-          destruct (X0 n); simpl.
-          destruct a.
-          rewrite <- H3.
-          generalize (simple_approx_le Y pos_Y n x); intros.
-          simpl in H4.
-          generalize (cond_pos eps); intros.
-          lra.
-        + specialize (H1 x).
-          apply is_lim_seq_spec in H1.
-          destruct (H1 eps).
-          exists x0.
-          specialize (H2 x0).
-          cut_to H2; try lia.
-          generalize (simple_approx_le Y pos_Y x0 x); intros.          
-          destruct (X0 x0).
-          simpl.
-          destruct a.
-          rewrite <- H5.
-          rewrite Rabs_left1 in H2.
-          * lra.
-          * simpl in H3.
+      - unfold is_sup_seq.
+        match_case; intros.
+        + split.
+          * intros.
+            destruct (X0 n); simpl.
+            destruct a.
+            rewrite <- H4.
+            generalize (simple_approx_le Y pos_Y n x); intros.
+            generalize (cond_pos eps); intros.
+            rewrite H2 in H5.
+            simpl in H5.
             lra.
+          * specialize (H1 x).
+            rewrite H2 in H1.
+            apply is_lim_seq_spec in H1.
+            destruct (H1 eps).
+            exists x0.
+            specialize (H3 x0).
+            cut_to H3; try lia.
+            generalize (simple_approx_le Y pos_Y x0 x); intros.          
+            destruct (X0 x0).
+            simpl.
+            destruct a.
+            rewrite <- H6.
+            rewrite Rabs_left1 in H3.
+            -- lra.
+            -- rewrite H2 in H4.
+               simpl in H4.
+               lra.
+      + specialize (H1 x).
+        rewrite H2 in H1.
+        apply is_lim_seq_spec in H1.
+        destruct (H1 M).
+        exists x0.
+        destruct (X0 x0).
+        simpl.
+        destruct a.
+        rewrite <- H5.
+        apply H3; lia.
+      + specialize (H1 x).
+        rewrite H2 in H1.
+        destruct (X0 n).
+        simpl.
+        destruct a.
+        rewrite <- H4.
+        apply is_lim_seq_spec in H1.
+        destruct (H1 M).
+        destruct (le_dec x1 n).
+        * now apply H5.
+        * assert (n <= x1)%nat by lia.
+          apply Rle_lt_trans with (r2 := simple_approx Y x1 x).
+          replace (x1) with (n + (x1 - n))%nat by lia.
+          now apply simple_approx_increasing2.
+          apply H5; lia.
     }
     split.
     - apply Rbar_measurable_rv.
@@ -5290,18 +5318,18 @@ Section rv_expressible.
     - intros.
       specialize (H2 x).
       apply is_ELimSup_seq_unique in H2.
-      now rewrite H2.
+      now rewrite <- H2.
    Qed.
 
   Lemma nneg_measurable_is_expressible' {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
-        (X : Ts -> Td) (Y : Ts -> R)
+        (X : Ts -> Td) (Y : Ts -> Rbar)
         {rv_X : RandomVariable dom cod X}
         {pos_Y : Rbar_NonnegativeFunction Y}
-        {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+        {rv_y : RandomVariable (pullback_sa cod X) Rbar_borel_sa Y} :
       { g : Td -> Rbar | 
         RandomVariable cod Rbar_borel_sa g /\
-        forall x, Rbar.Finite(Y x) = g (X x)}.
+        forall x, Y x = g (X x)}.
     Proof.
       apply constructive_indefinite_description.
       now apply nneg_measurable_is_expressible.
