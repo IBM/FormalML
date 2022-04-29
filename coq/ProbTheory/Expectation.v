@@ -5266,23 +5266,10 @@ Section rv_expressible.
       rewrite H.
       simpl.
       unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
-      rewrite <- e.
-      rewrite <- e0.
-      simpl.
+      rewrite <- e, <- e0; simpl.
       apply Rbar_finite_eq.
       unfold Rmax.
-      destruct (Rle_dec (Y x) 0).
-      destruct (Rle_dec (- Y x) 0).      
-      + replace (0 + -1 * 0) with (0) by lra.
-        replace (- 0) with (0) by lra.
-        match_destr; lra.
-      + rewrite Rplus_0_l.
-        replace (-1 * - Y x) with (Y x) by lra.
-        match_destr; match_destr; lra.
-      + destruct (Rle_dec (- Y x) 0).
-        replace (Y x + -1 * 0) with (Y x) by lra.
-        * match_destr; match_destr; lra.
-        * match_destr; match_destr; lra.
+      destruct (Rle_dec (Y x) 0); destruct (Rle_dec (- Y x) 0);match_destr; match_destr; lra.
    Qed.
       
   Lemma measurable_is_expressible' {Ts : Type} {Td : Type}
