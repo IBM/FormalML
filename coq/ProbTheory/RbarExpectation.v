@@ -4652,9 +4652,7 @@ Section rv_expressible.
         apply RealVectorMeasurableRandomVariable. 
         unfold RealVectorMeasurable.
         intros.
-        unfold make_vector_from_seq.
-        unfold iso_f.
-        simpl.
+        unfold make_vector_from_seq, iso_f; simpl.
         rewrite vector_nth_fun_to_vector.
         setoid_rewrite vector_nth_create'.
         now apply rv_measurable.
