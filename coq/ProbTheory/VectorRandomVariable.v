@@ -1468,6 +1468,53 @@ Section real_pullback.
       apply pullback_rv.
   Qed.
  
+  Definition make_vector_from_seq {Ts : Type} (X : nat -> Ts -> R) (n : nat) : Ts -> DVector.vector R n :=
+    fun (x:Ts) => vector_create 0 n (fun i _ _ => X i x).
+
+  Lemma pullback_make_vector_from_seq0 {Ts : Type} (X : nat -> Ts -> R) :
+    sa_equiv
+      (pullback_sa (Rvector_borel_sa 0) (make_vector_from_seq X 0))
+      (trivial_sa Ts).
+   Proof.
+     Admitted.
+
+  Lemma pullback_make_vector_from_seq {Ts : Type} (X : nat -> Ts -> R) (n : nat):
+    sa_equiv
+      (union_sa (pullback_sa borel_sa (X n))
+                (pullback_sa (Rvector_borel_sa n) (make_vector_from_seq X n)))
+      (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
+   Proof.
+     Admitted.
+
+   Lemma union_sa_trivial {Ts : Type} (sa : SigmaAlgebra Ts) :
+     sa_equiv
+       (union_sa sa (trivial_sa Ts))
+       sa.
+   Proof.
+     unfold union_sa.
+     rewrite pre_event_union_sub_l.
+     - unfold sa_equiv, pre_event_equiv.
+       intros; simpl.
+       split; intros.
+       + now apply H.
+       + now apply H0.
+     - apply trivial_sa_sub.
+   Qed.
+
+  Lemma filtrate_history_vector_rv {Ts} (X : nat -> Ts -> R) (n : nat) :
+    sa_equiv (filtration_history_sa X n) (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
+  Proof.
+    unfold filtration_history_sa.
+    induction n.
+    - rewrite <- pullback_make_vector_from_seq.
+      rewrite pullback_make_vector_from_seq0.
+      unfold filtrate_sa.
+      now rewrite union_sa_trivial.
+    - simpl.
+      rewrite IHn.
+      apply pullback_make_vector_from_seq.
+  Qed.
+
 End real_pullback.
 
 Section almost.
