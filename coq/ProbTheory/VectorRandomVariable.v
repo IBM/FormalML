@@ -1478,6 +1478,41 @@ Section real_pullback.
   Proof.
     apply sa_equiv_subs.
     split; try apply trivial_sa_sub.
+    unfold sa_sub, pre_event_sub.
+    intros.
+    simpl in *.
+    unfold pullback_sa_sigma in H.
+    destruct H as [? [? ?]].
+    unfold pre_event_none, pre_Ω.
+    unfold pre_event in x0.
+    setoid_rewrite vector0_0 in H0.
+    unfold equiv, pre_event_equiv.
+    setoid_rewrite H0.
+    right.
+    intros.
+     Admitted.
+
+
+  Lemma removelast_length {A} (x : list A) (n : nat) :
+    length x = S n ->
+    length (removelast x) = n.
+  Proof.
+    Admitted.
+
+  Program Definition vector_removelast {n} {A} (v:vector A (S n)) : vector A n :=
+    exist _ (removelast (proj1_sig v)) _.
+  Next Obligation.
+    destruct v.
+    simpl.
+    now apply removelast_length.
+  Qed.
+
+  Lemma make_vector_from_seq_removelast {Ts : Type} (X : nat -> Ts -> R) (n : nat):
+    forall (a : Ts),
+      vector_removelast (make_vector_from_seq X (S n) a) =
+      (make_vector_from_seq X n a).
+  Proof.
+    intros.
      Admitted.
 
   Lemma pullback_make_vector_from_seq {Ts : Type} (X : nat -> Ts -> R) (n : nat):
@@ -1489,6 +1524,30 @@ Section real_pullback.
     apply sa_equiv_subs.
     split.
     - apply union_sa_sub_both.
+      + unfold sa_sub, pre_event_sub.
+        intros.
+        simpl in *.
+        unfold pullback_sa_sigma in *.
+        destruct H as [? [? ?]].
+        assert (n < S n)%nat by lia.
+        exists (fun v => x0 (vector_nth n H1 v)).
+        split.
+        * admit.
+        * intros.
+          unfold make_vector_from_seq.
+          rewrite vector_nth_create.
+          now replace (0 + n)%nat with (n) by lia.
+      + unfold sa_sub, pre_event_sub.
+        intros.
+        simpl in *.
+        unfold pullback_sa_sigma in *.
+        destruct H as [? [? ?]].
+        exists (fun v => x0 (vector_removelast v)).
+        split.
+        * admit.
+        * intros.
+          now rewrite make_vector_from_seq_removelast.
+    - admit.
      Admitted.
 
    Lemma union_sa_trivial {Ts : Type} (sa : SigmaAlgebra Ts) :
