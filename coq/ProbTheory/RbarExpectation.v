@@ -8,6 +8,7 @@ Require Import Classical_Prop.
 Require Import Classical.
 Require Import IndefiniteDescription ClassicalDescription.
 Require Import RealRandomVariable.
+Require Import DVector VectorRandomVariable.
 
 Require Import Utils.
 Require Export SimpleExpectation Expectation.
@@ -4367,6 +4368,8 @@ Qed.
     now rewrite H.
   Qed.
 
+End more_stuff.
+
 Section rv_expressible.
   Existing Instance simple_approx_frf.
   Existing Instance simple_approx_rv.
@@ -4629,7 +4632,51 @@ Section rv_expressible.
       now apply measurable_is_expressible.
     Qed.
 
+    Lemma measurable_sequence_is_expressible {Ts : Type} 
+          {dom : SigmaAlgebra Ts}
+          (X : nat -> Ts -> R) (n : nat) 
+          (Y : Ts -> R)
+          {rv_X : forall n, RandomVariable dom borel_sa (X n)}
+          {rv_y : RandomVariable (filtration_history_sa X n) Rbar_borel_sa Y} :
+      exists g : vector R (S n) -> Rbar,
+         RandomVariable (Rvector_borel_sa (S n)) Rbar_borel_sa g /\
+         (forall x : Ts, Rbar.Finite (Y x) = g (make_vector_from_seq X (S n) x)).
+    Proof.
+      generalize (filtrate_history_vector_rv X n); intros.
+      assert (RandomVariable (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))) Rbar_borel_sa Y).
+      {
+        now rewrite <- H.
+      }
+      assert (RandomVariable dom (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
+      {
+        apply RealVectorMeasurableRandomVariable. 
+        unfold RealVectorMeasurable.
+        intros.
+        unfold make_vector_from_seq.
+        unfold iso_f.
+        simpl.
+        rewrite vector_nth_fun_to_vector.
+        setoid_rewrite vector_nth_create'.
+        now apply rv_measurable.
+      }
+      now apply measurable_is_expressible.
+   Qed.
+
+    Lemma measurable_sequence_is_expressible' {Ts : Type} 
+          {dom : SigmaAlgebra Ts}
+          (X : nat -> Ts -> R) (n : nat) 
+          (Y : Ts -> R)
+          {rv_X : forall n, RandomVariable dom borel_sa (X n)}
+          {rv_y : RandomVariable (filtration_history_sa X n) Rbar_borel_sa Y} :
+      { g : vector R (S n) -> Rbar |
+         RandomVariable (Rvector_borel_sa (S n)) Rbar_borel_sa g /\
+         (forall x : Ts, Rbar.Finite (Y x) = g (make_vector_from_seq X (S n) x))}.
+    Proof.
+      apply constructive_indefinite_description.
+      now apply measurable_sequence_is_expressible.
+    Qed.
+
 End rv_expressible.
 
-End more_stuff.
+
 

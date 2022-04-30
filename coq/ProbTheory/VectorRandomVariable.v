@@ -1475,7 +1475,9 @@ Section real_pullback.
     sa_equiv
       (pullback_sa (Rvector_borel_sa 0) (make_vector_from_seq X 0))
       (trivial_sa Ts).
-   Proof.
+  Proof.
+    apply sa_equiv_subs.
+    split; try apply trivial_sa_sub.
      Admitted.
 
   Lemma pullback_make_vector_from_seq {Ts : Type} (X : nat -> Ts -> R) (n : nat):
@@ -1483,7 +1485,10 @@ Section real_pullback.
       (union_sa (pullback_sa borel_sa (X n))
                 (pullback_sa (Rvector_borel_sa n) (make_vector_from_seq X n)))
       (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
-   Proof.
+  Proof.
+    apply sa_equiv_subs.
+    split.
+    - apply union_sa_sub_both.
      Admitted.
 
    Lemma union_sa_trivial {Ts : Type} (sa : SigmaAlgebra Ts) :
@@ -1491,14 +1496,13 @@ Section real_pullback.
        (union_sa sa (trivial_sa Ts))
        sa.
    Proof.
-     unfold union_sa.
-     rewrite pre_event_union_sub_l.
-     - unfold sa_equiv, pre_event_equiv.
-       intros; simpl.
-       split; intros.
-       + now apply H.
-       + now apply H0.
-     - apply trivial_sa_sub.
+     apply sa_equiv_subs.
+     split.
+     - apply union_sa_sub_both.
+       + apply sa_equiv_sub.
+         apply sa_equiv_equiv.
+       + apply trivial_sa_sub.
+     - apply union_sa_sub_l.
    Qed.
 
   Lemma filtrate_history_vector_rv {Ts} (X : nat -> Ts -> R) (n : nat) :
