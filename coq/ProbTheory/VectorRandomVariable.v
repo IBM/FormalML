@@ -1490,59 +1490,6 @@ Section real_pullback.
     destruct (classic (x0 vector0)); tauto.
   Qed.
 
-  Lemma pullback_make_vector_from_seq1 {Ts : Type} (X : nat -> Ts -> R) :
-    sa_equiv
-      (pullback_sa borel_sa (X 0%nat))
-      (pullback_sa (Rvector_borel_sa 1) (make_vector_from_seq X 1)).
-  Proof.
-    apply sa_equiv_subs.
-    assert (0 < 1)%nat by lia.
-    split; unfold sa_sub, pre_event_sub; intros; simpl in *; unfold pullback_sa_sigma in *; destruct H0 as [? [? ?]].
-    - exists (fun v => x0 (vector_nth 0 H v)); split.
-      + unfold Rvector_borel_sa, vector_sa.
-        simpl; intros.
-        apply H2.
-        unfold pre_event_set_vector_product.
-        exists (vector_const x0 (S 0)).
-        split.
-        * intros.
-          rewrite vector_nth_const, vector_nth_map.
-          now rewrite vector_nth_const.          
-        * intro z.
-          split; intros.
-          -- rewrite vector_nth_const.
-             replace (vector_nth i pf z) with (vector_nth 0%nat H z); trivial.
-             assert (i = 0%nat) by lia.
-             unfold vector_nth, vector_nth_packed, proj1_sig.
-             match_destr; match_destr.
-             rewrite H4 in e0.
-             rewrite <- e0 in e.
-             now invcs e.
-          -- specialize (H3 0%nat H).
-             now rewrite vector_nth_const in H3.
-      + intros.
-        unfold make_vector_from_seq.
-        rewrite vector_nth_create.
-        replace (0 + 0)%nat with 0%nat by lia.
-        apply H1.
-    - exists (fun r => x0 (vector_const r (S 0))); split.
-      + clear H1 x H X Ts.
-        unfold sa_sigma in H0.
-        unfold Rvector_borel_sa, vector_const, vector_sa in H0.
-        simpl in H0.
-        setoid_rewrite vector_map_create in H0.
-        admit.
-      + intros.
-        specialize (H1 a).
-        replace (vector_const (X 0%nat a) 1) with
-            (make_vector_from_seq X 1 a); trivial.
-        unfold make_vector_from_seq, vector_const.
-        apply vector_create_ext.
-        intros.
-        assert (i = 0%nat) by lia.
-        now rewrite H2.
-  Admitted.
-
   Program Definition vector_removelast {n} {A} (v:vector A (S n)) : vector A n :=
     exist _ (removelast (proj1_sig v)) _.
   Next Obligation.
@@ -1568,13 +1515,22 @@ Section real_pullback.
   Proof.
     Admitted.
 
+
   Lemma pullback_make_vector_from_seq_sub {Ts : Type} (X : nat -> Ts -> R) (n : nat):
     forall h,
       sa_sub
         (pullback_sa (Rvector_borel_sa n) (make_vector_from_seq X n))
         (pullback_sa (Rvector_borel_sa (n + h)%nat) (make_vector_from_seq X (n + h)%nat)).
   Proof.
-   Admitted. 
+    induction h.
+    - replace (n+0)%nat with n by lia.
+      now intro x.
+    - replace (n + S h)%nat with (S (n + h)) by lia.
+      intro x.
+      intros.
+      apply pullback_make_vector_from_seq_sub1.
+      now apply IHh.
+   Qed.
 
   Lemma pullback_make_vector_from_seq {Ts : Type} (X : nat -> Ts -> R) (n : nat):
     sa_equiv
@@ -1603,16 +1559,7 @@ Section real_pullback.
           unfold make_vector_from_seq.
           rewrite vector_nth_create.
           now replace (0 + n)%nat with (n) by lia.
-      + unfold sa_sub, pre_event_sub.
-        intros.
-        simpl in *.
-        unfold pullback_sa_sigma in *.
-        destruct H as [? [? ?]].
-        exists (fun v => x0 (vector_removelast v)).
-        split.
-        * admit.
-        * intros.
-          now rewrite make_vector_from_seq_removelast.
+      + apply pullback_make_vector_from_seq_sub1.
     - admit.
      Admitted.
 
@@ -1635,7 +1582,10 @@ Section real_pullback.
   Proof.
     unfold filtration_history_sa.
     induction n.
-    - apply pullback_make_vector_from_seq1.
+    - unfold filtrate_sa.
+      rewrite <- pullback_make_vector_from_seq.
+      rewrite pullback_make_vector_from_seq0.
+      now rewrite union_sa_trivial.
     - simpl.
       rewrite IHn.
       apply pullback_make_vector_from_seq.
