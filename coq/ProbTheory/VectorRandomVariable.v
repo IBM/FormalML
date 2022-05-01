@@ -1481,17 +1481,14 @@ Section real_pullback.
     unfold sa_sub, pre_event_sub.
     intros.
     simpl in *.
-    unfold pullback_sa_sigma in H.
     destruct H as [? [? ?]].
     unfold pre_event_none, pre_Ω.
     unfold pre_event in x0.
     setoid_rewrite vector0_0 in H0.
     unfold equiv, pre_event_equiv.
     setoid_rewrite H0.
-    right.
-    intros.
-     Admitted.
-
+    destruct (classic (x0 vector0)); tauto.
+  Qed.
 
   Lemma pullback_make_vector_from_seq1 {Ts : Type} (X : nat -> Ts -> R) :
     sa_equiv
