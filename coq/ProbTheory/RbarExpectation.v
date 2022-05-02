@@ -4686,19 +4686,6 @@ Section rv_expressible.
       now apply measurable_sequence_is_expressible.
     Qed.
 
-    Lemma expressible_sequence_is_vec_measurable {Ts : Type} 
-          (X : nat -> Ts -> R) (n : nat) 
-          (Y : Ts -> R)
-          (g : vector R (S n) -> Rbar)
-          {rv_g : RandomVariable (Rvector_borel_sa (S n)) Rbar_borel_sa g} :
-      (forall x : Ts, Rbar.Finite (Y x) = g (make_vector_from_seq X (S n) x)) ->
-      RandomVariable (pullback_sa (Rvector_borel_sa (S n)) 
-                                  (make_vector_from_seq X (S n)))
-                     Rbar_borel_sa Y.
-    Proof.
-      now apply expressible_is_measurable.
-    Qed.
-      
     Lemma expressible_sequence_is_measurable {Ts : Type} 
           (X : nat -> Ts -> R) (n : nat) 
           (Y : Ts -> R)
@@ -4707,9 +4694,9 @@ Section rv_expressible.
       (forall x : Ts, Rbar.Finite (Y x) = g (make_vector_from_seq X (S n) x)) ->
       RandomVariable (filtration_history_sa X n) Rbar_borel_sa Y.
     Proof.
-      generalize (filtrate_history_vector_rv X n); intros.
-      rewrite H.
-      now apply expressible_sequence_is_vec_measurable with (g0 := g).
+      intros.
+      rewrite filtrate_history_vector_rv.
+      now apply expressible_is_measurable with (g0 := g).
     Qed.
       
 End rv_expressible.
