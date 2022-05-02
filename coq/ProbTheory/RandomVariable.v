@@ -153,18 +153,6 @@ Proof.
   apply (rvf (exist _ _ (rvg B))).
 Qed.  
 
-Instance pullback_compose_rv {Ts1 Ts2 Ts3} {dom2 dom3}
-         (f : Ts1 -> Ts2)
-         (g : Ts2 -> Ts3)
-         {rvg : RandomVariable dom2 dom3 g} :
-  RandomVariable (pullback_sa dom2 f) dom3 (compose g f).
-Proof.
-  intros ?.
-  specialize (rvg B).
-  destruct B.
-  now exists (fun z2 => x (g z2)).
- Qed.
-
 Section Simple.
   Context {Ts:Type} {Td:Type}.
 
@@ -560,6 +548,16 @@ Section pullback.
     red; intros.
     apply pullback_sa_pullback.
     now destruct B.
+  Qed.
+
+  Instance pullback_compose_rv {Ts1 Ts2 Ts3} {dom2 dom3}
+           (f : Ts1 -> Ts2)
+           (g : Ts2 -> Ts3)
+           {rvg : RandomVariable dom2 dom3 g} :
+    RandomVariable (pullback_sa dom2 f) dom3 (compose g f).
+  Proof.
+    apply compose_rv; trivial.
+    typeclasses eauto.
   Qed.
 
   Lemma pullback_rv_sub
