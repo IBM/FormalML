@@ -4631,30 +4631,6 @@ Section rv_expressible.
       now rewrite <- r0, <- r2.
   Qed.
 
-    Lemma Rbar_expressible_is_measurable {Ts : Type} {Td : Type}
-          {cod : SigmaAlgebra Td}
-          (X : Ts -> Td) (Y : Ts -> Rbar) (g : Td -> Rbar)
-          {rv_g : RandomVariable cod Rbar_borel_sa g} :
-      rv_eq Y (g ∘ X) ->
-      RandomVariable (pullback_sa cod X) Rbar_borel_sa Y.
-    Proof.
-      intros.
-      rewrite H.
-      now apply pullback_compose_rv.
-    Qed.
-      
-    Lemma expressible_is_measurable {Ts : Type} {Td : Type}
-          {cod : SigmaAlgebra Td}
-          (X : Ts -> Td) (Y : Ts -> R) (g : Td -> R)
-          {rv_g : RandomVariable cod borel_sa g} :
-      rv_eq Y (g ∘ X) ->
-      RandomVariable (pullback_sa cod X) borel_sa Y.
-    Proof.
-      intros.
-      rewrite H.
-      now apply pullback_compose_rv.
-    Qed.
-
     Lemma measurable_sequence_is_expressible {Ts : Type} 
           {dom : SigmaAlgebra Ts}
           (X : nat -> Ts -> R) (n : nat) 
@@ -4685,15 +4661,12 @@ Section rv_expressible.
 
     Lemma expressible_sequence_is_measurable {Ts : Type} 
           (X : nat -> Ts -> R) (n : nat) 
-          (Y : Ts -> R)
           (g : vector R (S n) -> R)
           {rv_g : RandomVariable (Rvector_borel_sa (S n)) borel_sa g} :
-      rv_eq Y (g ∘ (make_vector_from_seq X (S n) )) ->
-      RandomVariable (filtration_history_sa X n) borel_sa Y.
+      RandomVariable (filtration_history_sa X n) borel_sa (g ∘ (make_vector_from_seq X (S n) )).
     Proof.
-      intros.
       rewrite filtrate_history_vector_rv.
-      now apply expressible_is_measurable with (g0 := g).
+      now apply pullback_compose_rv.
     Qed.
       
 End rv_expressible.
