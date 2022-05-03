@@ -4375,7 +4375,7 @@ Section rv_expressible.
   Existing Instance simple_approx_rv.
 
 
-  Lemma nneg_measurable_is_expressible {Ts : Type} {Td : Type}
+  Lemma Rbar_nneg_measurable_is_expressible {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
         (X : Ts -> Td) (Y : Ts -> Rbar)
         {rv_X : RandomVariable dom cod X}
@@ -4469,9 +4469,82 @@ Section rv_expressible.
       specialize (H2 x).
       apply is_ELimSup_seq_unique in H2.
       now rewrite <- H2.
+  Qed.
+
+    Lemma nneg_measurable_is_expressible {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (Y : Ts -> R)
+        {rv_X : RandomVariable dom cod X}
+        {pos_Y : NonnegativeFunction Y}
+        {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+    exists g : Td -> R, 
+      RandomVariable cod borel_sa g /\
+      rv_eq Y (g ∘ X).
+  Proof.
+    generalize (simple_approx_pos Y); intros.
+    generalize (simple_approx_increasing Y pos_Y); intros.
+    generalize (simple_approx_lim_seq Y pos_Y); intros.
+    generalize (fun n => frf_measurable_is_expressible' X (simple_approx Y n)); intros.
+    exists (fun (z : Td) => ELimSup_seq (fun n => (proj1_sig (X0 n)) z)).
+    assert (forall x, is_ELimSup_seq (fun n : nat => (` (X0 n)) (X x)) (Y x)).
+    {
+      intros.
+      apply is_ELim_seq_sup_seq_incr.
+      - intros.
+        simpl.
+        destruct (X0 n) as [? [? ?]].
+        destruct (X0 (S n)) as [? [? ?]].
+        simpl.
+        rewrite <- (e x), <- (e0 x).
+        apply H0.
+      - unfold is_sup_seq.
+        intros.
+        split.
+        + intros.
+          destruct (X0 n); simpl.
+          destruct a.
+          rewrite <- H3.
+          generalize (simple_approx_le Y pos_Y n x); intros.
+          generalize (cond_pos eps); intros.
+          simpl in H4.
+          lra.
+        + specialize (H1 x).
+          apply is_lim_seq_spec in H1.
+          destruct (H1 eps).
+          exists x0.
+          specialize (H2 x0).
+          cut_to H2; try lia.
+          generalize (simple_approx_le Y pos_Y x0 x); intros.          
+          destruct (X0 x0).
+          simpl.
+          destruct a.
+          rewrite <- H5.
+          rewrite Rabs_left1 in H2.
+          * lra.
+          * simpl in H3.
+            lra.
+    }
+    
+    split.
+    - apply measurable_rv.
+      apply Rbar_finite_part_meas.
+      apply Rbar_measurable_rv.      
+      apply Rbar_lim_sup_measurable.
+      intros.
+      simpl.
+      apply rv_Rbar_measurable.
+      apply Real_Rbar_rv.
+      destruct (X0 n) as [? [? ?]].
+      now simpl.
+    - intro x.
+      specialize (H2 x).
+      apply is_ELimSup_seq_unique in H2.
+      unfold compose.
+      rewrite H2.
+      now simpl.
    Qed.
 
-  Lemma nneg_measurable_is_expressible' {Ts : Type} {Td : Type}
+  Lemma Rbar_nneg_measurable_is_expressible' {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
         (X : Ts -> Td) (Y : Ts -> Rbar)
         {rv_X : RandomVariable dom cod X}
@@ -4482,10 +4555,24 @@ Section rv_expressible.
         rv_eq Y (g ∘ X)}.
     Proof.
       apply constructive_indefinite_description.
+      now apply Rbar_nneg_measurable_is_expressible.
+    Qed.
+
+  Lemma nneg_measurable_is_expressible' {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (Y : Ts -> R)
+        {rv_X : RandomVariable dom cod X}
+        {pos_Y : NonnegativeFunction Y}
+        {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+      { g : Td -> R | 
+        RandomVariable cod borel_sa g /\
+        rv_eq Y (g ∘ X)}.
+    Proof.
+      apply constructive_indefinite_description.
       now apply nneg_measurable_is_expressible.
     Qed.
 
-  Lemma measurable_is_expressible {Ts : Type} {Td : Type}
+  Lemma Rbar_measurable_is_expressible {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
         (X : Ts -> Td) (Y : Ts -> Rbar)
         {rv_X : RandomVariable dom cod X}
@@ -4498,8 +4585,8 @@ Section rv_expressible.
       by typeclasses eauto.
     assert ( RandomVariable (pullback_sa cod X) Rbar_borel_sa (Rbar_neg_fun_part Y))
       by typeclasses eauto.           
-    generalize (nneg_measurable_is_expressible' X (Rbar_pos_fun_part Y)); intros.
-    generalize (nneg_measurable_is_expressible' X (Rbar_neg_fun_part Y)); intros.
+    generalize (Rbar_nneg_measurable_is_expressible' X (Rbar_pos_fun_part Y)); intros.
+    generalize (Rbar_nneg_measurable_is_expressible' X (Rbar_neg_fun_part Y)); intros.
     generalize (Rbar_rv_pos_neg_id Y); intros.
     exists (Rbar_rvminus (proj1_sig X0) (proj1_sig X1)).
     split.
@@ -4515,7 +4602,36 @@ Section rv_expressible.
       now rewrite <- r0, <- r2.
   Qed.
 
-    Lemma expressible_is_measurable {Ts : Type} {Td : Type}
+  Lemma measurable_is_expressible {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (Y : Ts -> R)
+        {rv_X : RandomVariable dom cod X}
+        {rv_y : RandomVariable (pullback_sa cod X) borel_sa Y} :
+    exists g : Td -> R,
+      RandomVariable cod borel_sa g /\
+      rv_eq Y (g ∘ X).
+  Proof.
+    assert ( RandomVariable (pullback_sa cod X) borel_sa (pos_fun_part Y)) 
+      by typeclasses eauto.
+    assert ( RandomVariable (pullback_sa cod X) borel_sa (neg_fun_part Y))
+      by typeclasses eauto.           
+    generalize (nneg_measurable_is_expressible' X (pos_fun_part Y)); intros.
+    generalize (nneg_measurable_is_expressible' X (neg_fun_part Y)); intros.
+    generalize (rv_pos_neg_id Y); intros.
+    exists (rvminus (proj1_sig X0) (proj1_sig X1)).
+    split.
+    - destruct X0; destruct X1.
+      now apply rvminus_rv.
+    - intros z.
+      rewrite H1.
+      unfold rvplus, rvopp.
+      destruct X0 as [? [? ?]].
+      destruct X1 as [? [? ?]].
+      rv_unfold; simpl.
+      now rewrite <- r0, <- r2.
+  Qed.
+
+    Lemma Rbar_expressible_is_measurable {Ts : Type} {Td : Type}
           {cod : SigmaAlgebra Td}
           (X : Ts -> Td) (Y : Ts -> Rbar) (g : Td -> Rbar)
           {rv_g : RandomVariable cod Rbar_borel_sa g} :
@@ -4527,17 +4643,16 @@ Section rv_expressible.
       now apply pullback_compose_rv.
     Qed.
       
-  Lemma measurable_is_expressible' {Ts : Type} {Td : Type}
-        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
-        (X : Ts -> Td) (Y : Ts -> Rbar)
-        {rv_X : RandomVariable dom cod X}
-        {rv_y : RandomVariable (pullback_sa cod X) Rbar_borel_sa Y} :
-      { g : Td -> Rbar | 
-        RandomVariable cod Rbar_borel_sa g /\
-        rv_eq Y (g ∘ X)}.
+    Lemma expressible_is_measurable {Ts : Type} {Td : Type}
+          {cod : SigmaAlgebra Td}
+          (X : Ts -> Td) (Y : Ts -> R) (g : Td -> R)
+          {rv_g : RandomVariable cod borel_sa g} :
+      rv_eq Y (g ∘ X) ->
+      RandomVariable (pullback_sa cod X) borel_sa Y.
     Proof.
-      apply constructive_indefinite_description.
-      now apply measurable_is_expressible.
+      intros.
+      rewrite H.
+      now apply pullback_compose_rv.
     Qed.
 
     Lemma measurable_sequence_is_expressible {Ts : Type} 
@@ -4546,15 +4661,14 @@ Section rv_expressible.
           (Y : Ts -> R)
           {rv_X : forall n, RandomVariable dom borel_sa (X n)}
           {rv_y : RandomVariable (filtration_history_sa X n) borel_sa Y} :
-      exists g : vector R (S n) -> Rbar,
-         RandomVariable (Rvector_borel_sa (S n)) Rbar_borel_sa g /\
-         rv_eq (fun x => Rbar.Finite (Y x)) (g ∘ (make_vector_from_seq X (S n))).
+      exists g : vector R (S n) -> R,
+         RandomVariable (Rvector_borel_sa (S n)) borel_sa g /\
+         rv_eq Y (g ∘ (make_vector_from_seq X (S n))).
     Proof.
       generalize (filtrate_history_vector_rv X n); intros.
-      assert (RandomVariable (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))) Rbar_borel_sa Y).
+      assert (RandomVariable (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))) borel_sa Y).
       {
-        rewrite <- H.
-        now apply Real_Rbar_rv.
+        now rewrite <- H.
       }
       assert (RandomVariable dom (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
       {
@@ -4569,31 +4683,16 @@ Section rv_expressible.
       apply measurable_is_expressible; trivial.
    Qed.
 
-    Lemma measurable_sequence_is_expressible' {Ts : Type} 
-          {dom : SigmaAlgebra Ts}
-          (X : nat -> Ts -> R) (n : nat) 
-          (Y : Ts -> R)
-          {rv_X : forall n, RandomVariable dom borel_sa (X n)}
-          {rv_y : RandomVariable (filtration_history_sa X n) borel_sa Y} :
-      { g : vector R (S n) -> Rbar |
-         RandomVariable (Rvector_borel_sa (S n)) Rbar_borel_sa g /\
-         rv_eq (fun x => Rbar.Finite (Y x)) (g ∘ (make_vector_from_seq X (S n) ))}.
-    Proof.
-      apply constructive_indefinite_description.
-      now apply measurable_sequence_is_expressible.
-    Qed.
-
     Lemma expressible_sequence_is_measurable {Ts : Type} 
           (X : nat -> Ts -> R) (n : nat) 
           (Y : Ts -> R)
-          (g : vector R (S n) -> Rbar)
-          {rv_g : RandomVariable (Rvector_borel_sa (S n)) Rbar_borel_sa g} :
-      rv_eq (fun x => Rbar.Finite (Y x)) (g ∘ (make_vector_from_seq X (S n) )) ->
+          (g : vector R (S n) -> R)
+          {rv_g : RandomVariable (Rvector_borel_sa (S n)) borel_sa g} :
+      rv_eq Y (g ∘ (make_vector_from_seq X (S n) )) ->
       RandomVariable (filtration_history_sa X n) borel_sa Y.
     Proof.
       intros.
       rewrite filtrate_history_vector_rv.
-      rewrite borel_Rbar_borel.
       now apply expressible_is_measurable with (g0 := g).
     Qed.
       
