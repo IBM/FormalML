@@ -997,7 +997,7 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
 End vector_ops.
 
 Lemma Rvector_borel_singleton {n} (c:vector R n) :
-  sa_sigma (SigmaAlgebra:=Rvector_borel_sa n) (pre_event_singleton c).
+  sa_sigma (Rvector_borel_sa n) (pre_event_singleton c).
 Proof.
   apply generated_sa_sub.
   red; intros.

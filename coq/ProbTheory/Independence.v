@@ -147,7 +147,7 @@ Section sigma_indep.
       ; apply independent_events_proper; intros ?; simpl; reflexivity.
     - unfold independent_eventcoll_class; intros ???; intros.
       split; intros [pf HH].
-      + assert (pf':sa_sigma y).
+      + assert (pf':sa_sigma _ y).
         {
           now generalize pf; apply sa_proper.
         }
@@ -156,7 +156,7 @@ Section sigma_indep.
         generalize (HH B saB).
         apply independent_events_proper; intros ?; simpl; try reflexivity.
         symmetry; apply H.
-      + assert (pf':sa_sigma x).
+      + assert (pf':sa_sigma _ x).
         {
           now generalize pf; apply sa_proper.
         }
@@ -174,7 +174,7 @@ Section sigma_indep.
       apply independent_events_proper; intros ?; simpl; reflexivity.
     - unfold independent_eventcoll_class.
       intros ???.
-      assert (sas:forall x, sa_sigma (an x)).
+      assert (sas:forall x, sa_sigma _ (an x)).
       {
         now intros x; destruct (H x).
       } 

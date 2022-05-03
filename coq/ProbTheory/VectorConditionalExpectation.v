@@ -99,7 +99,7 @@ Section vec_cond_exp.
         {isfe:vector_IsFiniteExpectation prts f}
         {P:pre_event Ts}
         (dec:dec_pre_event P)
-        (saP:sa_sigma (SigmaAlgebra := dom2) P) :
+        (saP:sa_sigma dom2 P) :
     vector_Expectation (vecrvmult f (fun x => (vector_const (EventIndicator dec x) n))) =
     vector_Expectation (vecrvmult (vector_FiniteConditionalExpectation f)
                                   (fun x => (vector_const (EventIndicator dec x) n))).
@@ -128,7 +128,7 @@ Section vec_cond_exp.
         {rv : RandomVariable dom (Rvector_borel_sa n) f}
         {isfe:vector_IsFiniteExpectation prts f}
         {P:pre_event Ts}
-        (saP:sa_sigma (SigmaAlgebra := dom2) P) :
+        (saP:sa_sigma dom2 P) :
     vector_Expectation (vecrvmult f (fun x => (vector_const (EventIndicator (classic_dec P) x) n))) =
     vector_Expectation (vecrvmult (vector_FiniteConditionalExpectation f)
                                   (fun x => (vector_const (EventIndicator (classic_dec P) x) n))).

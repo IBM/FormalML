@@ -19,7 +19,7 @@ Class RandomVariable {Ts:Type} {Td:Type}
   :=
   (* for every element B in the sigma algebra, 
        the preimage of rv_X on B is an event in the probability space *)
-  rv_preimage_sa: forall (B: event cod), sa_sigma (event_preimage rv_X B).
+  rv_preimage_sa: forall (B: event cod), sa_sigma _ (event_preimage rv_X B).
 
 Definition rv_preimage
            {Ts:Type}
@@ -76,7 +76,7 @@ Qed.
 Class HasPreimageSingleton {Td} (σ:SigmaAlgebra Td)
   := sa_preimage_singleton :
     forall {Ts} {σs:SigmaAlgebra Ts} (rv_X:Ts->Td) {rv : RandomVariable σs σ rv_X} c,
-      sa_sigma (pre_event_preimage rv_X (pre_event_singleton c)).
+      sa_sigma _ (pre_event_preimage rv_X (pre_event_singleton c)).
 
 Definition preimage_singleton {Ts Td} {σs:SigmaAlgebra Ts} {σd:SigmaAlgebra Td} {has_pre:HasPreimageSingleton σd}
            (rv_X:Ts->Td) 
@@ -222,7 +222,7 @@ Section Simple.
         (frf:FiniteRangeFunction rv_X) 
         (dom: SigmaAlgebra Ts)
         (cod: SigmaAlgebra Td) :
-    (forall (c : Td), In c frf_vals -> sa_sigma (pre_event_preimage rv_X (pre_event_singleton c))) ->
+    (forall (c : Td), In c frf_vals -> sa_sigma _ (pre_event_preimage rv_X (pre_event_singleton c))) ->
     RandomVariable dom cod rv_X.
   Proof.
     intros Fs.
@@ -288,7 +288,7 @@ Section Simple.
            (x : Ts -> Td) (f : Td -> Td)
            {rvx : RandomVariable dom cod x}
            {frfx : FiniteRangeFunction x} :
-    (forall (c : Td), In c frf_vals -> sa_sigma (pre_event_preimage x (pre_event_singleton c))) ->
+    (forall (c : Td), In c frf_vals -> sa_sigma _ (pre_event_preimage x (pre_event_singleton c))) ->
     RandomVariable dom cod (fun u => f (x u)).    
   Proof.
     intros Hsingleton.
@@ -436,7 +436,7 @@ Section Event_restricted.
     red in rv.
     unfold event_preimage in *.
     unfold event_restricted_function.
-    assert (HH:sa_sigma
+    assert (HH:sa_sigma _
                  (fun a : Ts =>
                     e a /\ proj1_sig B (f a))).
     - apply sa_inter.
@@ -750,7 +750,7 @@ Section filtration_history_props.
   Lemma filtration_history_sa_iso_l_sub
         (rv1 : nat -> Ts -> Td) (f g : nat -> Td -> Td)
         (inv:forall n x, g n (f n x) = x)
-        (g_sigma:forall k s, sa_sigma s -> sa_sigma (fun x => s (g k x))) :
+        (g_sigma:forall k s, sa_sigma _ s -> sa_sigma _ (fun x => s (g k x))) :
     forall n, sa_sub (filtration_history_sa rv1 n) ((filtration_history_sa (fun n x => f n (rv1 n x)) n)).
   Proof.
     unfold filtration_history_sa.
@@ -761,7 +761,7 @@ Section filtration_history_props.
 
   Lemma filtration_history_sa_f_sub
         (rv1 : nat -> Ts -> Td) (f : nat -> Td -> Td)
-        (f_sigma:forall k s, sa_sigma s -> sa_sigma (fun x => s (f k x))) :
+        (f_sigma:forall k s, sa_sigma _ s -> sa_sigma _ (fun x => s (f k x))) :
     forall n, sa_sub ((filtration_history_sa (fun n x => f n (rv1 n x)) n)) (filtration_history_sa rv1 n).
   Proof.
     unfold filtration_history_sa.
@@ -773,8 +773,8 @@ Section filtration_history_props.
   Lemma filtration_history_sa_isos
         (rv1 : nat -> Ts -> Td) (f g : nat -> Td -> Td)
         (inv:forall n x, g n (f n x) = x)
-        (f_sigma:forall k s, sa_sigma s -> sa_sigma (fun x => s (f k x)))
-        (g_sigma:forall k s, sa_sigma s -> sa_sigma (fun x => s (g k x))) :
+        (f_sigma:forall k s, sa_sigma _ s -> sa_sigma _ (fun x => s (f k x)))
+        (g_sigma:forall k s, sa_sigma _ s -> sa_sigma _ (fun x => s (g k x))) :
     forall n, sa_equiv (filtration_history_sa rv1 n) ((filtration_history_sa (fun n x => f n (rv1 n x)) n)).
   Proof.
     unfold filtration_history_sa; intros.
@@ -1163,7 +1163,7 @@ Section indep.
 
       assert (HHc:forall n, 
                exists ye,
-                 (sa_sigma (SigmaAlgebra:=cod n) ye /\
+                 (sa_sigma (cod n) ye /\
                     forall a, A n a <-> ye (X n a))).
       {
         intros.
@@ -1185,7 +1185,7 @@ Section indep.
         * apply in_map_iff in inna.
           destruct inna as [? [??]]; subst; simpl.
           apply HHc.
-          apply (HH2 ((fun i : Idx => rv_preimage (X i) (exist sa_sigma (ye i) (proj1 (HHc i)))) x0)).
+          apply (HH2 ((fun i : Idx => rv_preimage (X i) (exist (sa_sigma _) (ye i) (proj1 (HHc i)))) x0)).
           apply in_map_iff.
           exists x0; eauto.
       + f_equal.
@@ -1230,7 +1230,7 @@ Section indep.
 
       assert (HHc:forall n, 
                exists ye,
-                 (sa_sigma (SigmaAlgebra:=cod n) ye /\
+                 (sa_sigma (cod n) ye /\
                     forall a, A n a <-> ye (X n a))).
       {
         intros.
@@ -1339,7 +1339,7 @@ Section indep.
     - destruct (eqqs A).
       specialize (H (exist _ _ (H1 (proj2_sig A)))).
       assert (event_equiv (rv_preimage X1' A)
-                          (rv_preimage X1 (exist sa_sigma A (H1 (proj2_sig A))))).
+                          (rv_preimage X1 (exist (sa_sigma _) A (H1 (proj2_sig A))))).
       {
         intro x.
         destruct A.
@@ -1347,7 +1347,7 @@ Section indep.
         now rewrite eqqx1.
       }
       assert (event_equiv (rv_preimage X2' A)
-                          (rv_preimage X2 (exist sa_sigma A (H1 (proj2_sig A))))).
+                          (rv_preimage X2 (exist (sa_sigma _) A (H1 (proj2_sig A))))).
       {
         intro x.
         destruct A.
@@ -1358,7 +1358,7 @@ Section indep.
     - destruct (eqqs A).
       specialize (H (exist _ _ (H0 (proj2_sig A)))).
       assert (event_equiv (rv_preimage X1 A)
-                          (rv_preimage X1' (exist sa_sigma A (H0 (proj2_sig A))))).
+                          (rv_preimage X1' (exist (sa_sigma _) A (H0 (proj2_sig A))))).
       {
         intro x.
         destruct A.
@@ -1366,7 +1366,7 @@ Section indep.
         now rewrite eqqx1.
       }
       assert (event_equiv (rv_preimage X2 A)
-                          (rv_preimage X2' (exist sa_sigma A (H0 (proj2_sig A))))).
+                          (rv_preimage X2' (exist (sa_sigma _) A (H0 (proj2_sig A))))).
       {
         intro x.
         destruct A.

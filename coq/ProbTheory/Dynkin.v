@@ -285,7 +285,7 @@ Section dynkin.
   Instance pi_generated_lambda_sa (C:pre_event T -> Prop) {cpi:Pi_system C} : SigmaAlgebra T
     := Pi_Lambda_sa (generated_lambda C) (pi_generated_lambda_pi C).
 
-  Instance SigmaAlgebra_Lambda (sa:SigmaAlgebra T) : Lambda_system (fun x => sa_sigma x).
+  Instance SigmaAlgebra_Lambda (sa:SigmaAlgebra T) : Lambda_system (fun x => sa_sigma _ x).
   Proof.
     constructor; simpl.
     - apply sa_all.
@@ -297,7 +297,7 @@ Section dynkin.
       now apply sa_countable_union.
   Qed.
 
-  Instance SigmaAlgebra_Pi (sa:SigmaAlgebra T) : Pi_system (fun x => sa_sigma x).
+  Instance SigmaAlgebra_Pi (sa:SigmaAlgebra T) : Pi_system (fun x => sa_sigma _ x).
   Proof.
     intros ????.
     now apply sa_inter.
@@ -381,7 +381,7 @@ Section extension_uniqueness.
         now rewrite ps_one.
       - intros ???.
         split; intros [??].
-        + assert (say:sa_sigma (SigmaAlgebra:=(@generated_sa T C)) y).
+        + assert (say:sa_sigma (@generated_sa T C) y).
           {
             now rewrite <- H.
           }
@@ -389,7 +389,7 @@ Section extension_uniqueness.
           etransitivity; [etransitivity |]; [| apply H0 | ].
           * now apply ps_proper; red; simpl; symmetry.
           * now apply ps_proper; red; simpl.
-        + assert (sax:sa_sigma (SigmaAlgebra:=(@generated_sa T C)) x).
+        + assert (sax:sa_sigma (@generated_sa T C) x).
           {
             now rewrite H.
           }
@@ -399,7 +399,7 @@ Section extension_uniqueness.
           * now apply ps_proper; red; simpl.
       - intros ? [??].
         exists (sa_complement _ x).
-        replace (exist (fun e : pre_event T => sa_sigma e) (pre_event_complement a) (sa_complement a x))
+        replace (exist (fun e : pre_event T => sa_sigma _ e) (pre_event_complement a) (sa_complement a x))
           with (event_complement (σ:=generated_sa C) (exist _ a x))
           by reflexivity.
         repeat rewrite ps_complement.
@@ -408,10 +408,10 @@ Section extension_uniqueness.
           * now apply ps_proper; red; simpl; symmetry.
           * now apply ps_proper; red; simpl.
       - intros.
-        assert (sa_an:forall x, sa_sigma (SigmaAlgebra:=(@generated_sa T C)) (an x)) by eauto.
+        assert (sa_an:forall x, sa_sigma (@generated_sa T C) (an x)) by eauto.
         exists (sa_countable_union _ sa_an).
         assert (eqq1:event_equiv
-                  (exist (fun e : pre_event T => sa_sigma e) (pre_union_of_collection an) (sa_countable_union an sa_an)) 
+                  (exist (fun e : pre_event T => sa_sigma _ e) (pre_union_of_collection an) (sa_countable_union an sa_an)) 
                   (union_of_collection (σ:=generated_sa C) (fun n => exist _ (an n) (sa_an n)))).
         {
           rewrite union_of_collection_as_pre; intros ?; simpl.
@@ -419,7 +419,7 @@ Section extension_uniqueness.
           reflexivity.
         } 
         rewrite eqq1.
-        assert (disj:collection_is_pairwise_disjoint (σ:=generated_sa C) (fun n : nat => exist sa_sigma (an n) (sa_an n))).
+        assert (disj:collection_is_pairwise_disjoint (σ:=generated_sa C) (fun n : nat => exist (sa_sigma _) (an n) (sa_an n))).
         {
           now apply collection_is_pairwise_disjoint_pre.
         }

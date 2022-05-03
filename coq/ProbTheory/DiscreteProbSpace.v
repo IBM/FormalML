@@ -90,7 +90,7 @@ Section discrete.
 
     Context {A:Type} {countableA:Countable A} (PMF:prob_mass_fun A).
 
-    Definition sa_discrete (x:pre_event A) : sa_sigma (SigmaAlgebra:=discrete_sa A) x.
+    Definition sa_discrete (x:pre_event A) : sa_sigma (discrete_sa A) x.
     Proof.
       now vm_compute.
     Qed.

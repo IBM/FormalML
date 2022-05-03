@@ -23,7 +23,7 @@ Set Bullet Behavior "Strict Subproofs".
 Section RealRandomVariables.
 
   Lemma borel_singleton (c:R) :
-    sa_sigma (SigmaAlgebra:=borel_sa) (pre_event_singleton c).
+    sa_sigma borel_sa (pre_event_singleton c).
   Proof.
     apply sa_le_pt.
     apply borel_sa_preimage2; intros.
@@ -56,7 +56,7 @@ Section RealRandomVariables.
 
     (* For the borel_sa, this is an equivalent definition *)
     Class RealMeasurable (f: Ts -> R)
-      := rmeasurable : forall (r:R), sa_sigma (fun omega : Ts => f omega <= r).
+      := rmeasurable : forall (r:R), sa_sigma _ (fun omega : Ts => f omega <= r).
 
     Instance measurable_rv (rv_X:Ts->R)
              {rm:RealMeasurable rv_X}
@@ -171,7 +171,7 @@ Section RealRandomVariables.
           {rv1: RandomVariable dom borel_sa rv_X1}         
           {rv2: RandomVariable dom borel_sa rv_X2}         
           (c1 c2 : R) :
-      sa_sigma (fun omega : Ts => rv_X1 omega = c1 /\ 
+      sa_sigma _ (fun omega : Ts => rv_X1 omega = c1 /\ 
                                   rv_X2 omega = c2).
     Proof.
       apply sa_inter.
@@ -323,9 +323,9 @@ Section RealRandomVariables.
 
     Lemma measurable_open_continuous (f : Ts -> R) (g : R -> R) :
       continuity g ->
-      (forall B: pre_event R, open_set B -> sa_sigma (pre_event_preimage f B)) ->
+      (forall B: pre_event R, open_set B -> sa_sigma _ (pre_event_preimage f B)) ->
       (forall B: pre_event R, open_set B -> 
-                              sa_sigma (pre_event_preimage (fun omega => g (f omega)) B)).
+                              sa_sigma _ (pre_event_preimage (fun omega => g (f omega)) B)).
     Proof.
       intros.
       generalize (continuity_P3 g); intros.
@@ -1298,7 +1298,7 @@ Section RealRandomVariables.
     Qed.
 
     Global Instance EventIndicator_pre_rv {P : pre_event Ts} (dec:forall x, {P x} + {~ P x}) :
-      sa_sigma P ->
+      sa_sigma _ P ->
       RandomVariable dom borel_sa (EventIndicator dec).
     Proof.
       red; intros.
@@ -1790,7 +1790,7 @@ Section RealRandomVariables.
 
   Lemma sa_le_ge_rv 
         (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
-    : sa_sigma (fun omega => rv_X omega >= x).
+    : sa_sigma _ (fun omega => rv_X omega >= x).
   Proof.
     apply sa_le_ge.
     now apply rv_measurable.
@@ -1803,7 +1803,7 @@ Section RealRandomVariables.
 
   Lemma sa_le_le_rv 
         (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
-    : sa_sigma (fun omega => rv_X omega <= x).
+    : sa_sigma _ (fun omega => rv_X omega <= x).
   Proof.
     now apply rv_measurable.
   Qed.
@@ -1815,7 +1815,7 @@ Section RealRandomVariables.
 
   Lemma sa_le_lt_rv 
         (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
-    : sa_sigma (fun omega => rv_X omega < x).
+    : sa_sigma _ (fun omega => rv_X omega < x).
   Proof.
     apply sa_le_lt.
     now apply rv_measurable.
@@ -1828,7 +1828,7 @@ Section RealRandomVariables.
   
   Lemma sa_le_gt_rv 
         (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
-    : sa_sigma (fun omega => rv_X omega > x).
+    : sa_sigma _ (fun omega => rv_X omega > x).
   Proof.
     apply sa_le_gt.
     now apply rv_measurable.
@@ -1856,7 +1856,7 @@ Section MoreRealRandomVariable.
   Lemma event_Rgt_sa (σ:SigmaAlgebra Ts) x1 x2
         {rv1:RandomVariable σ borel_sa x1}
         {rv2:RandomVariable σ borel_sa x2}
-    : sa_sigma (fun x => x1 x > x2 x).
+    : sa_sigma _ (fun x => x1 x > x2 x).
   Proof.
     apply (sa_proper _ (fun x => (rvminus x1 x2) x > 0)).
     -  red; intros.
@@ -1871,7 +1871,7 @@ Section MoreRealRandomVariable.
   Lemma event_Rge_sa (σ:SigmaAlgebra Ts) x1 x2
         {rv1:RandomVariable σ borel_sa x1}
         {rv2:RandomVariable σ borel_sa x2}
-    : sa_sigma (fun x => x1 x >= x2 x).
+    : sa_sigma _ (fun x => x1 x >= x2 x).
   Proof.
     apply (sa_proper _ (fun x => (rvminus x1 x2) x >= 0)).
     -  red; intros.
@@ -2062,7 +2062,7 @@ Section RbarRandomVariables.
   Lemma sa_pinf_Rbar
         (f : Ts -> Rbar) 
         (rv : RandomVariable dom Rbar_borel_sa f) :
-    sa_sigma (fun x => (f x) = p_infty).
+    sa_sigma _ (fun x => (f x) = p_infty).
   Proof.
     apply Rbar_sa_le_pt.
     now rewrite Rbar_borel_sa_preimage2.
@@ -2071,7 +2071,7 @@ Section RbarRandomVariables.
   Lemma sa_minf_Rbar
         (f : Ts -> Rbar) 
         (rv : RandomVariable dom Rbar_borel_sa f) :
-    sa_sigma (fun x => (f x) = m_infty).
+    sa_sigma _ (fun x => (f x) = m_infty).
   Proof.
     apply Rbar_sa_le_pt.
     now rewrite Rbar_borel_sa_preimage2.
@@ -2080,7 +2080,7 @@ Section RbarRandomVariables.
   Lemma sa_finite_Rbar
         (f : Ts -> Rbar) 
         (rv : RandomVariable dom Rbar_borel_sa f) :
-    sa_sigma (fun x => is_finite (f x)).
+    sa_sigma _ (fun x => is_finite (f x)).
   Proof.
     assert (pre_event_equiv (fun x => is_finite (f x))
                             (pre_event_complement
@@ -2289,7 +2289,7 @@ Section RbarRandomVariables.
   Proof.
     unfold RbarMeasurable; intros.
     apply Rbar_sa_ge_le; intros.
-    assert (forall (n:nat) (r:Rbar), sa_sigma (fun omega : Ts => Rbar_ge (f n omega) r)) by
+    assert (forall (n:nat) (r:Rbar), sa_sigma _ (fun omega : Ts => Rbar_ge (f n omega) r)) by
         (intros; now apply Rbar_sa_le_ge).
     assert (pre_event_equiv
               (fun omega : Ts => Rbar_ge (Inf_seq (fun n : nat => f n omega)) r0)
@@ -2509,7 +2509,7 @@ Section RbarRandomVariables.
       destruct (f x); destruct (g x); try intuition congruence.
     }
     assert (saplusnone :
-              sa_sigma (fun omega => Rbar_plus' (f omega) (g omega) = None)).
+              sa_sigma _ (fun omega => Rbar_plus' (f omega) (g omega) = None)).
     {
       rewrite plusnoneequiv.
       apply sa_union; apply sa_inter; now apply Rbar_sa_le_pt.
@@ -3469,7 +3469,7 @@ Section RbarRandomVariables.
  Lemma event_Rbar_gt_sa x1 x2
         {rv1:RandomVariable dom Rbar_borel_sa x1}
         {rv2:RandomVariable dom Rbar_borel_sa x2}
-    : sa_sigma (fun x => Rbar_gt (x1 x) (x2 x)).
+    : sa_sigma _ (fun x => Rbar_gt (x1 x) (x2 x)).
  Proof.
    assert (pre_event_equiv
              (fun x => Rbar_gt (x1 x) (x2 x))

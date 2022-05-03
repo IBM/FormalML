@@ -881,10 +881,10 @@ Section martingale.
 
 
     Class IsStoppingTime (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts)
-      := is_stopping_time : forall n, sa_sigma (SigmaAlgebra := sas n) (stopping_time_pre_event rt n).
+      := is_stopping_time : forall n, sa_sigma (sas n) (stopping_time_pre_event rt n).
 
     Definition is_stopping_time_alt (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts)
-      := forall n, sa_sigma (SigmaAlgebra := sas n) (stopping_time_pre_event_alt rt n).
+      := forall n, sa_sigma (sas n) (stopping_time_pre_event_alt rt n).
 
     (* For filtrations, the two definitions coincide *)
     Lemma is_stopping_time_as_alt  (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts) {filt:IsFiltration sas}:
@@ -1098,7 +1098,7 @@ Section martingale.
 
     Definition past_before_sa_sigma (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts)
                (a:pre_event Ts) : Prop
-      := forall n, sa_sigma (SigmaAlgebra:=sas n) (pre_event_inter a (stopping_time_pre_event rt n)).
+      := forall n, sa_sigma (sas n) (pre_event_inter a (stopping_time_pre_event rt n)).
 
     Program Global Instance past_before_sa  (rt:Ts->option nat) (sas: nat -> SigmaAlgebra Ts)
             (stop:IsStoppingTime rt sas)
@@ -1136,7 +1136,7 @@ Section martingale.
           (rt:Ts->option nat)
           (sas: nat -> SigmaAlgebra Ts)
           (stop:IsStoppingTime rt sas) :
-      forall n, sa_sigma (SigmaAlgebra:=past_before_sa rt sas stop) (stopping_time_pre_event rt n).
+      forall n, sa_sigma (past_before_sa rt sas stop) (stopping_time_pre_event rt n).
     Proof.
       intros n k.
       destruct (Nat.eq_dec n k).
@@ -1223,7 +1223,7 @@ Section martingale.
           {filt: IsFiltration sas}
           (stop1:IsStoppingTime rt1 sas)
           (stop2:IsStoppingTime rt2 sas) :
-      sa_sigma (SigmaAlgebra:=past_before_sa rt1 sas stop1) (fun x => rt1 x = rt2 x).
+      sa_sigma (past_before_sa rt1 sas stop1) (fun x => rt1 x = rt2 x).
     Proof.
       simpl.
       red; intros n.
@@ -1247,7 +1247,7 @@ Section martingale.
           {filt: IsFiltration sas}
           (stop1:IsStoppingTime rt1 sas)
           (stop2:IsStoppingTime rt2 sas) :
-      sa_sigma (SigmaAlgebra:=past_before_sa rt2 sas stop2) (fun x => rt1 x = rt2 x).
+      sa_sigma (past_before_sa rt2 sas stop2) (fun x => rt1 x = rt2 x).
     Proof.
       generalize (past_before_sa_eq_in rt2 rt1 sas stop2 stop1).
       apply sa_proper.

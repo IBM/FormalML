@@ -382,15 +382,15 @@ Qed.
 
 Lemma generated_sa_sub_sub {X:Type} (E1 E2:pre_event X -> Prop) :
   sa_sub (generated_sa E1) (generated_sa E2) <->
-  (pre_event_sub E1 (sa_sigma (SigmaAlgebra:=(generated_sa E2)))).
+  (pre_event_sub E1 (sa_sigma (generated_sa E2))).
 Proof.
   firstorder.
 Qed.
     
 Lemma generated_sa_equiv_subs {X:Type} (E1 E2:pre_event X -> Prop) :
   generated_sa E1 === generated_sa E2 <->
-  (pre_event_sub E1 (sa_sigma (SigmaAlgebra:=(generated_sa E2))) /\
-   pre_event_sub E2 (sa_sigma (SigmaAlgebra:=(generated_sa E1)))).
+  (pre_event_sub E1 (sa_sigma (generated_sa E2)) /\
+   pre_event_sub E2 (sa_sigma (generated_sa E1))).
 Proof.
   firstorder.
 Qed.
@@ -446,7 +446,7 @@ Proof.
 Qed.
 
 Theorem product_sa_sa {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (a:event sa1) (b:event sa2) :
-  sa_sigma (SigmaAlgebra:=product_sa sa1 sa2) (fun '(x,y) => a x /\ b y).
+  sa_sigma (product_sa sa1 sa2) (fun '(x,y) => a x /\ b y).
 Proof.
   apply generated_sa_sub.
   red.
@@ -511,7 +511,7 @@ Qed.
 
 Lemma dep_product_sa_sa {T₁:Type} {T₂:T₁->Type} {sa₁:SigmaAlgebra T₁} {sa₂:forall x, SigmaAlgebra (T₂ x)}
        (a:event sa₁) (b:forall a, event (sa₂ a)) :
-  sa_sigma (SigmaAlgebra:=dep_product_sa sa₁ sa₂) (fun '(existT x y) => a x /\ b x y).
+  sa_sigma (dep_product_sa sa₁ sa₂) (fun '(existT x y) => a x /\ b x y).
 Proof.
   apply generated_sa_sub.
   red.
@@ -541,7 +541,7 @@ Qed.
 Definition pullback_sa_sigma {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : pre_event X -> Prop
   := fun (xe:pre_event X) =>
        exists ye:pre_event Y,
-         sa_sigma (SigmaAlgebra:=sa) ye /\
+         sa_sigma sa ye /\
          forall a, xe a <-> ye (f a).
 
 Program Instance pullback_sa {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : SigmaAlgebra X
@@ -607,7 +607,7 @@ Proof.
 Qed.
 
 Lemma pullback_sa_pullback {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) (y:pre_event Y) :
-  sa_sigma y -> sa_sigma (SigmaAlgebra:=pullback_sa sa f) (pre_event_preimage f y).
+  sa_sigma _ y -> sa_sigma (pullback_sa sa f) (pre_event_preimage f y).
 Proof.
   simpl.
   unfold pre_event_preimage, pullback_sa_sigma.
@@ -651,7 +651,7 @@ Section isos.
 
   Lemma pullback_sa_iso_l_sub (rv1 : Ts -> Td) (f g : Td -> Td)
     (inv:forall x, g (f x) = x)
-    (g_sigma:forall s, sa_sigma s -> sa_sigma (fun x => s (g x))) :
+    (g_sigma:forall s, sa_sigma _ s -> sa_sigma _ (fun x => s (g x))) :
     sa_sub (pullback_sa _ rv1) (pullback_sa _ (fun x => f (rv1 x))).
   Proof.
     intros ? [? [??]]; simpl in *.
@@ -666,7 +666,7 @@ Section isos.
   Qed.
 
   Lemma pullback_sa_f_sub (rv1 : Ts -> Td) (f : Td -> Td)
-    (f_sigma:forall s, sa_sigma s -> sa_sigma (fun x => s (f x))) :
+    (f_sigma:forall s, sa_sigma _ s -> sa_sigma _ (fun x => s (f x))) :
     sa_sub (pullback_sa _ (fun x => f (rv1 x))) (pullback_sa _ rv1).
   Proof.
     intros ? [? [??]]; simpl in *.
@@ -677,8 +677,8 @@ Section isos.
 
   Lemma pullback_sa_isos (rv1 : Ts -> Td) (f g : Td -> Td)
     (inv:forall x, g (f x) = x)
-    (f_sigma:forall s, sa_sigma s -> sa_sigma (fun x => s (g x)))
-    (g_sigma:forall s, sa_sigma s -> sa_sigma (fun x => s (f x))) :
+    (f_sigma:forall s, sa_sigma _ s -> sa_sigma _ (fun x => s (g x)))
+    (g_sigma:forall s, sa_sigma _ s -> sa_sigma _ (fun x => s (f x))) :
     sa_equiv (pullback_sa _ rv1) (pullback_sa _ (fun x => f (rv1 x))).
   Proof.
     apply sa_equiv_subs.
@@ -738,7 +738,7 @@ Qed.
 
 Lemma union_sa_generated_l_simpl {T : Type} (a b:pre_event T -> Prop) :
   generated_sa
-    (pre_event_union (sa_sigma (SigmaAlgebra:=(generated_sa a))) b)
+    (pre_event_union (sa_sigma (generated_sa a)) b)
     ===
     generated_sa
     (pre_event_union a b).
@@ -761,7 +761,7 @@ Qed.
 
 Lemma union_sa_generated_r_simpl {T : Type} (a b:pre_event T -> Prop) :
   generated_sa
-    (pre_event_union a (sa_sigma (SigmaAlgebra:=(generated_sa b))))
+    (pre_event_union a (sa_sigma (generated_sa b)))
     ===
     generated_sa
     (pre_event_union a b).

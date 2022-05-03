@@ -4395,7 +4395,7 @@ End rv_expressible.
 
   Lemma sa_le_Rbar_gt_rv {domm}
         (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma (fun omega => Rbar_gt (rv_X omega) x).
+    : sa_sigma _ (fun omega => Rbar_gt (rv_X omega) x).
   Proof.
     apply Rbar_sa_le_gt.
     intros.
@@ -4409,7 +4409,7 @@ End rv_expressible.
 
   Lemma sa_le_Rbar_lt_rv {domm}
         (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma (fun omega => Rbar_lt (rv_X omega) x).
+    : sa_sigma _ (fun omega => Rbar_lt (rv_X omega) x).
   Proof.
     apply Rbar_sa_le_lt.
     intros.
@@ -4423,7 +4423,7 @@ End rv_expressible.
 
   Lemma sa_le_Rbar_le_rv {domm}
         (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma (fun omega => Rbar_le (rv_X omega) x).
+    : sa_sigma _ (fun omega => Rbar_le (rv_X omega) x).
   Proof.
     now apply rv_Rbar_measurable.
   Qed.
@@ -5297,7 +5297,7 @@ End rv_expressible.
 
     Lemma sa_sigma_is_ELimInf_seq (f : nat -> Ts -> Rbar) (c:Rbar)
           {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
-      sa_sigma (fun omega => is_ELimInf_seq (fun n => f n omega) c).
+      sa_sigma _ (fun omega => is_ELimInf_seq (fun n => f n omega) c).
     Proof.
       assert (pre_event_equiv
                 (fun omega => is_ELimInf_seq (fun n => f n omega) c)
@@ -5321,7 +5321,7 @@ End rv_expressible.
 
     Lemma sa_sigma_is_ELimSup_seq (f : nat -> Ts -> Rbar) (c:Rbar)
           {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
-      sa_sigma (fun omega => is_ELimSup_seq (fun n => f n omega) c).
+      sa_sigma _ (fun omega => is_ELimSup_seq (fun n => f n omega) c).
     Proof.
       assert (pre_event_equiv
                 (fun omega => is_ELimSup_seq (fun n => f n omega) c)
@@ -5345,7 +5345,7 @@ End rv_expressible.
 
     Lemma sa_sigma_is_Elim_seq (f : nat -> Ts -> Rbar) (c:Rbar)
           {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
-      sa_sigma (fun omega => is_Elim_seq (fun n => f n omega) c).
+      sa_sigma _ (fun omega => is_Elim_seq (fun n => f n omega) c).
     Proof.
       assert (pre_event_equiv
                 (fun omega : Ts => is_Elim_seq (fun n : nat => f n omega) c)

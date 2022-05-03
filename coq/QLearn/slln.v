@@ -2323,7 +2323,7 @@ Qed.
 
     Lemma sa_sigma_is_ELimInf_seq (f : nat -> Ts -> Rbar) (c:Rbar)
           {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
-      sa_sigma (fun omega => is_ELimInf_seq (fun n => f n omega) c).
+      sa_sigma _ (fun omega => is_ELimInf_seq (fun n => f n omega) c).
     Proof.
       assert (pre_event_equiv
                 (fun omega => is_ELimInf_seq (fun n => f n omega) c)
@@ -2347,7 +2347,7 @@ Qed.
 
     Lemma sa_sigma_is_ELimSup_seq (f : nat -> Ts -> Rbar) (c:Rbar)
           {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
-      sa_sigma (fun omega => is_ELimSup_seq (fun n => f n omega) c).
+      sa_sigma _ (fun omega => is_ELimSup_seq (fun n => f n omega) c).
     Proof.
       assert (pre_event_equiv
                 (fun omega => is_ELimSup_seq (fun n => f n omega) c)
@@ -2371,7 +2371,7 @@ Qed.
 
     Lemma sa_sigma_is_Elim_seq (f : nat -> Ts -> Rbar) (c:Rbar)
           {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
-      sa_sigma (fun omega => is_Elim_seq (fun n => f n omega) c).
+      sa_sigma _ (fun omega => is_Elim_seq (fun n => f n omega) c).
     Proof.
       assert (pre_event_equiv
                 (fun omega : Ts => is_Elim_seq (fun n : nat => f n omega) c)
@@ -2396,7 +2396,7 @@ Qed.
 
    Lemma sa_sigma_is_lim_seq (f : nat -> Ts -> R) (c:Rbar)
          {rv : forall n, RandomVariable dom borel_sa (f n)} :
-     sa_sigma (fun omega => is_lim_seq (fun n => f n omega) c).
+     sa_sigma _ (fun omega => is_lim_seq (fun n => f n omega) c).
    Proof.
      assert (pre_event_equiv
                (fun omega => is_lim_seq (fun n => f n omega) c)
@@ -2414,7 +2414,7 @@ Qed.
 Lemma sa_sigma_not_convergent (X : nat -> Ts -> R) (X0 : Ts -> R) (eps : posreal) (N : nat)
       {rv : forall n, RandomVariable dom borel_sa (X n)}
       {rv0 : RandomVariable dom borel_sa X0} :
-  sa_sigma (fun omega => exists n : nat, (n >= N)%nat /\ Rabs (X n omega - X0 omega) >= eps).
+  sa_sigma _ (fun omega => exists n : nat, (n >= N)%nat /\ Rabs (X n omega - X0 omega) >= eps).
 Proof.
   apply sa_countable_union; intros n.
   apply sa_inter; try apply sa_sigma_const_classic.
@@ -2430,7 +2430,7 @@ Qed.
 
 Lemma sa_sigma_not_cauchy (X : nat -> Ts -> R) (eps:posreal) (N : nat)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
-  sa_sigma (fun omega =>
+  sa_sigma _ (fun omega =>
               exists (n m : nat),
                 (n >= N)%nat /\ (m >= N)%nat /\
                 Rabs ((X n omega) - (X m omega)) >= eps) .
@@ -2451,7 +2451,7 @@ Qed.
 Lemma sa_sigma_not_full_convergent (X : nat -> Ts -> R) X0
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
   {rv0 : RandomVariable dom borel_sa X0}:
-  sa_sigma (fun omega => exists (eps : posreal), forall N:nat,
+  sa_sigma _ (fun omega => exists (eps : posreal), forall N:nat,
                   exists (n : nat),
                     (n >= N)%nat /\
                     Rabs ((X n omega) - (X0 omega)) >= eps).
@@ -2523,7 +2523,7 @@ Qed.
 
 Lemma sa_sigma_not_full_cauchy (X : nat -> Ts -> R)
       {rv : forall (n:nat), RandomVariable dom borel_sa (X n)} :
-  sa_sigma (fun omega => exists (eps : posreal), forall N:nat,
+  sa_sigma _ (fun omega => exists (eps : posreal), forall N:nat,
                   exists (n m : nat),
                     (n >= N)%nat /\ (m >= N)%nat /\
                     Rabs ((X n omega) - (X m omega)) >= eps).
@@ -2599,7 +2599,7 @@ Definition cauchy_seq_at {A : Type}(omega : A) (X : nat -> A -> R) := forall (ep
 
 Lemma sa_sigma_cauchy_descending (X : nat -> Ts -> R)(eps : posreal)
       {rv : forall n, RandomVariable dom borel_sa (X n)}:
-  forall n, let E := fun n => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
+  forall n, let E := fun n => exist (sa_sigma _) _ (sa_sigma_not_cauchy X eps n) in
     event_sub (E (S n)) (E n).
 Proof.
   intros n E.
@@ -2611,8 +2611,8 @@ Qed.
 
 Lemma sa_sigma_cauchy_inter_event_sub (X : nat -> Ts -> R) {eps1 eps2 : posreal}
       {rv : forall n, RandomVariable dom borel_sa (X n)} (Heps : eps2 < eps1) (n : nat):
-  event_sub (inter_of_collection (fun n => exist sa_sigma _ (sa_sigma_not_cauchy X eps1 n)))
-            (inter_of_collection (fun n => exist sa_sigma _ (sa_sigma_not_cauchy X eps2 n))).
+  event_sub (inter_of_collection (fun n => exist (sa_sigma _) _ (sa_sigma_not_cauchy X eps1 n)))
+            (inter_of_collection (fun n => exist (sa_sigma _) _ (sa_sigma_not_cauchy X eps2 n))).
 Proof.
   repeat red. intros omega H.
   repeat red in H. intros m.
@@ -2649,10 +2649,10 @@ Lemma ps_union_countable_union_iff (coll : nat -> event dom):
  Lemma almost_convergent_iff (X : nat -> Ts -> R) X0
        {rv : forall n, RandomVariable dom borel_sa (X n)}
    {rv0 : RandomVariable dom borel_sa X0}:
-   event_equiv ((exist sa_sigma _ (sa_sigma_not_full_convergent X X0)))
+   event_equiv ((exist (sa_sigma _) _ (sa_sigma_not_full_convergent X X0)))
                (union_of_collection
                   (fun m => inter_of_collection
-                           (fun k => exist sa_sigma _ (sa_sigma_not_convergent X X0 (mkposreal (/(1 + INR m)) (recip_pos _)) k)))).
+                           (fun k => exist (sa_sigma _) _ (sa_sigma_not_convergent X X0 (mkposreal (/(1 + INR m)) (recip_pos _)) k)))).
  Proof.
     simpl.
    intros omega. simpl.
@@ -2685,10 +2685,10 @@ Lemma ps_union_countable_union_iff (coll : nat -> event dom):
 
  Lemma almost_cauchy_iff (X : nat -> Ts -> R)
     {rv : forall n, RandomVariable dom borel_sa (X n)}:
-   event_equiv ((exist sa_sigma _ (sa_sigma_not_full_cauchy X)))
+   event_equiv ((exist (sa_sigma _) _ (sa_sigma_not_full_cauchy X)))
                (union_of_collection
                   (fun m => inter_of_collection
-                           (fun k => exist sa_sigma _ (sa_sigma_not_cauchy X (mkposreal (/(1 + INR m)) (recip_pos _)) k)))).
+                           (fun k => exist (sa_sigma _) _ (sa_sigma_not_cauchy X (mkposreal (/(1 + INR m)) (recip_pos _)) k)))).
  Proof.
    simpl.
    intros omega. simpl.
@@ -2735,9 +2735,9 @@ Lemma almost_cauchy_seq_at_iff (X : nat -> Ts -> R)
   almost _ (fun omega => cauchy_seq_at omega X) <->
   (forall (eps:posreal),
       Lim_seq (fun N =>
-                 ps_P (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))) = 0).
+                 ps_P (exist (sa_sigma _) _ (sa_sigma_not_cauchy X eps N))) = 0).
 Proof.
-  assert (H1 : forall (eps: posreal),let E := fun n => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
+  assert (H1 : forall (eps: posreal),let E := fun n => exist (sa_sigma _) _ (sa_sigma_not_cauchy X eps n) in
                                 is_lim_seq (fun k => ps_P (E k)) (ps_P (inter_of_collection E))).
   {
     intros eps E.
@@ -2760,7 +2760,7 @@ Proof.
     now exists eps.
   + (* forall 0<δ, P(B_δ) = 0*)
     assert (Hinter : forall eps:posreal, let E :=
-         fun n : nat => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
+         fun n : nat => exist (sa_sigma _) _ (sa_sigma_not_cauchy X eps n) in
                                     (ps_P (inter_of_collection E)) = 0).
     {
       intros eps E.
@@ -2771,7 +2771,7 @@ Proof.
     clear H.
     rewrite almost_alt_eq.
     unfold almost_alt.
-    exists (exist sa_sigma _ (sa_sigma_not_full_cauchy X)).
+    exists (exist (sa_sigma _) _ (sa_sigma_not_full_cauchy X)).
     split.
     ++ rewrite almost_cauchy_iff.
        rewrite <-ps_union_countable_union_iff.
@@ -2787,9 +2787,9 @@ Lemma almost_cauchy_is_lim_seq_iff (X : nat -> Ts -> R)
   almost _ (fun omega => cauchy_seq_at omega X) <->
   (forall (eps:posreal),
       is_lim_seq (fun N =>
-                 ps_P (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))) 0).
+                 ps_P (exist (sa_sigma _) _ (sa_sigma_not_cauchy X eps N))) 0).
 Proof.
-  assert (H1 : forall (eps: posreal),let E := fun n => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
+  assert (H1 : forall (eps: posreal),let E := fun n => exist (sa_sigma _) _ (sa_sigma_not_cauchy X eps n) in
                                 is_lim_seq (fun k => ps_P (E k)) (ps_P (inter_of_collection E))).
   {
     intros eps E.
@@ -2804,7 +2804,7 @@ Proof.
     specialize (H1 eps). simpl in H1.
     enough (Hpsp : ps_P (
                     inter_of_collection(
-                        fun n => (exist sa_sigma _ (sa_sigma_not_cauchy X eps n)))) = 0).
+                        fun n => (exist (sa_sigma _) _ (sa_sigma_not_cauchy X eps n)))) = 0).
     - now rewrite <-Hpsp.
     - apply ps_P_sub_zero with E; trivial.
       intros omega.
@@ -2814,7 +2814,7 @@ Proof.
       now exists eps.
   + (* forall 0<δ, P(B_δ) = 0*)
     assert (Hinter : forall eps:posreal, let E :=
-         fun n : nat => exist sa_sigma _ (sa_sigma_not_cauchy X eps n) in
+         fun n : nat => exist (sa_sigma _) _ (sa_sigma_not_cauchy X eps n) in
                                     (ps_P (inter_of_collection E)) = 0).
     {
       intros eps E.
@@ -2825,7 +2825,7 @@ Proof.
     clear H.
     rewrite almost_alt_eq.
     unfold almost_alt.
-    exists (exist sa_sigma _ (sa_sigma_not_full_cauchy X)).
+    exists (exist (sa_sigma _) _ (sa_sigma_not_full_cauchy X)).
     split.
     ++ rewrite almost_cauchy_iff.
        rewrite <-ps_union_countable_union_iff.
@@ -2840,9 +2840,9 @@ Lemma almost_is_lim_seq_iff (X : nat -> Ts -> R) X0
   almost _ (fun omega => is_lim_seq (fun n => X n omega) (X0 omega)) <->
   (forall (eps:posreal),
       is_lim_seq (fun N =>
-                    ps_P (exist sa_sigma _ (sa_sigma_not_convergent X X0 eps N))) 0).
+                    ps_P (exist (sa_sigma _) _ (sa_sigma_not_convergent X X0 eps N))) 0).
 Proof.
-  assert (H1 : forall (eps: posreal),let E := fun n => exist sa_sigma _
+  assert (H1 : forall (eps: posreal),let E := fun n => exist (sa_sigma _) _
                                                      (sa_sigma_not_convergent X X0 eps n) in
                                 is_lim_seq (fun k => ps_P (E k)) (ps_P (inter_of_collection E))).
   {
@@ -2859,7 +2859,7 @@ Proof.
     specialize (H1 eps). simpl in H1.
     enough (Hpsp : ps_P (
                     inter_of_collection(
-                        fun n => (exist sa_sigma _ (sa_sigma_not_convergent X X0 eps n)))) = 0).
+                        fun n => (exist (sa_sigma _) _ (sa_sigma_not_convergent X X0 eps n)))) = 0).
     - now rewrite <-Hpsp.
     - apply ps_P_sub_zero with E; trivial.
       intros omega.
@@ -2871,7 +2871,7 @@ Proof.
       now unfold R_dist.
   + (* forall 0<δ, P(B_δ) = 0*)
     assert (Hinter : forall eps:posreal, let E :=
-         fun n : nat => exist sa_sigma _ (sa_sigma_not_convergent X X0 eps n) in
+         fun n : nat => exist (sa_sigma _) _ (sa_sigma_not_convergent X X0 eps n) in
                                     (ps_P (inter_of_collection E)) = 0).
     {
       intros eps E.
@@ -2882,7 +2882,7 @@ Proof.
     clear H.
     rewrite almost_alt_eq.
     unfold almost_alt.
-    exists (exist sa_sigma _ (sa_sigma_not_full_convergent X X0)).
+    exists (exist (sa_sigma _) _ (sa_sigma_not_full_convergent X X0)).
     split.
     ++ rewrite almost_convergent_iff.
        rewrite <-ps_union_countable_union_iff.
@@ -3187,7 +3187,7 @@ Qed.
     Lemma Ash_6_2_1_helper6a (X : nat -> Ts -> R) (eps : posreal) (N : nat) 
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))} :
       event_sub
-        (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))
+        (exist (sa_sigma _) _ (sa_sigma_not_cauchy X eps N))
         (union_of_collection (fun k => event_ge dom (rvabs (rvminus (X (k + (S N))%nat) (X N))) (eps/2))).
       Proof.
         unfold rvabs.
@@ -3222,7 +3222,7 @@ Qed.
       {rv : forall (n:nat), RandomVariable dom borel_sa (X (n))} :
       event_sub
         (union_of_collection (fun k => event_ge dom (rvabs (rvminus (X (k + (S N))%nat) (X N))) eps))
-        (exist sa_sigma _ (sa_sigma_not_cauchy X eps N)).
+        (exist (sa_sigma _) _ (sa_sigma_not_cauchy X eps N)).
       Proof.
         unfold rvabs.
         intro x; simpl; intros.
@@ -3239,7 +3239,7 @@ Qed.
     (forall (eps:posreal), 
         is_lim_seq (fun m => ps_P (union_of_collection (fun k => event_ge dom (rvabs (rvminus (X (k + (S m))%nat) (X m))) eps))) 0) <->
     (forall (eps:posreal), 
-        is_lim_seq (fun N => ps_P (exist sa_sigma _ (sa_sigma_not_cauchy X eps N))) 0).
+        is_lim_seq (fun N => ps_P (exist (sa_sigma _) _ (sa_sigma_not_cauchy X eps N))) 0).
     Proof.
       split; intros.
       - generalize (is_pos_div_2 eps); intros.
@@ -3263,7 +3263,7 @@ Qed.
            (u := const 0)
            (w :=  (fun N : nat =>
          ps_P
-           (exist sa_sigma
+           (exist (sa_sigma _)
               (fun omega : Ts =>
                exists n m : nat,
                  (n >= N)%nat /\ (m >= N)%nat /\ Rabs (X n omega - X m omega) >= eps)
@@ -5199,10 +5199,10 @@ Qed.
      specialize (H0 (exist _ _ H1)).
      assert (event_equiv
                (event_ge dom (rvabs (X i)) r)
-               (rv_preimage (Rabs ∘ X i) (exist sa_sigma (fun x : R => x >= r) H1))) by (now simpl).
+               (rv_preimage (Rabs ∘ X i) (exist (sa_sigma _) (fun x : R => x >= r) H1))) by (now simpl).
      assert (event_equiv
                (event_ge dom (rvabs (X j)) r)
-               (rv_preimage (Rabs ∘ X j) (exist sa_sigma (fun x : R => x >= r) H1))) by (now simpl).
+               (rv_preimage (Rabs ∘ X j) (exist (sa_sigma _) (fun x : R => x >= r) H1))) by (now simpl).
      now rewrite H2, H3.
    Qed.
 

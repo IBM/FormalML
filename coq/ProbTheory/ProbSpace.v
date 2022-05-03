@@ -900,7 +900,7 @@ Section conditional_probability.
   Global Program Instance event_restricted_sigma (e:event σ) : SigmaAlgebra (event_restricted_domain e)
     := {
     sa_sigma (A:pre_event (event_restricted_domain e)) 
-    := sa_sigma (fun a:T => exists (a':event_restricted_domain e), proj1_sig a' = a /\ A (a'))
+    := sa_sigma _ (fun a:T => exists (a':event_restricted_domain e), proj1_sig a' = a /\ A (a'))
       }.
   Next Obligation.
     apply sa_countable_union in H.
@@ -958,7 +958,7 @@ Section conditional_probability.
     := (fun a:T => exists (a':event_restricted_domain e), proj1_sig a' = a /\ A (a')).
 
   Lemma sa_pre_event_restricted_event_lift  (e:event σ) (A:event (event_restricted_sigma e)) 
-    : sa_sigma (fun a:T => exists (a':event_restricted_domain e), proj1_sig a' = a /\ A (a')).
+    : sa_sigma _ (fun a:T => exists (a':event_restricted_domain e), proj1_sig a' = a /\ A (a')).
   Proof.
     apply (proj2_sig A).
   Qed.
@@ -971,7 +971,7 @@ Section conditional_probability.
     := fun (a':event_restricted_domain e) => f (proj1_sig a').
 
   Lemma sa_pre_event_restricted_event (e f :event σ) : 
-    sa_sigma (event_restricted_pre_event e f).
+    sa_sigma _ (event_restricted_pre_event e f).
   Proof.
     unfold sa_sigma; simpl.
     apply sa_proper with (x := event_inter e f).

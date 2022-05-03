@@ -3070,7 +3070,7 @@ Section complete.
         {rrv:RandomVariable dom Rbar_borel_sa f} :
     1 <= n ->
     IsLp_Rbar prts n f ->
-    ps_P (exist sa_sigma _ (sa_finite_Rbar f rrv)) = 1.    
+    ps_P (exist (sa_sigma _) _ (sa_finite_Rbar f rrv)) = 1.    
   Proof.
     intros.
     apply Rbar_IsLp_IsFiniteExpectation in H0; trivial.

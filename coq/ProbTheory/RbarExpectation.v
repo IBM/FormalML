@@ -445,7 +445,7 @@ Section RbarExpectation.
   Lemma sigma_f_Rbar_ge_g (f g : Ts -> Rbar)
         {rvf:RandomVariable dom Rbar_borel_sa f}
         {rvg:RandomVariable dom Rbar_borel_sa g} :
-    sa_sigma (fun omega : Ts => Rbar_ge (f omega) (g omega)).
+    sa_sigma _ (fun omega : Ts => Rbar_ge (f omega) (g omega)).
   Proof.
     assert (pre_event_equiv (fun omega : Ts => Rbar_ge (f omega) (g omega))
                             (fun omega : Ts => Rbar_le ((Rbar_rvminus g f) omega) 0)).
@@ -499,7 +499,7 @@ Section RbarExpectation.
     :
       (forall (n:nat), Rbar_rv_le (Xn n) (Xn (S n))) ->
       (forall (omega:Ts), cphi omega = 0 \/ Rbar_lt (cphi omega) ((Rbar_rvlim Xn) omega)) ->
-      (forall (n:nat), sa_sigma (fun (omega:Ts) => Rbar_ge (Xn n omega) (cphi omega))) /\
+      (forall (n:nat), sa_sigma _ (fun (omega:Ts) => Rbar_ge (Xn n omega) (cphi omega))) /\
       pre_event_equiv (pre_union_of_collection (fun n => fun (omega:Ts) => (Rbar_ge (Xn n omega) (cphi omega)))) 
                   pre_Ω.
   Proof.
@@ -587,7 +587,7 @@ Section RbarExpectation.
   Proof.
     intros.
     rewrite <- (simple_NonnegExpectation cphi).
-    assert (sa1:forall n,  sa_sigma (fun omega : Ts => Rbar_ge (Xn n omega) (cphi omega))).
+    assert (sa1:forall n,  sa_sigma _ (fun omega : Ts => Rbar_ge (Xn n omega) (cphi omega))).
     { 
       intros.
       apply sigma_f_Rbar_ge_g; trivial.
@@ -2174,7 +2174,7 @@ Qed.
                   (@EventIndicator Ts (fun x : Ts => @eq Rbar (f x) p_infty)
                                    (fun x : Ts => pinf_Indicator_obligation_1 f x)) H1 X)
       with
-        (ps_P (exist sa_sigma (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv))) in H0.
+        (ps_P (exist (sa_sigma _) (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv))) in H0.
     apply H0.
     rewrite SimpleExpectation_pf_irrel with (frf2 := X) in H3.
     symmetry.
@@ -2186,7 +2186,7 @@ Qed.
         (rv : RandomVariable dom Rbar_borel_sa f) 
         (fpos : Rbar_NonnegativeFunction f) :
     is_finite (Rbar_NonnegExpectation f) ->
-    ps_P (exist sa_sigma _ (sa_pinf_Rbar f rv)) = 0.
+    ps_P (exist (sa_sigma _) _ (sa_pinf_Rbar f rv)) = 0.
      Proof.
        intros.
        generalize (finite_Rbar_NonnegExpectation_le_inf2 f rv fpos H); intros.
@@ -2194,11 +2194,11 @@ Qed.
        simpl in H0.
        destruct (Rlt_dec 
                    0
-                   (ps_P (exist sa_sigma (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv)))).
+                   (ps_P (exist (sa_sigma _) (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv)))).
        - assert (0 <
                  ((real (Rbar_NonnegExpectation f))+1)
                    /
-                   (ps_P (exist sa_sigma (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv)))).
+                   (ps_P (exist (sa_sigma _) (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv)))).
          + unfold Rdiv.
            apply Rmult_lt_0_compat.
            generalize (Rbar_NonnegExpectation_pos f); intros.
@@ -2212,8 +2212,8 @@ Qed.
            rewrite Rinv_l in H0.
            lra.
            now apply Rgt_not_eq.
-       - generalize (ps_pos (exist sa_sigma (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv))); intros.
-         assert (0 >= ps_P (exist sa_sigma (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv))) by lra.
+       - generalize (ps_pos (exist (sa_sigma _) (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv))); intros.
+         assert (0 >= ps_P (exist (sa_sigma _) (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv))) by lra.
          intuition.
    Qed.
 
@@ -2222,14 +2222,14 @@ Qed.
         (rv : RandomVariable dom Rbar_borel_sa f) 
         (fpos : Rbar_NonnegativeFunction f) :
     is_finite (Rbar_NonnegExpectation f) ->
-    ps_P (exist sa_sigma _ (sa_finite_Rbar f rv)) = 1.
+    ps_P (exist (sa_sigma _) _ (sa_finite_Rbar f rv)) = 1.
   Proof.
     intros.
     generalize (finite_Rbar_NonnegExpectation_never_inf f rv fpos H); intros.
     assert (event_equiv
-              (exist sa_sigma (fun x : Ts => is_finite (f x)) (sa_finite_Rbar f rv))
+              (exist (sa_sigma _) (fun x : Ts => is_finite (f x)) (sa_finite_Rbar f rv))
               (event_complement
-                 (exist sa_sigma (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv)))).
+                 (exist (sa_sigma _) (fun x : Ts => f x = p_infty) (sa_pinf_Rbar f rv)))).
     - intro x.
       simpl.
       unfold pre_event_complement.
@@ -2259,7 +2259,7 @@ Qed.
   Proof.
     intros.
     generalize (finite_Rbar_NonnegExpectation_almostR2_finite f rv fpos H); intros.
-    exists  (exist sa_sigma (fun x : Ts => is_finite (f x)) (sa_finite_Rbar f rv)).
+    exists  (exist (sa_sigma _) (fun x : Ts => is_finite (f x)) (sa_finite_Rbar f rv)).
     split; trivial.
   Qed.
 
@@ -2330,7 +2330,7 @@ Qed.
         (f : Ts -> Rbar)
         (rv : RandomVariable dom Rbar_borel_sa f) :
     Rbar_IsFiniteExpectation f ->
-    ps_P (exist sa_sigma _ (sa_finite_Rbar f rv)) = 1.
+    ps_P (exist (sa_sigma _) _ (sa_finite_Rbar f rv)) = 1.
   Proof.
     intros.
     generalize (finite_Rbar_NonnegExpectation_almostR2_finite (Rbar_rvabs f) (Rbar_rvabs_rv f) (Rbar_rvabs_nnf f)); intros.
@@ -2342,9 +2342,9 @@ Qed.
       now unfold Rbar_rvabs, is_finite; destruct (f x); simpl.
     }
     assert (event_equiv
-              (exist sa_sigma (fun x : Ts => is_finite (Rbar_rvabs f x))
+              (exist (sa_sigma _) (fun x : Ts => is_finite (Rbar_rvabs f x))
                      (sa_finite_Rbar (Rbar_rvabs f) (Rbar_rvabs_rv f)))
-              (exist sa_sigma (fun x : Ts => is_finite (f x)) (sa_finite_Rbar f rv))).
+              (exist (sa_sigma _) (fun x : Ts => is_finite (f x)) (sa_finite_Rbar f rv))).
     easy.
     erewrite <- ps_proper; try eapply H2.
     apply H0.
@@ -2781,7 +2781,7 @@ Qed.
 
   Global Instance Rbar_IsFiniteExpectation_indicator f {P} (dec:dec_pre_event P)
        {rv : RandomVariable dom Rbar_borel_sa f}:
-  sa_sigma P ->
+  sa_sigma _ P ->
   Rbar_IsFiniteExpectation f ->
   Rbar_IsFiniteExpectation (Rbar_rvmult f (EventIndicator dec)).
 Proof.
@@ -4117,7 +4117,7 @@ Qed.
             generalize (pofrf x); simpl; intros HH.
             destruct (rv_X x); simpl; rbar_prover; intuition (try invcs H1; subst; try lra; try congruence).
           }
-          assert (sa2:sa_sigma (pre_event_complement (fun x : Ts => rv_X x = 0))).
+          assert (sa2:sa_sigma _ (pre_event_complement (fun x : Ts => rv_X x = 0))).
           {
             rewrite <- H0.
             apply (sa_pinf_Rbar (Rbar_rvmult (const p_infty) rv_X) rvm).

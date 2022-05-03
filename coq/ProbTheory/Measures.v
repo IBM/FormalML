@@ -209,7 +209,7 @@ Section measure.
   Qed.
 
   Class is_complete_measure (μ:event σ -> Rbar) {μ_meas:is_measure μ}
-    := measure_is_complete : forall a b, pre_event_sub a (event_pre b) -> μ b = 0 -> sa_sigma a.
+    := measure_is_complete : forall a b, pre_event_sub a (event_pre b) -> μ b = 0 -> sa_sigma _ a.
 
 End measure.
 
@@ -2538,7 +2538,7 @@ Section caratheodory_semi.
                                                   _ has_none none))
                        (outer_λ (premeasure_of_semipremeasure λ)).
 
-  Lemma semi_σ_in : pre_event_sub salg_in (sa_sigma (SigmaAlgebra:=semi_σ)).
+  Lemma semi_σ_in : pre_event_sub salg_in (sa_sigma semi_σ).
   Proof.
     intros ??.
     simpl.
@@ -2550,7 +2550,7 @@ Section caratheodory_semi.
     now simpl in HH.
   Qed.
 
-  Lemma semi_σ_sa_sigma (x:salg_set SAlg) : sa_sigma x.
+  Lemma semi_σ_sa_sigma (x:salg_set SAlg) : sa_sigma _ x.
   Proof.
     destruct x; simpl.
     now apply semi_σ_in.

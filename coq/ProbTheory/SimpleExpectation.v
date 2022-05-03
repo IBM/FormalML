@@ -199,7 +199,7 @@ Section SimpleExpectation_sec.
         (rv_X : Ts -> R)
         {rv : RandomVariable dom borel_sa rv_X}
         (E : event dom) (l : list R):
-    sa_sigma E ->
+    sa_sigma _ E ->
     list_sum
       (map (fun v : R => v * ps_P (preimage_singleton rv_X v)) l) = 
     list_sum
@@ -1390,7 +1390,7 @@ Section SimpleConditionalExpectation.
 
   Lemma SimpleExpectation_pre_EventIndicator
         {P : pre_event Ts}
-        (sa_P:sa_sigma P)
+        (sa_P:sa_sigma _ P)
         (dec: forall x, {P x} + {~ P x}) :
     SimpleExpectation (EventIndicator dec)
                       (rv:=EventIndicator_pre_rv _ dec sa_P)
@@ -2242,7 +2242,7 @@ Section SimpleConditionalExpectation.
         (rv_X : Ts -> Td)
         {rv : RandomVariable dom cod rv_X}
         {frf : FiniteRangeFunction rv_X}
-        (has_singles: forall x, sa_sigma (SigmaAlgebra:=cod) (pre_event_singleton x))
+        (has_singles: forall x, sa_sigma cod (pre_event_singleton x))
         (l : list (event dom))
         (isp:is_pre_partition_list (map event_pre l)) :
     partition_measurable rv_X l -> RandomVariable (list_partition_sa (map event_pre l)
@@ -2259,7 +2259,7 @@ Section SimpleConditionalExpectation.
     + intros n.
       unfold pre_list_collection.
       destruct (@nth_in_or_default (pre_event Ts) n (map event_pre l) pre_event_none).
-      * replace (@pre_event_none Ts) with (proj1_sig (P:=fun e : pre_event Ts => sa_sigma e) (@event_none Ts dom)) in i by reflexivity.
+      * replace (@pre_event_none Ts) with (proj1_sig (P:=fun e : pre_event Ts => sa_sigma _ e) (@event_none Ts dom)) in i by reflexivity.
         rewrite map_nth in i.
         apply in_map_iff in i.
         destruct i as [? [eqq inn]]; subst.
@@ -2277,7 +2277,7 @@ Section SimpleConditionalExpectation.
            rewrite csub; trivial.
            unfold event_pre in eqq.
            rewrite eqq.
-           replace (@pre_event_none Ts) with (proj1_sig (P:=fun e : pre_event Ts => sa_sigma e) (@event_none Ts dom)) in H0  by reflexivity.
+           replace (@pre_event_none Ts) with (proj1_sig (P:=fun e : pre_event Ts => sa_sigma _ e) (@event_none Ts dom)) in H0  by reflexivity.
            now rewrite map_nth in H0.
         -- right.
            intros ?.
@@ -2310,7 +2310,7 @@ Section SimpleConditionalExpectation.
         (rv_X : Ts -> Td)
         {rv : RandomVariable dom cod rv_X}
         {frf : FiniteRangeFunction rv_X}
-        (has_singles: forall x, sa_sigma (SigmaAlgebra:=cod) (pre_event_singleton x))
+        (has_singles: forall x, sa_sigma cod (pre_event_singleton x))
         (l : list (event dom))
         (isp:is_pre_partition_list (map event_pre l)) :
     RandomVariable (list_partition_sa (map event_pre l) isp) cod rv_X -> partition_measurable rv_X l.
@@ -2390,7 +2390,7 @@ Section SimpleConditionalExpectation.
         (rv_X : Ts -> Td)
         {rv : RandomVariable dom cod rv_X}
         {frf : FiniteRangeFunction rv_X}
-        (has_singles: forall x, sa_sigma (SigmaAlgebra:=cod) (pre_event_singleton x))
+        (has_singles: forall x, sa_sigma cod (pre_event_singleton x))
         (l : list (event dom))
         (isp:is_pre_partition_list (map event_pre l)) :
     partition_measurable rv_X l <-> RandomVariable (list_partition_sa (map event_pre l)
@@ -2916,20 +2916,20 @@ Section indep.
       reflexivity.
     }
 
-    assert (saXd : forall d, sa_sigma (fun omega => X omega = d)).
+    assert (saXd : forall d, sa_sigma _(fun omega => X omega = d)).
     {
       intros.
       apply sa_le_pt.
       now apply sa_le_le_rv.
     } 
-    assert (saYc : forall c, sa_sigma (fun omega => Y omega = c)).
+    assert (saYc : forall c, sa_sigma _(fun omega => Y omega = c)).
     {
       intros.
       apply sa_le_pt.
       now apply sa_le_le_rv.
     } 
 
-    assert (saYXcd : forall c d, sa_sigma (fun omega0 : Ts => X omega0 = d /\ Y omega0 = c)).
+    assert (saYXcd : forall c d, sa_sigma _ (fun omega0 : Ts => X omega0 = d /\ Y omega0 = c)).
     {
       intros.
       now apply sa_inter.
@@ -2992,13 +2992,13 @@ Section indep.
       (list_sum
          (map
             (fun c : R =>
-               c * ps_P (exist sa_sigma (fun omega : Ts => Y omega = c) (saYc c)))
+               c * ps_P (exist (sa_sigma _) (fun omega : Ts => Y omega = c) (saYc c)))
             (nodup Req_EM_T (@frf_vals _ _ Y _)))
       * 
         (list_sum
            (map
               (fun d : R =>
-                 (d * ps_P (exist sa_sigma (fun omega : Ts => X omega = d) (saXd d))))
+                 (d * ps_P (exist (sa_sigma _) (fun omega : Ts => X omega = d) (saXd d))))
               (nodup Req_EM_T (@frf_vals _ _ X _))))).
     {
       rewrite Rmult_comm.

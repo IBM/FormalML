@@ -28,8 +28,8 @@ Context {Ts:Type}
 
 Lemma borel_sa_preimage
       (rvx: Ts -> R)
-      (pf_pre: forall r:R, sa_sigma (fun omega:Ts => (rvx omega) <= r)%R) :
-  (forall B: event borel_sa, sa_sigma (event_preimage rvx B)).
+      (pf_pre: forall r:R, sa_sigma _ (fun omega:Ts => (rvx omega) <= r)%R) :
+  (forall B: event borel_sa, sa_sigma _ (event_preimage rvx B)).
 Proof.
   intros.
   unfold event_preimage.
@@ -50,8 +50,8 @@ Qed.
 
 Lemma borel_sa_preimage2 
       (rvx: Ts -> R):
-  (forall r:R, sa_sigma (fun omega:Ts => (rvx omega) <= r)%R) <-> 
-  (forall B: event borel_sa, (sa_sigma (event_preimage rvx B))).
+  (forall r:R, sa_sigma _ (fun omega:Ts => (rvx omega) <= r)%R) <-> 
+  (forall B: event borel_sa, (sa_sigma _ (event_preimage rvx B))).
 Proof.
   split; intros.
   - now apply borel_sa_preimage.
@@ -63,8 +63,8 @@ Qed.
 
 Lemma open_borel_sa_preimage
       (rvx: Ts -> R)
-      (pf_pre: forall B:pre_event R, open_set B -> sa_sigma (pre_event_preimage rvx B)%R) :
-  (forall B: event open_borel_sa, sa_sigma (event_preimage rvx B)).
+      (pf_pre: forall B:pre_event R, open_set B -> sa_sigma _ (pre_event_preimage rvx B)%R) :
+  (forall B: event open_borel_sa, sa_sigma _ (event_preimage rvx B)).
 Proof.
   intros.
   unfold event_preimage.
@@ -83,8 +83,8 @@ Qed.
 
 Lemma open_borel_sa_preimage2 
       (rvx: Ts -> R):
-  (forall B:pre_event R, open_set B -> sa_sigma (pre_event_preimage rvx B)%R) <->
-  (forall B:event open_borel_sa, sa_sigma (event_preimage rvx B)).
+  (forall B:pre_event R, open_set B -> sa_sigma _ (pre_event_preimage rvx B)%R) <->
+  (forall B:event open_borel_sa, sa_sigma _ (event_preimage rvx B)).
 Proof.
   split; intros.
   - now apply open_borel_sa_preimage.
@@ -153,8 +153,8 @@ Qed.
   Qed.
 
   Lemma sa_le_gt (f : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega > r)).
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega > r)).
   Proof. 
     intros.
     assert (pre_event_equiv (fun omega : Ts => f omega > r)
@@ -167,8 +167,8 @@ Qed.
   Qed.
 
   Lemma sa_ge_lt (f : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega >= r)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega < r)).
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega >= r)) ->
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega < r)).
   Proof. 
     intros.
     assert (pre_event_equiv (fun omega : Ts => f omega < r)
@@ -181,8 +181,8 @@ Qed.
   Qed.
 
   Lemma sa_le_ge (f : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega >= r)).
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega >= r)).
   Proof.
     intros.
     assert (pre_event_equiv (fun omega : Ts => f omega >= r)
@@ -201,8 +201,8 @@ Qed.
   Qed.
 
   Lemma sa_ge_le (f : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega >= r)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)).
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega >= r)) ->
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega <= r)).
   Proof.
     intros.
     assert (pre_event_equiv (fun omega : Ts => f omega <= r)
@@ -221,8 +221,8 @@ Qed.
   Qed.
   
   Lemma sa_le_lt (f : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega < r)).
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega <= r)) ->
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega < r)).
   Proof. 
     intros.
     assert (pre_event_equiv (fun omega : Ts => f omega < r)
@@ -236,8 +236,8 @@ Qed.
   Qed.
 
   Lemma sa_ge_gt (f : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega >= r)) ->
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega > r)).
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega >= r)) ->
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega > r)).
   Proof. 
     intros.
     assert (pre_event_equiv (fun omega : Ts => f omega > r)
@@ -251,8 +251,8 @@ Qed.
   Qed.
 
   Lemma sa_closed_intervals (f : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
-    (forall (l r:R), sa_sigma (fun omega : Ts => l <= f omega <= r)).
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega <= r)) ->
+    (forall (l r:R), sa_sigma _ (fun omega : Ts => l <= f omega <= r)).
   Proof.
     intros.
     assert (pre_event_equiv (fun omega : Ts => l <= f omega <= r) 
@@ -269,8 +269,8 @@ Qed.
   Qed.
 
   Lemma sa_open_intervals (f : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
-    (forall (l r:R), sa_sigma (fun omega : Ts => l < f omega < r)).
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega <= r)) ->
+    (forall (l r:R), sa_sigma _ (fun omega : Ts => l < f omega < r)).
   Proof.
     intros.
     assert (pre_event_equiv (fun omega : Ts => l < f omega < r) 
@@ -288,8 +288,8 @@ Qed.
   Qed.
 
   Lemma sa_le_pt (f : Ts -> R) :
-    (forall (r:R),  sa_sigma (fun omega : Ts => f omega <= r)) ->
-    (forall (pt:R), sa_sigma (fun omega : Ts => f omega = pt)).
+    (forall (r:R),  sa_sigma _ (fun omega : Ts => f omega <= r)) ->
+    (forall (pt:R), sa_sigma _ (fun omega : Ts => f omega = pt)).
   Proof.
     intros.
     assert (pre_event_equiv (fun omega : Ts => f omega = pt)
@@ -354,8 +354,8 @@ Qed.
      Qed.
 
     Lemma sa_le_open_set (f : Ts -> R) :
-      (forall (r:R),  sa_sigma (fun omega : Ts => (f omega <= r)%R)) ->      
-      (forall B: pre_event R, open_set B -> sa_sigma (pre_event_preimage f B)).
+      (forall (r:R),  sa_sigma _ (fun omega : Ts => (f omega <= r)%R)) ->      
+      (forall B: pre_event R, open_set B -> sa_sigma _ (pre_event_preimage f B)).
     Proof.
       unfold pre_event_preimage; intros.
       generalize (Q_open_set B); intros.
@@ -390,8 +390,8 @@ Qed.
     Qed.
       
     Lemma sa_open_set_le (f : Ts -> R) :
-      (forall B: pre_event R, open_set B -> sa_sigma (pre_event_preimage f B)) ->
-      (forall (r:R),  sa_sigma (fun omega : Ts => (f omega <= r)%R)).
+      (forall B: pre_event R, open_set B -> sa_sigma _ (pre_event_preimage f B)) ->
+      (forall (r:R),  sa_sigma _ (fun omega : Ts => (f omega <= r)%R)).
     Proof.
       intros.
       assert (pre_event_equiv (fun omega : Ts => (f omega <= r)%R)
@@ -414,8 +414,8 @@ Qed.
     Qed.
 
     Lemma sa_open_iff_le (f : Ts -> R) :
-      (forall B: pre_event R, open_set B -> sa_sigma (pre_event_preimage f B)) <->
-      (forall (r:R),  sa_sigma (fun omega : Ts => (f omega <= r)%R)).
+      (forall B: pre_event R, open_set B -> sa_sigma _ (pre_event_preimage f B)) <->
+      (forall (r:R),  sa_sigma _ (fun omega : Ts => (f omega <= r)%R)).
     Proof.
       split.
       apply sa_open_set_le.
@@ -500,12 +500,12 @@ Local Open Scope R.
     (* For the Rbar_borel_sa, this is an equivalent definition *)
   Class RbarMeasurable (f: Ts -> Rbar)
       := rbarmeasurable : forall (r:Rbar), 
-          sa_sigma (fun omega : Ts => Rbar_le (f omega) r).
+          sa_sigma _ (fun omega : Ts => Rbar_le (f omega) r).
 
   Lemma Rbar_borel_sa_preimage
       (rvx: Ts -> Rbar)
-      (pf_pre: forall r:Rbar, sa_sigma (fun omega:Ts => Rbar_le (rvx omega) r)) :
-  (forall B: event Rbar_borel_sa, sa_sigma (event_preimage rvx B)).
+      (pf_pre: forall r:Rbar, sa_sigma _ (fun omega:Ts => Rbar_le (rvx omega) r)) :
+  (forall B: event Rbar_borel_sa, sa_sigma _ (event_preimage rvx B)).
   Proof.
     intros.
     unfold event_preimage.
@@ -526,8 +526,8 @@ Local Open Scope R.
 
   Lemma Rbar_borel_sa_preimage2 
       (rvx: Ts -> Rbar):
-  (forall r:Rbar, sa_sigma (fun omega:Ts => Rbar_le (rvx omega) r)) <-> 
-  (forall B: event Rbar_borel_sa, (sa_sigma (event_preimage rvx B))).
+  (forall r:Rbar, sa_sigma _ (fun omega:Ts => Rbar_le (rvx omega) r)) <-> 
+  (forall B: event Rbar_borel_sa, (sa_sigma _ (event_preimage rvx B))).
 Proof.
   split; intros.
   - now apply Rbar_borel_sa_preimage.
@@ -580,8 +580,8 @@ Qed.
   Definition Rbar_ge (x y : Rbar) := Rbar_le y x.
 
   Lemma Rbar_sa_le_ge (f : Ts -> Rbar) :
-    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_le (f omega) r)) ->
-    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_ge (f omega) r)).
+    (forall (r:Rbar),  sa_sigma _ (fun omega : Ts => Rbar_le (f omega) r)) ->
+    (forall (r:Rbar),  sa_sigma _ (fun omega : Ts => Rbar_ge (f omega) r)).
   Proof.
     intros.
     assert (pre_event_equiv (fun omega : Ts => Rbar_ge (f omega) r)
@@ -643,8 +643,8 @@ Qed.
    Qed.
 
   Lemma Rbar_sa_le_lt (f : Ts -> Rbar) :
-    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_le (f omega) r)) ->
-    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_lt (f omega) r)).
+    (forall (r:Rbar),  sa_sigma _ (fun omega : Ts => Rbar_le (f omega) r)) ->
+    (forall (r:Rbar),  sa_sigma _ (fun omega : Ts => Rbar_lt (f omega) r)).
   Proof. 
     intros.
     assert (pre_event_equiv (fun omega : Ts => Rbar_lt (f omega) r)
@@ -664,8 +664,8 @@ Qed.
   Definition Rbar_gt (x y : Rbar) := Rbar_lt y x.
 
    Lemma Rbar_sa_le_gt (f : Ts -> Rbar) :
-    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_le (f omega) r)) ->
-    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_gt (f omega) r)).
+    (forall (r:Rbar),  sa_sigma _ (fun omega : Ts => Rbar_le (f omega) r)) ->
+    (forall (r:Rbar),  sa_sigma _ (fun omega : Ts => Rbar_gt (f omega) r)).
   Proof. 
     intros.
     assert (pre_event_equiv (fun omega : Ts => Rbar_gt (f omega) r)
@@ -728,8 +728,8 @@ Qed.
   Qed.
 
   Lemma Rbar_sa_ge_le (f : Ts -> Rbar) :
-    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_ge (f omega) r)) ->
-    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_le (f omega) r)).
+    (forall (r:Rbar),  sa_sigma _ (fun omega : Ts => Rbar_ge (f omega) r)) ->
+    (forall (r:Rbar),  sa_sigma _ (fun omega : Ts => Rbar_le (f omega) r)).
   Proof.
     intros.
     assert (pre_event_equiv (fun omega : Ts => Rbar_le (f omega) r)
@@ -795,8 +795,8 @@ Qed.
   Qed.
 
   Lemma Rbar_sa_le_pt (f : Ts -> Rbar) :
-    (forall (r:Rbar),  sa_sigma (fun omega : Ts => Rbar_le (f omega) r)) ->
-    (forall (pt:Rbar), sa_sigma (fun omega : Ts => f omega = pt)).
+    (forall (r:Rbar),  sa_sigma _ (fun omega : Ts => Rbar_le (f omega) r)) ->
+    (forall (pt:Rbar), sa_sigma _ (fun omega : Ts => f omega = pt)).
   Proof.
     intros.
     assert (pre_event_equiv (fun omega : Ts => f omega = pt)
@@ -821,7 +821,7 @@ Qed.
     {dom: SigmaAlgebra Ts}.
 
   Lemma Rbar_borel_singleton (c:Rbar) :
-    sa_sigma (SigmaAlgebra:=Rbar_borel_sa) (pre_event_singleton c).
+    sa_sigma Rbar_borel_sa (pre_event_singleton c).
   Proof.
     apply Rbar_sa_le_pt.
     apply Rbar_borel_sa_preimage2; intros.

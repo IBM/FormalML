@@ -1407,7 +1407,7 @@ Qed.
 
 Global Instance IsFiniteExpectation_indicator f {P} (dec:dec_pre_event P)
        {rv : RandomVariable dom borel_sa f}:
-  sa_sigma P ->
+  sa_sigma _ P ->
   IsFiniteExpectation prts f ->
   IsFiniteExpectation prts (rvmult f (EventIndicator dec)).
 Proof.

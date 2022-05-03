@@ -23,7 +23,7 @@ Section Linf.
           (prts: ProbSpace dom).
 
   Lemma sa_le_gt_rv (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
-    : sa_sigma (fun omega => (rvabs rv_X) omega > x).
+    : sa_sigma _ (fun omega => (rvabs rv_X) omega > x).
   Proof.
     apply sa_le_gt.
     apply rv_measurable.

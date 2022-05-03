@@ -40,7 +40,7 @@ Section is_cond_exp.
              {rvf : RandomVariable dom borel_sa f}
              {rvce : RandomVariable dom2 Rbar_borel_sa ce}
     := forall P (dec:dec_pre_event P),
-      sa_sigma (SigmaAlgebra := dom2) P ->
+      sa_sigma dom2 P ->
       Expectation (rvmult f (EventIndicator dec)) =
       Rbar_Expectation (Rbar_rvmult ce (EventIndicator dec)).
   
@@ -160,7 +160,7 @@ Section is_cond_exp.
     unfold is_conditional_expectation; intros isce1 isce2.
 
     pose (G := fun x:R => pre_event_inter (fun omega => Rbar_gt (ce1 omega) (ce2 omega)) (fun omega => Rbar_gt x (ce2 omega))).
-    assert (sa_G : forall x:R, sa_sigma (G x)).
+    assert (sa_G : forall x:R, sa_sigma _ (G x)).
     {
       intros x.
       unfold G.
@@ -349,7 +349,7 @@ Section is_cond_exp.
       unfold Rbar_rvmult, IG, EventIndicator in pH.
       apply NNPP.
       intros neq.
-      assert (HH1:ps_P  (ProbSpace:=prts) (event_inter P (event_sa_sub sub (exist sa_sigma (G x) (sa_G x)))) <> 0).
+      assert (HH1:ps_P  (ProbSpace:=prts) (event_inter P (event_sa_sub sub (exist (sa_sigma _) (G x) (sa_G x)))) <> 0).
       {
         rewrite ps_inter_l1; trivial.
       } 
@@ -368,7 +368,7 @@ Section is_cond_exp.
     - apply (is_lim_seq_ext _ (fun _ => 0)) in HH.
       + apply is_lim_seq_unique in HH.
         rewrite Lim_seq_const in HH.
-        assert (eqq3:pre_event_equiv (union_of_collection (fun n : nat => exist sa_sigma (G (INR n)) (sa_G (INR n))))
+        assert (eqq3:pre_event_equiv (union_of_collection (fun n : nat => exist (sa_sigma _) (G (INR n)) (sa_G (INR n))))
                                      (fun omega : Ts => Rbar_gt (ce1 omega) (ce2 omega))).
         {
           intros a.
@@ -458,7 +458,7 @@ Section is_cond_exp.
 
     pose (G := fun x:R => pre_event_inter (fun omega => Rbar_gt (ce1 omega) (ce2 omega))
                                           (fun omega => Rbar_ge x ((Rbar_rvabs ce2) omega))).
-    assert (sa_G : forall x:R, sa_sigma (G x)).
+    assert (sa_G : forall x:R, sa_sigma _ (G x)).
     {
       intros x.
       unfold G.
@@ -669,7 +669,7 @@ Section is_cond_exp.
         apply NNPP.
         intros neq.
         simpl in *.
-        assert (HH1:ps_P (ProbSpace:=((prob_space_sa_sub prts sub))) (event_inter P (exist sa_sigma (G x) (sa_G x))) <> 0).
+        assert (HH1:ps_P (ProbSpace:=((prob_space_sa_sub prts sub))) (event_inter P (exist (sa_sigma _) (G x) (sa_G x))) <> 0).
         {
           rewrite ps_inter_l1; trivial.
         } 
@@ -704,7 +704,7 @@ Section is_cond_exp.
         rewrite Lim_seq_const in HH.
         assert (eqq3:pre_event_equiv
                        (union_of_collection
-                          (fun x : nat => event_inter (event_sa_sub sub (exist sa_sigma (G (INR x)) (sa_G (INR x)))) (exist _ _ (sa_finite_Rbar ce2 (RandomVariable_sa_sub sub _)))))
+                          (fun x : nat => event_inter (event_sa_sub sub (exist (sa_sigma _) (G (INR x)) (sa_G (INR x)))) (exist _ _ (sa_finite_Rbar ce2 (RandomVariable_sa_sub sub _)))))
                        (pre_event_inter 
                           (fun omega : Ts => Rbar_gt (ce1 omega) (ce2 omega))
                           (fun a => is_finite (ce2 a)))).
@@ -1108,7 +1108,7 @@ Section is_cond_exp.
 
   Lemma sa_le_Rbar_ge_rv {domm}
         (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma (fun omega => Rbar_ge (rv_X omega) x).
+    : sa_sigma _ (fun omega => Rbar_ge (rv_X omega) x).
   Proof.
     apply Rbar_sa_le_ge.
     intros.
@@ -1344,7 +1344,7 @@ Section is_cond_exp.
              {rvce : RandomVariable dom2 Rbar_borel_sa ce}            
     : is_conditional_expectation dom2 f ce ->
       forall P (dec:dec_pre_event P),
-        sa_sigma (SigmaAlgebra := dom2) P ->
+        sa_sigma dom2 P ->
         forall {isfef:IsFiniteExpectation prts (rvmult f (EventIndicator dec))}
           {isfece:Rbar_IsFiniteExpectation prts (Rbar_rvmult ce (EventIndicator dec))},
         FiniteExpectation prts (rvmult f (EventIndicator dec)) =
@@ -1744,7 +1744,7 @@ Qed.
     f_equal.
     apply is_conditional_expectation_isfe_finite_part in isce.
 
-    assert (sa_sigma (SigmaAlgebra:=dom2) (pre_event_inter (fun omega0 : Ts => g omega0 = a) P)).
+    assert (sa_sigma dom2 (pre_event_inter (fun omega0 : Ts => g omega0 = a) P)).
     {
       apply sa_inter; trivial.
       apply sa_le_pt.
@@ -1752,7 +1752,7 @@ Qed.
       now apply RandomVariable_sa_sub.
     } 
 
-    assert (sa_sigma (SigmaAlgebra:=dom) (pre_event_inter (fun omega0 : Ts => g omega0 = a) P)).
+    assert (sa_sigma dom (pre_event_inter (fun omega0 : Ts => g omega0 = a) P)).
     {
       apply sa_inter.
       - apply sa_le_pt.
@@ -5400,7 +5400,7 @@ Section fin_cond_exp.
         {isfe:IsFiniteExpectation prts f}
         {P:pre_event Ts}
         (dec:dec_pre_event P)
-        (saP:sa_sigma (SigmaAlgebra := dom2) P) :
+        (saP:sa_sigma dom2 P) :
     Expectation (rvmult f (EventIndicator dec)) =
     Expectation (rvmult (FiniteConditionalExpectation f) (EventIndicator dec)).
   Proof.
@@ -5415,7 +5415,7 @@ Section fin_cond_exp.
         {rv : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f}
         {P:pre_event Ts}
-        (saP:sa_sigma (SigmaAlgebra := dom2) P) :
+        (saP:sa_sigma dom2 P) :
     Expectation (rvmult f (EventIndicator (classic_dec P))) =
     Expectation (rvmult (FiniteConditionalExpectation f) (EventIndicator (classic_dec P))).
   Proof.

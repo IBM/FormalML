@@ -595,7 +595,7 @@ Section ps_product.
       {
         intros [??]; tauto.
       }
-      assert (sa:sa_sigma (SigmaAlgebra:=dep_product_sa A B) (fun '(existT x y) => @pre_Ω X x /\ @pre_Ω (Y x) y)).
+      assert (sa:sa_sigma (dep_product_sa A B) (fun '(existT x y) => @pre_Ω X x /\ @pre_Ω (Y x) y)).
       { 
         rewrite <- pre_eqq.
         apply sa_all.

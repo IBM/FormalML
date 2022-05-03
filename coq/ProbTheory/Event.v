@@ -2937,3 +2937,5 @@ Hint Rewrite @list_union_app : prob.
 Hint Rewrite @list_inter_nil @list_inter_cons : prob.
 Hint Rewrite @list_inter_singleton : prob.
 Hint Rewrite @list_inter_app : prob.
+
+Global Arguments sa_sigma {T}.

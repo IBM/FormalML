@@ -1653,7 +1653,7 @@ Section Expectation_sec.
   Lemma simple_approx_inf_measurable (X:Ts -> Rbar) (n:nat)
         (posx : Rbar_NonnegativeFunction X)
         (ranx : RandomVariable dom Rbar_borel_sa X) :
-    sa_sigma (pre_event_preimage (simple_approx X n) (pre_event_singleton (INR n))).
+    sa_sigma _ (pre_event_preimage (simple_approx X n) (pre_event_singleton (INR n))).
   Proof.
     generalize (simple_approx_inf_event X n posx); intros.
     rewrite H.
@@ -1667,7 +1667,7 @@ Section Expectation_sec.
         (ranx : RandomVariable dom Rbar_borel_sa X) :
     forall (k : nat), 
       (k < n*2^n)%nat ->
-      sa_sigma (pre_event_preimage (simple_approx X n) (pre_event_singleton ((INR k)/2^n))).
+      sa_sigma _ (pre_event_preimage (simple_approx X n) (pre_event_singleton ((INR k)/2^n))).
   Proof.
     intros.
     generalize (simple_approx_fin_event X n posx k H); intros.
@@ -2054,7 +2054,7 @@ Section Expectation_sec.
         (f g : Ts -> R)
         (f_rv : RandomVariable dom borel_sa f)
         (g_rv : RandomVariable dom borel_sa g)  :
-    sa_sigma (fun omega : Ts => f omega >= g omega).
+    sa_sigma _ (fun omega : Ts => f omega >= g omega).
   Proof.
     rewrite f_ge_g_le0_eq.
     apply minus_measurable; trivial
@@ -2077,7 +2077,7 @@ Section Expectation_sec.
       (forall (n:nat), Rbar_rv_le (Xn n) X) ->
       (forall (omega:Ts), cphi omega = 0 \/ Rbar_lt (cphi omega) (X omega) ) ->
       (forall (omega:Ts), is_lim_seq (fun n => Xn n omega) (X omega)) ->
-      (forall (n:nat), sa_sigma (fun (omega:Ts) => (Xn n omega) >= cphi omega)) /\
+      (forall (n:nat), sa_sigma _ (fun (omega:Ts) => (Xn n omega) >= cphi omega)) /\
       pre_event_equiv (pre_union_of_collection (fun n => fun (omega:Ts) => (Xn n omega) >= cphi omega)) 
                   pre_Ω.
   Proof.
@@ -2146,7 +2146,7 @@ Section Expectation_sec.
     :
       (forall (n:nat), rv_le (Xn n) (Xn (S n))) ->
       (forall (omega:Ts), cphi omega = 0 \/ Rbar_lt (cphi omega) ((Rbar_rvlim Xn) omega)) ->
-      (forall (n:nat), sa_sigma (fun (omega:Ts) => (Xn n omega) >= cphi omega)) /\
+      (forall (n:nat), sa_sigma _ (fun (omega:Ts) => (Xn n omega) >= cphi omega)) /\
       pre_event_equiv (pre_union_of_collection (fun n => fun (omega:Ts) => (Xn n omega) >= cphi omega)) 
                   pre_Ω.
   Proof.
@@ -2366,7 +2366,7 @@ Section Expectation_sec.
   Proof.
     intros.
     rewrite <- (simple_NonnegExpectation cphi).
-    assert (sa1:forall n,  sa_sigma (fun omega : Ts => Xn n omega >= cphi omega)).
+    assert (sa1:forall n,  sa_sigma _ (fun omega : Ts => Xn n omega >= cphi omega)).
     intros.
     now apply sigma_f_ge_g.
     assert (rv1:forall n, RandomVariable dom borel_sa (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))).
@@ -2453,7 +2453,7 @@ Section Expectation_sec.
   Proof.
     intros.
     rewrite <- (simple_NonnegExpectation cphi).
-    assert (sa1:forall n,  sa_sigma (fun omega : Ts => Xn n omega >= cphi omega)).
+    assert (sa1:forall n,  sa_sigma _ (fun omega : Ts => Xn n omega >= cphi omega)).
     intros.
     now apply sigma_f_ge_g.
     assert (rv1:forall n, RandomVariable dom borel_sa (rvmult cphi (EventIndicator (fun omega : Ts => Rge_dec (Xn n omega) (cphi omega))))).
@@ -5070,7 +5070,7 @@ Section ident.
     f_equal.
 
     red in H.
-    generalize (simple_approx_borel_rv n (exist sa_sigma _ (borel_singleton a))); intros HH.
+    generalize (simple_approx_borel_rv n (exist (sa_sigma _)  _ (borel_singleton a))); intros HH.
 
     specialize (H (exist _ _ HH)).
     etransitivity; [etransitivity |]; [| apply H |]
