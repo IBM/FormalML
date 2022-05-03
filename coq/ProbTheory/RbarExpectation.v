@@ -4374,110 +4374,6 @@ Section rv_expressible.
   Existing Instance simple_approx_frf.
   Existing Instance simple_approx_rv.
 
-  Lemma Rbar_le_incr0 (f : nat -> Rbar) :
-    (forall n, Rbar_le (f n) (f (S n))) ->
-    forall n k, (Rbar_le (f n) (f (n + k)%nat)).
-  Proof.
-    intros.
-    induction k.
-    - replace (n + 0)%nat with n by lia.
-      apply Rbar_le_refl.
-    - eapply Rbar_le_trans.
-      apply IHk.
-      replace (n + S k)%nat with (S (n + k)%nat) by lia.
-      apply H.
-  Qed.
-
-  Lemma Rbar_le_incr (f : nat -> Rbar) :
-    (forall n, Rbar_le (f n) (f (S n))) ->
-    forall n m, (n<=m)%nat -> Rbar_le (f n) (f m).
-  Proof.
-    intros.
-    replace (m) with (n + (m-n))%nat by lia.
-    now apply Rbar_le_incr0.
-  Qed.
-
-  Lemma is_ELim_seq_sup_seq_incr_R (f : nat -> Rbar) (l : R) :
-    (forall n, Rbar_le (f n) (f (S n))) ->
-    (is_ELimSup_seq f l) <-> is_sup_seq f l.
-  Proof.
-    intros.
-    unfold is_ELimSup_seq, is_sup_seq.
-    split; intros; destruct (H0 eps); split; generalize (cond_pos eps); intros eps_pos.
-    - intros.
-      simpl.
-      destruct H2.
-      destruct (le_dec x n).
-      + now apply H2.
-      + specialize (H2 x).
-        cut_to H2; try lia; simpl in H2.
-        assert (n <= x)%nat by lia.
-        assert (Rbar_le (f n) (f x)) by now apply Rbar_le_incr.
-        eapply Rbar_le_lt_trans.
-        * apply H4.
-        * apply H2.
-    - destruct (H1 0%nat) as [? [? ?]].
-      now exists x.
-    - intros.
-      destruct H2.
-      exists (max x N).
-      split; try lia.
-      assert (Rbar_le (f x) (f (Init.Nat.max x N))).
-      {
-        destruct (le_dec N x).
-        - rewrite Nat.max_l; try lia.
-          apply Rbar_le_refl.
-        - rewrite Nat.max_r; try lia.
-          assert (x <= N)%nat by lia.
-          now apply Rbar_le_incr.
-      }
-      eapply Rbar_lt_le_trans.
-      * apply H2.
-      * apply H3.
-    - exists (0%nat).
-      intros.
-      apply H1.
-   Qed.
-
-  Lemma is_ELim_seq_sup_seq_incr (f : nat -> Rbar) (l : Rbar) :
-    (forall n, Rbar_le (f n) (f (S n))) ->
-    (is_ELimSup_seq f l) <-> is_sup_seq f l.
-  Proof.
-    intros.
-    destruct l.
-    - now apply is_ELim_seq_sup_seq_incr_R.
-    - unfold is_ELimSup_seq, is_sup_seq.
-      split; intros.
-      + destruct (H0 M 0%nat) as [? [? ?]].
-        now exists x.
-      + destruct (H0 M).
-        exists (max x N).
-        split; try lia.
-        assert (Rbar_le (f x) (f (Init.Nat.max x N))).
-        {
-          destruct (le_dec N x).
-          - rewrite Nat.max_l; try lia.
-            apply Rbar_le_refl.
-          - rewrite Nat.max_r; try lia.
-            assert (x <= N)%nat by lia.
-            now apply Rbar_le_incr.
-        }
-      eapply Rbar_lt_le_trans.
-      * apply H1.
-      * apply H2.
-    - unfold is_ELimSup_seq, is_sup_seq.
-      split; intros.
-      + destruct (H0 M).
-        destruct (le_dec x n).
-        * now apply H1.
-        * assert (n <= x)%nat by lia.
-          apply Rbar_le_lt_trans with (y := f x).
-          -- now apply Rbar_le_incr.
-          -- apply H1; try lia.
-      + exists (0%nat).
-        intros.
-        apply H0.
-   Qed.        
 
   Lemma nneg_measurable_is_expressible {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
@@ -4487,7 +4383,7 @@ Section rv_expressible.
         {rv_y : RandomVariable (pullback_sa cod X) Rbar_borel_sa Y} :
     exists g : Td -> Rbar, 
       RandomVariable cod Rbar_borel_sa g /\
-      forall x, Y x = g (X x).
+      rv_eq Y (g ∘ X).
   Proof.
     generalize (simple_approx_pos Y); intros.
     generalize (simple_approx_increasing Y pos_Y); intros.
@@ -4569,7 +4465,7 @@ Section rv_expressible.
       apply Real_Rbar_rv.
       destruct (X0 n) as [? [? ?]].
       now simpl.
-    - intros.
+    - intros x.
       specialize (H2 x).
       apply is_ELimSup_seq_unique in H2.
       now rewrite <- H2.
@@ -4583,7 +4479,7 @@ Section rv_expressible.
         {rv_y : RandomVariable (pullback_sa cod X) Rbar_borel_sa Y} :
       { g : Td -> Rbar | 
         RandomVariable cod Rbar_borel_sa g /\
-        forall x, Y x = g (X x)}.
+        rv_eq Y (g ∘ X)}.
     Proof.
       apply constructive_indefinite_description.
       now apply nneg_measurable_is_expressible.
@@ -4596,7 +4492,7 @@ Section rv_expressible.
         {rv_y : RandomVariable (pullback_sa cod X) Rbar_borel_sa Y} :
     exists g : Td -> Rbar, 
       RandomVariable cod Rbar_borel_sa g /\
-      rv_eq Y (compose g X).
+      rv_eq Y (g ∘ X).
   Proof.
     assert ( RandomVariable (pullback_sa cod X) Rbar_borel_sa (Rbar_pos_fun_part Y)) 
       by typeclasses eauto.
@@ -4616,14 +4512,14 @@ Section rv_expressible.
       destruct X1 as [? [? ?]].
       rv_unfold; simpl.
       unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
-      now rewrite <- e, <- e0.
+      now rewrite <- r0, <- r2.
   Qed.
 
     Lemma expressible_is_measurable {Ts : Type} {Td : Type}
           {cod : SigmaAlgebra Td}
           (X : Ts -> Td) (Y : Ts -> Rbar) (g : Td -> Rbar)
           {rv_g : RandomVariable cod Rbar_borel_sa g} :
-      rv_eq Y (compose g X) ->
+      rv_eq Y (g ∘ X) ->
       RandomVariable (pullback_sa cod X) Rbar_borel_sa Y.
     Proof.
       intros.
@@ -4638,7 +4534,7 @@ Section rv_expressible.
         {rv_y : RandomVariable (pullback_sa cod X) Rbar_borel_sa Y} :
       { g : Td -> Rbar | 
         RandomVariable cod Rbar_borel_sa g /\
-        rv_eq Y (compose g X)}.
+        rv_eq Y (g ∘ X)}.
     Proof.
       apply constructive_indefinite_description.
       now apply measurable_is_expressible.
@@ -4649,15 +4545,16 @@ Section rv_expressible.
           (X : nat -> Ts -> R) (n : nat) 
           (Y : Ts -> R)
           {rv_X : forall n, RandomVariable dom borel_sa (X n)}
-          {rv_y : RandomVariable (filtration_history_sa X n) Rbar_borel_sa Y} :
+          {rv_y : RandomVariable (filtration_history_sa X n) borel_sa Y} :
       exists g : vector R (S n) -> Rbar,
          RandomVariable (Rvector_borel_sa (S n)) Rbar_borel_sa g /\
-         (forall x : Ts, Rbar.Finite (Y x) = g (make_vector_from_seq X (S n) x)).
+         rv_eq (fun x => Rbar.Finite (Y x)) (g ∘ (make_vector_from_seq X (S n))).
     Proof.
       generalize (filtrate_history_vector_rv X n); intros.
       assert (RandomVariable (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))) Rbar_borel_sa Y).
       {
-        now rewrite <- H.
+        rewrite <- H.
+        now apply Real_Rbar_rv.
       }
       assert (RandomVariable dom (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
       {
@@ -4669,7 +4566,7 @@ Section rv_expressible.
         setoid_rewrite vector_nth_create'.
         now apply rv_measurable.
       }
-      now apply measurable_is_expressible.
+      apply measurable_is_expressible; trivial.
    Qed.
 
     Lemma measurable_sequence_is_expressible' {Ts : Type} 
@@ -4677,10 +4574,10 @@ Section rv_expressible.
           (X : nat -> Ts -> R) (n : nat) 
           (Y : Ts -> R)
           {rv_X : forall n, RandomVariable dom borel_sa (X n)}
-          {rv_y : RandomVariable (filtration_history_sa X n) Rbar_borel_sa Y} :
+          {rv_y : RandomVariable (filtration_history_sa X n) borel_sa Y} :
       { g : vector R (S n) -> Rbar |
          RandomVariable (Rvector_borel_sa (S n)) Rbar_borel_sa g /\
-         (forall x : Ts, Rbar.Finite (Y x) = g (make_vector_from_seq X (S n) x))}.
+         rv_eq (fun x => Rbar.Finite (Y x)) (g ∘ (make_vector_from_seq X (S n) ))}.
     Proof.
       apply constructive_indefinite_description.
       now apply measurable_sequence_is_expressible.
@@ -4691,11 +4588,12 @@ Section rv_expressible.
           (Y : Ts -> R)
           (g : vector R (S n) -> Rbar)
           {rv_g : RandomVariable (Rvector_borel_sa (S n)) Rbar_borel_sa g} :
-      (forall x : Ts, Rbar.Finite (Y x) = g (make_vector_from_seq X (S n) x)) ->
-      RandomVariable (filtration_history_sa X n) Rbar_borel_sa Y.
+      rv_eq (fun x => Rbar.Finite (Y x)) (g ∘ (make_vector_from_seq X (S n) )) ->
+      RandomVariable (filtration_history_sa X n) borel_sa Y.
     Proof.
       intros.
       rewrite filtrate_history_vector_rv.
+      rewrite borel_Rbar_borel.
       now apply expressible_is_measurable with (g0 := g).
     Qed.
       

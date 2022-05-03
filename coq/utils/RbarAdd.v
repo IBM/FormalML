@@ -71,6 +71,29 @@ Section sums.
     apply HH; lra.
   Qed.
 
+  Lemma Rbar_le_incr0 (f : nat -> Rbar) :
+    (forall n, Rbar_le (f n) (f (S n))) ->
+    forall n k, (Rbar_le (f n) (f (n + k)%nat)).
+  Proof.
+    intros.
+    induction k.
+    - replace (n + 0)%nat with n by lia.
+      apply Rbar_le_refl.
+    - eapply Rbar_le_trans.
+      apply IHk.
+      replace (n + S k)%nat with (S (n + k)%nat) by lia.
+      apply H.
+  Qed.
+
+  Lemma Rbar_le_incr (f : nat -> Rbar) :
+    (forall n, Rbar_le (f n) (f (S n))) ->
+    forall n m, (n<=m)%nat -> Rbar_le (f n) (f m).
+  Proof.
+    intros.
+    replace (m) with (n + (m-n))%nat by lia.
+    now apply Rbar_le_incr0.
+  Qed.
+
   Lemma sum_Rbar_n_pos_incr (f : nat -> Rbar) :
     (forall i : nat, Rbar_le 0 (f i)) ->
     forall n : nat, Rbar_le (sum_Rbar_n f n) (sum_Rbar_n f (S n)).
@@ -2010,3 +2033,85 @@ Proof.
   ; destruct (ELimSup_seq f)
   ; simpl; try lra.
 Qed.
+
+  Lemma is_ELim_seq_sup_seq_incr_R (f : nat -> Rbar) (l : R) :
+    (forall n, Rbar_le (f n) (f (S n))) ->
+    (is_ELimSup_seq f l) <-> is_sup_seq f l.
+  Proof.
+    intros.
+    unfold is_ELimSup_seq, is_sup_seq.
+    split; intros; destruct (H0 eps); split; generalize (cond_pos eps); intros eps_pos.
+    - intros.
+      simpl.
+      destruct H2.
+      destruct (le_dec x n).
+      + now apply H2.
+      + specialize (H2 x).
+        cut_to H2; try lia; simpl in H2.
+        assert (n <= x)%nat by lia.
+        assert (Rbar_le (f n) (f x)) by now apply Rbar_le_incr.
+        eapply Rbar_le_lt_trans.
+        * apply H4.
+        * apply H2.
+    - destruct (H1 0%nat) as [? [? ?]].
+      now exists x.
+    - intros.
+      destruct H2.
+      exists (max x N).
+      split; try lia.
+      assert (Rbar_le (f x) (f (Init.Nat.max x N))).
+      {
+        destruct (le_dec N x).
+        - rewrite Nat.max_l; try lia.
+          apply Rbar_le_refl.
+        - rewrite Nat.max_r; try lia.
+          assert (x <= N)%nat by lia.
+          now apply Rbar_le_incr.
+      }
+      eapply Rbar_lt_le_trans.
+      * apply H2.
+      * apply H3.
+    - exists (0%nat).
+      intros.
+      apply H1.
+   Qed.
+
+  Lemma is_ELim_seq_sup_seq_incr (f : nat -> Rbar) (l : Rbar) :
+    (forall n, Rbar_le (f n) (f (S n))) ->
+    (is_ELimSup_seq f l) <-> is_sup_seq f l.
+  Proof.
+    intros.
+    destruct l.
+    - now apply is_ELim_seq_sup_seq_incr_R.
+    - unfold is_ELimSup_seq, is_sup_seq.
+      split; intros.
+      + destruct (H0 M 0%nat) as [? [? ?]].
+        now exists x.
+      + destruct (H0 M).
+        exists (max x N).
+        split; try lia.
+        assert (Rbar_le (f x) (f (Init.Nat.max x N))).
+        {
+          destruct (le_dec N x).
+          - rewrite Nat.max_l; try lia.
+            apply Rbar_le_refl.
+          - rewrite Nat.max_r; try lia.
+            assert (x <= N)%nat by lia.
+            now apply Rbar_le_incr.
+        }
+      eapply Rbar_lt_le_trans.
+      * apply H1.
+      * apply H2.
+    - unfold is_ELimSup_seq, is_sup_seq.
+      split; intros.
+      + destruct (H0 M).
+        destruct (le_dec x n).
+        * now apply H1.
+        * assert (n <= x)%nat by lia.
+          apply Rbar_le_lt_trans with (y := f x).
+          -- now apply Rbar_le_incr.
+          -- apply H1; try lia.
+      + exists (0%nat).
+        intros.
+        apply H0.
+   Qed.        
