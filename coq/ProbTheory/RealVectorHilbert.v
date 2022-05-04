@@ -1155,6 +1155,33 @@ Section more_lemmas.
         now apply Rvector_max_abs_in_le.
   Qed.        
 
+  Lemma inner_le_mult_max_abs {n:nat} (v w : vector R n) :
+    Rvector_inner v w <= (Rvector_max_abs v) * (Rvector_max_abs w) * INR n.
+  Proof.
+    unfold Rvector_inner.
+    destruct n.
+    - destruct v; destruct w.
+      destruct x; simpl; unfold Rvector_sum, Rvector_mult; simpl; try lra.
+      generalize (length_zero_iff_nil (r :: x) ); intros.
+      destruct H.
+      specialize (H e).
+      discriminate.
+    - apply Rvector_sum_bound_const_le; try lia.
+      intros.
+      eapply Rle_trans; try eapply Rle_abs.      
+      unfold Rvector_mult in H.
+      simpl in H.
+      apply in_map_iff in H.
+      destruct H as [? [? ?]].
+      destruct x.
+      rewrite <- H.
+      rewrite Rabs_mult.
+      apply Rmult_le_compat; try apply Rabs_pos.
+      + generalize (in_combine_l _ _ _ _ H0); intros.
+        now apply Rvector_max_abs_in_le.
+      + generalize (in_combine_r _ _ _ _ H0); intros.      
+        now apply Rvector_max_abs_in_le.      
+  Qed.        
 
   Lemma max_abs_le_sqrt_inner {n:nat} (v : vector R n) :
     (Rvector_max_abs v) <= Rsqrt (mknonnegreal (Rvector_inner v v) (Rvector_inner_pos v)).
