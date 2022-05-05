@@ -1161,7 +1161,7 @@ Section more_lemmas.
     unfold Rvector_inner.
     destruct n.
     - destruct v; destruct w.
-      destruct x; simpl; unfold Rvector_sum, Rvector_mult; simpl; try lra.
+      destruct x; simpl; unfold Rvector_sum, Rvector_mult; simpl; try rewrite Rabs_R0; try lra.
       generalize (length_zero_iff_nil (r :: x) ); intros.
       destruct H.
       specialize (H e).
@@ -1181,6 +1181,31 @@ Section more_lemmas.
         now apply Rvector_max_abs_in_le.
       + generalize (in_combine_r _ _ _ _ H0); intros.      
         now apply Rvector_max_abs_in_le.      
+  Qed.        
+
+  Lemma abs_inner_le_mult_max_abs {n:nat} (v w : vector R n) :
+    Rabs (Rvector_inner v w) <= (Rvector_max_abs v) * (Rvector_max_abs w) * INR n.
+  Proof.
+    destruct (Rle_dec 0 (Rvector_inner v w)).
+    - rewrite Rabs_right; try lra.
+      apply inner_le_mult_max_abs.
+    - rewrite Rabs_left; try lra.
+      replace (- Rvector_inner v w) with ((-1) * Rvector_inner v w) by lra.
+      rewrite <- Rvector_inner_scal.
+      assert (Rvector_max_abs (Rvector_scale (-1) v) = Rvector_max_abs v).
+      {
+        unfold Rvector_max_abs.
+        f_equal.
+        unfold Rvector_abs, Rvector_scale.
+        rewrite vector_map_map.
+        apply vector_map_ext.
+        intros.
+        rewrite Rabs_mult.
+        replace (-1) with (Ropp 1) by lra.
+        rewrite Rabs_Ropp, Rabs_R1; lra.
+      }
+      rewrite <- H.
+      apply inner_le_mult_max_abs.      
   Qed.        
 
   Lemma max_abs_le_sqrt_inner {n:nat} (v : vector R n) :
