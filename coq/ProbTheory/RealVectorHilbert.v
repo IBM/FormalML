@@ -477,6 +477,16 @@ Section Rvector_defs.
     lra.
   Qed.
 
+  Lemma Rvector_scale_mult_r (a:R) (x y:vector R n) :
+    (x * (a .* y)) = a .* (x * y).
+  Proof.
+    apply vector_eq; simpl.
+    rewrite combine_map_r.
+    repeat rewrite map_map.
+    apply map_ext; intros [??]; simpl.
+    lra.
+  Qed.
+
   Lemma Rvector_scale_sum (a:R) (x:vector R n) :
     ∑ (a .* x) = Rmult a (∑ x).
   Proof.
