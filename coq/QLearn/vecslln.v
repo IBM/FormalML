@@ -2318,6 +2318,16 @@ End ash.
       apply H; lia.
   Qed.
 
+  Lemma nested_Rmax_list_seq (f : nat -> nat -> R) (j k : nat):
+    forall j' k',
+      (j' <= j)%nat ->
+      (k' <= k)%nat ->
+      f j' k' <=
+      Rmax_list (map (fun n => Rmax_list (map (fun n0 => f n0 n) (seq 0 (S j))))
+                     (seq 0 (S k))).
+   Proof.
+   Admitted.
+
   Lemma isfin_inner_cutoff_eps {size : nat} (X : nat -> Ts -> vector R size) (eps : posreal) 
     {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)}
     {isfe : forall j k, IsFiniteExpectation Prts (rvinner (X j) (X k))} :
@@ -2340,9 +2350,9 @@ End ash.
       destruct H0 as [k' [? ?]].
       unfold rvabs, rvinner.
       rewrite H1, H2.
+      clear H1 H2 isfe rv.
       unfold rvmaxlist.
-
-      admit.
+      now apply (nested_Rmax_list_seq (fun n0 n : nat => Rabs (Rvector_inner (X n0 x) (X n x)))).
       Unshelve.
       apply IsFiniteExpectation_rvmaxlist.
       + intros.
@@ -2354,7 +2364,7 @@ End ash.
         * intros.
           apply IsFiniteExpectation_abs; trivial.
           now apply Rvector_inner_rv.
-    Admitted.
+    Qed.
 
   Lemma vec_ash_6_1_4 {size:nat} (X: nat -> Ts -> vector R size) (eps:posreal) (m:nat)
         {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)}
