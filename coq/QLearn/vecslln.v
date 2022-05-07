@@ -1393,8 +1393,7 @@ Qed.
   Defined.
 
   Global Instance vec_cutoff_ind_rv {size:nat} (j:nat) (eps:R) (X: nat -> Ts -> vector R size) 
-           {rv : forall n, (n <= j)%nat -> RandomVariable dom (Rvector_borel_sa size) (X n)}
-           {fsf : forall n, FiniteRangeFunction (X n)} :
+           {rv : forall n, (n <= j)%nat -> RandomVariable dom (Rvector_borel_sa size) (X n)} :
     RandomVariable dom borel_sa
                    (vec_cutoff_indicator (S j) eps (rvsumvec X)).
   Proof.
@@ -1934,21 +1933,103 @@ End ash.
 
    Context {Ts:Type} {dom: SigmaAlgebra Ts}{Prts: ProbSpace dom}.
    
-  Lemma vec_indicator_prod_cross_shift {size:nat} (j m:nat) (eps:R) (X: nat -> Ts -> vector R size) 
+(*
+   Instance isfinexp_inner_bounded {size: nat} (X Y : Ts -> vector R size) (c : R)
+            {rvX :  RandomVariable dom (Rvector_borel_sa size) X} 
+            {rvY :  RandomVariable dom (Rvector_borel_sa size) Y} :     
+     vector_IsFiniteExpectation Prts Y ->
+     (forall x, hilbert.Hnorm (X x) <= c) ->
+     IsFiniteExpectation Prts (rvinner X Y).
+   Proof.
+     intros.
+     assert (IsFiniteExpectation Prts (rvinner (vecrvconst size (Rabs c)) (vecrvabs Y))) by admit.
+     apply IsFiniteExpectation_abs_id; [typeclasses eauto | ].
+     apply (IsFiniteExpectation_bounded _ (const 0) _ (rvinner (vecrvconst size (Rabs c)) (vecrvabs Y))).
+     
+   Admitted.
+ *)
+   Lemma scale_cutoff_ind_bound {size : nat} (j :nat) (eps : posreal)
+         (X : nat -> Ts -> vector R size) :
+     forall omega,
+       hilbert.Hnorm 
+         (vecrvscalerv (vec_cutoff_indicator (S j) eps X)
+                       (vec_cutoff_eps_rv j eps X) omega) < eps.
+   Proof.
+     intros.
+     generalize (cond_pos eps); intros.
+     unfold vecrvscalerv, vec_cutoff_indicator.
+     unfold vec_cutoff_indicator_obligation_1.
+     unfold vec_pre_cutoff_event.
+     unfold EventIndicator.
+     match_case; intros.
+     - destruct H0.
+       rewrite Rvector_scale1.
+       generalize (vec_cutoff_eps_lt_eps (size := size) eps j); intros.
+       specialize (H0 (fun n => X n omega)).
+       unfold vec_cutoff_eps_rv.
+       unfold Rmax_list_map in r.
+       rewrite Rmax_list_lt_iff in r; try (apply map_not_nil; apply seq_not_nil; lia).
+       rewrite H0.
+       + apply r.
+         rewrite in_map_iff.
+         exists j.
+         split; trivial.
+         rewrite in_seq; lia.
+       + intros.
+         apply r.
+         rewrite in_map_iff.
+         exists k.
+         split; trivial.
+         rewrite in_seq; lia.
+     - rewrite Rvector_scale0.
+       unfold hilbert.Hnorm, hilbert.inner; simpl.
+       rewrite Rvector_inner_zero.
+       now rewrite sqrt_0.
+    Qed.
+
+   Instance vec_isfin_mult_ind_cutoff {size:nat} (j:nat) (eps:posreal) (X : nat -> Ts -> vector R size) (Y : Ts -> vector R size)
+         {rvx : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)}
+         {rvy : RandomVariable dom (Rvector_borel_sa size) Y}         
+         {isfe : vector_IsFiniteExpectation Prts Y} :
+     vector_IsFiniteExpectation 
+       Prts
+       (vecrvmult 
+          (vecrvscalerv (vec_cutoff_indicator (S j) eps X)
+                        (vec_cutoff_eps_rv j eps X)) Y).
+   Proof.
+     intros.
+     generalize (scale_cutoff_ind_bound j eps X); intros.
+     generalize (fun omega => Hnorm_nth1  (vecrvscalerv (vec_cutoff_indicator (S j) eps X) 
+                                                        (vec_cutoff_eps_rv j eps X) omega) ); intros.
+     apply Forall_vector; intros; simpl.
+     rewrite vector_nth_fun_to_vector.
+     apply IsFiniteExpectation_abs_id.
+     - rewrite <- vector_nth_fun_to_vector.
+       apply vec_rv.
+       apply Rvector_mult_rv; trivial.
+       apply Rvector_scale_rv_rv.
+       + apply EventIndicator_pre_rv.
+         apply sa_le_lt_rv.
+         typeclasses eauto.
+       + typeclasses eauto.
+     - eapply (IsFiniteExpectation_bounded _ (const 0) _ (rvscale eps (fun x => Rabs (vector_nth i pf (Y x))))).
+       + intro x.
+         unfold const, rvabs.
+         apply Rabs_pos.
+       + intro x.
+         rv_unfold.
+         unfold vecrvmult.
+         rewrite <- mult_nth.
+         specialize (H0 x eps i pf (H x)).
+         unfold abs in H0; simpl in H0.
+         rewrite Rabs_mult.
+         apply Rmult_le_compat_r.
+         * apply Rabs_pos.
+         * now left.
+    Qed.
+                                
+  Lemma vec_indicator_prod_cross_shift {size:nat} (j m:nat) (eps:posreal) (X: nat -> Ts -> vector R size) 
         {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)}
-        {frf : forall n, FiniteRangeFunction (X n)}
-        {isfe_in : let Xm := fun n => X (n + m)%nat in 
-                   IsFiniteExpectation 
-                     Prts
-                     (rvinner
-                        (vecrvscalerv (vec_cutoff_indicator (S j) eps (rvsumvec Xm))
-                                      (vec_cutoff_eps_rv j eps (rvsumvec Xm))) (Xm (S j)))}
-        {isfe_mult : let Xm := fun n => X (n + m)%nat in
-            vector_IsFiniteExpectation 
-              Prts 
-              (vecrvmult 
-                 (vecrvscalerv (vec_cutoff_indicator (S j) eps (rvsumvec Xm))
-                               (vec_cutoff_eps_rv j eps (rvsumvec Xm))) (Xm (S j)))}
         {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}
         (HC : forall (n:nat), 
           almostR2 Prts eq
@@ -1967,9 +2048,7 @@ End ash.
     specialize (H size (Xm (S j))  (vecrvscalerv (vec_cutoff_indicator (S j) eps (rvsumvec Xm))
           (vec_cutoff_eps_rv j eps (rvsumvec Xm))) _ _).
     cut_to H.
-    - simpl in isfe_in.
-      simpl in isfe_mult.
-      rewrite <- (H _ _).
+    - rewrite <- (H _ _).
       + apply FiniteExpectation_ext.
         reflexivity.
       + apply HC.
@@ -1979,13 +2058,12 @@ End ash.
         * intros.
           apply filtration_history_sa_le_rv.
           lia.
-        * easy.
       + apply vec_rv_cutoff_eps_rv; intros.
         apply rvsumvec_rv; intros.
         apply filtration_history_sa_le_rv.
         lia.
      Qed.
-  
+
   Lemma rvnorm_hnorm {size:nat} (X : Ts -> vector R size) :
     forall omega,
       (rvnorm X) omega = hilbert.Hnorm (X omega).
@@ -2057,10 +2135,234 @@ End ash.
     easy.
   Qed.
 
+  Instance isfe_inner_sum1  {size:nat} (X: nat -> Ts -> vector R size) 
+        {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)}
+        {isfeinner : forall j k : nat, 
+            IsFiniteExpectation 
+              Prts 
+              (rvinner (X j) (X k))} :
+    forall m k j, 
+      IsFiniteExpectation 
+        Prts
+        (fun omega : Ts =>
+           Rvector_inner (sum_n (fun n : nat => X (n + m)%nat omega) k)
+                         (X j omega)).
+   Proof.
+      intros.
+      induction k.
+      - setoid_rewrite sum_O.
+        apply isfeinner.
+      - assert (rv_eq
+                   (fun omega : Ts =>
+                      Rvector_inner (sum_n (fun n : nat => X (n + m)%nat omega) (S k))
+                                    (X j omega))
+                   (fun omega =>
+                      (Rvector_inner (sum_n (fun n : nat => X (n + m)%nat omega) k)
+                                     (X j omega))
+                      + 
+                      (Rvector_inner (X (S (k + m)) omega)
+                                     (X j omega)))).
+                                     
+        {
+          intro x.
+          rewrite sum_Sn.
+          unfold plus; simpl.
+          now rewrite Rvector_inner_plus.
+        }
+        apply (IsFiniteExpectation_proper _ _ _ H).        
+        apply IsFiniteExpectation_plus; try typeclasses eauto.        
+        apply Rvector_inner_rv; trivial.
+        now apply rvsumvec_rv.
+     Qed.        
+
+  Instance isfe_inner_sum  {size:nat} (X: nat -> Ts -> vector R size) (m:nat)
+        {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)}
+        {isfeinner : forall j k : nat, 
+            IsFiniteExpectation Prts (rvinner (X j) (X k))} :
+    forall j k : nat, 
+      IsFiniteExpectation Prts (rvinner (rvsumvec (fun n => X (n + m)%nat) j)
+                                        (rvsumvec (fun n => X (n + m)%nat) k)).
+  Proof.
+    intros.
+    unfold rvsumvec, rvinner. 
+    induction j.
+    - setoid_rewrite sum_O.
+      setoid_rewrite Rvector_inner_comm.
+      now apply isfe_inner_sum1.
+    - assert (rv_eq
+                 (fun omega : Ts =>
+                    Rvector_inner (sum_n (fun n : nat => X (n + m)%nat omega) (S j))
+                                  (sum_n (fun n : nat => X (n + m)%nat omega) k))
+                 (fun omega =>
+                    Rvector_inner (sum_n (fun n : nat => X (n + m)%nat omega) j)
+                                  (sum_n (fun n : nat => X (n + m)%nat omega) k) +
+                    Rvector_inner (X (S j + m)%nat omega)
+                                  (sum_n (fun n : nat => X (n + m)%nat omega) k))).
+      {
+        intro x.
+        rewrite sum_Sn.
+        unfold plus; simpl.
+        now rewrite Rvector_inner_plus.
+      }
+      apply (IsFiniteExpectation_proper _ _ _ H).
+      apply IsFiniteExpectation_plus; try typeclasses eauto.
+      + apply Rvector_inner_rv; now apply rvsumvec_rv.
+      + apply Rvector_inner_rv; trivial.
+        now apply rvsumvec_rv.
+      + setoid_rewrite Rvector_inner_comm.
+        now apply isfe_inner_sum1.
+  Qed.
+
+  Lemma a_plus_b_eq_b (a b : R) :
+    a = 0 -> a + b = b.
+  Proof.
+    lra.
+  Qed.
+  
+  Lemma IsFiniteExpectation_rvmult_rvmaxlist1 F G k
+        {rvF:forall n, RandomVariable dom borel_sa (F n)}
+        {rvG:RandomVariable dom borel_sa G}
+    :
+    (forall a, (a <= k)%nat ->
+            IsFiniteExpectation Prts (rvmult (F a) G)) ->
+    IsFiniteExpectation Prts
+                        (rvmult (rvmaxlist F k) G).
+  Proof.
+    intros.
+    unfold rvmaxlist, Rmax_list_map.
+    induction k; [simpl; auto |].
+    rewrite seq_Sn.
+    apply (IsFiniteExpectation_proper
+             _
+             (rvchoice
+                (fun a =>
+                   if Rle_dec (Rmax_list (map (fun n : nat => F n a) (seq 0 (S k))))
+                              (F (S k) a)
+                   then true else false
+                )
+                (rvmult
+                   (fun a : Ts =>
+                      ((fun n : nat => F n a) (S k)%nat)) G)
+                (rvmult
+                   (fun a : Ts =>
+                      (Rmax_list (map (fun n : nat => F n a) (seq 0 (S k))))) G))).
+    {
+      intros ?.
+      rv_unfold.
+      rewrite  Rmax_list_app by now simpl.
+      unfold Rmax.
+      rewrite plus_0_l.
+      destruct (Rle_dec (Rmax_list (map (fun n : nat => F n a) (seq 0 (S k)))) (F (S k) a)); trivial.
+    } 
+    apply IsFiniteExpectation_case.
+    - apply rvmult_rv; auto.
+    - apply rvmult_rv; auto 3.
+      apply rvmaxlist_rv; auto.
+    - apply H; lia.
+    - apply IHk; intros.
+      apply H; lia.
+  Qed.
+  
+  Lemma IsFiniteExpectation_rvmult_rvmaxlist F G k j
+        {rvF:forall n, RandomVariable dom borel_sa (F n)}
+        {rvG:forall n, RandomVariable dom borel_sa (G n)}
+    :
+    (forall a b, (a <= k -> b <= j)%nat ->
+            IsFiniteExpectation Prts (rvmult (F a) (G b))) ->
+    IsFiniteExpectation Prts
+                        (rvmult (rvmaxlist F k) (rvmaxlist G j)).
+  Proof.
+    intros.
+    apply IsFiniteExpectation_rvmult_rvmaxlist1; try typeclasses eauto; intros.
+    rewrite rvmult_comm.
+    apply IsFiniteExpectation_rvmult_rvmaxlist1; try typeclasses eauto; intros.
+    rewrite rvmult_comm.
+    now apply H.
+  Qed.
+
+  Lemma IsFiniteExpectation_rvmaxlist F k
+        {rvF:forall n, RandomVariable dom borel_sa (F n)}
+    :
+    (forall a, (a <= k)%nat ->
+            IsFiniteExpectation Prts (F a) ) ->
+    IsFiniteExpectation Prts (rvmaxlist F k).
+  Proof.
+    intros.
+    unfold rvmaxlist, Rmax_list_map.
+    induction k; [simpl; auto |].
+    rewrite seq_Sn.
+    apply (IsFiniteExpectation_proper
+             _
+             (rvchoice
+                (fun a =>
+                   if Rle_dec (Rmax_list (map (fun n : nat => F n a) (seq 0 (S k))))
+                              (F (S k) a)
+                   then true else false
+                )
+                (fun a : Ts =>
+                      ((fun n : nat => F n a) (S k)%nat))
+                (fun a : Ts =>
+                   (Rmax_list (map (fun n : nat => F n a) (seq 0 (S k))))))).
+    {
+      intros ?.
+      rv_unfold.
+      rewrite  Rmax_list_app by now simpl.
+      unfold Rmax.
+      rewrite plus_0_l.
+      destruct (Rle_dec (Rmax_list (map (fun n : nat => F n a) (seq 0 (S k)))) (F (S k) a)); trivial.
+    } 
+    apply IsFiniteExpectation_case; trivial.
+    - apply rvmaxlist_rv; auto.
+    - apply H; lia.
+    - apply IHk; intros.
+      apply H; lia.
+  Qed.
+
+  Lemma isfin_inner_cutoff_eps {size : nat} (X : nat -> Ts -> vector R size) (eps : posreal) 
+    {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)}
+    {isfe : forall j k, IsFiniteExpectation Prts (rvinner (X j) (X k))} :
+    forall j k,
+      IsFiniteExpectation Prts (rvinner (vec_cutoff_eps_rv j eps X)
+                                        (vec_cutoff_eps_rv k eps X)).
+  Proof.
+    intros.
+    apply IsFiniteExpectation_abs_id; try typeclasses eauto.
+    eapply (IsFiniteExpectation_bounded 
+              _ (const 0) _
+              (rvmaxlist (fun k => rvmaxlist (fun j => rvabs (rvinner (X j) (X k))) j) k)).
+    - intro x.
+      unfold const, rvabs.
+      apply Rabs_pos.
+    - intro x.
+      generalize (vec_cutoff_eps_values j eps X x); intros.
+      generalize (vec_cutoff_eps_values k eps X x); intros.      
+      destruct H as [j' [? ?]].
+      destruct H0 as [k' [? ?]].
+      unfold rvabs, rvinner.
+      rewrite H1, H2.
+      unfold rvmaxlist.
+
+      admit.
+      Unshelve.
+      apply IsFiniteExpectation_rvmaxlist.
+      + intros.
+        typeclasses eauto.
+      + intros.
+        apply IsFiniteExpectation_rvmaxlist; trivial.
+        * intros.
+          typeclasses eauto.
+        * intros.
+          apply IsFiniteExpectation_abs; trivial.
+          now apply Rvector_inner_rv.
+    Admitted.
+
   Lemma vec_ash_6_1_4 {size:nat} (X: nat -> Ts -> vector R size) (eps:posreal) (m:nat)
         {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)}
-        {frf : forall (n:nat), FiniteRangeFunction (X n)}
-        {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}        
+        {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}         
+        {isfemult : forall j k : nat, 
+            vector_IsFiniteExpectation 
+              Prts 
+              (vecrvmult (X j) (X k))}
         (HC : forall (n:nat), 
           almostR2 Prts eq
               (vector_FiniteConditionalExpectation 
@@ -2068,7 +2370,7 @@ End ash.
               (const Rvector_zero)) :
     let Sum := fun j => (rvsumvec (fun n => X (n + m)%nat) j) in
     forall (n:nat), ps_P (event_ge dom (rvmaxlist (fun k => rvnorm(Sum k)) n) eps) <=
-                    (SimpleExpectation (rvinner (Sum n) (Sum n)))/eps^2.
+                    (FiniteExpectation Prts (rvinner (Sum n) (Sum n)))/eps^2.
   Proof.
     intros.
     assert (H1 : event_equiv (event_ge dom (rvmaxlist (fun k => rvnorm(Sum k)) n) eps)
@@ -2082,9 +2384,57 @@ End ash.
       + rewrite rvmaxlist_rvnorm_hnorm.
         now rewrite <- vec_cutoff_ge_eps_rv_rvmaxlist_iff.
     }
+
+    assert (Zrelfe1 : forall j k,
+               IsFiniteExpectation Prts (rvinner (vec_cutoff_eps_rv j eps Sum)
+                                                 (vec_cutoff_eps_rv k eps Sum))).
+    {
+      intros.
+      apply isfin_inner_cutoff_eps; typeclasses eauto.
+    }
+(*    
+      unfold Sum.
+      Search IsFiniteExpectation.
+
+      apply IsFiniteExpectation_abs_id; try typeclasses eauto.
+      eapply (IsFiniteExpectation_bounded _ (const 0) _
+                    (rvscale (INR size) (rvmult (rvmaxlist (fun k => rvmaxabs (Sum k)) j)
+                                                (rvmaxlist (fun k => rvmaxabs (Sum k)) k)))).
+      - intro x.
+        unfold const, rvabs.
+        apply Rabs_pos.
+      - intro x.
+        rv_unfold.
+        unfold rvinner.
+        eapply Rle_trans.
+        + apply abs_inner_le_mult_max_abs.
+        + rewrite (Rmult_comm (INR size)).
+          apply Rmult_le_compat_r.
+          * apply pos_INR.
+          * apply Rmult_le_compat.
+            -- apply Rvector_max_abs_nonneg.
+            -- apply Rvector_max_abs_nonneg.
+            -- destruct (vec_cutoff_eps_values j eps Sum x) as [j' [??]].
+               rewrite H0.
+               apply Rmax_spec.
+               apply in_map_iff.
+               exists j'.
+               split; trivial.
+               apply in_seq.
+               lia.
+            -- destruct (vec_cutoff_eps_values k eps Sum x) as [k' [??]].
+               rewrite H0.
+               apply Rmax_spec.
+               apply in_map_iff.
+               exists k'.
+               split; trivial.
+               apply in_seq.
+               lia.
+    }
+*)
     rewrite H1.
     generalize (vec_Chebyshev_ineq_div_mean0 (vec_cutoff_eps_rv n eps Sum) _ eps); intros H3.
-    erewrite <- simple_NonnegExpectation in H3.  
+    rewrite <- FiniteNonnegExpectation_alt with (isfeX := Zrelfe1 n n) in H3.
     simpl in H3.
     rewrite <- Rsqr_pow2.
     unfold rvnorm.
@@ -2131,9 +2481,9 @@ End ash.
     unfold Rdiv.
     apply Rmult_le_compat_r; 
       [left; apply Rinv_0_lt_compat, Rlt_0_sqr, Rgt_not_eq, cond_pos |].
-    assert (Srel:forall j, SimpleExpectation(rvinner (Sum (S j)) (Sum (S j))) =
-                           SimpleExpectation(rvinner (Sum j) (Sum j)) + 
-                           SimpleExpectation(rvinner (X ((S j)+m)%nat) (X ((S j)+m)%nat))).
+    assert (Srel:forall j, FiniteExpectation Prts (rvinner (Sum (S j)) (Sum (S j))) =
+                           FiniteExpectation Prts (rvinner (Sum j) (Sum j)) + 
+                           FiniteExpectation Prts (rvinner (X ((S j)+m)%nat) (X ((S j)+m)%nat))).
     {
       intros.
       assert (rv_eq (Sum (S j)) (vecrvplus (Sum j) (X (S j + m)%nat))).
@@ -2143,48 +2493,111 @@ End ash.
         now rewrite sum_Sn.
       - generalize (rvinner_sum (Sum j) (X (S j + m)%nat)); intros.
         rewrite <- H in H0.
-        rewrite (SimpleExpectation_ext H0).
-        rewrite <- sumSimpleExpectation.
-        rewrite <- sumSimpleExpectation.
+        erewrite (FiniteExpectation_ext Prts _ _ H0).
+        erewrite FiniteExpectation_plus.
+        erewrite FiniteExpectation_plus.        
         rewrite <- Rplus_assoc.
-        rewrite <- scaleSimpleExpectation.
-
-        assert (isfe_in : forall j k : nat, IsFiniteExpectation Prts (rvinner (X j) (X k))).
-        {
-          intros.
-          apply IsFiniteExpectation_simple; typeclasses eauto.
-        }
-        assert (isfe_mult : forall j k : nat, vector_IsFiniteExpectation Prts (vecrvmult (X j) (X k))).
-        {
-          intros.
-          apply vector_IsFiniteExpectation_simple.
-          - typeclasses eauto.
-          - now apply frf_vecrvmult.
-       }
+        f_equal.
+        erewrite FiniteExpectation_scale.
+        symmetry.
+        replace (FiniteExpectation Prts (rvinner (Sum j) (Sum j))) with
+            (FiniteExpectation Prts (rvinner (Sum j) (Sum j)) + 2*0) at 1 by lra.
+        do 2 f_equal.
         assert(isfe_sum : forall j k : nat,
              IsFiniteExpectation 
                Prts
                (rvinner (rvsumvec (fun n : nat => X (n + m)%nat) j) (X (k + m)%nat))).
        {
          intros.
-         apply IsFiniteExpectation_simple; typeclasses eauto.         
+         unfold rvinner, rvsumvec.
+         induction j0.
+         - setoid_rewrite sum_O.
+           typeclasses eauto.
+         - setoid_rewrite sum_Sn.
+           unfold plus; simpl.
+           setoid_rewrite Rvector_inner_plus.
+           apply IsFiniteExpectation_plus; trivial.
+           + apply Rvector_inner_rv; trivial.
+             now apply rvsumvec_rv; intros.
+           + typeclasses eauto.
+           + typeclasses eauto.
         }
         generalize (vec_expec_cross_zero_sum2_shift X m HC); intros.
         specialize (H2 j (S j)).
         cut_to H2; try lia.
-        replace  (SimpleExpectation (rvinner (Sum j) (X (S j + m)%nat))) with 0.
-        + ring.
-        + rewrite simple_FiniteExpectation.
-          unfold Sum.
-          rewrite <- H2.
-          apply FiniteExpectation_pf_irrel.
+        unfold Sum.
+        rewrite <- H2.
+        apply FiniteExpectation_pf_irrel.        
+    }
+    assert (Zrelfe2 : forall j,
+               IsFiniteExpectation 
+                 Prts
+                 (rvinner
+                    (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) (vec_cutoff_eps_rv j eps Sum))
+                    (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) (vec_cutoff_eps_rv j eps Sum)))).
+    {
+      intros.
+      unfold vecrvminus.
+      setoid_rewrite rvinner_sum.
+      apply IsFiniteExpectation_plus; trivial; try typeclasses eauto.
+      apply IsFiniteExpectation_plus; trivial; try typeclasses eauto.
+      - apply IsFiniteExpectation_scale.
+        assert (rv_eq
+                   (rvinner (vec_cutoff_eps_rv (S j) eps Sum)
+                            (vecrvopp (vec_cutoff_eps_rv j eps Sum)))
+                   (rvopp
+                      (rvinner (vec_cutoff_eps_rv (S j) eps Sum)
+                               (vec_cutoff_eps_rv j eps Sum)))).
+        {
+          intro x.
+          unfold rvinner, vecrvopp, rvopp, vecrvscale.
+          rewrite Rvector_inner_comm.
+          rewrite Rvector_inner_scal.
+          rewrite Rvector_inner_comm.
+          now unfold rvscale.
+        }
+        apply (IsFiniteExpectation_proper _ _ _ H).
+        now apply IsFiniteExpectation_opp.
+      - assert (rv_eq
+                   (rvinner (vecrvopp (vec_cutoff_eps_rv j eps Sum))
+                            (vecrvopp (vec_cutoff_eps_rv j eps Sum)))
+                   (rvinner (vec_cutoff_eps_rv j eps Sum)
+                            (vec_cutoff_eps_rv j eps Sum))).
+        {
+          intro x.
+          unfold rvinner, vecrvopp, vecrvscale.
+          rewrite Rvector_inner_scal.
+          rewrite Rvector_inner_comm.
+          rewrite Rvector_inner_scal.
+          lra.
+        }
+        now apply (IsFiniteExpectation_proper _ _ _ H).        
+     }
+    assert (Zrel_fe3 : forall j,
+               IsFiniteExpectation Prts (rvinner (vec_cutoff_eps_rv j eps Sum) 
+                                           (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
+                                                       (vec_cutoff_eps_rv j eps Sum))) ).
+    {
+      intros.
+      unfold vecrvminus.
+      unfold rvinner, vecrvplus.
+      setoid_rewrite Rvector_inner_plus_r.
+      apply IsFiniteExpectation_plus.
+      - typeclasses eauto.
+      - typeclasses eauto.
+      - apply Zrelfe1.
+      - unfold vecrvopp.
+        setoid_rewrite Rvector_inner_comm.
+        setoid_rewrite Rvector_inner_scal.
+        apply IsFiniteExpectation_scale.
+        apply Zrelfe1.
     }
     assert (Zrel: forall j,
-               SimpleExpectation (rvinner (vec_cutoff_eps_rv (S j) eps Sum)
+               FiniteExpectation Prts (rvinner (vec_cutoff_eps_rv (S j) eps Sum)
                                          (vec_cutoff_eps_rv (S j) eps Sum)) =
-               SimpleExpectation (rvinner (vec_cutoff_eps_rv j eps Sum)
+               FiniteExpectation Prts (rvinner (vec_cutoff_eps_rv j eps Sum)
                                          (vec_cutoff_eps_rv j eps Sum)) + 
-               SimpleExpectation  (rvinner (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
+               FiniteExpectation Prts  (rvinner (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
                                                      (vec_cutoff_eps_rv j eps Sum))
                                          (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
                                                      (vec_cutoff_eps_rv j eps Sum)))).
@@ -2219,36 +2632,54 @@ End ash.
           now rewrite <- vecrvplus_minus.
         + rewrite H.
           now rewrite rvinner_sum.         
-      - rewrite (SimpleExpectation_ext H).
-        rewrite <- sumSimpleExpectation.
-        rewrite <- sumSimpleExpectation.
-        rewrite <- Rplus_assoc.
-        f_equal.
-        rewrite <- scaleSimpleExpectation.
-        assert (SimpleExpectation (rvinner (vec_cutoff_eps_rv j eps Sum) 
+      - rewrite (FiniteExpectation_ext_alt _ _ _ H).
+        
+erewrite FiniteExpectation_plus'.
+        + erewrite FiniteExpectation_plus'.
+          * erewrite FiniteExpectation_scale.
+            
+            assert (IsFiniteExpectation Prts (rvinner (vec_cutoff_eps_rv j eps Sum) 
                                            (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
-                                                       (vec_cutoff_eps_rv j eps Sum))) = 0).
-        + assert (Heq :rv_eq
-                         (rvinner 
-                            (vec_cutoff_eps_rv j eps Sum) 
-                            (vecrvscalerv 
-                               (vec_cutoff_indicator (S j) eps Sum)
-                               (X ((S j)+m)%nat)))
-                         (rvinner 
-                            (vec_cutoff_eps_rv j eps Sum) 
-                            (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
-                                        (vec_cutoff_eps_rv j eps Sum)))).
-          {
+                                                       (vec_cutoff_eps_rv j eps Sum))) ).
+            {
+                  unfold vecrvminus.
+                  unfold rvinner, vecrvplus.
+                  setoid_rewrite Rvector_inner_plus_r.
+                  apply IsFiniteExpectation_plus.
+                  - typeclasses eauto.
+                  - typeclasses eauto.
+                  - apply Zrelfe1.
+                  - unfold vecrvopp.
+                    setoid_rewrite Rvector_inner_comm.
+                    setoid_rewrite Rvector_inner_scal.
+                    apply IsFiniteExpectation_scale.
+                    apply Zrelfe1.
+              }
+              assert (FiniteExpectation Prts (rvinner (vec_cutoff_eps_rv j eps Sum) 
+                                                      (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
+                                                                  (vec_cutoff_eps_rv j eps Sum))) = 0).
+              {
+                assert (Heq :rv_eq
+                               (rvinner 
+                                  (vec_cutoff_eps_rv j eps Sum) 
+                                  (vecrvscalerv 
+                                     (vec_cutoff_indicator (S j) eps Sum)
+                                     (X ((S j)+m)%nat)))
+                               (rvinner 
+                                  (vec_cutoff_eps_rv j eps Sum) 
+                                  (vecrvminus (vec_cutoff_eps_rv (S j) eps Sum) 
+                                              (vec_cutoff_eps_rv j eps Sum)))).
+            {
             intros w.
             unfold rvinner, vecrvminus, vecrvopp, vecrvplus, vecrvscale, vecrvscalerv.
             f_equal.
             unfold vec_cutoff_eps_rv, vec_cutoff_indicator, EventIndicator.
             unfold vec_cutoff_indicator_obligation_1.
             generalize (vec_cutoff_eps_succ_minus eps (fun k => Sum k w) j); intros.
-            unfold minus, plus, opp in H0; simpl in H0.
+            unfold minus, plus, opp in H2; simpl in H2.
             simpl.
             rewrite <- Rvector_opp_scale.
-            rewrite H0.
+            rewrite H2.
             unfold vec_pre_cutoff_event.
             match_destr.
             - match_destr.
@@ -2267,7 +2698,8 @@ End ash.
               + tauto.
               + now rewrite Rvector_scale0.
           }
-          erewrite <-(SimpleExpectation_ext Heq).
+            symmetry in Heq.
+            erewrite (FiniteExpectation_ext _ _ _ Heq).
           assert (rv_eq
                     (rvinner (vec_cutoff_eps_rv j eps Sum)
                              (vecrvscalerv (vec_cutoff_indicator (S j) eps Sum) (X ((S j)+m)%nat)))
@@ -2284,28 +2716,33 @@ End ash.
             rewrite Rvector_inner_comm.
             now unfold Sum, rvsumvec.
           }
-          erewrite (SimpleExpectation_ext H0).
-          rewrite simple_FiniteExpectation.
+          erewrite (FiniteExpectation_ext _ _ _ H2).
           apply vec_indicator_prod_cross_shift with (isfe0 := isfe) (rv0 := rv); trivial.
-          simpl.
-          apply vector_IsFiniteExpectation_simple.
+          }
+              f_equal.
+              apply a_plus_b_eq_b .
+              replace 0 with (2 * 0) by lra.
+              apply Rmult_eq_compat_l.
+              rewrite <- H2.
+              apply FiniteExpectation_pf_irrel.
           * typeclasses eauto.
-          * apply frf_vecrvmult; trivial.
-            apply frf_vecrvscalerv; typeclasses eauto.
-        + rewrite H0.
-          lra.
+          * typeclasses eauto.
+          * typeclasses eauto.
+        + typeclasses eauto.
+        + typeclasses eauto.
+        + typeclasses eauto.
     }
     clear H1 H3 H3eq.
     induction n.
     + simpl.
       right.
-      apply SimpleExpectation_ext.
+      apply FiniteExpectation_ext.
       intro x.
       now unfold Sum.
     + rewrite Srel.
       rewrite Zrel.
       apply Rplus_le_compat; trivial.
-      apply SimpleExpectation_le.
+      apply FiniteExpectation_le.
       intro x.
       unfold rvinner, vecrvminus, vecrvplus, vecrvopp, vecrvscale.
       unfold vec_cutoff_eps_rv.
@@ -2328,20 +2765,36 @@ End ash.
         now rewrite Rvector_plus_zero.
       * rewrite Rvector_inner_zero.
         apply Rvector_inner_pos.
+        Unshelve.
+        -- assert (rv_eq
+                     (rvinner (vec_cutoff_eps_rv j eps Sum) (vecrvscalerv (vec_cutoff_indicator (S j) eps Sum) (X (S j + m)%nat)))
+                     (rvinner (vecrvscalerv (vec_cutoff_indicator (S j) eps Sum) (vec_cutoff_eps_rv j eps Sum)) (X (S j + m)%nat))).
+           {
+             intro x.
+             rv_unfold.
+             unfold rvinner.
+             unfold vecrvscalerv.
+             unfold Rvector_inner.
+             f_equal.
+             rewrite Rvector_scale_mult_l.
+             now rewrite Rvector_scale_mult_r.             
+           }
+           apply (IsFiniteExpectation_proper _ _ _ H2).
+           apply IsFiniteExpectation_inner_vecrvmult; try typeclasses eauto.
     Qed.
 
   Lemma vec_var_sum_cross_0_offset {size:nat} (X : nat -> Ts -> vector R size) (m : nat)
         {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)}
-        {frf : forall (n:nat), FiniteRangeFunction (X n)}
         {isfe : forall n, vector_IsFiniteExpectation Prts (X n)}
+        {isfe_mult : forall j k : nat, vector_IsFiniteExpectation Prts (vecrvmult (X j) (X k))} 
         (HC : forall (n:nat), 
           almostR2 Prts eq
               (vector_FiniteConditionalExpectation 
                  Prts (filtration_history_sa_sub (cod := Rvector_borel_sa size) X n) (X (S n))) 
               (const Rvector_zero)) :
     let Xm := fun n => X (n + m)%nat in
-    forall j, SimpleExpectation(rvinner (rvsumvec Xm j) (rvsumvec Xm j)) =
-              sum_n (fun n => SimpleExpectation (rvinner (X (n + m)%nat) (X (n + m)%nat))) j.
+    forall j, FiniteExpectation Prts (rvinner (rvsumvec Xm j) (rvsumvec Xm j)) =
+              sum_n (fun n => FiniteExpectation Prts (rvinner (X (n + m)%nat) (X (n + m)%nat))) j.
   Proof.
     intros.
     induction j.
@@ -2349,7 +2802,7 @@ End ash.
       + intro x.
         unfold Xm, rvinner, rvsumvec; simpl.
         now rewrite sum_O.
-      + rewrite (SimpleExpectation_ext H).
+      + rewrite (FiniteExpectation_ext _ _ _  H).
         now rewrite sum_O.
     - rewrite sum_Sn.
       unfold plus; simpl.
@@ -2365,42 +2818,35 @@ End ash.
         unfold plus; simpl.
         rewrite Rvector_inner_sum.
         now unfold rvplus, rvscale; simpl.
-      + rewrite (SimpleExpectation_ext H).
-        rewrite <- sumSimpleExpectation.
-        rewrite <- sumSimpleExpectation.
-        rewrite <- scaleSimpleExpectation.
-        assert (isfe_in : forall j k : nat, IsFiniteExpectation Prts (rvinner (X j) (X k))).
-        {
-          intros.
-          apply IsFiniteExpectation_simple; typeclasses eauto.
-        }
-        assert (isfe_mult : forall j k : nat, vector_IsFiniteExpectation Prts (vecrvmult (X j) (X k))).
-        {
-          intros.
-          apply vector_IsFiniteExpectation_simple.
-          - typeclasses eauto.
-          - now apply frf_vecrvmult.
-       }
-        assert(isfe_sum : forall j k : nat,
-             IsFiniteExpectation 
-               Prts
-               (rvinner (rvsumvec (fun n : nat => X (n + m)%nat) j) (X (k + m)%nat))).
-       {
-         intros.
-         apply IsFiniteExpectation_simple; typeclasses eauto.         
-        }
-        generalize (vec_expec_cross_zero_sum2_shift X m HC); intros.
-        specialize (H0 j (S j)).
-        cut_to H0; try lia.
-        replace (SimpleExpectation (rvinner (rvsumvec Xm j) (X (S j + m)%nat))) with 0.
-        * rewrite <- IHj.
-          ring_simplify.
-          reflexivity.
-        * rewrite simple_FiniteExpectation.
-          unfold Xm.
-          rewrite <- H0.
-          apply FiniteExpectation_pf_irrel.
-   Qed.
+      + rewrite (FiniteExpectation_ext_alt _ _ _ H).
+        erewrite FiniteExpectation_plus'.
+        * erewrite FiniteExpectation_plus'.        
+          -- erewrite FiniteExpectation_scale.
+             assert(isfe_sum : forall j k : nat,
+                       IsFiniteExpectation 
+                         Prts
+                         (rvinner (rvsumvec (fun n : nat => X (n + m)%nat) j) (X (k + m)%nat))).
+             {
+               intros.
+               typeclasses eauto.
+             }
+             generalize (vec_expec_cross_zero_sum2_shift X m HC); intros.
+             specialize (H0 j (S j)).
+             cut_to H0; try lia.
+             unfold Xm.
+             replace (FiniteExpectation Prts (rvinner (rvsumvec Xm j) (X (S j + m)%nat))) with 0.
+             ++ rewrite <- IHj.
+                ring_simplify.
+                reflexivity.
+             ++ rewrite <- H0.
+                apply FiniteExpectation_pf_irrel.                
+        -- typeclasses eauto.
+        -- typeclasses eauto.
+        -- typeclasses eauto.
+      * typeclasses eauto.
+      * typeclasses eauto.
+      * typeclasses eauto.
+  Qed.
 
   Lemma vec_sa_sigma_not_cauchy {size:nat} (X : nat -> Ts -> vector R size) (eps:posreal) (N : nat)
         {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)} :
@@ -2733,7 +3179,13 @@ End ash.
     Lemma vec_Ash_6_2_1_helper {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (m : nat)
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
           {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}
-          {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+          {isfe_mult : forall j k : nat, vector_IsFiniteExpectation Prts (vecrvmult (X j) (X k))} 
+(*
+          {isfe2 : forall (n:nat), IsFiniteExpectation 
+                                     Prts
+                                     (rvinner (X n) (X n))}
+*)
+(*          {frf : forall (n:nat), FiniteRangeFunction (X (n))} *)
           (HC : forall (n:nat), 
               almostR2 Prts eq
                        (vector_FiniteConditionalExpectation 
@@ -2742,11 +3194,11 @@ End ash.
 
       let Sum := fun j => rvsumvec (fun k => X (k+m)%nat) j in
       Rbar_le (Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvnorm (Sum k)) n) eps)))
-              (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvinner (X (n + m)%nat) (X (n + m)%nat))))) (mkposreal _ (sqr_pos eps))).
+              (Rbar_div_pos (LimSup_seq (sum_n (fun n => FiniteExpectation Prts (rvinner (X (n + m)%nat) (X (n + m)%nat))))) (mkposreal _ (sqr_pos eps))).
     Proof.
       intros.
       generalize (vec_ash_6_1_4 X); intros.
-      specialize (H eps m _ _ isfe HC).
+      specialize (H eps m _ isfe isfe_mult HC).
       simpl in H.
       generalize (Lim_seq_le _ _ H); intros.
       unfold Sum.
@@ -2760,22 +3212,24 @@ End ash.
         apply Rbar_div_pos_le.
         generalize (vec_var_sum_cross_0_offset X m HC); intros.
         simpl in H1.
-        rewrite Lim_seq_ext with (v := sum_n (fun n : nat => SimpleExpectation (rvinner (X (n + m)%nat)  (X (n + m)%nat)))).
+        rewrite Lim_seq_ext with (v := sum_n (fun n : nat => FiniteExpectation Prts (rvinner (X (n + m)%nat)  (X (n + m)%nat)))).
         + apply Lim_seq_sup_le.
         + apply H1.
     Qed.
 
     Lemma vec_Ash_6_2_1_helper2 {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal)
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
-          {frf : forall (n:nat), FiniteRangeFunction (X (n))}:
-      ex_series (fun n => SimpleExpectation (rvinner (X n) (X n))) ->
+          {isfe_mult : forall j k : nat, vector_IsFiniteExpectation Prts (vecrvmult (X j) (X k))} 
+
+(*          {frf : forall (n:nat), FiniteRangeFunction (X (n))} *) :
+      ex_series (fun n => FiniteExpectation Prts (rvinner (X n) (X n))) ->
       is_lim_seq (fun m =>
-                    (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvinner (X (n + (S m))%nat) (X (n + (S m))%nat))))) 
+                    (Rbar_div_pos (LimSup_seq (sum_n (fun n => FiniteExpectation Prts (rvinner (X (n + (S m))%nat) (X (n + (S m))%nat))))) 
                                   (mkposreal _ (sqr_pos eps)))) 0.
     Proof.
       intros.
       apply is_lim_seq_ext with
-          (u := fun m => (Rbar_div_pos (Series (fun n => SimpleExpectation (rvinner (X (n + (S m))%nat) (X (n + (S m))%nat))))
+          (u := fun m => (Rbar_div_pos (Series (fun n => FiniteExpectation Prts (rvinner (X (n + (S m))%nat) (X (n + (S m))%nat))))
                                        (mkposreal _ (sqr_pos eps)))).
       {
         intros.
@@ -2789,11 +3243,11 @@ End ash.
         generalize (zerotails _ H); intros.
         apply is_lim_seq_ext with
             (u :=  (fun n : nat =>
-                      Series (fun k : nat => SimpleExpectation (rvinner (X (S (n + k))) (X (S (n + k))))))).
+                      Series (fun k : nat => FiniteExpectation Prts (rvinner (X (S (n + k))) (X (S (n + k))))))).
         + intros.
           apply Series_ext.
           intros.
-          apply SimpleExpectation_ext.
+          apply FiniteExpectation_ext.
           intro x.
           now replace (n0 + S n)%nat with (S (n + n0))%nat by lia.
         + apply H0.
@@ -2841,7 +3295,7 @@ End ash.
 
     Lemma vec_Ash_6_2_1_helper3 {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (m : nat) 
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
-          {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
+(*          {frf : forall (n:nat), FiniteRangeFunction (X (n))} *) :
       let Sum := fun j => rvsumvec X j in
       Rbar.Finite (ps_P (union_of_collection (fun k =>  event_ge dom (rvnorm (vecrvminus (Sum (k+(S m))%nat) (Sum m))) eps))) =
       Lim_seq (fun n => ps_P (event_ge dom (rvmaxlist (fun k => rvnorm (vecrvminus (Sum (k + (S m))%nat) (Sum m))) n) eps)).
@@ -2903,7 +3357,8 @@ End ash.
     Lemma vec_Ash_6_2_1_helper4 {size:nat} (X : nat -> Ts -> vector R size) (eps : posreal) (m : nat) 
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
           {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}
-          {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+          {isfe_mult : forall j k : nat, vector_IsFiniteExpectation Prts (vecrvmult (X j) (X k))} 
+(*          {frf : forall (n:nat), FiniteRangeFunction (X (n))} *)
           (HC : forall (n:nat), 
               almostR2 Prts eq
                        (vector_FiniteConditionalExpectation 
@@ -2912,7 +3367,7 @@ End ash.
 
       let Sum := fun j => rvsumvec X j in
       Rbar_le (ps_P (union_of_collection (fun k =>  event_ge dom (rvnorm (vecrvminus (Sum (k + (S m))%nat) (Sum m))) eps)))
-              (Rbar_div_pos (LimSup_seq (sum_n (fun n => SimpleExpectation (rvinner (X (n + (S m))%nat)  (X (n + (S m))%nat))))) (mkposreal _ (sqr_pos eps))).
+              (Rbar_div_pos (LimSup_seq (sum_n (fun n => FiniteExpectation Prts (rvinner (X (n + (S m))%nat)  (X (n + (S m))%nat))))) (mkposreal _ (sqr_pos eps))).
     Proof.
       intros.
       unfold Sum.
@@ -2953,15 +3408,16 @@ End ash.
 
     Lemma vec_Ash_6_2_1_helper5 {size:nat} (X : nat -> Ts -> vector R size)
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
-          {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+(*          {frf : forall (n:nat), FiniteRangeFunction (X (n))} *)
           {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}
+          {isfe_mult : forall j k : nat, vector_IsFiniteExpectation Prts (vecrvmult (X j) (X k))} 
           (HC : forall (n:nat), 
               almostR2 Prts eq
                        (vector_FiniteConditionalExpectation 
                           Prts (filtration_history_sa_sub (cod := Rvector_borel_sa size) X n) (X (S n))) 
                        (const Rvector_zero)) :
 
-      ex_series (fun n => SimpleExpectation (rvinner (X n) (X n))) ->
+      ex_series (fun n => FiniteExpectation Prts (rvinner (X n) (X n))) ->
       let Sum := fun j => rvsumvec X j in
       forall (eps : posreal),
         is_lim_seq (fun m => ps_P (union_of_collection (fun k => event_ge dom (rvnorm (vecrvminus (Sum (k + (S m))%nat) (Sum m))) eps))) 0. 
@@ -2977,7 +3433,7 @@ End ash.
                  (fun m : nat =>
                     Rbar_div_pos
                       (LimSup_seq
-                         (sum_n (fun n : nat => SimpleExpectation (rvinner  (X (n + (S m))%nat)  (X (n + (S m))%nat)))))
+                         (sum_n (fun n : nat => FiniteExpectation Prts (rvinner  (X (n + (S m))%nat)  (X (n + (S m))%nat)))))
                       {| pos := eps²; cond_pos := sqr_pos eps |}) m).
       {
         intros.
@@ -3135,14 +3591,15 @@ End ash.
 
     Lemma vec_Ash_6_2_1 {size:nat} (X : nat -> Ts -> vector R size)
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
-          {frf : forall (n:nat), FiniteRangeFunction (X (n))}
+(*          {frf : forall (n:nat), FiniteRangeFunction (X (n))} *)
           {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}
+          {isfe_mult : forall j k : nat, vector_IsFiniteExpectation Prts (vecrvmult (X j) (X k))} 
           (HC : forall (n:nat), 
               almostR2 Prts eq
                        (vector_FiniteConditionalExpectation 
                           Prts (filtration_history_sa_sub (cod := Rvector_borel_sa size) X n) (X (S n))) 
                        (const Rvector_zero)) :
-      ex_series (fun n => SimpleExpectation (rvinner (X n) (X n))) ->
+      ex_series (fun n => FiniteExpectation Prts (rvinner (X n) (X n))) ->
       almost Prts (fun (x : Ts) => 
                      (forall (i:nat) (pf : (i<size)%nat),
                          ex_series (fun k => (vecrvnth i pf (X k)) x))).
@@ -3202,6 +3659,7 @@ End ash.
       - now apply Rvector_scale_inj in H1.
     Qed.
 
+(*
     Lemma vec_filtration_history_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
           {frf : forall (n:nat), FiniteRangeFunction (X (n))} :
@@ -3215,7 +3673,7 @@ End ash.
         + now apply vec_induced_sigma_scale.
         + apply IHn.
     Qed.
-    
+*)    
 
     Lemma vec_SCESA_scale {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
@@ -3280,11 +3738,37 @@ End ash.
     - apply all_almost.
       now intros.
    Qed.
-    
-    Lemma vec_Ash_6_2_2 {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
+
+    Instance isfe_vecrvmult_scale {size:nat} (X  Y : Ts -> vector R size) (b c : R) :
+      vector_IsFiniteExpectation Prts (vecrvmult X Y) ->
+      vector_IsFiniteExpectation Prts (vecrvmult (vecrvscale b X) (vecrvscale c Y)).
+    Proof.
+      intros.
+      apply Forall_vector; intros; simpl.
+      rewrite vector_nth_fun_to_vector.
+      unfold vector_IsFiniteExpectation in H.
+      apply vector_Forall with (i0 := i) (pf0 := pf) in H.
+      simpl in H.
+      rewrite vector_nth_fun_to_vector in H.
+      assert (rv_eq (fun x => vector_nth i pf ((vecrvmult (vecrvscale b X) (vecrvscale c Y)) x))
+                    (rvscale (b * c) (fun x => vector_nth i pf ((vecrvmult X Y) x)))).
+      {
+        intro x.
+        unfold rvscale, vecrvmult, vecrvscale.
+        rewrite Rvector_scale_mult_l.
+        rewrite Rvector_scale_mult_r.
+        rewrite Rvector_scale_scale.
+        now rewrite Rvector_nth_scale.
+      }
+      apply (IsFiniteExpectation_proper _ _ _ H0).
+      now apply IsFiniteExpectation_scale.
+    Qed.
+
+Lemma vec_Ash_6_2_2 {size:nat} (X : nat -> Ts -> vector R size) (b : nat -> R)
           {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X (n))}
-          {frf : forall (n:nat), FiniteRangeFunction (X (n))}
-          {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)}
+(*          {frf : forall (n:nat), FiniteRangeFunction (X (n))} *)
+          {isfe : forall (n:nat), vector_IsFiniteExpectation Prts (X n)} 
+          {isfe_mult : forall j k : nat, vector_IsFiniteExpectation Prts (vecrvmult (X j) (X k))} 
           (HC : forall (n:nat), 
               almostR2 Prts eq
                        (vector_FiniteConditionalExpectation 
@@ -3292,7 +3776,7 @@ End ash.
                        (const Rvector_zero)) :
       (forall n, 0 < b n <= b (S n)) ->
       is_lim_seq b p_infty ->
-      ex_series (fun n => SimpleExpectation (rvinner (vecrvscale (/ (b n)) (X n))
+      ex_series (fun n => FiniteExpectation Prts (rvinner (vecrvscale (/ (b n)) (X n))
                                                   (vecrvscale (/ (b n)) (X n)))) ->
       almost Prts 
              (fun (x : Ts) => 

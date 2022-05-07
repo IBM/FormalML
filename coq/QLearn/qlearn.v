@@ -3033,6 +3033,14 @@ End rv_expressible.
                      is_lim_seq (fun n => (rvmaxabs (L2_convergent_x (const Rvector_zero) w n)) w1) 0).
     Proof.
       intros Hc HF Ha1 Ha2 Ha3 Ha4 HCE HE.
+      assert (isfe_mult : forall j k : nat,
+              vector_IsFiniteExpectation prts (vecrvmult (w j) (w k))).
+      {
+        intros.
+        apply vector_IsFiniteExpectation_simple.
+        - typeclasses eauto.
+        - now apply frf_vecrvmult.
+      }
       setoid_rewrite is_lim_seq_rvmaxabs_zero_iff.
       pose (N0 := 0%nat).
       assert (Hp1 : let b := fun m => /(prod_f_R0 (fun k => 1 - α (k + N0)) (pred (m))) in
@@ -3125,6 +3133,7 @@ End rv_expressible.
       }
       assert (isfez : forall n : nat, vector_IsFiniteExpectation prts (z n)).
       {
+        
         destruct n.
         - simpl; typeclasses eauto.
         - simpl.
@@ -3140,7 +3149,15 @@ End rv_expressible.
           apply product_sum_increasing0.
           intros; apply Ha1.
       }
-      generalize (vec_Ash_6_2_2 z b); intros Kol.
+      assert (isfe_mult2 : forall j k : nat,
+                      vector_IsFiniteExpectation prts (vecrvmult (z j) (z k))).
+      {
+        intros.
+        apply vector_IsFiniteExpectation_simple.
+        - typeclasses eauto.
+        - now apply frf_vecrvmult.
+      }
+      generalize (vec_Ash_6_2_2 z b); intros Kol.      
       cut_to Kol; trivial.
       - revert Kol;apply almost_impl; apply all_almost; intros ??.
         intros; specialize (H k pf).
@@ -3221,6 +3238,7 @@ End rv_expressible.
         revert H60_2.
         apply ex_series_ext.
         intros.
+        erewrite FiniteExpectation_simple.
         apply SimpleExpectation_ext.
         intros ?.
         unfold z, rvinner, rvscale, vecrvscale.
