@@ -2329,16 +2329,12 @@ End ash.
     intros.
     induction k.
     - unfold seq at 2.
-      replace (S j) with (j + 1)%nat by lia.
-      simpl.
-      assert (k' = 0)%nat by lia.
-      rewrite H1.
+      replace (S j) with (j + 1)%nat by lia; simpl.
       apply Rmax_spec.
+      replace (k') with (0%nat) by lia.
       apply in_map_iff.
-      exists j'.
-      split; trivial.
-      apply in_seq.
-      lia.
+      exists j'; split; trivial.
+      apply in_seq; lia.
     - destruct (le_dec k' k).
       + specialize (IHk l).
         eapply Rle_trans.
@@ -2347,19 +2343,14 @@ End ash.
           -- unfold not; intros.
              symmetry in H1.
              apply map_eq_nil in H1.
-             simpl in H1.
              discriminate H1.
-          -- apply incl_map.
-             apply incl_seq.
-             lia.
-      + assert (k' = (S k))%nat by lia.
-        rewrite H1.
+          -- apply incl_map, incl_seq; lia.
+      + replace (k') with (S k) by lia.
         rewrite Rmax_list_Sn; try lia.
         apply Rle_trans with
             (r2 :=  (Rmax_list (map (fun n0 : nat => f n0 (0 + S k)%nat) (seq 0 (S j))))); [|apply Rmax_r].
         replace (0 + S k)%nat with (S k) by lia.
-        apply Rmax_spec.
-        apply in_map_iff.
+        apply Rmax_spec, in_map_iff.
         exists j'; split; trivial.
         apply in_seq; lia.
    Qed.
