@@ -2325,9 +2325,45 @@ End ash.
       f j' k' <=
       Rmax_list (map (fun n => Rmax_list (map (fun n0 => f n0 n) (seq 0 (S j))))
                      (seq 0 (S k))).
-   Proof.
-   Admitted.
-
+  Proof.
+    intros.
+    induction k.
+    - unfold seq at 2.
+      replace (S j) with (j + 1)%nat by lia.
+      simpl.
+      assert (k' = 0)%nat by lia.
+      rewrite H1.
+      apply Rmax_spec.
+      apply in_map_iff.
+      exists j'.
+      split; trivial.
+      apply in_seq.
+      lia.
+    - destruct (le_dec k' k).
+      + specialize (IHk l).
+        eapply Rle_trans.
+        * apply IHk.
+        * apply Rmax_list_incl.
+          -- unfold not; intros.
+             symmetry in H1.
+             apply map_eq_nil in H1.
+             simpl in H1.
+             discriminate H1.
+          -- apply incl_map.
+             apply incl_seq.
+             lia.
+      + assert (k' = (S k))%nat by lia.
+        rewrite H1.
+        rewrite Rmax_list_Sn; try lia.
+        apply Rle_trans with
+            (r2 :=  (Rmax_list (map (fun n0 : nat => f n0 (0 + S k)%nat) (seq 0 (S j))))); [|apply Rmax_r].
+        replace (0 + S k)%nat with (S k) by lia.
+        apply Rmax_spec.
+        apply in_map_iff.
+        exists j'; split; trivial.
+        apply in_seq; lia.
+   Qed.
+   
   Lemma isfin_inner_cutoff_eps {size : nat} (X : nat -> Ts -> vector R size) (eps : posreal) 
     {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)}
     {isfe : forall j k, IsFiniteExpectation Prts (rvinner (X j) (X k))} :
@@ -2402,46 +2438,6 @@ End ash.
       intros.
       apply isfin_inner_cutoff_eps; typeclasses eauto.
     }
-(*    
-      unfold Sum.
-      Search IsFiniteExpectation.
-
-      apply IsFiniteExpectation_abs_id; try typeclasses eauto.
-      eapply (IsFiniteExpectation_bounded _ (const 0) _
-                    (rvscale (INR size) (rvmult (rvmaxlist (fun k => rvmaxabs (Sum k)) j)
-                                                (rvmaxlist (fun k => rvmaxabs (Sum k)) k)))).
-      - intro x.
-        unfold const, rvabs.
-        apply Rabs_pos.
-      - intro x.
-        rv_unfold.
-        unfold rvinner.
-        eapply Rle_trans.
-        + apply abs_inner_le_mult_max_abs.
-        + rewrite (Rmult_comm (INR size)).
-          apply Rmult_le_compat_r.
-          * apply pos_INR.
-          * apply Rmult_le_compat.
-            -- apply Rvector_max_abs_nonneg.
-            -- apply Rvector_max_abs_nonneg.
-            -- destruct (vec_cutoff_eps_values j eps Sum x) as [j' [??]].
-               rewrite H0.
-               apply Rmax_spec.
-               apply in_map_iff.
-               exists j'.
-               split; trivial.
-               apply in_seq.
-               lia.
-            -- destruct (vec_cutoff_eps_values k eps Sum x) as [k' [??]].
-               rewrite H0.
-               apply Rmax_spec.
-               apply in_map_iff.
-               exists k'.
-               split; trivial.
-               apply in_seq.
-               lia.
-    }
-*)
     rewrite H1.
     generalize (vec_Chebyshev_ineq_div_mean0 (vec_cutoff_eps_rv n eps Sum) _ eps); intros H3.
     rewrite <- FiniteNonnegExpectation_alt with (isfeX := Zrelfe1 n n) in H3.
@@ -2644,7 +2640,7 @@ End ash.
           now rewrite rvinner_sum.         
       - rewrite (FiniteExpectation_ext_alt _ _ _ H).
         
-erewrite FiniteExpectation_plus'.
+        erewrite FiniteExpectation_plus'.
         + erewrite FiniteExpectation_plus'.
           * erewrite FiniteExpectation_scale.
             
