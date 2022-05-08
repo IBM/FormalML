@@ -1843,7 +1843,10 @@ Section RealRandomVariables.
              {rv : RandomVariable dom borel_sa rv_X}  :=
     ps_P (event_le rv_X x).
 
+
 End RealRandomVariables.
+
+
 
 Section MoreRealRandomVariable.
   
@@ -1854,6 +1857,33 @@ Section MoreRealRandomVariable.
     intros gcont.
     apply (continuous_compose_rv borel_sa (fun x => x) g gcont).
   Qed.
+
+  Lemma ident_distrib_distribution {Ts} {dom : SigmaAlgebra Ts}
+        (prts : ProbSpace dom) (rv_X rv_Y : Ts -> R)
+        {rvx : RandomVariable dom borel_sa rv_X}
+        {rvy : RandomVariable dom borel_sa rv_Y} :
+    identically_distributed_rvs prts borel_sa rv_X rv_Y <->
+    forall x, RealDistribution dom prts rv_X x = RealDistribution dom prts rv_Y x.
+  Proof.
+    split; intros.
+    - unfold RealDistribution.
+      pose (f := (fun (z : R) => z)).
+      assert (RandomVariable borel_sa borel_sa f).
+      {
+        apply continuity_rv.
+        apply derivable_continuous.
+        apply derivable_id.
+      }
+      specialize (H (event_le borel_sa f x)).
+      assert (event_equiv
+                (event_le dom rv_X x)
+                (rv_preimage rv_X (event_le borel_sa f x))) by easy.
+      assert (event_equiv
+                (event_le dom rv_Y x)
+                (rv_preimage rv_Y (event_le borel_sa f x))) by easy.
+      now rewrite H1, H2.
+    - intro A.
+      Admitted.
 
   Context {Ts:Type}.
 
