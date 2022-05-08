@@ -1839,6 +1839,10 @@ Section RealRandomVariables.
     : event dom
     := @exist (pre_event Ts) _ _ (sa_le_gt_rv rv_X x).
 
+  Definition RealDistribution (prts : ProbSpace dom) (rv_X : Ts -> R) (x : R) 
+             {rv : RandomVariable dom borel_sa rv_X}  :=
+    ps_P (event_le rv_X x).
+
 End RealRandomVariables.
 
 Section MoreRealRandomVariable.
