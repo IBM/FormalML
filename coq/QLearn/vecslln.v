@@ -1933,21 +1933,6 @@ End ash.
 
    Context {Ts:Type} {dom: SigmaAlgebra Ts}{Prts: ProbSpace dom}.
    
-(*
-   Instance isfinexp_inner_bounded {size: nat} (X Y : Ts -> vector R size) (c : R)
-            {rvX :  RandomVariable dom (Rvector_borel_sa size) X} 
-            {rvY :  RandomVariable dom (Rvector_borel_sa size) Y} :     
-     vector_IsFiniteExpectation Prts Y ->
-     (forall x, hilbert.Hnorm (X x) <= c) ->
-     IsFiniteExpectation Prts (rvinner X Y).
-   Proof.
-     intros.
-     assert (IsFiniteExpectation Prts (rvinner (vecrvconst size (Rabs c)) (vecrvabs Y))) by admit.
-     apply IsFiniteExpectation_abs_id; [typeclasses eauto | ].
-     apply (IsFiniteExpectation_bounded _ (const 0) _ (rvinner (vecrvconst size (Rabs c)) (vecrvabs Y))).
-     
-   Admitted.
- *)
    Lemma scale_cutoff_ind_bound {size : nat} (j :nat) (eps : posreal)
          (X : nat -> Ts -> vector R size) :
      forall omega,
