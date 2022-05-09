@@ -1377,3 +1377,67 @@ Section indep.
   Qed.
 
 End indep.
+
+Section ps_pullback.
+
+  Context {Ts:Type} {Td:Type}
+          (dom: SigmaAlgebra Ts)
+          (cod: SigmaAlgebra Td).
+
+  Lemma rv_preimage_Ω
+        (X: Ts -> Td)
+        {rvX : RandomVariable dom cod X} :
+    rv_preimage X Ω === Ω.
+  Proof.
+    unfold rv_preimage; intros ?; simpl.
+    reflexivity.
+  Qed.
+
+  Lemma rv_preimage_union_of_collection
+         (X: Ts -> Td)
+         {rvX : RandomVariable dom cod X}
+         (c : nat -> event cod) :
+    rv_preimage X (union_of_collection c) === union_of_collection (fun n => rv_preimage X (c n)).
+  Proof.
+    intros ?; simpl; reflexivity.
+  Qed.
+
+  Lemma rv_preimage_pairwise_disjoint_collection
+         (X: Ts -> Td)
+         {rvX : RandomVariable dom cod X}
+         (c : nat -> event cod) :
+    collection_is_pairwise_disjoint c ->
+    collection_is_pairwise_disjoint (fun n : nat => rv_preimage X (c n)).
+  Proof.
+    intros ???????; simpl in *.
+    unfold event_preimage in *.
+    now apply (H n1 n2 H0 _ H1 H2).
+  Qed.
+
+  Program Instance pullback_ps 
+           (ps : ProbSpace dom)
+           (X: Ts -> Td)
+           {rvX : RandomVariable dom cod X}
+    : ProbSpace cod
+    :=
+    {|
+      ps_P a := ps_P (rv_preimage X a)
+    |}.
+  Next Obligation.
+    intros ???.
+    apply ps_proper.
+    now rewrite H.
+  Qed.
+  Next Obligation.
+    rewrite rv_preimage_union_of_collection.
+    apply ps_countable_disjoint_union.
+    now apply rv_preimage_pairwise_disjoint_collection.
+  Qed.
+  Next Obligation.
+    now rewrite rv_preimage_Ω, ps_all.
+  Qed.
+  Next Obligation.
+    apply ps_pos.
+  Qed.
+
+End ps_pullback.
