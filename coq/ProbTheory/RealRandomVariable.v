@@ -1860,7 +1860,19 @@ Section MoreRealRandomVariable.
   Qed.
 
   Context {Ts:Type}.
-  
+
+  Lemma Rmin_Rle (r1 r2 r : R) :
+    r <= Rmin r1 r2 <-> r <= r1 /\ r <= r2.
+  Proof.
+    split; intros.
+    - split; eapply Rle_trans.
+      + apply H.
+      + apply Rmin_l.
+      + apply H.
+      + apply Rmin_r.
+    - now apply P_Rmin.
+   Qed.
+    
   Lemma ident_distrib_distribution {dom : SigmaAlgebra Ts}
         (prts : ProbSpace dom) (X Y : Ts -> R)
         {rvx : RandomVariable dom borel_sa X}
@@ -1891,22 +1903,13 @@ Section MoreRealRandomVariable.
       specialize (H0  (fun (s:R->Prop) => exists r, forall m, m <= r <-> s m)%R).
       assert ( Pi_system (fun s : R -> Prop => exists r : R, forall m : R, m <= r <-> s m)).
       {
-        unfold Pi_system.
+        unfold Pi_system, pre_event_inter.
         intros.
         destruct H1; destruct H2.
         exists (Rmin x x0).
         intros.
-        specialize (H1 m).
-        specialize (H2 m).
-        unfold pre_event_inter.
-        split; intros.
-        - rewrite <- H1, <- H2; split; eapply Rle_trans.
-          + apply H3.
-          + apply Rmin_l.
-          + apply H3.
-          + apply Rmin_r.
-        - rewrite <- H1, <- H2 in H3.
-          now apply P_Rmin.
+        rewrite <- H1, <- H2.
+        apply Rmin_Rle.
       }
       apply (H0 H1 (pullback_ps dom borel_sa prts X)
                 (pullback_ps dom borel_sa prts Y)).
