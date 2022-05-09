@@ -15,6 +15,7 @@ Require Import SigmaAlgebras.
 Require Export Almost.
 Require Export FunctionsToReal ProbSpace BorelSigmaAlgebra.
 Require Export RandomVariable.
+Require Import Dynkin.
 
 Import ListNotations.
 
@@ -1858,12 +1859,14 @@ Section MoreRealRandomVariable.
     apply (continuous_compose_rv borel_sa (fun x => x) g gcont).
   Qed.
 
-  Lemma ident_distrib_distribution {Ts} {dom : SigmaAlgebra Ts}
-        (prts : ProbSpace dom) (rv_X rv_Y : Ts -> R)
-        {rvx : RandomVariable dom borel_sa rv_X}
-        {rvy : RandomVariable dom borel_sa rv_Y} :
-    identically_distributed_rvs prts borel_sa rv_X rv_Y <->
-    forall x, RealDistribution dom prts rv_X x = RealDistribution dom prts rv_Y x.
+  Context {Ts:Type}.
+  
+  Lemma ident_distrib_distribution {dom : SigmaAlgebra Ts}
+        (prts : ProbSpace dom) (X Y : Ts -> R)
+        {rvx : RandomVariable dom borel_sa X}
+        {rvy : RandomVariable dom borel_sa Y} :
+    identically_distributed_rvs prts borel_sa X Y <->
+    forall x, RealDistribution dom prts X x = RealDistribution dom prts Y x.
   Proof.
     split; intros.
     - unfold RealDistribution.
@@ -1876,16 +1879,72 @@ Section MoreRealRandomVariable.
       }
       specialize (H (event_le borel_sa f x)).
       assert (event_equiv
-                (event_le dom rv_X x)
-                (rv_preimage rv_X (event_le borel_sa f x))) by easy.
+                (event_le dom X x)
+                (rv_preimage X (event_le borel_sa f x))) by easy.
       assert (event_equiv
-                (event_le dom rv_Y x)
-                (rv_preimage rv_Y (event_le borel_sa f x))) by easy.
+                (event_le dom Y x)
+                (rv_preimage Y (event_le borel_sa f x))) by easy.
       now rewrite H1, H2.
     - intro A.
-      Admitted.
-
-  Context {Ts:Type}.
+      unfold RealDistribution in *.
+      generalize (pi_prob_extension_unique (T := R) ); intros.
+      specialize (H0  (fun (s:R->Prop) => exists r, forall m, m <= r <-> s m)%R).
+      assert ( Pi_system (fun s : R -> Prop => exists r : R, forall m : R, m <= r <-> s m)).
+      {
+        unfold Pi_system.
+        intros.
+        destruct H1; destruct H2.
+        exists (Rmin x x0).
+        intros.
+        specialize (H1 m).
+        specialize (H2 m).
+        unfold pre_event_inter.
+        split; intros.
+        - rewrite <- H1, <- H2; split; eapply Rle_trans.
+          + apply H3.
+          + apply Rmin_l.
+          + apply H3.
+          + apply Rmin_r.
+        - rewrite <- H1, <- H2 in H3.
+          now apply P_Rmin.
+      }
+      apply (H0 H1 (pullback_ps dom borel_sa prts X)
+                (pullback_ps dom borel_sa prts Y)).
+      clear H0 H1.
+      intros.
+      destruct Ca.
+      specialize (H x).
+      simpl.
+      assert (event_equiv
+                (rv_preimage 
+                   X
+                   (@generated_sa_base_event 
+                      R
+                      (fun s : forall _ : R, Prop =>
+                         @ex R (fun r : R => forall m : R, iff (Rle m r) (s m))) a
+                      (@ex_intro R (fun r : R => forall m : R, iff (Rle m r) (a m)) x i)))
+                (event_le dom X x)).
+      {
+        intros z.
+        simpl.
+        now rewrite <- i.
+      }
+      assert (event_equiv
+                 (rv_preimage 
+                    Y
+                    (@generated_sa_base_event 
+                       R
+                       (fun s : forall _ : R, Prop =>
+                          @ex R (fun r : R => forall m : R, iff (Rle m r) (s m))) a
+                       (@ex_intro R (fun r : R => forall m : R, iff (Rle m r) (a m)) x i)))
+                 (event_le dom Y x)).
+      {
+        intros z.
+        simpl.
+        now rewrite <- i.
+      }
+      now rewrite H0, H1.
+      Qed.
 
   Lemma event_Rgt_sa (σ:SigmaAlgebra Ts) x1 x2
         {rv1:RandomVariable σ borel_sa x1}
