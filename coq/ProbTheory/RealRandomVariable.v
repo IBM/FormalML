@@ -1861,18 +1861,21 @@ Section MoreRealRandomVariable.
 
   Context {Ts:Type}.
 
-  Lemma Rmin_Rle (r1 r2 r : R) :
-    r <= Rmin r1 r2 <-> r <= r1 /\ r <= r2.
+  Lemma borel_extension_unique (P1 P2 : ProbSpace borel_sa) :
+    let C := (fun (s:R->Prop) => exists r, forall m, m <= r <-> s m)%R in 
+    (forall a (Ca:C a), ps_P (ProbSpace:=P1) (generated_sa_base_event Ca) = ps_P (ProbSpace:=P2) (generated_sa_base_event Ca)) ->
+    (forall a, ps_P (ProbSpace:=P1) a = ps_P (ProbSpace:=P2) a).
   Proof.
-    split; intros.
-    - split; eapply Rle_trans.
-      + apply H.
-      + apply Rmin_l.
-      + apply H.
-      + apply Rmin_r.
-    - now apply P_Rmin.
-   Qed.
-    
+    apply pi_prob_extension_unique.
+    unfold Pi_system, pre_event_inter.
+    intros.
+    destruct H; destruct H0.
+    exists (Rmin x x0).
+    intros.
+    rewrite <- H, <- H0.
+    apply Rmin_Rle.
+  Qed.
+
   Lemma ident_distrib_distribution {dom : SigmaAlgebra Ts}
         (prts : ProbSpace dom) (X Y : Ts -> R)
         {rvx : RandomVariable dom borel_sa X}
@@ -1893,21 +1896,8 @@ Section MoreRealRandomVariable.
       etransitivity; [etransitivity |]; [| apply H |]; now apply ps_proper.
     - intro A.
       unfold RealDistribution in *.
-      generalize (pi_prob_extension_unique (T := R) ); intros.
-      specialize (H0  (fun (s:R->Prop) => exists r, forall m, m <= r <-> s m)%R).
-      assert ( Pi_system (fun s : R -> Prop => exists r : R, forall m : R, m <= r <-> s m)).
-      {
-        unfold Pi_system, pre_event_inter.
-        intros.
-        destruct H1; destruct H2.
-        exists (Rmin x x0).
-        intros.
-        rewrite <- H1, <- H2.
-        apply Rmin_Rle.
-      }
-      apply (H0 H1 (pullback_ps dom borel_sa prts X)
-                (pullback_ps dom borel_sa prts Y)).
-      clear H0 H1.
+      apply borel_extension_unique with (P1 := pullback_ps dom borel_sa prts X)
+                                        (P2 := pullback_ps dom borel_sa prts Y).
       intros.
       destruct Ca.
       specialize (H x).
@@ -1915,7 +1905,7 @@ Section MoreRealRandomVariable.
       etransitivity; [etransitivity |]; [| apply H |]; apply ps_proper
       ; intros z; simpl; now rewrite <- i.
   Qed.
-
+  
   Lemma event_Rgt_sa (σ:SigmaAlgebra Ts) x1 x2
         {rv1:RandomVariable σ borel_sa x1}
         {rv2:RandomVariable σ borel_sa x2}

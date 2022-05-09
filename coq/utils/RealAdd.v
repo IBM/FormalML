@@ -5856,3 +5856,16 @@ Lemma Rbar_opp0 : Rbar_opp 0 = 0.
 Proof.
   simpl; f_equal; lra.
 Qed.
+
+Lemma Rmin_Rle (r1 r2 r : R) :
+  r <= Rmin r1 r2 <-> r <= r1 /\ r <= r2.
+Proof.
+  split; intros.
+  - split; eapply Rle_trans.
+    + apply H.
+    + apply Rmin_l.
+    + apply H.
+    + apply Rmin_r.
+  - now apply P_Rmin.
+Qed.
+    
