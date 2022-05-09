@@ -1890,13 +1890,7 @@ Section MoreRealRandomVariable.
         apply derivable_id.
       }
       specialize (H (event_le borel_sa f x)).
-      assert (event_equiv
-                (event_le dom X x)
-                (rv_preimage X (event_le borel_sa f x))) by easy.
-      assert (event_equiv
-                (event_le dom Y x)
-                (rv_preimage Y (event_le borel_sa f x))) by easy.
-      now rewrite H1, H2.
+      etransitivity; [etransitivity |]; [| apply H |]; now apply ps_proper.
     - intro A.
       unfold RealDistribution in *.
       generalize (pi_prob_extension_unique (T := R) ); intros.
