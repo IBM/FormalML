@@ -1889,8 +1889,7 @@ Section MoreRealRandomVariable.
       assert (RandomVariable borel_sa borel_sa f).
       {
         apply continuity_rv.
-        apply derivable_continuous.
-        apply derivable_id.
+        apply derivable_continuous, derivable_id.
       }
       specialize (H (event_le borel_sa f x)).
       etransitivity; [etransitivity |]; [| apply H |]; now apply ps_proper.
@@ -1900,9 +1899,8 @@ Section MoreRealRandomVariable.
                                         (P2 := pullback_ps dom borel_sa prts Y).
       intros.
       destruct Ca.
-      specialize (H x).
       simpl.
-      etransitivity; [etransitivity |]; [| apply H |]; apply ps_proper
+      etransitivity; [etransitivity |]; [| apply (H x) |]; apply ps_proper
       ; intros z; simpl; now rewrite <- i.
   Qed.
   
