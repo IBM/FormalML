@@ -1912,36 +1912,9 @@ Section MoreRealRandomVariable.
       destruct Ca.
       specialize (H x).
       simpl.
-      assert (event_equiv
-                (rv_preimage 
-                   X
-                   (@generated_sa_base_event 
-                      R
-                      (fun s : forall _ : R, Prop =>
-                         @ex R (fun r : R => forall m : R, iff (Rle m r) (s m))) a
-                      (@ex_intro R (fun r : R => forall m : R, iff (Rle m r) (a m)) x i)))
-                (event_le dom X x)).
-      {
-        intros z.
-        simpl.
-        now rewrite <- i.
-      }
-      assert (event_equiv
-                 (rv_preimage 
-                    Y
-                    (@generated_sa_base_event 
-                       R
-                       (fun s : forall _ : R, Prop =>
-                          @ex R (fun r : R => forall m : R, iff (Rle m r) (s m))) a
-                       (@ex_intro R (fun r : R => forall m : R, iff (Rle m r) (a m)) x i)))
-                 (event_le dom Y x)).
-      {
-        intros z.
-        simpl.
-        now rewrite <- i.
-      }
-      now rewrite H0, H1.
-      Qed.
+      etransitivity; [etransitivity |]; [| apply H |]; apply ps_proper
+      ; intros z; simpl; now rewrite <- i.
+  Qed.
 
   Lemma event_Rgt_sa (σ:SigmaAlgebra Ts) x1 x2
         {rv1:RandomVariable σ borel_sa x1}
