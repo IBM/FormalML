@@ -153,6 +153,7 @@ Proof.
   apply (rvf (exist _ _ (rvg B))).
 Qed.  
 
+
 Section Simple.
   Context {Ts:Type} {Td:Type}.
 
@@ -866,8 +867,22 @@ Section prod_space.
     - apply sa_complement; eauto.
   Qed.
 
-End prod_space.
+  Instance compose_product_rv {Ts3} {dom3}
+           (f1 : Ts -> Td1)
+           (f2 : Ts -> Td2)
+           (g : Td1*Td2 -> Ts3)
+           {rvf1 : RandomVariable dom cod1 f1}
+           {rvf2 : RandomVariable dom cod2 f2}         
+           {rvg : RandomVariable (product_sa cod1 cod2) dom3 g} :
+    RandomVariable dom dom3 (fun x => g (f1 x, f2 x)).
+  Proof.
+    intros ?.
+    generalize (product_sa_rv f1 f2); intros.
+    apply (H (exist _ _ (rvg B))).
+  Qed.  
 
+End prod_space.
+      
 Section indep.
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}
