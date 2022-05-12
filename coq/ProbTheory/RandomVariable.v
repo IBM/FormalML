@@ -882,6 +882,31 @@ Section prod_space.
   Qed.  
 
 End prod_space.
+
+Section pullback_prod_space.
+  
+  Context {Ts Td1 Td2 : Type}
+          {cod1:SigmaAlgebra Td1}
+          {cod2:SigmaAlgebra Td2}.
+
+  Instance pullback_compose_product_rv {Ts3} {dom3}
+           (f1 : Ts -> Td1)
+           (f2 : Ts -> Td2)
+           (g : Td1*Td2 -> Ts3)
+           {rvg : RandomVariable (product_sa cod1 cod2) dom3 g} :
+    RandomVariable (union_sa (pullback_sa cod1 f1) (pullback_sa cod2 f2))
+                   dom3 (fun x => g (f1 x, f2 x)).
+  Proof.
+    apply compose_product_rv; trivial.
+    - generalize (pullback_rv cod1 f1).
+      apply RandomVariable_proper_le; try reflexivity.
+      apply union_sa_sub_l.
+    - generalize (pullback_rv cod2 f2).
+      apply RandomVariable_proper_le; try reflexivity.
+      apply union_sa_sub_r.
+  Qed.  
+   
+End pullback_prod_space.
       
 Section indep.
   Context {Ts:Type} 
