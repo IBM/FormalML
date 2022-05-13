@@ -1840,10 +1840,6 @@ Section RealRandomVariables.
     : event dom
     := @exist (pre_event Ts) _ _ (sa_le_gt_rv rv_X x).
 
-  Definition RealDistribution (prts : ProbSpace dom) (rv_X : Ts -> R) (x : R) 
-             {rv : RandomVariable dom borel_sa rv_X}  :=
-    ps_P (event_le rv_X x).
-
 
 End RealRandomVariables.
 
@@ -1876,12 +1872,16 @@ Section MoreRealRandomVariable.
     apply Rmin_Rle.
   Qed.
 
+  Definition RealDistribution {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (rv_X : Ts -> R) (x : R) 
+             {rv : RandomVariable dom borel_sa rv_X}  :=
+    ps_P (event_le dom rv_X x).
+
   Lemma ident_distrib_distribution {dom : SigmaAlgebra Ts}
         (prts : ProbSpace dom) (X Y : Ts -> R)
         {rvx : RandomVariable dom borel_sa X}
         {rvy : RandomVariable dom borel_sa Y} :
     identically_distributed_rvs prts borel_sa X Y <->
-    forall x, RealDistribution dom prts X x = RealDistribution dom prts Y x.
+    forall x, RealDistribution prts X x = RealDistribution prts Y x.
   Proof.
     split; intros.
     - unfold RealDistribution.
