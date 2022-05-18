@@ -4055,7 +4055,7 @@ Qed.
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
         {rvdec : RandomVariable dom borel_sa (EventIndicator dec)} :
     independent_rv_collection Prts (const borel_sa) X ->    
-    @sa_sigma _ (filtration_history_sa X n) P ->
+    sa_sigma (filtration_history_sa X n) P ->
     independent_rvs Prts borel_sa borel_sa (X (S n)) (EventIndicator dec).
   Proof.
     Admitted.
@@ -5189,7 +5189,7 @@ Qed.
      specialize (H i j).
      generalize (identically_distributed_rv_compose Prts borel_sa borel_sa (X i) (X j) Rabs H); intros.
      unfold identically_distributed_rvs in H0.
-     assert (@sa_sigma _ borel_sa (fun (x : R) => x >= r)).
+     assert (sa_sigma borel_sa (fun (x : R) => x >= r)).
      {
        apply sa_le_ge; intros.
        simpl; intros.

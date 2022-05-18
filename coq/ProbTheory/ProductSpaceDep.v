@@ -620,7 +620,7 @@ Section ps_product.
     now rewrite product_measure_product; simpl.
   Qed.
 
-  Lemma pre_event_set_dep_product_pi : Pi_system (pre_event_set_dep_product (@sa_sigma _ A) (fun a => @sa_sigma _ (B a))).
+  Lemma pre_event_set_dep_product_pi : Pi_system (pre_event_set_dep_product (sa_sigma A) (fun a => sa_sigma (B a))).
   Proof.
     unfold pre_event_set_dep_product; intros ?[?[?[?[??]]]]?[?[?[?[??]]]].
     exists (pre_event_inter x x1).

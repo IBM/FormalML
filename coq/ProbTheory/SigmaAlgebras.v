@@ -258,7 +258,7 @@ Next Obligation.
 Qed.
 
 Program Instance sigma_algebra_intersection {T} (coll:SigmaAlgebra T->Prop): SigmaAlgebra T
-  := { sa_sigma := fun e => forall sa, coll sa -> @sa_sigma _ sa e
+  := { sa_sigma := fun e => forall sa, coll sa -> sa_sigma sa e
      }.
 Next Obligation.
   apply sa_countable_union.
@@ -281,7 +281,7 @@ Proof.
 Qed.
 
 Definition all_included {T} (F:pre_event T -> Prop) : SigmaAlgebra T -> Prop
-  := fun sa => forall (e:pre_event T), F e -> @sa_sigma _ sa e.
+  := fun sa => forall (e:pre_event T), F e -> sa_sigma sa e.
 
 Global Instance all_included_proper {T} : Proper (equiv ==> equiv) (@all_included T).
 Proof.
@@ -293,21 +293,21 @@ Instance generated_sa {T} (F:pre_event T -> Prop) : SigmaAlgebra T
   := sigma_algebra_intersection (all_included F).
 
 Lemma generated_sa_sub {T} (F:pre_event T -> Prop) :
-  forall x, F x -> @sa_sigma _ (generated_sa F) x.
+  forall x, F x -> sa_sigma (generated_sa F) x.
 Proof.
   unfold sa_sigma, generated_sa, sigma_algebra_intersection, all_included.
   eauto.
 Qed.
 
 Lemma generated_sa_sub' {T} (F:pre_event T -> Prop) :
-  pre_event_sub F (@sa_sigma _ (generated_sa F)).
+  pre_event_sub F (sa_sigma (generated_sa F)).
 Proof.
   firstorder.
 Qed.
 
 Lemma generated_sa_minimal {T} (F:pre_event T -> Prop) (sa':SigmaAlgebra T) :
-  (forall x, F x -> @sa_sigma _ sa' x) ->
-  (forall x, @sa_sigma _ (generated_sa F) x -> @sa_sigma _ sa' x).
+  (forall x, F x -> sa_sigma sa' x) ->
+  (forall x, sa_sigma (generated_sa F) x -> sa_sigma sa' x).
 Proof.
   intros ff x sax.
   unfold sa_sigma, generated_sa, sigma_algebra_intersection, all_included in sax.
@@ -424,7 +424,7 @@ Proof.
 Qed.
 
 Instance product_sa {T₁ T₂} (sa₁:SigmaAlgebra T₁) (sa₂:SigmaAlgebra T₂) : SigmaAlgebra (T₁ * T₂)
-  := generated_sa (pre_event_set_product (@sa_sigma _ sa₁) (@sa_sigma _ sa₂)).
+  := generated_sa (pre_event_set_product (sa_sigma sa₁) (sa_sigma sa₂)).
 
 Global Instance product_sa_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@product_sa T1 T2).
 Proof.
@@ -484,7 +484,7 @@ Qed.
 
 Instance dep_product_sa {T₁:Type} {T₂:T₁->Type}
          (sa₁:SigmaAlgebra T₁) (sa₂:forall x, SigmaAlgebra (T₂ x)) : SigmaAlgebra (sigT T₂)
-  := generated_sa (pre_event_set_dep_product (@sa_sigma _ sa₁) (fun x => @sa_sigma _ (sa₂ x))).
+  := generated_sa (pre_event_set_dep_product (sa_sigma sa₁) (fun x => sa_sigma (sa₂ x))).
 
 Lemma dep_product_sa_proper {T1 T2}
       (s1x s1y : SigmaAlgebra T1)
@@ -691,8 +691,8 @@ End isos.
 
 
 Definition union_sa {T : Type} (sa1 sa2:SigmaAlgebra T) :=
-  generated_sa (pre_event_union (@sa_sigma _ sa1) 
-                                (@sa_sigma _ sa2)).
+  generated_sa (pre_event_union (sa_sigma sa1) 
+                                (sa_sigma sa2)).
 
 Global Instance union_sa_proper {T:Type}  :
   Proper (sa_equiv ==> sa_equiv ==> sa_equiv) (@union_sa T).
@@ -792,7 +792,7 @@ Proof.
 Qed.  
 
 Definition countable_union_sa {T : Type} (sas:nat->SigmaAlgebra T) :=
-  generated_sa (pre_union_of_collection (fun n => (@sa_sigma _ (sas n)))).
+  generated_sa (pre_union_of_collection (fun n => (sa_sigma (sas n)))).
 
 Global Instance countable_union_sa_sub_proper {T:Type}  :
   Proper (pointwise_relation _ sa_sub ==> sa_sub) (@countable_union_sa T).
@@ -985,7 +985,7 @@ Proof.
 Qed.
 
 Instance vector_sa {n} {T} (sav:vector (SigmaAlgebra T) n) : SigmaAlgebra (vector T n)
-  := generated_sa (pre_event_set_vector_product (vector_map (@sa_sigma _) sav)).
+  := generated_sa (pre_event_set_vector_product (vector_map sa_sigma sav)).
 
 Global Instance vector_sa_proper {T} {n} : Proper (equiv ==> equiv) (@vector_sa T n).
 Proof.

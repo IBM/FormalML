@@ -320,7 +320,7 @@ Section dynkin.
   Qed.
   
   Theorem Dynkin (C:pre_event T -> Prop) (D:pre_event T -> Prop) {cpi:Pi_system C} {dlambda:Lambda_system D} :
-    pre_event_sub C D -> pre_event_sub (@sa_sigma _ (generated_sa C)) D.
+    pre_event_sub C D -> pre_event_sub (sa_sigma (generated_sa C)) D.
   Proof.
     intros csub.
     generalize (pi_generated_lambda_generated_sa C).
@@ -365,7 +365,7 @@ Section extension_uniqueness.
     {
       intros ??; red; eauto.
     } 
-    assert (asub : pre_event_sub A (@sa_sigma _ (generated_sa C))).
+    assert (asub : pre_event_sub A (sa_sigma (generated_sa C))).
     {
       now intros ? [??].
     }     
@@ -437,7 +437,7 @@ Section extension_uniqueness.
           * now apply ps_proper; red; simpl.
     }
     apply Dynkin in csub; trivial.
-    assert (pre_event_equiv A (@sa_sigma _ (generated_sa C)))
+    assert (pre_event_equiv A (sa_sigma (generated_sa C)))
       by now apply antisymmetry.
     intros.
     destruct a.

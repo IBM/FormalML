@@ -93,7 +93,7 @@ Section sigma_indep.
       independent_events prts A B.
   
   Lemma independent_sas_eventcoll {dom1} (sub1:sa_sub dom1 dom) {dom2} (sub2:sa_sub dom2 dom) :
-    independent_sas sub1 sub2 <-> independent_eventcoll (@sa_sigma _ dom1) (@sa_sigma _ dom2).
+    independent_sas sub1 sub2 <-> independent_eventcoll (sa_sigma dom1) (sa_sigma dom2).
   Proof.
     split; intros HH A B.
     - intros.
@@ -198,11 +198,11 @@ Section sigma_indep.
   Qed.
       
   Lemma independent_eventcoll_generated_l (dom1 dom2: pre_event Ts -> Prop)
-        (sub1:pre_event_sub dom1 (@sa_sigma _ dom))
+        (sub1:pre_event_sub dom1 (sa_sigma dom))
         {pi1 : Pi_system dom1}
     :
     independent_eventcoll dom1 dom2 ->
-    independent_eventcoll (@sa_sigma _ (generated_sa dom1)) dom2.
+    independent_eventcoll (sa_sigma (generated_sa dom1)) dom2.
   Proof.
     intros.
     generalize (@Dynkin _ dom1 (independent_eventcoll_class dom2))
@@ -231,11 +231,11 @@ Section sigma_indep.
   Qed.
 
   Lemma independent_eventcoll_generated_r (dom1 dom2: pre_event Ts -> Prop)
-        (sub1:pre_event_sub dom2 (@sa_sigma _ dom))
+        (sub1:pre_event_sub dom2 (sa_sigma dom))
         {pi2 : Pi_system dom2}
     :
     independent_eventcoll dom1 dom2 ->
-    independent_eventcoll dom1 (@sa_sigma _ (generated_sa dom2)).
+    independent_eventcoll dom1 (sa_sigma (generated_sa dom2)).
   Proof.
     intros.
     apply independent_eventcoll_symm.
@@ -245,13 +245,13 @@ Section sigma_indep.
 
   (*
   Lemma independent_coll_generated_union (dom1 dom2 dom3: pre_event Ts -> Prop)
-        (sub1:pre_event_sub dom1 (@sa_sigma _ dom))
-        (sub2:pre_event_sub dom2 (@sa_sigma _ dom))
+        (sub1:pre_event_sub dom1 (sa_sigma dom))
+        (sub2:pre_event_sub dom2 (sa_sigma dom))
         {pi1 : Pi_system dom1}
         {pi2 : Pi_system dom2} :
     independent_eventcoll dom1 dom3 ->
     independent_eventcoll dom2 dom3 ->
-    independent_eventcoll (@sa_sigma _ (generated_sa (pre_event_union dom1 dom2))) dom3.
+    independent_eventcoll (sa_sigma (generated_sa (pre_event_union dom1 dom2))) dom3.
   Proof.
     intros indep1 indep2.
     generalize (independent_eventcoll_union dom1 dom2 dom3 indep1 indep2).
@@ -284,8 +284,8 @@ Section sigma_indep.
 
 
   Lemma independent_coll_inter3 (dom1 dom2 dom3: pre_event Ts -> Prop)
-        (sub1:pre_event_sub dom1 (@sa_sigma _ dom))
-        (sub2:pre_event_sub dom2 (@sa_sigma _ dom)) :
+        (sub1:pre_event_sub dom1 (sa_sigma dom))
+        (sub2:pre_event_sub dom2 (sa_sigma dom)) :
 
     (forall A B C : event dom, dom1 A -> dom2 B -> dom3 C -> 
                               ps_P ((A ∩ B)  ∩ C ) = ps_P A * ps_P B * ps_P C) ->
