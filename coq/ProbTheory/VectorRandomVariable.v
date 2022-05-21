@@ -2006,15 +2006,9 @@ admit.
       now intros.
     - match_destr.
       destruct H as [? [? ?]].
-      assert (pre_event_equiv x x0).
-      {
-        intros ?.
-        apply H0.
-      }
       replace x with x0; trivial.
       symmetry.
-      apply functional_extensionality.
-      intros.
+      apply functional_extensionality; intros.
       now apply hilbert.prop_extensionality.
   Qed.
 
