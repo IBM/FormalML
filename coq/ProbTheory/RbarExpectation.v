@@ -4659,6 +4659,7 @@ Section rv_expressible.
       apply measurable_is_expressible; trivial.
    Qed.
 
+   (*
     Lemma expressible_sequence_is_measurable {Ts : Type} 
           (X : nat -> Ts -> R) (n : nat) 
           (g : vector R (S n) -> R)
@@ -4668,6 +4669,7 @@ Section rv_expressible.
       rewrite filtrate_history_vector_rv.
       now apply pullback_compose_rv.
     Qed.
+   *)
       
 End rv_expressible.
 

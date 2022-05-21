@@ -1568,60 +1568,600 @@ Section real_pullback.
     apply vector_removelast_create.
   Qed.
 
+  Lemma n0lt2 : (0 < 2)%nat.
+  Proof.
+    lia.
+  Qed.  
+    
+  Lemma n1lt2 : (1 < 2)%nat.
+  Proof.
+    lia.
+  Qed.  
+
+  (*
+  Lemma Rvector_borel2 {Ts : Type} (X : Ts -> vector R 2) :
+    sa_equiv (pullback_sa (Rvector_borel_sa 2) X)
+             (union_sa (pullback_sa borel_sa (fun omega => vector_nth 0 n0lt2 (X omega)))
+                       (pullback_sa borel_sa (fun omega => vector_nth 1 n1lt2 (X omega)))).
+  Proof.
+    apply sa_equiv_subs; split; intros x.
+    - unfold pullback_sa; simpl; intros.
+      apply H0; clear H0.
+      unfold pre_event_union.
+      unfold pullback_sa_sigma in *.
+      destruct H as [? [? ?]].
+      simpl in H.
+      
+      unfold Rvector_borel_sa in H.
+      unfold vector_sa in H.
+      simpl in H.
+      unfold sa_sigma in H.
+      simpl in H.
+      unfold pre_event in *.
+   *)
+  
+  Program Global Instance vector_add_iso {n} {T} : Isomorphism (vector T (S n))
+                                                (vector T n * T)
+    := {|
+      iso_f v := (vector_removelast v, vector_nth n (Nat.lt_succ_diag_r _) v)
+    ; iso_b vt := vector_add_to_end (snd vt) (fst vt)
+    |}.
+  Next Obligation.
+    simpl.
+    now rewrite <- vector_removelast_add_to_end, vector_nth_add_to_end_suffix.
+  Qed.    
+  Next Obligation.
+    simpl.
+    now rewrite vector_removelast_eq.
+  Qed.    
+
+  Instance iso_sa {A B}
+          {iso:Isomorphism A B}
+          (sa:SigmaAlgebra A) : SigmaAlgebra B
+    := pullback_sa sa iso_b.
+      
+  Lemma vector_sa_add {n} {T} (x:SigmaAlgebra T) (sav:vector (SigmaAlgebra T) n) : 
+    vector_sa (vector_add_to_end x sav) === iso_sa (product_sa (vector_sa sav) x).
+  Proof.
+    split; intros ?; simpl in *.
+    red.
+    - exists (fun xv => x0 (vector_add_to_end (snd xv) (fst xv))).
+      split.
+      + intros ??.
+        specialize (H (iso_sa sa)).
+        cut_to H.
+        * simpl in H.
+          destruct H as [?[??]].
+          revert H; apply sa_proper.
+          intros ?.
+          rewrite H1.
+          rewrite <- vector_removelast_add_to_end, vector_nth_add_to_end_suffix.
+          now destruct x2.
+        * intros ??; simpl.
+          red.
+          red in H0.
+          exists (fun vx => e (vector_add_to_end (snd vx) (fst vx))).
+          split.
+          -- apply H0.
+             destruct H1 as [? [??]].
+             red.
+             exists (fun x => forall (i : nat) (pf : (i < n)%nat), vector_nth i pf (vector_removelast x1) (vector_nth i pf x)).
+             exists (fun x => (vector_nth n (Nat.lt_succ_diag_r _) x1) x).
+             split.
+             ++ simpl; intros ? HH; apply HH.
+                red.
+                exists (vector_removelast x1).
+                split; try reflexivity.
+                intros.
+                specialize (H1 i (le_S (S i) n pf)).
+                rewrite vector_nth_map in H1.
+                rewrite vector_nth_map.
+                revert H1.
+                rewrite (vector_nth_add_to_end_prefix _ _ _ _ pf).
+                now rewrite vector_nth_removelast.
+             ++ split.
+                ** specialize (H1 n (Nat.lt_succ_diag_r n)).
+                   rewrite vector_nth_map in H1.
+                   now rewrite vector_nth_add_to_end_suffix in H1.
+                ** { split; intros HH.
+                     - destruct x2; intros.
+                       destruct (H2  (vector_add_to_end (snd (v, t)) (fst (v, t)))).
+                       specialize (H3 HH).
+                       split.
+                       + intros.
+                         specialize (H3 i (le_S (S i) n pf)).
+                         rewrite (vector_nth_add_to_end_prefix _ _ _ _ pf) in H3.
+                         now rewrite vector_nth_removelast.
+                       + specialize (H3 n (Nat.lt_succ_diag_r n)).
+                         now rewrite vector_nth_add_to_end_suffix in H3.
+                     - destruct x2.
+                       apply H2; intros.
+                       simpl.
+                       destruct (i == n).
+                       + red in e0; subst.
+                         rewrite vector_nth_add_to_end_suffix.
+                         destruct HH.
+                         erewrite vector_nth_ext; apply H4.
+                       + unfold equiv, complement in c.
+                         assert (pf2:(i < n)%nat) by lia.
+                         rewrite (vector_nth_add_to_end_prefix _ _ _ _ pf2).
+                         destruct HH.
+                         specialize (H3 i pf2).
+                         rewrite vector_nth_removelast in H3.
+                         erewrite vector_nth_ext; apply H3.
+                   } 
+          -- intros; simpl.
+             now rewrite <- vector_removelast_eq.
+      + intros; simpl.
+        now rewrite <- vector_removelast_eq.
+    - destruct H as [? [??]].
+      intros.
+      apply (sa_proper _ (fun a =>  x1 (vector_removelast a, vector_nth n (Nat.lt_succ_diag_r n) a)))
+      ; [intros ?; now rewrite H0 |].
+      clear x0 H0.
+      simpl in H.
+      specialize (H (iso_sa sa)).
+      cut_to H.
+      + destruct H as [? [??]].
+        revert H.
+        apply sa_proper; intros ?.
+        simpl in *.
+        rewrite H0; simpl.
+        now rewrite <- vector_removelast_eq.
+      + clear x1 H.
+        intros ? [?[?[?[??]]]]; simpl.
+        exists (fun x => e (iso_f x)).
+        split.
+        * simpl.
+          apply (sa_proper _ (fun x => x0 (vector_removelast x) /\ x1 ( vector_nth n (Nat.lt_succ_diag_r n) x))).
+          {
+            intros ?.
+            now specialize (H2 (vector_removelast x2, vector_nth n (Nat.lt_succ_diag_r n) x2)).
+          }
+          clear e H2.
+          apply H1; clear H1.
+
+          
+
+          
+          revert x x0 x1 H H0.
+          clear sa.
+          destruct sav; subst.
+          {
+            induction x
+            ; intros sa1 vn xn HH san.
+            - simpl.
+              unfold pre_event_set_vector_product.
+              exists (vector_singleton xn).
+              split.
+              + intros.
+                rewrite vector_nth_singleton, vector_nth_map.
+                assert (i = 0)%nat by lia.
+                unfold vector_nth, vector_nth_packed, proj1_sig.
+                match_destr.
+                rewrite H in e.
+                now invcs e.
+              + intro x.
+                split; intros.
+                * destruct H.
+                  rewrite vector_nth_singleton.
+                  replace (vector_nth i pf x) with (vector_nth 0 (Nat.lt_succ_diag_r 0) x); trivial.
+                  assert (i = 0)%nat by lia.
+                  clear H H0.
+                  destruct H1.
+                  apply vector_nth_ext.
+                * split.
+                  -- admit.
+                  -- specialize (H _ (Nat.lt_succ_diag_r 0)).
+                     apply H.
+            - simpl.
+              specialize (IHx sa1).
+              specialize (IHx (fun (v:(vector T (length x))) =>
+                                 exists x, vn (vector_add_to_end x v))).
+              specialize (IHx xn).
+              cut_to IHx; trivial.
+              + unfold pre_event_set_vector_product in *.
+                destruct IHx.
+                destruct H as [? [? ?]].
+                exists (vector_add_to_end xn x0).
+                split.
+                * intros.
+                  destruct (lt_dec i (S (length x))).
+                  specialize (H i l).
+                  -- rewrite vector_nth_map.
+                     do 2 rewrite vector_nth_add_to_end_prefix with (pf2 := l).
+                     rewrite vector_nth_map in H.
+                     
+                     
+                     
+admit.
+                  -- assert (i = S (length x))%nat by lia.
+                     admit.
+                     
+                * admit.
+              + intros.
+(*
+                  Lemma measurable_rectangle_eq_decompose
+        (fx:event A) (fy:event B) (gx:event A) (gy:event B) :
+    (forall (x : X) (y : Y), fx x /\ fy y <-> gx x /\ gy y) ->
+    ((event_equiv fx ∅ \/ event_equiv fy ∅) /\ (event_equiv gx ∅ \/ event_equiv gy ∅))
+    \/ (event_equiv fx gx /\ event_equiv fy gy).
+
+                apply HH.
+              
+          
+          admit.
+*)
+                admit.
+        }
+        * intros.
+          simpl.
+          rewrite <- vector_removelast_add_to_end.
+          rewrite vector_nth_add_to_end_suffix.
+          now destruct a.
+  Admitted.
+
+  Lemma sa_borel_vector1 (n : nat) (x0 : pre_event R) :
+     sa_sigma borel_sa x0 ->
+     sa_sigma (Rvector_borel_sa (S n))
+              (fun v : vector R (S n) => x0 (vector_nth n (Nat.lt_succ_diag_r n) v)).
+  Proof.
+    intros.
+    unfold Rvector_borel_sa, vector_sa; simpl; intros.
+    apply H0.
+    unfold pre_event_set_vector_product.
+    exists (vector_add_to_end x0 (vector_const pre_Ω n)).
+    split; intros.
+    - destruct (Nat.eq_dec i n).
+      + rewrite vector_nth_map, vector_nth_const.
+        destruct e.
+        now rewrite vector_nth_add_to_end_suffix.
+      + assert (i < n)%nat by lia.
+        rewrite vector_nth_add_to_end_prefix with (pf2 := H1).
+        rewrite vector_nth_map, vector_nth_const.
+        rewrite vector_nth_const.
+        apply sa_all.
+   - intro x.
+     split; intros.
+     + destruct (Nat.eq_dec i n).
+       * destruct e.
+         rewrite vector_nth_add_to_end_suffix.
+         replace  (vector_nth i pf x) with  (vector_nth i (Nat.lt_succ_diag_r i) x); trivial.
+         apply vector_nth_ext.
+       * assert (i < n)%nat by lia.
+         rewrite vector_nth_add_to_end_prefix with (pf2 := H2).
+         rewrite vector_nth_const.
+         apply I.
+    + specialize (H1 n (Nat.lt_succ_diag_r n)).
+      now rewrite vector_nth_add_to_end_suffix in H1.
+  Qed.
+
+  Definition pre_event_set_vector_product_alt {T} {n} (s₁ : pre_event (vector T n) -> Prop) (s₂ : pre_event T -> Prop) : pre_event (vector T (S n)) -> Prop
+  := fun (e:pre_event (vector T (S n))) =>
+       exists e₁ e₂,
+         s₁ e₁ /\ s₂ e₂ /\
+         e === (fun (x : vector T (S n)) => e₁ (vector_removelast x) /\ e₂ (vector_nth n (Nat.lt_succ_diag_r n) x)).
+
+
+ Instance vector_product_sa {T} {n} (sa₁:SigmaAlgebra (vector T n)) (sa₂:SigmaAlgebra T) : SigmaAlgebra (vector T (S n))
+   := generated_sa (pre_event_set_vector_product_alt (sa_sigma sa₁) (sa_sigma sa₂)).
+
+ Fixpoint Rvector_borel_sa_alt (n:nat) : SigmaAlgebra (vector R n) :=
+  match n with
+  | 0 => Rvector_borel_sa 0
+  | S n' => vector_product_sa (Rvector_borel_sa_alt n') borel_sa
+  end.
+
+  Lemma sa_borel_vector_sub1 (n : nat) (x0 : pre_event (vector R n)) (sa : SigmaAlgebra (vector R n)):
+    sa_sigma sa x0 ->
+    sa_sigma (vector_product_sa sa borel_sa) (fun v : vector R (S n) => x0 (vector_removelast v)).
+  Proof.
+    intros.
+    simpl; intros.
+    apply H0.
+    unfold pre_event_set_vector_product.
+    exists x0; exists pre_Ω.
+    split; trivial.
+    split; intros.
+    - apply sa_all.
+    - intro x.
+      now assert (pre_Ω (vector_nth n (Nat.lt_succ_diag_r n) x)) by apply I.
+  Qed.
+
+  Lemma sa_borel_vector_sub1_alt (n : nat) (x0 : pre_event (vector R n)) :
+    sa_sigma (Rvector_borel_sa_alt n) x0 ->
+    sa_sigma (Rvector_borel_sa_alt (S n)) (fun v : vector R (S n) => x0 (vector_removelast v)).
+  Proof.
+    intros.
+    simpl; intros.
+    apply H0.
+    unfold pre_event_set_vector_product_alt.
+    exists x0; exists pre_Ω.
+    split; trivial.
+    split; intros.
+    - apply sa_all.
+    - intro x.
+      now assert (pre_Ω (vector_nth n (Nat.lt_succ_diag_r n) x)) by apply I.
+  Qed.
+
+  Lemma pullback_make_vector_from_seq_sub1_alt {Ts : Type} (X : nat -> Ts -> R) (n : nat):
+    sa_sub
+      (pullback_sa (Rvector_borel_sa_alt n) (make_vector_from_seq X n))
+      (pullback_sa (Rvector_borel_sa_alt (S n)) (make_vector_from_seq X (S n))).
+  Proof.
+    intro x.
+    unfold pullback_sa; simpl.
+    unfold Rvector_borel_sa_alt, pullback_sa_sigma; intros.
+    destruct H as [? [? ?]].
+    exists (fun v => x0 (vector_removelast v)).
+    split.
+    - now apply sa_borel_vector_sub1_alt.
+    - split; intros.
+      + destruct (H0 a).
+        apply H2 in H1.
+        now rewrite make_vector_from_seq_removelast.
+      + rewrite make_vector_from_seq_removelast in H1.
+        destruct (H0 a).
+        now apply H3.
+  Qed.
+
+  Lemma sa_sigma_removelast {n} (x0 : pre_event (vector R n)) :
+    sa_sigma (Rvector_borel_sa n) x0 ->
+    sa_sigma (Rvector_borel_sa (S n)) (fun v : vector R (S n) => x0 (vector_removelast v)).
+  Proof.
+    unfold Rvector_borel_sa.
+    intros.
+    assert (vector_const borel_sa (S n) = vector_add_to_end borel_sa
+                                                            (vector_const borel_sa n)).
+    {
+      apply vector_eqs.
+      rewrite <- vector_Forall2_nth_iff.
+      intros.
+      rewrite vector_nth_const.
+      destruct (lt_dec i n).
+      - rewrite vector_nth_add_to_end_prefix with (pf2 := l).
+        now rewrite vector_nth_const.
+      - assert (i = n)%nat by lia.
+        destruct H0.
+        now rewrite vector_nth_add_to_end_suffix.
+    }
+    rewrite H0.
+    apply vector_sa_add.
+    unfold iso_sa, product_sa, pullback_sa; simpl.
+    unfold pullback_sa_sigma; simpl.
+    exists (fun '(x1,x2) => x0 x1).
+    split; intros.
+    - apply H1.
+      unfold pre_event_set_product.
+      exists x0.
+      exists pre_Ω.
+      split.
+      + intros.
+        now apply H.
+      + split; intros.
+        * apply sa_all.
+        * intro x.
+          match_destr.
+          now assert (pre_Ω r).
+    - tauto.
+  Qed.
+
+  Lemma sa_sigma_removelast_alt {n} (x0 : pre_event (vector R n)) :
+    sa_sigma (Rvector_borel_sa_alt n) x0 ->
+    sa_sigma (Rvector_borel_sa_alt (S n)) (fun v : vector R (S n) => x0 (vector_removelast v)).
+  Proof.
+    intros.
+    unfold Rvector_borel_sa_alt, vector_product_sa.
+    simpl; intros.
+    apply H0.
+    clear H0.
+    unfold pre_event_set_vector_product_alt.
+    exists x0.
+    exists pre_Ω.
+    split.
+    - apply H.
+    - split; try easy.
+      intros.
+      apply sa_all.
+  Qed.
+
   Lemma pullback_make_vector_from_seq_sub1 {Ts : Type} (X : nat -> Ts -> R) (n : nat):
     sa_sub
       (pullback_sa (Rvector_borel_sa n) (make_vector_from_seq X n))
       (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
   Proof.
-    Admitted.
-
-
-  Lemma pullback_make_vector_from_seq_sub {Ts : Type} (X : nat -> Ts -> R) (n : nat):
-    forall h,
-      sa_sub
-        (pullback_sa (Rvector_borel_sa n) (make_vector_from_seq X n))
-        (pullback_sa (Rvector_borel_sa (n + h)%nat) (make_vector_from_seq X (n + h)%nat)).
-  Proof.
-    induction h.
-    - replace (n+0)%nat with n by lia.
-      now intro x.
-    - replace (n + S h)%nat with (S (n + h)) by lia.
-      intro x.
-      intros.
-      apply pullback_make_vector_from_seq_sub1.
-      now apply IHh.
+    intro x.
+    unfold pullback_sa; simpl.
+    unfold Rvector_borel_sa_alt, pullback_sa_sigma; intros.
+    destruct H as [? [? ?]].
+    exists (fun v => x0 (vector_removelast v)).
+    split.
+    - now apply sa_sigma_removelast.
+    - split; intros.
+      + destruct (H0 a).
+        apply H2 in H1.
+        now rewrite make_vector_from_seq_removelast.
+      + rewrite make_vector_from_seq_removelast in H1.
+        destruct (H0 a).
+        now apply H3.
    Qed.
 
-  Lemma pullback_make_vector_from_seq {Ts : Type} (X : nat -> Ts -> R) (n : nat):
-    sa_equiv
-      (union_sa (pullback_sa borel_sa (X n))
-                (pullback_sa (Rvector_borel_sa n) (make_vector_from_seq X n)))
-      (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
+  Definition pullback_pre_events {X Y:Type} (sa:pre_event Y -> Prop) (f:X->Y) : pre_event X -> Prop
+    := fun (xe:pre_event X) =>
+         exists ye:pre_event Y,
+         sa ye /\
+         forall a, xe a <-> ye (f a).
+  
+  Lemma pullback_id {Ts} (dom : SigmaAlgebra Ts) :
+    sa_equiv dom (pullback_sa dom (fun x => x)).
   Proof.
-    apply sa_equiv_subs.
-    split.
+    intro x.
+    unfold pullback_sa; simpl.
+    unfold pullback_sa_sigma; simpl.
+    unfold sa_sigma; simpl.
+    split; intros.
+    - match_destr_in H.
+      exists x.
+      split; trivial.
+      now intros.
+    - match_destr.
+      destruct H as [? [? ?]].
+      assert (pre_event_equiv x x0).
+      {
+        intros ?.
+        apply H0.
+      }
+      replace x with x0; trivial.
+      symmetry.
+      apply functional_extensionality.
+      intros.
+      now apply hilbert.prop_extensionality.
+  Qed.
+
+(*
+  Lemma pullback_generated_sa {Ts Td : Type} (E : pre_event Td -> Prop) (X : Ts -> Td)  :
+    pullback_sa (generated_sa E) X === generated_sa (pullback_pre_events E X).
+  Proof.
+    unfold pullback_pre_events; simpl.
+    apply sa_equiv_subs; split.
+*)
+
+  Lemma vector_const_add_to_end {T} {n} (a : T) :
+    vector_add_to_end a (vector_const a n) = vector_const a (S n).
+  Proof.
+    apply vector_eqs.
+    rewrite <- vector_Forall2_nth_iff.
+    intros.
+    rewrite vector_nth_const.
+    destruct (lt_dec i n).
+    - rewrite vector_nth_add_to_end_prefix with (pf2 := l).
+      now rewrite vector_nth_const.
+    - assert (i = n)%nat by lia.
+      destruct H.
+      now rewrite vector_nth_add_to_end_suffix.
+  Qed.
+
+  Lemma pullback_product_sa {Ts Td1 Td2 : Type} (X : Ts -> Td1) (Y : Ts -> Td2) 
+        {cod1 : SigmaAlgebra Td1} {cod2 : SigmaAlgebra Td2} :
+    sa_sub
+      (union_sa (pullback_sa cod1 X) (pullback_sa cod2 Y))
+      (pullback_sa (product_sa cod1 cod2) (fun (x : Ts) => (X x, Y x))).
+   Proof.
+     - apply union_sa_sub_both.
+       + intros ? ?.
+         unfold pullback_sa in *; simpl in *.
+         unfold pullback_sa_sigma in *; simpl in *.
+         destruct H as [? [? ?]].
+         exists (fun '(y1, y2) => x0 y1).
+         split; intros; trivial.
+         apply H1.
+         unfold pre_event_set_product.
+         exists x0.
+         exists pre_Ω.
+         split; trivial.
+         split.
+         * apply sa_all.
+         * intros xy.
+            now destruct xy.
+       + intros ? ?.
+         unfold pullback_sa in *; simpl in *.
+         unfold pullback_sa_sigma in *; simpl in *.
+         destruct H as [? [? ?]].
+         exists (fun '(y1, y2) => x0 y2).
+         split; intros; trivial.
+         apply H1.
+         unfold pre_event_set_product.
+         exists pre_Ω.
+         exists x0.
+         split; trivial.
+         * apply sa_all.
+         * split; trivial.
+           intros xy.
+           now destruct xy.
+   Qed.
+
+  Lemma pullback_make_vector_from_seq_alt {Ts : Type} (X : nat -> Ts -> R) (n : nat):
+    sa_sub
+      (union_sa (pullback_sa borel_sa (X n))
+                (pullback_sa (Rvector_borel_sa_alt n) (make_vector_from_seq X n)))
+      (pullback_sa (Rvector_borel_sa_alt (S n)) (make_vector_from_seq X (S n))).
+  Proof.
     - apply union_sa_sub_both.
-      + unfold sa_sub, pre_event_sub.
-        intros.
+      + intros ? ?.
         simpl in *.
         unfold pullback_sa_sigma in *.
         destruct H as [? [? ?]].
         assert (n < S n)%nat by lia.
-        exists (fun v => x0 (vector_nth n H1 v)).
+        exists (fun v => x0 (vector_nth n (Nat.lt_succ_diag_r n) v)).
         split.
-        * unfold Rvector_borel_sa, vector_sa.
+        * unfold Rvector_borel_sa_alt, vector_product_sa.
           simpl; intros.
           apply H2.
-          unfold pre_event_set_vector_product.
-          
-          admit.
+          unfold pre_event_set_vector_product_alt.
+          exists pre_Ω.
+          exists x0.
+          split; intros.
+          -- apply sa_all.
+          -- split; intros.
+             ++ now apply H.
+             ++ intro z.
+                now assert (pre_Ω (vector_removelast z)) by apply I.
         * intros.
           unfold make_vector_from_seq.
           rewrite vector_nth_create.
           now replace (0 + n)%nat with (n) by lia.
+      + apply pullback_make_vector_from_seq_sub1_alt.
+  Qed.
+
+  
+  Lemma pullback_make_vector_from_seq {Ts : Type} (X : nat -> Ts -> R) (n : nat):
+    sa_sub
+      (union_sa (pullback_sa borel_sa (X n))
+                (pullback_sa (Rvector_borel_sa n) (make_vector_from_seq X n)))
+      (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
+  Proof.
+    - apply union_sa_sub_both.
+      + intros ? ?.
+        simpl in *.
+        unfold pullback_sa_sigma in *.
+        destruct H as [? [? ?]].
+        assert (n < S n)%nat by lia.
+        exists (fun v => x0 (vector_nth n (Nat.lt_succ_diag_r n) v)).
+        split.
+        * unfold Rvector_borel_sa, vector_sa.
+          simpl; intros.
+          apply H2.
+          exists (vector_add_to_end x0 (vector_const pre_Ω n)).
+          split; intros.
+          -- rewrite vector_nth_map, vector_nth_const.
+             destruct (lt_dec i n).
+             ++ rewrite vector_nth_add_to_end_prefix with (pf2 := l).
+                rewrite vector_nth_const.
+                apply sa_all.
+             ++ assert (i = n)%nat by lia.
+                destruct H3.
+                now rewrite vector_nth_add_to_end_suffix.
+          -- intro z.
+             split; intros.
+             ++ destruct (lt_dec i n).
+                ** rewrite vector_nth_add_to_end_prefix with (pf2 := l).
+                   rewrite vector_nth_const.
+                   apply I.
+                ** assert (i = n)%nat by lia.
+                   destruct H4.
+                   rewrite vector_nth_add_to_end_suffix.
+                   replace (vector_nth i pf z) with
+                       (vector_nth i (Nat.lt_succ_diag_r i) z); trivial.
+                   apply vector_nth_ext.
+             ++ specialize (H3 n (Nat.lt_succ_diag_r n)).
+                now rewrite vector_nth_add_to_end_suffix in H3.
+        * intros.
+          rewrite H0.
+          unfold make_vector_from_seq.
+          rewrite vector_nth_create.
+          now replace (0 + n)%nat with (n) by lia.
       + apply pullback_make_vector_from_seq_sub1.
-    - admit.
-     Admitted.
+    Qed.
 
    Lemma union_sa_trivial {Ts : Type} (sa : SigmaAlgebra Ts) :
      sa_equiv
@@ -1638,7 +2178,7 @@ Section real_pullback.
    Qed.
 
   Lemma filtrate_history_vector_rv {Ts} (X : nat -> Ts -> R) (n : nat) :
-    sa_equiv (filtration_history_sa X n) (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
+    sa_sub (filtration_history_sa X n) (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
   Proof.
     unfold filtration_history_sa.
     induction n.
