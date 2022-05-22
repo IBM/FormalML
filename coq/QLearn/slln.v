@@ -3833,11 +3833,37 @@ Qed.
     now unfold const.
   Qed.
 
+  (* not currently used *)
   Lemma independent_sum (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} :
     independent_rv_collection Prts (const borel_sa) X ->
     forall n,
       independent_rvs Prts borel_sa borel_sa (rvsum X n) (X (S n)).
+  Proof.
+    intros.
+    apply independent_rv_sas.
+    assert (independent_sa_collection Prts (fun n : nat => pullback_sa borel_sa (X n))).
+    {
+      apply independent_rv_collection_sas.
+      unfold const in H.
+      revert H.
+      now apply independent_rv_collection_proper.
+    }
+    assert (independent_sas Prts (filtration_history_sa_sub X n) (pullback_rv_sub dom borel_sa (X (S n)) _ )).
+    {
+      admit.
+    }
+    assert (RandomVariable (filtration_history_sa X n) borel_sa (rvsum X n)).
+    {
+      apply rvsum_rv_loc.
+      intros.
+      now apply filtration_history_sa_le_rv.
+    }
+    generalize (pullback_rv_sub _ _ _ H2); intros.
+    revert H1.
+    apply independent_sas_sub_proper; trivial.
+    apply sa_equiv_sub.
+    apply sa_equiv_equiv.
   Admitted.
 
   Lemma independent_sum_prod (X : nat -> Ts -> R)

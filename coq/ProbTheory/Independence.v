@@ -61,6 +61,22 @@ Section sigma_indep.
       now apply independent_events_proper; intros ?; simpl.
   Qed.      
 
+  Lemma independent_sas_sub_proper
+        {dom1} (sub1:sa_sub dom1 dom)
+        {dom1'} (sub1':sa_sub dom1' dom)
+        (sasub1:sa_sub dom1' dom1)
+        {dom2} (sub2:sa_sub dom2 dom)
+        {dom2'} (sub2':sa_sub dom2' dom) 
+        (sasub2:sa_sub dom2' dom2) :
+    independent_sas sub1 sub2 -> independent_sas sub1' sub2'.
+  Proof.
+    intros HH A B.
+    red in HH.
+    generalize (HH (event_sa_sub sasub1 A)
+                   (event_sa_sub sasub2 B)).
+    now apply independent_events_proper.
+  Qed.      
+
   Lemma independent_sa_collection_proper {Idx}
         (doms:Idx->SigmaAlgebra Ts) {sub:IsSubAlgebras dom doms}
         (doms':Idx->SigmaAlgebra Ts) {sub':IsSubAlgebras dom doms'}
