@@ -2152,21 +2152,21 @@ admit.
        + apply trivial_sa_sub.
      - apply union_sa_sub_l.
    Qed.
-(*
-  Lemma filtrate_history_vector_rv {Ts} (X : nat -> Ts -> R) (n : nat) :
-    sa_sub (filtration_history_sa X n) (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
+
+  Lemma filtrate_history_vector_rv_alt {Ts} (X : nat -> Ts -> R) (n : nat) :
+    sa_sub (filtration_history_sa X n) (pullback_sa (Rvector_borel_sa_alt (S n)) (make_vector_from_seq X (S n))).
   Proof.
     unfold filtration_history_sa.
     induction n.
     - unfold filtrate_sa.
-      rewrite <- pullback_make_vector_from_seq.
+      rewrite <- pullback_make_vector_from_seq_alt.
       rewrite pullback_make_vector_from_seq0.
       now rewrite union_sa_trivial.
     - simpl.
       rewrite IHn.
-      apply pullback_make_vector_from_seq.
+      apply pullback_make_vector_from_seq_alt.
   Qed.
-*)
+
   Lemma filtrate_history_vector_equiv {Ts} (X : nat -> Ts -> R) (n : nat) :
     sa_equiv (filtration_history_sa X n) (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
   Proof.
@@ -2185,8 +2185,7 @@ admit.
     }
     apply sa_equiv_subs.
     split.
-    - (* apply filtrate_history_vector_rv. *)
-      apply filtration_history_sa_sub_le.
+    - apply filtration_history_sa_sub_le.
       intros.
       unfold RandomVariable, pullback_sa; simpl.
       intros.
@@ -2221,7 +2220,6 @@ admit.
         unfold make_vector_from_seq.
         rewrite vector_nth_create.
         now replace (0 + k)%nat with k by lia.
-
     - now apply pullback_rv_sub.
   Qed.
 
