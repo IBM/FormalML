@@ -1578,28 +1578,6 @@ Section real_pullback.
     lia.
   Qed.  
 
-  (*
-  Lemma Rvector_borel2 {Ts : Type} (X : Ts -> vector R 2) :
-    sa_equiv (pullback_sa (Rvector_borel_sa 2) X)
-             (union_sa (pullback_sa borel_sa (fun omega => vector_nth 0 n0lt2 (X omega)))
-                       (pullback_sa borel_sa (fun omega => vector_nth 1 n1lt2 (X omega)))).
-  Proof.
-    apply sa_equiv_subs; split; intros x.
-    - unfold pullback_sa; simpl; intros.
-      apply H0; clear H0.
-      unfold pre_event_union.
-      unfold pullback_sa_sigma in *.
-      destruct H as [? [? ?]].
-      simpl in H.
-      
-      unfold Rvector_borel_sa in H.
-      unfold vector_sa in H.
-      simpl in H.
-      unfold sa_sigma in H.
-      simpl in H.
-      unfold pre_event in *.
-   *)
-  
   Program Global Instance vector_add_iso {n} {T} : Isomorphism (vector T (S n))
                                                 (vector T n * T)
     := {|
@@ -1620,6 +1598,7 @@ Section real_pullback.
           (sa:SigmaAlgebra A) : SigmaAlgebra B
     := pullback_sa sa iso_b.
       
+(*
   Lemma vector_sa_add {n} {T} (x:SigmaAlgebra T) (sav:vector (SigmaAlgebra T) n) : 
     vector_sa (vector_add_to_end x sav) === iso_sa (product_sa (vector_sa sav) x).
   Proof.
@@ -1799,7 +1778,7 @@ admit.
           rewrite <- vector_removelast_add_to_end.
           rewrite vector_nth_add_to_end_suffix.
           now destruct a.
-  Admitted.
+*)
 
   Lemma sa_borel_vector1 (n : nat) (x0 : pre_event R) :
      sa_sigma borel_sa x0 ->
@@ -1905,6 +1884,7 @@ admit.
         now apply H3.
   Qed.
 
+(*
   Lemma sa_sigma_removelast {n} (x0 : pre_event (vector R n)) :
     sa_sigma (Rvector_borel_sa n) x0 ->
     sa_sigma (Rvector_borel_sa (S n)) (fun v : vector R (S n) => x0 (vector_removelast v)).
@@ -1945,7 +1925,8 @@ admit.
           now assert (pre_Ω r).
     - tauto.
   Qed.
-
+ *)
+  
   Lemma sa_sigma_removelast_alt {n} (x0 : pre_event (vector R n)) :
     sa_sigma (Rvector_borel_sa_alt n) x0 ->
     sa_sigma (Rvector_borel_sa_alt (S n)) (fun v : vector R (S n) => x0 (vector_removelast v)).
@@ -1965,6 +1946,7 @@ admit.
       apply sa_all.
   Qed.
 
+(*
   Lemma pullback_make_vector_from_seq_sub1 {Ts : Type} (X : nat -> Ts -> R) (n : nat):
     sa_sub
       (pullback_sa (Rvector_borel_sa n) (make_vector_from_seq X n))
@@ -1985,7 +1967,7 @@ admit.
         destruct (H0 a).
         now apply H3.
    Qed.
-
+*)
   Definition pullback_pre_events {X Y:Type} (sa:pre_event Y -> Prop) (f:X->Y) : pre_event X -> Prop
     := fun (xe:pre_event X) =>
          exists ye:pre_event Y,
@@ -2107,7 +2089,7 @@ admit.
       + apply pullback_make_vector_from_seq_sub1_alt.
   Qed.
 
-  
+(*  
   Lemma pullback_make_vector_from_seq {Ts : Type} (X : nat -> Ts -> R) (n : nat):
     sa_sub
       (union_sa (pullback_sa borel_sa (X n))
@@ -2156,7 +2138,7 @@ admit.
           now replace (0 + n)%nat with (n) by lia.
       + apply pullback_make_vector_from_seq_sub1.
     Qed.
-
+*)
    Lemma union_sa_trivial {Ts : Type} (sa : SigmaAlgebra Ts) :
      sa_equiv
        (union_sa sa (trivial_sa Ts))
@@ -2170,7 +2152,7 @@ admit.
        + apply trivial_sa_sub.
      - apply union_sa_sub_l.
    Qed.
-
+(*
   Lemma filtrate_history_vector_rv {Ts} (X : nat -> Ts -> R) (n : nat) :
     sa_sub (filtration_history_sa X n) (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
   Proof.
@@ -2183,6 +2165,64 @@ admit.
     - simpl.
       rewrite IHn.
       apply pullback_make_vector_from_seq.
+  Qed.
+*)
+  Lemma filtrate_history_vector_equiv {Ts} (X : nat -> Ts -> R) (n : nat) :
+    sa_equiv (filtration_history_sa X n) (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
+  Proof.
+    generalize (filtration_history_sa_le_rv X); intros.
+    assert (RandomVariable (filtration_history_sa X n) (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))).
+    {
+      apply RealVectorMeasurableRandomVariable. 
+      unfold RealVectorMeasurable.
+      intros.
+      unfold make_vector_from_seq, iso_f; simpl.
+      rewrite vector_nth_fun_to_vector.
+      setoid_rewrite vector_nth_create'.
+      apply rv_measurable.
+      apply H.
+      lia.
+    }
+    apply sa_equiv_subs.
+    split.
+    - (* apply filtrate_history_vector_rv. *)
+      apply filtration_history_sa_sub_le.
+      intros.
+      unfold RandomVariable, pullback_sa; simpl.
+      intros.
+      unfold pullback_sa_sigma; simpl.
+      destruct B.
+      assert (k < S n)%nat by lia.
+      exists (fun (v : vector R (S n)) => x (vector_nth k H2 v)).
+      split; intros.
+      + apply H3.
+        unfold pre_event_set_vector_product.
+        exists (vector_create 0 (S n) (fun i pf0 pf1 => if Nat.eq_dec i k then x else pre_Ω)).
+        split; intros.
+        * rewrite vector_nth_map, vector_nth_const.
+          rewrite vector_nth_create.
+          match_destr.
+          apply sa_all.
+        * intro z.
+          split; intros.
+          -- rewrite vector_nth_create.
+             replace (0 + i)%nat with i by lia.
+             match_destr.
+             ++ destruct e.
+                replace (vector_nth i pf z) with (vector_nth i H2 z); trivial.
+                apply vector_nth_ext.
+             ++ apply I.
+          -- specialize (H4 k H2).
+             rewrite vector_nth_create in H4.
+             replace (0 + k)%nat with k in H4 by lia.
+             match_destr_in H4.
+             congruence.
+      + simpl.
+        unfold make_vector_from_seq.
+        rewrite vector_nth_create.
+        now replace (0 + k)%nat with k by lia.
+
+    - now apply pullback_rv_sub.
   Qed.
 
 End real_pullback.

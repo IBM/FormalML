@@ -4641,7 +4641,7 @@ Section rv_expressible.
          RandomVariable (Rvector_borel_sa (S n)) borel_sa g /\
          rv_eq Y (g ∘ (make_vector_from_seq X (S n))).
     Proof.
-      generalize (filtrate_history_vector_rv X n); intros.
+      generalize (filtrate_history_vector_equiv X n); intros.
       assert (RandomVariable (pullback_sa (Rvector_borel_sa (S n)) (make_vector_from_seq X (S n))) borel_sa Y).
       {
         now rewrite <- H.
@@ -4659,17 +4659,15 @@ Section rv_expressible.
       apply measurable_is_expressible; trivial.
    Qed.
 
-   (*
     Lemma expressible_sequence_is_measurable {Ts : Type} 
           (X : nat -> Ts -> R) (n : nat) 
           (g : vector R (S n) -> R)
           {rv_g : RandomVariable (Rvector_borel_sa (S n)) borel_sa g} :
       RandomVariable (filtration_history_sa X n) borel_sa (g ∘ (make_vector_from_seq X (S n) )).
     Proof.
-      rewrite filtrate_history_vector_rv.
+      rewrite filtrate_history_vector_equiv.
       now apply pullback_compose_rv.
     Qed.
-   *)
       
 End rv_expressible.
 
