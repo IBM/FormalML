@@ -37,29 +37,6 @@ Section sigma_indep.
     := forall (l:forall n, event (doms n)),
       pairwise_independent_event_collection prts (fun n => event_sa_sub (sub n) (l n)).
 
-  Lemma independent_sas_proper
-        {dom1} (sub1:sa_sub dom1 dom)
-        {dom1'} (sub1':sa_sub dom1' dom)
-        (eqq1:sa_equiv dom1 dom1')
-        {dom2} (sub2:sa_sub dom2 dom)
-        {dom2'} (sub2':sa_sub dom2' dom) 
-        (eqq2:sa_equiv dom2 dom2') :
-    independent_sas sub1 sub2 <-> independent_sas sub1' sub2'.
-  Proof.
-    split; intros HH A B.
-    - red in HH.
-      destruct (eqq1 A).
-      destruct (eqq2 B).
-      generalize (HH (exist _ _ (H0 (proj2_sig A)))
-                     (exist _ _ (H2 (proj2_sig B)))).
-      now apply independent_events_proper; intros ?; simpl.
-    - red in HH.
-      destruct (eqq1 A).
-      destruct (eqq2 B).
-      generalize (HH (exist _ _ (H (proj2_sig A)))
-                     (exist _ _ (H1 (proj2_sig B)))).
-      now apply independent_events_proper; intros ?; simpl.
-  Qed.      
 
   Lemma independent_sas_sub_proper
         {dom1} (sub1:sa_sub dom1 dom)
@@ -75,6 +52,24 @@ Section sigma_indep.
     generalize (HH (event_sa_sub sasub1 A)
                    (event_sa_sub sasub2 B)).
     now apply independent_events_proper.
+  Qed.
+  
+  Lemma independent_sas_proper
+        {dom1} (sub1:sa_sub dom1 dom)
+        {dom1'} (sub1':sa_sub dom1' dom)
+        (eqq1:sa_equiv dom1 dom1')
+        {dom2} (sub2:sa_sub dom2 dom)
+        {dom2'} (sub2':sa_sub dom2' dom) 
+        (eqq2:sa_equiv dom2 dom2') :
+    independent_sas sub1 sub2 <-> independent_sas sub1' sub2'.
+  Proof.
+    split; intros.
+    - assert (sa_sub dom1' dom1) by now apply sa_equiv_sub.
+      assert (sa_sub dom2' dom2) by now apply sa_equiv_sub.
+      now apply (independent_sas_sub_proper sub1 sub1' H0 sub2 sub2' H1).
+    - assert (sa_sub dom1 dom1') by now apply sa_equiv_sub.
+      assert (sa_sub dom2 dom2') by now apply sa_equiv_sub.
+      now apply (independent_sas_sub_proper sub1' sub1 H0 sub2' sub2 H1).      
   Qed.      
 
   Lemma independent_sa_collection_proper {Idx}
