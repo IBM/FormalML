@@ -3833,7 +3833,21 @@ Qed.
     now unfold const.
   Qed.
 
-  (* not currently used *)
+  Lemma filtration_history_pullback_independent (X : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (X n)} :
+    independent_rv_collection Prts (const borel_sa) X ->
+    forall n, independent_sas Prts (filtration_history_sa_sub X n) (pullback_rv_sub dom borel_sa (X (S n)) _ ).
+  Proof.
+    intros.
+    assert (independent_sa_collection Prts (fun n : nat => pullback_sa borel_sa (X n))).
+    {
+      apply independent_rv_collection_sas.
+      unfold const in H.
+      revert H.
+      now apply independent_rv_collection_proper.
+    }
+    Admitted.
+
   Lemma independent_sum (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} :
     independent_rv_collection Prts (const borel_sa) X ->
@@ -3842,29 +3856,20 @@ Qed.
   Proof.
     intros.
     apply independent_rv_sas.
-    assert (independent_sa_collection Prts (fun n : nat => pullback_sa borel_sa (X n))).
-    {
-      apply independent_rv_collection_sas.
-      unfold const in H.
-      revert H.
-      now apply independent_rv_collection_proper.
-    }
-    assert (independent_sas Prts (filtration_history_sa_sub X n) (pullback_rv_sub dom borel_sa (X (S n)) _ )).
-    {
-      admit.
-    }
+    generalize (filtration_history_pullback_independent X H); intros.
     assert (RandomVariable (filtration_history_sa X n) borel_sa (rvsum X n)).
     {
       apply rvsum_rv_loc.
       intros.
       now apply filtration_history_sa_le_rv.
     }
-    generalize (pullback_rv_sub _ _ _ H2); intros.
-    revert H1.
+    generalize (pullback_rv_sub _ _ _ H1); intros.
+    specialize (H0 n).
+    revert H0.
     apply independent_sas_sub_proper; trivial.
     apply sa_equiv_sub.
     apply sa_equiv_equiv.
-  Admitted.
+  Qed.
 
   Lemma independent_sum_prod (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
@@ -4084,7 +4089,18 @@ Qed.
     sa_sigma (filtration_history_sa X n) P ->
     independent_rvs Prts borel_sa borel_sa (X (S n)) (EventIndicator dec).
   Proof.
-    Admitted.
+    intros.
+    apply independent_rvs_symm.
+    apply independent_rv_sas.
+    generalize (filtration_history_pullback_independent X H n); intros.
+    assert (RandomVariable (filtration_history_sa X n) borel_sa (EventIndicator dec)) by
+        now apply EventIndicator_pre_rv.
+    generalize (pullback_rv_sub _ _ _ H2); intros.
+    revert H1.
+    apply independent_sas_sub_proper; trivial.
+    apply sa_equiv_sub.
+    apply sa_equiv_equiv.
+  Qed.
 
   Existing Instance IsFiniteExpectation_simple.
 
@@ -5780,7 +5796,82 @@ Qed.
                 * apply Rabs_pos.
           }
           eapply Ash_6_2_1.
-        - admit.
+        - assert (independent_rv_collection Prts (const borel_sa) Y).
+          {
+            pose (YY :=
+              (fun n x => x * (EventIndicator (classic_dec (event_lt borel_sa (rvabs id) (INR n + 1))) x))).
+            assert (forall n, RandomVariable (const borel_sa n) (const borel_sa n) (YY n)).
+            {
+              intros.
+              unfold const.
+              unfold YY.
+              typeclasses eauto.
+            }
+            unfold iid_rv_collection in iid.
+            destruct iid.
+            generalize (independent_rv_collection_compose Prts
+                     (const borel_sa) X
+                     (const borel_sa) YY H4).
+            apply independent_rv_collection_proper; try easy.
+          }
+          assert (independent_rv_collection 
+                    Prts (const borel_sa)
+                    (fun k => (rvscale (/ INR (S k)) (rvminus (Y k) (const (FiniteExpectation Prts (Y k))))))).
+          {
+            pose (YY :=
+                    (fun (k:nat)(x:R) => rvscale (/ INR (S k)) (rvminus id (const (FiniteExpectation Prts (Y k)))) x)).
+            assert (forall n, RandomVariable (const borel_sa n) (const borel_sa n) (YY n)).
+            {
+              intros.
+              unfold YY, const.
+              apply rvscale_rv.
+              apply rvminus_rv.
+              - apply id_rv.
+              - apply rvconst.
+            }
+            generalize (independent_rv_collection_compose Prts
+                     (const borel_sa) Y
+                     (const borel_sa) YY H3).
+            apply independent_rv_collection_proper; try easy.            
+          }
+          intros.
+          assert  (rv0 : forall n1 : nat,
+            RandomVariable dom borel_sa (fun x : Ts => (Y n1 x - FiniteExpectation Prts (Y n1)) / INR (S n1))).
+          {
+            intros.
+            unfold Rdiv.
+            setoid_rewrite Rmult_comm.
+            apply rvscale_rv.
+            admit.
+          }
+          assert (isfe2 : forall n1,
+              IsFiniteExpectation Prts (fun x : Ts => (Y n1 x - FiniteExpectation Prts (Y n1)) / INR (S n1))).
+          {
+            intros.
+            unfold Rdiv.
+            setoid_rewrite Rmult_comm.
+            apply IsFiniteExpectation_scale.
+            admit.
+          }
+          generalize (is_condexp_indep  (fun (n0 : nat) (x : Ts) => (Y n0 x - FiniteExpectation Prts (Y n0)) / INR (S n0)) n (isfe2 (S n))); intros.
+          cut_to H5.
+          + revert H5.
+            apply almost_impl, all_almost; intros.
+            unfold impl; intros.
+            assert (FiniteExpectation Prts (fun x : Ts => (Y (S n) x - FiniteExpectation Prts (Y (S n))) / INR (S (S n))) = 0).
+            {
+              admit.
+            }
+            unfold const in H5.
+            rewrite H6 in H5.
+            unfold const.
+            rewrite <- H5.
+            admit.
+          + revert H4.
+            apply independent_rv_collection_proper; try easy.
+            intros ? ?.
+            rv_unfold.
+            unfold Rdiv; ring.
         - assert (forall n, IsFiniteExpectation Prts (rvsqr (Y n))).
           {
             intros.
