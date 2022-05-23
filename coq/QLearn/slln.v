@@ -5558,24 +5558,7 @@ Qed.
      apply is_lim_seq_INR.
    Qed.
 
-   Lemma Condexp_all_proper' 
-        (prts: ProbSpace dom)
-        {dom2 dom2' : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        (sub' : sa_sub dom2' dom)
-        (sub_equiv:sa_equiv dom2 dom2')
-        (f1 f2 : Ts -> R) 
-        {rvf1 : RandomVariable dom borel_sa f1} 
-        {rvf2 : RandomVariable dom borel_sa f2} :
-      almostR2 prts eq f1 f2 ->
-    almostR2 prts eq
-             (ConditionalExpectation prts sub f1)
-             (ConditionalExpectation prts sub' f2).
-  Proof.
-    intros.
-    generalize (Condexp_all_proper prts sub sub' sub_equiv f1 f2 H).
-    apply almostR2_prob_space_sa_sub_lift.
-  Qed.
+  
 
    Lemma lim_avg_tails (X : nat -> R) (l:R) (N:nat):
      is_lim_seq (fun n => sum_n_m X 0 n / INR (S n)) l <->
@@ -5893,7 +5876,14 @@ Qed.
                 rv_unfold; intros ?.
                 unfold Rdiv; ring.
               - intros.
-                admit.
+                apply IsFiniteExpectation_proper with
+                    (x := rvscale (Rsqr (/ (INR (S k))))
+                                  (rvsqr (rvminus (Y k) (const (FiniteExpectation Prts (Y k)))))).
+                + intros ?.
+                  rv_unfold.
+                  unfold Rdiv, Rsqr.
+                  ring.
+                + now apply IsFiniteExpectation_scale.
             }
             Unshelve.
           generalize (is_condexp_indep  (fun (n0 : nat) (x : Ts) => (Y n0 x - FiniteExpectation Prts (Y n0)) / INR (S n0)) n (isfe2 (S n))); intros.
@@ -6611,7 +6601,13 @@ Qed.
         apply Rle_ge.
         apply ps_pos.
         Unshelve.
-        admit.
-  Admitted.
+        intros.
+        apply IsFiniteExpectation_indicator; trivial.
+        * typeclasses eauto.
+        * apply sa_le_lt.
+          intros.
+          apply rv_measurable.
+          typeclasses eauto.
+  Qed.
 
 End slln_extra.
