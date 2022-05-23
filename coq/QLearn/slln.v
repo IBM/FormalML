@@ -5857,18 +5857,14 @@ Qed.
             generalize (rv00 n1).
             now apply RandomVariable_proper.
           }
-          assert (isfe00: forall n1,
-                     IsFiniteExpectation Prts 
-                                      (rvscale (/ (INR (S n1))) (rvminus (Y n1) (const (FiniteExpectation Prts (Y n1)))))).
-          {
-            intros.
-            typeclasses eauto.
-          }
           assert (isfe2 : forall n1,
               IsFiniteExpectation Prts (fun x : Ts => (Y n1 x - FiniteExpectation Prts (Y n1)) / INR (S n1))).
           {
             intros.
-            generalize (isfe00 n1).
+            assert (IsFiniteExpectation Prts 
+                                        (rvscale (/ (INR (S n1))) (rvminus (Y n1) (const (FiniteExpectation Prts (Y n1)))))) 
+                   by typeclasses eauto.
+            revert H6.
             now apply IsFiniteExpectation_proper.
           }
           generalize (is_condexp_indep  (fun (n0 : nat) (x : Ts) => (Y n0 x - FiniteExpectation Prts (Y n0)) / INR (S n0)) n (isfe2 (S n))); intros.
@@ -5878,8 +5874,11 @@ Qed.
             unfold impl; intros.
             assert (FiniteExpectation Prts (fun x : Ts => (Y (S n) x - FiniteExpectation Prts (Y (S n))) / INR (S (S n))) = 0).
             {
-              rewrite FiniteExpectation_ext with (rv_X2 := rvscale (/ (INR (S (S n)))) (rvminus (Y (S n)) (const (FiniteExpectation Prts (Y (S n)))))) (isfe3 := isfe00 (S n)).
-              - admit.
+              erewrite FiniteExpectation_ext with (rv_X2 := rvscale (/ (INR (S (S n)))) (rvminus (Y (S n)) (const (FiniteExpectation Prts (Y (S n)))))).
+              - rewrite FiniteExpectation_scale.
+                rewrite FiniteExpectation_minus.
+                rewrite FiniteExpectation_const.
+                ring.
               - apply H5.
             }
             unfold const in H6.
