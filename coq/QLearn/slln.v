@@ -5835,43 +5835,60 @@ Qed.
             apply independent_rv_collection_proper; try easy.            
           }
           intros.
+          assert (forall n1,
+                     (rv_eq (fun x : Ts => (Y n1 x - FiniteExpectation Prts (Y n1)) / INR (S n1))
+                            (rvscale (/ (INR (S n1))) (rvminus (Y n1) (const (FiniteExpectation Prts (Y n1))))))).
+          {
+            intros ? ?.
+            rv_unfold.
+            unfold Rdiv.
+            ring.
+          }
+          assert (rv00:forall n1, RandomVariable dom borel_sa
+                                       (rvscale (/ (INR (S n1))) (rvminus (Y n1) (const (FiniteExpectation Prts (Y n1)))))).
+          {
+            intros.
+            typeclasses eauto.
+          }
           assert  (rv0 : forall n1 : nat,
             RandomVariable dom borel_sa (fun x : Ts => (Y n1 x - FiniteExpectation Prts (Y n1)) / INR (S n1))).
           {
             intros.
-            unfold Rdiv.
-            setoid_rewrite Rmult_comm.
-            apply rvscale_rv.
-            admit.
+            generalize (rv00 n1).
+            now apply RandomVariable_proper.
+          }
+          assert (isfe00: forall n1,
+                     IsFiniteExpectation Prts 
+                                      (rvscale (/ (INR (S n1))) (rvminus (Y n1) (const (FiniteExpectation Prts (Y n1)))))).
+          {
+            intros.
+            typeclasses eauto.
           }
           assert (isfe2 : forall n1,
               IsFiniteExpectation Prts (fun x : Ts => (Y n1 x - FiniteExpectation Prts (Y n1)) / INR (S n1))).
           {
             intros.
-            unfold Rdiv.
-            setoid_rewrite Rmult_comm.
-            apply IsFiniteExpectation_scale.
-            admit.
+            generalize (isfe00 n1).
+            now apply IsFiniteExpectation_proper.
           }
           generalize (is_condexp_indep  (fun (n0 : nat) (x : Ts) => (Y n0 x - FiniteExpectation Prts (Y n0)) / INR (S n0)) n (isfe2 (S n))); intros.
-          cut_to H5.
-          + revert H5.
+          cut_to H6.
+          + revert H6.
             apply almost_impl, all_almost; intros.
             unfold impl; intros.
             assert (FiniteExpectation Prts (fun x : Ts => (Y (S n) x - FiniteExpectation Prts (Y (S n))) / INR (S (S n))) = 0).
             {
-              admit.
+              rewrite FiniteExpectation_ext with (rv_X2 := rvscale (/ (INR (S (S n)))) (rvminus (Y (S n)) (const (FiniteExpectation Prts (Y (S n)))))) (isfe3 := isfe00 (S n)).
+              - admit.
+              - apply H5.
             }
-            unfold const in H5.
-            rewrite H6 in H5.
+            unfold const in H6.
+            rewrite H7 in H6.
             unfold const.
-            rewrite <- H5.
+            rewrite <- H6.
             admit.
           + revert H4.
-            apply independent_rv_collection_proper; try easy.
-            intros ? ?.
-            rv_unfold.
-            unfold Rdiv; ring.
+            now apply independent_rv_collection_proper.
         - assert (forall n, IsFiniteExpectation Prts (rvsqr (Y n))).
           {
             intros.
