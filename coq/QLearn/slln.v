@@ -3947,16 +3947,81 @@ Qed.
     
     assert (sa_equiv (generated_sa F) (filtrate_sa sas n)).
     {
+      (*
+      clear Fpi indep.
+      intros ?; split; intros HH.
+      - admit.
+      - 
+
+        subst F.
+        induction n.
+        + simpl in *; apply generated_sa_sub'; eauto.
+        + simpl filtrate_sa in HH.
+          unfold union_sa in HH.
+          revert HH.
+          apply generated_sa_sub_sub; intros ??.
+          destruct H0.
+          * simpl in *; apply generated_sa_sub'; eauto.
+          * cut_to IHn.
+            -- 
+        
       intros ?.
+       *)
       admit.
     }  
     assert (independent_eventcoll Prts F (sa_sigma (sas (S n)))).
     {
+      (*
+      intros ?? [?[??]] ?.
+      induction x.
+      - rewrite pre_list_inter_nil in H2.
+        assert (eqq:A === Ω); [intros ?; apply H2 |].
+        rewrite eqq.
+        apply independent_events_all_l.
+      - unfold collection_take in H1; simpl in H1.
+        invcs H1.
+        rewrite pre_list_inter_cons in H2.
+        assert (sax:sa_sigma dom (pre_list_inter x)).
+        {
+          revert H9.
+          generalize sub.
+          clear.
+          revert x.
+          generalize 1%nat.
+          induction n.
+          - simpl; intros.
+            invcs H9.
+            rewrite pre_list_inter_nil.
+            apply sa_all.
+          - intros.
+            simpl in *.
+            destruct x; simpl in *; invcs H9.
+            rewrite pre_list_inter_cons.
+            apply sa_inter; [| eauto].
+            eapply sub; eauto.
+        }
+        assert (sap: sa_sigma dom p) by (eapply sub; eauto).
+        assert (A === event_inter (exist _ _ sap) (exist _ _ sax)).
+        {
+          intros ?; apply H2.
+        } 
+        rewrite H1.
+        red.
+        
+      red in indep.
+      red.
+       *)
       admit.
     }
-    assert ( pre_event_sub F (sa_sigma dom)).
+    assert (pre_event_sub F (sa_sigma dom)).
     {
-      admit.
+      intros ? [?[??]].
+      rewrite H3.
+      apply sa_pre_list_inter; intros.
+      destruct (Forall2_In_l H2 H4) as [? [??]].
+      apply in_map_iff in H5.
+      destruct H5 as [? [??]]; subst.
+      eapply sub; eauto.
     }
 
     generalize (independent_eventcoll_generated_l Prts F (sa_sigma (sas (S n)))); intros.
