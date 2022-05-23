@@ -3843,6 +3843,12 @@ Qed.
     
     Admitted.
 
+  Lemma event_sa_sub_pf_irrel (dom2 : SigmaAlgebra Ts) (sub1 sub2 : sa_sub dom2 dom) (x : event dom2) :
+    event_equiv (event_sa_sub sub1 x) (event_sa_sub sub2 x).
+  Proof.
+    intros ?; reflexivity.
+  Qed.
+        
   Lemma filtration_history_pullback_independent (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} :
     independent_rv_collection Prts (const borel_sa) X ->
@@ -3861,9 +3867,10 @@ Qed.
     unfold is_sub_algebras in H1.
     unfold independent_sas in *.
     intros.
-    specialize (H1 A B).
-    
-    Admitted.
+    generalize (H1 A B).
+    apply independent_events_proper; try reflexivity.
+    apply event_sa_sub_pf_irrel.
+  Qed.
 
   Lemma independent_sum (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} :
