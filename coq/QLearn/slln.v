@@ -5558,6 +5558,25 @@ Qed.
      apply is_lim_seq_INR.
    Qed.
 
+   Lemma Condexp_all_proper' 
+        (prts: ProbSpace dom)
+        {dom2 dom2' : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        (sub' : sa_sub dom2' dom)
+        (sub_equiv:sa_equiv dom2 dom2')
+        (f1 f2 : Ts -> R) 
+        {rvf1 : RandomVariable dom borel_sa f1} 
+        {rvf2 : RandomVariable dom borel_sa f2} :
+      almostR2 prts eq f1 f2 ->
+    almostR2 prts eq
+             (ConditionalExpectation prts sub f1)
+             (ConditionalExpectation prts sub' f2).
+  Proof.
+    intros.
+    generalize (Condexp_all_proper prts sub sub' sub_equiv f1 f2 H).
+    apply almostR2_prob_space_sa_sub_lift.
+  Qed.
+
    Lemma lim_avg_tails (X : nat -> R) (l:R) (N:nat):
      is_lim_seq (fun n => sum_n_m X 0 n / INR (S n)) l <->
      is_lim_seq (fun n => sum_n_m X N n / INR (S n)) l.
@@ -5867,25 +5886,29 @@ Qed.
             revert H6.
             now apply IsFiniteExpectation_proper.
           }
+          { Unshelve.
+              - shelve.
+              - intros.
+                generalize (H0 n); apply RandomVariable_proper; try reflexivity.
+                rv_unfold; intros ?.
+                unfold Rdiv; ring.
+              - intros.
+                admit.
+            }
+            Unshelve.
           generalize (is_condexp_indep  (fun (n0 : nat) (x : Ts) => (Y n0 x - FiniteExpectation Prts (Y n0)) / INR (S n0)) n (isfe2 (S n))); intros.
           cut_to H6.
-          + revert H6.
-            apply almost_impl, all_almost; intros.
-            unfold impl; intros.
-            assert (FiniteExpectation Prts (fun x : Ts => (Y (S n) x - FiniteExpectation Prts (Y (S n))) / INR (S (S n))) = 0).
-            {
+          + etransitivity; [| etransitivity]; [| apply H6 |].
+            * apply Condexp_all_proper'; reflexivity.
+            * apply all_almost; intros.
+              rv_unfold.
               erewrite FiniteExpectation_ext with (rv_X2 := rvscale (/ (INR (S (S n)))) (rvminus (Y (S n)) (const (FiniteExpectation Prts (Y (S n)))))).
-              - rewrite FiniteExpectation_scale.
-                rewrite FiniteExpectation_minus.
-                rewrite FiniteExpectation_const.
-                ring.
-              - apply H5.
-            }
-            unfold const in H6.
-            rewrite H7 in H6.
-            unfold const.
-            rewrite <- H6.
-            admit.
+              -- rewrite FiniteExpectation_scale.
+                 rewrite FiniteExpectation_minus.
+                 rewrite FiniteExpectation_const.
+                 f_equal.
+                 ring.
+              -- apply H5.
           + revert H4.
             now apply independent_rv_collection_proper.
         - assert (forall n, IsFiniteExpectation Prts (rvsqr (Y n))).
@@ -6587,7 +6610,8 @@ Qed.
         rewrite Rabs_right; trivial.
         apply Rle_ge.
         apply ps_pos.
-
+        Unshelve.
+        admit.
   Admitted.
 
 End slln_extra.
