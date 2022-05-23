@@ -3850,6 +3850,39 @@ Qed.
       firstorder.
   Qed.
 
+  Lemma pre_list_inter_repeat_S (e:pre_event Ts) n : pre_list_inter (repeat e (S n)) === e.
+  Proof.
+    induction n; simpl.
+    - now rewrite pre_list_inter_singleton.
+    - now rewrite pre_list_inter_cons, IHn, pre_event_inter_self.
+  Qed.
+
+  Lemma pre_list_union_repeat_S (e:pre_event Ts) n : pre_list_union (repeat e (S n)) === e.
+  Proof.
+    induction n; simpl.
+    - now rewrite pre_list_union_singleton.
+    - now rewrite pre_list_union_cons, IHn, pre_event_union_self.
+  Qed.
+
+  Lemma pre_list_inter_repeat_Ω n : pre_list_inter (repeat (@pre_Ω Ts) n) === pre_Ω.
+  Proof.
+    destruct n.
+    - now rewrite pre_list_inter_nil. 
+    - apply pre_list_inter_repeat_S.
+  Qed.
+
+  Lemma Forall2_repeat_pre_Ω sas n j :
+          Forall2 (fun (e : pre_event Ts) (s : SigmaAlgebra Ts) => sa_sigma s e) 
+                  (repeat pre_Ω j) (map sas (seq n j)).
+  Proof.
+    revert n.
+    induction j; intros.
+    - simpl; constructor.
+    - simpl.
+      constructor; trivial.
+      apply sa_all.
+  Qed.
+
   Lemma independent_sas_split1 (sas : nat -> SigmaAlgebra Ts) 
         {sub:IsSubAlgebras dom sas}
         (fsub: forall n, sa_sub (filtrate_sa sas n) dom) :
@@ -3860,7 +3893,7 @@ Qed.
     intros indep n.
     
     pose (F := fun x => exists (l:list (pre_event Ts)),
-                   Forall2 (fun e s => sa_sigma s e) l (collection_take sas n) /\
+                   Forall2 (fun e s => sa_sigma s e) l (collection_take sas (S n)) /\
                      pre_event_equiv x (pre_list_inter l)).
 
     assert (Fpi : Pi_system F).
@@ -3871,14 +3904,14 @@ Qed.
       split.
       - clear eqq1 eqq2.
         revert l1 l2 F1 F2.
-        generalize (collection_take sas n); intros l.
+        generalize (collection_take sas (S n)); intros l.
         induction l; intros; invcs F1; invcs F2
         ; simpl; trivial.
         constructor; auto.
         now apply sa_inter.
       - rewrite eqq1, eqq2.
         apply pre_event_inter_pre_list_inter_combine.
-        transitivity (length (collection_take sas n)).
+        transitivity (length (collection_take sas (S n))).
         + now apply Forall2_length in F1.
         + now apply Forall2_length in F2.
     }
@@ -3886,7 +3919,30 @@ Qed.
     assert (forall j x, (j <= n)%nat -> sa_sigma (sas j) x -> F x).
     {
       intros.
-      admit.
+      red.
+      exists (repeat pre_Ω j ++ [x] ++ repeat pre_Ω (n-j)%nat).
+      split.
+      - unfold collection_take.
+        clear F Fpi.
+        replace (S n) with (j + (S n - j))%nat by lia.
+        rewrite seq_plus, map_app.
+        apply Forall2_app.
+        {
+          apply Forall2_repeat_pre_Ω.
+        }
+        destruct j.
+        + simpl.
+          constructor; trivial.
+          replace (n-0)%nat with n by lia.
+          apply Forall2_repeat_pre_Ω.
+        + simpl.
+          replace (n - j)%nat with (S (n - (S j))%nat) by lia.
+          simpl.
+          constructor; trivial.
+          apply Forall2_repeat_pre_Ω.
+      - repeat rewrite pre_list_inter_app.
+        repeat rewrite pre_list_inter_repeat_Ω.
+        now rewrite pre_event_inter_true_l, pre_list_inter_singleton, pre_event_inter_true_r.
     } 
     
     assert (sa_equiv (generated_sa F) (filtrate_sa sas n)).
