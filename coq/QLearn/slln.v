@@ -3832,6 +3832,16 @@ Qed.
     intros.
     now unfold const.
   Qed.
+  
+  Lemma independent_sas_split1 (sas : nat -> SigmaAlgebra Ts) 
+        {sub:IsSubAlgebras dom sas}
+        (fsub: forall n, sa_sub (filtrate_sa sas n) dom) :
+    independent_sa_collection Prts sas ->
+    forall n,
+      independent_sas Prts (fsub n) (is_sub_algebras (S n)).
+  Proof.
+    
+    Admitted.
 
   Lemma filtration_history_pullback_independent (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} :
@@ -3846,6 +3856,13 @@ Qed.
       revert H.
       now apply independent_rv_collection_proper.
     }
+    generalize (filtration_history_sa_sub X); intros fsub.
+    generalize (independent_sas_split1 _ fsub H0 n); intros.
+    unfold is_sub_algebras in H1.
+    unfold independent_sas in *.
+    intros.
+    specialize (H1 A B).
+    
     Admitted.
 
   Lemma independent_sum (X : nat -> Ts -> R)
