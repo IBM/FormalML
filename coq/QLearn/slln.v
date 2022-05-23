@@ -12,6 +12,7 @@ Require Import utils.Utils.
 Require Import ConditionalExpectation.
 Require Import Independence.
 Require Import sumtest.
+Require Import Dynkin.
 
 Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
@@ -3832,7 +3833,23 @@ Qed.
     intros.
     now unfold const.
   Qed.
-  
+
+  Lemma pre_event_inter_pre_list_inter_combine (l1 l2:list (pre_event Ts)) :
+    length l1 = length l2 ->
+    pre_event_equiv (pre_event_inter (pre_list_inter l1) (pre_list_inter l2))
+                    (pre_list_inter (map (fun '(x, y) => pre_event_inter x y) (combine l1 l2))).
+  Proof.
+    revert l2.
+    induction l1; destruct l2; simpl in *; try discriminate; intros eqq.
+    - rewrite pre_list_inter_nil.
+      now rewrite pre_event_inter_true_l.
+    - assert (length l1 = length l2) by lia.
+      specialize (IHl1 _ H).
+      repeat rewrite pre_list_inter_cons.
+      rewrite <- IHl1.
+      firstorder.
+  Qed.
+
   Lemma independent_sas_split1 (sas : nat -> SigmaAlgebra Ts) 
         {sub:IsSubAlgebras dom sas}
         (fsub: forall n, sa_sub (filtrate_sa sas n) dom) :
@@ -3840,6 +3857,40 @@ Qed.
     forall n,
       independent_sas Prts (fsub n) (is_sub_algebras (S n)).
   Proof.
+    intros indep n.
+    
+    pose (F := fun x => exists (l:list (pre_event Ts)),
+                   Forall2 (fun e s => sa_sigma s e) l (collection_take sas n) /\
+                     pre_event_equiv x (pre_list_inter l)).
+
+    assert (Fpi : Pi_system F).
+    {
+      unfold F.
+      intros ?[l1[F1 eqq1]]?[l2[F2 eqq2]].
+      exists (map (fun '(x,y) => pre_event_inter x y) (combine l1 l2)).
+      split.
+      - clear eqq1 eqq2.
+        revert l1 l2 F1 F2.
+        generalize (collection_take sas n); intros l.
+        induction l; intros; invcs F1; invcs F2
+        ; simpl; trivial.
+        constructor; auto.
+        now apply sa_inter.
+      - rewrite eqq1, eqq2.
+        apply pre_event_inter_pre_list_inter_combine.
+        transitivity (length (collection_take sas n)).
+        + now apply Forall2_length in F1.
+        + now apply Forall2_length in F2.
+    }
+
+    assert (forall j x, (j <= n)%nat -> sa_sigma (sas j) x -> F x).
+    {
+      admit.
+    } 
+    
+    assert (sa_equiv (generated_sa F) (filtrate_sa sas n)).
+    {
+      intros ?.
     
     Admitted.
 
