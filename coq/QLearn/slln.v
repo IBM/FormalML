@@ -4033,9 +4033,15 @@ Qed.
     specialize (H3 (event_sa_sub (fsub n) A)
                    (event_sa_sub (sub (S n)) B)).
     apply H3.
-    - admit.
-    - admit.
-
+    - assert (sa_sigma (filtrate_sa sas n) (event_sa_sub (fsub n) A)).
+      {
+        simpl.
+        destruct A.
+        now simpl.
+      }
+      now apply H0.
+    - destruct B.
+      now simpl.
     Admitted.
 
   Lemma event_sa_sub_pf_irrel (dom2 : SigmaAlgebra Ts) (sub1 sub2 : sa_sub dom2 dom) (x : event dom2) :
