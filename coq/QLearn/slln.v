@@ -3885,13 +3885,36 @@ Qed.
 
     assert (forall j x, (j <= n)%nat -> sa_sigma (sas j) x -> F x).
     {
+      intros.
       admit.
     } 
     
     assert (sa_equiv (generated_sa F) (filtrate_sa sas n)).
     {
       intros ?.
-    
+      admit.
+    }  
+    assert (independent_eventcoll Prts F (sa_sigma (sas (S n)))).
+    {
+      admit.
+    }
+    assert ( pre_event_sub F (sa_sigma dom)).
+    {
+      admit.
+    }
+
+    generalize (independent_eventcoll_generated_l Prts F (sa_sigma (sas (S n)))); intros.
+    cut_to H3; trivial.
+    unfold independent_eventcoll in H3.
+    unfold independent_sas.
+    intros.
+    unfold IsSubAlgebras in sub.
+    specialize (H3 (event_sa_sub (fsub n) A)
+                   (event_sa_sub (sub (S n)) B)).
+    apply H3.
+    - admit.
+    - admit.
+
     Admitted.
 
   Lemma event_sa_sub_pf_irrel (dom2 : SigmaAlgebra Ts) (sub1 sub2 : sa_sub dom2 dom) (x : event dom2) :
