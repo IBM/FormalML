@@ -3883,6 +3883,172 @@ Qed.
       apply sa_all.
   Qed.
 
+  Instance is_subalg_join1  (sas : nat -> SigmaAlgebra Ts) 
+           {sub:IsSubAlgebras dom sas} :
+    let sas2 := fun (n:nat) => match n with
+                              | 0%nat => union_sa (sas 0%nat) (sas 1%nat)
+                              | S n' => sas (S n)
+                              end    in
+    IsSubAlgebras dom sas2.
+  Proof.
+    unfold IsSubAlgebras in *.
+    destruct n.
+    - now apply union_sa_sub_both.
+    - easy.
+  Qed.
+
+  Lemma independent_sas_join1  (sas : nat -> SigmaAlgebra Ts) 
+        {sub:IsSubAlgebras dom sas} :
+    independent_sa_collection Prts sas ->
+    let sas2 := fun (n:nat) => match n with
+                              | 0%nat => union_sa (sas 0%nat) (sas 1%nat)
+                              | S n' => sas (S n)
+                              end    in
+    independent_sa_collection Prts sas2.
+  Proof.
+    intro indep.
+
+    pose (F := fun x => 
+                 exists (e1 e2: pre_event Ts),
+                     (sa_sigma (sas 0%nat)) e1 /\ (sa_sigma (sas 1%nat)) e2 /\
+                     pre_event_equiv x (pre_event_inter e1 e2)).
+
+    assert (Fpi : Pi_system F).
+    {
+      apply Pi_system_inter; apply SigmaAlgebra_Pi.
+    }
+
+    assert (pre_event_sub F (sa_sigma dom)).
+    {
+      unfold F, pre_event_sub.
+      intros.
+      destruct H as [? [? [? [? ?]]]].
+      rewrite H1.
+      apply sa_inter.
+      - now apply (sub 0%nat).
+      - now apply (sub 1%nat).        
+    }
+
+    pose (sys2 := fun (n:nat) => match n with
+                                 | 0%nat => F
+                                 | S n' => sa_sigma (sas (S n))
+                                 end).
+    
+    assert (forall n, pre_event_sub (sys2 n) (sa_sigma dom)).
+    {
+      destruct n.
+      - now unfold sys2.
+      - apply sub.
+    }
+
+    assert (sa_equiv (generated_sa F) (union_sa (sas 0%nat) (sas 1%nat))).
+    {
+      unfold union_sa, F.
+      apply sa_equiv_subs; split.
+      - apply generated_sa_sub_sub.
+        intros ??.
+        destruct H1 as [? [? [? [? ?]]]].
+        rewrite H3.
+        apply sa_inter.
+        + now apply union_sa_sub_l.
+        + now apply union_sa_sub_r.
+      - apply generated_sa_sub_proper.
+        unfold pre_event_sub, pre_event_union, pre_event_inter.
+        intros.
+        destruct H1.
+        + exists x; exists pre_Ω.
+          split; trivial.
+          split.
+          * apply sa_all.
+          * intros ?.
+            assert (pre_Ω x0) by apply I.
+            tauto.
+        + exists pre_Ω; exists x.
+          split.
+          * apply sa_all.
+          * split; trivial.
+            intros ?.
+            assert (pre_Ω x0) by apply I.
+            tauto.
+    }
+    
+
+    assert (forall (f : nat -> event dom),
+               (forall n, (sys2 n) (f n)) ->
+               independent_event_collection Prts f).
+    {
+      unfold independent_event_collection.
+      intros.
+      unfold independent_sa_collection in indep.
+      generalize (H2 0%nat); intros.
+      unfold sys2, F in H4.
+      destruct H4 as [? [? [? [? ?]]]].
+      assert (forall n, sa_sigma (sas (S (S n))) (f (S n))).
+      {
+        intros.
+        specialize (H2 (S n)).
+        now unfold sys2 in H2.
+      }
+      pose (g := fun (n : nat) =>  match n return (event (sas n)) with
+                                   | 0%nat => exist _ _ H4
+                                   | S n' =>
+                                     match n' with
+                                     | 0%nat => exist _ _ H5
+                                     | S n'' => exist _ _ (H7 n'')
+                                     end
+                                   end).
+      specialize (indep g).                             
+      unfold independent_event_collection in indep.
+      destruct (classic (In 0%nat l)).
+      - admit.
+      - specialize (indep (map S l)).
+        assert (NoDup (map S l)).
+        {
+          apply map_inj_NoDup; trivial.
+          intros.
+          lia.
+        }
+        specialize (indep H9).
+        replace (ps_P (list_inter (map (fun n : nat => event_sa_sub (sub n) (g n)) (map S l)))) with 
+            (ps_P (list_inter (map f l))) in indep.
+        + rewrite indep.
+          f_equal.
+          do 3 rewrite map_map.
+          apply map_eq, Forall_forall.
+          intros.
+          unfold g.
+          destruct x1; try congruence.
+          unfold event_sa_sub.
+          simpl.
+          apply ps_proper.
+          intro z.
+          simpl.
+          unfold proj1_sig.
+          match_destr.
+          now simpl.
+        + apply ps_proper.
+          intro z.
+          unfold proj1_sig.
+          simpl.
+          split; intros.
+          * apply H10.
+            rewrite map_map in H11.
+            rewrite in_map_iff in H11.
+            destruct H11 as [? [? ?]].
+            unfold event_sa_sub in H11.
+            destruct a.
+            unfold g in H11.
+            match_destr_in H11; try congruence.
+            admit.
+        * apply H10.
+          rewrite map_map.
+          rewrite in_map_iff.
+          admit.
+    }
+               
+  Admitted.
+    
+
   Lemma independent_sas_split1 (sas : nat -> SigmaAlgebra Ts) 
         {sub:IsSubAlgebras dom sas}
         (fsub: forall n, sa_sub (filtrate_sa sas n) dom) :
@@ -3947,12 +4113,11 @@ Qed.
     
     assert (sa_equiv (generated_sa F) (filtrate_sa sas n)).
     {
-      (*
+(*
       clear Fpi indep.
       intros ?; split; intros HH.
       - admit.
       - 
-
         subst F.
         induction n.
         + simpl in *; apply generated_sa_sub'; eauto.
@@ -3966,7 +4131,7 @@ Qed.
             -- 
         
       intros ?.
-       *)
+*)
       admit.
     }  
     assert (independent_eventcoll Prts F (sa_sigma (sas (S n)))).
