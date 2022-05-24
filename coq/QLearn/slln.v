@@ -3997,7 +3997,15 @@ Qed.
                                      | S n'' => exist _ _ (H7 n'')
                                      end
                                    end).
-      specialize (indep g).                             
+      specialize (indep g).
+      assert (forall n, proj1_sig (f (S n)) = proj1_sig (g (S (S n)))).
+      {
+        intros.
+        unfold g.
+        simpl.
+        unfold proj1_sig.
+        match_destr.
+      }
       unfold independent_event_collection in indep.
       destruct (classic (In 0%nat l)).
       - admit.
@@ -4008,7 +4016,7 @@ Qed.
           intros.
           lia.
         }
-        specialize (indep H9).
+        specialize (indep H10).
         etransitivity; [| etransitivity]; [| apply indep |].
         + rewrite map_map.
           admit.
