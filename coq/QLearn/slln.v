@@ -4065,7 +4065,6 @@ Qed.
                                        | 0%nat => n
                                        | S n' => S n
                                        end) l).
-        specialize (indep ll).
         assert (NoDup ll).
         {
           assert (NoDup (tail ll)).
@@ -4083,11 +4082,11 @@ Qed.
           destruct H10 as [? [? ?]].
           match_destr_in H10.
         }
-        specialize (indep H9).
+        generalize (remove_one_in_perm _ _ i); intros perm.
+        specialize (indep ll H9).
         etransitivity; [| etransitivity]; [| apply indep |].
         + apply ps_proper.
           unfold ll.
-          generalize (remove_one_in_perm _ _ i); intros perm.
           rewrite perm.
           simpl.
           repeat rewrite list_inter_cons.
@@ -4108,15 +4107,17 @@ Qed.
              } 
              destruct x1; try congruence.
              reflexivity.
-        + admit.
-      - specialize (indep (map S l)).
-        assert (NoDup (map S l)).
+        + unfold ll.
+          (* rewrite perm. *)
+          admit.
+          
+      - assert (NoDup (map S l)).
         {
           apply map_inj_NoDup; trivial.
           intros.
           lia.
         }
-        specialize (indep H9).
+        specialize (indep (map S l) H9).
         etransitivity; [| etransitivity]; [| apply indep |].
         + rewrite map_map.
           apply ps_proper.
