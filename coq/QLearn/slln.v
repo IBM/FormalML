@@ -4032,7 +4032,32 @@ Qed.
       }
       unfold independent_event_collection in indep.
       destruct (in_dec NPeano.Nat.eq_dec 0%nat l).
-      - 
+      - pose (ll := 1%nat :: map (fun n => match n with
+                                       | 0%nat => n
+                                       | S n' => S n
+                                       end) l).
+        specialize (indep ll).
+        assert (NoDup ll).
+        {
+          assert (NoDup (tail ll)).
+          {
+            apply map_inj_NoDup; trivial.
+            intros.
+            match_destr_in H9.
+            - match_destr_in H9.
+            - match_destr_in H9.
+              lia.
+          }
+          apply NoDup_cons; trivial.
+          unfold not; intros.
+          rewrite in_map_iff in H10.
+          destruct H10 as [? [? ?]].
+          match_destr_in H10.
+        }
+        specialize (indep H9).
+        etransitivity; [| etransitivity]; [| apply indep |].
+        + admit.
+        + admit.
       - specialize (indep (map S l)).
         assert (NoDup (map S l)).
         {
@@ -4056,15 +4081,11 @@ Qed.
           intros.
           unfold g.
           destruct x1; try congruence.
-          unfold event_sa_sub.
-          simpl.
           apply ps_proper.
           intro z.
-          simpl.
-          unfold proj1_sig.
-          match_destr.
-          now simpl.
+          reflexivity.
     }
+
                
   Admitted.
     
