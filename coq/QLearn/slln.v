@@ -3883,6 +3883,30 @@ Qed.
       apply sa_all.
   Qed.
 
+  Global Instance list_inter_sub_proper {A} {σ:SigmaAlgebra A} :
+    Proper (Forall2 event_sub ==> event_sub) (@list_inter A σ).
+  Proof.
+    intros ???????.
+    destruct (Forall2_In_r H H1) as [? [??]].
+    red in H0.
+    apply H3.
+    apply H0; simpl; eauto.
+  Qed.
+
+  Global Instance list_inter_proper {A} {σ:SigmaAlgebra A}  :
+    Proper (Forall2 event_equiv ==> event_equiv) (@list_inter A σ).
+  Proof.
+    intros ????.
+    split.
+    - apply list_inter_sub_proper; trivial.
+      eapply Forall2_incl; try eapply H; intros.
+      firstorder.
+    - apply list_inter_sub_proper; trivial.
+      symmetry in H.
+      eapply Forall2_incl; try eapply H; intros.
+      firstorder.
+  Qed.
+
   Instance is_subalg_join1  (sas : nat -> SigmaAlgebra Ts) 
            {sub:IsSubAlgebras dom sas} :
     let sas2 := fun (n:nat) => match n with
@@ -4007,8 +4031,8 @@ Qed.
         match_destr.
       }
       unfold independent_event_collection in indep.
-      destruct (classic (In 0%nat l)).
-      - admit.
+      destruct (in_dec NPeano.Nat.eq_dec 0%nat l).
+      - 
       - specialize (indep (map S l)).
         assert (NoDup (map S l)).
         {
@@ -4016,10 +4040,16 @@ Qed.
           intros.
           lia.
         }
-        specialize (indep H10).
+        specialize (indep H9).
         etransitivity; [| etransitivity]; [| apply indep |].
         + rewrite map_map.
-          admit.
+          apply ps_proper.
+          apply list_inter_proper.
+          apply Forall2_map_f.
+          apply Forall2_refl_in.
+          apply Forall_forall; intros ???; simpl.
+          destruct x1; try congruence.
+          reflexivity.
         + f_equal.
           do 3 rewrite map_map.
           apply map_eq, Forall_forall.
