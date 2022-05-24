@@ -4009,10 +4009,10 @@ Qed.
           lia.
         }
         specialize (indep H9).
-        replace (ps_P (list_inter (map (fun n : nat => event_sa_sub (sub n) (g n)) (map S l)))) with 
-            (ps_P (list_inter (map f l))) in indep.
-        + rewrite indep.
-          f_equal.
+        etransitivity; [| etransitivity]; [| apply indep |].
+        + rewrite map_map.
+          admit.
+        + f_equal.
           do 3 rewrite map_map.
           apply map_eq, Forall_forall.
           intros.
@@ -4026,24 +4026,6 @@ Qed.
           unfold proj1_sig.
           match_destr.
           now simpl.
-        + apply ps_proper.
-          intro z.
-          unfold proj1_sig.
-          simpl.
-          split; intros.
-          * apply H10.
-            rewrite map_map in H11.
-            rewrite in_map_iff in H11.
-            destruct H11 as [? [? ?]].
-            unfold event_sa_sub in H11.
-            destruct a.
-            unfold g in H11.
-            match_destr_in H11; try congruence.
-            admit.
-        * apply H10.
-          rewrite map_map.
-          rewrite in_map_iff.
-          admit.
     }
                
   Admitted.
@@ -4136,7 +4118,6 @@ Qed.
     }  
     assert (independent_eventcoll Prts F (sa_sigma (sas (S n)))).
     {
-      (*
       intros ?? [?[??]] ?.
       induction x.
       - rewrite pre_list_inter_nil in H2.
@@ -4165,6 +4146,7 @@ Qed.
             apply sa_inter; [| eauto].
             eapply sub; eauto.
         }
+       (*
         assert (sap: sa_sigma dom p) by (eapply sub; eauto).
         assert (A === event_inter (exist _ _ sap) (exist _ _ sax)).
         {
