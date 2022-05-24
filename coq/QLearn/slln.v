@@ -3893,6 +3893,17 @@ Qed.
     apply H0; simpl; eauto.
   Qed.
 
+  Global Instance list_union_sub_proper {A} {σ:SigmaAlgebra A} :
+    Proper (Forall2 event_sub ==> event_sub) (@list_union A σ).
+  Proof.
+    intros ????[?[??]].
+    destruct (Forall2_In_l H H0) as [? [??]].
+    simpl.
+    exists x2.
+    split; trivial.
+    now apply H3.
+  Qed.
+
   Global Instance list_inter_proper {A} {σ:SigmaAlgebra A}  :
     Proper (Forall2 event_equiv ==> event_equiv) (@list_inter A σ).
   Proof.
@@ -3907,6 +3918,24 @@ Qed.
       firstorder.
   Qed.
 
+  Global Instance list_inter_incl_proper {A} {σ:SigmaAlgebra A}  :
+    Proper (@incl _ --> event_sub) (@list_inter A σ).
+  Proof.
+    intros ???????.
+    apply H in H1.
+    now apply H0.
+  Qed.
+
+  Global Instance list_inter_equivlist_proper {A} {σ:SigmaAlgebra A}  :
+    Proper (@equivlist _ ==> event_equiv) (@list_inter A σ).
+  Proof.
+    intros ????.
+    apply equivlist_incls in H.
+    destruct H.
+    split
+    ; apply list_inter_incl_proper; auto.
+  Qed.
+  
   Instance is_subalg_join1  (sas : nat -> SigmaAlgebra Ts) 
            {sub:IsSubAlgebras dom sas} :
     let sas2 := fun (n:nat) => match n with
@@ -4056,7 +4085,29 @@ Qed.
         }
         specialize (indep H9).
         etransitivity; [| etransitivity]; [| apply indep |].
-        + admit.
+        + apply ps_proper.
+          unfold ll.
+          generalize (remove_one_in_perm _ _ i); intros perm.
+          rewrite perm.
+          simpl.
+          repeat rewrite list_inter_cons.
+          rewrite event_inter_assoc.
+          apply event_inter_proper.
+          * rewrite event_inter_comm.
+             apply H6.
+          * apply list_inter_proper.
+             rewrite map_map.
+             apply Forall2_map_f.
+             apply Forall2_refl_in.
+             apply Forall_forall; intros ???; simpl.
+             assert (x1 <> 0%nat).
+             {
+               rewrite perm in H3.
+               invcs H3.
+               congruence.
+             } 
+             destruct x1; try congruence.
+             reflexivity.
         + admit.
       - specialize (indep (map S l)).
         assert (NoDup (map S l)).
