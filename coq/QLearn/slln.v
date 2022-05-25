@@ -13,6 +13,7 @@ Require Import ConditionalExpectation.
 Require Import Independence.
 Require Import sumtest.
 Require Import Dynkin.
+Require Import Measures.
 
 Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
@@ -3954,9 +3955,209 @@ Qed.
     := forall (A:Idx -> event dom),
       (forall n, (doms n) (A n)) ->
       independent_event_collection Prts A.
+
+  Lemma measure_complement {T} {σ : SigmaAlgebra T} (μ : event σ -> R) {μ_meas:is_measure μ} A :
+    μ (event_complement A) = μ Ω - μ A.
+  Proof.
+  Admitted.
+
+  Instance measure_proper_fin {T} {σ : SigmaAlgebra T} (μ : event σ -> R) {μ_meas:is_measure μ}
+    : Proper (event_equiv ==> eq) μ.
+  Proof.
+    intros ???.
+    apply measure_proper in H.
+    now invcs H.
+  Qed.    
   
+  Lemma meas_prob_extension_unique {T} 
+        (C:pre_event T -> Prop) {cpi:Pi_system C}
+        (μ1 μ2 : event (generated_sa C) -> R)
+        {μ_meas1:is_measure μ1}
+        {μ_meas2:is_measure μ2} :
+    (μ1 Ω = μ2 Ω) ->
+    (forall a (Ca:C a), μ1 (generated_sa_base_event Ca) = μ2 (generated_sa_base_event Ca)) ->
+    (forall a, μ1 a = μ2 a).
+  Proof.
+    intros alleq HH.
+    pose (A := fun e => exists pf, μ1 (exist _ e pf) = μ2 (exist _ e pf)).
+    assert (csub : pre_event_sub C A).
+    {
+      intros ??; red; eauto.
+    } 
+    assert (asub : pre_event_sub A (sa_sigma (generated_sa C))).
+    {
+      now intros ? [??].
+    }     
+
+    assert (lambda_A : Lambda_system A).
+    {
+      subst A.
+      constructor.
+      - exists sa_all.
+        rewrite (measure_proper_fin _ _ Ω) by reflexivity.
+        symmetry.
+        rewrite (measure_proper_fin _ _ Ω) by reflexivity.
+        symmetry.
+        trivial.
+      - intros ???.
+        split; intros [??].
+        + assert (say:sa_sigma (@generated_sa T C) y).
+          {
+            now rewrite <- H.
+          }
+          exists say.
+          etransitivity; [etransitivity |]; [| apply H0 | ].
+          * now apply measure_proper_fin.
+          * now apply measure_proper_fin.
+        + assert (sax:sa_sigma (@generated_sa T C) x).
+          {
+            now rewrite H.
+          }
+          exists sax.
+          etransitivity; [etransitivity |]; [| apply H0 | ].
+          * now apply measure_proper_fin.
+          * now apply measure_proper_fin.
+      - intros ? [??].
+        exists (sa_complement _ x).
+        replace (exist (fun e : pre_event T => sa_sigma _ e) (pre_event_complement a) (sa_complement a x))
+          with (event_complement (σ:=generated_sa C) (exist _ a x))
+          by reflexivity.
+        rewrite measure_complement; trivial.
+        rewrite measure_complement; trivial.
+        rewrite alleq.
+        f_equal.
+        apply H.
+      - intros.
+        assert (sa_an:forall x, sa_sigma (@generated_sa T C) (an x)) by eauto.
+        exists (sa_countable_union _ sa_an).
+        assert (eqq1:event_equiv
+                  (exist (fun e : pre_event T => sa_sigma _ e) (pre_union_of_collection an) (sa_countable_union an sa_an)) 
+                  (union_of_collection (σ:=generated_sa C) (fun n => exist _ (an n) (sa_an n)))).
+        {
+          rewrite union_of_collection_as_pre; intros ?; simpl.
+          unfold collection_pre; simpl.
+          reflexivity.
+        } 
+        rewrite eqq1.
+        assert (disj:collection_is_pairwise_disjoint (σ:=generated_sa C) (fun n : nat => exist (sa_sigma _) (an n) (sa_an n))).
+        {
+          now apply collection_is_pairwise_disjoint_pre.
+        }
+        apply Rbar_finite_eq.
+        rewrite (@measure_countable_disjoint_union _ _ μ1 μ_meas1 _ disj).
+        rewrite (@measure_countable_disjoint_union _ _ μ2 μ_meas2 _ disj).
+        apply ELim_seq_ext; intros.
+        unfold sum_Rbar_n.
+        f_equal.
+        apply map_ext; intros.
+        apply Rbar_finite_eq.
+        destruct (H a).
+        etransitivity; [| etransitivity]; [| apply H1 |].
+        + now apply measure_proper_fin.
+        + now apply measure_proper_fin.
+    }
+    apply Dynkin in csub; trivial.
+    assert (pre_event_equiv A (sa_sigma (generated_sa C)))
+      by now apply antisymmetry.
+    intros.
+    destruct a.
+    assert (Ax :A x) by now apply H.
+    destruct Ax.
+    etransitivity; [etransitivity |]; [| apply H0 | ].
+    * now apply measure_proper_fin.
+    * now apply measure_proper_fin.
+      Unshelve.
+      trivial.
+  Qed.
+  
+  Definition independent_eventcoll_collection_μ1 (l : list (event dom)) : event dom -> R
+    := fun x => ps_P (event_inter x (list_inter l)).
+
+  Program Instance independent_eventcoll_collection_μ1_is_measure (l : list (event dom)) :
+    is_measure (independent_eventcoll_collection_μ1 l).
+  Next Obligation.
+    unfold independent_eventcoll_collection_μ1.
+    intros ???.
+    apply Rbar_finite_eq.
+    apply ps_proper.
+    now rewrite H.
+  Qed.
+  Next Obligation.
+    unfold independent_eventcoll_collection_μ1.
+    now rewrite event_inter_false_l, ps_none.
+  Qed.
+  Next Obligation.
+    unfold independent_eventcoll_collection_μ1.
+    apply ps_pos.
+  Qed.
+  Next Obligation.
+    unfold independent_eventcoll_collection_μ1.
+    rewrite event_inter_countable_union_distr_r.
+    assert (disj2: collection_is_pairwise_disjoint (fun n : nat => event_inter (B n) (list_inter l))).
+    {
+      apply collection_is_pairwise_disjoint_pre.
+      apply collection_is_pairwise_disjoint_pre in H.
+      generalize (pre_collection_is_pairwise_disjoint_inter _ (list_inter l) H).
+      apply pre_collection_is_pairwise_disjoint_pre_event_sub_proper; intros ???.
+      apply pre_event_inter_comm.
+      apply H0.
+    }
+
+    generalize (ps_countable_disjoint_union (fun n : nat => event_inter (B n) (list_inter l)) disj2)
+    ; intros HH.
+    red in HH.
+    apply infinite_sum_infinite_sum' in HH.
+    apply infinite_sum_is_lim_seq in HH.
+    apply is_Elim_seq_fin in HH.
+    apply is_Elim_seq_unique in HH.
+    rewrite <- HH.
+  Admitted.
+
+  (*  measure_all_one_ps in Measures *)
+  
+  Definition independent_eventcoll_collection_μ2 (l : list (event dom)) : event dom -> R
+    := fun x => ps_P x * ps_P (list_inter l).
+
+  Program Instance independent_eventcoll_collection_μ2_is_measure (l : list (event dom)) :
+    is_measure (independent_eventcoll_collection_μ2 l).
+  Next Obligation.
+    unfold independent_eventcoll_collection_μ2.
+    intros ???.
+    apply Rbar_finite_eq.
+    now rewrite H.
+  Qed.
+  Next Obligation.
+    unfold independent_eventcoll_collection_μ2.
+    now rewrite ps_none, Rmult_0_l.
+  Qed.
+  Next Obligation.
+    unfold independent_eventcoll_collection_μ2.
+    apply Rmult_le_pos; apply ps_pos.
+  Qed.
+  Next Obligation.
+    unfold independent_eventcoll_collection_μ2.
+  Admitted.
+
+  Definition measure_sa_sub {T} {σ1 σ2 : SigmaAlgebra T} (sub:sa_sub σ2 σ1) (μ: event σ1 -> Rbar) : event σ2 -> Rbar
+    := fun x => μ (event_sa_sub sub x).
+
+  Global Instance measure_sa_sub_is_measure {T}
+         {σ1 σ2 : SigmaAlgebra T} (sub:sa_sub σ2 σ1) (μ: event σ1 -> Rbar)
+         {μ_meas:is_measure μ} : is_measure (measure_sa_sub sub μ).
+  Admitted.
+
+  
+    Definition measure_sa_sub_fin {T} {σ1 σ2 : SigmaAlgebra T} (sub:sa_sub σ2 σ1) (μ: event σ1 -> R) : event σ2 -> R
+    := fun x => μ (event_sa_sub sub x).
+
+  Global Instance measure_sa_sub_fin_is_measure {T}
+         {σ1 σ2 : SigmaAlgebra T} (sub:sa_sub σ2 σ1) (μ: event σ1 -> R)
+         {μ_meas:is_measure μ} : is_measure (measure_sa_sub_fin sub μ).
+  Admitted.
+
   Lemma independent_eventcoll_collection_generated_l 
-        (doms:nat -> pre_event Ts -> Prop) :
+        (doms:nat -> pre_event Ts -> Prop)
+        (sub0:pre_event_sub (doms 0%nat) (sa_sigma dom)) :
     Pi_system (doms 0%nat) ->
     independent_eventcoll_collection doms ->
     independent_eventcoll_collection (fun n => match n with
@@ -3965,7 +4166,20 @@ Qed.
                                                end).
   Proof.
     intros.
-    Admitted.
+    red; intros.
+    red; intros.
+
+    assert (sub':sa_sub (generated_sa (doms 0%nat)) dom).
+    {
+      admit.
+    } 
+    (* case split on 0 in l *)
+    
+    generalize (meas_prob_extension_unique (doms 0%nat)
+                                           (measure_sa_sub_fin sub' (independent_eventcoll_collection_μ1 (map A (remove_one 0%nat l))))
+                                           (measure_sa_sub_fin sub' (independent_eventcoll_collection_μ2 (map A (remove_one 0%nat l))))); intros HH.
+    cut_to HH.
+  Admitted.
 
   Instance is_subalg_join1  (sas : nat -> SigmaAlgebra Ts) 
            {sub:IsSubAlgebras dom sas} :
@@ -4281,8 +4495,6 @@ Qed.
         by now rewrite union_sa_comm.
       now match_destr.
   Qed.
-
-  
 
   Lemma independent_sas_split1_alt (sas : nat -> SigmaAlgebra Ts) 
         {sub:IsSubAlgebras dom sas}
