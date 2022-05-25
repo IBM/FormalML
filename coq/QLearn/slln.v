@@ -3950,6 +3950,25 @@ Qed.
     ; apply list_inter_incl_proper; auto.
   Qed.
   
+  Definition independent_eventcoll_collection {Idx} (doms:Idx -> pre_event Ts -> Prop)
+             {sub: forall n (e : pre_event Ts | doms n e), sa_sigma dom (proj1_sig e)}
+    := 
+    forall (l:forall n, {e : pre_event Ts | doms n e}),
+      independent_event_collection Prts (fun n => exist _ _ (sub n (l n))).
+  
+(*
+  Lemma independent_eventcoll_collection_generated_l 
+        (doms:nat -> pre_event Ts -> Prop)
+        {sub: forall n (e : pre_event Ts | doms n e), sa_sigma dom (proj1_sig e)} :
+    Pi_system (doms 0%nat) ->
+    independent_eventcoll_collection doms (sub := sub) ->
+    independent_eventcoll_collection (fun n => match n with
+                                               | 0%nat => sa_sigma (generated_sa (doms 0%nat))
+                                               | _ => doms n
+                                               end)
+*)
+    
+
   Instance is_subalg_join1  (sas : nat -> SigmaAlgebra Ts) 
            {sub:IsSubAlgebras dom sas} :
     let sas2 := fun (n:nat) => match n with
@@ -4198,7 +4217,9 @@ Qed.
                        (union_sa (filtrate_sa sas n) (sas (1 + n)%nat))) 
         by now rewrite union_sa_comm.
       now match_destr.
-   Qed.
+  Qed.
+
+  
 
   Lemma independent_sas_split1_alt (sas : nat -> SigmaAlgebra Ts) 
         {sub:IsSubAlgebras dom sas}
@@ -4414,7 +4435,7 @@ Qed.
       now apply independent_rv_collection_proper.
     }
     generalize (filtration_history_sa_sub X); intros fsub.
-    generalize (independent_sas_split1 _ fsub H0 n); intros.
+    generalize (independent_sas_split1_alt _ fsub H0 n); intros.
     unfold is_sub_algebras in H1.
     unfold independent_sas in *.
     intros.
