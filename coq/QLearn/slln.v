@@ -3956,11 +3956,6 @@ Qed.
       (forall n, (doms n) (A n)) ->
       independent_event_collection Prts A.
 
-  Lemma measure_complement {T} {σ : SigmaAlgebra T} (μ : event σ -> R) {μ_meas:is_measure μ} A :
-    μ (event_complement A) = μ Ω - μ A.
-  Proof.
-    
-  Admitted.
 
   Instance measure_proper_fin {T} {σ : SigmaAlgebra T} (μ : event σ -> R) {μ_meas:is_measure μ}
     : Proper (event_equiv ==> eq) μ.
@@ -3970,6 +3965,19 @@ Qed.
     now invcs H.
   Qed.    
   
+  Lemma measure_complement {T} {σ : SigmaAlgebra T} (μ : event σ -> R) {μ_meas:is_measure μ} A :
+    μ (event_complement A) = μ Ω - μ A.
+  Proof.
+    generalize (event_disjoint_complement A); intros.
+    generalize (measure_disjoint_union _ A (event_complement A) H); intros.
+    simpl in H0.
+    apply Rbar_finite_eq in H0.
+    generalize (ps_event_union_complement A); intros.
+    rewrite (measure_proper_fin _ _ _ H1) in H0.
+    rewrite H0.
+    lra.
+  Qed.
+
   Lemma meas_prob_extension_unique {T} 
         (C:pre_event T -> Prop) {cpi:Pi_system C}
         (μ1 μ2 : event (generated_sa C) -> R)
