@@ -3959,6 +3959,7 @@ Qed.
   Lemma measure_complement {T} {σ : SigmaAlgebra T} (μ : event σ -> R) {μ_meas:is_measure μ} A :
     μ (event_complement A) = μ Ω - μ A.
   Proof.
+    
   Admitted.
 
   Instance measure_proper_fin {T} {σ : SigmaAlgebra T} (μ : event σ -> R) {μ_meas:is_measure μ}
@@ -4204,6 +4205,15 @@ Qed.
     - now rewrite Rmult_comm.
   Qed.
 
+  Lemma list_inter2 (x y : event dom) :
+    event_equiv
+      (list_inter (x :: y :: nil))
+      (event_inter x y).
+  Proof.
+    rewrite list_inter_cons.
+    now rewrite list_inter_singleton.
+  Qed.
+
   Lemma independent_sas_join1  (sas : nat -> SigmaAlgebra Ts) 
         {sub:IsSubAlgebras dom sas} :
     independent_sa_collection Prts sas ->
@@ -4337,8 +4347,8 @@ Qed.
           match_destr_in H10.
         }
         generalize (remove_one_in_perm _ _ i); intros perm.
-        specialize (indep ll H9).
-        etransitivity; [| etransitivity]; [| apply indep |].
+        generalize (indep ll H9); intros indep'.
+        etransitivity; [| etransitivity]; [| apply indep' |].
         + apply ps_proper.
           unfold ll.
           rewrite perm.
@@ -4391,7 +4401,30 @@ Qed.
           simpl.
           rewrite <- Rmult_assoc.
           f_equal.
-          * admit.
+          * assert (ps_P (event_sa_sub (sub 1%nat) (exist (sa_sigma (sas 1%nat)) x0 H5)) *
+                    ps_P (event_sa_sub (sub 0%nat) (exist (sa_sigma (sas 0%nat)) x H4)) =
+                    ps_P (event_inter
+                            (event_sa_sub (sub 1%nat) (exist (sa_sigma (sas 1%nat)) x0 H5))                            
+                            (event_sa_sub (sub 0%nat) (exist (sa_sigma (sas 0%nat)) x H4)))).
+            {
+              specialize (indep (1%nat :: 0%nat :: nil)).
+              cut_to indep.
+              - simpl in indep.
+                rewrite Rmult_1_r in indep.
+                rewrite list_inter2 in indep.
+                now rewrite indep.
+              - apply NoDup_cons.
+                + unfold In.
+                  lia.
+                + apply NoDup_cons.
+                  * apply in_nil.
+                  * apply NoDup_nil.
+            }
+            rewrite H10.
+            apply ps_proper.
+            unfold event_equiv, event_inter; simpl.
+            rewrite H6.
+            now rewrite pre_event_inter_comm.
           * f_equal.
             apply map_eq, Forall_forall.
             intros.
@@ -4433,7 +4466,7 @@ Qed.
           reflexivity.
     }
     intros.
-    generalize (independent_eventcoll_collection_generated_l sys2 Fpi); intros.
+    generalize (independent_eventcoll_collection_generated_l sys2); intros.
     unfold independent_sa_collection.
     intros.
     apply H3; trivial.
@@ -4450,8 +4483,7 @@ Qed.
       generalize (l (S n)); intros.
       destruct e.
       now simpl.
-  Admitted.
-
+  Qed.
 
   Instance is_subalg_join_n  (sas : nat -> SigmaAlgebra Ts)  (n : nat)
            {sub:IsSubAlgebras dom sas} :
