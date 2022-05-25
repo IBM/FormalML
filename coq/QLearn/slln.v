@@ -4195,11 +4195,8 @@ Qed.
       unfold sas2.
       replace (a + S n)%nat with (S a + n)%nat by lia.
       assert (sa_equiv (filtrate_sa sas (S n))
-                       (union_sa (filtrate_sa sas n) (sas (1 + n)%nat))).
-      {
-        simpl.
-        now rewrite union_sa_comm.
-      }
+                       (union_sa (filtrate_sa sas n) (sas (1 + n)%nat))) 
+        by now rewrite union_sa_comm.
       now match_destr.
    Qed.
 
