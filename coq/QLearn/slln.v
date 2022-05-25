@@ -3981,6 +3981,15 @@ Qed.
     - easy.
   Qed.
 
+  Global Instance fold_right_Rmult1_perm_proper :
+    Proper (@Permutation R ==> eq) (fold_right Rmult 1).
+  Proof.
+    intros ???.
+    apply fold_right_perm; trivial; intros.
+    - now rewrite Rmult_assoc.
+    - now rewrite Rmult_comm.
+  Qed.
+
   Lemma independent_sas_join1  (sas : nat -> SigmaAlgebra Ts) 
         {sub:IsSubAlgebras dom sas} :
     independent_sa_collection Prts sas ->
@@ -4140,9 +4149,49 @@ Qed.
              reflexivity.
         + unfold ll.
           do 2 rewrite map_map.
-          (* rewrite perm. *)
-          admit.
-          
+          simpl.
+          rewrite map_map.
+          cut (ps_P (event_sa_sub (sub 1%nat) (exist (sa_sigma (sas 1%nat)) x0 H5)) *
+  fold_right Rmult 1
+    (map
+       (fun x1 : nat =>
+        ps_P
+          (event_sa_sub (sub match x1 with
+                             | 0%nat => x1
+                             | S _ => S x1
+                             end) (g match x1 with
+                                     | 0%nat => x1
+                                     | S _ => S x1
+                                     end)))  (0%nat :: remove_one 0%nat l)) =
+  fold_right Rmult 1 (map (fun x1 : nat => ps_P (f x1))  (0%nat :: remove_one 0%nat l))
+              ).
+          {
+            intros HH.
+            etransitivity; [| etransitivity]; [| apply HH |].
+            - f_equal.
+              apply fold_right_Rmult1_perm_proper.
+              now apply Permutation_map.
+            - apply fold_right_Rmult1_perm_proper.
+              now apply Permutation_map.
+          } 
+          simpl.
+          rewrite <- Rmult_assoc.
+          f_equal.
+          * admit.
+          * f_equal.
+            apply map_eq, Forall_forall.
+            intros.
+            unfold g.
+            assert (x1 <> 0%nat).
+            {
+              rewrite perm in H3.
+              invcs H3.
+              congruence.
+            } 
+            destruct x1; try congruence.
+            apply ps_proper.
+            intro z.
+            reflexivity.
       - assert (NoDup (map S l)).
         {
           apply map_inj_NoDup; trivial.
