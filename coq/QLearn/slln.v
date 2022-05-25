@@ -3951,23 +3951,21 @@ Qed.
   Qed.
   
   Definition independent_eventcoll_collection {Idx} (doms:Idx -> pre_event Ts -> Prop)
-             {sub: forall n (e : pre_event Ts | doms n e), sa_sigma dom (proj1_sig e)}
-    := 
-    forall (l:forall n, {e : pre_event Ts | doms n e}),
-      independent_event_collection Prts (fun n => exist _ _ (sub n (l n))).
+    := forall (A:Idx -> event dom),
+      (forall n, (doms n) (A n)) ->
+      independent_event_collection Prts A.
   
-(*
   Lemma independent_eventcoll_collection_generated_l 
-        (doms:nat -> pre_event Ts -> Prop)
-        {sub: forall n (e : pre_event Ts | doms n e), sa_sigma dom (proj1_sig e)} :
+        (doms:nat -> pre_event Ts -> Prop) :
     Pi_system (doms 0%nat) ->
-    independent_eventcoll_collection doms (sub := sub) ->
+    independent_eventcoll_collection doms ->
     independent_eventcoll_collection (fun n => match n with
                                                | 0%nat => sa_sigma (generated_sa (doms 0%nat))
                                                | _ => doms n
-                                               end)
-*)
-    
+                                               end).
+  Proof.
+    intros.
+    Admitted.
 
   Instance is_subalg_join1  (sas : nat -> SigmaAlgebra Ts) 
            {sub:IsSubAlgebras dom sas} :
@@ -4171,8 +4169,24 @@ Qed.
           intro z.
           reflexivity.
     }
-
-               
+    intros.
+    generalize (independent_eventcoll_collection_generated_l sys2 Fpi); intros.
+    unfold independent_sa_collection.
+    intros.
+    apply H3; trivial.
+    intros.
+    match_destr.
+    - unfold sys2.
+      unfold sas2 in l.
+      generalize (l 0%nat); intros.
+      apply H1.
+      destruct e.
+      now simpl.
+    - simpl.
+      unfold sas2 in l.
+      generalize (l (S n)); intros.
+      destruct e.
+      now simpl.
   Admitted.
 
 
