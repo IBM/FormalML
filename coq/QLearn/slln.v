@@ -3918,6 +3918,20 @@ Qed.
       firstorder.
   Qed.
 
+   Global Instance list_union_proper {A} {σ:SigmaAlgebra A}  :
+    Proper (Forall2 event_equiv ==> event_equiv) (@list_union A σ).
+  Proof.
+    intros ????.
+    split.
+    - apply list_union_sub_proper; trivial.
+      eapply Forall2_incl; try eapply H; intros.
+      firstorder.
+    - apply list_union_sub_proper; trivial.
+      symmetry in H.
+      eapply Forall2_incl; try eapply H; intros.
+      firstorder.
+  Qed.
+
   Global Instance list_inter_incl_proper {A} {σ:SigmaAlgebra A}  :
     Proper (@incl _ --> event_sub) (@list_inter A σ).
   Proof.
@@ -4108,6 +4122,7 @@ Qed.
              destruct x1; try congruence.
              reflexivity.
         + unfold ll.
+          do 2 rewrite map_map.
           (* rewrite perm. *)
           admit.
           
@@ -4140,7 +4155,87 @@ Qed.
 
                
   Admitted.
-    
+
+
+  Instance is_subalg_join_n  (sas : nat -> SigmaAlgebra Ts)  (n : nat)
+           {sub:IsSubAlgebras dom sas} :
+    let sas2 := fun (n0:nat) => match n0 with
+                              | 0%nat => filtrate_sa sas n
+                              | S n' => sas (n0 + n)%nat
+                              end    in
+    IsSubAlgebras dom sas2.
+  Proof.
+    unfold IsSubAlgebras in *.
+    destruct n0.
+    - now apply filtrate_sa_sub_all.
+    - easy.
+  Qed.
+
+  Lemma independent_sas_join_n  (sas : nat -> SigmaAlgebra Ts)  (n:nat)
+        {sub:IsSubAlgebras dom sas} :
+    independent_sa_collection Prts sas ->
+    let sas2 := fun (n0:nat) => match n0 with
+                              | 0%nat => filtrate_sa sas n
+                              | S n' => sas (n0 + n)%nat
+                              end    in
+    independent_sa_collection Prts sas2.
+  Proof.
+    intros.
+    induction n.
+    - simpl in sas2.
+      revert H.
+      apply independent_sa_collection_proper.
+      intros ??.
+      unfold sas2.
+      replace (a + 0)%nat with a by lia.
+      now match_destr.
+    - generalize (independent_sas_join1 _ IHn).
+      apply independent_sa_collection_proper.
+      intros ??.
+      unfold sas2.
+      replace (a + S n)%nat with (S a + n)%nat by lia.
+      assert (sa_equiv (filtrate_sa sas (S n))
+                       (union_sa (filtrate_sa sas n) (sas (1 + n)%nat))).
+      {
+        simpl.
+        now rewrite union_sa_comm.
+      }
+      now match_destr.
+   Qed.
+
+  Lemma independent_sas_split1_alt (sas : nat -> SigmaAlgebra Ts) 
+        {sub:IsSubAlgebras dom sas}
+        (fsub: forall n, sa_sub (filtrate_sa sas n) dom) :
+    independent_sa_collection Prts sas ->
+    forall n,
+      independent_sas Prts (fsub n) (is_sub_algebras (S n)).
+  Proof.
+    intros.
+    generalize (independent_sas_join_n sas n H); intros.
+    unfold independent_sas.
+    intros.
+    unfold independent_sa_collection in H0.
+    pose (l := fun (n0:nat) =>
+                 match n0 return (event
+                                   match n0 with
+                                   | 0%nat => filtrate_sa sas n
+                                   | S _ => sas (n0 + n)%nat
+                                   end) with
+                 | 0%nat => A
+                 | S n' =>
+                   match n' with
+                   | 0%nat => B
+                   | _ =>  Ω
+                   end
+                 end).
+    specialize (H0 l).
+    apply independent_event_collection_pairwise_independent in H0.
+    unfold pairwise_independent_event_collection in H0.
+    specialize (H0 0%nat 1%nat).
+    cut_to H0; try lia.
+    revert H0.
+    apply independent_events_proper; now simpl.
+  Qed.
 
   Lemma independent_sas_split1 (sas : nat -> SigmaAlgebra Ts) 
         {sub:IsSubAlgebras dom sas}
