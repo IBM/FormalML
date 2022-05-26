@@ -4213,7 +4213,7 @@ Qed.
         (doms:nat -> pre_event Ts -> Prop)
         (sub0:pre_event_sub (doms 0%nat) (sa_sigma dom)) :
     Pi_system (doms 0%nat) ->
-    (forall n, (doms n)  pre_Ω) ->
+    (doms 0%nat) pre_Ω ->
     independent_eventcoll_collection doms ->
     independent_eventcoll_collection (fun n => match n with
                                                | 0%nat => sa_sigma (generated_sa (doms 0%nat))
@@ -4651,14 +4651,12 @@ Qed.
     apply H3; trivial.
     - intros.
       unfold sys2.
-      destruct n.
-      + unfold F.
-        exists pre_Ω.
-        exists pre_Ω.
-        split; try apply sa_all.
-        split; try apply sa_all.        
-        now rewrite pre_event_inter_true_r.
-      + apply sa_all.
+      unfold F.
+      exists pre_Ω.
+      exists pre_Ω.
+      split; try apply sa_all.
+      split; try apply sa_all.        
+      now rewrite pre_event_inter_true_r.
     - intros.
       match_destr.
       + unfold sys2.
