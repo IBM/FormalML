@@ -4196,14 +4196,6 @@ Qed.
     - now rewrite Rmult_comm.
   Qed.
 
-  Lemma NoDup_remove {A} (l : list A) (a : A) {eqdec : EqDec A eq} :
-    NoDup l ->
-    NoDup (remove_one a l).
-  Proof.
-    intros.
-    now rewrite remove_one_sublist.
-  Qed.
-
   Lemma NoDup_remove_val {A} (l : list A) (a : A) {eqdec : EqDec A eq} :
     NoDup l ->
     forall b,
@@ -4300,14 +4292,11 @@ Qed.
                    --- unfold B.
                        specialize (H2 (S n)).
                        apply H2.
-                ** generalize (remove_one_sublist l 0%nat); intros.
-                   now apply NoDup_remove.
+                ** now rewrite remove_one_sublist.
+
           -- apply map_ext_in.
              intros.
-             assert (a <> 0%nat).
-             {
-               now apply (NoDup_remove_val _ _ H3).
-             }
+             assert (a <> 0%nat) by now apply (NoDup_remove_val _ _ H3).
              now destruct a.
       + rewrite event_sa_sub_all, event_inter_true_l, ps_all; lra.
       + intros.
@@ -4329,10 +4318,7 @@ Qed.
              replace (map C (remove_one 0%nat l)) with (map A (remove_one 0%nat l)); try easy.
              apply map_ext_in.
              intros.
-             assert (a0 <> 0%nat).
-             {
-               now apply (NoDup_remove_val _ _ H3).               
-             }
+             assert (a0 <> 0%nat) by now apply (NoDup_remove_val _ _ H3).               
              now destruct a0.
           -- cut (fold_right Rmult 1 (map ps_P (map C (0%nat :: remove_one 0%nat l))) =
   ps_P (event_sa_sub sub' (generated_sa_base_event Ca)) * ps_P (list_inter (map A (remove_one 0%nat (0%nat :: remove_one 0%nat l))))).
@@ -4351,13 +4337,10 @@ Qed.
              replace (map A (remove_one 0%nat l)) with (map C (remove_one 0%nat l)).
              ++ symmetry.
                 apply H1.
-                now apply NoDup_remove.
+                now rewrite remove_one_sublist.
              ++ apply map_ext_in.
                 intros.
-                assert (a0 <> 0%nat).
-                {
-                  now apply (NoDup_remove_val _ _ H3).
-                }
+                assert (a0 <> 0%nat) by now apply (NoDup_remove_val _ _ H3).
                 now destruct a0.
         * intros.
           destruct n; trivial.
