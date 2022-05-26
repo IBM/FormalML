@@ -4200,14 +4200,22 @@ Qed.
     NoDup l ->
     NoDup (remove_one a l).
   Proof.
-  Admitted.
+    intros.
+    now rewrite remove_one_sublist.
+  Qed.
 
   Lemma NoDup_remove_val {A} (l : list A) (a : A) {eqdec : EqDec A eq} :
     NoDup l ->
     forall b,
       In b (remove_one a l) -> b <> a.
   Proof.
-  Admitted.
+    induction 1; simpl; [tauto |]; intros.
+    match_destr_in H1.
+    - congruence.
+    - destruct H1.
+      + congruence.
+      + auto.
+  Qed.
 
   Lemma independent_eventcoll_collection_generated_l 
         (doms:nat -> pre_event Ts -> Prop)
