@@ -4259,8 +4259,7 @@ Qed.
         generalize (remove_one_in_perm _ _ H4); intros perm.
         etransitivity; [| etransitivity]; [| apply HH |].
         * rewrite perm.
-          rewrite map_cons.
-          rewrite list_inter_cons.
+          rewrite map_cons, list_inter_cons.
           apply ps_proper.
           intros ?.
           now simpl.
@@ -4274,9 +4273,9 @@ Qed.
               do 2 rewrite map_map.
               now apply Permutation_map.
           }
-          rewrite remove_one_consed.
-          rewrite map_cons.
-          replace (map A (remove_one 0%nat l)) with (map B (remove_one 0%nat l)).          
+          rewrite remove_one_consed, map_cons.
+          replace (map A (remove_one 0%nat l)) with (map B (remove_one 0%nat l)).
+          
           -- rewrite map_cons.
              simpl.
              f_equal.
@@ -4309,9 +4308,7 @@ Qed.
         * generalize (remove_one_in_perm _ _ H4); intros perm.
           etransitivity; [| etransitivity]; [| apply (H1 l H3) |].
           -- rewrite perm.
-             rewrite remove_one_consed.
-             rewrite map_cons.
-             rewrite list_inter_cons.
+             rewrite remove_one_consed, map_cons, list_inter_cons.
              apply ps_proper.
              intros ?.
              simpl.
@@ -4330,8 +4327,7 @@ Qed.
                  now apply Permutation_map.
                - f_equal.
              }
-             rewrite map_cons.
-             rewrite map_cons.
+             do 2 rewrite map_cons.
              simpl.
              f_equal.
              replace (map A (remove_one 0%nat l)) with (map C (remove_one 0%nat l)).
