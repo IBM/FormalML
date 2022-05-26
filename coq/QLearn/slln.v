@@ -4717,7 +4717,7 @@ Qed.
       now match_destr.
   Qed.
 
-  Lemma independent_sas_split1_alt (sas : nat -> SigmaAlgebra Ts) 
+  Lemma independent_sas_split1 (sas : nat -> SigmaAlgebra Ts) 
         {sub:IsSubAlgebras dom sas}
         (fsub: forall n, sa_sub (filtrate_sa sas n) dom) :
     independent_sa_collection Prts sas ->
@@ -4751,166 +4751,6 @@ Qed.
     apply independent_events_proper; now simpl.
   Qed.
 
-  Lemma independent_sas_split1 (sas : nat -> SigmaAlgebra Ts) 
-        {sub:IsSubAlgebras dom sas}
-        (fsub: forall n, sa_sub (filtrate_sa sas n) dom) :
-    independent_sa_collection Prts sas ->
-    forall n,
-      independent_sas Prts (fsub n) (is_sub_algebras (S n)).
-  Proof.
-    intros indep n.
-    
-    pose (F := fun x => exists (l:list (pre_event Ts)),
-                   Forall2 (fun e s => sa_sigma s e) l (collection_take sas (S n)) /\
-                     pre_event_equiv x (pre_list_inter l)).
-
-    assert (Fpi : Pi_system F).
-    {
-      unfold F.
-      intros ?[l1[F1 eqq1]]?[l2[F2 eqq2]].
-      exists (map (fun '(x,y) => pre_event_inter x y) (combine l1 l2)).
-      split.
-      - clear eqq1 eqq2.
-        revert l1 l2 F1 F2.
-        generalize (collection_take sas (S n)); intros l.
-        induction l; intros; invcs F1; invcs F2
-        ; simpl; trivial.
-        constructor; auto.
-        now apply sa_inter.
-      - rewrite eqq1, eqq2.
-        apply pre_event_inter_pre_list_inter_combine.
-        transitivity (length (collection_take sas (S n))).
-        + now apply Forall2_length in F1.
-        + now apply Forall2_length in F2.
-    }
-
-    assert (forall j x, (j <= n)%nat -> sa_sigma (sas j) x -> F x).
-    {
-      intros.
-      red.
-      exists (repeat pre_Ω j ++ [x] ++ repeat pre_Ω (n-j)%nat).
-      split.
-      - unfold collection_take.
-        clear F Fpi.
-        replace (S n) with (j + (S n - j))%nat by lia.
-        rewrite seq_plus, map_app.
-        apply Forall2_app.
-        {
-          apply Forall2_repeat_pre_Ω.
-        }
-        destruct j.
-        + simpl.
-          constructor; trivial.
-          replace (n-0)%nat with n by lia.
-          apply Forall2_repeat_pre_Ω.
-        + simpl.
-          replace (n - j)%nat with (S (n - (S j))%nat) by lia.
-          simpl.
-          constructor; trivial.
-          apply Forall2_repeat_pre_Ω.
-      - repeat rewrite pre_list_inter_app.
-        repeat rewrite pre_list_inter_repeat_Ω.
-        now rewrite pre_event_inter_true_l, pre_list_inter_singleton, pre_event_inter_true_r.
-    } 
-    
-    assert (sa_equiv (generated_sa F) (filtrate_sa sas n)).
-    {
-(*
-      clear Fpi indep.
-      intros ?; split; intros HH.
-      - admit.
-      - 
-        subst F.
-        induction n.
-        + simpl in *; apply generated_sa_sub'; eauto.
-        + simpl filtrate_sa in HH.
-          unfold union_sa in HH.
-          revert HH.
-          apply generated_sa_sub_sub; intros ??.
-          destruct H0.
-          * simpl in *; apply generated_sa_sub'; eauto.
-          * cut_to IHn.
-            -- 
-        
-      intros ?.
-*)
-      admit.
-    }  
-    assert (independent_eventcoll Prts F (sa_sigma (sas (S n)))).
-    {
-      intros ?? [?[??]] ?.
-      induction x.
-      - rewrite pre_list_inter_nil in H2.
-        assert (eqq:A === Ω); [intros ?; apply H2 |].
-        rewrite eqq.
-        apply independent_events_all_l.
-      - unfold collection_take in H1; simpl in H1.
-        invcs H1.
-        rewrite pre_list_inter_cons in H2.
-        assert (sax:sa_sigma dom (pre_list_inter x)).
-        {
-          revert H9.
-          generalize sub.
-          clear.
-          revert x.
-          generalize 1%nat.
-          induction n.
-          - simpl; intros.
-            invcs H9.
-            rewrite pre_list_inter_nil.
-            apply sa_all.
-          - intros.
-            simpl in *.
-            destruct x; simpl in *; invcs H9.
-            rewrite pre_list_inter_cons.
-            apply sa_inter; [| eauto].
-            eapply sub; eauto.
-        }
-       (*
-        assert (sap: sa_sigma dom p) by (eapply sub; eauto).
-        assert (A === event_inter (exist _ _ sap) (exist _ _ sax)).
-        {
-          intros ?; apply H2.
-        } 
-        rewrite H1.
-        red.
-        
-      red in indep.
-      red.
-       *)
-      admit.
-    }
-    assert (pre_event_sub F (sa_sigma dom)).
-    {
-      intros ? [?[??]].
-      rewrite H3.
-      apply sa_pre_list_inter; intros.
-      destruct (Forall2_In_l H2 H4) as [? [??]].
-      apply in_map_iff in H5.
-      destruct H5 as [? [??]]; subst.
-      eapply sub; eauto.
-    }
-
-    generalize (independent_eventcoll_generated_l Prts F (sa_sigma (sas (S n)))); intros.
-    cut_to H3; trivial.
-    unfold independent_eventcoll in H3.
-    unfold independent_sas.
-    intros.
-    unfold IsSubAlgebras in sub.
-    specialize (H3 (event_sa_sub (fsub n) A)
-                   (event_sa_sub (sub (S n)) B)).
-    apply H3.
-    - assert (sa_sigma (filtrate_sa sas n) (event_sa_sub (fsub n) A)).
-      {
-        simpl.
-        destruct A.
-        now simpl.
-      }
-      now apply H0.
-    - destruct B.
-      now simpl.
-    Admitted.
-
   Lemma event_sa_sub_pf_irrel (dom2 : SigmaAlgebra Ts) (sub1 sub2 : sa_sub dom2 dom) (x : event dom2) :
     event_equiv (event_sa_sub sub1 x) (event_sa_sub sub2 x).
   Proof.
@@ -4931,7 +4771,7 @@ Qed.
       now apply independent_rv_collection_proper.
     }
     generalize (filtration_history_sa_sub X); intros fsub.
-    generalize (independent_sas_split1_alt _ fsub H0 n); intros.
+    generalize (independent_sas_split1 _ fsub H0 n); intros.
     unfold is_sub_algebras in H1.
     unfold independent_sas in *.
     intros.
