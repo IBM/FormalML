@@ -4217,6 +4217,16 @@ Qed.
       + auto.
   Qed.
 
+  Lemma event_sa_sub_all (dom1 dom2:SigmaAlgebra Ts) (sub:sa_sub dom1 dom2) : (event_sa_sub sub Ω) === Ω.
+  Proof.
+    intros ?; simpl; reflexivity.
+  Qed.
+
+  Lemma event_sa_sub_none (dom1 dom2:SigmaAlgebra Ts) (sub:sa_sub dom1 dom2) : (event_sa_sub sub event_none) === event_none.
+  Proof.
+    intros ?; simpl; reflexivity.
+  Qed.
+
   Lemma independent_eventcoll_collection_generated_l 
         (doms:nat -> pre_event Ts -> Prop)
         (sub0:pre_event_sub (doms 0%nat) (sa_sigma dom)) :
@@ -4299,24 +4309,7 @@ Qed.
                now apply (NoDup_remove_val _ _ H3).
              }
              now destruct a.
-      +  assert (ps_P (event_inter (event_sa_sub sub' Ω) (list_inter (map A (remove_one 0%nat l)))) =
-                 ps_P (list_inter (map A (remove_one 0%nat l)))).
-         {
-           apply ps_proper.
-           intro z.
-           simpl.
-           apply pre_event_inter_true_l.
-         }
-         rewrite H5.
-         assert (ps_P (event_sa_sub sub' Ω) = ps_P (Ω)).
-         {
-           apply ps_proper.
-           intro z.
-           now simpl.
-         }
-         rewrite H6.
-         rewrite ps_all.
-         now rewrite Rmult_1_l.
+      + rewrite event_sa_sub_all, event_inter_true_l, ps_all; lra.
       + intros.
         pose (C := fun n => match n with
                             | 0%nat => (event_sa_sub sub' (generated_sa_base_event Ca))
