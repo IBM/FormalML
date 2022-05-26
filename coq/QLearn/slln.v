@@ -3970,11 +3970,9 @@ Qed.
   Proof.
     generalize (event_disjoint_complement A); intros.
     generalize (measure_disjoint_union _ A (event_complement A) H); intros.
-    simpl in H0.
     apply Rbar_finite_eq in H0.
     generalize (ps_event_union_complement A); intros.
     rewrite (measure_proper_fin _ _ _ H1) in H0.
-    rewrite H0.
     lra.
   Qed.
 
@@ -4120,7 +4118,13 @@ Qed.
     apply is_Elim_seq_fin in HH.
     apply is_Elim_seq_unique in HH.
     rewrite <- HH.
-  Admitted.
+    symmetry.
+    rewrite <- ELim_seq_incr_1.
+    apply ELim_seq_ext.
+    intros.
+    rewrite sum_Rbar_n_finite_sum_n.
+    now rewrite sum_n_Reals.
+  Qed.
 
   (*  measure_all_one_ps in Measures *)
   
@@ -4145,7 +4149,23 @@ Qed.
   Qed.
   Next Obligation.
     unfold independent_eventcoll_collection_μ2.
-  Admitted.
+    generalize (ps_countable_disjoint_union B H)
+    ; intros HH.
+    apply infinite_sum_infinite_sum' in HH.
+    apply infinite_sum_is_lim_seq in HH.
+    rewrite <- Lim_seq_sum_Elim.
+    replace (Lim_seq (fun n : nat => sum_n (fun n0 : nat => ps_P (B n0) * ps_P (list_inter l)) n)) with
+        (Rbar_mult (Lim_seq (fun n : nat => sum_f_R0 (fun n0 : nat => ps_P (B n0)) n))  (ps_P (list_inter l))).
+    - apply is_lim_seq_unique in HH.
+      rewrite HH.
+      reflexivity.
+    - setoid_rewrite sum_n_Reals.
+      rewrite <- Lim_seq_scal_r.
+      apply Lim_seq_ext.
+      intros.
+      rewrite <- scal_sum.
+      lra.
+  Qed.
 
   Definition measure_sa_sub {T} {σ1 σ2 : SigmaAlgebra T} (sub:sa_sub σ2 σ1) (μ: event σ1 -> Rbar) : event σ2 -> Rbar
     := fun x => μ (event_sa_sub sub x).
@@ -4153,21 +4173,47 @@ Qed.
   Global Instance measure_sa_sub_is_measure {T}
          {σ1 σ2 : SigmaAlgebra T} (sub:sa_sub σ2 σ1) (μ: event σ1 -> Rbar)
          {μ_meas:is_measure μ} : is_measure (measure_sa_sub sub μ).
-  Admitted.
-
+  Proof.
+    now apply is_measure_proper_sub.
+  Qed.
   
-    Definition measure_sa_sub_fin {T} {σ1 σ2 : SigmaAlgebra T} (sub:sa_sub σ2 σ1) (μ: event σ1 -> R) : event σ2 -> R
+  Definition measure_sa_sub_fin {T} {σ1 σ2 : SigmaAlgebra T} (sub:sa_sub σ2 σ1) (μ: event σ1 -> R) : event σ2 -> R
     := fun x => μ (event_sa_sub sub x).
 
   Global Instance measure_sa_sub_fin_is_measure {T}
          {σ1 σ2 : SigmaAlgebra T} (sub:sa_sub σ2 σ1) (μ: event σ1 -> R)
          {μ_meas:is_measure μ} : is_measure (measure_sa_sub_fin sub μ).
+  Proof.
+    now generalize (measure_sa_sub_is_measure sub μ).
+  Qed.
+
+  Global Instance fold_right_Rmult1_perm_proper :
+    Proper (@Permutation R ==> eq) (fold_right Rmult 1).
+  Proof.
+    intros ???.
+    apply fold_right_perm; trivial; intros.
+    - now rewrite Rmult_assoc.
+    - now rewrite Rmult_comm.
+  Qed.
+
+  Lemma NoDup_remove {A} (l : list A) (a : A) {eqdec : EqDec A eq} :
+    NoDup l ->
+    NoDup (remove_one a l).
+  Proof.
+  Admitted.
+
+  Lemma NoDup_remove_val {A} (l : list A) (a : A) {eqdec : EqDec A eq} :
+    NoDup l ->
+    forall b,
+      In b (remove_one a l) -> b <> a.
+  Proof.
   Admitted.
 
   Lemma independent_eventcoll_collection_generated_l 
         (doms:nat -> pre_event Ts -> Prop)
         (sub0:pre_event_sub (doms 0%nat) (sa_sigma dom)) :
     Pi_system (doms 0%nat) ->
+    (forall n, (doms n)  pre_Ω) ->
     independent_eventcoll_collection doms ->
     independent_eventcoll_collection (fun n => match n with
                                                | 0%nat => sa_sigma (generated_sa (doms 0%nat))
@@ -4180,15 +4226,156 @@ Qed.
 
     assert (sub':sa_sub (generated_sa (doms 0%nat)) dom).
     {
-      admit.
-    } 
-    (* case split on 0 in l *)
-    
-    generalize (meas_prob_extension_unique (doms 0%nat)
-                                           (measure_sa_sub_fin sub' (independent_eventcoll_collection_μ1 (map A (remove_one 0%nat l))))
-                                           (measure_sa_sub_fin sub' (independent_eventcoll_collection_μ2 (map A (remove_one 0%nat l))))); intros HH.
-    cut_to HH.
-  Admitted.
+      intros ? ?.
+      apply H4.
+      intros ? ?.
+      now apply sub0.
+    }
+
+    pose (B := fun n => match n with
+                        | 0%nat => Ω
+                        | _ => A n
+                        end).
+
+    destruct (classic (In 0%nat l)).
+    - generalize (meas_prob_extension_unique (doms 0%nat)
+                                             (measure_sa_sub_fin sub' (independent_eventcoll_collection_μ1 (map A (remove_one 0%nat l))))
+                                             (measure_sa_sub_fin sub' (independent_eventcoll_collection_μ2 (map A (remove_one 0%nat l))))); intros HH.
+      unfold measure_sa_sub_fin in HH.
+      unfold independent_eventcoll_collection_μ1, independent_eventcoll_collection_μ2 in HH.
+      cut_to HH.
+      + generalize (H2 0%nat); intros.
+        specialize (HH (exist _ _ H5)).
+        generalize (remove_one_in_perm _ _ H4); intros perm.
+        etransitivity; [| etransitivity]; [| apply HH |].
+        * rewrite perm.
+          rewrite map_cons.
+          rewrite list_inter_cons.
+          apply ps_proper.
+          intros ?.
+          now simpl.
+        * cut (ps_P (event_sa_sub sub' (exist (sa_sigma (generated_sa (doms 0%nat))) (A 0%nat) H5)) *
+               ps_P (list_inter (map A (remove_one 0%nat  (0%nat :: remove_one 0%nat l)))) = fold_right Rmult 1 (map ps_P (map A  (0%nat :: remove_one 0%nat l)))).
+          {
+            intros HHH.
+            etransitivity; [| etransitivity]; [| apply HHH |].
+            - f_equal.
+            - apply fold_right_Rmult1_perm_proper.
+              do 2 rewrite map_map.
+              now apply Permutation_map.
+          }
+          rewrite remove_one_consed.
+          rewrite map_cons.
+          replace (map A (remove_one 0%nat l)) with (map B (remove_one 0%nat l)).          
+          -- rewrite map_cons.
+             simpl.
+             f_equal.
+             ++ unfold event_sa_sub; simpl.
+                apply ps_proper.
+                intro z.
+                now simpl.
+             ++ unfold independent_eventcoll_collection in H1.
+                apply H1.
+                ** intros.
+                   destruct n.
+                   --- now unfold B.
+                   --- unfold B.
+                       specialize (H2 (S n)).
+                       apply H2.
+                ** generalize (remove_one_sublist l 0%nat); intros.
+                   now apply NoDup_remove.
+          -- apply map_ext_in.
+             intros.
+             assert (a <> 0%nat).
+             {
+               now apply (NoDup_remove_val _ _ H3).
+             }
+             now destruct a.
+      +  assert (ps_P (event_inter (event_sa_sub sub' Ω) (list_inter (map A (remove_one 0%nat l)))) =
+                 ps_P (list_inter (map A (remove_one 0%nat l)))).
+         {
+           apply ps_proper.
+           intro z.
+           simpl.
+           apply pre_event_inter_true_l.
+         }
+         rewrite H5.
+         assert (ps_P (event_sa_sub sub' Ω) = ps_P (Ω)).
+         {
+           apply ps_proper.
+           intro z.
+           now simpl.
+         }
+         rewrite H6.
+         rewrite ps_all.
+         now rewrite Rmult_1_l.
+      + intros.
+        pose (C := fun n => match n with
+                            | 0%nat => (event_sa_sub sub' (generated_sa_base_event Ca))
+                            | _ => A n
+                            end).
+        specialize (H1 C).
+        cut_to H1.
+        * generalize (remove_one_in_perm _ _ H4); intros perm.
+          etransitivity; [| etransitivity]; [| apply (H1 l H3) |].
+          -- rewrite perm.
+             rewrite remove_one_consed.
+             rewrite map_cons.
+             rewrite list_inter_cons.
+             apply ps_proper.
+             intros ?.
+             simpl.
+             replace (map C (remove_one 0%nat l)) with (map A (remove_one 0%nat l)); try easy.
+             apply map_ext_in.
+             intros.
+             assert (a0 <> 0%nat).
+             {
+               now apply (NoDup_remove_val _ _ H3).               
+             }
+             now destruct a0.
+          -- cut (fold_right Rmult 1 (map ps_P (map C (0%nat :: remove_one 0%nat l))) =
+  ps_P (event_sa_sub sub' (generated_sa_base_event Ca)) * ps_P (list_inter (map A (remove_one 0%nat (0%nat :: remove_one 0%nat l))))).
+             {
+               intros HHH.
+               etransitivity; [| etransitivity]; [| apply HHH |].
+               - apply fold_right_Rmult1_perm_proper.
+                 do 2 rewrite map_map.
+                 now apply Permutation_map.
+               - f_equal.
+             }
+             rewrite map_cons.
+             rewrite map_cons.
+             simpl.
+             f_equal.
+             replace (map A (remove_one 0%nat l)) with (map C (remove_one 0%nat l)).
+             ++ symmetry.
+                apply H1.
+                now apply NoDup_remove.
+             ++ apply map_ext_in.
+                intros.
+                assert (a0 <> 0%nat).
+                {
+                  now apply (NoDup_remove_val _ _ H3).
+                }
+                now destruct a0.
+        * intros.
+          destruct n; trivial.
+          unfold C.
+          specialize (H2 (S n)).
+          now simpl in H2.
+    - unfold independent_eventcoll_collection in H1.
+      replace (map A l) with (map B l).
+      + apply H1; trivial.
+        intros.
+        destruct n.
+        * now unfold B.
+        * unfold B.
+          specialize (H2 (S n)).
+          apply H2.
+      + apply map_ext_in.
+        intros.
+        now destruct a.
+  Qed.
 
   Instance is_subalg_join1  (sas : nat -> SigmaAlgebra Ts) 
            {sub:IsSubAlgebras dom sas} :
@@ -4204,23 +4391,6 @@ Qed.
     - easy.
   Qed.
 
-  Global Instance fold_right_Rmult1_perm_proper :
-    Proper (@Permutation R ==> eq) (fold_right Rmult 1).
-  Proof.
-    intros ???.
-    apply fold_right_perm; trivial; intros.
-    - now rewrite Rmult_assoc.
-    - now rewrite Rmult_comm.
-  Qed.
-
-  Lemma list_inter2 (x y : event dom) :
-    event_equiv
-      (list_inter (x :: y :: nil))
-      (event_inter x y).
-  Proof.
-    rewrite list_inter_cons.
-    now rewrite list_inter_singleton.
-  Qed.
 
   Lemma independent_sas_join1  (sas : nat -> SigmaAlgebra Ts) 
         {sub:IsSubAlgebras dom sas} :
@@ -4419,7 +4589,8 @@ Qed.
               cut_to indep.
               - simpl in indep.
                 rewrite Rmult_1_r in indep.
-                rewrite list_inter2 in indep.
+                rewrite list_inter_cons in indep.
+                rewrite list_inter_singleton in indep.
                 now rewrite indep.
               - apply NoDup_cons.
                 + unfold In.
@@ -4478,19 +4649,29 @@ Qed.
     unfold independent_sa_collection.
     intros.
     apply H3; trivial.
-    intros.
-    match_destr.
-    - unfold sys2.
-      unfold sas2 in l.
-      generalize (l 0%nat); intros.
-      apply H1.
-      destruct e.
-      now simpl.
-    - simpl.
-      unfold sas2 in l.
-      generalize (l (S n)); intros.
-      destruct e.
-      now simpl.
+    - intros.
+      unfold sys2.
+      destruct n.
+      + unfold F.
+        exists pre_Ω.
+        exists pre_Ω.
+        split; try apply sa_all.
+        split; try apply sa_all.        
+        now rewrite pre_event_inter_true_r.
+      + apply sa_all.
+    - intros.
+      match_destr.
+      + unfold sys2.
+        unfold sas2 in l.
+        generalize (l 0%nat); intros.
+        apply H1.
+        destruct e.
+        now simpl.
+      + simpl.
+        unfold sas2 in l.
+        generalize (l (S n)); intros.
+        destruct e.
+        now simpl.
   Qed.
 
   Instance is_subalg_join_n  (sas : nat -> SigmaAlgebra Ts)  (n : nat)
