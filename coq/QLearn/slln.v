@@ -7575,8 +7575,9 @@ Qed.
         }
         split.
         + generalize (independent_rv_collection_compose _ _ X (const borel_sa) _ H0).
-          apply independent_rv_collection_proper; try easy.
+          now apply independent_rv_collection_proper.
         + generalize (identically_distributed_rv_collection_compose _ _ borel_sa X _ H2).
-     Admitted.
+          now apply identically_distributed_rv_collection_proper.
+   Qed.
           
 End slln_extra.

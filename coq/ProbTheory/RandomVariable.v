@@ -1416,6 +1416,21 @@ Section indep.
       now rewrite H2, H3.
   Qed.
 
+  Lemma identically_distributed_rv_collection_proper 
+        {Td} (cod:SigmaAlgebra Td) (cod':SigmaAlgebra Td)
+        (eqqs:sa_equiv cod cod')
+        {Idx} (X X' : forall (i:Idx), Ts -> Td) 
+        (eqqx:forall (i:Idx), rv_eq (X i) (X' i))
+        {rv : forall (i:Idx), RandomVariable dom cod (X i)}
+        {rv' : forall (i:Idx), RandomVariable dom cod' (X' i)}  :
+    identically_distributed_rv_collection cod X <-> 
+    identically_distributed_rv_collection cod' X'.
+  Proof.
+    unfold identically_distributed_rv_collection.
+    split; intros; specialize (H i j); revert H;
+      now apply identically_distributed_rvs_proper.
+  Qed.
+    
 End indep.
 
 Section ps_pullback.
