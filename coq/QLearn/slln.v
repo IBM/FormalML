@@ -7520,4 +7520,66 @@ Qed.
           typeclasses eauto.
   Qed.
 
+
+  Lemma Ash_6_2_5 (X : nat -> Ts -> R) (mu : R)
+        {rv : forall n, RandomVariable dom borel_sa (X n)} 
+        {isfe : forall n, IsFiniteExpectation Prts (X n)} :
+    (forall n, FiniteExpectation Prts (X n) = mu) ->
+    iid_rv_collection Prts borel_sa X ->
+    almost Prts (fun omega => is_lim_seq (fun n => ((rvsum X n) omega)/(INR (S n))) mu).
+    Proof.
+      intros.
+      pose (Y := fun n => rvminus (X n) (const mu)).
+      generalize (Ash_6_2_5_0 Y); intros.
+      cut_to H1.
+      - revert H1.
+        apply almost_impl, all_almost; intros ??.
+        apply is_lim_seq_ext with (u := fun n => rvsum Y n x / INR (S n) + mu).
+        + intros.
+          unfold rvsum, Y.
+          rv_unfold.
+          unfold Rdiv.
+          rewrite sum_n_ext with (b := fun k => plus (X k x) (-1 * mu)).
+          * rewrite sum_n_plus.
+            rewrite sum_n_const.
+            replace (S n) with (n + 1)%nat by lia.
+            unfold plus; simpl.
+            assert (INR (n + 1) <> 0).
+            {
+              apply INR_nzero; lia.
+            }
+            field_simplify; trivial.
+          * intros; unfold plus; simpl; lra.
+        + replace mu with (0 + mu) at 1 by lra.
+          apply is_lim_seq_plus'; trivial.
+          apply is_lim_seq_const.
+      - intros.
+        unfold Y.
+        rewrite FiniteExpectation_minus.
+        rewrite H.
+        rewrite FiniteExpectation_const.
+        lra.
+      - unfold iid_rv_collection in *.
+        destruct H0.
+        unfold Y.
+        assert (RandomVariable borel_sa borel_sa
+                               (rvminus id (const mu))) by typeclasses eauto.
+        assert (forall i : nat,
+                     RandomVariable (const borel_sa i) (const borel_sa i)
+                                    ((fun (n : nat) => (rvminus id (const mu)))i)).
+        {
+          intros.
+          replace (const borel_sa i) with (borel_sa).
+          - typeclasses eauto.
+          - now unfold const.
+        }
+        split.
+        + generalize (independent_rv_collection_compose Prts (const borel_sa) X (const borel_sa) (fun n => rvminus id (const mu)) H0); intros.
+          revert H5.
+          apply independent_rv_collection_proper; try easy.
+        + generalize (identically_distributed_rv_collection_compose Prts borel_sa borel_sa X _ H2); intros.
+     Admitted.
+          
+          
+          
 End slln_extra.
