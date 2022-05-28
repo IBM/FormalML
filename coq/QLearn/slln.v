@@ -7574,12 +7574,9 @@ Qed.
           - now unfold const.
         }
         split.
-        + generalize (independent_rv_collection_compose Prts (const borel_sa) X (const borel_sa) (fun n => rvminus id (const mu)) H0); intros.
-          revert H5.
+        + generalize (independent_rv_collection_compose Prts (const borel_sa) X (const borel_sa) (fun n => rvminus id (const mu)) H0).
           apply independent_rv_collection_proper; try easy.
-        + generalize (identically_distributed_rv_collection_compose Prts borel_sa borel_sa X _ H2); intros.
+        + generalize (identically_distributed_rv_collection_compose Prts borel_sa borel_sa X _ H2).
      Admitted.
-          
-          
           
 End slln_extra.
