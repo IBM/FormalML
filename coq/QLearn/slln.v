@@ -6033,31 +6033,6 @@ Qed.
      - apply sqr_scale_comm.
   Qed.
      
-  Lemma identically_distributed_sqr
-             (X Y : Ts -> R)
-             {rv_X : RandomVariable dom borel_sa X}
-             {rv_Y : RandomVariable dom borel_sa Y} :
-    identically_distributed_rvs Prts borel_sa X Y -> 
-    identically_distributed_rvs Prts borel_sa 
-                    (Rsqr ∘ X) 
-                    (Rsqr ∘ Y).
-  Proof.
-    apply identically_distributed_rv_compose.
-  Qed.
-
-  Lemma identically_distributed_rvsqr
-             (X Y : Ts -> R)
-             {rv_X : RandomVariable dom borel_sa X}
-             {rv_Y : RandomVariable dom borel_sa Y} :
-    identically_distributed_rvs Prts borel_sa X Y -> 
-    identically_distributed_rvs Prts borel_sa 
-                    (rvsqr X) 
-                    (rvsqr Y).
-  Proof.
-    intros.
-    generalize (identically_distributed_sqr X Y H).
-    now apply identically_distributed_rvs_proper.
-  Qed.
 
   Lemma event_lt_indicator_sum (X : Ts -> R) (n : nat) 
         {rv: RandomVariable dom borel_sa X} :
@@ -6103,16 +6078,6 @@ Qed.
      apply sum_f_R0_ext.
      intros.
      lra.
-   Qed.
-
-   Lemma sum_n_pos_incr (f : nat -> R) :
-     (forall n, 0 <= f n) ->
-     forall n, sum_n f n <= sum_n f (S n).
-   Proof.
-     intros.
-     replace (sum_n f n) with (sum_n f n + 0) by lra.
-     rewrite sum_Sn.
-     now apply Rplus_le_compat_l.
    Qed.
 
    Lemma ELim_seq_ind_le (f : nat -> R) (x : nat) :
@@ -6857,7 +6822,7 @@ Qed.
               rewrite ex_finite_lim_seq_correct.
               split.
               - apply ex_lim_seq_incr; intros.
-                apply sum_n_pos_incr.
+                apply sum_n_pos_incr; try lia.
                 intros.
                 apply Rmult_le_pos.
                 + apply sum_n_nneg; intros.

@@ -5454,6 +5454,33 @@ Section indep.
     apply identically_distributed_rv_compose.
   Qed.
 
+  Lemma identically_distributed_sqr
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y} :
+    identically_distributed_rvs prts borel_sa X Y -> 
+    identically_distributed_rvs prts borel_sa 
+                    (Rsqr ∘ X) 
+                    (Rsqr ∘ Y).
+  Proof.
+    apply identically_distributed_rv_compose.
+  Qed.
+
+  Lemma identically_distributed_rvsqr
+             (X Y : Ts -> R)
+             {rv_X : RandomVariable dom borel_sa X}
+             {rv_Y : RandomVariable dom borel_sa Y} :
+    identically_distributed_rvs prts borel_sa X Y -> 
+    identically_distributed_rvs prts borel_sa 
+                    (rvsqr X) 
+                    (rvsqr Y).
+  Proof.
+    intros.
+    generalize (identically_distributed_sqr X Y H).
+    now apply identically_distributed_rvs_proper.
+  Qed.
+
+
   Definition pairwise_independent_real_rv_collection {Idx}
              (X : Idx -> Ts -> R)
              {rv_X : forall n, RandomVariable dom borel_sa (X n)}
