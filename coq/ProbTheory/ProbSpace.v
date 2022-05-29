@@ -155,6 +155,19 @@ Proof.
   apply event_sub_true.
 Qed.
 
+ Lemma ps_P_sub_zero {T:Type} {σ:SigmaAlgebra T} (ps:ProbSpace σ)
+       (E1 E2 : event  σ) :
+   event_sub E1 E2 -> ps_P E2 = 0 -> ps_P E1 = 0.
+ Proof.
+   intros.
+   generalize (ps_sub _ E1 E2 H); intros.
+   rewrite H0 in H1.
+   generalize (ps_pos E1); intros.
+   lra.
+ Qed.
+
+
+
 (* P1.4 *)
 Lemma ps_countable_total {T:Type} {σ:SigmaAlgebra T} (ps:ProbSpace σ) (A:event σ) (coll:nat -> event σ) :
   collection_is_pairwise_disjoint coll ->

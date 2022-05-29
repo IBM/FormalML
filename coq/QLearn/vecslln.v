@@ -2858,16 +2858,6 @@ End ash.
       assumption.
   Qed.
 
-  Lemma ps_P_sub_zero (E1 E2 : event dom) :
-    event_sub E1 E2 -> ps_P E2 = 0 -> ps_P E1 = 0.
-  Proof.
-    intros.
-    generalize (ps_sub _ E1 E2 H); intros.
-    rewrite H0 in H1.
-    generalize (ps_pos E1); intros.
-    lra.
-  Qed.
-
   (* ash prob 2.5.4 *)
   Lemma vec_almost_cauchy_seq_at_iff {size:nat} (X : nat -> Ts -> vector R size)
         {rv : forall (n:nat), RandomVariable dom (Rvector_borel_sa size) (X n)} :
