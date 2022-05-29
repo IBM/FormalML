@@ -1188,6 +1188,55 @@ Section RealRandomVariables.
       apply in_prod; trivial.
     Qed.
 
+    Global Instance rvmaxlist_rv  (X : nat -> Ts -> R) (N : nat)
+           {rv : forall n, (n <= N)%nat -> RandomVariable dom borel_sa (X n)} :
+      RandomVariable dom borel_sa (rvmaxlist X N).
+    Proof.
+      intros.
+      apply measurable_rv.
+      apply max_list_measurable; intros.
+      apply rv_measurable.
+      apply rv; lia.
+    Qed.
+
+    Lemma rvmaxlist_monotone (X : nat -> Ts -> R) :
+      forall n omega, rvmaxlist X n omega <= rvmaxlist X (S n) omega.
+    Proof.
+      intros n omega.
+      unfold rvmaxlist.
+      assert (seq 0 (S (S n)) = seq 0 (S n) ++ [S n]).
+      {
+        generalize (S n); intros n0.
+        rewrite seq_S.
+        f_equal.
+      }
+      rewrite H.
+      unfold Rmax_list_map.
+      rewrite Rmax_list_app.
+      + apply Rmax_l.
+      + apply seq_not_nil; lia.
+    Qed.
+    
+    Global Instance frfrvmaxlist (X : nat -> Ts -> R)
+           {rv : forall n, FiniteRangeFunction (X n)} (N : nat):
+      FiniteRangeFunction (rvmaxlist X N).
+    Proof.
+      unfold rvmaxlist, Rmax_list_map.
+      generalize (0%nat).
+      induction N; simpl; intros s.
+      - apply rv.
+      - assert (frf:FiniteRangeFunction (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) (S N)))))).
+        {
+          apply frfmax; auto.
+        }
+        destruct N.
+        + simpl; auto.
+        + eapply FiniteRangeFunction_ext; try eapply frf.
+          intros ?.
+          reflexivity.
+    Qed.
+
+
     Global Instance frfsum (X : nat -> Ts -> R) 
            {rv : forall (n:nat), FiniteRangeFunction (X n)} (n : nat) :
       FiniteRangeFunction (rvsum X n).
@@ -1209,7 +1258,15 @@ Section RealRandomVariables.
           * rewrite H; reflexivity.
           * apply frfplus; trivial.
     Qed.
-    
+
+
+    Global Instance frfite (X Y : Ts -> R){p : Prop}(dec : {p} + {~ p})
+           {rv_X : FiniteRangeFunction X} {rv_Y : FiniteRangeFunction Y} :
+      FiniteRangeFunction (if dec then X else Y).
+    Proof.
+      match_destr.
+    Qed.
+
     Global Program Instance positive_part_frf'
            (rv_X : Ts -> R) 
            {frf: FiniteRangeFunction rv_X } : FiniteRangeFunction (pos_fun_part rv_X)

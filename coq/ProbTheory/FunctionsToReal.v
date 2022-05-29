@@ -143,6 +143,9 @@ Section defs.
     Definition Rbar_rvmin  (rv_X1 rv_X2 : Ts -> Rbar)
       := fun omega => Rbar_min (rv_X1 omega) (rv_X2 omega). 
 
+    Definition rvmaxlist (X : nat -> Ts -> R) (N : nat) : Ts -> R :=
+      fun (omega : Ts) => Rmax_list_map (List.seq 0 (S N)) (fun n => X n omega).
+
     Program Definition pos_fun_part {Ts:Type} (f : Ts -> R) : (Ts -> nonnegreal) :=
       fun x => mknonnegreal (Rmax (f x) 0) _.
     Next Obligation.

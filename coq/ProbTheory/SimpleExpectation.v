@@ -3,7 +3,7 @@ Require Import Reals.
 Require Import Lra Lia.
 Require Import List Permutation.
 Require Import Morphisms EquivDec Program.
-Require Import Coquelicot.Rbar Coquelicot.Lub Coquelicot.Lim_seq.
+Require Import Coquelicot.Rbar Coquelicot.Lub Coquelicot.Lim_seq Coquelicot.Hierarchy.
 Require Import Classical_Prop.
 Require Import Classical.
 
@@ -1021,7 +1021,6 @@ Section SimpleExpectation_sec.
     apply SimpleExpectation_pf_irrel.
   Qed.
 
-
   Lemma SimplePosExpectation_pos_zero x
         {rvx:RandomVariable dom borel_sa x} 
         {xfrf:FiniteRangeFunction x} :
@@ -1640,7 +1639,35 @@ Section SimpleConditionalExpectation.
     apply SimpleExpectation_pf_irrel.
   Qed.
 
-  
+  Lemma SimpleExpectation_rvsum {n}  
+        (X : nat -> Ts -> R)
+        {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
+        {frf : forall (n:nat), FiniteRangeFunction (X n)} :
+    SimpleExpectation (rvsum X n) =
+    sum_n (fun m => SimpleExpectation (X m)) n.
+  Proof.
+    induction n.
+    - rewrite sum_O.
+      assert (rv_eq (rvsum X 0%nat) (X 0%nat)).
+      {
+        unfold rvsum.
+        intro x.
+        now rewrite sum_O.
+      }
+      now erewrite SimpleExpectation_ext; [|apply H].
+    - replace (SimpleExpectation (rvsum X (S n))) with
+          (SimpleExpectation (rvplus (rvsum X n) (X (S n)))).
+      + rewrite <- sumSimpleExpectation.
+        rewrite IHn.
+        rewrite sum_Sn.
+        now unfold plus; simpl.
+      + apply SimpleExpectation_ext.
+        intro x.
+        unfold rvplus, rvsum.
+        now rewrite sum_Sn.
+  Qed.
+
+
   (*
   Lemma sumSimpleExpectation
         (rv_X1 rv_X2 : Ts -> R)
