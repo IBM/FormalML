@@ -10,6 +10,8 @@ Require Import BorelSigmaAlgebra.
 Require Import DVector RealVectorHilbert VectorRandomVariable.
 Require Import VectorConditionalExpectation.
 
+(* note this file does not import from slln, so there are some duplicate lemmas *)
+
 Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
 
