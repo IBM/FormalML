@@ -548,35 +548,6 @@ Section ash.
 
   Context {Ts:Type} {dom: SigmaAlgebra Ts}{Prts: ProbSpace dom}.
 
-  Global Instance frfsum (X : nat -> Ts -> R)
-         {rv : forall (n:nat), FiniteRangeFunction (X n)} (n : nat) :
-    FiniteRangeFunction (rvsum X n).
-  Proof.
-    induction n.
-    - assert (rv_eq  (rvsum X 0) (X 0%nat)).
-      + intro x.
-        unfold rvsum. cbn.
-        lra.
-      + eapply FiniteRangeFunction_ext.
-        * symmetry; apply H.
-        * apply rv.
-    - assert (rv_eq (rvsum X (S n)) (rvplus (X (S n)) (rvsum X n))).
-      + intro x.
-        unfold rvplus, rvsum.
-        rewrite sum_Sn; unfold plus; simpl.
-        lra.
-      + eapply FiniteRangeFunction_ext.
-        * rewrite H; reflexivity.
-        * apply frfplus; trivial.
-  Defined.
-
-  Global Instance frfite (X Y : Ts -> R){p : Prop}(dec : {p} + {~ p})
-         {rv_X : FiniteRangeFunction X} {rv_Y : FiniteRangeFunction Y} :
-    FiniteRangeFunction (if dec then X else Y).
-  Proof.
-    match_destr.
-  Qed.
-
   Definition rvmaxlist (X : nat -> Ts -> R) (N : nat) : Ts -> R :=
     fun (omega : Ts) => Rmax_list (List.map (fun n => X n omega) (List.seq 0 (S N))).
 
@@ -887,34 +858,6 @@ Lemma vec_expec_cross_zero {size:nat} (X : nat -> Ts -> vector R size)
         reflexivity.
       + apply HC.
     - apply filtration_history_sa_le_rv; lia.
-  Qed.
-
-  Lemma SimpleExpectation_rvsum {n}  
-        (X : nat -> Ts -> R)
-        {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
-        {frf : forall (n:nat), FiniteRangeFunction (X n)} :
-    SimpleExpectation (rvsum X n) =
-    sum_n (fun m => SimpleExpectation (X m)) n.
-  Proof.
-    induction n.
-    - rewrite sum_O.
-      assert (rv_eq (rvsum X 0%nat) (X 0%nat)).
-      {
-        unfold rvsum.
-        intro x.
-        now rewrite sum_O.
-      }
-      now erewrite SimpleExpectation_ext; [|apply H].
-    - replace (SimpleExpectation (rvsum X (S n))) with
-          (SimpleExpectation (rvplus (rvsum X n) (X (S n)))).
-      + rewrite <- sumSimpleExpectation.
-        rewrite IHn.
-        rewrite sum_Sn.
-        now unfold plus; simpl.
-      + apply SimpleExpectation_ext.
-        intro x.
-        unfold rvplus, rvsum.
-        now rewrite sum_Sn.
   Qed.
 
   Lemma vec_expec_cross_zero_sum_shift {size:nat} (X : nat -> Ts -> vector R size) (m:nat)
