@@ -548,65 +548,6 @@ Section ash.
 
   Context {Ts:Type} {dom: SigmaAlgebra Ts}{Prts: ProbSpace dom}.
 
-  Definition rvmaxlist (X : nat -> Ts -> R) (N : nat) : Ts -> R :=
-    fun (omega : Ts) => Rmax_list (List.map (fun n => X n omega) (List.seq 0 (S N))).
-
-  Lemma rvmaxlist_monotone (X : nat -> Ts -> R) :
-    forall n omega, rvmaxlist X n omega <= rvmaxlist X (S n) omega.
-  Proof.
-    intros n omega.
-    unfold rvmaxlist.
-    assert (seq 0 (S (S n)) = seq 0 (S n) ++ [S n]).
-    {
-      generalize (S n); intros n0.
-      rewrite seq_S.
-      f_equal.
-    }
-    rewrite H.
-    rewrite Rmax_list_app.
-    + apply Rmax_l.
-    + apply seq_not_nil; lia.
-  Qed.
-
-
-  Global Instance frfrvmaxlist (X : nat -> Ts -> R)
-         {rv : forall n, FiniteRangeFunction (X n)} (N : nat):
-    FiniteRangeFunction (rvmaxlist X N).
-  Proof.
-    unfold rvmaxlist.
-    generalize (0%nat).
-    induction N; simpl; intros s.
-    - apply rv.
-    - assert (frf:FiniteRangeFunction (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) (S N)))))).
-      {
-        apply frfmax; auto.
-      }
-      destruct N.
-      + simpl; auto.
-      + eapply FiniteRangeFunction_ext; try eapply frf.
-        intros ?.
-        reflexivity.
-  Qed.
-
-  Global Instance rvmaxlist_rv (X : nat -> Ts -> R)
-         {rv : forall n, RandomVariable dom borel_sa (X n)} (N : nat):
-    RandomVariable dom borel_sa (rvmaxlist X N).
-  Proof.
-    unfold rvmaxlist.
-    generalize (0%nat).
-    induction N; simpl; intros s.
-    - apply rv.
-    - assert (frf:RandomVariable dom borel_sa (fun omega => Rmax (X s omega) (Rmax_list (map (fun n : nat => X n omega) (seq (S s) (S N)))))).
-      {
-        apply rvmax_rv; auto.
-      }
-      destruct N.
-      + simpl; auto.
-      + eapply RandomVariable_proper; try reflexivity; try eapply frf.
-        intros ?.
-        reflexivity.
-  Qed.
-
   Fixpoint vec_filtration_history {size:nat} (n : nat) (X : nat -> Ts -> vector R size)
            {frf : forall n, FiniteRangeFunction (X n)}
            {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (X n)}
@@ -1140,46 +1081,6 @@ Lemma vec_expec_cross_zero {size:nat} (X : nat -> Ts -> vector R size)
     now rewrite vec_cutoff_ge_eps_Rmax_list_iff.
   Qed.
 
-  Lemma Rle_Rmax : forall r1 r2 r : R, Rmax r1 r2 <= r <-> r1 <= r /\ r2 <= r.
-  Proof.
-    split; intros.
-    + split.
-      -- eapply Rle_trans; try (apply H); apply Rmax_l.
-      -- eapply Rle_trans; try (apply H); apply Rmax_r.
-    + destruct H; apply Rmax_lub; trivial.
-  Qed.
-
-  Instance max_list_measurable (k : nat) (X : nat -> Ts -> R)
-           {rm: forall n, (n <= k)%nat -> RealMeasurable dom (X n)} :
-    RealMeasurable dom (fun omega => Rmax_list_map (seq 0 (S k)) (fun n => X n omega)).
-  Proof.
-    unfold Rmax_list_map.
-    induction k.
-    - simpl.
-      apply rm; lia.
-    - unfold RealMeasurable in *; intros.
-      assert (pre_event_equiv
-                (fun omega : Ts =>
-                   Rmax_list (map (fun n : nat => X n omega) (seq 0 (S (S k)))) <= r)
-                (pre_event_inter
-                   (fun omega : Ts =>
-                      Rmax_list (map (fun n : nat => X n omega) (seq 0 (S k))) <= r)
-                   (fun omega => X (S k) omega <= r))).
-      {
-        intro x; unfold pre_event_inter.
-        replace (seq 0 (S(S k))) with (seq 0 (S k) ++ [S k]) by
-            (do 3 rewrite seq_S; f_equal; lra).
-        rewrite Rmax_list_app; try (apply seq_not_nil; lia).
-        apply Rle_Rmax.
-      }
-      rewrite H.
-      apply sa_inter.
-      + apply IHk.
-        intros.
-        apply rm; lia.
-      + apply rm; lia.
-  Qed.
-
   Global Instance vec_rv_cutoff_eps_rv {size:nat} (n : nat) (eps : R) (X : nat -> Ts -> vector R size) 
            {rv: forall k, (k <= n)%nat -> RandomVariable dom (Rvector_borel_sa size) (X k)} :
     RandomVariable dom (Rvector_borel_sa size) (vec_cutoff_eps_rv n eps X).
@@ -1207,7 +1108,7 @@ Lemma vec_expec_cross_zero {size:nat} (X : nat -> Ts -> vector R size)
       assert (sa1 : sa_sigma _ (fun omega : Ts => Rmax_list_map (0%nat :: seq 1 n) (fun n0 : nat => hilbert.Hnorm (X n0 omega)) < eps)).
       {
         apply sa_le_lt.
-        apply (max_list_measurable n); intros.
+        apply (max_list_measurable dom n); intros.
         unfold hilbert.Hnorm.
         apply Rsqrt_measurable.
         unfold hilbert.inner; simpl.
@@ -2053,7 +1954,7 @@ End ash.
       rvmaxlist (fun k : nat => (fun omega => hilbert.Hnorm ((X k) omega))) n omega.
   Proof.
     intros.
-    unfold rvmaxlist.
+    unfold rvmaxlist, Rmax_list_map.
     now setoid_rewrite rvnorm_hnorm.
   Qed.
 
@@ -3193,7 +3094,7 @@ End ash.
         destruct inn as [m [mlt ?]]; subst.
         simpl in ax.
         simpl.
-        unfold rvmaxlist.
+        unfold rvmaxlist, Rmax_list_map.
         apply Rle_ge.
         apply Rge_le in ax.
         eapply Rmax_list_ge; eauto.
@@ -3203,7 +3104,7 @@ End ash.
         lia.
       - intros rvm.
         simpl in rvm.
-        unfold rvmaxlist in rvm.
+        unfold rvmaxlist, Rmax_list_map in rvm.
         generalize (Rmax_list_In (map (fun n : nat => f n x) (seq 0 (S n))))
         ; intros HH.
         cut_to HH; [| simpl; congruence].
