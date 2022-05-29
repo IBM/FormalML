@@ -2463,23 +2463,6 @@ Proof.
   repeat split; try lia; try lra.
 Qed.
 
-(* Move to ProbSpace.v *)
-Lemma ps_union_countable_union_iff (coll : nat -> event dom):
-  (forall n, ps_P (coll n) = 0) <-> (ps_P (union_of_collection coll) = 0).
-  Proof.
-    split; intros H.
-    + now apply ps_zero_countable_union.
-    + intros n.
-      assert (H1 : 0 <= ps_P (coll n)) by (apply ps_pos).
-      assert (H2 : ps_P (coll n) <= ps_P (union_of_collection coll)).
-      {
-        apply ps_sub.
-        apply union_of_collection_sup.
-      }
-      rewrite H in H2.
-      lra.
-  Qed.
-
   Lemma recip_pos (m : nat) : 0 < /(1 + INR m).
   Proof.
     apply Rinv_pos.

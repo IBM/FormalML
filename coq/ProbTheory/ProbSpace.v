@@ -347,6 +347,7 @@ Proof.
   - firstorder.
 Qed.
 
+
 Require Import Classical ClassicalFacts.
 
 Section classic.
@@ -750,7 +751,6 @@ Hint Resolve ps_none ps_one : prob.
     auto with prob.
   Qed.
 
-
   Lemma ps_zero_countable_union {T:Type} 
         {dom:SigmaAlgebra T} (prts:ProbSpace dom)
         (coll: nat -> event dom) :
@@ -766,6 +766,23 @@ Hint Resolve ps_none ps_one : prob.
       + apply infinite_sum'0.
     - apply ps_pos.
  Qed.
+
+  Lemma ps_union_countable_union_iff {T:Type} {dom : SigmaAlgebra T}
+        (prts: ProbSpace dom) (coll : nat -> event dom):
+  (forall n, ps_P (coll n) = 0) <-> (ps_P (union_of_collection coll) = 0).
+  Proof.
+    split; intros H.
+    + now apply ps_zero_countable_union.
+    + intros n.
+      assert (H1 : 0 <= ps_P (coll n)) by (apply ps_pos).
+      assert (H2 : ps_P (coll n) <= ps_P (union_of_collection coll)).
+      {
+        apply ps_sub.
+        apply union_of_collection_sup.
+      }
+      rewrite H in H2.
+      lra.
+  Qed.
 
   Lemma ps_one_countable_inter {T:Type} 
         {dom:SigmaAlgebra T} (prts:ProbSpace dom)
