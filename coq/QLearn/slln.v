@@ -920,48 +920,6 @@ Proof.
   now rewrite cutoff_ge_eps_Rmax_list_iff.
 Qed.
 
-Lemma Rle_Rmax : forall r1 r2 r : R, Rmax r1 r2 <= r <-> r1 <= r /\ r2 <= r.
-Proof.
-  split; intros.
-  + split.
-    -- eapply Rle_trans; try (apply H); apply Rmax_l.
-    -- eapply Rle_trans; try (apply H); apply Rmax_r.
-  + destruct H; apply Rmax_lub; trivial.
-Qed.
-
-Instance max_list_measurable (k : nat) (X : nat -> Ts -> R)
-  {rm: forall n, (n <= k)%nat -> RealMeasurable dom (X n)} :
-    RealMeasurable dom (fun omega => Rmax_list_map (seq 0 (S k)) (fun n => X n omega)).
-Proof.
-  unfold Rmax_list_map.
-  induction k.
-  - simpl.
-    apply rm; lia.
-  - unfold RealMeasurable in *; intros.
-    assert (pre_event_equiv
-               (fun omega : Ts =>
-                  Rmax_list (map (fun n : nat => X n omega) (seq 0 (S (S k)))) <= r)
-               (pre_event_inter
-                  (fun omega : Ts =>
-                     Rmax_list (map (fun n : nat => X n omega) (seq 0 (S k))) <= r)
-                  (fun omega => X (S k) omega <= r))).
-    {
-      intro x; unfold pre_event_inter.
-      replace (seq 0 (S(S k))) with (seq 0 (S k) ++ [S k]) by
-          (do 3 rewrite seq_S; f_equal; lra).
-      rewrite Rmax_list_app; try (apply seq_not_nil; lia).
-      apply Rle_Rmax.
-    }
-    rewrite H.
-    apply sa_inter.
-    + apply IHk.
-      intros.
-      apply rm.
-      lia.
-    + apply rm.
-      lia.
- Qed.
-
 
 Global Instance rv_cutoff_eps_rv (n : nat) (eps : R) (X : nat -> Ts -> R) 
          {rv: forall k, (k <= n)%nat -> RandomVariable dom borel_sa (X k)} :
