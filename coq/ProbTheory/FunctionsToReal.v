@@ -361,6 +361,20 @@ Section defs.
       lra.
     Qed.
 
+    Lemma rvsum_distr_r {n} (X : nat -> Ts -> R) (f : Ts -> R) :
+      rv_eq (rvsum (fun j => rvmult (X j) f) n) (rvmult (rvsum X n) f).
+    Proof.
+      intro x; unfold rvsum, rvmult.
+      induction n.
+      - rewrite sum_O.
+        now rewrite sum_O.
+      - rewrite sum_Sn.
+        rewrite sum_Sn.
+        unfold plus; simpl.
+        rewrite IHn.
+        lra.
+    Qed.
+
     Lemma pos_fun_part_le rv_X : rv_le (fun x : Ts => pos_fun_part rv_X x) (rvabs rv_X).
     Proof.
       intros ?.

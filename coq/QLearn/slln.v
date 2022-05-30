@@ -705,20 +705,6 @@ Proof.
     lia.
  Qed.
 
-Lemma rvsum_distr_r {n} (X : nat -> Ts -> R) (f : Ts -> R) :
-  rv_eq (rvsum (fun j => rvmult (X j) f) n) (rvmult (rvsum X n) f).
-Proof.
-  intro x; unfold rvsum, rvmult.
-  induction n.
-  - rewrite sum_O.
-    now rewrite sum_O.
-  - rewrite sum_Sn.
-    rewrite sum_Sn.
-    unfold plus; simpl.
-    rewrite IHn.
-    lra.
- Qed.
-
 Lemma expec_cross_zero_sum2_shift_filter (X : nat -> Ts -> R) (m : nat)
       {F : nat -> SigmaAlgebra Ts}
       (isfilt: IsFiltration F)
