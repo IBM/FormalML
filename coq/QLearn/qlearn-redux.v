@@ -83,7 +83,6 @@ Section MDP.
     generalize (ne M); intros.
     generalize (na M X); intros.
     exists (existT _ X X0).
-    destruct (act_finite M).
     apply finite.
   Qed.
 
@@ -125,7 +124,14 @@ Section MDP.
           apply map_eq_nil in H.
           generalize (act_list_not_nil (pi t0 sa)); intros.
           now rewrite H in H0.
-        +  admit.
+        + rewrite incl_Forall_in_iff.
+          rewrite Forall_forall.
+          intros.
+          rewrite in_map_iff in H.
+          destruct H as [? [? ?]].
+          rewrite <- H.
+          apply in_map.
+          apply finite.
     }
     assert (step12: forall (t:nat) (sa:sigT M.(act)),
                Q (S t) sa <= (1 - alpha t sa)*
@@ -192,7 +198,7 @@ Section MDP.
       apply map_eq_nil in H.
       generalize (s_act_list_not_nil); intros.
       now rewrite H in H0.
-  Admitted.
+  Qed.
 
   Notation "Min_{ l } ( f )" := (Rmin_list (List.map f l)) (at level 50).
 
@@ -312,7 +318,6 @@ Section MDP.
       rewrite Rmax_Rle.
       left.
       apply Rmax_spec_map.
-      unfold s_act_list.
       apply finite.
     - intros.
       assert (Max_{ s_act_list}(Q t) <=  Rmax (Max_{ s_act_list}(Q 0)) (max_reward / (1 - γ))).
@@ -332,7 +337,6 @@ Section MDP.
       assert (Q (S t) sa <= (Max_{ s_act_list}(Q (S t)))).
       {
         apply Rmax_spec_map.
-        unfold s_act_list.
         apply finite.
       }
       eapply Rle_trans.
