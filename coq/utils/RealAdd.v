@@ -2842,6 +2842,12 @@ Section Rmax_list.
     | a :: l1 => Rmax a (Rmax_list l1)
     end.
 
+  Fixpoint Rmin_list (l : list R) : R :=
+    match l with
+    | nil => 0
+    | a :: nil => a
+    | a :: l1 => Rmin a (Rmin_list l1)
+    end.
 
   Lemma Rmax_spec_map {A} (l : list A) (f : A -> R) : forall a:A, In a l -> f a <= Rmax_list (List.map f l).
   Proof.
@@ -2855,6 +2861,19 @@ Section Rmax_list.
         simpl in *. eapply Rle_trans ; eauto. apply Rmax_r.
   Qed.
 
+  Lemma Rmin_spec_map {A} (l : list A) (f : A -> R) : forall a:A, In a l -> f a >= Rmin_list (List.map f l).
+  Proof.
+    intros a Ha.
+    induction l.
+    - simpl ; firstorder.
+    - simpl in *. intuition.
+      + rewrite H. destruct l. simpl. right; reflexivity.
+        simpl. apply Rle_ge, Rmin_l.
+      + destruct l. simpl in *; firstorder.
+        simpl in *. eapply Rge_trans ; eauto.
+        apply Rle_ge, Rmin_r.
+  Qed.
+
   Lemma Rmax_spec {l : list R} : forall a:R, In a l -> a <= Rmax_list l.
   Proof.
     intros a Ha.
@@ -2865,6 +2884,18 @@ Section Rmax_list.
         simpl. apply Rmax_l.
       + destruct l. simpl in *; firstorder.
         simpl in *. eapply Rle_trans ; eauto. apply Rmax_r.
+  Qed.
+
+  Lemma Rmin_spec {l : list R} : forall a:R, In a l -> a >= Rmin_list l.
+  Proof.
+    intros a Ha.
+    induction l.
+    - simpl ; firstorder.
+    - simpl in *. intuition.
+      + rewrite H. destruct l. simpl. right; reflexivity.
+        simpl. apply Rle_ge, Rmin_l.
+      + destruct l. simpl in *; firstorder.
+        simpl in *. eapply Rge_trans ; eauto. apply Rle_ge, Rmin_r.
   Qed.
 
   Lemma Rmax_list_map_const_mul {A} (l : list A) (f : A -> R) {r : R} (hr : 0 <= r) :
@@ -2912,6 +2943,14 @@ Section Rmax_list.
     now apply Rmax_spec.
   Qed.
 
+  Lemma Rmin_list_le (l : list R) (r : R) :
+    forall x, In x l -> r >= x -> r >= Rmin_list l.
+  Proof.
+    intros x Hx Hrx.
+    eapply Rge_trans ; eauto.
+    now apply Rmin_spec.
+  Qed.
+
   Lemma Rmax_list_le (l : list R) (r : R) :
     Rmax_list l <= r -> forall x, In x l -> x <= r.
   Proof.
@@ -2920,6 +2959,13 @@ Section Rmax_list.
     eapply Rle_trans; eauto.
   Qed.
 
+  Lemma Rmin_list_ge (l : list R) (r : R) :
+    Rmin_list l >= r -> forall x, In x l -> x >= r.
+  Proof.
+    intros H x Hx.
+    set (Rmin_spec x Hx).
+    eapply Rge_trans; eauto.
+  Qed.
 
   Lemma Rmax_list_In (l : list R):
     ([] <> l) -> In (Rmax_list l) l.
@@ -2933,8 +2979,22 @@ Section Rmax_list.
          specialize (IHl H0) ; clear H0.
          destruct (Rle_dec a (Rmax_list (r :: l))).
          ++ rewrite Rmax_right. now right ; assumption. assumption.
-         ++ rewrite Rmax_left. now left.
-            left ; apply ROrder.not_ge_lt ; assumption.
+         ++ rewrite Rmax_left. now left. lra.
+  Qed.
+
+  Lemma Rmin_list_In (l : list R):
+    ([] <> l) -> In (Rmin_list l) l.
+  Proof.
+    induction l.
+    - simpl ; firstorder.
+    - intros H. simpl in *.
+      destruct l.
+      -- now left.
+      -- assert ([] <> r :: l)  by apply nil_cons.
+         specialize (IHl H0) ; clear H0.
+         destruct (Rge_dec a (Rmin_list (r :: l))).
+         ++ rewrite Rmin_right. now right ; assumption. lra.
+         ++ rewrite Rmin_left. now left. lra.
   Qed.
 
   Lemma Rmax_list_lub (l : list R) (r : R):
@@ -2944,12 +3004,27 @@ Section Rmax_list.
     apply H. eapply Rmax_list_In ; auto.
   Qed.
 
+  Lemma Rmin_list_glb (l : list R) (r : R):
+    ([] <> l) -> (forall x, In x l -> x >= r) -> Rmin_list l >= r.
+  Proof.
+    intros Hl H.
+    apply H. eapply Rmin_list_In ; auto.
+  Qed.
+
   Lemma Rmax_list_le_iff {l : list R} (hl : [] <> l) (r : R):
     Rmax_list l <= r <-> (forall x, In x l -> x <= r)  .
   Proof.
     split.
     apply Rmax_list_le.
     apply Rmax_list_lub ; auto.
+  Qed.
+
+  Lemma Rmin_list_ge_iff {l : list R} (hl : [] <> l) (r : R):
+    Rmin_list l >= r <-> (forall x, In x l -> x >= r)  .
+  Proof.
+    split.
+    apply Rmin_list_ge.
+    apply Rmin_list_glb ; auto.
   Qed.
 
   Lemma Rmax_list_lt_iff {l : list R} (hl : [] <> l) (r : R):
@@ -2961,6 +3036,15 @@ Section Rmax_list.
     -- intro H. apply H ; auto. now apply Rmax_list_In.
   Qed.
 
+  Lemma Rmin_list_gt_iff {l : list R} (hl : [] <> l) (r : R):
+    Rmin_list l > r <-> (forall x, In x l -> x > r)  .
+  Proof.
+    split.
+    -- intros Hr x Hx.
+       eapply Rge_gt_trans. eapply Rmin_spec ; eauto. assumption.
+    -- intro H. apply H ; auto. now apply Rmin_list_In.
+  Qed.
+
   Lemma Rmax_list_incl l1 l2 : nil <> l1 -> incl l1 l2 -> Rmax_list l1 <= Rmax_list l2.
   Proof.
     unfold Proper, respectful, incl
@@ -2968,6 +3052,15 @@ Section Rmax_list.
     apply Rmax_list_le_iff; trivial.
     intros.
     apply Rmax_spec; auto.
+  Qed.
+
+  Lemma Rmin_list_incl l1 l2 : nil <> l1 -> incl l1 l2 -> Rmin_list l1 >= Rmin_list l2.
+  Proof.
+    unfold Proper, respectful, incl
+    ; intros.
+    apply Rmin_list_ge_iff; trivial.
+    intros.
+    apply Rmin_spec; auto.
   Qed.
 
   Global Instance Rmax_list_equivlist : Proper (equivlist ==> eq) Rmax_list.
@@ -2989,6 +3082,25 @@ Section Rmax_list.
         lra.
   Qed.
 
+  Global Instance Rmin_list_equivlist : Proper (equivlist ==> eq) Rmin_list.
+  Proof.
+    unfold Proper, respectful; intros x y equivs.
+    destruct x.
+    - symmetry in equivs.
+      apply equivlist_nil in equivs.
+      subst; simpl; trivial.
+    - destruct y.
+      + apply equivlist_nil in equivs.
+        discriminate.
+      + apply equivlist_incls in equivs.
+        destruct equivs.
+        generalize (Rmin_list_incl (r::x) (r0::y)); intros HH1.
+        generalize (Rmin_list_incl (r0::y) (r::x)); intros HH2.
+        cut_to HH1; trivial; try discriminate.
+        cut_to HH2; trivial; try discriminate.
+        lra.
+  Qed.
+
   Lemma Rmax_list_sum {A B} {la : list A} (lb : list B) (f : A -> B -> R) (Hla : [] <> la):
     Rmax_list (List.map (fun a => list_sum (List.map (f a) lb)) la) <=
     list_sum (List.map (fun b => Rmax_list (List.map (fun a => f a b) la)) lb).
@@ -3001,9 +3113,14 @@ Section Rmax_list.
     * now rewrite map_not_nil.
   Qed.
 
-
   Lemma Rmax_list_cons_cons (l : list R) (a b : R) :
     Rmax_list (a :: b :: l) = Rmax a (Rmax_list (b :: l)).
+  Proof.
+    constructor.
+  Qed.
+
+  Lemma Rmin_list_cons_cons (l : list R) (a b : R) :
+    Rmin_list (a :: b :: l) = Rmin a (Rmin_list (b :: l)).
   Proof.
     constructor.
   Qed.
@@ -3018,8 +3135,33 @@ Section Rmax_list.
       now rewrite (Rmax_comm _ b).
   Qed.
 
+  Lemma Rmin_list_Rmin_swap (l : list R) (a b : R) :
+    Rmin a (Rmin_list (b :: l)) = Rmin b (Rmin_list (a :: l)).
+  Proof.
+    induction l.
+    - simpl ; apply Rmin_comm.
+    - do 2 rewrite Rmin_list_cons_cons.
+      do 2 rewrite Rmin_assoc.
+      now rewrite (Rmin_comm _ b).
+  Qed.
+
   Lemma Rmax_list_cons (x0 : R)  (l1 l2 : list R) :
     Permutation l1 l2 -> (Rmax_list l1 = Rmax_list l2) -> Rmax_list (x0 :: l1) = Rmax_list(x0 :: l2).
+  Proof.
+    intros Hpl Hrl.
+    case_eq l1.
+    * intro Hl. rewrite Hl in Hpl. set (Permutation_nil Hpl).
+      now rewrite e.
+    * case_eq l2.
+      ++ intro Hl2. rewrite Hl2 in Hpl. symmetry in Hpl. set (Permutation_nil Hpl).
+         now rewrite e.
+      ++ intros r l H r0 l0 H0.
+         rewrite <-H0, <-H. simpl ; rewrite Hrl.
+         now rewrite H0, H.
+  Qed.
+
+  Lemma Rmin_list_cons (x0 : R)  (l1 l2 : list R) :
+    Permutation l1 l2 -> (Rmin_list l1 = Rmin_list l2) -> Rmin_list (x0 :: l1) = Rmin_list(x0 :: l2).
   Proof.
     intros Hpl Hrl.
     case_eq l1.
@@ -3050,6 +3192,23 @@ Section Rmax_list.
          now rewrite H0, H.
   Qed.
 
+  Lemma Rmin_list_cons_swap (x0 y0 : R)  (l1 l2 : list R) :
+    Permutation l1 l2 -> (Rmin_list l1 = Rmin_list l2) ->
+    Rmin_list (x0 :: y0 :: l1) = Rmin_list(y0 :: x0 :: l2).
+  Proof.
+    intros Hpl Hrl.
+    rewrite Rmin_list_cons_cons. rewrite Rmin_list_Rmin_swap.
+    rewrite <-Rmin_list_cons_cons.
+    case_eq l1.
+    * intro Hl. rewrite Hl in Hpl. set (Permutation_nil Hpl).
+      now rewrite e.
+    * case_eq l2.
+      ++ intro Hl2. rewrite Hl2 in Hpl. symmetry in Hpl. set (Permutation_nil Hpl).
+         now rewrite e.
+      ++ intros r l H r0 l0 H0.  rewrite <-H0, <-H. simpl ; rewrite Hrl.
+         now rewrite H0, H.
+  Qed.
+
   Global Instance Rmax_list_Proper : Proper (@Permutation R ++> eq) Rmax_list.
   Proof.
     unfold Proper. intros x y H.
@@ -3061,10 +3220,23 @@ Section Rmax_list.
     - assumption.
   Qed.
 
+  Global Instance Rmin_list_Proper : Proper (@Permutation R ++> eq) Rmin_list.
+  Proof.
+    unfold Proper. intros x y H.
+    apply (@Permutation_ind_bis R (fun a b => Rmin_list a = Rmin_list b)).
+    - simpl ; lra.
+    - intros x0. apply Rmin_list_cons.
+    - intros x0 y0 l l' H0 H1. apply Rmin_list_cons_swap ; trivial.
+    - intros l l' l'' H0 H1 H2 H3. rewrite H1. rewrite <-H3. reflexivity.
+    - assumption.
+  Qed.
+
   Definition Rmax_list_map {A} (l : list A) (f : A -> R) := Rmax_list (List.map f l).
+  Definition Rmin_list_map {A} (l : list A) (f : A -> R) := Rmin_list (List.map f l).  
 
   Declare Scope rmax_scope.
   Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50) : rmax_scope.
+  Notation "Min_{ l } ( f )" := (Rmin_list (List.map f l)) (at level 50) : rmax_scope.  
 
   Open Scope rmax_scope.
   Delimit Scope rmax_scope with rmax.
@@ -3075,6 +3247,19 @@ Section Rmax_list.
   Proof.
     intro Hne.
     set (Hmap := Rmax_list_In (List.map f l)).
+    rewrite <-(map_not_nil l f) in Hne.
+    specialize (Hmap Hne).
+    rewrite in_map_iff in Hmap.
+    destruct Hmap as  [a [Hfa Hin]].
+    now exists a.
+  Qed.
+
+  (* This is very important. *)
+  Lemma Rmin_list_map_exist {A} (f : A -> R) (l : list A) :
+    [] <> l -> exists a:A, In a l /\ f a = Min_{l}(f).
+  Proof.
+    intro Hne.
+    set (Hmap := Rmin_list_In (List.map f l)).
     rewrite <-(map_not_nil l f) in Hne.
     specialize (Hmap Hne).
     rewrite in_map_iff in Hmap.
