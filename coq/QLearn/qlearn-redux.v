@@ -202,6 +202,16 @@ Section MDP.
 
   Notation "Min_{ l } ( f )" := (Rmin_list (List.map f l)) (at level 50).
 
+  Lemma Rmax_list_map_ge_Rmin {A} (l : list A) (f : A -> R) :
+    Rmax_list (map f l) >= Rmin_list (map f l).
+  Proof.
+    destruct l.
+    - simpl; lra.
+    - apply Rge_trans with (r2 := f a).
+      + apply Rle_ge, Rmax_spec_map, in_eq.
+      + apply Rmin_spec_map, in_eq.
+   Qed.
+
   (* lemma 6 *)
   Lemma lower_bound_step :
     0 < γ < 1 ->
@@ -234,7 +244,24 @@ Section MDP.
       - specialize (ac t0 sa); lra.
       - apply Rplus_ge_compat; trivial.
         apply Rmult_ge_compat_l; try lra.
-        admit.
+        apply Rge_trans with
+            (r2 :=  Min_{ act_list (pi t0 sa)}
+                        (fun a : act M (pi t0 sa) => Q t0 (existT (act M) (pi t0 sa) a))).
+        + apply Rmax_list_map_ge_Rmin.
+        + apply Rmin_list_incl.
+          * unfold not; intros.
+            symmetry in H.
+            apply map_eq_nil in H.
+            generalize (act_list_not_nil (pi t0 sa)); intros.
+            now rewrite H in H0.
+          * rewrite incl_Forall_in_iff.
+            rewrite Forall_forall.
+            intros.
+            rewrite in_map_iff in H.
+            destruct H as [? [? ?]].
+            rewrite <- H.
+            apply in_map.
+            apply finite.
     }
     assert (step12: forall (t:nat) (sa:sigT M.(act)),
                Q (S t) sa >= (1 - alpha t sa)*
@@ -300,7 +327,7 @@ Section MDP.
       apply map_eq_nil in H.
       generalize (s_act_list_not_nil); intros.
       now rewrite H in H0.
-  Admitted.
+  Qed.
 
   Lemma upper_bound :
     0 < γ < 1 ->
