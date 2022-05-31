@@ -19,7 +19,6 @@ Section MDP.
   Arguments outcomes {_}.
   Arguments t {_}.
 
-  (*TODO(Kody): Change the names of fields. *)
   Class MDPonline : Type := mkMDP
   { on_state : Type;
     on_act : on_state -> Type;
