@@ -133,6 +133,50 @@ Proof.
        specialize (a0 s0). now exists (existT _ s0 a0).
 Qed.
 
+Theorem isContraction_bellmanQbar_gamma (Hg : 0 < γ) : @is_Lipschitz  (Rfct_UniformSpace (sigT M.(act))) (Rfct_UniformSpace (sigT M.(act)))
+                                      bellmanQbar γ.
+  Proof.
+  unfold is_Lipschitz.
+    unfold ball_x,ball_y. simpl.
+    destruct (fs M) as [ls Hls].
+    split.
+    -- now destruct hγ.
+    -- intros f g r Hr Hx.
+       repeat red in Hx |-.
+       unfold Rmax_ball, Rmax_norm.
+       destruct (act_finite M) as [la Hla].
+       rewrite Rmax_list_lt_iff; intros; try(apply map_not_nil; apply not_nil_exists).
+       rewrite in_map_iff in H.
+       destruct H as [sa [Q HQ]]; subst.
+       unfold minus, plus, opp. simpl.
+       unfold bellmanQbar; destruct sa. rewrite Rabs_helper.
+       rewrite <-Rmult_minus_distr_l.
+       rewrite Rabs_mult.
+       assert (Hrγ : Rabs γ = γ) by (apply Rabs_pos_eq; lra). rewrite Hrγ.
+       apply Rmult_lt_compat_l; try (destruct hγ; lra).
+       rewrite <-expt_value_sub.
+       eapply Rle_lt_trans; eauto.
+       unfold Rmax_norm.
+       eapply Rle_trans. apply expt_value_Rabs_Rle.
+       apply expt_value_bdd; intro s0.
+       unfold act_list.
+       destruct (M s0).
+       eapply Rle_trans. apply Rmax_list_minus_le_abs.
+       rewrite Rmax_list_le_iff; try (rewrite map_not_nil).
+       intros r'.
+       rewrite in_map_iff; intros.
+       destruct H as [a0 [Ha0 Helms]].
+       subst. apply Rmax_spec.
+       rewrite in_map_iff.
+       exists (existT _ s0 a0); now split.
+       rewrite not_nil_exists.
+       generalize (na _ s0); intros a0; now exists a0.
+       generalize (ne M); intros s0.
+       generalize (na M); intros a0.
+       specialize (a0 s0). now exists (existT _ s0 a0).
+  Qed.
+
+
 End bellmanQbar.
 
 Section bellmanQ.

@@ -709,8 +709,12 @@ Section MDP.
            assert ((bellmanQbar γ (Q (t + tk)) sa - bellmanQbar γ Qstar sa) <=
                    (γ * Ck)).
            {
-             generalize (@is_contraction_bellmanQbar M γ glim); intros.
-             unfold fixed_point.is_contraction in H0.
+             destruct (Req_EM_T γ 0).
+             -- rewrite e. right.
+                unfold bellmanQbar. destruct sa. lra.
+             -- assert (0 < γ) by lra.
+             generalize (@isContraction_bellmanQbar_gamma M γ glim H0); intros.
+             unfold fixed_point.is_Lipschitz in H1.
              admit.
            }
            apply Rmult_le_compat_l with (r := alpha (t + tk) sa) in H0; trivial.
