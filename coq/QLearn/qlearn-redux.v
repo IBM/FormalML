@@ -604,4 +604,144 @@ Section MDP.
        rewrite Rabs_right; try lra.
        rewrite Rabs_right; try lra.
   Qed.
+
+   Fixpoint Y (tk:nat) (C: R) (n:nat) sa : R :=
+    match n with
+    | 0%nat => C
+    | S n' => (1-alpha (n'+tk)%nat sa)*(Y tk C n' sa) +
+              (alpha (n'+tk)%nat sa) * γ * C 
+    end.
+
+   Fixpoint Z (tk:nat) (QQ : nat -> Rfct(sigT M.(act))) (n:nat) sa : R :=
+    match n with
+    | 0%nat => 0
+    | S n' => (1-alpha (n' + tk)%nat sa)*(Z tk QQ n' sa) +
+              (alpha (n'+tk)%nat sa) * (QQ n' sa)
+    end.
+
+   Lemma le_minus (a b : R) :
+     a - b <= 0 ->
+     a <= b.
+   Proof.
+     lra.
+   Qed.
+
+   Lemma le_minus2 (a b : R) :
+     a <= b ->
+     a - b <= 0.
+   Proof.
+     lra.
+   Qed.
+
+   Lemma core_bounding_upper (Qstar : Rfct(sigT M.(act))) (tk:nat) (Ck : R) :
+     0 <= γ < 1 ->
+     (forall t sa, 0 <= alpha t sa < 1) ->
+     bellmanQbar γ Qstar = Qstar ->
+     (forall t, 
+         Max_{s_act_list}(Hierarchy.minus (Q (t+tk)%nat) Qstar) <= Ck) ->
+     forall t sa,
+       Q (t+tk)%nat sa - Qstar sa <= Y tk Ck t sa + 
+                                     Z tk (fun n sa => 
+                                          (bellmanQ' (Q (n+tk)%nat) (pi (n+tk)%nat) sa -
+                                           bellmanQbar γ (Q (n+tk)%nat) sa))
+                                       t sa.
+   Proof.
+     intros glim alim fixedQstar Qbound t sa.
+     induction t.
+     - simpl.
+       rewrite Rplus_0_r.
+       specialize (Qbound (0%nat)).
+       generalize (Rmax_list_le _ _ Qbound); intros.
+       apply H.
+       apply in_map_iff.
+       exists sa.
+       split; [|apply finite].
+       replace (0 + tk)%nat with tk by lia.
+       unfold Hierarchy.minus, Hierarchy.plus, Hierarchy.opp; simpl.
+       unfold Rfct_plus, Rfct_opp, Hierarchy.opp; simpl.
+       lra.
+     - assert (forall t,
+                  Q (S t) sa - Qstar sa = 
+                  (1 - alpha t sa) * (Q t sa - Qstar sa) +
+                  (alpha t sa) * ((bellmanQbar γ  (Q t) sa) -
+                                  (bellmanQbar γ Qstar sa)) +
+                  (alpha t sa) * ((bellmanQ' (Q t) (pi t) sa) - 
+                                  (bellmanQbar γ (Q t) sa))).
+       {
+         intros.
+         simpl.
+         rewrite fixedQstar.
+         ring.
+       }
+       specialize (H (t + tk)%nat).
+       replace (S (t + tk)) with (S t + tk)%nat in H by lia.
+       rewrite H.
+       apply Rle_trans with
+           (r2 := ((1 - alpha (t + tk) sa) * (Y tk Ck t sa +
+                   Z tk
+                     (fun (n : nat) (sa : {x : state M & act M x}) =>
+                        bellmanQ' (Q (n + tk)) (pi (n + tk)) sa -
+                        bellmanQbar γ (Q (n + tk)) sa) t sa)) +
+                  alpha (t + tk) sa * 
+                  (bellmanQbar γ (Q (t + tk)) sa - bellmanQbar γ Qstar sa) +
+                  alpha (t + tk) sa *
+                  (bellmanQ' (Q (t + tk)) (pi (t + tk)) sa - 
+                   bellmanQbar γ (Q (t + tk)) sa)).
+       + apply Rplus_le_compat; try lra.
+         apply Rplus_le_compat; try lra.
+         apply Rmult_le_compat_l with (r := 1 - alpha (t + tk) sa) in IHt; trivial.
+         specialize (alim (t + tk)%nat sa).
+         lra.
+       + apply Rle_trans with
+             (r2 := (1 - alpha (t + tk) sa) *
+                    (Y tk Ck t sa +
+                     Z tk
+                       (fun (n : nat) (sa0 : {x : state M & act M x}) =>
+                          bellmanQ' (Q (n + tk)) (pi (n + tk)) sa0 - 
+                          bellmanQbar γ (Q (n + tk)) sa0)
+                       t sa) +
+                    alpha (t + tk) sa * (γ * Ck) +
+                    alpha (t + tk) sa *
+                    (bellmanQ' (Q (t + tk)) (pi (t + tk)) sa - 
+                     bellmanQbar γ (Q (t + tk)) sa)).
+         * apply Rplus_le_compat; try lra.
+           apply Rplus_le_compat; try lra.
+           assert ((bellmanQbar γ (Q (t + tk)) sa - bellmanQbar γ Qstar sa) <=
+                   (γ * Ck)).
+           {
+             generalize (@is_contraction_bellmanQbar M γ glim); intros.
+             unfold fixed_point.is_contraction in H0.
+             admit.
+           }
+           apply Rmult_le_compat_l with (r := alpha (t + tk) sa) in H0; trivial.
+           specialize (alim (t + tk)%nat sa).
+           lra.
+         * simpl.
+           ring_simplify.
+           apply Rplus_le_compat; [|right; reflexivity].
+           apply Rplus_le_compat; [|right; reflexivity].
+           unfold Rminus.
+           do 6 rewrite Rplus_assoc.
+           apply Rplus_le_compat; try lra.
+           ring_simplify.
+           unfold Rminus.
+           apply le_minus.
+           ring_simplify.
+           rewrite Rplus_comm.
+           ring_simplify.
+           apply le_minus2.
+           right.
+           reflexivity.
+           Admitted.
+           
+
+           
+           
+                     
+
+      
      
+     
+         
+           
+           
