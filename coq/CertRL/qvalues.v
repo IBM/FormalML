@@ -133,7 +133,8 @@ Proof.
        specialize (a0 s0). now exists (existT _ s0 a0).
 Qed.
 
-Theorem isContraction_bellmanQbar_gamma (Hg : 0 < γ) : @is_Lipschitz  (Rfct_UniformSpace (sigT M.(act))) (Rfct_UniformSpace (sigT M.(act)))
+Theorem isContraction_bellmanQbar_gamma (Hg : 0 < γ) :
+  @is_Lipschitz (Rfct_NormedModule (sigT M.(act))) (Rfct_NormedModule (sigT M.(act)))
                                       bellmanQbar γ.
   Proof.
   unfold is_Lipschitz.
