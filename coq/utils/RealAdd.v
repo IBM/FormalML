@@ -3004,8 +3004,22 @@ Section Rmax_list.
     apply H. eapply Rmax_list_In ; auto.
   Qed.
 
+  Lemma Rmax_list_glb (l : list R) (r : R):
+    ([] <> l) -> (forall x, In x l -> r <= x) -> r <= Rmax_list l.
+  Proof.
+    intros Hl H.
+    apply H. eapply Rmax_list_In ; auto.
+  Qed.
+
   Lemma Rmin_list_glb (l : list R) (r : R):
     ([] <> l) -> (forall x, In x l -> x >= r) -> Rmin_list l >= r.
+  Proof.
+    intros Hl H.
+    apply H. eapply Rmin_list_In ; auto.
+  Qed.
+
+  Lemma Rmin_list_lub (l : list R) (r : R):
+    ([] <> l) -> (forall x, In x l -> r >= x) -> r >= Rmin_list l.
   Proof.
     intros Hl H.
     apply H. eapply Rmin_list_In ; auto.

@@ -766,6 +766,19 @@ Proof.
     now apply Rplus_le_compat.
 Qed.
 
+  Lemma expt_value_lbdd {A : Type} {D : R} {f : A -> R} (hf : forall a:A, D <= (f a)) (p : Pmf A) :
+    D <= (expt_value p f).
+  Proof.
+    unfold expt_value.
+    replace D with (D * R1) by lra.
+    rewrite <- (sum1_compat p). 
+    induction p.(outcomes).
+    * simpl; lra.
+    * simpl in *. rewrite Rmult_plus_distr_l.
+    assert ( D * a.1 <= f a.2 * a.1). apply Rmult_le_compat_r. apply cond_nonneg.
+    apply hf.
+    now apply Rplus_le_compat.
+  Qed.
 
  Lemma expt_value_const {A : Type} (c : R) (p : Pmf A) : expt_value p (fun _ => c) = c.
   Proof.

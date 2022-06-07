@@ -328,6 +328,7 @@ Section MDP.
       now rewrite H in H0.
   Qed.
 
+  (* Theorem 7 *)
   Lemma upper_bound :
     0 < γ < 1 ->
     (forall sa s', reward_sa sa s' <= max_reward) ->
@@ -374,6 +375,7 @@ Section MDP.
       apply Rmax_r.
   Qed.
         
+  (* Theorem 7 *)
   Lemma lower_bound :
     0 < γ < 1 ->
     (forall sa s', reward_sa sa s' >= min_reward) ->
@@ -423,4 +425,183 @@ Section MDP.
       + now apply Rge_le.
   Qed.
 
-        
+  Lemma abs_bound a b c :
+    a <= b <= c ->
+    Rabs b <= Rabs a + Rabs c.
+  Proof.
+    intros.
+    unfold Rabs.
+    match_destr; match_destr; match_destr; try lra.
+  Qed.
+  
+  Lemma noise_bound :
+       0 < γ < 1 ->
+       (forall sa s', reward_sa sa s' <= max_reward) ->
+       (forall sa s', reward_sa sa s' >= min_reward) ->
+       (forall t sa, 0 <= alpha t sa < 1) ->
+        exists (sigma : R),
+        forall n sa,
+          Rsqr ((bellmanQ' (Q n) (pi n) sa) -
+                bellmanQbar γ (Q n) sa) <= Rsqr sigma.
+   Proof.
+     intros glim maxr minr alim.
+     destruct (upper_bound glim maxr alim) as [Cmax ?].
+     destruct (lower_bound glim minr alim) as [Cmin ?].
+     assert (forall sa s', Rabs (reward_sa sa s') <= Rabs min_reward + Rabs max_reward).
+     {
+       intros.
+       apply abs_bound.
+       specialize (maxr sa  s').
+       specialize (minr sa  s').
+       lra.
+     }
+     assert (exists (s1:R),
+                (0 <= s1) /\
+                forall (n : nat) (sa : {x : state M & act M x}),
+                  Rabs (bellmanQ' (Q n) (pi n) sa) <= Rabs s1).
+     {
+       exists ((Rabs min_reward + Rabs max_reward) + (Rabs Cmin + Rabs Cmax)).
+       split.
+       - apply Rplus_le_le_0_compat; apply Rplus_le_le_0_compat; apply Rabs_pos.
+       - intros.
+         unfold bellmanQ'.
+         generalize (Rabs_triang  (reward_sa sa (pi n sa))
+                                (γ *
+                                 (Max_{ act_list (pi n sa)}
+                                      (fun a : act M (pi n sa) => 
+                                         Q n (existT (act M) (pi n sa) a))))); intros.
+         eapply Rle_trans.
+         apply H2.
+         apply Rge_le; rewrite Rabs_right; apply Rle_ge.
+         + apply Rplus_le_compat; trivial.
+           rewrite Rabs_mult.
+           apply Rle_trans with
+               (r2 :=  Rabs
+                         (Max_{ act_list (pi n sa)}
+                              (fun a : act M (pi n sa) => Q n (existT (act M) (pi n sa) a)))).
+           * rewrite Rabs_right; try lra.
+             rewrite <- Rmult_1_l.
+             apply Rmult_le_compat; try lra.
+             apply Rabs_pos.
+           * apply abs_bound.
+             assert ( nil <>
+                      map (fun a : act M (pi n sa) => Q n (existT (act M) (pi n sa) a))
+                          (act_list (pi n sa))).
+             {
+               unfold not; intros.
+               symmetry in H3.
+               apply map_eq_nil in H3.
+               generalize (act_list_not_nil (pi n sa)); intros.
+               congruence.
+             }
+             split.
+             -- apply Rmax_list_glb; trivial.
+                intros.
+                apply in_map_iff in H4.
+                destruct H4 as [? [? ?]].
+                rewrite <- H4.
+                apply Rge_le.
+                apply H0.
+             -- apply Rmax_list_lub; trivial.
+                intros.
+                apply in_map_iff in H4.
+                destruct H4 as [? [? ?]].
+                rewrite <- H4.
+                apply H.
+         + apply Rplus_le_le_0_compat; apply Rplus_le_le_0_compat; apply Rabs_pos.
+     }
+      assert (exists (s2:R),
+                (0 <= s2) /\
+                forall (n : nat) (sa : {x : state M & act M x}),
+                  Rabs (bellmanQbar γ (Q n) sa) <= Rabs s2).
+     {
+       exists ((Rabs min_reward + Rabs max_reward) + (Rabs Cmin + Rabs Cmax)).
+       split.
+       - apply Rplus_le_le_0_compat; apply Rplus_le_le_0_compat; apply Rabs_pos.
+       - intros.
+         unfold bellmanQbar.
+         destruct sa.
+         generalize (Rabs_triang (act_expt_reward x a)
+                                 ( γ *
+                                   expt_value (t x a)
+                                              (fun s' : state M =>
+                                                 Max_{ act_list s'}(fun a0 : act M s' => Q n (existT (act M) s' a0))))); intros.
+         eapply Rle_trans.
+         apply H3.
+         apply Rge_le; rewrite Rabs_right; apply Rle_ge.
+         + apply Rplus_le_compat.
+           * apply abs_bound.
+             unfold act_expt_reward.
+             split.
+             -- apply expt_value_lbdd.
+                unfold reward_sa in minr.
+                intros.
+                apply Rge_le.
+                specialize (minr (existT _ x a) a0).
+                apply minr.
+             -- apply expt_value_bdd.
+                unfold reward_sa in maxr.
+                intros.
+                specialize (maxr (existT _ x a) a0).
+                apply maxr.
+           * rewrite Rabs_mult.
+             apply Rle_trans with
+                 (r2 :=  Rabs
+                           (expt_value (t x a)
+                                       (fun s' : state M =>
+                                          Max_{ act_list s'}(fun a0 : act M s' => Q n (existT (act M) s' a0))))).
+             -- rewrite Rabs_right; try lra.
+                rewrite <- Rmult_1_l.
+                apply Rmult_le_compat; try lra.
+                apply Rabs_pos.
+             -- apply abs_bound.
+                split.
+                ++ apply expt_value_lbdd.
+                   intros.
+                   apply Rmax_list_glb.
+                   ** unfold not; intros.
+                      symmetry in H4.
+                      apply map_eq_nil in H4.
+                      generalize (act_list_not_nil a0); intros.
+                      congruence.
+                   ** intros.
+                      apply in_map_iff in H4.
+                      destruct H4 as [? [? ?]].
+                      rewrite <- H4.
+                      apply Rge_le.
+                      apply H0.
+                ++ apply expt_value_bdd.
+                   intros.
+                   apply Rmax_list_lub.
+                   ** unfold not; intros.
+                      symmetry in H4.
+                      apply map_eq_nil in H4.
+                      generalize (act_list_not_nil a0); intros.
+                      congruence.
+                   ** intros.
+                      apply in_map_iff in H4.
+                      destruct H4 as [? [? ?]].
+                      rewrite <- H4.
+                      apply H.
+         + apply Rplus_le_le_0_compat; apply Rplus_le_le_0_compat; apply Rabs_pos.
+     }
+     destruct H2 as [s1 [? ?]].
+     destruct H3 as [s2 [? ?]].
+     exists (s1 + s2).
+     intros. 
+     specialize (H n sa).
+     specialize (H0 n sa).
+     apply Rsqr_le_abs_1.
+     unfold Rminus.
+     apply Rle_trans with
+         (r2 := Rabs (bellmanQ' (Q n) (pi n) sa) +
+                Rabs (- bellmanQbar γ (Q n) sa)).
+     apply Rabs_triang.
+     replace (Rabs (s1 + s2)) with (Rabs s1 + Rabs s2).
+     - rewrite Rabs_Ropp.
+       apply Rplus_le_compat; trivial.
+     - rewrite Rabs_right; try lra.
+       rewrite Rabs_right; try lra.
+       rewrite Rabs_right; try lra.
+  Qed.
+     
