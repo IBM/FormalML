@@ -633,12 +633,17 @@ Section MDP.
      lra.
    Qed.
 
+   Lemma Rmax_norm_ge (X : Rfct (sigT M.(act))) :
+     forall sa,
+       Rabs (X sa) <= Rmax_norm _ X.
+   Proof.
+     Admitted.
+
    Lemma core_bounding_upper (Qstar : Rfct(sigT M.(act))) (tk:nat) (Ck : R) :
      0 <= γ < 1 ->
      (forall t sa, 0 <= alpha t sa < 1) ->
      bellmanQbar γ Qstar = Qstar ->
-     (forall t, 
-         Max_{s_act_list}(Hierarchy.minus (Q (t+tk)%nat) Qstar) <= Ck) ->
+     (forall t, Rmax_norm _ (Rfct_plus _ (Q (t+tk)%nat) (Rfct_opp _ Qstar)) <= Ck) ->
      forall t sa,
        Q (t+tk)%nat sa - Qstar sa <= Y tk Ck t sa + 
                                      Z tk (fun n sa => 
@@ -651,15 +656,12 @@ Section MDP.
      - simpl.
        rewrite Rplus_0_r.
        specialize (Qbound (0%nat)).
-       generalize (Rmax_list_le _ _ Qbound); intros.
+       generalize (Rmax_norm_ge (Hierarchy.minus (Q tk) Qstar)); intros.
+       apply Rle_trans with
+           (r2 := Rabs (Q tk sa - Qstar sa)); [apply Rle_abs|].
+       apply Rle_trans with
+           (r2 := Rmax_norm _  (Hierarchy.minus (Q tk) Qstar)); trivial.
        apply H.
-       apply in_map_iff.
-       exists sa.
-       split; [|apply finite].
-       replace (0 + tk)%nat with tk by lia.
-       unfold Hierarchy.minus, Hierarchy.plus, Hierarchy.opp; simpl.
-       unfold Rfct_plus, Rfct_opp, Hierarchy.opp; simpl.
-       lra.
      - assert (forall t,
                   Q (S t) sa - Qstar sa = 
                   (1 - alpha t sa) * (Q t sa - Qstar sa) +
@@ -710,12 +712,39 @@ Section MDP.
                    (γ * Ck)).
            {
              destruct (Req_EM_T γ 0).
-             -- rewrite e. right.
-                unfold bellmanQbar. destruct sa. lra.
-             -- assert (0 < γ) by lra.
-             generalize (@isContraction_bellmanQbar_gamma M γ glim H0); intros.
-             unfold fixed_point.is_Lipschitz in H1.
-             admit.
+             - rewrite e. right.
+               unfold bellmanQbar. destruct sa. lra.
+             - assert (0 < γ) by lra.
+               generalize (@isContraction_bellmanQbar_gamma M γ glim H0); intros.
+               unfold fixed_point.is_Lipschitz in H1.
+               destruct H1.
+               assert (HH1: 0 <= γ <= 1) by lra.
+               generalize (@is_Lipschitz_cond Hierarchy.R_AbsRing _ _ (@bellmanQbar M γ) _ HH1); intros.
+               cut_to H3.
+               + specialize (H3 Qstar (Q (t + tk))).
+                 apply Rle_trans with
+                     (r2 := Rabs (bellmanQbar γ (Q (t + tk)) sa - bellmanQbar γ Qstar sa)); [apply Rle_abs|].
+                 unfold Hierarchy.norm in H3; simpl in H3.
+                 apply Rle_trans with
+                     (r2 :=  Rmax_norm {x : state M & act M x}
+         (Hierarchy.minus  (bellmanQbar γ (Q (t + tk))) (bellmanQbar γ Qstar)) ).
+                 
+                 * replace  (bellmanQbar γ (Q (t + tk)) sa - bellmanQbar γ Qstar sa) with
+                       (Hierarchy.minus  (bellmanQbar γ (Q (t + tk))) (bellmanQbar γ Qstar) sa); [apply Rmax_norm_ge | ].
+                   unfold Hierarchy.minus, Hierarchy.plus, Hierarchy.opp; simpl.
+                   unfold Rfct_opp, Hierarchy.opp; simpl.
+                   unfold Rfct_plus.
+                   lra.
+                 * eapply Rle_trans.
+                   apply H3.
+                   apply Rmult_le_compat_l; try lra.
+                   apply Qbound.
+               + intros.
+                 apply H2.
+                 * generalize (Hierarchy.norm_ge_0 (Hierarchy.minus y x)); intros.
+                   apply Rle_lt_trans with
+                       (r2 := Hierarchy.norm (Hierarchy.minus y x)); trivial.
+                 * apply H4.
            }
            apply Rmult_le_compat_l with (r := alpha (t + tk) sa) in H0; trivial.
            specialize (alim (t + tk)%nat sa).
@@ -736,7 +765,27 @@ Section MDP.
            apply le_minus2.
            right.
            reflexivity.
-           Admitted.
+   Qed.
+
+   Lemma core_bounding_lower (Qstar : Rfct(sigT M.(act))) (tk:nat) (Ck : R) :
+     0 <= γ < 1 ->
+     (forall t sa, 0 <= alpha t sa < 1) ->
+     bellmanQbar γ Qstar = Qstar ->
+     (forall t, Rmax_norm _ (Rfct_plus _ (Q (t+tk)%nat) (Rfct_opp _ Qstar)) <= Ck) ->
+     forall t sa,
+       Q (t+tk)%nat sa - Qstar sa >= - Y tk Ck t sa + 
+                                     Z tk (fun n sa => 
+                                          (bellmanQ' (Q (n+tk)%nat) (pi (n+tk)%nat) sa -
+                                           bellmanQbar γ (Q (n+tk)%nat) sa))
+                                       t sa.
+   Proof.
+     intros glim alim fixedQstar Qbound t sa.
+     induction t.
+     - simpl.
+       rewrite Rplus_0_r.
+       specialize (Qbound (0%nat)).
+   Admitted.
+   
            
 
            
