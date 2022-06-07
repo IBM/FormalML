@@ -522,7 +522,7 @@ Qed.
 
 
 Lemma is_Lipschitz_cond {K : AbsRing} {X : NormedModule K}{Y : NormedModule R_AbsRing}
-      {F : X -> Y} (γ : R):
+      (F : X -> Y) (γ : R):
   (0 <= γ <= 1) ->
   (forall (x y : X) (r : R), norm(minus y x) < r -> norm(minus (F y) (F x)) < γ*r) ->
   (forall (x y : X), norm (minus (F y) (F x)) <= γ*norm( minus y x)).
