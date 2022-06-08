@@ -653,7 +653,7 @@ Section MDP.
        lra.
      Qed.
 
-     Lemma bellman_contraction :
+     Lemma bellmanQbar_contraction :
        0 <= γ < 1 ->
        forall (X1 X2 : Rfct(sigT M.(act))),
          Hierarchy.norm (Hierarchy.minus (bellmanQbar γ X1) (bellmanQbar γ X2)) <=
@@ -684,7 +684,7 @@ Section MDP.
            apply Rle_lt_trans with
                (r2 := Hierarchy.norm (Hierarchy.minus y x)); trivial.
          + apply H2.
-    Qed.
+     Qed.
 
    Lemma core_bounding_upper (Qstar : Rfct(sigT M.(act))) (tk:nat) (Ck : R) :
      0 <= γ < 1 ->
@@ -758,7 +758,7 @@ Section MDP.
            assert ((bellmanQbar γ (Q (t + tk)) sa - bellmanQbar γ Qstar sa) <=
                    (γ * Ck)).
            {
-             generalize (bellman_contraction glim (Q (t + tk)) Qstar); intros.
+             generalize (bellmanQbar_contraction glim (Q (t + tk)) Qstar); intros.
              apply Rle_trans with
                  (r2 := Rabs (bellmanQbar γ (Q (t + tk)) sa - bellmanQbar γ Qstar sa)); [apply Rle_abs|].
              unfold Hierarchy.norm in H0; simpl in H0.
@@ -881,7 +881,7 @@ Section MDP.
            assert ((bellmanQbar γ (Q (t + tk)) sa - bellmanQbar γ Qstar sa) >=
                    -(γ * Ck)).
            {
-             generalize (bellman_contraction glim (Q (t + tk)) Qstar); intros.
+             generalize (bellmanQbar_contraction glim (Q (t + tk)) Qstar); intros.
              assert (Rabs (bellmanQbar γ (Q (t + tk)) sa - bellmanQbar γ Qstar sa) <= γ * Ck).
              {
                generalize (Rmax_norm_spec _ (Hierarchy.minus (bellmanQbar γ (Q (t + tk))) (bellmanQbar γ Qstar)) sa); intros.
@@ -919,13 +919,5 @@ Section MDP.
      lra.
    Qed.
 
-           
-           
-                     
-
-      
-     
-     
-         
            
            
