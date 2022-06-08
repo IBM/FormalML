@@ -642,13 +642,6 @@ Section MDP.
        exists a. split; trivial.
      Qed.
 
-   Lemma Rmax_norm_ge (X : Rfct (sigT M.(act))) :
-     forall sa,
-       Rabs (X sa) <= Rmax_norm _ X.
-   Proof.
-     apply Rmax_norm_spec.
-    Qed.
-
    Lemma core_bounding_upper (Qstar : Rfct(sigT M.(act))) (tk:nat) (Ck : R) :
      0 <= γ < 1 ->
      (forall t sa, 0 <= alpha t sa < 1) ->
@@ -666,7 +659,7 @@ Section MDP.
      - simpl.
        rewrite Rplus_0_r.
        specialize (Qbound (0%nat)).
-       generalize (Rmax_norm_ge (Hierarchy.minus (Q tk) Qstar)); intros.
+       generalize (Rmax_norm_spec _ (Hierarchy.minus (Q tk) Qstar)); intros.
        apply Rle_trans with
            (r2 := Rabs (Q tk sa - Qstar sa)); [apply Rle_abs|].
        apply Rle_trans with
@@ -740,7 +733,7 @@ Section MDP.
          (Hierarchy.minus  (bellmanQbar γ (Q (t + tk))) (bellmanQbar γ Qstar)) ).
                  
                  * replace  (bellmanQbar γ (Q (t + tk)) sa - bellmanQbar γ Qstar sa) with
-                       (Hierarchy.minus  (bellmanQbar γ (Q (t + tk))) (bellmanQbar γ Qstar) sa); [apply Rmax_norm_ge | ].
+                       (Hierarchy.minus  (bellmanQbar γ (Q (t + tk))) (bellmanQbar γ Qstar) sa); [apply Rmax_norm_spec | ].
                    unfold Hierarchy.minus, Hierarchy.plus, Hierarchy.opp; simpl.
                    unfold Rfct_opp, Hierarchy.opp; simpl.
                    unfold Rfct_plus.
@@ -777,6 +770,20 @@ Section MDP.
            reflexivity.
    Qed.
 
+   Lemma ge_minus (a b : R) :
+     a - b >= 0 ->
+     a >= b.
+   Proof.
+     lra.
+   Qed.
+
+   Lemma ge_minus2 (a b : R) :
+     a >= b ->
+     a - b >= 0.
+   Proof.
+     lra.
+   Qed.
+
    Lemma core_bounding_lower (Qstar : Rfct(sigT M.(act))) (tk:nat) (Ck : R) :
      0 <= γ < 1 ->
      (forall t sa, 0 <= alpha t sa < 1) ->
@@ -794,8 +801,117 @@ Section MDP.
      - simpl.
        rewrite Rplus_0_r.
        specialize (Qbound (0%nat)).
-   Admitted.
-   
+       generalize (Rmax_norm_spec _ (Hierarchy.minus (Q tk) Qstar)); intros.
+       assert (Rabs (Q tk sa - Qstar sa) <= Ck).
+       {
+         apply Rle_trans with
+             (r2 := Rmax_norm _  (Hierarchy.minus (Q tk) Qstar)); trivial.
+         apply H.
+       }
+       apply Rcomplements.Rabs_le_between in H0.
+       lra.
+     - assert (forall t,
+                  Q (S t) sa - Qstar sa = 
+                  (1 - alpha t sa) * (Q t sa - Qstar sa) +
+                  (alpha t sa) * ((bellmanQbar γ  (Q t) sa) -
+                                  (bellmanQbar γ Qstar sa)) +
+                  (alpha t sa) * ((bellmanQ' (Q t) (pi t) sa) - 
+                                  (bellmanQbar γ (Q t) sa))).
+       {
+         intros.
+         simpl.
+         rewrite fixedQstar.
+         ring.
+       }
+       specialize (H (t + tk)%nat).
+       replace (S (t + tk)) with (S t + tk)%nat in H by lia.
+       rewrite H.
+       apply Rge_trans with
+           (r2 := ((1 - alpha (t + tk) sa) * (- Y tk Ck t sa +
+                   Z tk
+                     (fun (n : nat) (sa : {x : state M & act M x}) =>
+                        bellmanQ' (Q (n + tk)) (pi (n + tk)) sa -
+                        bellmanQbar γ (Q (n + tk)) sa) t sa)) +
+                  alpha (t + tk) sa * 
+                  (bellmanQbar γ (Q (t + tk)) sa - bellmanQbar γ Qstar sa) +
+                  alpha (t + tk) sa *
+                  (bellmanQ' (Q (t + tk)) (pi (t + tk)) sa - 
+                   bellmanQbar γ (Q (t + tk)) sa)).
+       + apply Rplus_ge_compat; try lra.
+         apply Rplus_ge_compat; try lra.
+         apply Rmult_ge_compat_l with (r := 1 - alpha (t + tk) sa) in IHt; trivial.
+         specialize (alim (t + tk)%nat sa).
+         lra.
+       + apply Rge_trans with
+             (r2 := (1 - alpha (t + tk) sa) *
+                    (-Y tk Ck t sa +
+                     Z tk
+                       (fun (n : nat) (sa0 : {x : state M & act M x}) =>
+                          bellmanQ' (Q (n + tk)) (pi (n + tk)) sa0 - 
+                          bellmanQbar γ (Q (n + tk)) sa0)
+                       t sa) +
+                    alpha (t + tk) sa * (- (γ * Ck)) +
+                    alpha (t + tk) sa *
+                    (bellmanQ' (Q (t + tk)) (pi (t + tk)) sa - 
+                     bellmanQbar γ (Q (t + tk)) sa)).
+         * apply Rplus_ge_compat; try lra.
+           apply Rplus_ge_compat; try lra.           
+           assert ((bellmanQbar γ (Q (t + tk)) sa - bellmanQbar γ Qstar sa) >=
+                   -(γ * Ck)).
+           {
+             destruct (Req_EM_T γ 0).
+             - rewrite e. right.
+               unfold bellmanQbar. destruct sa. lra.
+             - assert (0 < γ) by lra.
+               generalize (@isContraction_bellmanQbar_gamma M γ glim H0); intros.
+               unfold fixed_point.is_Lipschitz in H1.
+               destruct H1.
+               assert (HH1: 0 <= γ <= 1) by lra.
+               generalize (@is_Lipschitz_cond Hierarchy.R_AbsRing _ _ (@bellmanQbar M γ) _ HH1); intros.
+               cut_to H3.
+               + specialize (H3 Qstar (Q (t + tk))).
+
+                 specialize (Qbound t).
+                 assert (Rabs (bellmanQbar γ (Q (t + tk)) sa - bellmanQbar γ Qstar sa) <= γ * Ck).
+                 {
+                   generalize (Rmax_norm_spec _ (Hierarchy.minus (bellmanQbar γ (Q (t + tk))) (bellmanQbar γ Qstar)) sa); intros.
+                   apply Rle_trans with
+                       (r2 :=   Rmax_norm {x : state M & act M x}
+                                          (Hierarchy.minus (bellmanQbar γ (Q (t + tk)))
+                                                           (bellmanQbar γ Qstar))); trivial.
+                   eapply Rle_trans.
+                   - apply H3.
+                   - apply Rmult_le_compat_l; try lra.
+                     apply Qbound.
+                 }
+                 apply Rcomplements.Rabs_le_between in H4; lra.
+               + intros.
+                 apply H2.
+                 * generalize (Hierarchy.norm_ge_0 (Hierarchy.minus y x)); intros.
+                   apply Rle_lt_trans with
+                       (r2 := Hierarchy.norm (Hierarchy.minus y x)); trivial.
+                 * apply H4.
+           }
+           apply Rmult_ge_compat_l with (r := alpha (t + tk) sa) in H0; trivial.
+           specialize (alim (t + tk)%nat sa).
+           lra.
+         * simpl.
+           ring_simplify.
+           apply Rplus_ge_compat; [|right; reflexivity].
+           apply Rplus_ge_compat; [|right; reflexivity].
+           unfold Rminus.
+           do 6 rewrite Rplus_assoc.
+           apply Rplus_ge_compat; try lra.
+           ring_simplify.
+           unfold Rminus.
+           apply ge_minus.
+           ring_simplify.
+           rewrite Rplus_comm.
+           ring_simplify.
+           apply ge_minus2.
+           right.
+           reflexivity.
+   Qed.
            
 
            
