@@ -633,11 +633,21 @@ Section MDP.
      lra.
    Qed.
 
+   Lemma Rmax_norm_spec {A : Type} (finA : Finite A) (X : Rfct A):
+     forall a, Rabs (X a) <= Rmax_norm _ X.
+     Proof.
+       intros a.
+       unfold Rmax_norm. destruct finA.
+       apply Rmax_spec. rewrite in_map_iff.
+       exists a. split; trivial.
+     Qed.
+
    Lemma Rmax_norm_ge (X : Rfct (sigT M.(act))) :
      forall sa,
        Rabs (X sa) <= Rmax_norm _ X.
    Proof.
-     Admitted.
+     apply Rmax_norm_spec.
+    Qed.
 
    Lemma core_bounding_upper (Qstar : Rfct(sigT M.(act))) (tk:nat) (Ck : R) :
      0 <= γ < 1 ->
