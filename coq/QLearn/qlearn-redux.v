@@ -756,11 +756,6 @@ Section MDP.
            ring_simplify.
            apply Rplus_le_compat; [|right; reflexivity].
            apply Rplus_le_compat; [|right; reflexivity].
-           unfold Rminus.
-           do 6 rewrite Rplus_assoc.
-           apply Rplus_le_compat; try lra.
-           ring_simplify.
-           unfold Rminus.
            apply le_minus.
            ring_simplify.
            rewrite Rplus_comm.
@@ -899,11 +894,6 @@ Section MDP.
            ring_simplify.
            apply Rplus_ge_compat; [|right; reflexivity].
            apply Rplus_ge_compat; [|right; reflexivity].
-           unfold Rminus.
-           do 6 rewrite Rplus_assoc.
-           apply Rplus_ge_compat; try lra.
-           ring_simplify.
-           unfold Rminus.
            apply ge_minus.
            ring_simplify.
            rewrite Rplus_comm.
@@ -913,6 +903,12 @@ Section MDP.
            reflexivity.
    Qed.
            
+   Lemma gamma_eps :
+     0 <= γ < 1 ->
+     γ + (1-γ)/2 < 1.
+   Proof.
+     lra.
+   Qed.
 
            
            
