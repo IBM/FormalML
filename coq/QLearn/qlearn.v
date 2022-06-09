@@ -5757,9 +5757,7 @@ End rv_expressible.
         now replace (n1 + n0)%nat with (n0 + n1)%nat by lia.
         apply Rle_ge.
         apply rvmaxabs_pos.
-      - specialize (H15 eps0).
-        apply H15.
+      - apply H15.
     Qed.
-
 
   End qlearn5.
