@@ -324,7 +324,6 @@ Proof.
        now exists (mkposreal eps Heps).
 Qed.
 
-
   Lemma conv_prob_sup_0_as {prts: ProbSpace dom} (f : nat -> Ts -> R)
           {rv : forall n, RandomVariable dom borel_sa (f n)} 
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
@@ -364,6 +363,100 @@ Qed.
           + apply rv.
     Qed.
 
+    Lemma conv_as_prob_sup_0 {prts: ProbSpace dom} (f : nat -> Ts -> R)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} 
+          {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
+      almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
+      (forall (eps:posreal),
+        is_lim_seq (fun n => ps_P (event_Rbar_gt (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 0).
+   Proof.
+     intros.
+     rewrite almost_is_lim_seq_iff in H.
+     intros.
+     specialize (H eps).
+     assert (RandomVariable dom borel_sa (fun _ : Ts => 0)) by apply rvconst.
+     apply is_lim_seq_le_le with (u := fun n => 0)
+                                 (w :=  (fun N : nat =>
+         ps_P (ProbSpace := prts)
+           (exist (sa_sigma dom)
+                  (fun omega : Ts =>
+                     exists n : nat, (n >= N)%nat /\ Rabs (f n omega - 0) >= eps)
+                  (sa_sigma_not_convergent f (fun _ : Ts => 0) eps N)))).
+     intros.
+     - split.
+       + apply ps_pos.
+       + apply ps_sub.
+         rewrite <- union_coll_gt_sup.
+         intros ? ?.
+         simpl.
+         simpl in H1.
+         destruct H1.
+         exists (n + x0)%nat.
+         split; try lia.
+         unfold rvabs in H1.
+         rewrite Rminus_0_r.
+         lra.
+    - apply is_lim_seq_const.
+    - revert H.
+      apply is_lim_seq_ext.
+      intros.
+      apply ps_proper.
+      intros ?.
+      simpl.
+      reflexivity.
+      Unshelve.
+      + apply rv.
+      + apply rvconst.
+      + apply rv.
+  Qed.
+
+  Lemma lim_ps_sub_1_0 {prts: ProbSpace dom} (f : nat -> Ts -> R)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} 
+          {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
+    forall (eps:posreal),
+      is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 1 <->
+      is_lim_seq (fun n => ps_P (event_Rbar_gt (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 0.
+    Proof.
+      intros.
+      split; intros.
+      - apply is_lim_seq_ext with
+         (u := (fun n : nat =>
+                  1 - ps_P
+                        (event_Rbar_le
+                           (fun x : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x))) eps))).
+        + intros.
+          rewrite <- ps_complement.
+          apply ps_proper.
+          intros ?.
+          simpl.
+          unfold pre_event_complement.
+          match_destr; simpl; lra.
+        + apply is_lim_seq_minus with (l1 := 1) (l2 := 1); trivial.
+          * apply is_lim_seq_const.
+          * unfold is_Rbar_minus, is_Rbar_plus; simpl.
+            f_equal.
+            apply Rbar_finite_eq.
+            lra. 
+      - apply is_lim_seq_ext with
+            (u := (fun n => 
+                     1 - 
+                     ps_P (event_Rbar_gt
+                             (fun x : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x))) eps))).
+        + intros.
+          rewrite <- ps_complement.
+          apply ps_proper.
+          intros ?.
+          simpl.
+          unfold pre_event_complement.
+          match_destr; simpl; lra.
+        + apply is_lim_seq_minus with (l1 := 1) (l2 := 0); trivial.
+          * apply is_lim_seq_const.
+          * unfold is_Rbar_minus, is_Rbar_plus; simpl.
+            f_equal.
+            apply Rbar_finite_eq.
+            lra. 
+  Qed.
+
   Lemma conv_prob_sup_1_as {prts: ProbSpace dom} (f : nat -> Ts -> R)
           {rv : forall n, RandomVariable dom borel_sa (f n)} 
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
@@ -374,22 +467,17 @@ Qed.
      intros.
      apply conv_prob_sup_0_as with (rv3 := rv2); trivial.
      intros.
-     apply is_lim_seq_ext with
-         (u := (fun n : nat =>
-                  1 - ps_P
-                        (event_Rbar_le
-                           (fun x : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x))) eps))).
-     - intros.
-       rewrite <- ps_complement.
-       apply ps_proper.
-       intros ?.
-       simpl.
-       unfold pre_event_complement.
-       match_destr; simpl; lra.
-     - apply is_lim_seq_minus with (l1 := 1) (l2 := 1); trivial.
-       + apply is_lim_seq_const.
-       + unfold is_Rbar_minus, is_Rbar_plus; simpl.
-         f_equal.
-         apply Rbar_finite_eq.
-         lra.
+     now rewrite <- lim_ps_sub_1_0.
   Qed.
+
+  Lemma conv_as_prob_sup_1  {prts: ProbSpace dom} (f : nat -> Ts -> R)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} 
+          {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
+      almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
+      forall (eps:posreal),
+        is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 1.
+    Proof.
+      intros.
+      rewrite lim_ps_sub_1_0; trivial.
+      now apply  conv_as_prob_sup_0.
+    Qed.
