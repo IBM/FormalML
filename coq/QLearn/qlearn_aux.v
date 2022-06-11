@@ -7,6 +7,8 @@ Require Import Lra Lia PushNeg.
 Require Import Expectation RandomVariableFinite RbarExpectation.
 Require Import SigmaAlgebras ProbSpace.
 Require Import ConditionalExpectation.
+Require Import DVector RealVectorHilbert VectorRandomVariable.
+Require Import DiscreteProbSpace ProductSpace.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -481,3 +483,104 @@ Qed.
       rewrite lim_ps_sub_1_0; trivial.
       now apply  conv_as_prob_sup_0.
     Qed.
+
+    Lemma nneg_expec_inf_sum {prts : ProbSpace dom} (f : nat -> Ts -> Rbar) 
+          {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} 
+          {nnf : forall n, Rbar_NonnegativeFunction (f n)} 
+          {pofrf : Rbar_NonnegativeFunction
+            (fun omega : Ts => ELim_seq (sum_Rbar_n (fun k : nat => f k omega)))} :
+      ELim_seq (sum_Rbar_n (fun k => Rbar_NonnegExpectation (f k))) =
+      Rbar_NonnegExpectation (fun omega => ELim_seq (sum_Rbar_n (fun k => f k omega))).
+    Proof.
+      assert (forall k, 
+                 Rbar_NonnegativeFunction
+                   (fun omega : Ts => sum_Rbar_n (fun j : nat => f j omega) k)).
+      {
+        unfold Rbar_NonnegativeFunction; intros.
+        apply sum_Rbar_n_nneg_nneg; intros.
+        apply nnf.
+      }
+      rewrite ELim_seq_ext with
+          (v := (fun k => Rbar_NonnegExpectation 
+                            (fun omega => sum_Rbar_n (fun j => f j omega) k))).
+      rewrite monotone_convergence_Rbar_rvlim.
+      - now unfold Rbar_rvlim.
+      - intros.
+        apply sum_Rbar_n_rv.
+        intros.
+        apply rv.
+      - intros.
+        unfold Rbar_rv_le.
+        intros ?.
+        apply sum_Rbar_n_pos_incr.
+        intros.
+        apply nnf.
+      - intros.
+        generalize Rbar_NonnegExpectation_sum; intros.
+        now rewrite Rbar_NonnegExpectation_sum with (Xlim_pos := H).
+   Qed.
+
+    Context {T:Type} {countableT:Countable T} 
+            {n:nat} {countableVecT : Countable (vector T n)}.
+
+    Definition vec_pmf (p0 : ProbSpace (discrete_sa T)) : (vector T n) -> R :=
+      fun v =>
+        vector_fold_left Rmult (vector_map ps_P (vector_map discrete_singleton v)) 1.
+      
+    Lemma vec_pmf_pos (p0 : ProbSpace (discrete_sa T)):
+      forall v,
+        0 <= vec_pmf p0 v.
+    Proof.
+      intros.
+      unfold vec_pmf, vector_fold_left, vector_map.
+      destruct v; simpl.
+      assert (forall (e:R), 
+                 forall (l : list R),
+                   0 <= e ->
+                   (forall f, In f l -> 0<=f) ->
+                   0 <= fold_left Rmult l e).
+      {
+        intros.
+        revert H.
+        revert e0.
+        induction l.
+        - intros.
+          now simpl.
+        - intros.
+          simpl.
+          apply IHl.
+          + intros.
+            apply H0.
+            now apply in_cons.
+          + apply Rmult_le_pos; trivial.
+            apply H0.
+            simpl.
+            tauto.
+      }
+      apply H; try lra.
+      intros.
+      apply in_map_iff in H0.
+      destruct H0 as [? [? ?]].
+      rewrite <- H0.
+      apply ps_pos.
+    Qed.
+
+    Lemma vec_pmf_sum1 (p0 : ProbSpace (discrete_sa T)):
+      countable_sum (vec_pmf p0) 1.
+    Proof.
+      Admitted.
+
+    Program Definition vectorPMF (p0 : ProbSpace (discrete_sa T)) : prob_mass_fun (vector T n) := {| pmf_pmf := vec_pmf p0 |}.
+    Next Obligation.
+      apply vec_pmf_pos.
+    Qed.
+    Next Obligation.    
+      apply vec_pmf_sum1.
+    Qed.
+
+    Global Instance vector_discrete_ps (p0 : ProbSpace (discrete_sa T)): ProbSpace (discrete_sa (vector T n)) := discrete_ps (vectorPMF p0).
+    
+      
+
+
+    
