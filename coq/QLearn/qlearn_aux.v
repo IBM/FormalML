@@ -520,8 +520,11 @@ Qed.
         now rewrite Rbar_NonnegExpectation_sum with (Xlim_pos := H).
    Qed.
 
-    Context {T:Type} {countableT:Countable T} 
-            {n:nat} {countableVecT : Countable (vector T n)}.
+    Context {T:Type} {countableT:Countable T} {n:nat}.
+
+    Instance countableVec : Countable (vector T n).
+    Proof.
+      Admitted.
 
     Definition vec_pmf (p0 : ProbSpace (discrete_sa T)) : (vector T n) -> R :=
       fun v =>
@@ -579,6 +582,7 @@ Qed.
     Qed.
 
     Global Instance vector_discrete_ps (p0 : ProbSpace (discrete_sa T)): ProbSpace (discrete_sa (vector T n)) := discrete_ps (vectorPMF p0).
+    
     
       
 
