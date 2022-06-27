@@ -4872,7 +4872,6 @@ Qed.
   Lemma Ash_6_2_2_indep_0 (X : nat -> Ts -> R)
         {rv : forall (n:nat), RandomVariable dom borel_sa (X n)}
         {isfe : forall k, IsFiniteExpectation Prts (X k)}
-        {isfe2 : forall k : nat, IsFiniteExpectation Prts (rvsqr (X k))}
         {isfes:forall n, IsFiniteExpectation Prts (rvsqr (rvscale (/ (INR (S n))) (X n)))} :
     (forall i, FiniteExpectation Prts (X i) = 0) ->
     independent_rv_collection Prts (const borel_sa) X ->
@@ -4880,6 +4879,20 @@ Qed.
     almost Prts (fun (x : Ts) => is_lim_seq (fun n => (rvscale (/ INR (S n)) (rvsum X n)) x) 0). 
   Proof.
     intros.
+    assert (isfe2 : forall n : nat, IsFiniteExpectation Prts (rvsqr (X n))).
+    {
+      intros.
+      apply IsFiniteExpectation_proper with
+          (x := (rvscale (Rsqr (INR (S n)))
+                         (rvsqr (rvscale (/ (INR (S n))) (X n))))).
+      - intro x.
+        rv_unfold.
+        unfold Rsqr.
+        field.
+        apply INR_nzero.
+        lia.
+      - now apply IsFiniteExpectation_scale.
+    }
     apply (Ash_6_2_2 X (fun n => INR (S n))); trivial.
     - intros.
       generalize (is_condexp_indep X n (isfe (S n)) H0); intros.
