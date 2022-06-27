@@ -14,7 +14,7 @@ jobs:
           - '8.12.2'
 #          - '8.14.0'
         ocaml_version:
-          - '4.07-flambda'
+          - '4.07.1-flambda'
     steps:
       - uses: actions/checkout@v2
         with:
