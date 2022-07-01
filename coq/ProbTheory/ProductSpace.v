@@ -716,3 +716,89 @@ Section ps_product.
   Qed.
 
 End ps_product.
+
+Section ps_ivector_product.
+
+  Program Global Instance trivial_ps {T} (elem:inhabited T) : ProbSpace (trivial_sa T)
+    := {|
+      ps_P e := if ClassicalDescription.excluded_middle_informative (exists y, proj1_sig e y)
+                then 1%R
+                else 0%R
+    |}.
+  Next Obligation.
+    repeat red; intros.
+    repeat match_destr; firstorder.
+  Qed.
+  Next Obligation.
+    red.
+    match_destr.
+    - destruct e as [x [n ?]].
+      apply (infinite_sum'_one _ n).
+      + intros.
+        match_destr.
+        destruct e as [y ?].
+        specialize (H _ _ H1).
+        destruct (collection n); simpl in *.
+        destruct (collection n'); simpl in *.
+        repeat red in H.
+        simpl in H.
+        destruct s.
+        * apply H3 in H0.
+          now red in H0.
+        * destruct s0.
+          -- apply H4 in H2.
+             now red in H2.
+          -- elim (H x); trivial.
+             apply H4.
+             now red.
+      + match_destr.
+        firstorder.
+    - eapply infinite_sum'_ext; try apply infinite_sum'0; simpl; intros.
+      match_destr.
+      firstorder.
+  Qed.
+  Next Obligation.
+    match_destr.
+    elim n.
+    destruct elem.
+    exists X; now red.
+  Qed.
+  Next Obligation.
+    match_destr; lra.
+  Qed.
+
+  Fixpoint ivector_const {T:Type} (n:nat) (v:T) : ivector T n :=
+    match n with
+    | 0%nat => tt
+    | S m => (v, ivector_const m v)
+    end.
+    
+  Fixpoint ivector_ps {n} {T} {σ:SigmaAlgebra T} : ivector (ProbSpace σ) n -> ProbSpace (ivector_sa (ivector_const n σ))
+    := match n with
+       | 0%nat => fun _ => trivial_ps (inhabits tt)
+       | S m => fun '(hd,tl) => product_ps hd (ivector_ps tl)
+       end.
+
+
+  Fixpoint ivector_nth {T:Type} (n:nat) (idx:nat): (idx < n)%nat -> ivector T n -> T :=
+    match n with
+    | 0%nat => fun pf _ => False_rect _ (Nat.nlt_0_r _ pf)
+    | S n' => match idx with
+             | 0%nat => fun pf '(hd,tl) => hd
+             | S m' => fun pf '(hd,tl) => ivector_nth n' m' (lt_S_n _ _ pf) tl
+             end
+    end.
+
+  Fixpoint ivector_take {T:Type} (n:nat) (idx:nat): (idx <= n)%nat -> ivector T n -> ivector T idx :=
+    match n with
+    | 0%nat => match idx with
+            | 0%nat => fun _ _ => tt
+            | _ => fun pf _ => False_rect _ (Nat.nle_succ_0 _ pf)
+            end
+    | S n' => match idx with
+             | 0%nat => fun pf '(hd,tl) => tt
+             | S m' => fun pf '(hd,tl) => (hd, ivector_take n' m' (le_S_n _ _ pf) tl)
+             end
+    end.
+
+End ps_ivector_product.

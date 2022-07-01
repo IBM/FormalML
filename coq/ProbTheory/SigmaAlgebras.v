@@ -1013,6 +1013,26 @@ Proof.
     apply H.
 Qed.
 
+(* vector product, inductively *)
+
+Section ivector.
+
+  Fixpoint ivector (T:Type) (n:nat) : Type :=
+    match n with
+    | 0%nat => unit
+    | S m => prod T (ivector T m)
+    end.
+
+  Fixpoint ivector_sa {n} {T} : ivector (SigmaAlgebra T) n -> SigmaAlgebra (ivector T n)
+    := match n with
+       | 0%nat => fun _ => trivial_sa unit
+       | S m => fun '(hd,tl) => product_sa hd (ivector_sa tl)
+       end.
+
+  Global Existing Instance ivector_sa.
+  
+End ivector.
+
 Definition is_pre_partition_list {T} (l:list (pre_event T)) :=
   ForallOrdPairs pre_event_disjoint l /\ pre_list_union l === pre_Ω.
 
