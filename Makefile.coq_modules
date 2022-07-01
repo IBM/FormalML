@@ -107,6 +107,7 @@ PROB_THEORY = \
 
 QLEARN = \
 	Dvoretzky \
+	qlearn_aux \
 	qlearn \
     infprod \
 	sumtest \

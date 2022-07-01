@@ -13,6 +13,7 @@ Require Import vecslln.
 Require Import ConditionalExpectation VectorConditionalExpectation.
 Require Import IndefiniteDescription ClassicalDescription.
 Require slln.
+Require Import qlearn_aux.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -4411,6 +4412,7 @@ End rv_expressible.
         now apply is_Elim_seq_fin.
    Qed.
 
+(*
   Lemma sa_le_Rbar_gt_rv {domm}
         (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
     : sa_sigma _ (fun omega => Rbar_gt (rv_X omega) x).
@@ -4625,7 +4627,8 @@ End rv_expressible.
           + apply rv.
     Qed.
 
-
+ *)
+    
     Lemma L2_convergent_x_nth_RMseq (i n:nat) (pf : (i < S n)%nat) (α : nat -> R) 
           (w : nat -> Ts -> vector R (S n)) (omega:Ts) :
       forall n0, 

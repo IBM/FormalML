@@ -12,6 +12,8 @@ Require Import DiscreteProbSpace ProductSpace.
 
 Set Bullet Behavior "Strict Subproofs".
 
+Section qlearn_aux.
+
 Context {Ts : Type} {dom: SigmaAlgebra Ts}.
 
   Lemma sa_le_Rbar_gt_rv {domm}
@@ -584,7 +586,7 @@ Qed.
     Global Instance vector_discrete_ps (p0 : ProbSpace (discrete_sa T)): ProbSpace (discrete_sa (vector T n)) := discrete_ps (vectorPMF p0).
     
     
-      
+End qlearn_aux.      
 
 
     

@@ -1017,12 +1017,6 @@ Qed.
 
 Section ivector.
 
-  Fixpoint ivector (T:Type) (n:nat) : Type :=
-    match n with
-    | 0%nat => unit
-    | S m => prod T (ivector T m)
-    end.
-
   Fixpoint ivector_sa {n} {T} : ivector (SigmaAlgebra T) n -> SigmaAlgebra (ivector T n)
     := match n with
        | 0%nat => fun _ => trivial_sa unit

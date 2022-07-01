@@ -1013,3 +1013,40 @@ Proof.
     congruence.
   - rewrite vector_length; reflexivity.
 Qed.
+
+Section ivector.
+
+  Fixpoint ivector (T:Type) (n:nat) : Type :=
+    match n with
+    | 0%nat => unit
+    | S m => prod T (ivector T m)
+    end.
+
+  Fixpoint ivector_const {T:Type} (n:nat) (v:T) : ivector T n :=
+    match n with
+    | 0%nat => tt
+    | S m => (v, ivector_const m v)
+    end.
+
+    Fixpoint ivector_nth {T:Type} (n:nat) (idx:nat): (idx < n)%nat -> ivector T n -> T :=
+    match n with
+    | 0%nat => fun pf _ => False_rect _ (Nat.nlt_0_r _ pf)
+    | S n' => match idx with
+             | 0%nat => fun pf '(hd,tl) => hd
+             | S m' => fun pf '(hd,tl) => ivector_nth n' m' (lt_S_n _ _ pf) tl
+             end
+    end.
+
+  Fixpoint ivector_take {T:Type} (n:nat) (idx:nat): (idx <= n)%nat -> ivector T n -> ivector T idx :=
+    match n with
+    | 0%nat => match idx with
+            | 0%nat => fun _ _ => tt
+            | _ => fun pf _ => False_rect _ (Nat.nle_succ_0 _ pf)
+            end
+    | S n' => match idx with
+             | 0%nat => fun pf '(hd,tl) => tt
+             | S m' => fun pf '(hd,tl) => (hd, ivector_take n' m' (le_S_n _ _ pf) tl)
+             end
+    end.
+
+End ivector.
