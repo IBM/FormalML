@@ -773,4 +773,34 @@ Section ps_ivector_product.
        | S m => fun '(hd,tl) => product_ps hd (ivector_ps tl)
        end.
 
+  Lemma ivector_nth_0_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) 
+        (npos : (0 < n)%nat) :
+        RandomVariable (ivector_sa ivsa) 
+                       (ivector_nth n 0 npos ivsa)
+                       (ivector_nth n 0 npos).
+  Proof.
+    red; intros.
+    destruct n; try lia.
+    destruct ivsa.
+    destruct B; simpl; intros.
+    apply H.
+    red.
+    exists x.
+    exists pre_Ω.
+    split; trivial.
+    split; [apply sa_all |].
+    intro z; destruct z; simpl.
+    unfold pre_Ω.
+    tauto.
+  Qed.
+    
+  Lemma ivector_nth_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
+        (idx_lt : (idx < n)%nat) :
+        RandomVariable (ivector_sa ivsa) 
+                       (ivector_nth n idx idx_lt ivsa)
+                       (ivector_nth n idx idx_lt).
+  Proof.
+  Admitted.
+
+  
 End ps_ivector_product.
