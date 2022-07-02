@@ -109,6 +109,7 @@ QLEARN = \
 	Dvoretzky \
 	qlearn_aux \
 	qlearn \
+	qlearn_redux \
     infprod \
 	sumtest \
    	slln \
