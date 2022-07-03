@@ -1025,6 +1025,50 @@ Section ivector.
 
   Global Existing Instance ivector_sa.
   
+  Global Instance ivector_sa_proper {n} {T} :
+    Proper (ivector_Forall2 equiv ==> equiv) (@ivector_sa n T).
+  Proof.
+    unfold Proper, respectful; simpl.
+    induction n; simpl.
+    - reflexivity.
+    - intros [??][??] [??] ?.
+      split.
+      + apply product_sa_proper; trivial.
+        * now symmetry.
+        * apply IHn.
+          now symmetry.
+      + apply product_sa_proper; trivial.
+        now apply IHn.
+  Qed.
+
+  Lemma ivector_sa_sa {n} {T} {σ:SigmaAlgebra T} (a:ivector (event σ) n) :
+    sa_sigma (ivector_sa (ivector_const n σ))
+             (fun v => ivector_Forall2 (fun a x => event_pre a x) a v).
+  Proof.
+    revert a.
+    induction n; [firstorder |].
+    intros [hd tl].
+    apply generated_sa_sub.
+    red.
+    exists (event_pre hd).
+    exists  (fun v : ivector T n => ivector_Forall2 (fun (a0 : event σ) (x : T) => a0 x) tl v).
+    split; [| split].
+    - now destruct hd.
+    - apply IHn.
+    - reflexivity.
+  Qed.
+
+  Definition ivector_sa_event {n} {T} {σ:SigmaAlgebra T} (a:ivector (event σ) n)
+    : event (ivector_sa (ivector_const n σ))
+  := exist _ _ (ivector_sa_sa a).
+
+  Lemma ivector_sa_event_as_prod {n} {T} {σ:SigmaAlgebra T} (hd:event σ) (tl:ivector (event σ) n) :
+    ivector_sa_event (n:=S n) (hd, tl) === product_sa_event hd (ivector_sa_event tl).
+  Proof.
+    unfold equiv, event_equiv; simpl.
+    reflexivity.
+  Qed.
+
 End ivector.
 
 Definition is_pre_partition_list {T} (l:list (pre_event T)) :=

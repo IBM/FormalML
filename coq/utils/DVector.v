@@ -1,3 +1,4 @@
+Require Import Program.Basics.
 Require Import List Lia.
 Require Import Eqdep_dec.
 Require Import Equivalence EquivDec.
@@ -1048,5 +1049,80 @@ Section ivector.
              | S m' => fun pf '(hd,tl) => (hd, ivector_take n' m' (le_S_n _ _ pf) tl)
              end
     end.
+
+  Fixpoint ivector_map {A B} {n} (f : A -> B ) : ivector A n -> ivector B n
+    := match n with
+       | 0%nat => fun _ => tt
+       | S _ =>
+           fun '(hd,tl) => (f hd, ivector_map f tl)
+       end.
+
+  Fixpoint ivector_zip {A B} {n} : ivector A n -> ivector B n -> ivector (A*B) n
+    := match n with
+       | 0%nat => fun _ _ => tt
+       | S _ =>
+           fun '(hd1,tl1) '(hd2,tl2) => ((hd1,hd2), ivector_zip tl1 tl2)
+       end.
+
+  Fixpoint ivector_fold_left {A} {n} {T} (f : A -> T -> A) : ivector T n -> A -> A
+    := match n with
+       | 0%nat => fun _ acc => acc
+       | S _ =>
+           fun '(hd,tl) acc => ivector_fold_left f tl (f acc hd)
+       end.
+
+  Fixpoint ivector_fold_right {A} {n} {T} (f : T -> A -> A) (init:A) : ivector T n -> A
+    := match n with
+       | 0%nat => fun _ => init
+       | S _ =>
+           fun '(hd,tl) => f hd (ivector_fold_right f init tl)
+       end.
+
+  Fixpoint ivector_Forall2 {A B} {n} (R:A->B->Prop): ivector A n -> ivector B n -> Prop
+    := match n with
+       | 0%nat => fun _ _ => True
+       | S _ => fun '(hd1,tl1) '(hd2,tl2) =>
+                 R hd1 hd2 /\ ivector_Forall2 R tl1 tl2
+       end.
+
+  Global Instance ivector_Forall2_refl {A} {n} (R:A->A->Prop) {refl:Reflexive R} : Reflexive (ivector_Forall2 (n:=n) R).
+  Proof.
+    red.
+    induction n; simpl; trivial.
+    intros [??]; auto.
+  Qed.
+
+  Global Instance ivector_Forall2_sym {A} {n} (R:A->A->Prop) {sym:Symmetric R} : Symmetric (ivector_Forall2 (n:=n) R).
+  Proof.
+    red.
+    induction n; simpl; trivial.
+    intros [??][??]; firstorder.
+  Qed.
+
+  Global Instance ivector_Forall2_trans {A} {n} (R:A->A->Prop) {trans:Transitive R} : Transitive (ivector_Forall2 (n:=n) R).
+  Proof.
+    red.
+    induction n; simpl; trivial.
+    intros [??][??][??]; firstorder.
+  Qed.
+
+  Global Instance ivector_Forall2_equiv {A} {n} (R:A->A->Prop) {trans:Equivalence R} : Equivalence (ivector_Forall2 (n:=n) R).
+  Proof.
+    constructor; typeclasses eauto.
+  Qed.
+  
+  Global Instance ivector_Forall2_pre {A} {n} (R:A->A->Prop) {trans:PreOrder R} : PreOrder (ivector_Forall2 (n:=n) R).
+  Proof.
+    constructor; typeclasses eauto.
+  Qed.
+
+  Global Instance ivector_Forall2_part {A} {n} (eqA:A->A->Prop) {equivA:Equivalence eqA} (R:A->A->Prop) {preo:PreOrder R} {part:PartialOrder eqA R} : PartialOrder (ivector_Forall2 (n:=n) eqA) (ivector_Forall2 (n:=n) R).
+  Proof.
+    repeat red.
+    unfold relation_conjunction, predicate_intersection, pointwise_extension, flip.
+    induction n; simpl; [tauto |].
+    intros [??][??].
+    firstorder.
+  Qed.
 
 End ivector.
