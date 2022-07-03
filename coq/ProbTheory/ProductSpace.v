@@ -770,37 +770,218 @@ Section ps_ivector_product.
   Fixpoint ivector_ps {n} {T} {σ:SigmaAlgebra T} : ivector (ProbSpace σ) n -> ProbSpace (ivector_sa (ivector_const n σ))
     := match n with
        | 0%nat => fun _ => trivial_ps (inhabits tt)
-       | S m => fun '(hd,tl) => product_ps hd (ivector_ps tl)
+       | S _ => fun '(hd,tl) => product_ps hd (ivector_ps tl)
        end.
 
-  Lemma ivector_nth_0_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) 
-        (npos : (0 < n)%nat) :
-        RandomVariable (ivector_sa ivsa) 
-                       (ivector_nth n 0 npos ivsa)
-                       (ivector_nth n 0 npos).
+  Fixpoint ivector_fold_left {A} {n} {T} (f : A -> T -> A) : ivector T n -> A -> A
+    := match n with
+       | 0%nat => fun _ acc => acc
+       | S _ =>
+           fun '(hd,tl) acc => ivector_fold_left f tl (f acc hd)
+       end.
+
+  Fixpoint ivector_fold_right {A} {n} {T} (f : T -> A -> A) (init:A) : ivector T n -> A
+    := match n with
+       | 0%nat => fun _ => init
+       | S _ =>
+           fun '(hd,tl) => f hd (ivector_fold_right f init tl)
+       end.
+
+  Fixpoint ivector_Forall2 {A B} {n} (R:A->B->Prop): ivector A n -> ivector B n -> Prop
+    := match n with
+       | 0%nat => fun _ _ => True
+       | S _ => fun '(hd1,tl1) '(hd2,tl2) =>
+                 R hd1 hd2 /\ ivector_Forall2 R tl1 tl2
+       end.
+
+  Global Instance ivector_Forall2_refl {A} {n} (R:A->A->Prop) {refl:Reflexive R} : Reflexive (ivector_Forall2 (n:=n) R).
   Proof.
-    red; intros.
-    destruct n; try lia.
-    destruct ivsa.
-    destruct B; simpl; intros.
+    red.
+    induction n; simpl; trivial.
+    intros [??]; auto.
+  Qed.
+
+  Global Instance ivector_Forall2_sym {A} {n} (R:A->A->Prop) {sym:Symmetric R} : Symmetric (ivector_Forall2 (n:=n) R).
+  Proof.
+    red.
+    induction n; simpl; trivial.
+    intros [??][??]; firstorder.
+  Qed.
+
+  Global Instance ivector_Forall2_trans {A} {n} (R:A->A->Prop) {trans:Transitive R} : Transitive (ivector_Forall2 (n:=n) R).
+  Proof.
+    red.
+    induction n; simpl; trivial.
+    intros [??][??][??]; firstorder.
+  Qed.
+
+  Global Instance ivector_Forall2_equiv {A} {n} (R:A->A->Prop) {trans:Equivalence R} : Equivalence (ivector_Forall2 (n:=n) R).
+  Proof.
+    constructor; typeclasses eauto.
+  Qed.
+  
+  Global Instance ivector_Forall2_pre {A} {n} (R:A->A->Prop) {trans:PreOrder R} : PreOrder (ivector_Forall2 (n:=n) R).
+  Proof.
+    constructor; typeclasses eauto.
+  Qed.
+
+  Global Instance ivector_Forall2_part {A} {n} (eqA:A->A->Prop) {equivA:Equivalence eqA} (R:A->A->Prop) {preo:PreOrder R} {part:PartialOrder eqA R} : PartialOrder (ivector_Forall2 (n:=n) eqA) (ivector_Forall2 (n:=n) R).
+  Proof.
+    repeat red.
+    unfold relation_conjunction, predicate_intersection, pointwise_extension, flip.
+    induction n; simpl; [tauto |].
+    intros [??][??].
+    firstorder.
+  Qed.
+
+  Global Instance ivector_sa_proper {n} {T} :
+    Proper (ivector_Forall2 equiv ==> equiv) (@ivector_sa n T).
+  Proof.
+    unfold Proper, respectful; simpl.
+    induction n; simpl.
+    - reflexivity.
+    - intros [??][??] [??] ?.
+      split.
+      + apply product_sa_proper; trivial.
+        * now symmetry.
+        * apply IHn.
+          now symmetry.
+      + apply product_sa_proper; trivial.
+        now apply IHn.
+  Qed.
+  
+  Lemma ivector_sa_sa {n} {T} {σ:SigmaAlgebra T} (a:ivector (event σ) n) :
+    sa_sigma (ivector_sa (ivector_const n σ))
+             (fun v => ivector_Forall2 (fun a x => event_pre a x) a v).
+  Proof.
+    revert a.
+    induction n; [firstorder |].
+    intros [hd tl].
+    apply generated_sa_sub.
+    red.
+    exists (event_pre hd).
+    exists  (fun v : ivector T n => ivector_Forall2 (fun (a0 : event σ) (x : T) => a0 x) tl v).
+    split; [| split].
+    - now destruct hd.
+    - apply IHn.
+    - reflexivity.
+  Qed.
+
+  Definition ivector_sa_event {n} {T} {σ:SigmaAlgebra T} (a:ivector (event σ) n)
+    : event (ivector_sa (ivector_const n σ))
+  := exist _ _ (ivector_sa_sa a).
+
+  Fixpoint ivector_map {A B} {n} (f : A -> B ) : ivector A n -> ivector B n
+    := match n with
+       | 0%nat => fun _ => tt
+       | S _ =>
+           fun '(hd,tl) => (f hd, ivector_map f tl)
+       end.
+
+  Fixpoint ivector_zip {A B} {n} : ivector A n -> ivector B n -> ivector (A*B) n
+    := match n with
+       | 0%nat => fun _ _ => tt
+       | S _ =>
+           fun '(hd1,tl1) '(hd2,tl2) => ((hd1,hd2), ivector_zip tl1 tl2)
+       end.
+
+
+  Lemma ivector_sa_event_as_prod {n} {T} {σ:SigmaAlgebra T} (hd:event σ) (tl:ivector (event σ) n) :
+    ivector_sa_event (n:=S n) (hd, tl) === product_sa_event hd (ivector_sa_event tl).
+  Proof.
+    unfold equiv, event_equiv; simpl.
+    reflexivity.
+  Qed.
+
+  Theorem ivector_sa_product {n} {T} {σ:SigmaAlgebra T} (vps:ivector (ProbSpace σ) n)
+          (ve:ivector (event σ) n)
+    :
+    ps_P (ProbSpace:=ivector_ps vps) (ivector_sa_event ve)
+    = ivector_fold_left Rmult (ivector_map (fun '(p,e) => ps_P (ProbSpace:=p) e) (ivector_zip vps ve)) 1.
+  Proof.
+    cut (forall acc, ps_P (ProbSpace:=ivector_ps vps) (ivector_sa_event ve) * acc =
+                  ivector_fold_left Rmult (ivector_map (fun '(p, e) => ps_P e) (ivector_zip vps ve)) acc).
+    { intros HH; rewrite <- HH; lra. }
+    revert vps ve.
+    induction n; simpl.
+    - intros.
+      match_destr.
+      + lra.
+      + elim n.
+        exists tt; trivial.
+    - intros [??] [??] acc.
+      rewrite <- IHn.
+      rewrite ivector_sa_event_as_prod.
+      rewrite product_sa_product.
+      lra.
+  Qed.
+
+  Global Instance fst_rv {T1 T2} (a:SigmaAlgebra T1) (b:SigmaAlgebra T2) :
+    RandomVariable (product_sa a b)
+                   a
+                   fst.
+  Proof.
+    intros ???.
     apply H.
     red.
-    exists x.
-    exists pre_Ω.
-    split; trivial.
-    split; [apply sa_all |].
-    intro z; destruct z; simpl.
-    unfold pre_Ω.
-    tauto.
+    exists (event_pre B).
+    exists (pre_Ω).
+    repeat split.
+    - now destruct B.
+    - apply sa_all.
+    - destruct x.
+      intros HH; split.
+      + apply HH.
+      + unfold pre_Ω; trivial.
+    - destruct x; intros [HH _].
+      red; simpl.
+      apply HH.
   Qed.
-    
+
+  Global Instance snd_rv {T1 T2} (a:SigmaAlgebra T1) (b:SigmaAlgebra T2) :
+    RandomVariable (product_sa a b)
+                   b
+                   snd.
+  Proof.
+    intros ???.
+    apply H.
+    red.
+    exists (pre_Ω).
+    exists (event_pre B).
+    repeat split.
+    - apply sa_all.
+    - now destruct B.
+    - destruct x.
+      intros HH; split.
+      + unfold pre_Ω; trivial.
+      + apply HH.
+    - destruct x; intros [_ HH].
+      red; simpl.
+      apply HH.
+  Qed.
+
   Lemma ivector_nth_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
         (idx_lt : (idx < n)%nat) :
         RandomVariable (ivector_sa ivsa) 
                        (ivector_nth n idx idx_lt ivsa)
                        (ivector_nth n idx idx_lt).
   Proof.
-  Admitted.
-
+    revert ivsa idx idx_lt.
+    induction n; simpl; [lia |].
+    intros [??] idx idx_lt.
+    destruct idx.
+    - apply fst_rv.
+    - generalize compose_rv; intros HH.
+      cut (
+          RandomVariable (product_sa s (ivector_sa i)) (ivector_nth n idx (lt_S_n idx n idx_lt) i)
+                         (ivector_nth n idx (lt_S_n idx n idx_lt) ∘ snd)).
+      {
+        apply RandomVariable_proper; try reflexivity.
+        now intros [??].
+      }
+      apply (compose_rv (dom2:=ivector_sa i)).
+      + apply snd_rv.
+      + apply IHn.
+  Qed.
   
 End ps_ivector_product.
