@@ -1125,4 +1125,22 @@ Section ivector.
     firstorder.
   Qed.
 
+  Fixpoint ivector_Forall {A} {n} (P:A->Prop): ivector A n -> Prop
+    := match n with
+       | 0%nat => fun _ => True
+       | S _ => fun '(hd,tl) =>
+                 P hd /\ ivector_Forall P tl
+       end.
+  
+  Lemma ivector_Forall2_Forall_zip  {A B} {n} (R:A->B->Prop) (v1:ivector A n) (v2:ivector B n) :
+    ivector_Forall2 R v1 v2 <-> ivector_Forall (fun '(a,b) => R a b) (ivector_zip v1 v2).
+  Proof.
+    revert v1 v2.
+    induction n; simpl; [tauto |].
+    intros [??] [??].
+    now rewrite IHn.
+  Qed.
+
+  
+
 End ivector.
