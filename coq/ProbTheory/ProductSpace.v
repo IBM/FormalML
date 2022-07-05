@@ -796,53 +796,6 @@ Section ps_ivector_product.
       lra.
   Qed.
 
-  Global Instance fst_rv {T1 T2} (a:SigmaAlgebra T1) (b:SigmaAlgebra T2) :
-    RandomVariable (product_sa a b)
-                   a
-                   fst.
-  Proof.
-    intros ???.
-    apply H.
-    red.
-    exists (event_pre B).
-    exists (pre_Ω).
-    repeat split.
-    - now destruct B.
-    - apply sa_all.
-    - destruct x.
-      intros HH; split.
-      + apply HH.
-      + unfold pre_Ω; trivial.
-    - destruct x; intros [HH _].
-      red; simpl.
-      apply HH.
-  Qed.
-
-  Global Instance snd_rv {T1 T2} (a:SigmaAlgebra T1) (b:SigmaAlgebra T2) :
-    RandomVariable (product_sa a b)
-                   b
-                   snd.
-  Proof.
-    intros ???.
-    apply H.
-    red.
-    exists (pre_Ω).
-    exists (event_pre B).
-    repeat split.
-    - apply sa_all.
-    - now destruct B.
-    - destruct x.
-      intros HH; split.
-      + unfold pre_Ω; trivial.
-      + apply HH.
-    - destruct x; intros [_ HH].
-      red; simpl.
-      apply HH.
-  Qed.
-
-  (* pair_rv = product_sa_rv *)
-  (* another name for consistency *)
-
   Lemma ivector_nth_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
         (idx_lt : (idx < n)%nat) :
         RandomVariable (ivector_sa ivsa) 
