@@ -840,6 +840,9 @@ Section ps_ivector_product.
       apply HH.
   Qed.
 
+  (* pair_rv = product_sa_rv *)
+  (* another name for consistency *)
+
   Lemma ivector_nth_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
         (idx_lt : (idx < n)%nat) :
         RandomVariable (ivector_sa ivsa) 
@@ -863,5 +866,36 @@ Section ps_ivector_product.
       + apply snd_rv.
       + apply IHn.
   Qed.
-  
+
+  Lemma ivector_take_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
+        (idx_le : (idx <= n)%nat) :
+        RandomVariable (ivector_sa ivsa) 
+                       (ivector_sa (ivector_take n idx idx_le ivsa))
+                       (ivector_take n idx idx_le).
+  Proof.
+    revert ivsa idx idx_le.
+    induction n; simpl.
+    - intros.
+      destruct idx; [| lia].
+      apply rvconst.
+    - intros [??] idx idx_le.
+      destruct idx.
+      + simpl.
+        generalize (rvconst (product_sa s (ivector_sa i)) (trivial_sa ()) ()).
+        apply RandomVariable_proper; try reflexivity.
+        intros [??]; reflexivity.
+      + simpl.
+        cut (RandomVariable (product_sa s (ivector_sa i))
+                            (product_sa s (ivector_sa (ivector_take n idx (le_S_n idx n idx_le) i)))
+                            (fun x => (fst x, ivector_take n idx (le_S_n idx n idx_le) (snd x)))).
+        { apply RandomVariable_proper; try reflexivity.
+          intros [??]; reflexivity.
+        }
+        apply product_sa_rv.
+        * apply fst_rv.
+        * apply (compose_rv (dom2:= (ivector_sa i))).
+          -- apply snd_rv.
+          -- apply IHn.
+  Qed.
+
 End ps_ivector_product.
