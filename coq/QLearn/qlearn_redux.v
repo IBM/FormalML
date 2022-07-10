@@ -941,14 +941,73 @@ Section stuff.
       + apply M.(fs).
   Qed.
 
+  (* uses functional extensionality *)
+  Local Instance eqdec_finite_fun_ext {A B} {fin:Finite A} {decA:EqDec A eq} {decB:EqDec B eq}:
+    EqDec (A -> B) eq.
+  Proof.
+    intros ??.
+    destruct fin.
+    cut ({forall a, In a elms -> x a = y a} + {~ (forall a, In a elms -> x a = y a)}).
+    {
+      intros [?|?].
+      - left; apply functional_extensionality; intros a.
+        auto.
+      - right; intros eqq.
+        red in eqq.
+        subst.
+        now apply n; intros.
+    }         
+    clear finite.
+    induction elms.
+    - left; simpl; tauto.
+    - destruct (decB (x a) (y a)).
+      + destruct IHelms.
+        * left; simpl; intros a' [?|inn]; subst; auto.
+        * right; intros HH; simpl in *; eauto.
+      + right; intros HH; simpl in *.
+        elim c; apply HH; eauto.
+  Qed.
+
+    (* uses functional extensionality *)
+  Local Instance eqdec_finite_fun_dep_ext {A} {B:A->Type} {fin:Finite A} {decA:EqDec A eq} {decB:forall a, EqDec (B a) eq}:
+    EqDec (forall a, B a) eq.
+  Proof.
+    intros ??.
+    destruct fin.
+    cut ({forall a, In a elms -> x a = y a} + {~ (forall a, In a elms -> x a = y a)}).
+    {
+      intros [?|?].
+      - left; apply functional_extensionality_dep; intros a.
+        auto.
+      - right; intros eqq.
+        red in eqq.
+        subst.
+        now apply n; intros.
+    }         
+    clear finite.
+    induction elms.
+    - left; simpl; tauto.
+    - destruct (decB _ (x a) (y a)).
+      + destruct IHelms.
+        * left; simpl; intros a' [?|inn]; subst; auto.
+        * right; intros HH; simpl in *; eauto.
+      + right; intros HH; simpl in *.
+        elim c; apply HH; eauto.
+  Qed.
+
   Instance space_eqdec : EqDec space eq.
   Proof.
-  Admitted.
+    unfold space.
+    apply @eqdec_finite_fun_dep_ext.
+    - apply M.(fs).
+    - apply M.(st_eqdec).
+    - intros.
+      apply @eqdec_finite_fun_ext.
+      + apply M.(fa).
+      + apply act_eqdec.
+      + apply M.(st_eqdec).
+  Qed.
   
-(*  Instance space_countable : Countable space.
-  Proof.
- *)  
-
   Context (f: forall (s:M.(state)), M.(act) s -> M.(state) -> nonnegreal)
           (fsum_one : forall (s:M.(state)) (a : M.(act) s),
               fold_right Rplus 0 (map (fun s' => nonneg (f s a s')) 
