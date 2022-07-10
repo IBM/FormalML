@@ -949,7 +949,10 @@ Section stuff.
   Proof.
  *)  
 
-  Context (f: forall (s:M.(state)), M.(act) s -> M.(state) -> nonnegreal).
+  Context (f: forall (s:M.(state)), M.(act) s -> M.(state) -> nonnegreal)
+          (fsum_one : forall (s:M.(state)) (a : M.(act) s),
+              fold_right Rplus 0 (map (fun s' => nonneg (f s a s')) 
+                                      (nodup M.(st_eqdec) (@elms _ M.(fs)))) = 1).
 
   Definition space_pmf_pmf
              (sp:space) : R
@@ -987,9 +990,11 @@ Section stuff.
     destruct H as [? [??]]; subst.
     apply cond_nonneg.
   Qed.
-  
+
   Lemma space_pmf_one : countable_sum space_pmf_pmf 1.
   Proof.
+    unfold countable_sum.
+    
   Admitted.
   
   Definition space_pmf : prob_mass_fun space
