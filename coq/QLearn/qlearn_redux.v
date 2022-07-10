@@ -1,12 +1,12 @@
 Require Import List.
-Require Import mdp qvalues pmf_monad Finite.
+Require Import mdp qvalues pmf_monad Finite EquivDec.
 Require Import Reals RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia PushNeg.
 Require Import RandomVariableL2 infprod Dvoretzky Expectation.
 Require Import RandomVariableFinite RbarExpectation.
 Require Import Classical.
-Require Import SigmaAlgebras ProbSpace.
+Require Import SigmaAlgebras ProbSpace DiscreteProbSpace.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -922,3 +922,83 @@ Section MDP.
 End MDP.
 
            
+Section stuff.
+
+  Context (M : MDP).
+  Context (act_eqdec:forall s, EqDec (act M s) eq).
+  
+  Definition space := forall s:M.(state), M.(act) s -> M.(state).
+
+  Instance space_finite : Finite space.
+  Proof.
+    unfold space.
+    apply (@Finite_fun_dep M.(state) M.(st_eqdec)).
+    - apply M.(fs).
+    - intros.
+      apply @Finite_fun.
+      + trivial.
+      + apply M.(fa).
+      + apply M.(fs).
+  Qed.
+
+  Instance space_eqdec : EqDec space eq.
+  Proof.
+  Admitted.
+  
+(*  Instance space_countable : Countable space.
+  Proof.
+ *)  
+
+  Context (f: forall (s:M.(state)), M.(act) s -> M.(state) -> nonnegreal).
+
+  Definition space_pmf_pmf
+             (sp:space) : R
+    :=
+    fold_right Rmult 1
+               (map
+                  (fun s =>
+                     fold_right Rmult 1
+                                (map
+                                   (fun a => nonneg (f s a (sp s a)))
+                                   (nodup (act_eqdec s) (@elms _ (M.(fa) s))))
+                  )
+                  (nodup M.(st_eqdec) (@elms _ M.(fs)))).
+
+  Lemma fold_right_Rmult_nneg acc l :
+    0 <= acc ->
+    Forall (fun x => 0 <= x) l ->
+    0 <= fold_right Rmult acc l.
+  Proof.
+    revert acc.
+    induction l; simpl; trivial; intros.
+    invcs H0.
+    apply Rmult_le_pos; auto.
+  Qed.
+  
+  Lemma space_pmf_nneg sp : 0 <= space_pmf_pmf sp.
+  Proof.
+    apply fold_right_Rmult_nneg; [lra |].
+    apply Forall_forall; intros.
+    apply in_map_iff in H.
+    destruct H as [? [??]]; subst.
+    apply fold_right_Rmult_nneg; [lra |].
+    apply Forall_forall; intros.
+    apply in_map_iff in H.
+    destruct H as [? [??]]; subst.
+    apply cond_nonneg.
+  Qed.
+  
+  Lemma space_pmf_one : countable_sum space_pmf_pmf 1.
+  Proof.
+  Admitted.
+  
+  Definition space_pmf : prob_mass_fun space
+    := {|
+      pmf_pmf := space_pmf_pmf
+    ; pmf_pmf_pos := space_pmf_nneg
+    ; pmf_pmf_one := space_pmf_one
+    |}.
+      
+  Instance space_ps : ProbSpace (discrete_sa space) := discrete_ps space_pmf.
+
+End stuff.
