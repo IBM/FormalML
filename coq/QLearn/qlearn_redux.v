@@ -924,14 +924,9 @@ End MDP.
            
 Section stuff.
 
-  Lemma fold_right_perm_unit {A : Type} (f : A -> A -> A) (unit : A)
-        (eq_dec : forall x y : A, {x = y} + {x <> y}) :
-    (forall x y z : A, f x (f y z) = f (f x y) z) ->
-    (forall x y : A, f x y = f y x) ->
-    (forall x : A, f unit x = x) ->
-    forall (l1 l2 : list A) (unit : A),
-      Permutation.Permutation (remove eq_dec unit l1) (remove eq_dec unit l2) ->
-      fold_right f unit l1 = fold_right f unit l2.
+   Lemma list_sum_perm_eq_nzero (l1 l2 : list R) :
+    Permutation.Permutation (remove Req_EM_T 0 l1) (remove Req_EM_T 0 l2) ->
+    list_sum l1 = list_sum l2.
   Admitted.
 
   Context (M : MDP).
@@ -1019,8 +1014,8 @@ Section stuff.
   
   Context (f: forall (s:M.(state)), M.(act) s -> M.(state) -> nonnegreal)
           (fsum_one : forall (s:M.(state)) (a : M.(act) s),
-              fold_right Rplus 0 (map (fun s' => nonneg (f s a s')) 
-                                      (nodup M.(st_eqdec) (@elms _ M.(fs)))) = 1).
+              list_sum (map (fun s' => nonneg (f s a s')) 
+                            (nodup M.(st_eqdec) (@elms _ M.(fs)))) = 1).
 
   Definition fun_space_pmf_pmf
              (sp:fun_space) : R
@@ -1165,7 +1160,6 @@ Section stuff.
       lia.
   Qed.
 
-  
   Lemma sa_space_pmf_one (sa : sigT M.(act)) : 
     @countable_sum _ (countable_finite_eqdec _ M.(st_eqdec)) (sa_space_pmf_pmf sa) 1.
   Proof.
@@ -1180,10 +1174,11 @@ Section stuff.
       unfold sa_space_pmf_pmf.
       destruct sa.
       specialize (fsum_one x0 a).
-      rewrite sum_f_R0'_as_fold_right.
+      rewrite sum_f_R0'_list_sum.
       rewrite <- fsum_one.
-      rewrite <- fold_right_map.
-      apply fold_right_perm_unit with (unit := 0) (eq_dec := Req_EM_T); try (intros; lra).
+      generalize list_sum_perm_eq_nzero; intros.
+      rewrite list_sum_perm_eq_nzero 
+        with (l2 := (map (fun s' : state M => nonneg (f x0 a s')) (nodup M.(st_eqdec) elms))); trivial.
       admit.
     }
     now rewrite H1 in H.
