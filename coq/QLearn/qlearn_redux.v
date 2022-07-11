@@ -1169,6 +1169,10 @@ Section stuff.
       clear H.
       unfold sa_space_pmf_pmf.
       destruct sa.
+      specialize (fsum_one x0 a).
+      rewrite sum_f_R0'_as_fold_right.
+      rewrite <- fsum_one.
+      
       admit.
     }
     now rewrite H1 in H.
