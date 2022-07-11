@@ -1077,23 +1077,6 @@ Section stuff.
     apply cond_nonneg.
   Qed.
 
-  Lemma fun_space_pmf_finite_sum_one :
-    list_sum (map fun_space_pmf_pmf (nodup fun_space_eqdec (@elms _ fun_space_finite))) = 1.
-    Admitted.
-
-  Lemma fun_space_pmf_one : countable_sum fun_space_pmf_pmf 1.
-  Proof.
-  Admitted.
-  
-  Definition fun_space_pmf : prob_mass_fun fun_space
-    := {|
-      pmf_pmf := fun_space_pmf_pmf
-    ; pmf_pmf_pos := fun_space_pmf_nneg
-    ; pmf_pmf_one := fun_space_pmf_one
-    |}.
-      
-  Instance fun_space_ps : ProbSpace (discrete_sa fun_space) := discrete_ps fun_space_pmf.
-
   Definition sa_space_pmf_pmf (sa : sigT M.(act)) : M.(state) -> R
     := let (s,a) := sa in f s a.
 
@@ -1183,6 +1166,41 @@ Section stuff.
       lia.
   Qed.
 
+  Lemma fun_space_pmf_finite_sum_one :
+    list_sum (map fun_space_pmf_pmf (nodup fun_space_eqdec elms)) = 1.
+    Admitted.
+
+  Lemma fun_space_pmf_one : countable_sum fun_space_pmf_pmf 1.
+  Proof.
+    destruct (finite_countable_inv_sum fun_space_pmf_pmf _ _) as [? [? ?]].
+    unfold countable_sum.
+    assert ((sum_f_R0'
+               (fun k : nat =>
+                  match (@countable_inv fun_space (countable_finite_eqdec _ fun_space_eqdec) k) with
+                  | Some a => fun_space_pmf_pmf a
+                  | None => 0
+                  end) x) = 1).
+    {
+      unfold fun_space_pmf_pmf.
+      generalize fun_space_pmf_finite_sum_one; intros.
+      rewrite sum_f_R0'_list_sum.
+      rewrite <- H1.
+      rewrite list_sum_perm_eq_nzero
+        with (l2 := (map fun_space_pmf_pmf (nodup fun_space_eqdec elms))); trivial.
+      admit.
+    }
+    now rewrite H1 in H.
+  Admitted.
+  
+  Definition fun_space_pmf : prob_mass_fun fun_space
+    := {|
+      pmf_pmf := fun_space_pmf_pmf
+    ; pmf_pmf_pos := fun_space_pmf_nneg
+    ; pmf_pmf_one := fun_space_pmf_one
+    |}.
+
+  Instance fun_space_ps : ProbSpace (discrete_sa fun_space) := discrete_ps fun_space_pmf.
+
   Lemma sa_space_pmf_one (sa : sigT M.(act)) : 
     @countable_sum _ (countable_finite_eqdec _ M.(st_eqdec)) (sa_space_pmf_pmf sa) 1.
   Proof.
@@ -1199,7 +1217,7 @@ Section stuff.
       specialize (fsum_one x0 a).
       rewrite sum_f_R0'_list_sum.
       rewrite <- fsum_one.
-      rewrite list_sum_perm_eq_nzero 
+      rewrite list_sum_perm_eq_nzero
         with (l2 := (map (fun s' : state M => nonneg (f x0 a s')) (nodup M.(st_eqdec) elms))); trivial.
       admit.
     }
