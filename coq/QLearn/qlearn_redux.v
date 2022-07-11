@@ -1076,23 +1076,23 @@ Section stuff.
     apply cond_nonneg.
   Qed.
 
+(*
   Instance countable_state_m : Countable M.(state).
   Proof.
     apply finite_countable.
     - apply st_eqdec.
     - apply M.(fs).
   Qed.
+*)
 
-  Instance countable_finite_eqdec (A : Type) : 
-    Finite A ->
-    EqDec A eq ->
+  Instance countable_finite_eqdec {A : Type} (fsA : Finite A) (eqdec: EqDec A eq) :
     Countable A.
   Proof.
     intros.
     now apply finite_countable.
   Qed.
 
-  Lemma finite_countable_inv ( A : Type) 
+  Lemma finite_countable_inv { A : Type} 
         (fsA : Finite A) (eqdec: EqDec A eq) :
     exists (n:nat), 
       forall m, (m>n)%nat ->
@@ -1115,22 +1115,54 @@ Section stuff.
     apply fsA.
   Qed.
                               
-  Lemma finite_countable_inv_sum ( A : Type) (g : A -> R)
+  Lemma finite_countable_inv_sum { A : Type} (g : A -> R)
     (fsA : Finite A) (eqdec: EqDec A eq) :
     exists (n : nat),
-      countable_sum g (sum_f_R0 (fun k => 
+      countable_sum g (sum_f_R0' (fun k => 
                                     match countable_inv k with
                                     | Some a => g a
                                     | None => 0
                                     end) n).
-    Proof.
-      Admitted.
-
-  Lemma sa_space_pmf_one (sa : sigT M.(act)) : countable_sum (sa_space_pmf_pmf sa) 1.
   Proof.
-    unfold countable_sum, sa_space_pmf_pmf.
-    unfold countable_inv.
-    Admitted.
+    destruct (finite_countable_inv fsA eqdec).
+    exists (S x).
+    unfold countable_sum.
+    generalize (infinite_sum'_split (S x) (fun k : nat => match countable_inv k with
+                       | Some a => g a
+                       | None => 0
+                       end)
+                (sum_f_R0'
+       (fun k : nat => match countable_inv k with
+                       | Some a => g a
+                       | None => 0
+                       end) (S x))); intros.
+    apply H0; clear H0.
+    rewrite Rminus_eq_0.
+    apply infinite_sum'_ext with (s1 := fun _ => 0).
+    - intros.
+      match_case.
+      intros.
+      specialize (H (x0 + S x)%nat).
+      cut_to H; try lia.
+      congruence.
+    - apply infinite_sum'0.
+  Qed.
+
+  Lemma sa_space_pmf_one (sa : sigT M.(act)) : 
+    @countable_sum _ (countable_finite_eqdec _ M.(st_eqdec)) (sa_space_pmf_pmf sa) 1.
+  Proof.
+    destruct (finite_countable_inv_sum (sa_space_pmf_pmf sa) _ M.(st_eqdec)).
+    assert ((sum_f_R0'
+               (fun k : nat =>
+                  match (@countable_inv _ (countable_finite_eqdec _ M.(st_eqdec)) k) with
+                  | Some a => sa_space_pmf_pmf sa a
+                  | None => 0
+                  end) x) = 1).
+    {
+      admit.
+    }
+    now rewrite H0 in H.
+  Admitted.
 
   Definition sa_space_pmf (sa : sigT M.(act)) : prob_mass_fun M.(state)
     := {|
