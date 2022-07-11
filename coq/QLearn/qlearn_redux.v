@@ -1181,7 +1181,6 @@ Section stuff.
                   | None => 0
                   end) x) = 1).
     {
-      unfold fun_space_pmf_pmf.
       generalize fun_space_pmf_finite_sum_one; intros.
       rewrite sum_f_R0'_list_sum.
       rewrite <- H1.
