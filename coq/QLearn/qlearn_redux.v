@@ -1218,9 +1218,55 @@ Section stuff.
       rewrite <- fsum_one.
       rewrite list_sum_perm_eq_nzero
         with (l2 := (map (fun s' : state M => nonneg (f x0 a s')) (nodup M.(st_eqdec) elms))); trivial.
-      admit.
-    }
-    now rewrite H1 in H.
+      assert (perm1:
+               Permutation.Permutation 
+                 (filter (fun x => match x with | Some _ => true | None => false end)
+                         (map (@countable_inv _ (countable_finite_eqdec _ M.(st_eqdec))) (seq 0 x)))
+                 (map Some (nodup M.(st_eqdec) elms))).
+      {
+        apply NoDup_Permutation'.
+        - clear H H0.
+          generalize 0%nat.
+          induction x; simpl; [constructor |]; intros n.
+          match_case; match_case; intros.
+          constructor; trivial.
+          intros inn.
+          apply filter_In in inn.
+          destruct inn as [inn _].
+          apply in_map_iff in inn.
+          destruct inn as [? [? inn]].
+          apply in_seq in inn.
+          apply countable_inv_sound in H.
+          apply countable_inv_sound in H1.
+          assert (n = x1) by congruence.
+          subst.
+          lia.
+        - apply FinFun.Injective_map_NoDup.
+          + red; congruence.
+          + apply NoDup_nodup.
+        - intros so; split; intros inn.
+          + apply filter_In in inn.
+            destruct inn as [??].
+            destruct so; try discriminate.
+            apply in_map.
+            apply nodup_In.
+            apply finite.
+          + apply in_map_iff in inn.
+            destruct inn as [s [? inn]]; subst.
+            apply filter_In.
+            split; trivial.
+            apply in_map_iff.
+            exists (@countable_index _ (countable_finite_eqdec _ M.(st_eqdec)) s).
+            split.
+            * apply countable_inv_index.
+            * apply in_seq.
+              split; try lia.
+              simpl.
+              destruct (Nat.lt_ge_cases (@countable_index _ (countable_finite_eqdec _ M.(st_eqdec)) s) x); trivial.
+              specialize (H0 _ H1).
+              rewrite countable_inv_index in H0.
+              discriminate.
+      }
   Admitted.
 
   Definition sa_space_pmf (sa : sigT M.(act)) : prob_mass_fun M.(state)
