@@ -927,7 +927,20 @@ Section stuff.
   Lemma list_sum_nzero (l : list R) :
     list_sum l = list_sum (remove Req_EM_T 0 l).
   Proof.
-    Admitted.
+    induction l.
+    - now simpl.
+    - destruct (Req_EM_T a 0).
+      + rewrite e.
+        rewrite remove_cons.
+        simpl.
+        rewrite Rplus_0_l.
+        apply IHl.
+      + simpl.
+        match_destr; try lra.
+        simpl.
+        f_equal.
+        apply IHl.
+   Qed.
 
    Lemma list_sum_perm_eq_nzero (l1 l2 : list R) :
     Permutation.Permutation (remove Req_EM_T 0 l1) (remove Req_EM_T 0 l2) ->
