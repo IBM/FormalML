@@ -924,6 +924,16 @@ End MDP.
            
 Section stuff.
 
+  Lemma fold_right_perm_unit {A : Type} (f : A -> A -> A) (unit : A)
+        (eq_dec : forall x y : A, {x = y} + {x <> y}) :
+    (forall x y z : A, f x (f y z) = f (f x y) z) ->
+    (forall x y : A, f x y = f y x) ->
+    (forall x : A, f unit x = x) ->
+    forall (l1 l2 : list A) (unit : A),
+      Permutation.Permutation (remove eq_dec unit l1) (remove eq_dec unit l2) ->
+      fold_right f unit l1 = fold_right f unit l2.
+  Admitted.
+
   Context (M : MDP).
   Context (act_eqdec:forall s, EqDec (act M s) eq).
   
@@ -1155,6 +1165,7 @@ Section stuff.
       lia.
   Qed.
 
+  
   Lemma sa_space_pmf_one (sa : sigT M.(act)) : 
     @countable_sum _ (countable_finite_eqdec _ M.(st_eqdec)) (sa_space_pmf_pmf sa) 1.
   Proof.
@@ -1166,13 +1177,13 @@ Section stuff.
                   | None => 0
                   end) x) = 1).
     {
-      clear H.
       unfold sa_space_pmf_pmf.
       destruct sa.
       specialize (fsum_one x0 a).
       rewrite sum_f_R0'_as_fold_right.
       rewrite <- fsum_one.
-      
+      rewrite <- fold_right_map.
+      apply fold_right_perm_unit with (unit := 0) (eq_dec := Req_EM_T); try (intros; lra).
       admit.
     }
     now rewrite H1 in H.
