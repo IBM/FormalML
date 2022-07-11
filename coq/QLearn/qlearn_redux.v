@@ -1199,7 +1199,6 @@ Section stuff.
       specialize (fsum_one x0 a).
       rewrite sum_f_R0'_list_sum.
       rewrite <- fsum_one.
-      generalize list_sum_perm_eq_nzero; intros.
       rewrite list_sum_perm_eq_nzero 
         with (l2 := (map (fun s' : state M => nonneg (f x0 a s')) (nodup M.(st_eqdec) elms))); trivial.
       admit.
