@@ -1083,10 +1083,53 @@ Section stuff.
     - apply M.(fs).
   Qed.
 
+  Instance countable_finite_eqdec (A : Type) : 
+    Finite A ->
+    EqDec A eq ->
+    Countable A.
+  Proof.
+    intros.
+    now apply finite_countable.
+  Qed.
+
+  Lemma finite_countable_inv ( A : Type) 
+        (fsA : Finite A) (eqdec: EqDec A eq) :
+    exists (n:nat), 
+      forall m, (m>n)%nat ->
+                (@countable_inv A _ m) = None.
+  Proof.
+    intros.
+    exists (list_max (map countable_index (@elms _ fsA))).
+    intros.
+    unfold countable_inv.
+    match_destr.
+    destruct e.
+    generalize (list_max_upper (map countable_index (@elms _ fsA))); intros.
+    destruct (Forall_forall
+                  (fun k : nat => (k <= list_max (map countable_index (@elms _ fsA)))%nat) (map countable_index (@elms _ fsA))).
+    specialize (H1 H0 m).
+    cut_to H1; try lia.
+    apply in_map_iff.
+    exists x.
+    split; trivial.
+    apply fsA.
+  Qed.
+                              
+  Lemma finite_countable_inv_sum ( A : Type) (g : A -> R)
+    (fsA : Finite A) (eqdec: EqDec A eq) :
+    exists (n : nat),
+      countable_sum g (sum_f_R0 (fun k => 
+                                    match countable_inv k with
+                                    | Some a => g a
+                                    | None => 0
+                                    end) n).
+    Proof.
+      Admitted.
+
   Lemma sa_space_pmf_one (sa : sigT M.(act)) : countable_sum (sa_space_pmf_pmf sa) 1.
   Proof.
     unfold countable_sum, sa_space_pmf_pmf.
-
+    unfold countable_inv.
     Admitted.
 
   Definition sa_space_pmf (sa : sigT M.(act)) : prob_mass_fun M.(state)
