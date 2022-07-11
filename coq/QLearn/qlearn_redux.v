@@ -924,8 +924,6 @@ End MDP.
            
 Section stuff.
 
-  Locate list_sum_perm_eq.
-
   Lemma list_sum_nzero (l : list R) :
     list_sum l = list_sum (remove Req_EM_T 0 l).
   Proof.
