@@ -1,5 +1,5 @@
 Require Import List.
-Require Import mdp qvalues pmf_monad Finite EquivDec.
+Require Import mdp qvalues pmf_monad Finite EquivDec Permutation.
 Require Import Reals RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia PushNeg.
@@ -943,7 +943,7 @@ Section stuff.
    Qed.
 
    Lemma list_sum_perm_eq_nzero (l1 l2 : list R) :
-    Permutation.Permutation (remove Req_EM_T 0 l1) (remove Req_EM_T 0 l2) ->
+    Permutation (remove Req_EM_T 0 l1) (remove Req_EM_T 0 l2) ->
     list_sum l1 = list_sum l2.
    Proof.
      intros.
@@ -1219,7 +1219,7 @@ Section stuff.
       rewrite list_sum_perm_eq_nzero
         with (l2 := (map (fun s' : state M => nonneg (f x0 a s')) (nodup M.(st_eqdec) elms))); trivial.
       assert (perm1:
-               Permutation.Permutation 
+               Permutation 
                  (filter (fun x => match x with | Some _ => true | None => false end)
                          (map (@countable_inv _ (countable_finite_eqdec _ M.(st_eqdec))) (seq 0 x)))
                  (map Some (nodup M.(st_eqdec) elms))).
@@ -1267,6 +1267,58 @@ Section stuff.
               rewrite countable_inv_index in H0.
               discriminate.
       }
+      assert (perm2:
+               Permutation
+                 (map (fun so =>
+                         match so with
+                         | None => 0
+                         | Some s =>  nonneg (f x0 a s)
+                         end)
+                       (filter (fun x => match x with | Some _ => true | None => false end)
+                         (map (@countable_inv _ (countable_finite_eqdec _ M.(st_eqdec))) (seq 0 x))))
+                 (map (fun so =>
+                         match so with
+                         | None => 0
+                         | Some s => nonneg (f x0 a s)
+                         end)
+                      (map Some (nodup M.(st_eqdec) elms)))).
+      {
+        now apply Permutation_map.
+      }
+
+      assert (perm3:
+               Permutation
+                 (remove Req_EM_T 0
+                 (map (fun so =>
+                         match so with
+                         | None => 0
+                         | Some s =>  nonneg (f x0 a s)
+                         end)
+                       (filter (fun x => match x with | Some _ => true | None => false end)
+                         (map (@countable_inv _ (countable_finite_eqdec _ M.(st_eqdec))) (seq 0 x)))))
+                 (remove Req_EM_T 0 (map (fun so =>
+                         match so with
+                         | None => 0
+                         | Some s => nonneg (f x0 a s)
+                         end)
+                      (map Some (nodup M.(st_eqdec) elms))))).
+      {
+        (* need to prove lemma about permutation and remove *)
+        admit.
+      }
+      rewrite map_map in perm3.
+      rewrite <- perm3.
+      apply refl_refl.
+      generalize (seq 0 x); intros l.
+      clear.
+      induction l; simpl; trivial.
+      match_option; simpl
+      ; destruct (Req_EM_T _ _)
+      ; trivial
+      ; try lra.
+      congruence.
+    }
+    now rewrite H1 in H.
   Admitted.
 
   Definition sa_space_pmf (sa : sigT M.(act)) : prob_mass_fun M.(state)
