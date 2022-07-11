@@ -927,16 +927,15 @@ Section stuff.
   Context (M : MDP).
   Context (act_eqdec:forall s, EqDec (act M s) eq).
   
-  Definition space := forall s:M.(state), M.(act) s -> M.(state).
+  Definition fun_space := forall s:M.(state), M.(act) s -> M.(state).
 
-  Instance space_finite : Finite space.
+  Instance fun_space_finite : Finite fun_space.
   Proof.
-    unfold space.
+    unfold fun_space.
     apply (@Finite_fun_dep M.(state) M.(st_eqdec)).
     - apply M.(fs).
     - intros.
-      apply @Finite_fun.
-      + trivial.
+      apply Finite_fun.
       + apply M.(fa).
       + apply M.(fs).
   Qed.
@@ -995,9 +994,9 @@ Section stuff.
         elim c; apply HH; eauto.
   Qed.
 
-  Instance space_eqdec : EqDec space eq.
+  Instance fun_space_eqdec : EqDec fun_space eq.
   Proof.
-    unfold space.
+    unfold fun_space.
     apply @eqdec_finite_fun_dep_ext.
     - apply M.(fs).
     - apply M.(st_eqdec).
@@ -1013,8 +1012,8 @@ Section stuff.
               fold_right Rplus 0 (map (fun s' => nonneg (f s a s')) 
                                       (nodup M.(st_eqdec) (@elms _ M.(fs)))) = 1).
 
-  Definition space_pmf_pmf
-             (sp:space) : R
+  Definition fun_space_pmf_pmf
+             (sp:fun_space) : R
     :=
     fold_right Rmult 1
                (map
@@ -1037,7 +1036,7 @@ Section stuff.
     apply Rmult_le_pos; auto.
   Qed.
   
-  Lemma space_pmf_nneg sp : 0 <= space_pmf_pmf sp.
+  Lemma fun_space_pmf_nneg sp : 0 <= fun_space_pmf_pmf sp.
   Proof.
     apply fold_right_Rmult_nneg; [lra |].
     apply Forall_forall; intros.
@@ -1050,19 +1049,53 @@ Section stuff.
     apply cond_nonneg.
   Qed.
 
-  Lemma space_pmf_one : countable_sum space_pmf_pmf 1.
+  Lemma fun_space_pmf_finite_sum_one :
+    fold_right Rplus 0 (map fun_space_pmf_pmf (nodup fun_space_eqdec (@elms _ fun_space_finite))) = 1.
+    Admitted.
+
+  Lemma fun_space_pmf_one : countable_sum fun_space_pmf_pmf 1.
   Proof.
-    unfold countable_sum.
-    
   Admitted.
   
-  Definition space_pmf : prob_mass_fun space
+  Definition fun_space_pmf : prob_mass_fun fun_space
     := {|
-      pmf_pmf := space_pmf_pmf
-    ; pmf_pmf_pos := space_pmf_nneg
-    ; pmf_pmf_one := space_pmf_one
+      pmf_pmf := fun_space_pmf_pmf
+    ; pmf_pmf_pos := fun_space_pmf_nneg
+    ; pmf_pmf_one := fun_space_pmf_one
     |}.
       
-  Instance space_ps : ProbSpace (discrete_sa space) := discrete_ps space_pmf.
+  Instance fun_space_ps : ProbSpace (discrete_sa fun_space) := discrete_ps fun_space_pmf.
+
+  Definition sa_space_pmf_pmf (sa : sigT M.(act)) : M.(state) -> R
+    := let (s,a) := sa in f s a.
+
+  Lemma sa_space_pmf_nneg sa s : 0 <= sa_space_pmf_pmf sa s.
+  Proof.
+    unfold sa_space_pmf_pmf.
+    destruct sa.
+    apply cond_nonneg.
+  Qed.
+
+  Instance countable_state_m : Countable M.(state).
+  Proof.
+    apply finite_countable.
+    - apply st_eqdec.
+    - apply M.(fs).
+  Qed.
+
+  Lemma sa_space_pmf_one (sa : sigT M.(act)) : countable_sum (sa_space_pmf_pmf sa) 1.
+  Proof.
+    unfold countable_sum, sa_space_pmf_pmf.
+
+    Admitted.
+
+  Definition sa_space_pmf (sa : sigT M.(act)) : prob_mass_fun M.(state)
+    := {|
+      pmf_pmf := sa_space_pmf_pmf sa
+    ; pmf_pmf_pos := sa_space_pmf_nneg sa
+    ; pmf_pmf_one := sa_space_pmf_one sa
+      |}.
+
+  Instance sa_space_ps (sa : sigT M.(act)) : ProbSpace (discrete_sa M.(state)) := discrete_ps (sa_space_pmf sa).
 
 End stuff.
