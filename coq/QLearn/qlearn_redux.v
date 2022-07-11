@@ -1122,7 +1122,10 @@ Section stuff.
                                     match countable_inv k with
                                     | Some a => g a
                                     | None => 0
-                                    end) n).
+                                    end) n) /\
+      forall m, (m>=n)%nat ->
+                (@countable_inv A _ m) = None.
+      
   Proof.
     destruct (finite_countable_inv fsA eqdec).
     exists (S x).
@@ -1136,32 +1139,39 @@ Section stuff.
                        | Some a => g a
                        | None => 0
                        end) (S x))); intros.
-    apply H0; clear H0.
-    rewrite Rminus_eq_0.
-    apply infinite_sum'_ext with (s1 := fun _ => 0).
+    split.
+    - apply H0; clear H0.
+      rewrite Rminus_eq_0.
+      apply infinite_sum'_ext with (s1 := fun _ => 0).
+      + intros.
+        match_case.
+        intros.
+        specialize (H (x0 + S x)%nat).
+        cut_to H; try lia.
+        congruence.
+      + apply infinite_sum'0.
     - intros.
-      match_case.
-      intros.
-      specialize (H (x0 + S x)%nat).
-      cut_to H; try lia.
-      congruence.
-    - apply infinite_sum'0.
+      apply H.
+      lia.
   Qed.
 
   Lemma sa_space_pmf_one (sa : sigT M.(act)) : 
     @countable_sum _ (countable_finite_eqdec _ M.(st_eqdec)) (sa_space_pmf_pmf sa) 1.
   Proof.
-    destruct (finite_countable_inv_sum (sa_space_pmf_pmf sa) _ M.(st_eqdec)).
+    destruct (finite_countable_inv_sum (sa_space_pmf_pmf sa) _ M.(st_eqdec)) as [? [? ?]].
     assert ((sum_f_R0'
                (fun k : nat =>
-                  match (@countable_inv _ (countable_finite_eqdec _ M.(st_eqdec)) k) with
+                  match (@countable_inv M.(state) (countable_finite_eqdec _ M.(st_eqdec)) k) with
                   | Some a => sa_space_pmf_pmf sa a
                   | None => 0
                   end) x) = 1).
     {
+      clear H.
+      unfold sa_space_pmf_pmf.
+      destruct sa.
       admit.
     }
-    now rewrite H0 in H.
+    now rewrite H1 in H.
   Admitted.
 
   Definition sa_space_pmf (sa : sigT M.(act)) : prob_mass_fun M.(state)
