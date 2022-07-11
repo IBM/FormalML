@@ -924,10 +924,22 @@ End MDP.
            
 Section stuff.
 
+  Locate list_sum_perm_eq.
+
+  Lemma list_sum_nzero (l : list R) :
+    list_sum l = list_sum (remove Req_EM_T 0 l).
+  Proof.
+    Admitted.
+
    Lemma list_sum_perm_eq_nzero (l1 l2 : list R) :
     Permutation.Permutation (remove Req_EM_T 0 l1) (remove Req_EM_T 0 l2) ->
     list_sum l1 = list_sum l2.
-  Admitted.
+   Proof.
+     intros.
+     rewrite list_sum_nzero.
+     rewrite (list_sum_nzero l2).
+     now apply list_sum_perm_eq.
+   Qed.
 
   Context (M : MDP).
   Context (act_eqdec:forall s, EqDec (act M s) eq).
@@ -1055,7 +1067,7 @@ Section stuff.
   Qed.
 
   Lemma fun_space_pmf_finite_sum_one :
-    fold_right Rplus 0 (map fun_space_pmf_pmf (nodup fun_space_eqdec (@elms _ fun_space_finite))) = 1.
+    list_sum (map fun_space_pmf_pmf (nodup fun_space_eqdec (@elms _ fun_space_finite))) = 1.
     Admitted.
 
   Lemma fun_space_pmf_one : countable_sum fun_space_pmf_pmf 1.
@@ -1167,7 +1179,7 @@ Section stuff.
     assert ((sum_f_R0'
                (fun k : nat =>
                   match (@countable_inv M.(state) (countable_finite_eqdec _ M.(st_eqdec)) k) with
-                  | Some a => sa_space_pmf_pmf sa a
+                  | Some s' => sa_space_pmf_pmf sa s'
                   | None => 0
                   end) x) = 1).
     {
