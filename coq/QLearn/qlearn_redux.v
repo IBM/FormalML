@@ -924,33 +924,6 @@ End MDP.
            
 Section stuff.
 
-  Lemma list_sum_nzero (l : list R) :
-    list_sum l = list_sum (remove Req_EM_T 0 l).
-  Proof.
-    induction l.
-    - now simpl.
-    - destruct (Req_EM_T a 0).
-      + rewrite e.
-        rewrite remove_cons.
-        simpl.
-        rewrite Rplus_0_l.
-        apply IHl.
-      + simpl.
-        match_destr; try lra.
-        simpl.
-        f_equal.
-        apply IHl.
-   Qed.
-
-   Lemma list_sum_perm_eq_nzero (l1 l2 : list R) :
-    Permutation (remove Req_EM_T 0 l1) (remove Req_EM_T 0 l2) ->
-    list_sum l1 = list_sum l2.
-   Proof.
-     intros.
-     rewrite list_sum_nzero.
-     rewrite (list_sum_nzero l2).
-     now apply list_sum_perm_eq.
-   Qed.
 
   Context (M : MDP).
   Context (act_eqdec:forall s, EqDec (act M s) eq).
@@ -1166,40 +1139,6 @@ Section stuff.
       lia.
   Qed.
 
-  Lemma fun_space_pmf_finite_sum_one :
-    list_sum (map fun_space_pmf_pmf (nodup fun_space_eqdec elms)) = 1.
-    Admitted.
-
-  Lemma fun_space_pmf_one : countable_sum fun_space_pmf_pmf 1.
-  Proof.
-    destruct (finite_countable_inv_sum fun_space_pmf_pmf _ _) as [? [? ?]].
-    unfold countable_sum.
-    assert ((sum_f_R0'
-               (fun k : nat =>
-                  match (@countable_inv fun_space (countable_finite_eqdec _ fun_space_eqdec) k) with
-                  | Some a => fun_space_pmf_pmf a
-                  | None => 0
-                  end) x) = 1).
-    {
-      generalize fun_space_pmf_finite_sum_one; intros.
-      rewrite sum_f_R0'_list_sum.
-      rewrite <- H1.
-      rewrite list_sum_perm_eq_nzero
-        with (l2 := (map fun_space_pmf_pmf (nodup fun_space_eqdec elms))); trivial.
-      admit.
-    }
-    now rewrite H1 in H.
-  Admitted.
-  
-  Definition fun_space_pmf : prob_mass_fun fun_space
-    := {|
-      pmf_pmf := fun_space_pmf_pmf
-    ; pmf_pmf_pos := fun_space_pmf_nneg
-    ; pmf_pmf_one := fun_space_pmf_one
-    |}.
-
-  Instance fun_space_ps : ProbSpace (discrete_sa fun_space) := discrete_ps fun_space_pmf.
-
   Global Instance Permutation_remove {A:Type} (eq_dec : forall x y : A, {x = y} + {x <> y}) (a:A) : Proper (@Permutation A ==> @Permutation A) (remove eq_dec a).
   Proof.
     intros x y perm.
@@ -1211,12 +1150,13 @@ Section stuff.
     - etransitivity; eauto.
   Qed.
 
-  Lemma perm_countable_inv_elms (x:nat) :
-    (forall m : nat, (m >= x)%nat -> (@countable_inv M.(state) (countable_finite_eqdec _ M.(st_eqdec)) m) = None) ->
+  Lemma perm_countable_inv_elms (x:nat) {A : Type} 
+        (fsA : Finite A) (eqdec: EqDec A eq) :
+    (forall m : nat, (m >= x)%nat -> (@countable_inv _ (countable_finite_eqdec _ eqdec) m) = None) ->
     Permutation 
       (filter (fun x => match x with | Some _ => true | None => false end)
-              (map (@countable_inv _ (countable_finite_eqdec _ M.(st_eqdec))) (seq 0 x)))
-      (map Some (nodup M.(st_eqdec) elms)).
+              (map (@countable_inv _ (countable_finite_eqdec _ eqdec)) (seq 0 x)))
+      (map Some (nodup eqdec elms)).
     Proof.
         intros.
         apply NoDup_Permutation'.
@@ -1251,17 +1191,100 @@ Section stuff.
             apply filter_In.
             split; trivial.
             apply in_map_iff.
-            exists (@countable_index _ (countable_finite_eqdec _ M.(st_eqdec)) s).
+            exists (@countable_index _ (countable_finite_eqdec _ eqdec) s).
             split.
             * apply countable_inv_index.
             * apply in_seq.
               split; try lia.
               simpl.
-              destruct (Nat.lt_ge_cases (@countable_index _ (countable_finite_eqdec _ M.(st_eqdec)) s) x); trivial.
+              destruct (Nat.lt_ge_cases (@countable_index _ (countable_finite_eqdec _ eqdec) s) x); trivial.
               specialize (H _ H0).
               rewrite countable_inv_index in H.
               discriminate.
      Qed.
+
+  Lemma fun_space_pmf_finite_sum_one :
+    list_sum (map fun_space_pmf_pmf (nodup fun_space_eqdec elms)) = 1.
+    Admitted.
+
+  Lemma fun_space_pmf_one : countable_sum fun_space_pmf_pmf 1.
+  Proof.
+    destruct (finite_countable_inv_sum fun_space_pmf_pmf _ _) as [? [? ?]].
+    unfold countable_sum.
+    assert ((sum_f_R0'
+               (fun k : nat =>
+                  match (@countable_inv fun_space (countable_finite_eqdec _ fun_space_eqdec) k) with
+                  | Some a => fun_space_pmf_pmf a
+                  | None => 0
+                  end) x) = 1).
+    {
+      generalize fun_space_pmf_finite_sum_one; intros.
+      rewrite sum_f_R0'_list_sum.
+      rewrite <- H1.
+      rewrite list_sum_perm_eq_nzero
+        with (l2 := (map fun_space_pmf_pmf (nodup fun_space_eqdec elms))); trivial.
+      generalize (perm_countable_inv_elms x fun_space_finite fun_space_eqdec H0); intro perm1.
+      assert (perm2:
+               Permutation
+                 (map (fun so =>
+                         match so with
+                         | None => 0
+                         | Some s => fun_space_pmf_pmf s
+                         end)
+                       (filter (fun x => match x with | Some _ => true | None => false end)
+                         (map (@countable_inv _ (countable_finite_eqdec _ fun_space_eqdec)) (seq 0 x))))
+                 (map (fun so =>
+                         match so with
+                         | None => 0
+                         | Some s => fun_space_pmf_pmf s
+                         end)
+                      (map Some (nodup fun_space_eqdec elms)))).
+      {
+        now apply Permutation_map.
+      }
+      assert (perm3:
+               Permutation
+                 (remove Req_EM_T 0
+                 (map (fun so =>
+                         match so with
+                         | None => 0
+                         | Some s => fun_space_pmf_pmf s
+                         end)
+                       (filter (fun x => match x with | Some _ => true | None => false end)
+                         (map (@countable_inv _ (countable_finite_eqdec _ fun_space_eqdec)) (seq 0 x)))))
+                 (remove Req_EM_T 0 (map (fun so =>
+                         match so with
+                         | None => 0
+                         | Some s => fun_space_pmf_pmf s
+                         end)
+                      (map Some (nodup fun_space_eqdec elms))))).
+      {
+        now apply Permutation_remove.
+      }
+
+     rewrite map_map in perm3.
+      rewrite <- perm3.
+      apply refl_refl.
+      generalize (seq 0 x); intros l.
+      clear.
+      induction l; simpl; trivial.
+      match_option; simpl
+      ; destruct (Req_EM_T _ _)
+      ; trivial
+      ; try lra.
+      congruence.
+     }
+    now rewrite H1 in H.
+  Qed.
+  
+  Definition fun_space_pmf : prob_mass_fun fun_space
+    := {|
+      pmf_pmf := fun_space_pmf_pmf
+    ; pmf_pmf_pos := fun_space_pmf_nneg
+    ; pmf_pmf_one := fun_space_pmf_one
+    |}.
+
+  Instance fun_space_ps : ProbSpace (discrete_sa fun_space) := discrete_ps fun_space_pmf.
 
   Lemma sa_space_pmf_one (sa : sigT M.(act)) : 
     @countable_sum _ (countable_finite_eqdec _ M.(st_eqdec)) (sa_space_pmf_pmf sa) 1.
@@ -1281,7 +1304,7 @@ Section stuff.
       rewrite <- fsum_one.
       rewrite list_sum_perm_eq_nzero
         with (l2 := (map (fun s' : state M => nonneg (f x0 a s')) (nodup M.(st_eqdec) elms))); trivial.
-      generalize (perm_countable_inv_elms x H0); intro perm1.
+      generalize (perm_countable_inv_elms x M.(fs) M.(st_eqdec) H0); intro perm1.
       assert (perm2:
                Permutation
                  (map (fun so =>

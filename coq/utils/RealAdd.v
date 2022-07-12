@@ -640,6 +640,34 @@ Section list_sum.
     now rewrite H.
   Qed.
 
+  Lemma list_sum_nzero (l : list R) :
+    list_sum l = list_sum (remove Req_EM_T 0 l).
+  Proof.
+    induction l.
+    - now simpl.
+    - destruct (Req_EM_T a 0).
+      + rewrite e.
+        rewrite remove_cons.
+        simpl.
+        rewrite Rplus_0_l.
+        apply IHl.
+      + simpl.
+        match_destr; try lra.
+        simpl.
+        f_equal.
+        apply IHl.
+   Qed.
+
+   Lemma list_sum_perm_eq_nzero (l1 l2 : list R) :
+    Permutation (remove Req_EM_T 0 l1) (remove Req_EM_T 0 l2) ->
+    list_sum l1 = list_sum l2.
+   Proof.
+     intros.
+     rewrite list_sum_nzero.
+     rewrite (list_sum_nzero l2).
+     now apply list_sum_perm_eq.
+   Qed.
+
   Lemma list_sum_map_ext {A : Type} (f g : A -> R) (l : list A):
     (forall x, f x = g x) -> list_sum (map f l) = list_sum (map g l).
   Proof.
