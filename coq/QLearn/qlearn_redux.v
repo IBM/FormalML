@@ -1,5 +1,5 @@
 Require Import List.
-Require Import mdp qvalues pmf_monad Finite EquivDec Permutation.
+Require Import mdp qvalues pmf_monad Finite EquivDec Permutation Morphisms.
 Require Import Reals RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia PushNeg.
@@ -1200,6 +1200,17 @@ Section stuff.
 
   Instance fun_space_ps : ProbSpace (discrete_sa fun_space) := discrete_ps fun_space_pmf.
 
+  Global Instance Permutation_remove {A:Type} (eq_dec : forall x y : A, {x = y} + {x <> y}) (a:A) : Proper (@Permutation A ==> @Permutation A) (remove eq_dec a).
+  Proof.
+    intros x y perm.
+    induction perm; simpl
+    ; repeat match_destr.
+    - reflexivity.
+    - auto.
+    - apply perm_swap.
+    - etransitivity; eauto.
+  Qed.
+
   Lemma sa_space_pmf_one (sa : sigT M.(act)) : 
     @countable_sum _ (countable_finite_eqdec _ M.(st_eqdec)) (sa_space_pmf_pmf sa) 1.
   Proof.
@@ -1303,8 +1314,7 @@ Section stuff.
                          end)
                       (map Some (nodup M.(st_eqdec) elms))))).
       {
-        (* need to prove lemma about permutation and remove *)
-        admit.
+        now apply Permutation_remove.
       }
       rewrite map_map in perm3.
       rewrite <- perm3.
@@ -1319,7 +1329,7 @@ Section stuff.
       congruence.
     }
     now rewrite H1 in H.
-  Admitted.
+  Qed.
 
   Definition sa_space_pmf (sa : sigT M.(act)) : prob_mass_fun M.(state)
     := {|
