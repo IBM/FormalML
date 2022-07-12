@@ -1420,6 +1420,17 @@ Proof.
       intuition.
 Qed.
 
+  Global Instance Permutation_remove {A:Type} (eq_dec : forall x y : A, {x = y} + {x <> y}) (a:A) : Proper (@Permutation A ==> @Permutation A) (remove eq_dec a).
+  Proof.
+    intros x y perm.
+    induction perm; simpl
+    ; repeat match_destr.
+    - reflexivity.
+    - auto.
+    - apply perm_swap.
+    - etransitivity; eauto.
+  Qed.
+
 Lemma remove_other_in {A} {dec : EqDec A eq} (a1 a2:A) l :
   a1 <> a2 ->
   In a1 l <-> In a1 (remove_one a2 l).

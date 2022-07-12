@@ -1139,16 +1139,6 @@ Section stuff.
       lia.
   Qed.
 
-  Global Instance Permutation_remove {A:Type} (eq_dec : forall x y : A, {x = y} + {x <> y}) (a:A) : Proper (@Permutation A ==> @Permutation A) (remove eq_dec a).
-  Proof.
-    intros x y perm.
-    induction perm; simpl
-    ; repeat match_destr.
-    - reflexivity.
-    - auto.
-    - apply perm_swap.
-    - etransitivity; eauto.
-  Qed.
 
   Lemma perm_countable_inv_elms (x:nat) {A : Type} 
         (fsA : Finite A) (eqdec: EqDec A eq) :
