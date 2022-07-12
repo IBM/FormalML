@@ -1211,32 +1211,16 @@ Section stuff.
     - etransitivity; eauto.
   Qed.
 
-  Lemma sa_space_pmf_one (sa : sigT M.(act)) : 
-    @countable_sum _ (countable_finite_eqdec _ M.(st_eqdec)) (sa_space_pmf_pmf sa) 1.
-  Proof.
-    destruct (finite_countable_inv_sum (sa_space_pmf_pmf sa) _ M.(st_eqdec)) as [? [? ?]].
-    assert ((sum_f_R0'
-               (fun k : nat =>
-                  match (@countable_inv M.(state) (countable_finite_eqdec _ M.(st_eqdec)) k) with
-                  | Some s' => sa_space_pmf_pmf sa s'
-                  | None => 0
-                  end) x) = 1).
-    {
-      unfold sa_space_pmf_pmf.
-      destruct sa.
-      specialize (fsum_one x0 a).
-      rewrite sum_f_R0'_list_sum.
-      rewrite <- fsum_one.
-      rewrite list_sum_perm_eq_nzero
-        with (l2 := (map (fun s' : state M => nonneg (f x0 a s')) (nodup M.(st_eqdec) elms))); trivial.
-      assert (perm1:
-               Permutation 
-                 (filter (fun x => match x with | Some _ => true | None => false end)
-                         (map (@countable_inv _ (countable_finite_eqdec _ M.(st_eqdec))) (seq 0 x)))
-                 (map Some (nodup M.(st_eqdec) elms))).
-      {
+  Lemma perm_countable_inv_elms (x:nat) :
+    (forall m : nat, (m >= x)%nat -> (@countable_inv M.(state) (countable_finite_eqdec _ M.(st_eqdec)) m) = None) ->
+    Permutation 
+      (filter (fun x => match x with | Some _ => true | None => false end)
+              (map (@countable_inv _ (countable_finite_eqdec _ M.(st_eqdec))) (seq 0 x)))
+      (map Some (nodup M.(st_eqdec) elms)).
+    Proof.
+        intros.
         apply NoDup_Permutation'.
-        - clear H H0.
+        - clear H.
           generalize 0%nat.
           induction x; simpl; [constructor |]; intros n.
           match_case; match_case; intros.
@@ -1249,7 +1233,7 @@ Section stuff.
           apply in_seq in inn.
           apply countable_inv_sound in H.
           apply countable_inv_sound in H1.
-          assert (n = x1) by congruence.
+          assert (n = x0) by congruence.
           subst.
           lia.
         - apply FinFun.Injective_map_NoDup.
@@ -1274,10 +1258,30 @@ Section stuff.
               split; try lia.
               simpl.
               destruct (Nat.lt_ge_cases (@countable_index _ (countable_finite_eqdec _ M.(st_eqdec)) s) x); trivial.
-              specialize (H0 _ H1).
-              rewrite countable_inv_index in H0.
+              specialize (H _ H0).
+              rewrite countable_inv_index in H.
               discriminate.
-      }
+     Qed.
+
+  Lemma sa_space_pmf_one (sa : sigT M.(act)) : 
+    @countable_sum _ (countable_finite_eqdec _ M.(st_eqdec)) (sa_space_pmf_pmf sa) 1.
+  Proof.
+    destruct (finite_countable_inv_sum (sa_space_pmf_pmf sa) _ M.(st_eqdec)) as [? [? ?]].
+    assert ((sum_f_R0'
+               (fun k : nat =>
+                  match (@countable_inv M.(state) (countable_finite_eqdec _ M.(st_eqdec)) k) with
+                  | Some s' => sa_space_pmf_pmf sa s'
+                  | None => 0
+                  end) x) = 1).
+    {
+      unfold sa_space_pmf_pmf.
+      destruct sa.
+      specialize (fsum_one x0 a).
+      rewrite sum_f_R0'_list_sum.
+      rewrite <- fsum_one.
+      rewrite list_sum_perm_eq_nzero
+        with (l2 := (map (fun s' : state M => nonneg (f x0 a s')) (nodup M.(st_eqdec) elms))); trivial.
+      generalize (perm_countable_inv_elms x H0); intro perm1.
       assert (perm2:
                Permutation
                  (map (fun so =>
@@ -1330,6 +1334,7 @@ Section stuff.
     }
     now rewrite H1 in H.
   Qed.
+
 
   Definition sa_space_pmf (sa : sigT M.(act)) : prob_mass_fun M.(state)
     := {|
