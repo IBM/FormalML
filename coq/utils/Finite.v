@@ -401,3 +401,201 @@ Qed.
   Next Obligation.
     lia.
   Defined.
+
+  Section find_ind.
+
+    Lemma nth_error_nil {A} n : nth_error (@nil A) n = None.
+    Proof.
+      now destruct n; simpl.
+    Qed.
+          
+    Context  {A} {dec:EqDec A eq}.
+
+
+    Fixpoint find_index_aux (l:list A) a (index:nat) : option nat
+      := match l with
+         | nil => None
+         | a'::l' => if a == a'
+                   then Some index
+                   else find_index_aux l' a (S index)
+         end.
+
+    Definition find_index (l:list A) a : option nat
+      := find_index_aux l a 0%nat.
+
+    Lemma find_index_aux_bounds {l:list A} {a} {index:nat} {n} :
+      find_index_aux l a index = Some n ->
+      index <= n < length l + index.
+    Proof.
+      revert index n.
+      induction l; simpl; [congruence |]; intros index n eqq.
+      match_destr_in eqq.
+      - invcs eqq.
+        lia.
+      - specialize (IHl _ _ eqq).
+        lia.
+    Qed.
+    
+    Lemma find_index_bound {l:list A} {a} {n} :
+      find_index l a = Some n ->
+      n < length l.
+    Proof.
+      unfold find_index; intros HH.
+      generalize (find_index_aux_bounds HH); lia.
+    Qed.
+
+    Lemma find_index_aux_correct {l:list A} {a} {index:nat} {n} :
+      find_index_aux l a index = Some n ->
+      nth_error l (n-index)%nat = Some a.
+    Proof.
+      revert index.
+      induction l; simpl; [congruence |].
+      intros index eqq.
+      match_destr_in eqq.
+      - invcs eqq.
+        rewrite PeanoNat.Nat.sub_diag; simpl.
+        congruence.
+      - specialize (IHl _ eqq).
+        generalize (find_index_aux_bounds eqq); intros le1.
+        destruct n; [lia |].
+        replace (S n - index)%nat with (S (n - index))%nat by lia.
+        simpl.
+        now replace (S n - S index)%nat with (n - index)%nat in IHl by lia.
+    Qed.
+
+    Lemma find_index_correct {l:list A} {a} {n} :
+      find_index l a = Some n ->
+      nth_error l n = Some a.
+    Proof.
+      intros HH.
+      specialize (find_index_aux_correct HH).
+      now rewrite PeanoNat.Nat.sub_0_r.
+    Qed.      
+
+    Lemma find_index_aux_first {l:list A} {a} {index:nat} {n} :
+      find_index_aux l a index = Some n ->
+      forall t,
+      nth_error l t = Some a ->
+      (n-index)%nat <= t.
+    Proof.
+      revert index.
+      induction l; simpl; [congruence |].
+      intros index eqq.
+      match_destr_in eqq.
+      - invcs eqq.
+        rewrite PeanoNat.Nat.sub_diag; simpl.
+        lia.
+      - specialize (IHl _ eqq).
+        intros [|]; simpl; intros eqq2.
+        + congruence.
+        + specialize (IHl _ eqq2).
+          lia.
+    Qed.
+
+    
+    Lemma find_index_first {l:list A} {a} {index:nat} {n} :
+      find_index l a = Some n ->
+      forall t,
+      nth_error l t = Some a ->
+      n <= t.
+    Proof.
+      intros eqq t eqq2.
+      specialize (find_index_aux_first eqq _ eqq2).
+      lia.
+    Qed.
+
+    Lemma find_index_aux_complete {l:list A} {a} {index:nat} :
+      In a l ->
+      {t' | find_index_aux l a index = Some t'}.
+    Proof.
+      revert index.
+      induction l; simpl; intros index eqq; [tauto |].
+      - match_destr.
+        + red in e; subst; eauto.
+        + destruct (IHl (S index)); [| eauto].
+          destruct eqq; trivial.
+          congruence.
+    Qed.
+
+    Lemma find_index_complete {l:list A} {a} :
+      In a l ->
+      { t' | find_index l a = Some t'}.
+    Proof.
+      intros.
+      now apply find_index_aux_complete.
+    Qed.
+
+  End find_ind.
+
+  Section fin_ind.
+    Context {A} {dec:EqDec A eq} (fin:Finite A).
+
+    Program Instance finite_nodup : Finite A
+      := {|
+        elms := nodup dec elms
+      |}.
+    Next Obligation.
+      apply nodup_In.
+      apply finite.
+    Qed.
+
+                 
+    Definition finite_index (a:A) : nat
+      := proj1_sig (find_index_complete (finite (Finite:=finite_nodup) a)).
+
+    Lemma finite_index_correct a :
+      nth_error (elms (Finite:=finite_nodup)) (finite_index a) = Some a.
+    Proof.
+      unfold finite_index, proj1_sig; match_destr.
+      now apply find_index_correct.
+    Qed.
+    
+    Lemma finite_index_bound a :
+      finite_index a < length (nodup dec (elms (Finite:=fin))).
+    Proof.
+      unfold finite_index, proj1_sig; match_destr.
+      now apply find_index_bound in e.
+    Qed.
+      
+
+    Lemma bounded_index_pf_irrel n m1 m2 pf1 pf2 :
+      m1 = m2 ->
+      exist (fun n' : nat => (n' < n)%nat) m1 pf1 =
+        exist (fun n' : nat => (n' < n)%nat) m2 pf2.
+    Proof.
+      intros eqq.
+      destruct eqq.
+      assert (pf1 = pf2) by apply digit_pf_irrel.
+      congruence.
+  Qed.
+
+    Definition nth_error_len_some (l:list A) (n:nat) (pf:n < length l) :
+      { x | nth_error l n = Some x}.
+    Proof.
+      apply nth_error_Some in pf.
+      destruct (nth_error l n); [eauto | congruence].
+    Qed.
+        
+    Program Instance finite_index_iso : Isomorphism A {m:nat | (m < length (nodup dec (elms (Finite:=fin))))%nat}
+      := {|
+        iso_f a := exist _ _ (finite_index_bound a)
+      ; iso_b x := proj1_sig (nth_error_len_some (elms (Finite:=finite_nodup)) x _)
+      |}.
+    Next Obligation.
+      apply bounded_index_pf_irrel.
+      unfold proj1_sig; match_destr.
+      unfold finite_index, proj1_sig; match_destr.
+      apply find_index_correct in e0.
+      simpl in e0.
+      eapply NoDup_nth_error; try now rewrite e, e0.
+      - apply NoDup_nodup.
+      - apply nth_error_Some.
+        congruence.
+    Qed.
+    Next Obligation.
+      unfold proj1_sig; match_destr.
+      rewrite finite_index_correct in e.
+      congruence.
+    Qed.
+    
+  End fin_ind.
