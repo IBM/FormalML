@@ -925,6 +925,35 @@ End MDP.
            
 Section stuff.
 
+  (*
+  Lemma list_sum_fold_right1_swap {A B} (f:A->B->R) (l:list A) (funs:list (A->B)) :
+    l <> nil ->
+    list_sum (map (fun g => fold_right Rmult 1 (map (fun x => f x (g x)) l)) funs) =
+      fold_right Rmult 1 (map (fun x => list_sum (map (fun g => f x (g x)) funs)) l).
+  Proof.
+    induction l; simpl; intros nnil; [congruence |].
+    destruct l; simpl.
+    - simpl.
+      rewrite Rmult_1_r.
+      f_equal.
+      apply map_ext; intros.
+      lra.
+    - cut_to IHl; [| congruence].
+      simpl in *.
+      rewrite <- IHl.
+
+    (g1 a * g2 a) + (g1 a0 * g2 a0)
+      
+      (g1 a + g2 a) * (g1 a0 + g2 a0) == g1 a * g1 a0 + g1 a * g2 a0
+    
+      
+    
+    repeat rewrite list_sum_fold_right.
+    repeat rewrite fold_right_map.
+
+  Admitted.
+
+*)
 
   Context (M : MDP).
   Context (act_eqdec:forall s, EqDec (act M s) eq).
@@ -1038,9 +1067,25 @@ Section stuff.
     list_sum (map (fun_space_pmf_inner s) (nodup fun_space_eqdec elms)) = 1.    
   Proof.
 *)    
-
+      
   Lemma fun_space_pmf_finite_sum_one :
     list_sum (map fun_space_pmf_pmf (nodup fun_space_eqdec elms)) = 1.
+  Proof.
+    unfold fun_space_pmf_pmf.
+
+
+
+
+                               
+
+    fold_right Rmult 1 (map (fun s => fold_right Rmult 1 (fun a => f s a)))
+
+
+    simpl.
+    forall s a, ((s, a), (f s a)) = 1
+    
+                  
+    
     Admitted.
 
   Lemma fold_right_Rmult_nneg acc l :
