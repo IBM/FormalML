@@ -6,7 +6,8 @@ Require Import Lra Lia PushNeg.
 Require Import RandomVariableL2 infprod Dvoretzky Expectation.
 Require Import RandomVariableFinite RbarExpectation.
 Require Import Classical.
-Require Import SigmaAlgebras ProbSpace DiscreteProbSpace.
+Require Import SigmaAlgebras ProbSpace DiscreteProbSpace ProductSpace.
+Require Import DVector.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -1025,6 +1026,22 @@ Section stuff.
                                    (nodup (act_eqdec s) (@elms _ (M.(fa) s))))
                   )
                   (nodup M.(st_eqdec) (@elms _ M.(fs)))).
+(*
+
+  Definition fun_space_pmf_inner (s : M.(state)) (sp : fun_space)  : R :=
+     fold_right Rmult 1
+                (map
+                   (fun a => nonneg (f s a (sp s a)))
+                   (nodup (act_eqdec s) (@elms _ (M.(fa) s)))).
+
+  Lemma fun_space_pmf_inner_finite_sum_one (s : M.(state)):
+    list_sum (map (fun_space_pmf_inner s) (nodup fun_space_eqdec elms)) = 1.    
+  Proof.
+*)    
+
+  Lemma fun_space_pmf_finite_sum_one :
+    list_sum (map fun_space_pmf_pmf (nodup fun_space_eqdec elms)) = 1.
+    Admitted.
 
   Lemma fold_right_Rmult_nneg acc l :
     0 <= acc ->
@@ -1193,9 +1210,6 @@ Section stuff.
               discriminate.
      Qed.
 
-  Lemma fun_space_pmf_finite_sum_one :
-    list_sum (map fun_space_pmf_pmf (nodup fun_space_eqdec elms)) = 1.
-    Admitted.
 
   Lemma fun_space_pmf_one : countable_sum fun_space_pmf_pmf 1.
   Proof.
@@ -1357,5 +1371,17 @@ Section stuff.
       |}.
 
   Instance sa_space_ps (sa : sigT M.(act)) : ProbSpace (discrete_sa M.(state)) := discrete_ps (sa_space_pmf sa).
+
+  Definition state_act_index (sa : sigT M.(act)) : nat :=
+    (@finite_index _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _ sa).
+  
+  Fixpoint ivector_from_list {A} (l : list A) : ivector A (length l)
+    := match l with
+       | nil => tt
+       | a :: l' => (a, ivector_from_list l')
+       end.
+  
+  Definition sa_fun_space_ps :=
+    ivector_ps (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))).
 
 End stuff.
