@@ -1,4 +1,4 @@
-Require Import Equivalence EquivDec Morphisms.
+Require Import Equivalence EquivDec Eqdep_dec Morphisms.
 
 Require Import LibUtilsCoqLibAdd.
 
@@ -51,3 +51,21 @@ Proof.
   intros; subst.
   apply refl.
 Qed.
+
+Global Instance sigT_eqdec {A} {B:A->Type} (decA:EqDec A eq) (decB:forall x, EqDec (B x) eq) :
+  EqDec (sigT B) eq.
+Proof.
+  intros [x y] [x' y'].
+  destruct (decA x x').
+  - red in e; subst.
+    destruct (decB _ y y').
+    + left.
+      congruence.
+    + right.
+      intros HH.
+      apply inj_pair2_eq_dec in HH; [| auto].
+      congruence.
+  - right.
+    congruence.
+Defined.
+
