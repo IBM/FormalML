@@ -1073,6 +1073,7 @@ Section stuff.
                   (nodup decAB elms)) = 1.
   Proof.
     intros.
+    
     Admitted.
 
   Lemma fun_space_sa_pmf_finite_sum_one :
