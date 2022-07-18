@@ -925,50 +925,25 @@ End MDP.
            
 Section stuff.
 
-  (*
-  Lemma list_sum_fold_right1_swap {A B} (f:A->B->R) (l:list A) (funs:list (A->B)) :
-    l <> nil ->
-    list_sum (map (fun g => fold_right Rmult 1 (map (fun x => f x (g x)) l)) funs) =
-      fold_right Rmult 1 (map (fun x => list_sum (map (fun g => f x (g x)) funs)) l).
-  Proof.
-    induction l; simpl; intros nnil; [congruence |].
-    destruct l; simpl.
-    - simpl.
-      rewrite Rmult_1_r.
-      f_equal.
-      apply map_ext; intros.
-      lra.
-    - cut_to IHl; [| congruence].
-      simpl in *.
-      rewrite <- IHl.
-
-    (g1 a * g2 a) + (g1 a0 * g2 a0)
-      
-      (g1 a + g2 a) * (g1 a0 + g2 a0) == g1 a * g1 a0 + g1 a * g2 a0
-    
-      
-    
-    repeat rewrite list_sum_fold_right.
-    repeat rewrite fold_right_map.
-
-  Admitted.
-
-*)
-
   Context (M : MDP).
   Context (act_eqdec:forall s, EqDec (act M s) eq).
   
   Definition fun_space := forall s:M.(state), M.(act) s -> M.(state).
+  Definition fun_space_sa := sigT M.(act) -> M.(state).
 
   Instance fun_space_finite : Finite fun_space.
   Proof.
-    unfold fun_space.
     apply (@Finite_fun_dep M.(state) M.(st_eqdec)).
     - apply M.(fs).
     - intros.
       apply Finite_fun.
       + apply M.(fa).
       + apply M.(fs).
+  Qed.
+
+  Instance fun_space_sa_finite : Finite fun_space_sa.
+  Proof.
+    apply (@Finite_fun _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _  _ _); intros.
   Qed.
 
   (* uses functional extensionality *)
@@ -1038,6 +1013,15 @@ Section stuff.
       + apply M.(st_eqdec).
   Qed.
   
+  Instance fun_space_sa_eqdec : EqDec fun_space_sa eq.
+  Proof.
+    unfold fun_space.
+    apply @eqdec_finite_fun_ext.
+    - typeclasses eauto.
+    - apply (sigT_eqdec  M.(st_eqdec) act_eqdec).
+    - apply M.(st_eqdec).
+  Qed.
+
   Context (f: forall (s:M.(state)), M.(act) s -> M.(state) -> nonnegreal)
           (fsum_one : forall (s:M.(state)) (a : M.(act) s),
               list_sum (map (fun s' => nonneg (f s a s')) 
@@ -1055,37 +1039,38 @@ Section stuff.
                                    (nodup (act_eqdec s) (@elms _ (M.(fa) s))))
                   )
                   (nodup M.(st_eqdec) (@elms _ M.(fs)))).
-(*
 
-  Definition fun_space_pmf_inner (s : M.(state)) (sp : fun_space)  : R :=
-     fold_right Rmult 1
-                (map
-                   (fun a => nonneg (f s a (sp s a)))
-                   (nodup (act_eqdec s) (@elms _ (M.(fa) s)))).
+  Definition f_sa (sa : sigT M.(act)) (s' : M.(state)) : nonnegreal := 
+    let (s,a) := sa in f s a s'.
+    
+  Definition fun_space_sa_pmf_pmf (sp:fun_space_sa) : R :=
+    fold_right Rmult 1 (map (fun sa => nonneg (f_sa sa (sp sa)))
+                            (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms)).
 
-  Lemma fun_space_pmf_inner_finite_sum_one (s : M.(state)):
-    list_sum (map (fun_space_pmf_inner s) (nodup fun_space_eqdec elms)) = 1.    
-  Proof.
-*)    
+  Lemma f_sa_sum_one (sa : sigT M.(act)) :
+    list_sum (map (fun s' => nonneg (f_sa sa s')) 
+                  (nodup M.(st_eqdec) (@elms _ M.(fs)))) = 1.
+   Proof.
+     unfold f_sa.
+     destruct sa.
+     apply fsum_one.
+   Qed.
+   
+  Lemma fun_space_sa_pmf_finite_sum_one :
+    list_sum (map fun_space_sa_pmf_pmf 
+                  (nodup fun_space_sa_eqdec elms)) = 1.
+   Proof.
+     generalize (f_sa_sum_one); intros fsa_sum_one.
+     clear fsum_one.
+     unfold fun_space_sa_pmf_pmf.
+     Admitted.
+
+
       
   Lemma fun_space_pmf_finite_sum_one :
     list_sum (map fun_space_pmf_pmf (nodup fun_space_eqdec elms)) = 1.
   Proof.
     unfold fun_space_pmf_pmf.
-
-
-
-
-                               
-
-    fold_right Rmult 1 (map (fun s => fold_right Rmult 1 (fun a => f s a)))
-
-
-    simpl.
-    forall s a, ((s, a), (f s a)) = 1
-    
-                  
-    
     Admitted.
 
   Lemma fold_right_Rmult_nneg acc l :
