@@ -1056,16 +1056,35 @@ Section stuff.
      apply fsum_one.
    Qed.
    
+  Lemma fun_finite_sum_one {A B : Type} 
+        (finA : Finite A)
+        (finB : Finite B)         
+        (decA : EqDec A eq)
+        (decB : EqDec B eq)        
+        (finAB : Finite (A -> B))
+        (decAB : EqDec (A -> B) eq) 
+        (fab : A -> B -> R) :
+    inhabited A ->
+    (forall (a : A),
+        list_sum (map (fab a) (nodup decB elms)) = 1) ->
+    list_sum (map (fun sp =>
+                     (fold_right Rmult 1 (map (fun a => fab a (sp a))
+                                              (nodup decA elms))))
+                  (nodup decAB elms)) = 1.
+  Proof.
+    intros.
+    Admitted.
+
   Lemma fun_space_sa_pmf_finite_sum_one :
+    inhabited (sigT M.(act)) ->
     list_sum (map fun_space_sa_pmf_pmf 
                   (nodup fun_space_sa_eqdec elms)) = 1.
    Proof.
      generalize (f_sa_sum_one); intros fsa_sum_one.
-     clear fsum_one.
      unfold fun_space_sa_pmf_pmf.
-     Admitted.
-
-
+     generalize (fun_finite_sum_one _ _ (sigT_eqdec  M.(st_eqdec) act_eqdec) (M.(st_eqdec)) _ _ f_sa); intros.
+     now apply H.
+   Qed.
       
   Lemma fun_space_pmf_finite_sum_one :
     list_sum (map fun_space_pmf_pmf (nodup fun_space_eqdec elms)) = 1.
