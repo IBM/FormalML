@@ -157,7 +157,10 @@ Section Pmf_PMF.
            filter (fun x0 : A => if dec x (f x0) then true else false)
                   l) (nodup dec (map f l)))) l.
   Proof.
-    rewrite <- (nodup_hd_quotient _ b).
+    generalize (nodup_hd_quotient _ b (map f l)); intros HH0.
+    eapply Permutation_map in HH0.
+    eapply Permutation_concat in HH0.
+    rewrite <- HH0.
     rewrite map_map.
     rewrite quotient_map.
     rewrite map_map.
@@ -400,8 +403,11 @@ Section pmf_prob.
       destruct pmf.
       unfold pmf_PMF_fun; simpl.
       clear sum1.
-
-      rewrite <- (map_filter_nodup_perm snd outcomes) at 2.
+      generalize (map_filter_nodup_perm snd outcomes); intros HH0.
+      rewrite seqmap_map at 1.
+      eapply Permutation_map in HH0.
+      eapply list_sum_perm_eq in HH0.
+      rewrite <- HH0.
       rewrite concat_map.
       rewrite list_sum_map_concat.
       repeat rewrite map_map.
@@ -557,11 +563,12 @@ Proof.
     firstorder.
 Qed.
 
+
 Lemma pmf_restricted_range_almostR2_eq rv_X :
-  rv_almostR2_eq ps_pmf rv_X  (rv_restricted_range 0 (pmf_image rv_X) rv_X).
+  almostR2 ps_pmf eq rv_X  (rv_restricted_range 0 (pmf_image rv_X) rv_X).
 Proof.
-  apply rv_almostR2_eq_alt_eq.
   simpl.
+  repeat red;  simpl.
   unfold ps_of_pmf, proj1_sig.
   match_destr.
   unfold pmf_parts in i.
