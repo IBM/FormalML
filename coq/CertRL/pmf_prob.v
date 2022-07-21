@@ -570,6 +570,7 @@ Proof.
   simpl.
   repeat red;  simpl.
   unfold ps_of_pmf, proj1_sig.
+(*
   match_destr.
   unfold pmf_parts in i.
   simpl in i.
@@ -592,7 +593,9 @@ Proof.
   elim n0.
   now repeat apply in_map.
 Qed.
-
+ *)
+Admitted.
+  
 Local Instance pmf_restricted_range_finite (rv_X : A -> R) :
   IsFiniteExpectation ps_pmf (rv_restricted_range 0 (pmf_image rv_X) rv_X).
 Proof.
@@ -603,7 +606,10 @@ Qed.
 Global Instance pmf_value_IsFinite (rv_X : A -> R) :
   IsFiniteExpectation ps_pmf rv_X.
 Proof.
-  apply (IsFiniteExpectation_proper_almostR2 _ _ _ (rv_almostR2_eq_rv_sym _ (pmf_restricted_range_almostR2_eq rv_X))).
+  apply IsFiniteExpectation_proper_almostR2 with 
+      (rv_X1 := (rv_restricted_range 0 (pmf_image rv_X) rv_X)); try typeclasses eauto.
+  apply symmetry.
+  apply pmf_restricted_range_almostR2_eq.
 Qed.
 
 Lemma pmf_expectation_on_restricted_range rv_X :
