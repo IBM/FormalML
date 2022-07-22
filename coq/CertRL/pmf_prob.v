@@ -563,13 +563,33 @@ Proof.
     firstorder.
 Qed.
 
-
 Lemma pmf_restricted_range_almostR2_eq rv_X :
   almostR2 ps_pmf eq rv_X  (rv_restricted_range 0 (pmf_image rv_X) rv_X).
 Proof.
   simpl.
   repeat red;  simpl.
-  unfold ps_of_pmf, proj1_sig.
+  unfold ps_of_pmf, proj1_sig, rv_restricted_range.
+  exists (exist _ _ (sa_discrete (fun (a:A) => In a (map snd (outcomes pmf))))).
+  split.
+  - simpl.
+    rewrite <- Lim_seq.Lim_seq_incr_n with (N := (length (outcomes pmf))).
+    rewrite Lim_seq.Lim_seq_ext with (v := fun n => 1).
+    + rewrite Lim_seq.Lim_seq_const.
+      now simpl.
+    + intros.
+      unfold pmf_parts.
+      unfold pmf_pmf, pmf_PMF; simpl.
+      unfold pmf_PMF_fun.
+      Search countable_inv.
+      admit.
+  - intros.
+    simpl in H.
+    unfold pmf_image.
+    match_destr.
+    now apply (in_map rv_X) in H.
+ Admitted.
+    
+
 (*
   match_destr.
   unfold pmf_parts in i.
@@ -594,7 +614,6 @@ Proof.
   now repeat apply in_map.
 Qed.
  *)
-Admitted.
   
 Local Instance pmf_restricted_range_finite (rv_X : A -> R) :
   IsFiniteExpectation ps_pmf (rv_restricted_range 0 (pmf_image rv_X) rv_X).
