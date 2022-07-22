@@ -69,7 +69,8 @@ CERTRL = pmf_monad \
 	mdp \
 	mdp_turtle \
 	finite_time \
-	cond_expt
+	cond_expt \
+	pmf_prob
 
 PROB_THEORY = \
 	Almost \
