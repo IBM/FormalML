@@ -572,49 +572,44 @@ Proof.
   exists (exist _ _ (sa_discrete (fun (a:A) => In a (map snd (outcomes pmf))))).
   split.
   - simpl.
-    rewrite <- Lim_seq.Lim_seq_incr_n with (N := (length (outcomes pmf))).
-    rewrite Lim_seq.Lim_seq_ext with (v := fun n => 1).
-    + rewrite Lim_seq.Lim_seq_const.
-      now simpl.
-    + intros.
-      unfold pmf_parts.
+
+    assert (HH:infinite_sum (pmf_parts (pmf_PMF pmf)
+             (exist (fun _ : pre_event A => True) (fun a : A => In a (map snd pmf))
+                    (sa_discrete (fun a : A => In a (map snd pmf))))) 1).
+    {
+      apply infinite_sum_infinite_sum'.
+      unfold pmf_parts; simpl.
+      generalize (pmf_infinite_sum_finite pmf); intros HH.
       unfold pmf_pmf, pmf_PMF; simpl.
       unfold pmf_PMF_fun.
-      Search countable_inv.
-      admit.
-  - intros.
+      assert (adds1: (list_sum (map (fun x : nonnegreal * A => nonneg (fst x)) pmf)) = 1).
+      {
+        destruct pmf.
+        rewrite <- list_fst_sum_eq.
+        apply sum1.
+      }
+      rewrite <- adds1.
+      eapply infinite_sum'_ext; try apply HH.
+      intros.
+      simpl.
+      match_destr; trivial.
+      match_destr.
+      rewrite false_filter_nil; simpl; trivial.
+      intros ? inn; simpl.
+      match_destr.
+      red in e; subst; simpl in *.
+      elim n.
+      now apply in_map.
+    } 
+    apply infinite_sum_is_lim_seq in HH.
+    apply Lim_seq.is_lim_seq_unique in HH.
+    now rewrite (f_equal _ HH); simpl.                                                                   - intros.
     simpl in H.
     unfold pmf_image.
     match_destr.
     now apply (in_map rv_X) in H.
- Admitted.
-    
-
-(*
-  match_destr.
-  unfold pmf_parts in i.
-  simpl in i.
-  erewrite infinite_sum'_ext in i
-  ; [now apply infinite_sum'_const0 in i |].
-  intros n; simpl.
-  match_case; intros.
-  match_destr.
-  unfold pmf_image, pre_event_complement, rv_restricted_range in p.
-  match_destr_in p; try congruence.
-  unfold pmf_PMF_fun.
-  apply list_sum0_0.
-  rewrite Forall_map.
-  rewrite Forall_forall.
-  intros ? inn.
-  apply filter_In in inn.
-  destruct inn as [inn eqq].
-  match_destr_in eqq.
-  red in e; subst.
-  elim n0.
-  now repeat apply in_map.
 Qed.
- *)
-  
+      
 Local Instance pmf_restricted_range_finite (rv_X : A -> R) :
   IsFiniteExpectation ps_pmf (rv_restricted_range 0 (pmf_image rv_X) rv_X).
 Proof.
