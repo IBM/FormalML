@@ -603,7 +603,8 @@ Proof.
     } 
     apply infinite_sum_is_lim_seq in HH.
     apply Lim_seq.is_lim_seq_unique in HH.
-    now rewrite (f_equal _ HH); simpl.                                                                   - intros.
+    now rewrite (f_equal _ HH); simpl.
+  - intros.
     simpl in H.
     unfold pmf_image.
     match_destr.
