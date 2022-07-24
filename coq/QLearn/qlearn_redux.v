@@ -8,6 +8,8 @@ Require Import RandomVariableFinite RbarExpectation.
 Require Import Classical.
 Require Import SigmaAlgebras ProbSpace DiscreteProbSpace ProductSpace.
 Require Import DVector.
+Require Import pmf_monad.
+Require pmf_prob.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -1047,6 +1049,14 @@ Section stuff.
     fold_right Rmult 1 (map (fun sa => nonneg (f_sa sa (sp sa)))
                             (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms)).
 
+  Lemma fun_space_sa_pmf_equal (sp : fun_space) :
+    fun_space_pmf_pmf sp = fun_space_sa_pmf_pmf  (fun (sa : sigT M.(act)) => sp (projT1 sa) (projT2 sa)).
+  Proof.
+    unfold fun_space_pmf_pmf, fun_space_sa_pmf_pmf.
+    unfold f_sa.
+    
+    Admitted.
+
   Lemma f_sa_sum_one (sa : sigT M.(act)) :
     list_sum (map (fun s' => nonneg (f_sa sa s')) 
                   (nodup M.(st_eqdec) (@elms _ M.(fs)))) = 1.
@@ -1072,9 +1082,35 @@ Section stuff.
                                               (nodup decA elms))))
                   (nodup decAB elms)) = 1.
   Proof.
-    intros.
-    
+    intros inhA sum1.
+      
+    pose (la := nodup decA elms).
+    induction la.
     Admitted.
+
+  Lemma fun_finite_sum_prob {A B : Type} 
+        (finA : Finite A)
+        (finB : Finite B)         
+        (decA : EqDec A eq)
+        (decB : EqDec B eq)        
+        (finAB : Finite (A -> B))
+        (decAB : EqDec (A -> B) eq) 
+        (fab : A -> B -> R) :
+    inhabited A ->
+    (forall (a : A),
+        list_sum (map (fab a) (nodup decB elms)) = 1) ->
+    forall (aa : A) (bb : B),
+      list_sum (map (fun sp =>
+                       (fold_right Rmult 1 (map (fun a => fab a (sp a))
+                                                (nodup decA elms))))
+                    (filter 
+                       (fun ff => if (decB (ff aa) bb) then true else false)
+                       (nodup decAB elms))) = fab aa bb.
+   Proof.
+     intros.
+     
+     Admitted.
+  
 
   Lemma fun_space_sa_pmf_finite_sum_one :
     inhabited (sigT M.(act)) ->
@@ -1093,6 +1129,7 @@ Section stuff.
     unfold fun_space_pmf_pmf.
     Admitted.
 
+  
   Lemma fold_right_Rmult_nneg acc l :
     0 <= acc ->
     Forall (fun x => 0 <= x) l ->
@@ -1116,6 +1153,38 @@ Section stuff.
     destruct H as [? [??]]; subst.
     apply cond_nonneg.
   Qed.
+
+    Lemma fun_space_sa_pmf_pmf_nonneg (sp:fun_space_sa) :
+      0 <= fun_space_sa_pmf_pmf sp.
+    Proof.
+      apply fold_right_Rmult_nneg; [lra |].
+      apply Forall_forall; intros.
+      apply in_map_iff in H.
+      destruct H as [? [??]]; subst.
+      apply cond_nonneg.
+    Qed.
+      
+    Lemma fun_space_sa_pmf_list_fst_sum_one (inh : inhabited (sigT M.(act))):
+      list_fst_sum
+        (map (fun fsa => (mknonnegreal _ (fun_space_sa_pmf_pmf_nonneg fsa), fsa))
+             (nodup fun_space_sa_eqdec elms)) = 1.
+    Proof.
+      rewrite list_fst_sum_compat.
+      unfold list_fst_sum'.
+      generalize (fun_space_sa_pmf_finite_sum_one inh); intros.
+      rewrite <- H.
+      f_equal.
+      rewrite pmf_prob.seqmap_map.
+      rewrite map_map.
+      apply map_ext.
+      intros.
+      now simpl.
+   Qed.
+    
+  Definition fun_space_sa_Pmf (inh : inhabited (sigT M.(act))) : Pmf fun_space_sa :=
+    mkPmf (map (fun fsa => (mknonnegreal _ (fun_space_sa_pmf_pmf_nonneg fsa), fsa))
+                 (nodup fun_space_sa_eqdec elms))
+          (fun_space_sa_pmf_list_fst_sum_one inh).
 
   Definition sa_space_pmf_pmf (sa : sigT M.(act)) : M.(state) -> R
     := let (s,a) := sa in f s a.
@@ -1340,6 +1409,20 @@ Section stuff.
 
   Instance fun_space_ps : ProbSpace (discrete_sa fun_space) := discrete_ps fun_space_pmf.
 
+  Lemma fun_space_s_a_s_prob :
+    forall (s:M.(state)) (a : M.(act) s) (s' : M.(state)),
+      ps_P (exist _ _ (sa_discrete (fun (omega : fun_space) => (omega s a) = s'))) =
+      f s a s'.
+   Proof.
+     intros.
+     unfold ps_P.
+     unfold fun_space_ps.
+     unfold fun_space_pmf; simpl.
+     unfold ps_of_pmf; simpl.
+     unfold pmf_parts; simpl.
+     unfold fun_space_pmf_pmf.
+     Admitted.
+     
   Lemma sa_space_pmf_one (sa : sigT M.(act)) : 
     @countable_sum _ (countable_finite_eqdec _ M.(st_eqdec)) (sa_space_pmf_pmf sa) 1.
   Proof.
@@ -1435,3 +1518,74 @@ Section stuff.
     ivector_ps (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))).
 
 End stuff.
+
+Section FiniteDomain.
+  
+Context {Ts : Type}
+        {fin : Finite Ts}
+        {eqdec : EqDec Ts eq}
+        (prts : ProbSpace (discrete_sa Ts)) .
+
+Program Instance finite_frf (rv_X : Ts -> R) :
+  FiniteRangeFunction rv_X := { frf_vals :=  map rv_X elms }.
+Next Obligation.
+  destruct fin.
+  apply in_map.
+  apply finite.
+Qed.
+
+Instance isfe_finite_domain 
+        (rv_X : Ts -> R)
+        {rv:RandomVariable (discrete_sa Ts) borel_sa rv_X}  :
+     IsFiniteExpectation prts rv_X.
+Proof.
+  apply IsFiniteExpectation_simple; trivial.
+  typeclasses eauto.
+Qed.
+
+Lemma discrete_finite_preimage
+      (rv_X : Ts -> R)
+      (frf : FiniteRangeFunction rv_X)
+      {rv:RandomVariable (discrete_sa Ts) borel_sa rv_X}  :
+  forall (v : R), 
+    In v frf_vals ->
+    ps_P (preimage_singleton rv_X v) =
+    list_sum (map (fun a => ps_P (discrete_singleton a))
+                  (filter (fun a => if Req_EM_T (rv_X a) v then true else false) (nodup eqdec elms))).
+ Proof.
+   Admitted.
+
+Lemma Expectation_finite_domain 
+      (rv_X : Ts -> R)
+      {rv:RandomVariable (discrete_sa Ts) borel_sa rv_X}  :
+    FiniteExpectation prts rv_X =
+    list_sum (map (fun a => Rmult (rv_X a) (ps_P (discrete_singleton a)))
+                  (nodup eqdec elms)).
+Proof.
+  generalize pmf_prob.pmf_value_FiniteExpectation; intros.
+  unfold expt_value in H.
+  rewrite FiniteExpectation_simple with (rvx_rv := rv) (frf := finite_frf rv_X).
+  unfold SimpleExpectation.
+  generalize (frf_vals_nodup_preimage_disj rv_X); intros.
+  assert (Permutation (nodup Req_EM_T  (@frf_vals Ts R rv_X (finite_frf rv_X)))
+                      (nodup Req_EM_T (map rv_X elms))).
+  {
+    apply NoDup_Permutation.
+    - apply NoDup_nodup.
+    - apply NoDup_nodup.
+    - intros.
+      do 2 rewrite nodup_In.
+      destruct (finite_frf rv_X).
+      destruct fin.
+      split; intros.
+      + apply in_map_iff.
+        admit.        
+      + admit.
+   }
+  induction (nodup Req_EM_T frf_vals).
+  - admit.
+  - 
+Admitted.
+
+End FiniteDomain.
+
