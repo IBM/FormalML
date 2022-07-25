@@ -10,6 +10,7 @@ Require Import SigmaAlgebras ProbSpace DiscreteProbSpace ProductSpace.
 Require Import DVector.
 Require Import pmf_monad.
 Require pmf_prob.
+Require SetoidList.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -1065,7 +1066,415 @@ Section stuff.
      destruct sa.
      apply fsum_one.
    Qed.
+
+
+   Lemma nodup_singleton {A} dec (x:A) :
+     nodup dec (x::nil) = x::nil.
+   Proof.
+     reflexivity.
+   Qed.
+
+   Definition holds_on {A B : Type} (R:B->B->Prop) (elmsA:list A) : (A -> B) -> (A -> B) -> Prop
+     := fun f g => forall a, In a elmsA -> R (f a) (g a).
+
+   Global Instance holds_on_refl {A B : Type} (R:B->B->Prop) (elmsA:list A) {refl:Reflexive R}:
+     Reflexive (holds_on R elmsA).
+   Proof.
+     now intros ???.
+   Qed.
+
+   Global Instance holds_on_sym {A B : Type} (R:B->B->Prop) (elmsA:list A) {sym:Symmetric R}:
+     Symmetric (holds_on R elmsA).
+   Proof.
+     intros ?????; eauto.
+   Qed.
+
+   Global Instance holds_on_trans {A B : Type} (R:B->B->Prop) (elmsA:list A) {sym:Transitive R}:
+     Transitive (holds_on R elmsA).
+   Proof.
+     intros ???????; eauto.
+   Qed.
+
+   Global Instance holds_on_equiv {A B : Type} (R:B->B->Prop) (elmsA:list A) {eqR:Equivalence R}:
+     Equivalence (holds_on R elmsA).
+   Proof.
+     constructor; typeclasses eauto.
+   Qed.
+
+   Global Instance holds_on_dec {A B : Type} {R:B->B->Prop} {eqR:Equivalence R} (dec:EqDec B R) (elmsA:list A) :
+     EqDec (A->B) (holds_on R elmsA).
+   Proof.
+     intros ??; unfold equiv, complement, holds_on.
+     induction elmsA; simpl.
+     - left; tauto.
+     - destruct (dec (x a) (y a)).
+       + destruct IHelmsA.
+         * left; firstorder congruence.
+         * right; eauto.
+       + right; intros HH.
+         apply c.
+         apply (HH a); eauto.
+   Defined.
+
+   Lemma InA_eq {A} a (l:list A) : SetoidList.InA eq a l <-> In a l.
+   Proof.
+     rewrite SetoidList.InA_alt.
+     firstorder congruence.
+   Qed.
+
+   Section ndA.
+
+     Context {A} {R:A->A->Prop} (decR : forall x y : A, {R x y} + {~ R x y}).
+
+     Fixpoint nodupA (l:list A)
+       := match l with
+          | nil => nil
+          | x :: xs => if existsb (fun y => if decR x y then true else false) xs then nodupA xs else x :: nodupA xs
+          end.
+
+     Lemma nodupA_In {x l} :
+       In x (nodupA l) -> In x l.
+     Proof.
+       induction l; simpl; trivial.
+       match_destr; simpl; firstorder.
+     Qed.
+     
+     Lemma InA_nodupA {x l} {trans:Transitive R} :
+       SetoidList.InA R x l -> SetoidList.InA R x (nodupA l).
+     Proof.
+       induction l; simpl; trivial; intros HH.
+       invcs HH.
+       - match_case.
+         + intros HH.
+           apply existsb_exists in HH.
+           destruct HH as [? [??]].
+           match_destr_in H1.
+           apply IHl.
+           apply SetoidList.InA_alt.
+           eauto.
+         + intros.
+           now constructor.
+       - match_destr; auto.
+     Qed.
+
+     Lemma NoDupA_nodupA l : SetoidList.NoDupA R (nodupA l).
+     Proof.
+       induction l; simpl; trivial.
+       match_case.
+       intros HH.
+       constructor; trivial.
+       rewrite existsb_not_forallb in HH.
+       apply Bool.negb_false_iff in HH.
+       destruct (forallb_forall (fun x : A => negb (if decR a x then true else false)) l) as [HH2 _].
+       specialize (HH2 HH).
+       intros inn.
+       apply SetoidList.InA_altdef in inn.
+       apply Exists_exists in inn.
+       destruct inn as [?[??]].
+       specialize (HH2 _ (nodupA_In H)).
+       match_destr_in HH2; tauto.
+     Qed.
+
+   End ndA.
+
+   Lemma NoDupA_holds_on_singleton {A B} {R:B->B->Prop} a fs:
+     SetoidList.NoDupA (holds_on R (a::nil)) fs <->
+     SetoidList.NoDupA R (map (fun sp : A -> B => sp a) fs).
+   Proof.
+     split; intros nd.
+     - induction fs; simpl; trivial.
+       invcs nd.
+       constructor; trivial; auto 2.
+       intros ?.
+       apply SetoidList.InA_alt in H.
+       destruct H as [? [??]].
+       apply in_map_iff in H0.
+       destruct H0 as [? [??]]; subst.
+       apply H1.
+       apply SetoidList.InA_alt.
+       exists x0; split; trivial.
+       intros ? [|]; [subst| tauto]; eauto.
+     - induction fs; simpl; trivial.
+       invcs nd.
+       constructor; trivial; auto 2.
+       intros ?.
+       apply SetoidList.InA_alt in H.
+       destruct H as [? [??]].
+       apply H1.
+       apply SetoidList.InA_alt.
+       exists (x a).
+       split.
+       + apply H; simpl; eauto.
+       + apply in_map_iff.
+         eauto.
+   Qed.
+
    
+   Lemma NoDupA_eq {A} (l:list A) : SetoidList.NoDupA eq l <-> NoDup l.
+   Proof.
+     split; induction l; intros HH; try invcs HH; constructor; auto 2
+     ; intros HH; apply InA_eq in HH; eauto.
+   Qed.
+
+   Global Instance InA_subr {A} : Proper (subrelation ==> eq ==> @incl A ==> impl) (@SetoidList.InA A).
+   Proof.
+     intros ??????????; subst.
+     apply SetoidList.InA_alt in H2.
+     apply SetoidList.InA_alt.
+     destruct H2 as [? [??]].
+     exists x0.
+     eauto.
+   Qed.
+
+   Lemma NoDupA_perm' {A:Type} R {a b:list A} {sym:Symmetric R} : SetoidList.NoDupA R a -> Permutation a b -> SetoidList.NoDupA R b.
+    Proof.
+      intros nd p.
+      revert nd.
+      revert a b p.
+      apply (Permutation_ind_bis (fun l l' => SetoidList.NoDupA R l -> SetoidList.NoDupA R l')); intuition.
+      - invcs H1.
+        constructor; auto.
+        intros HH; apply H4.
+        eapply InA_subr; try apply HH; try reflexivity.
+        intros ?.
+        apply Permutation_in.
+        now symmetry.
+      - invcs H1.
+        invcs H5.
+        specialize (H0 H6).
+        constructor; [|constructor]; simpl in *; trivial.
+        + intros HH.
+          invcs HH.
+          * apply H4.
+            constructor.
+            now symmetry.
+          * apply H3; revert H2.
+            eapply InA_subr; try apply HH; try reflexivity.
+            intros ?.
+            apply Permutation_in.
+            now symmetry.
+        + intros HH.
+          apply H4.
+          apply SetoidList.InA_cons_tl.
+            eapply InA_subr; try apply HH; try reflexivity.
+            intros ?.
+            apply Permutation_in.
+            now symmetry.
+    Qed.
+    
+    Global Instance NoDupA_perm {A:Type} R {sym:Symmetric R}:
+      Proper (@Permutation A ==> iff) (@SetoidList.NoDupA A R).
+    Proof.
+      Hint Resolve NoDupA_perm' Permutation_sym : fml.
+      unfold Proper, respectful; intros; subst; intuition; eauto with fml.
+    Qed.
+
+   Global Instance NoDupA_subr {A} : Proper (subrelation --> eq ==> impl) (@SetoidList.NoDupA A).
+   Proof.
+     intros ???????; subst.
+     induction y0; trivial.
+     invcs H1.
+     constructor; auto 2.
+     intros HH; apply H3.
+     revert HH.
+     apply InA_subr; try reflexivity.
+     apply H.
+   Qed.
+
+   Lemma NoDupA_NoDup {A} {R} {refl:Reflexive R} {l:list A} : SetoidList.NoDupA R l -> NoDup l.
+   Proof.
+     intros.
+     apply NoDupA_eq.
+     revert H.
+     apply NoDupA_subr; trivial.
+     intros ???; subst; reflexivity.
+   Qed.
+
+   Lemma InA_map {A B} (R:B->B->Prop) (g:A->B) a l :
+     SetoidList.InA R (g a) (map g l) <->
+       SetoidList.InA (fun x y : A => R (g x) (g y)) a l.
+   Proof.
+     split; intros HH
+     ; apply SetoidList.InA_alt in HH
+     ; apply SetoidList.InA_alt
+     ; destruct HH as [? [??]].
+     - apply in_map_iff in H0.
+       destruct H0 as [?[??]]; subst.
+       eauto.
+     - exists (g x).
+       split; trivial.
+       now apply in_map.
+   Qed.
+
+   Lemma NoDupA_map {A B} (R:B->B->Prop) (g:A->B) l :
+     SetoidList.NoDupA R (map g l) <-> SetoidList.NoDupA (fun x y => R (g x) (g y)) l.
+   Proof.
+     split; induction l; intros HH; invcs HH; constructor; auto 2.
+     - now rewrite <- InA_map.
+     - now rewrite <- InA_map in H1.
+   Qed.
+
+   Lemma In_nodupA {A} {R}  (decR : forall x y : A, {R x y} + {~ R x y}) {x l} {preR:PreOrder R} :
+     In x l -> SetoidList.InA R x (nodupA decR l).
+   Proof.
+     intros.
+     apply InA_nodupA; [typeclasses eauto |].
+     apply InA_eq in H.
+     revert H.
+     apply InA_subr; try reflexivity.
+     apply eq_subrelation.
+     typeclasses eauto.
+   Qed.
+
+   Lemma fun_finite_sum_one_aux {A B : Type}
+         (decA : EqDec A eq)
+         (decB : EqDec B eq)        
+         (decAB : EqDec (A -> B) eq) 
+         
+         (elmsA:list A)
+         (nnilA : elmsA <> nil)
+         (finB:Finite B)
+         (elmsAB: Finite (A -> B))
+         (fab : A -> B -> R)
+         (sumone:(forall (a : A),
+                     list_sum (map (fab a) (nodup decB elms)) = 1)) :
+        list_sum (map (fun sp =>
+                         (fold_right Rmult 1 (map (fun a => fab a (sp a))
+                                                  elmsA)))
+                      ((nodupA (holds_on_dec decB elmsA) elms))) = 1.
+  Proof.
+    induction elmsA; [simpl; congruence | clear nnilA].
+    destruct elmsA; [clear IHelmsA | cut_to IHelmsA; trivial]; intros.
+    - simpl.
+      rewrite <- (sumone a) at 1.
+      apply list_sum_perm_eq.
+      transitivity (map (fab a) (map (fun sp : A -> B => (sp a)) (nodupA (holds_on_dec decB (a :: nil)) elms))).
+      {
+        rewrite map_map. 
+        apply refl_refl.
+        apply map_ext; intros ?.
+        lra.
+      }
+      apply Permutation_map.
+      destruct finB; simpl.
+      apply NoDup_Permutation'.
+      + apply NoDupA_eq.
+        apply NoDupA_map.
+        eapply NoDupA_subr; [| reflexivity | apply NoDupA_nodupA].
+        unfold equiv, flip; intros ???? inn.
+        simpl in inn.
+        destruct inn; [| tauto].
+        congruence.
+      + apply NoDup_nodup.
+      + intros b; split; intros inn.
+        * apply nodup_In.
+          apply finite.
+        * apply in_map_iff.
+          destruct elmsAB; simpl.
+          generalize (finite0 (fun _ => b)); intros inn2.
+          apply (In_nodupA (holds_on_dec decB (a :: nil))) in inn2.
+          apply SetoidList.InA_alt in inn2.
+          destruct inn2 as [?[??]].
+          red in H.
+          exists x.
+          split; trivial.
+          symmetry; apply H; simpl; tauto.
+    - revert IHelmsA.
+      assert (HH:a0 :: elmsA <> nil) by congruence.
+      revert HH.
+      generalize (a0 :: elmsA); clear a0 elmsA; intros elmsA elmsAnnil.
+      intros IHelmsA.
+      simpl.
+      specialize (sumone a).
+      
+
+      assert (perm1:Permutation
+                (nodupA (holds_on_dec decB (a :: elmsA)) elms)
+                (concat (map
+                           (fun b =>
+                              map 
+                                (fun f => fun x => if decA x a then b else f x)
+                                (nodupA (holds_on_dec decB elmsA) elms)) elms))).
+      {
+        admit.
+      } 
+
+      
+      
+      (*
+      assert (perm2:Permutation
+                (nodupA (holds_on_dec decB (a :: elmsA)) elms)
+                (concat (map
+                           (fun f =>
+                              map 
+                                (fun b => fun x => if decA x a then b else f x)
+                                elms) (nodupA (holds_on_dec decB elmsA) elms)))).
+      {
+        admit.
+      } 
+
+      erewrite list_sum_perm_eq; [| apply Permutation_map; apply perm2].
+
+      
+      
+      rewrite concat_map.
+      repeat rewrite map_map.
+      erewrite map_ext; [| intros; rewrite map_map; match_destr; [| congruence]; reflexivity].
+      *)
+      
+
+   (*
+   Lemma fun_finite_sum_one_aux {A B : Type}
+         (decA : EqDec A eq)
+         (decB : EqDec B eq)        
+         (decAB : EqDec (A -> B) eq) 
+
+         (elmsA:list A)
+         (nnilA : elmsA <> nil)
+         (finB:Finite B)
+         (elmsAB: list (A -> B))
+
+         (elmsABfin : forall (f:A->B), exists (g:A->B), In g elmsAB /\ holds_on eq elmsA f g)
+         (elmsABnd : SetoidList.NoDupA (holds_on eq elmsA) elmsAB)
+        (fab : A -> B -> R)
+        (sumone:(forall (a : A),
+                    list_sum (map (fab a) (nodup decB elms)) = 1)) :
+    list_sum (map (fun sp =>
+                     (fold_right Rmult 1 (map (fun a => fab a (sp a))
+                                              elmsA)))
+                  elmsAB) = 1.
+  Proof.
+    revert elmsAB elmsABfin elmsABnd.
+    induction elmsA; [simpl; congruence | clear nnilA].
+    destruct elmsA; [clear IHelmsA | cut_to IHelmsA; trivial]; intros.
+    - simpl.
+      rewrite <- (sumone a) at 1.
+      apply list_sum_perm_eq.
+      transitivity (map (fab a) (map (fun sp : A -> B => (sp a)) elmsAB)).
+      {
+        rewrite map_map. 
+        apply refl_refl.
+        apply map_ext; intros ?.
+        lra.
+      }
+      apply Permutation_map.
+      destruct finB; simpl.
+      apply NoDup_Permutation'.
+      + apply NoDupA_holds_on_singleton in elmsABnd.
+        now apply NoDupA_eq in elmsABnd.
+      + apply NoDup_nodup.
+      + intros b; split; intros inn.
+        * apply nodup_In.
+          apply finite.
+        * apply in_map_iff.
+          destruct (elmsABfin (fun _ => b)) as [g [??]].
+          exists g.
+          split; trivial.
+          symmetry; apply H0; simpl; eauto.
+    - simpl in *.
+*)      
+  Admitted.    
+    
   Lemma fun_finite_sum_one {A B : Type} 
         (finA : Finite A)
         (finB : Finite B)         
@@ -1087,6 +1496,7 @@ Section stuff.
     pose (la := nodup decA elms).
     induction la.
     Admitted.
+
 
   Lemma fun_finite_sum_prob {A B : Type} 
         (finA : Finite A)
