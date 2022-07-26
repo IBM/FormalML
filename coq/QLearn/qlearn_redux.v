@@ -1422,7 +1422,8 @@ Section stuff.
       f_equal.
       apply map_ext_in.
       intros.
-      assert (~ In a elmsA) by admit.
+      assert (NoDup (a :: elmsA)) by admit.
+      apply NoDup_cons_iff in H0.
       match_destr.
       now rewrite e in H.
     - congruence.
