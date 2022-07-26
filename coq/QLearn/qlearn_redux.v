@@ -1497,12 +1497,132 @@ Section stuff.
                   (nodup decAB elms)) = 1.
   Proof.
     intros inhA sum1.
+    generalize (fun_finite_sum_one_aux decA decB decAB (nodup decA elms)) ; intros.
+    assert (nodup decA elms <> nil).
+    {
+      rewrite <- nodup_not_nil.
+      destruct inhA.
+      generalize (finite X); intros.
+      destruct finA.
+      unfold not; intros.
+      rewrite H1 in H0.
+      tauto.
+    }
+    specialize (H H0 finB finAB fab sum1).
+    replace (nodup decAB elms) with
+        (nodupA (holds_on_dec decB (nodup decA elms)) elms).
+    apply H.
+  Admitted.
+
+(*  
+
+   Lemma fun_finite_sum_prob_aux {A B : Type}
+         (decA : EqDec A eq)
+         (decB : EqDec B eq)        
+         (decAB : EqDec (A -> B) eq) 
+         
+         (elmsA:list A)
+(*         (NoDup_elmsA : NoDup elmsA) *)
+         (nnilA : elmsA <> nil)
+         (finB:Finite B)
+         (elmsAB: Finite (A -> B))
+         (fab : A -> B -> R)
+         (sumone:(forall (a : A),
+                     list_sum (map (fab a) (nodup decB elms)) = 1)) :
+     forall (aa : A) (bb : B),
+       list_sum (map (fun sp =>
+                        (fold_right Rmult 1 (map (fun a => fab a (sp a))
+                                                 elmsA)))
+                     (filter 
+                        (fun ff => if (decB (ff aa) bb) then true else false)
+                        (nodupA (holds_on_dec decB elmsA) elms))) = fab aa bb.
+  Proof.
+    induction elmsA; [simpl; congruence | clear nnilA].
+    destruct elmsA; [clear IHelmsA | cut_to IHelmsA; trivial]; intros.
+    - simpl.
+      rewrite <- (sumone a) at 1.
+      apply list_sum_perm_eq.
+      transitivity (map (fab a) (map (fun sp : A -> B => (sp a)) (nodupA (holds_on_dec decB (a :: nil)) elms))).
+      {
+        rewrite map_map. 
+        apply refl_refl.
+        apply map_ext; intros ?.
+        lra.
+      }
+      apply Permutation_map.
+      destruct finB; simpl.
+      apply NoDup_Permutation'.
+      + apply NoDupA_eq.
+        apply NoDupA_map.
+        eapply NoDupA_subr; [| reflexivity | apply NoDupA_nodupA].
+        unfold equiv, flip; intros ???? inn.
+        simpl in inn.
+        destruct inn; [| tauto].
+        congruence.
+      + apply NoDup_nodup.
+      + intros b; split; intros inn.
+        * apply nodup_In.
+          apply finite.
+        * apply in_map_iff.
+          destruct elmsAB; simpl.
+          generalize (finite0 (fun _ => b)); intros inn2.
+          apply (In_nodupA (holds_on_dec decB (a :: nil))) in inn2.
+          apply SetoidList.InA_alt in inn2.
+          destruct inn2 as [?[??]].
+          red in H.
+          exists x.
+          split; trivial.
+          symmetry; apply H; simpl; tauto.
+    - revert IHelmsA.
+      assert (HH:a0 :: elmsA <> nil) by congruence.
+      revert HH.
+      generalize (a0 :: elmsA); clear a0 elmsA; intros elmsA elmsAnnil.
+      intros IHelmsA.
+      simpl.
+      specialize (sumone a).
       
-    pose (la := nodup decA elms).
-    induction la.
-    Admitted.
+      assert (perm1:Permutation
+                (nodupA (holds_on_dec decB (a :: elmsA)) elms)
+                (concat (map
+                           (fun b =>
+                              map 
+                                (fun f => fun x => if decA x a then b else f x)
+                                (nodupA (holds_on_dec decB elmsA) elms)) (nodup decB elms)))).
+      {
+        admit.
+      } 
 
-
+      erewrite list_sum_perm_eq; [| apply Permutation_map; apply perm1].
+      rewrite concat_map.
+      repeat rewrite map_map.
+      erewrite map_ext; [| intros; rewrite map_map; match_destr; [| congruence]; reflexivity].
+      rewrite list_sum_map_concat.
+      rewrite <- sumone.
+      f_equal.
+      rewrite map_map.
+      apply map_ext.
+      intros.
+      rewrite <- map_map.
+      rewrite list_sum_mult_const.
+      replace (fab a a0) with ((fab a a0) * 1) at 2 by lra.
+      f_equal.
+      rewrite map_map.
+      rewrite <- IHelmsA.
+      f_equal.
+      apply map_ext.
+      intros.
+      rewrite sumone.
+      f_equal.
+      apply map_ext_in.
+      intros.
+      assert (NoDup (a :: elmsA)) by admit.
+      apply NoDup_cons_iff in H0.
+      match_destr.
+      now rewrite e in H.
+    - congruence.
+  Admitted.
+ *)
+  
   Lemma fun_finite_sum_prob {A B : Type} 
         (finA : Finite A)
         (finB : Finite B)         
