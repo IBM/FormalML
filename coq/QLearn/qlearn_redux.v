@@ -1332,6 +1332,7 @@ Section stuff.
          (decAB : EqDec (A -> B) eq) 
          
          (elmsA:list A)
+(*         (NoDup_elmsA : NoDup elmsA) *)
          (nnilA : elmsA <> nil)
          (finB:Finite B)
          (elmsAB: Finite (A -> B))
@@ -1387,42 +1388,46 @@ Section stuff.
       simpl.
       specialize (sumone a).
       
-
       assert (perm1:Permutation
                 (nodupA (holds_on_dec decB (a :: elmsA)) elms)
                 (concat (map
                            (fun b =>
                               map 
                                 (fun f => fun x => if decA x a then b else f x)
-                                (nodupA (holds_on_dec decB elmsA) elms)) elms))).
+                                (nodupA (holds_on_dec decB elmsA) elms)) (nodup decB elms)))).
       {
         admit.
       } 
 
-      
-      
-      (*
-      assert (perm2:Permutation
-                (nodupA (holds_on_dec decB (a :: elmsA)) elms)
-                (concat (map
-                           (fun f =>
-                              map 
-                                (fun b => fun x => if decA x a then b else f x)
-                                elms) (nodupA (holds_on_dec decB elmsA) elms)))).
-      {
-        admit.
-      } 
-
-      erewrite list_sum_perm_eq; [| apply Permutation_map; apply perm2].
-
-      
-      
+      erewrite list_sum_perm_eq; [| apply Permutation_map; apply perm1].
       rewrite concat_map.
       repeat rewrite map_map.
       erewrite map_ext; [| intros; rewrite map_map; match_destr; [| congruence]; reflexivity].
-      *)
-      
-
+      rewrite list_sum_map_concat.
+      rewrite <- sumone.
+      f_equal.
+      rewrite map_map.
+      apply map_ext.
+      intros.
+      rewrite <- map_map.
+      rewrite list_sum_mult_const.
+      replace (fab a a0) with ((fab a a0) * 1) at 2 by lra.
+      f_equal.
+      rewrite map_map.
+      rewrite <- IHelmsA.
+      f_equal.
+      apply map_ext.
+      intros.
+      rewrite sumone.
+      f_equal.
+      apply map_ext_in.
+      intros.
+      assert (~ In a elmsA) by admit.
+      match_destr.
+      now rewrite e in H.
+    - congruence.
+  Admitted.
+  
    (*
    Lemma fun_finite_sum_one_aux {A B : Type}
          (decA : EqDec A eq)
@@ -1473,8 +1478,7 @@ Section stuff.
           symmetry; apply H0; simpl; eauto.
     - simpl in *.
 *)      
-  Admitted.    
-    
+
   Lemma fun_finite_sum_one {A B : Type} 
         (finA : Finite A)
         (finB : Finite B)         
