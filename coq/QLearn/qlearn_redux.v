@@ -2083,6 +2083,155 @@ Section stuff.
     unfold ivector_to_finite_fun, finite_fun_to_ivector.
     apply ivector_map_nth_finite.
   Qed.
+  
+  Lemma find_index_aux_S {A} (decA : EqDec A eq) (la : list A) (x: A) (n: nat) (x0 : nat):
+    find_index_aux la x (S n) = Some (S x0) ->
+    find_index_aux la x n = Some x0.
+  Proof.
+  Admitted.
+
+  Lemma find_index_aux_bound {A} (decA : EqDec A eq) (la : list A) (x: A) (n: nat) (x0 : nat):
+    find_index_aux la x n = Some x0 ->
+    (x0 >= n)%nat.
+  Proof.
+    Admitted.
+
+  
+  Lemma find_index_S {A} (decA : EqDec A eq) (la : list A) (a x: A):
+    (exists x0,
+        Finite.find_index (a :: la) x = Some (S x0)) ->
+    In x la.
+  Proof.
+    induction la.
+    - intros.
+      destruct H.
+      unfold Finite.find_index in H.
+      simpl in H.
+      match_destr_in H.
+    - intros.
+      destruct H.
+      unfold Finite.find_index in *.
+      simpl in *.
+      match_destr_in H.
+      destruct (decA a0 x); try tauto.
+      match_destr_in H.
+      + rewrite e in c0.
+        congruence.
+      + right.
+        assert (S x0 >= 2)%nat.
+        {
+          now apply find_index_aux_bound with (decA0 := decA) (la0 := la) (x1 := x).
+        }
+        apply IHla.
+        exists (x0 - 1)%nat.
+        apply find_index_aux_S in H.
+        rewrite H.
+        f_equal.
+        lia.
+   Qed.
+
+  Lemma find_index_aux_n {A} (decA : EqDec A eq) (x : A) (la : list A) :
+    forall n1 n2, find_index_aux la x n1 = Some n2 ->
+    (n2 >= n1)%nat.
+  Proof.
+    induction la.
+    - simpl.
+      discriminate.
+    - intros.
+      simpl in H.
+      match_destr_in H.
+      + invcs H.
+        lia.
+      + specialize (IHla (S n1) n2 H).
+        lia.
+   Qed.
+
+  Lemma find_index_0 {A} (decA : EqDec A eq) (a x : A) (la : list A) :
+    Finite.find_index (a :: la) x = Some 0%nat ->
+    x = a.
+  Proof.
+    unfold Finite.find_index.
+    simpl.
+    match_destr.
+    intros.
+    apply find_index_aux_n in H.
+    lia.
+  Qed.
+
+   Lemma find_index_S_x {A} (decA : EqDec A eq) (a x : A) (la : list A) (x0 x1 : nat) :
+     Finite.find_index (a :: la) x = Some (S x0) ->
+     Finite.find_index (la) x = Some x1 ->
+     x0 = x1.
+   Proof.
+     intros.
+     unfold Finite.find_index in *.
+     simpl in H.
+     match_destr_in H.
+     apply find_index_aux_S in H.
+     rewrite H in H0.
+     now invcs H0.
+   Qed.
+   
+  Lemma ivector_nth_finite_map_aux {A B} (la : list A) (decA : EqDec A eq) (g : A -> B) 
+        (x : A) (inx : In x la) :
+    NoDup la ->
+    let find_ind := (@find_index_complete A decA la x inx) in
+    ivector_nth (length la) (proj1_sig find_ind)
+                (@find_index_bound A decA la x (proj1_sig find_ind) (proj2_sig find_ind))
+                (ivector_map g (ivector_from_list la)) = g x.
+   Proof.
+     intros nodup inla.
+     simpl.
+     induction la.
+     - tauto.
+     - destruct la.
+       + simpl.
+         destruct inx; [| tauto].
+         unfold proj1_sig.
+         match_destr.
+         simpl.
+         match_destr.
+         * now rewrite e.
+         * unfold Finite.find_index in e0.
+           unfold find_index_aux in e0.
+           unfold equiv_dec in e0.
+           generalize e0 as e0'.
+           intros.
+           case_eq (decA x a); intros.
+           -- rewrite H in e0.
+              invcs e0.
+           -- rewrite H in e0.
+              discriminate.
+       + simpl.
+         simpl in IHla.
+         unfold proj1_sig.
+         match_destr.
+         simpl.
+         match_destr.
+         * apply find_index_0 in e.
+           now rewrite e.
+         * generalize e as e'; intros.
+           generalize (find_index_S decA (a0 :: la) a x); intros.
+           cut_to H.
+           specialize (IHla H).
+           cut_to IHla.
+           -- unfold proj1_sig in IHla.
+              match_destr_in IHla.
+              generalize (find_index_S_x decA a x (a0 :: la) x0 x1 e' e0); intros.
+              match_destr.
+              ++ match_destr_in IHla.
+              ++ match_destr_in IHla.
+                 assert (x0 = x1) by lia.
+                 rewrite <- IHla.
+                 unfold proj2_sig.
+                 subst.
+                 f_equal.
+                 f_equal.
+                 admit.
+           -- now apply NoDup_cons_iff in nodup.
+           -- exists x0.
+              apply e.
+     Admitted.
 
   Lemma ivector_nth_finite_map {A B} (finA : Finite A) (decA : EqDec A eq) (g : A -> B) :
     forall (x : A),
