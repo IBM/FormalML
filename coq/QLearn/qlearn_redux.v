@@ -2053,17 +2053,11 @@ Section stuff.
        | a :: l' => (a, ivector_from_list l')
        end.
 
-  Program Definition ivector_from_map {A B} (f : A -> B) (l : list A) : ivector B (length l) :=
-    ivector_from_list (map f l).
-  Next Obligation.
-    apply map_length.
-  Qed.
-
   Definition sa_fun_space_ps :=
     ivector_ps (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))).
 
   Definition finite_fun_to_ivector {A B} (finA : Finite A) (decA : EqDec A eq) (g : A -> B) :=
-    ivector_from_map g (nodup decA elms).
+    ivector_map g (ivector_from_list (nodup decA elms)).
 
   Definition ivector_to_finite_fun {A B} (finA : Finite A) (decA : EqDec A eq) (vec : ivector B (length (nodup decA elms))) : A -> B :=
     (fun (a : A) => ivector_nth _ (finite_index _ a) (finite_index_bound _ _ ) vec).
@@ -2073,13 +2067,31 @@ Section stuff.
   Definition ivector_to_fun_space_sa (vec : ivector M.(state) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))) : fun_space_sa :=
     ivector_to_finite_fun _ _ vec.
 
+  Lemma ivector_map_nth_finite {A B} (finA : Finite A) (decA : EqDec A eq) (vec : ivector B (length (nodup decA elms))) :
+    ivector_map
+      (fun a : A =>
+         ivector_nth (length (nodup decA elms)) (finite_index finA a)
+                     (finite_index_bound finA a) vec) (ivector_from_list (nodup decA elms)) = vec.
+    Proof.
+      Admitted.
+
   Lemma finite_fun_iso_f_b {A B} (finA : Finite A) (decA : EqDec A eq) :
     forall (vec : ivector B (length (nodup decA elms))), 
       finite_fun_to_ivector _ _ (ivector_to_finite_fun _ _ vec) = vec.
   Proof.
     intros.
     unfold ivector_to_finite_fun, finite_fun_to_ivector.
-  Admitted.
+    apply ivector_map_nth_finite.
+  Qed.
+
+  Lemma ivector_nth_finite_map {A B} (finA : Finite A) (decA : EqDec A eq) (g : A -> B) :
+    forall (x : A),
+      ivector_nth (length (nodup decA elms)) (finite_index finA x) (finite_index_bound finA x)
+                  (ivector_map g (ivector_from_list (nodup decA elms))) = g x.
+   Proof.
+     intros.
+     
+     Admitted.
 
   Lemma finite_fun_iso_b_f {A B} (finA : Finite A) (decA : EqDec A eq) :
     forall (g : A -> B),
@@ -2089,8 +2101,9 @@ Section stuff.
     unfold ivector_to_finite_fun, finite_fun_to_ivector.
     apply functional_extensionality.
     intros.
-    Admitted.
-  
+    apply ivector_nth_finite_map.
+  Qed.
+
 End stuff.
 
 Section FiniteDomain.
