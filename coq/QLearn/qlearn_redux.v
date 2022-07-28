@@ -2088,13 +2088,29 @@ Section stuff.
     find_index_aux la x (S n) = Some (S x0) ->
     find_index_aux la x n = Some x0.
   Proof.
-  Admitted.
+    revert n x0.
+    induction la.
+    + intros. discriminate H.
+    + intros. simpl in H. match_destr_in H.
+      -- simpl. match_destr.
+         ++ now invcs H.
+         ++ congruence.
+      -- simpl. match_destr; try congruence.
+         now apply IHla.
+  Qed.
 
   Lemma find_index_aux_bound {A} (decA : EqDec A eq) (la : list A) (x: A) (n: nat) (x0 : nat):
     find_index_aux la x n = Some x0 ->
     (x0 >= n)%nat.
   Proof.
-    Admitted.
+    revert n x0.
+    induction la; try (intros; discriminate H).
+    intros n x0.
+    simpl. match_destr.
+    + intros. invcs H. lia.
+    + intros. specialize (IHla (S n) x0 H).
+      lia.
+  Qed.
 
   
   Lemma find_index_S {A} (decA : EqDec A eq) (la : list A) (a x: A):
