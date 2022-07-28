@@ -1326,6 +1326,7 @@ Section stuff.
      typeclasses eauto.
    Qed.
 
+
    Lemma fun_finite_sum_one_aux {A B : Type}
          (decA : EqDec A eq)
          (decB : EqDec B eq)        
@@ -1512,9 +1513,9 @@ Section stuff.
     replace (nodup decAB elms) with
         (nodupA (holds_on_dec decB (nodup decA elms)) elms).
     apply H.
+    clear H.
+    
   Admitted.
-
-(*  
 
    Lemma fun_finite_sum_prob_aux {A B : Type}
          (decA : EqDec A eq)
@@ -1540,6 +1541,8 @@ Section stuff.
     induction elmsA; [simpl; congruence | clear nnilA].
     destruct elmsA; [clear IHelmsA | cut_to IHelmsA; trivial]; intros.
     - simpl.
+      unfold nodupA, holds_on_dec; simpl.
+(*      
       rewrite <- (sumone a) at 1.
       apply list_sum_perm_eq.
       transitivity (map (fab a) (map (fun sp : A -> B => (sp a)) (nodupA (holds_on_dec decB (a :: nil)) elms))).
@@ -1620,8 +1623,9 @@ Section stuff.
       match_destr.
       now rewrite e in H.
     - congruence.
-  Admitted.
  *)
+  Admitted.
+
   
   Lemma fun_finite_sum_prob {A B : Type} 
         (finA : Finite A)
@@ -2048,10 +2052,45 @@ Section stuff.
        | nil => tt
        | a :: l' => (a, ivector_from_list l')
        end.
-  
+
+  Program Definition ivector_from_map {A B} (f : A -> B) (l : list A) : ivector B (length l) :=
+    ivector_from_list (map f l).
+  Next Obligation.
+    apply map_length.
+  Qed.
+
   Definition sa_fun_space_ps :=
     ivector_ps (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))).
 
+  Definition finite_fun_to_ivector {A B} (finA : Finite A) (decA : EqDec A eq) (g : A -> B) :=
+    ivector_from_map g (nodup decA elms).
+
+  Definition ivector_to_finite_fun {A B} (finA : Finite A) (decA : EqDec A eq) (vec : ivector B (length (nodup decA elms))) : A -> B :=
+    (fun (a : A) => ivector_nth _ (@finite_index _ _ _ a) (finite_index_bound _ _ ) vec).
+
+  Definition fun_space_sa_to_ivector (g : fun_space_sa) := finite_fun_to_ivector _ (sigT_eqdec M.(st_eqdec) act_eqdec) g.
+
+  Definition ivector_to_fun_space_sa (vec : ivector M.(state) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))) : fun_space_sa :=
+    ivector_to_finite_fun _ _ vec.
+
+  Lemma finite_fun_iso_f_b {A B} (finA : Finite A) (decA : EqDec A eq) :
+    forall (vec : ivector B (length (nodup decA elms))), 
+      finite_fun_to_ivector _ _ (ivector_to_finite_fun _ _ vec) = vec.
+  Proof.
+    intros.
+    unfold ivector_to_finite_fun, finite_fun_to_ivector.
+  Admitted.
+
+  Lemma finite_fun_iso_b_f {A B} (finA : Finite A) (decA : EqDec A eq) :
+    forall (g : A -> B),
+      ivector_to_finite_fun _ _ (finite_fun_to_ivector _ _ g)  = g.
+  Proof.
+    intros.
+    unfold ivector_to_finite_fun, finite_fun_to_ivector.
+    apply functional_extensionality.
+    intros.
+    Admitted.
+  
 End stuff.
 
 Section FiniteDomain.
