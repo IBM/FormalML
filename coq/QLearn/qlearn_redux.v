@@ -2066,7 +2066,7 @@ Section stuff.
     ivector_from_map g (nodup decA elms).
 
   Definition ivector_to_finite_fun {A B} (finA : Finite A) (decA : EqDec A eq) (vec : ivector B (length (nodup decA elms))) : A -> B :=
-    (fun (a : A) => ivector_nth _ (@finite_index _ _ _ a) (finite_index_bound _ _ ) vec).
+    (fun (a : A) => ivector_nth _ (finite_index _ a) (finite_index_bound _ _ ) vec).
 
   Definition fun_space_sa_to_ivector (g : fun_space_sa) := finite_fun_to_ivector _ (sigT_eqdec M.(st_eqdec) act_eqdec) g.
 
