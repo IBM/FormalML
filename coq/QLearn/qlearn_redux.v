@@ -1055,7 +1055,6 @@ Section stuff.
   Proof.
     unfold fun_space_pmf_pmf, fun_space_sa_pmf_pmf.
     unfold f_sa.
-    
     Admitted.
 
   Lemma f_sa_sum_one (sa : sigT M.(act)) :
@@ -1314,6 +1313,13 @@ Section stuff.
      - now rewrite <- InA_map in H1.
    Qed.
 
+   Lemma NoDup_nodupA {A} {R} {refl:Reflexive R} (dec:forall x y : A, {R x y} + {~ R x y}) l :
+     NoDup (nodupA dec l).
+   Proof.
+     generalize (NoDupA_nodupA dec l).
+     apply NoDupA_NoDup.
+   Qed.
+
    Lemma In_nodupA {A} {R}  (decR : forall x y : A, {R x y} + {~ R x y}) {x l} {preR:PreOrder R} :
      In x l -> SetoidList.InA R x (nodupA decR l).
    Proof.
@@ -1326,14 +1332,183 @@ Section stuff.
      typeclasses eauto.
    Qed.
 
+   Lemma nodupA_sub {A : Type} {R1 R2 : A -> A -> Prop} (decR1 : forall x y : A, {R1 x y} + {~ R1 x y}) (decR2 : forall x y : A, {R2 x y} + {~ R2 x y})
+         (subr: forall x y, R2 x y -> R1 x y)
+         {l : list A} :
+     sublist (nodupA decR1 l) (nodupA decR2 l).
+   Proof.
+     induction l; simpl; [reflexivity |].
+     repeat match_case; intros ex1 ex2; try now constructor.
+     apply existsb_ex in ex1.
+     destruct ex1 as [?[??]].
+     match_destr_in H0.
+     rewrite existsb_not_forallb in ex2.
+     apply Bool.negb_false_iff in ex2.
+     destruct (forallb_forall (fun x : A => negb (if decR1 a x then true else false)) l) as [HH2 _].
+     specialize (HH2 ex2 _ H).
+     match_destr_in HH2.
+     specialize (subr _ _ r).
+     tauto.
+   Qed.
 
+   Lemma NoDupA_concat {A} (eqA:A->A->Prop) {equivA:Equivalence eqA} (l: list (list A)) :
+     Forall (SetoidList.NoDupA (A:=A) eqA) l ->
+     SetoidList.NoDupA (fun l1 l2 => Exists (fun x => Exists (eqA x) l2) l1) l ->
+     SetoidList.NoDupA eqA (concat l).
+   Proof.
+     induction l; simpl; trivial.
+     intros FF nd.
+     invcs FF.
+     invcs nd.
+     cut_to IHl; trivial.
+     apply SetoidList.NoDupA_app; trivial.
+     intros.
+     apply H3.
+     apply SetoidList.InA_alt.
+     apply SetoidList.InA_alt in H.
+     apply SetoidList.InA_alt in H0.
+     destruct H as [?[??]].
+     destruct H0 as [?[??]].
+     apply in_concat in H6.
+     destruct H6 as [?[??]].
+     exists x2.
+     split; trivial.
+     apply Exists_exists.
+     exists x0; split; trivial.
+     apply Exists_exists.
+     exists x1; split; trivial.
+     now rewrite <- H.
+   Qed.
+
+   Global Instance holds_on_proper {A B} :
+     Proper (subrelation ==> @incl A --> subrelation) (@holds_on A B).
+   Proof.
+     intros ???????????.
+     apply H.
+     apply H1.
+     now apply H0.
+   Qed.
+
+   Lemma nodupA_sup {A : Type} {R1 R2 : A -> A -> Prop} (decR1 : forall x y : A, {R1 x y} + {~ R1 x y}) (decR2 : forall x y : A, {R2 x y} + {~ R2 x y}) {pre1:PreOrder R1}
+         (subr: forall x y, R2 x y -> R1 x y) x l :
+     In x (nodupA decR2 l) ->
+     Exists (fun y => R1 x y /\ (x = y \/ ~ R2 x y)) (nodupA decR1 l).
+   Proof.
+     induction l; simpl; [tauto |].
+     repeat match_case; intros ex1 ex2 inn.
+     - apply Exists_cons_tl; auto.
+     - destruct inn; [subst | auto].
+       apply existsb_exists in ex1.
+       destruct ex1 as [?[??]].
+       match_destr_in H0.
+       apply Exists_exists.
+       assert (SetoidList.InA R1 x0 (nodupA decR1 l)).
+       {
+         apply InA_nodupA; try typeclasses eauto.
+         apply SetoidList.InA_alt.
+         eauto.
+         exists x0; split; trivial.
+         reflexivity.
+       }
+       apply SetoidList.InA_alt in H1.
+       destruct H1 as [?[??]].
+       exists x1.
+       split; trivial.
+       split.
+       + now rewrite r.
+       + rewrite existsb_not_forallb in ex2.
+         apply Bool.negb_false_iff in ex2.
+         destruct (forallb_forall (fun xx : A => negb (if decR2 x xx then true else false)) l) as [HH2 _].
+         apply nodupA_In in H2.
+         specialize (HH2 ex2 _ H2).
+         match_destr_in HH2.
+         eauto.
+     - destruct inn; [subst | auto].
+       apply Exists_exists.
+       exists x; simpl.
+       split; [eauto |].
+       split; [| eauto].
+       reflexivity.
+   Qed.
+   
+   Lemma nodupA_sup' {A : Type} {R1 R2 : A -> A -> Prop} (decR1 : forall x y : A, {R1 x y} + {~ R1 x y}) (decR2 : forall x y : A, {R2 x y} + {~ R2 x y}) {pre1:PreOrder R1}
+         (subr: forall x y, R2 x y -> R1 x y) x l :
+     In x (nodupA decR2 l) ->
+     In x (nodupA decR1 l) \/
+       Exists (fun y => R1 x y /\ ~ R2 x y) (nodupA decR1 l).
+   Proof.
+     intros inn.
+     generalize (nodupA_sup decR1 decR2 subr _ _ inn); intros ina.
+     apply Exists_exists in ina.
+     destruct ina as [? [?[?[?|?]]]].
+     - subst; eauto.
+     - right.
+       apply Exists_exists.
+       eauto.
+   Qed.        
+
+   Lemma holds_on_dec_eq_sup {A B : Type} (dec : EqDec B eq) (l1 l2: list A) l :
+     incl l2 l1 ->
+     forall x, In x (nodupA (holds_on_dec dec l1) l) ->
+          Exists (fun y => forall a, (In a l2 \/ ~ In a l1) -> x a = y a) (nodupA (holds_on_dec dec l2) l).
+   Proof.
+   Admitted.
+
+   
+   Lemma nodupA_holds_on_dec_eq_sup {A B : Type} (dec : EqDec B eq) (l1 l2: list A) l :
+     incl l2 l1 ->
+     forall x, In x (nodupA (holds_on_dec dec l1) l) ->
+          Exists (fun y => forall a, (In a l2 \/ ~ In a l1) -> x a = y a) (nodupA (holds_on_dec dec l2) l).
+   Proof.
+     intros lincl x.
+     induction l; simpl; [tauto |].
+     repeat match_case; intros ex1 ex2 inn.
+     - apply Exists_cons_tl; auto.
+     - destruct inn; [subst | auto].
+       apply existsb_exists in ex1.
+       destruct ex1 as [?[??]].
+       match_destr_in H0.
+       apply Exists_exists.
+       red in e.
+       rewrite existsb_not_forallb in ex2.
+       apply Bool.negb_false_iff in ex2.
+       destruct (forallb_forall (fun x0 : A -> B => negb (if holds_on_dec dec l1 x x0 then true else false)) l) as [HH2 _].
+       specialize (HH2 ex2).
+       assert (SetoidList.InA (holds_on eq l2) x0 (nodupA (holds_on_dec dec l2) l)).
+       {
+         apply InA_nodupA; try typeclasses eauto.
+         apply SetoidList.InA_alt.
+         exists x0; split; trivial.
+         reflexivity.
+       }
+       apply SetoidList.InA_alt in H1.
+       destruct H1 as [?[??]].
+       rewrite H1 in e.
+       clear x0 H H1.
+       exists x1.
+       split; trivial.
+       intros ? [?|?].
+       + now apply e.
+       + apply nodupA_In in H2.
+         admit.
+(*         specialize (HH2 ex2 _ H2).
+         match_destr_in HH2.
+         eauto. *)
+     - destruct inn; [subst | auto].
+       apply Exists_exists.
+       exists x; simpl.
+       split; [eauto |].
+(*       split; [| eauto].
+       reflexivity. *)
+   Admitted.
+   
    Lemma fun_finite_sum_one_aux {A B : Type}
          (decA : EqDec A eq)
          (decB : EqDec B eq)        
          (decAB : EqDec (A -> B) eq) 
          
          (elmsA:list A)
-(*         (NoDup_elmsA : NoDup elmsA) *)
+         (NoDup_elmsA : NoDup elmsA)
          (nnilA : elmsA <> nil)
          (finB:Finite B)
          (elmsAB: Finite (A -> B))
@@ -1384,7 +1559,10 @@ Section stuff.
     - revert IHelmsA.
       assert (HH:a0 :: elmsA <> nil) by congruence.
       revert HH.
-      generalize (a0 :: elmsA); clear a0 elmsA; intros elmsA elmsAnnil.
+      invcs NoDup_elmsA.
+      invcs H2.
+      revert H1.
+      generalize (a0 :: elmsA); clear a0 elmsA H3 H4; intros elmsA anin elmsAnnil.
       intros IHelmsA.
       simpl.
       specialize (sumone a).
@@ -1397,7 +1575,153 @@ Section stuff.
                                 (fun f => fun x => if decA x a then b else f x)
                                 (nodupA (holds_on_dec decB elmsA) elms)) (nodup decB elms)))).
       {
-        admit.
+        apply NoDup_Permutation'.
+        - apply NoDup_nodupA.
+        - apply NoDupA_eq.
+          apply NoDupA_concat; [typeclasses eauto |..].
+          + apply Forall_map.
+            apply Forall_forall; intros.
+            apply NoDupA_eq.
+            revert anin.
+            clear; intros anin.
+            induction elms; simpl; [constructor |].
+            match_case.
+            intros exf.
+            rewrite existsb_not_forallb in exf.
+            apply Bool.negb_false_iff in exf.
+            rewrite forallb_forall in exf.
+            simpl.
+            constructor; trivial.
+            intros inn.
+            apply in_map_iff in inn.
+            destruct inn as [? [??]]; subst.
+            assert (inn2:In x0 l).
+            {
+              eapply nodupA_In; eauto.
+            }
+            specialize (exf _ inn2).
+            match_destr_in exf.
+            apply c.
+            intros ??.
+            cut ((fun x1 : A => if decA x1 a then x else x0 x1) a1 =
+                   (fun x0 : A => if decA x0 a then x else a0 x0) a1)
+            ; [| now rewrite H].
+            simpl.
+            intros HH.
+            match_destr_in HH; [| eauto].
+            red in e; subst.
+            congruence.
+          + apply NoDupA_map.
+            eapply NoDupA_subr; [| reflexivity | apply NoDupA_eq; apply NoDup_nodup].
+            intros ???.
+            apply Exists_exists in H.
+            destruct H as [?[??]].
+            apply Exists_exists in H0.
+            destruct H0 as [?[??]]; subst.
+            apply in_map_iff in H.
+            destruct H as [? [??]]; subst.
+            apply in_map_iff in H0.
+            destruct H0 as [? [??]]; subst.
+            cut ( (fun x : A => if decA x a then y else x1 x) a =
+                    (fun x1 : A => if decA x1 a then x else x0 x1) a)
+            ; [| now rewrite H].
+            simpl.
+            match_destr; intuition.
+        - intros x; split; intros inn.
+          + apply in_concat.
+            exists (map (fun (f0 : A -> B) (x1 : A) => if decA x1 a then (x a) else f0 x1)
+                   (nodupA (holds_on_dec decB elmsA) elms)).
+            split.
+            * admit.
+            * apply in_map_iff.
+              generalize (nodupA_sup
+                            (holds_on_dec decB elmsA)
+                            (holds_on_dec decB (a :: elmsA)))
+              ; intros HH.
+              cut_to HH
+              ; [| apply holds_on_proper; try reflexivity; intros ?; simpl; eauto].
+              specialize (HH _ _ inn).
+              apply Exists_exists in HH.
+              destruct HH as [? [?[??]]].
+              unfold equiv in *.
+              
+              exists x0.
+              split; trivial.
+              unfold equiv in *.
+              apply functional_extensionality; intros.
+              match_destr; [congruence |].
+              destruct H1; [congruence |].
+              unfold holds_on in *.
+              assert (x a <> x0 a) by admit.
+  Admitted.
+(*              admit.
+              
+              
+              intros ?[?|?].
+
+              eexists; split.
+              - apply in_map_iff.
+                eexists; split.
+                + reflexivity.
+                + apply nodup_In.
+                  shelve.
+              - apply in_map_iff.
+                destruct elmsAB; simpl.
+                Set Printing All.
+                
+                
+                eexists x.
+                split.
+                + apply functional_extensionality; intros.
+                  match_destr; congruence.
+                + revert inn.
+                  apply sublist_incl_sub.
+                  apply nodupA_sub.
+                  apply holds_on_proper; try reflexivity.
+                  intros ?; simpl.
+                  unfold equiv; intros.
+                  holds_on R l
+
+
+
+
+            
+            assert (inn2:SetoidList.InA (holds_on eq elmsA)
+                                        x
+                                        (nodupA (holds_on_dec decB (a :: elmsA)) elms)).
+            {
+              apply nodupA_In in inn.
+              eapply InA_subr; try apply In_nodupA; try apply inn
+              ; try typeclasses eauto; trivial.
+              apply sublist_incl_sub.
+              apply nodupA_sub.
+              
+              intros ??; unfold equiv, holds_on; simpl; eauto.
+            } 
+            apply SetoidList.InA_alt in inn2.
+            destruct inn2 as [xx [??]].
+            { eexists; split.
+              - apply in_map_iff.
+                eexists; split.
+                + reflexivity.
+                + apply nodup_In.
+                  apply (finite (x a)).
+              - apply in_map_iff.
+                eexists x.
+                split.
+                + apply functional_extensionality; intros.
+                  match_destr; congruence.
+                + revert inn.
+                  apply sublist_incl_sub.
+                  apply nodupA_sub.
+                  apply holds_on_proper; try reflexivity.
+                  intros ?; simpl.
+                  unfold equiv; intros.
+                  holds_on R l
+                  
+            } 
+            
+            
       } 
 
       erewrite list_sum_perm_eq; [| apply Permutation_map; apply perm1].
@@ -1429,7 +1753,7 @@ Section stuff.
       now rewrite e in H.
     - congruence.
   Admitted.
-  
+  *)
    (*
    Lemma fun_finite_sum_one_aux {A B : Type}
          (decA : EqDec A eq)
@@ -1481,6 +1805,44 @@ Section stuff.
     - simpl in *.
 *)      
 
+  Lemma holds_on_finite {A B : Type} (R:B->B->Prop) {fin:Finite A} :
+    forall x y, holds_on R elms x y <-> forall a, R (x a) (y a).
+  Proof.
+    destruct fin; unfold holds_on; simpl.
+    firstorder.
+   Qed.
+
+  Lemma nodupA_holds_on_fin {A B : Type} {fin:Finite A}
+        (decB : EqDec B eq)
+        (decAB : EqDec (A -> B) eq) l:
+    nodupA (holds_on_dec decB elms) l = nodup decAB l.
+  Proof.
+    induction l; simpl; trivial.
+    repeat match_case; intros.
+    - apply existsb_exists in H0.
+      destruct H0 as [?[??]].
+      match_destr_in H1.
+      repeat red in e.
+      cut (a = x); [congruence |].
+      apply functional_extensionality; intros.
+      apply e.
+      apply finite.
+    - rewrite existsb_not_forallb in H0.
+      apply Bool.negb_false_iff in H0.
+      rewrite forallb_forall in H0.
+      specialize (H0 _ i).
+      match_destr_in H0.
+      elim c.
+      reflexivity.
+    - f_equal.
+      auto.
+  Qed.
+      
+
+  (* nodup dec l = nodupA eq l *)
+  (* nodupA_ext *)
+
+         
   Lemma fun_finite_sum_one {A B : Type} 
         (finA : Finite A)
         (finB : Finite B)         
@@ -1488,7 +1850,8 @@ Section stuff.
         (decB : EqDec B eq)        
         (finAB : Finite (A -> B))
         (decAB : EqDec (A -> B) eq) 
-        (fab : A -> B -> R) :
+        (fab : A -> B -> R)
+    :
     inhabited A ->
     (forall (a : A),
         list_sum (map (fab a) (nodup decB elms)) = 1) ->
@@ -1509,14 +1872,14 @@ Section stuff.
       rewrite H1 in H0.
       tauto.
     }
-    specialize (H H0 finB finAB fab sum1).
-    replace (nodup decAB elms) with
+    cut_to H; trivial.
+    - specialize (H finB finAB fab sum1).
+      replace (nodup decAB elms) with
         (nodupA (holds_on_dec decB (nodup decA elms)) elms).
-    apply H.
-    clear H.
-    
+      apply H.
+      apply (@nodupA_holds_on_fin A B (finite_nodup finA) decB decAB).
   Admitted.
-
+  
    Lemma fun_finite_sum_prob_aux {A B : Type}
          (decA : EqDec A eq)
          (decB : EqDec B eq)        
