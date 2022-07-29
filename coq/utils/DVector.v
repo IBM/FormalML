@@ -1053,6 +1053,17 @@ Section ivector.
      apply ivector_nth_prf_irrelevance.
    Qed.
 
+   Lemma ivector_nth_ext' {T} {n} (v1 v2 : ivector T n) i1 i2 pf1 pf2 :
+     i1 = i2 ->
+     v1 = v2 -> 
+     ivector_nth n i1 pf1 v1 = ivector_nth n i2 pf2 v2.
+   Proof.
+     intros Hi1i2 Hv1v2.
+     rewrite Hv1v2.
+     destruct Hi1i2.
+     apply ivector_nth_prf_irrelevance.
+   Qed.
+
   Fixpoint ivector_take {T:Type} (n:nat) (idx:nat): (idx <= n)%nat -> ivector T n -> ivector T idx :=
     match n with
     | 0%nat => match idx with

@@ -1878,7 +1878,8 @@ Section stuff.
         (nodupA (holds_on_dec decB (nodup decA elms)) elms).
       apply H.
       apply (@nodupA_holds_on_fin A B (finite_nodup finA) decB decAB).
-  Admitted.
+    - apply NoDup_nodup.
+  Qed.
   
    Lemma fun_finite_sum_prob_aux {A B : Type}
          (decA : EqDec A eq)
