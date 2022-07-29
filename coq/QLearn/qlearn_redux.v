@@ -2629,11 +2629,10 @@ Section stuff.
      match_destr.
      match_destr.
      clear H.
-     replace (@elms A (@finite_nodup A decA finA)) with (@nodup A decA (@elms A finA)) in e.
-     - rewrite e0 in e.
-       now invcs e.
-     - unfold finite_nodup.
-       now simpl.
+     unfold finite_nodup in e.
+     simpl in e.
+     rewrite e0 in e.
+     now invcs e.
    Qed.
 
   Lemma finite_fun_iso_b_f {A B} (finA : Finite A) (decA : EqDec A eq) :
