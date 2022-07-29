@@ -1038,6 +1038,21 @@ Section ivector.
              end
     end.
 
+   Lemma ivector_nth_prf_irrelevance {T} (n : nat) (vec : ivector T n) index pf1 pf2 :
+     ivector_nth n index pf1 vec = ivector_nth n index pf2 vec.
+   Proof.
+     f_equal.
+     apply le_uniqueness_proof.
+   Qed.
+
+   Lemma ivector_nth_ext {T} {n} (v1 v2 : ivector T n) i pf1 pf2 :
+     v1 = v2 -> ivector_nth n i pf1 v1 = ivector_nth n i pf2 v2.
+   Proof.
+     intros Hv1v2.
+     rewrite Hv1v2.
+     apply ivector_nth_prf_irrelevance.
+   Qed.
+
   Fixpoint ivector_take {T:Type} (n:nat) (idx:nat): (idx <= n)%nat -> ivector T n -> ivector T idx :=
     match n with
     | 0%nat => match idx with
