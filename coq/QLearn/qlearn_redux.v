@@ -2067,6 +2067,17 @@ Section stuff.
   Definition ivector_to_fun_space_sa (vec : ivector M.(state) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))) : fun_space_sa :=
     ivector_to_finite_fun _ _ vec.
 
+(*
+  Lemma ivector_map_nth_finite_aux {A B} (la : list A) (decA : EqDec A eq) (vec : ivector B (length la)) :
+    NoDup la ->
+    ivector_map
+      (fun a : A =>
+         let find_ind := (@find_index_complete A decA la a (In a la)) in
+         ivector_nth (length la) (proj1_sig find_ind)
+                     (@find_index_bound A decA la a (proj1_sig find_ind) (proj2_sig find_ind)) 
+                      vec) (ivector_from_list la) = vec.
+*)
+  
   Lemma ivector_map_nth_finite {A B} (finA : Finite A) (decA : EqDec A eq) (vec : ivector B (length (nodup decA elms))) :
     ivector_map
       (fun a : A =>
@@ -2099,20 +2110,22 @@ Section stuff.
          now apply IHla.
   Qed.
 
-  Lemma find_index_aux_bound {A} (decA : EqDec A eq) (la : list A) (x: A) (n: nat) (x0 : nat):
-    find_index_aux la x n = Some x0 ->
-    (x0 >= n)%nat.
+  Lemma find_index_aux_n {A} (decA : EqDec A eq) (x : A) (la : list A) :
+    forall n1 n2, find_index_aux la x n1 = Some n2 ->
+    (n2 >= n1)%nat.
   Proof.
-    revert n x0.
-    induction la; try (intros; discriminate H).
-    intros n x0.
-    simpl. match_destr.
-    + intros. invcs H. lia.
-    + intros. specialize (IHla (S n) x0 H).
-      lia.
-  Qed.
+    induction la.
+    - simpl.
+      discriminate.
+    - intros.
+      simpl in H.
+      match_destr_in H.
+      + invcs H.
+        lia.
+      + specialize (IHla (S n1) n2 H).
+        lia.
+   Qed.
 
-  
   Lemma find_index_S {A} (decA : EqDec A eq) (la : list A) (a x: A):
     (exists x0,
         Finite.find_index (a :: la) x = Some (S x0)) ->
@@ -2136,29 +2149,13 @@ Section stuff.
       + right.
         assert (S x0 >= 2)%nat.
         {
-          now apply find_index_aux_bound with (decA0 := decA) (la0 := la) (x1 := x).
+          now apply find_index_aux_n with (decA0 := decA) (la0 := la) (x1 := x).
         }
         apply IHla.
         exists (x0 - 1)%nat.
         apply find_index_aux_S in H.
         rewrite H.
         f_equal.
-        lia.
-   Qed.
-
-  Lemma find_index_aux_n {A} (decA : EqDec A eq) (x : A) (la : list A) :
-    forall n1 n2, find_index_aux la x n1 = Some n2 ->
-    (n2 >= n1)%nat.
-  Proof.
-    induction la.
-    - simpl.
-      discriminate.
-    - intros.
-      simpl in H.
-      match_destr_in H.
-      + invcs H.
-        lia.
-      + specialize (IHla (S n1) n2 H).
         lia.
    Qed.
 
@@ -2255,8 +2252,20 @@ Section stuff.
                   (ivector_map g (ivector_from_list (nodup decA elms))) = g x.
    Proof.
      intros.
-     
-     Admitted.
+     generalize (ivector_nth_finite_map_aux (nodup decA elms) decA g x); intros.
+     assert (inx: In x (nodup decA elms)).
+     {
+       apply nodup_In.
+       apply finite.
+     }
+     specialize (H inx).
+     cut_to H; try apply NoDup_nodup.
+     simpl in H.
+     rewrite <- H.
+     unfold finite_index.
+     unfold proj1_sig.
+     simpl.
+   Admitted.
 
   Lemma finite_fun_iso_b_f {A B} (finA : Finite A) (decA : EqDec A eq) :
     forall (g : A -> B),
