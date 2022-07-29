@@ -2188,7 +2188,9 @@ Section stuff.
    Lemma ivector_nth_prf_irrelevance {A} (n : nat) (vec : ivector A n) index pf1 pf2 :
      ivector_nth n index pf1 vec = ivector_nth n index pf2 vec.
    Proof.
-     Admitted.
+     f_equal.
+     apply le_uniqueness_proof.
+   Qed.
    
   Lemma ivector_nth_finite_map_aux {A B} (la : list A) (decA : EqDec A eq) (g : A -> B) 
         (x : A) (inx : In x la) :
