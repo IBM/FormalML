@@ -2624,10 +2624,17 @@ Section stuff.
      cut_to H; try apply NoDup_nodup.
      simpl in H.
      rewrite <- H.
-     unfold finite_index.
-     simpl.
-     
-   Admitted.
+     apply ivector_nth_ext'; trivial.
+     unfold finite_index, proj1_sig.
+     match_destr.
+     match_destr.
+     clear H.
+     replace (@elms A (@finite_nodup A decA finA)) with (@nodup A decA (@elms A finA)) in e.
+     - rewrite e0 in e.
+       now invcs e.
+     - unfold finite_nodup.
+       now simpl.
+   Qed.
 
   Lemma finite_fun_iso_b_f {A B} (finA : Finite A) (decA : EqDec A eq) :
     forall (g : A -> B),
