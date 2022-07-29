@@ -2184,6 +2184,11 @@ Section stuff.
      rewrite H in H0.
      now invcs H0.
    Qed.
+
+   Lemma ivector_nth_prf_irrelevance {A} (n : nat) (vec : ivector A n) index pf1 pf2 :
+     ivector_nth n index pf1 vec = ivector_nth n index pf2 vec.
+   Proof.
+     Admitted.
    
   Lemma ivector_nth_finite_map_aux {A B} (la : list A) (decA : EqDec A eq) (g : A -> B) 
         (x : A) (inx : In x la) :
@@ -2238,13 +2243,11 @@ Section stuff.
                  rewrite <- IHla.
                  unfold proj2_sig.
                  subst.
-                 f_equal.
-                 f_equal.
-                 admit.
+                 apply ivector_nth_prf_irrelevance.
            -- now apply NoDup_cons_iff in nodup.
            -- exists x0.
               apply e.
-     Admitted.
+        Qed.
 
   Lemma ivector_nth_finite_map {A B} (finA : Finite A) (decA : EqDec A eq) (g : A -> B) :
     forall (x : A),
@@ -2263,8 +2266,8 @@ Section stuff.
      simpl in H.
      rewrite <- H.
      unfold finite_index.
-     unfold proj1_sig.
      simpl.
+     
    Admitted.
 
   Lemma finite_fun_iso_b_f {A B} (finA : Finite A) (decA : EqDec A eq) :
