@@ -1167,6 +1167,27 @@ Section ivector.
     now rewrite IHn.
   Qed.
 
-  
+  Lemma ivector_Forall2_eq {A} {n} (vec1 vec2 : ivector A n) :
+    ivector_Forall2 (fun (a1 a2 : A) => a1 = a2) vec1 vec2 <->
+    vec1 = vec2.
+  Proof.
+    intros.
+    induction n.
+    - destruct vec1.
+      destruct vec2.
+      simpl.
+      tauto.
+    - destruct vec1; destruct vec2.
+      split; intros.
+      + assert (a = a0) by apply H.
+        assert (i = i0).
+        {
+          apply IHn.
+          apply H.
+        }
+        now rewrite H0, H1.
+      + invcs H.
+        now apply ivector_Forall2_refl.
+  Qed.
 
 End ivector.
