@@ -2411,12 +2411,6 @@ Section stuff.
   Definition state_act_index (sa : sigT M.(act)) : nat :=
     (@finite_index _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _ sa).
   
-  Fixpoint ivector_from_list {A} (l : list A) : ivector A (length l)
-    := match l with
-       | nil => tt
-       | a :: l' => (a, ivector_from_list l')
-       end.
-
   Definition sa_fun_space_ps :=
     ivector_ps (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))).
 
@@ -2436,8 +2430,8 @@ Section stuff.
     apply map_onto_length.
   Qed.
 
-  Lemma singleton_in {A} (a0 : A) :
-    In a0 (a0 :: nil).
+  Lemma singleton_in {A} (a0 : A) (la : list A):
+    In a0 (a0 :: la).
   Proof.
     simpl.
     tauto.
@@ -2446,11 +2440,19 @@ Section stuff.
   Lemma ivector_from_singleton_list_map_onto {A B} (a0 : A) 
         (g: forall a, In a (a0 :: nil) -> B) : 
     ivector_from_list_map_onto (a0 :: nil) g =
-    ivector_from_list ((g a0 (singleton_in a0)) :: nil).
+    ivector_from_list ((g a0 (singleton_in a0 nil)) :: nil).
   Proof.
     simpl.
     Admitted.
 
+(*
+  Lemma ivector_from_list_map_onto_pair {A B} (a0 : A) (la : list A)
+        (g: forall a, In a (a0 :: la) -> B) : 
+    ivector_from_list_map_onto (a0 :: la) g =
+    ivector_from_list ((g a0 (singleton_in a0 la)) 
+                         :: (map_onto la (fun g)).
+
+*)
   Lemma ivector_map_nth_finite_aux {A B} (la : list A) (decA : EqDec A eq) (vec : ivector B (length la)) :
     NoDup la ->
     la <> nil ->
@@ -2465,16 +2467,35 @@ Section stuff.
     intros NoDup_la la_nnil.
     induction la.
     - tauto.
-    - apply ivector_Forall2_eq.
+    - apply ivector_eq2.
       destruct vec.
       destruct la.
       + simpl.
+        unfold ivector_hd, ivector_tl.
         match_case; intros.
+        destruct i.
+        destruct i0.
         split; trivial.
+        generalize (ivector_from_singleton_list_map_onto a  (fun (a0 : A) (pf : In a0 (a:: nil))  =>
+         match
+           ` (find_index_complete pf) as idx return ((idx < 1)%nat -> B * () -> B)
+         with
+         | 0%nat => fun (_ : (0 < 1)%nat) '(hd, _) => hd
+         | S m' => fun (pf0 : (S m' < 1)%nat) pat =>
+                     match pat return B with
+                     | pair _ _ => False_rect B (Nat.nlt_0_r m' (lt_S_n m' O pf0))
+                     end
+         end (find_index_bound (proj2_sig (find_index_complete pf))) 
+             (b, ()))); intros.
+        simpl in H0.
+        rewrite H0 in H.
+        clear H0.
         admit.
       + specialize (IHla i).
         cut_to IHla.
-        * admit.
+        * unfold ivector_hd, ivector_tl.
+          match_case; intros.
+          admit.
         * now apply NoDup_cons_iff in NoDup_la.
         * discriminate.
      Admitted.

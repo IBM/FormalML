@@ -1172,22 +1172,41 @@ Section ivector.
     vec1 = vec2.
   Proof.
     intros.
-    induction n.
-    - destruct vec1.
-      destruct vec2.
-      simpl.
+    induction n; destruct vec1; destruct vec2.
+    - simpl.
       tauto.
-    - destruct vec1; destruct vec2.
-      split; intros.
-      + assert (a = a0) by apply H.
-        assert (i = i0).
+    - split; intros; invcs H.
+      + assert (i = i0).
         {
           apply IHn.
-          apply H.
+          apply H1.
         }
-        now rewrite H0, H1.
-      + invcs H.
-        now apply ivector_Forall2_refl.
+        now rewrite H.
+      + now apply ivector_Forall2_refl.
   Qed.
+
+  Fixpoint ivector_from_list {A} (l : list A) : ivector A (length l)
+    := match l with
+       | nil => tt
+       | a :: l' => (a, ivector_from_list l')
+       end.
+
+  Definition ivector_hd {A} {n} (vec : ivector A (S n)) : A :=
+    (fun '(hd, tl) => hd) vec.
+    
+  Definition ivector_tl {A} {n} (vec : ivector A (S n)) : ivector A n :=
+    (fun '(hd, tl) => tl) vec.
+  
+  Lemma ivector_eq2 {A} {n} (vec1 vec2 : ivector A (S n)) :
+    vec1 = vec2 <-> ivector_hd vec1 = ivector_hd vec2 /\ ivector_tl vec1 = ivector_tl vec2.
+  Proof.
+    destruct vec1; destruct vec2.
+    split; intros.
+    - invcs H.
+      tauto.
+    - simpl in H.
+      destruct H.
+      now rewrite H, H0.
+   Qed.
 
 End ivector.
