@@ -1175,11 +1175,11 @@ Section ivector.
     induction n; destruct vec1; destruct vec2.
     - simpl.
       tauto.
-    - split; intros; invcs H.
+    - split; intros HH; invcs HH.
       + assert (i = i0).
         {
           apply IHn.
-          apply H1.
+          apply H0.
         }
         now rewrite H.
       + now apply ivector_Forall2_refl.
