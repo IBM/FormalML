@@ -799,8 +799,8 @@ Section ps_ivector_product.
   Lemma ivector_nth_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
         (idx_lt : (idx < n)%nat) :
         RandomVariable (ivector_sa ivsa) 
-                       (ivector_nth n idx idx_lt ivsa)
-                       (ivector_nth n idx idx_lt).
+                       (ivector_nth idx idx_lt ivsa)
+                       (ivector_nth idx idx_lt).
   Proof.
     revert ivsa idx idx_lt.
     induction n; simpl; [lia |].
@@ -809,8 +809,8 @@ Section ps_ivector_product.
     - apply fst_rv.
     - generalize compose_rv; intros HH.
       cut (
-          RandomVariable (product_sa s (ivector_sa i)) (ivector_nth n idx (lt_S_n idx n idx_lt) i)
-                         (ivector_nth n idx (lt_S_n idx n idx_lt) ∘ snd)).
+          RandomVariable (product_sa s (ivector_sa i)) (ivector_nth idx (lt_S_n idx n idx_lt) i)
+                         (ivector_nth idx (lt_S_n idx n idx_lt) ∘ snd)).
       {
         apply RandomVariable_proper; try reflexivity.
         now intros [??].

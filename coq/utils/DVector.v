@@ -1029,24 +1029,24 @@ Section ivector.
     | S m => (v, ivector_const m v)
     end.
 
-    Fixpoint ivector_nth {T:Type} (n:nat) (idx:nat): (idx < n)%nat -> ivector T n -> T :=
+    Fixpoint ivector_nth {T:Type} {n:nat} (idx:nat): (idx < n)%nat -> ivector T n -> T :=
     match n with
     | 0%nat => fun pf _ => False_rect _ (Nat.nlt_0_r _ pf)
     | S n' => match idx with
              | 0%nat => fun pf '(hd,tl) => hd
-             | S m' => fun pf '(hd,tl) => ivector_nth n' m' (lt_S_n _ _ pf) tl
+             | S m' => fun pf '(hd,tl) => ivector_nth m' (lt_S_n _ _ pf) tl
              end
     end.
 
    Lemma ivector_nth_prf_irrelevance {T} (n : nat) (vec : ivector T n) index pf1 pf2 :
-     ivector_nth n index pf1 vec = ivector_nth n index pf2 vec.
+     ivector_nth index pf1 vec = ivector_nth index pf2 vec.
    Proof.
      f_equal.
      apply le_uniqueness_proof.
    Qed.
 
    Lemma ivector_nth_ext {T} {n} (v1 v2 : ivector T n) i pf1 pf2 :
-     v1 = v2 -> ivector_nth n i pf1 v1 = ivector_nth n i pf2 v2.
+     v1 = v2 -> ivector_nth i pf1 v1 = ivector_nth i pf2 v2.
    Proof.
      intros Hv1v2.
      rewrite Hv1v2.
@@ -1056,7 +1056,7 @@ Section ivector.
    Lemma ivector_nth_ext' {T} {n} (v1 v2 : ivector T n) i1 i2 pf1 pf2 :
      i1 = i2 ->
      v1 = v2 -> 
-     ivector_nth n i1 pf1 v1 = ivector_nth n i2 pf2 v2.
+     ivector_nth i1 pf1 v1 = ivector_nth i2 pf2 v2.
    Proof.
      intros Hi1i2 Hv1v2.
      rewrite Hv1v2.
@@ -1230,7 +1230,7 @@ Section ivector.
 
   
   Lemma ivector_Forall2_nth_iff {A B} {n} (P:A->B->Prop) (v1:ivector A n) (v2:ivector B n) :
-  (forall (i : nat) (pf : (i < n)%nat), P (ivector_nth _ i pf v1) (ivector_nth _ i pf v2)) <->
+  (forall (i : nat) (pf : (i < n)%nat), P (ivector_nth i pf v1) (ivector_nth i pf v2)) <->
     ivector_Forall2 P v1 v2.
   Proof.
     split; revert v1 v2.
@@ -1250,12 +1250,22 @@ Section ivector.
   Qed.
 
 Lemma ivector_nth_eq {T} {n} (v1 v2:ivector T n) :
-  (forall i pf, ivector_nth _ i pf v1 = ivector_nth _ i pf v2) ->
+  (forall i pf, ivector_nth i pf v1 = ivector_nth i pf v2) ->
   v1 = v2.
 Proof.
   intros.
   apply ivector_Forall2_eq.
   now apply ivector_Forall2_nth_iff.
 Qed.
+
+  Lemma ivector_nth_map {A B:Type}
+      {n:nat} (g:A->B) (v:ivector A n) i pf
+  : ivector_nth i pf (ivector_map g v) = g (ivector_nth i pf v).
+  Proof.
+    revert v i pf.
+    induction n; simpl; intros; [lia |].
+    destruct v.
+    destruct i; trivial.
+  Qed.
 
 End ivector.
