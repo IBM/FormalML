@@ -2517,7 +2517,15 @@ Section stuff.
      now invcs H0.
    Qed.
 
-  Program Definition ivector_from_list_map_onto {A B} (la : list A) (g: forall a, In a la -> B) : ivector B (length la) := ivector_from_list (map_onto la g).
+   Fixpoint ivector_create {B} n : (forall i (pf:(i<n)%nat), B) -> ivector B n
+    := match n as n' return  (forall i (pf:(i<n')%nat), B) -> ivector B n' with
+       | 0%nat => fun _ => tt
+       | S m =>
+           fun f => (f 0%nat (Nat.lt_0_succ _) , ivector_create m (fun i pf => f (S i) (lt_n_S _ _ pf)))
+       end.
+
+   
+   Program Definition ivector_from_list_map_onto {A B} (la : list A) (g: forall a, In a la -> B) : ivector B (length la) := ivector_from_list (map_onto la g).
   Next Obligation.
     apply map_onto_length.
   Qed.
@@ -2546,13 +2554,23 @@ Section stuff.
 
 *)
 
+  Lemma ivector_from_list_map_onto_cons_inv {A B} a (l : list A) (decA : EqDec A eq) (g: forall a', In a' (a::l) -> B) :
+    ivector_from_list_map_onto (a::l) g =
+      (g a (or_introl (eq_refl _)), ivector_from_list_map_onto l (fun a' pf => g a' (or_intror pf))).
+  Proof.
+    unfold ivector_from_list_map_onto; simpl.
+  Admitted.
+
+  (*
   Lemma ivector_map_nth_finite_aux {A B} (la : list A) (decA : EqDec A eq) (vec : ivector B (length la)) :
     NoDup la ->
     la <> nil ->
-    ivector_from_list_map_onto 
-      la
-      (fun (a : A) pf =>
-         let find_ind := (@find_index_complete A decA la a pf) in
+    ivector_create
+      (length la)
+      (fun i (pf:(i<length la))
+         ivector_nth 
+
+         
          ivector_nth (length la) (proj1_sig find_ind)
                      (@find_index_bound A decA la a (proj1_sig find_ind) (proj2_sig find_ind)) 
                      vec) = vec.
@@ -2599,10 +2617,25 @@ Section stuff.
         cut_to IHla.
         * unfold ivector_hd, ivector_tl.
           match_case; intros.
+
+
+          
           admit.
         * now apply NoDup_cons_iff in NoDup_la.
         * discriminate.
      Admitted.
+
+*)
+
+  Lemma ivector_nth_map {A B:Type}
+      {n:nat} (g:A->B) (v:ivector A n) i pf
+  : ivector_nth _ i pf (ivector_map g v) = g (ivector_nth _ i pf v).
+  Proof.
+    revert v i pf.
+    induction n; simpl; intros; [lia |].
+    destruct v.
+    destruct i; trivial.
+  Qed.
 
   Lemma ivector_map_nth_finite {A B} (finA : Finite A) (decA : EqDec A eq) (vec : ivector B (length (nodup decA elms))) :
     inhabited A ->
@@ -2611,22 +2644,11 @@ Section stuff.
          ivector_nth (length (nodup decA elms)) (finite_index finA a)
                      (finite_index_bound finA a) vec) (ivector_from_list (nodup decA elms)) = vec.
   Proof.
-      intro inhA.
-      generalize (ivector_map_nth_finite_aux (nodup decA elms) decA vec); intros.
-      cut_to H.
-      - unfold finite_index, proj1_sig.
-        unfold finite.
-        unfold finite_nodup.
-        admit.
-      - apply NoDup_nodup.
-      - apply nodup_not_nil.
-        destruct inhA.
-        destruct finA.
-        generalize (finite X); intros.
-        unfold not; intros.
-        simpl in H1.
-        now rewrite H1 in H0.
-      Admitted.
+    intro inhA.
+    apply ivector_nth_eq; intros.
+    rewrite ivector_nth_map.
+    apply ivector_nth_ext'; try reflexivity.
+  Admitted.
 
   Lemma finite_fun_iso_f_b {A B} (finA : Finite A) (decA : EqDec A eq) :
     inhabited A ->

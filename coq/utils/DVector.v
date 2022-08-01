@@ -1185,6 +1185,8 @@ Section ivector.
       + now apply ivector_Forall2_refl.
   Qed.
 
+  
+
   Fixpoint ivector_from_list {A} (l : list A) : ivector A (length l)
     := match l with
        | nil => tt
@@ -1208,5 +1210,35 @@ Section ivector.
       destruct H.
       now rewrite H, H0.
    Qed.
+
+  
+  Lemma ivector_Forall2_nth_iff {A B} {n} (P:A->B->Prop) (v1:ivector A n) (v2:ivector B n) :
+  (forall (i : nat) (pf : (i < n)%nat), P (ivector_nth _ i pf v1) (ivector_nth _ i pf v2)) <->
+    ivector_Forall2 P v1 v2.
+  Proof.
+    split; revert v1 v2.
+    - induction n; simpl; trivial; intros.
+      destruct v1; destruct v2.
+      split.
+      + specialize (H 0 ((Nat.lt_0_succ _))).
+        apply H.
+      + apply IHn; intros.
+        specialize (H (S i1) ( (lt_n_S _ _ pf))).
+        simpl in H.
+        rewrite (ivector_nth_prf_irrelevance _ i _ _ pf) in H.
+        now rewrite (ivector_nth_prf_irrelevance _ i0 _ _ pf) in H.
+    - induction n; simpl; intros; [lia |].
+      destruct v1; destruct v2; destruct H.
+      destruct i; auto.
+  Qed.
+
+Lemma ivector_nth_eq {T} {n} (v1 v2:ivector T n) :
+  (forall i pf, ivector_nth _ i pf v1 = ivector_nth _ i pf v2) ->
+  v1 = v2.
+Proof.
+  intros.
+  apply ivector_Forall2_eq.
+  now apply ivector_Forall2_nth_iff.
+Qed.
 
 End ivector.
