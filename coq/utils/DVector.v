@@ -1193,6 +1193,23 @@ Section ivector.
        | a :: l' => (a, ivector_from_list l')
        end.
 
+  Fixpoint ivector_to_list {A} {n} : ivector A n -> list A 
+    := match n with
+       | 0%nat => fun _ => nil
+       | S _ => fun '(hd,tl) => hd::(ivector_to_list tl)
+       end.
+
+  Lemma ivector_to_list_from_list {A} (l:list A) : ivector_to_list (ivector_from_list l) = l.
+  Proof.
+    induction l; simpl; congruence.
+  Qed.
+
+  Lemma ivector_to_list_length {A} {n} (v:ivector A n) : length (ivector_to_list v) = n.
+  Proof.
+    induction n; simpl; trivial.
+    destruct v; simpl; auto.
+  Qed.
+
   Definition ivector_hd {A} {n} (vec : ivector A (S n)) : A :=
     (fun '(hd, tl) => hd) vec.
     
