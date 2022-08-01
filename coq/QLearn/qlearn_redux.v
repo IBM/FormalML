@@ -2648,8 +2648,6 @@ Section stuff.
     Admitted.
 
 
-  Search Finite.find_index.
-
   Lemma find_index_correct_alt {A} (l:list A) a n 
         (decA : EqDec A eq)
         (pf : (n < length l)%nat):
@@ -2679,7 +2677,6 @@ unfold Finite.find_index in *.
        simpl in e.
        generalize length_zero_iff_nil; intros.
      generalize (@find_index_correct A decA l); intros.
-     Search Finite.find_index.
      Admitted.
 
    
