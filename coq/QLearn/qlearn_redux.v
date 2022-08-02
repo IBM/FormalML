@@ -2688,7 +2688,7 @@ Section stuff.
     apply functional_extensionality.
     intros.
     apply ivector_nth_finite_map.
-  Qed
+  Qed.
 
 End stuff.
 
