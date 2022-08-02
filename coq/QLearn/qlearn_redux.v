@@ -2631,12 +2631,33 @@ Section stuff.
 
    *)
 
+  Lemma vector_nth_from_list {A} 
+        (l : list A) (i : nat) (pf : (i < length l)%nat):
+    nth_error l i = Some (vector_nth i pf (vector_list l)).
+  Proof.
+    unfold vector_nth, proj1_sig.
+    match_destr.
+    symmetry; apply e.
+  Qed.
+
+  Lemma ivector_nth_from_list {A} 
+        (l : list A) (i : nat) (pf : (i < length l)%nat):
+    nth_error l i = Some (ivector_nth i pf (ivector_from_list l)).
+  Proof.
+    revert i pf.
+    induction l; simpl in *; [lia |].
+    destruct i; simpl; trivial.
+  Qed.
+
   Lemma ivector_vector_nth_from_list {A} 
         (l : list A) (i : nat) (pf : (i < length l)%nat):
     ivector_nth i pf (ivector_from_list l) =
     vector_nth i pf (vector_list l).
   Proof.
-  Admitted.
+    generalize (vector_nth_from_list l i pf).
+    rewrite (ivector_nth_from_list l i pf).
+    congruence.
+  Qed.
 
   Lemma ivector_from_list_nth_error {A} 
         (l : list A) (i : nat) (pf : (i < length l)%nat):
