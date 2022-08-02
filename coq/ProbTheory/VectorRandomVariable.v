@@ -1593,11 +1593,7 @@ Section real_pullback.
     now rewrite vector_removelast_eq.
   Qed.    
 
-  Instance iso_sa {A B}
-          {iso:Isomorphism A B}
-          (sa:SigmaAlgebra A) : SigmaAlgebra B
-    := pullback_sa sa iso_b.
-      
+  Existing Instance iso_sa.      
 (*
   Lemma vector_sa_add {n} {T} (x:SigmaAlgebra T) (sav:vector (SigmaAlgebra T) n) : 
     vector_sa (vector_add_to_end x sav) === iso_sa (product_sa (vector_sa sav) x).

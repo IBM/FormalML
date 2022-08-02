@@ -17,6 +17,8 @@ Require Import utils.Utils DVector.
 Import ListNotations.
 Require Export Event.
 
+Require Import SigmaAlgebras.
+
 Set Bullet Behavior "Strict Subproofs".
 
 Local Open Scope prob.
@@ -1358,3 +1360,34 @@ Section indep.
   Qed.
 
 End indep.
+
+Section iso.
+
+  Program Instance iso_ps {A B: Type}
+          {σ:SigmaAlgebra A}
+          (prts:ProbSpace σ)
+          {iso:Isomorphism A B} :
+    ProbSpace (iso_sa σ)
+    := {|
+      ps_P e := ps_P (iso_event_b e)
+    |}.
+  Next Obligation.
+    intros ???.
+    apply ps_proper.
+    now apply iso_event_b_proper.
+  Qed.
+  Next Obligation.
+    rewrite iso_event_b_union.
+    apply ps_countable_disjoint_union.
+    now apply iso_event_b_disjoint.
+  Qed.
+  Next Obligation.
+    rewrite <- ps_one.
+    apply ps_proper.
+    firstorder.
+  Qed.
+  Next Obligation.
+    apply ps_pos.
+  Qed.
+
+End iso.

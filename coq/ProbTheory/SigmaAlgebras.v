@@ -689,6 +689,71 @@ Section isos.
 
 End isos.
 
+Instance iso_sa {A B}
+         {iso:Isomorphism A B}
+         (sa:SigmaAlgebra A) : SigmaAlgebra B
+  := pullback_sa sa iso_b.
+
+Definition iso_event {A B: Type}
+           {σ:SigmaAlgebra A}
+           {iso:Isomorphism A B}
+           (e:event σ) : event (iso_sa σ)
+  := exist _ (pre_event_preimage (iso_b (Isomorphism:=iso)) e) (pullback_sa_pullback σ (iso_b (Isomorphism:=iso)) (event_pre e) (sa_sigma_event_pre e) ).
+
+Program Definition iso_event_b {A B: Type}
+        {σ:SigmaAlgebra A}
+        {iso:Isomorphism A B}
+        (e:event (iso_sa σ)) : event σ
+  := exist _ (pre_event_preimage (iso_f (Isomorphism:=iso)) e) _.
+Next Obligation.
+  simpl in *.
+  destruct e as [?[?[??]]].
+  simpl in *.
+  unfold pre_event_preimage.
+  revert s.
+  apply sa_proper; intros ?.
+  split; intros HH.
+  + apply i in HH.
+    now rewrite iso_b_f in HH.
+  + apply i.
+    now rewrite iso_b_f.
+Qed.
+
+Global Instance iso_event_b_proper {A B: Type}
+       {σ:SigmaAlgebra A}
+       {iso:Isomorphism A B} :
+  Proper (equiv ==> equiv)
+         (@iso_event_b A B σ iso).
+Proof.
+  intros ????; simpl.
+  apply pre_event_preimage_proper; try reflexivity.
+  apply H.
+Qed.
+
+Lemma iso_event_b_union
+      {A B: Type}
+      {σ:SigmaAlgebra A}
+      {iso:Isomorphism A B}
+      (collection : nat -> event (iso_sa σ)):
+  iso_event_b (union_of_collection collection) ===
+              union_of_collection (fun n => iso_event_b (collection n)).
+Proof.
+  intros ?; simpl.
+  unfold pre_event_preimage.
+  split; intros [n HH]; exists n; apply HH.
+Qed.
+
+Lemma iso_event_b_disjoint
+      {A B: Type}
+      {σ:SigmaAlgebra A}
+      {iso:Isomorphism A B}
+      (collection : nat -> event (iso_sa σ)) :
+  collection_is_pairwise_disjoint collection ->
+  collection_is_pairwise_disjoint (fun n : nat => iso_event_b (collection n)).
+Proof.
+  unfold collection_is_pairwise_disjoint; intros ?????.
+  now apply H.
+Qed.
 
 Definition union_sa {T : Type} (sa1 sa2:SigmaAlgebra T) :=
   generated_sa (pre_event_union (sa_sigma sa1) 
