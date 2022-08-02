@@ -2524,122 +2524,6 @@ Section stuff.
            fun f => (f 0%nat (Nat.lt_0_succ _) , ivector_create m (fun i pf => f (S i) (lt_n_S _ _ pf)))
        end.
 
-   
-   Program Definition ivector_from_list_map_onto {A B} (la : list A) (g: forall a, In a la -> B) : ivector B (length la) := ivector_from_list (map_onto la g).
-  Next Obligation.
-    apply map_onto_length.
-  Qed.
-
-(*
-  Lemma singleton_in {A} (a0 : A) (la : list A):
-    In a0 (a0 :: la).
-  Proof.
-    simpl.
-    tauto.
-  Qed.
-
-  Lemma ivector_from_singleton_list_map_onto {A B} (a0 : A) 
-        (g: forall a, In a (a0 :: nil) -> B) : 
-    ivector_from_list_map_onto (a0 :: nil) g =
-    ivector_from_list ((g a0 (singleton_in a0 nil)) :: nil).
-  Proof.
-    simpl.
-    Admitted.
-
-*)
-
-(*
-  Lemma ivector_from_list_map_onto_pair {A B} (a0 : A) (la : list A)
-        (g: forall a, In a (a0 :: la) -> B) : 
-    ivector_from_list_map_onto (a0 :: la) g =
-    ivector_from_list ((g a0 (singleton_in a0 la)) 
-                         :: (map_onto la (fun g)).
-
-*)
-
-(*
-  Lemma ivector_from_list_map_onto_cons_inv {A B} a (l : list A) (decA : EqDec A eq) (g: forall a', In a' (a::l) -> B) :
-    ivector_from_list_map_onto (a::l) g =
-      (g a (or_introl (eq_refl _)), ivector_from_list_map_onto l (fun a' pf => g a' (or_intror pf))).
-  Proof.
-    unfold ivector_from_list_map_onto; simpl.
-  Admitted.
-*)
-  (*
-  Lemma ivector_map_nth_finite_aux {A B} (la : list A) (decA : EqDec A eq) (vec : ivector B (length la)) :
-    NoDup la ->
-    la <> nil ->
-    ivector_create
-      (length la)
-      (fun i (pf:(i<length la))
-         ivector_nth 
-
-         
-         ivector_nth (length la) (proj1_sig find_ind)
-                     (@find_index_bound A decA la a (proj1_sig find_ind) (proj2_sig find_ind)) 
-                     vec) = vec.
-  Proof.
-    intros NoDup_la la_nnil.
-    induction la.
-    - tauto.
-    - apply ivector_eq2.
-      destruct vec.
-      destruct la.
-      + simpl.
-        unfold ivector_hd, ivector_tl.
-        match_case; intros.
-        destruct i.
-        destruct i0.
-        split; trivial.
-        generalize (ivector_from_singleton_list_map_onto a  (fun (a0 : A) (pf : In a0 (a:: nil))  =>
-         match
-           ` (find_index_complete pf) as idx return ((idx < 1)%nat -> B * () -> B)
-         with
-         | 0%nat => fun (_ : (0 < 1)%nat) '(hd, _) => hd
-         | S m' => fun (pf0 : (S m' < 1)%nat) pat =>
-                     match pat return B with
-                     | pair _ _ => False_rect B (Nat.nlt_0_r m' (lt_S_n m' O pf0))
-                     end
-         end (find_index_bound (proj2_sig (find_index_complete pf))) 
-             (b, ()))); intros.
-        simpl in H0.
-        rewrite H0 in H.
-        clear H0.
-        unfold proj1_sig in H.
-        match_destr_in H.
-        simpl in H.
-        destruct x.
-        * now invcs H.
-        * unfold Finite.find_index in e.
-          simpl in e.
-          generalize e; intros e'.
-          match_case_in e'; intros.
-          rewrite H0 in e'.
-          inversion e'.
-          congruence.
-      + specialize (IHla i).
-        cut_to IHla.
-        * unfold ivector_hd, ivector_tl.
-          match_case; intros.
-
-
-          
-          admit.
-        * now apply NoDup_cons_iff in NoDup_la.
-        * discriminate.
-     Admitted.
-
-   *)
-
-  Lemma vector_nth_from_list {A} 
-        (l : list A) (i : nat) (pf : (i < length l)%nat):
-    nth_error l i = Some (vector_nth i pf (vector_list l)).
-  Proof.
-    unfold vector_nth, proj1_sig.
-    match_destr.
-    symmetry; apply e.
-  Qed.
-
   Lemma ivector_nth_from_list {A} 
         (l : list A) (i : nat) (pf : (i < length l)%nat):
     nth_error l i = Some (ivector_nth i pf (ivector_from_list l)).
@@ -2654,7 +2538,7 @@ Section stuff.
     ivector_nth i pf (ivector_from_list l) =
     vector_nth i pf (vector_list l).
   Proof.
-    generalize (vector_nth_from_list l i pf).
+    generalize (vector_nth_in i pf (vector_list l)); simpl.
     rewrite (ivector_nth_from_list l i pf).
     congruence.
   Qed.
