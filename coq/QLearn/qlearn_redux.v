@@ -2631,30 +2631,38 @@ Section stuff.
 
    *)
 
-  Lemma ivector_nth_from_list {A} (decA : EqDec A eq) 
+  Lemma ivector_vector_nth_from_list {A} (decA : EqDec A eq) 
         (l : list A) (i : nat) (pf : (i < length l)%nat):
-    NoDup l ->
-    Some (ivector_nth i pf (ivector_from_list l)) =
-    nth_error l i.
+    ivector_nth i pf (ivector_from_list l) =
+    vector_nth i pf (vector_list l).
   Proof.
   Admitted.
 
+  Lemma ivector_from_list_nth_error {A} (decA : EqDec A eq) 
+        (l : list A) (i : nat) (pf : (i < length l)%nat):
+    Some (ivector_nth i pf (ivector_from_list l)) =
+    nth_error l i.
+  Proof.
+    rewrite ivector_vector_nth_from_list; trivial.
+    apply vector_nth_in.
+  Qed.
+
   Lemma ivector_nth_from_list_default {A} (a: A) (decA : EqDec A eq) 
         (l : list A) (i : nat) (pf : (i < length l)%nat):
-    NoDup l ->
     (ivector_nth i pf (ivector_from_list l)) =
     nth i l a.
   Proof.
+    symmetry; apply nth_error_nth; symmetry.
+    now apply ivector_from_list_nth_error.
+  Qed.
+
+  Lemma find_index_correct_nodup {A} (decA : EqDec A eq) 
+        (l : list A) (i : nat) (x : A) :
+    NoDup l ->
+    nth_error l i = Some x ->
+    Finite.find_index l x = Some i.
+  Proof.
     Admitted.
-
-
-  Lemma find_index_correct_alt {A} (l:list A) a n 
-        (decA : EqDec A eq)
-        (pf : (n < length l)%nat):
-      nth_error l n = Some a ->
-      Finite.find_index l a = Some n.
-    Proof.
-      Admitted.
 
   Lemma find_index_ivector_nth {A} (decA : EqDec A eq) 
         (l : list A) (i : nat) (pf : (i < length l)%nat):
@@ -2664,22 +2672,10 @@ Section stuff.
       Some i.
    Proof.
      intro nodup.
-     generalize (ivector_nth_from_list decA l i pf nodup); intros.
-     induction l.
-     - simpl in pf.
-       lia.
-     - rewrite ivector_nth_from_list_default with (a0 := a); trivial.
-       
-       generalize (nth_In (a :: l) a pf); intros.
-unfold Finite.find_index in *.
-       simpl.
-       match_destr.
-       simpl in e.
-       generalize length_zero_iff_nil; intros.
-     generalize (@find_index_correct A decA l); intros.
-     Admitted.
-
-   
+     generalize (ivector_from_list_nth_error decA l i pf); intros.
+     symmetry in H.
+     now apply find_index_correct_nodup.
+   Qed.
 
   Lemma ivector_map_nth_finite {A B} (finA : Finite A) (decA : EqDec A eq) (vec : ivector B (length (nodup decA elms))) :
     ivector_map
