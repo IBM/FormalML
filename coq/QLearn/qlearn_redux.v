@@ -2527,6 +2527,7 @@ Section stuff.
         match_destr; try congruence.
         apply IHl. assumption.
    Qed.
+
   Lemma find_index_correct_nodup {A} (decA : EqDec A eq)
         (l : list A) (i : nat) (x : A) :
     NoDup l ->
@@ -2542,12 +2543,12 @@ Section stuff.
       destruct HN as [HN1 HN2].
       destruct i.
       -- simpl in Hncons.
-         invcs Hncons. unfold Finite.find_index. simpl.
+         invcs Hncons. unfold Finite.find_index; simpl.
          match_destr; try congruence.
-      -- simpl in Hncons. unfold Finite.find_index. simpl.
+      -- simpl in Hncons. unfold Finite.find_index; simpl.
          match_destr; try congruence.
          ++ apply nth_error_In in Hncons.
-            rewrite e in Hncons. congruence.
+            rewrite e in Hncons; congruence.
          ++ specialize (IHl i x HN2 Hncons).
             unfold Finite.find_index in IHl.
             now apply find_index_aux_succ.
