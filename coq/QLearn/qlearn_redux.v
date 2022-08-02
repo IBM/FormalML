@@ -2631,29 +2631,20 @@ Section stuff.
 
    *)
 
-  Lemma ivector_vector_nth_from_list {A} (decA : EqDec A eq) 
+  Lemma ivector_vector_nth_from_list {A} 
         (l : list A) (i : nat) (pf : (i < length l)%nat):
     ivector_nth i pf (ivector_from_list l) =
     vector_nth i pf (vector_list l).
   Proof.
   Admitted.
 
-  Lemma ivector_from_list_nth_error {A} (decA : EqDec A eq) 
+  Lemma ivector_from_list_nth_error {A} 
         (l : list A) (i : nat) (pf : (i < length l)%nat):
     Some (ivector_nth i pf (ivector_from_list l)) =
     nth_error l i.
   Proof.
     rewrite ivector_vector_nth_from_list; trivial.
     apply vector_nth_in.
-  Qed.
-
-  Lemma ivector_nth_from_list_default {A} (a: A) (decA : EqDec A eq) 
-        (l : list A) (i : nat) (pf : (i < length l)%nat):
-    (ivector_nth i pf (ivector_from_list l)) =
-    nth i l a.
-  Proof.
-    symmetry; apply nth_error_nth; symmetry.
-    now apply ivector_from_list_nth_error.
   Qed.
 
   Lemma find_index_correct_nodup {A} (decA : EqDec A eq) 
@@ -2672,7 +2663,7 @@ Section stuff.
       Some i.
    Proof.
      intro nodup.
-     generalize (ivector_from_list_nth_error decA l i pf); intros.
+     generalize (ivector_from_list_nth_error l i pf); intros.
      symmetry in H.
      now apply find_index_correct_nodup.
    Qed.
