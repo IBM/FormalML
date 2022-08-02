@@ -2517,7 +2517,17 @@ Section stuff.
      now invcs H0.
    Qed.
 
-  Lemma find_index_correct_nodup {A} (decA : EqDec A eq) 
+   Lemma find_index_aux_succ {A} (decA : EqDec A eq) (l : list A) (i n : nat) (x : A):
+     find_index_aux l x n = Some i -> find_index_aux l x (S n) = Some (S i).
+   Proof.
+     revert i n x.
+     induction l.
+     -- simpl. intros; congruence.
+     -- simpl. intros.
+        match_destr; try congruence.
+        apply IHl. assumption.
+   Qed.
+  Lemma find_index_correct_nodup {A} (decA : EqDec A eq)
         (l : list A) (i : nat) (x : A) :
     NoDup l ->
     nth_error l i = Some x ->
@@ -2540,8 +2550,8 @@ Section stuff.
             rewrite e in Hncons. congruence.
          ++ specialize (IHl i x HN2 Hncons).
             unfold Finite.find_index in IHl.
-
-  Admitted.
+            now apply find_index_aux_succ.
+ Qed.
 
   Lemma find_index_ivector_nth {A} (decA : EqDec A eq) 
         (l : list A) (i : nat) (pf : (i < length l)%nat):
@@ -2677,7 +2687,7 @@ Section stuff.
     apply functional_extensionality.
     intros.
     apply ivector_nth_finite_map.
-  Qed.
+  Qed
 
 End stuff.
 
