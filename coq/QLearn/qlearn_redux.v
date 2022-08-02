@@ -2659,15 +2659,6 @@ Section stuff.
     congruence.
   Qed.
 
-  Lemma ivector_from_list_nth_error {A} 
-        (l : list A) (i : nat) (pf : (i < length l)%nat):
-    Some (ivector_nth i pf (ivector_from_list l)) =
-    nth_error l i.
-  Proof.
-    rewrite ivector_vector_nth_from_list; trivial.
-    apply vector_nth_in.
-  Qed.
-
   Lemma find_index_correct_nodup {A} (decA : EqDec A eq) 
         (l : list A) (i : nat) (x : A) :
     NoDup l ->
@@ -2684,8 +2675,7 @@ Section stuff.
       Some i.
    Proof.
      intro nodup.
-     generalize (ivector_from_list_nth_error l i pf); intros.
-     symmetry in H.
+     generalize (ivector_nth_from_list l i pf); intros.
      now apply find_index_correct_nodup.
    Qed.
 
