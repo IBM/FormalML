@@ -2523,7 +2523,25 @@ Section stuff.
     nth_error l i = Some x ->
     Finite.find_index l x = Some i.
   Proof.
-    Admitted.
+    revert i x.
+    induction l.
+    + intros. rewrite nth_error_nil in H0.
+      invcs H0.
+    + intros i x HN Hncons.
+      rewrite NoDup_cons_iff in HN.
+      destruct HN as [HN1 HN2].
+      destruct i.
+      -- simpl in Hncons.
+         invcs Hncons. unfold Finite.find_index. simpl.
+         match_destr; try congruence.
+      -- simpl in Hncons. unfold Finite.find_index. simpl.
+         match_destr; try congruence.
+         ++ apply nth_error_In in Hncons.
+            rewrite e in Hncons. congruence.
+         ++ specialize (IHl i x HN2 Hncons).
+            unfold Finite.find_index in IHl.
+
+  Admitted.
 
   Lemma find_index_ivector_nth {A} (decA : EqDec A eq) 
         (l : list A) (i : nat) (pf : (i < length l)%nat):
