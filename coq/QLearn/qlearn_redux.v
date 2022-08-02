@@ -2517,32 +2517,6 @@ Section stuff.
      now invcs H0.
    Qed.
 
-   Fixpoint ivector_create {B} n : (forall i (pf:(i<n)%nat), B) -> ivector B n
-    := match n as n' return  (forall i (pf:(i<n')%nat), B) -> ivector B n' with
-       | 0%nat => fun _ => tt
-       | S m =>
-           fun f => (f 0%nat (Nat.lt_0_succ _) , ivector_create m (fun i pf => f (S i) (lt_n_S _ _ pf)))
-       end.
-
-  Lemma ivector_nth_from_list {A} 
-        (l : list A) (i : nat) (pf : (i < length l)%nat):
-    nth_error l i = Some (ivector_nth i pf (ivector_from_list l)).
-  Proof.
-    revert i pf.
-    induction l; simpl in *; [lia |].
-    destruct i; simpl; trivial.
-  Qed.
-
-  Lemma ivector_vector_nth_from_list {A} 
-        (l : list A) (i : nat) (pf : (i < length l)%nat):
-    ivector_nth i pf (ivector_from_list l) =
-    vector_nth i pf (vector_list l).
-  Proof.
-    generalize (vector_nth_in i pf (vector_list l)); simpl.
-    rewrite (ivector_nth_from_list l i pf).
-    congruence.
-  Qed.
-
   Lemma find_index_correct_nodup {A} (decA : EqDec A eq) 
         (l : list A) (i : nat) (x : A) :
     NoDup l ->
