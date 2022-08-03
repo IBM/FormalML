@@ -2325,7 +2325,7 @@ Section stuff.
      unfold pmf_parts; simpl.
      unfold fun_space_pmf_pmf.
      Admitted.
-     
+
   Lemma sa_space_pmf_one (sa : sigT M.(act)) : 
     @countable_sum _ (countable_finite_eqdec _ M.(st_eqdec)) (sa_space_pmf_pmf sa) 1.
   Proof.
@@ -2411,8 +2411,6 @@ Section stuff.
   Definition state_act_index (sa : sigT M.(act)) : nat :=
     (@finite_index _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _ sa).
   
-  Definition sa_fun_space_ps :=
-    ivector_ps (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))).
 
   Definition finite_fun_to_ivector {A B} (finA : Finite A) (decA : EqDec A eq) (g : A -> B) :=
     ivector_map g (ivector_from_list (nodup decA elms)).
@@ -2698,52 +2696,28 @@ Section stuff.
     iso_f_b := finite_fun_iso_f_b finA decA ;
     iso_b_f := finite_fun_iso_b_f finA decA }.
 
-  Definition fun_event_to_vec_event {A B} (finA : Finite A) (decA :EqDec A eq):
-    ((A -> B) -> Prop) -> (ivector B (length (nodup decA elms)) -> Prop) :=
-    fun (funevent: (A -> B) -> Prop) (iv : (ivector B (length (nodup decA elms)))) =>  
-      (funevent (iso_b (Isomorphism := finite_fun_vec_encoder finA decA) iv)).
+  Instance vec_finite_fun_encoder {A B} (finA : Finite A) (decA :EqDec A eq):
+    Isomorphism  (ivector B (length (nodup decA elms))) (A -> B)
+    := {
+    iso_b := finite_fun_to_ivector finA decA;
+    iso_f := ivector_to_finite_fun finA decA;
+    iso_b_f := finite_fun_iso_f_b finA decA ;
+    iso_f_b := finite_fun_iso_b_f finA decA }.
 
-  Definition vec_sa_to_fun_sa {A B} (finA : Finite A) (decA :EqDec A eq)
-            (vecsa : pre_event (ivector B (length (nodup decA elms))) -> Prop) :
-    (pre_event (A -> B) -> Prop) :=
-    (fun (funevent: (A -> B) -> Prop) =>
-       vecsa (fun_event_to_vec_event finA decA funevent)).
-
-  Definition vec_sa_to_fun_sa2 {A B} (finA : Finite A) (decA :EqDec A eq)
-            (vecsa : SigmaAlgebra (ivector B (length (nodup decA elms)))) :
-    (pre_event (A -> B) -> Prop) :=
-    (fun (funevent: (A -> B) -> Prop) =>
-       sa_sigma vecsa (fun_event_to_vec_event finA decA funevent)).
-
-  Program Instance finite_fun_sa {A B} (finA : Finite A) (decA :EqDec A eq) 
-          (vecsa :SigmaAlgebra (ivector B (length (nodup decA elms)))) : SigmaAlgebra (A -> B) :=
-    {| sa_sigma := vec_sa_to_fun_sa2 finA decA vecsa |}.
-  Next Obligation.
-    apply sa_countable_union.
-    intros.
-    unfold sa_sigma.
-    match_destr.
-    simpl.
+  Instance vec_finite_fun_encoder_alt :
+    Isomorphism  (ivector (M.(state)) (length (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms)))) ((sigT (M.(act))) -> M.(state)).
+  Proof.
   Admitted.
-  Next Obligation.
-    apply sa_complement.
-    simpl.
-    unfold sa_sigma.
-    match_destr.
-  Qed.
-  Next Obligation.
-    apply sa_all.
-  Qed.
 
-  (*
-  Program Instance finite_fun_ps {A B} (finA : Finite A) (decA :EqDec A eq) 
-          (vecsa : SigmaAlgebra (ivector B (length (nodup decA elms))))
-          (vecps : ProbSpace (ivector_sa (ivector_const (length (nodup decA elms)) vecsa))) :
-    ProbSpace (finite_fun_sa finA decA vecsa) :=
-    {| ps_P := (fun fun_event => 
-              
-  *)
-  
+  Definition vec_sa_space_ps :=
+    ivector_ps (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))).
+
+  Definition finite_fun_ps := @iso_ps _ _ _ vec_sa_space_ps
+                                      vec_finite_fun_encoder_alt.
+
+
+(* Existing Instance finite_fun_ps. *)
+
 End stuff.
 
 
