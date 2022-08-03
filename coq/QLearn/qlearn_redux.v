@@ -2314,7 +2314,7 @@ Section stuff.
 
   Lemma fun_space_s_a_s_prob :
     forall (s:M.(state)) (a : M.(act) s) (s' : M.(state)),
-      ps_P (exist _ _ (sa_discrete (fun (omega : fun_space) => (omega s a) = s'))) =
+      ps_P (ProbSpace:=fun_space_ps) (exist _ _ (sa_discrete (fun (omega : fun_space) => (omega s a) = s'))) =
       f s a s'.
    Proof.
      intros.
