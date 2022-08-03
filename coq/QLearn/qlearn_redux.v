@@ -54,12 +54,12 @@ Section MDP.
     and ProbSpace structure.
   *)
 
-  Definition reward_sa (sa : sigT M.(act)) (s' : M.(state)) : R :=
+  Definition sa_reward (sa : sigT M.(act)) (s' : M.(state)) : R :=
     let (s, a) := sa in reward s a s'.
 
   Definition bellmanQ' : Rfct(sigT M.(act)) -> (sigT M.(act) -> M.(state)) -> Rfct(sigT M.(act))
   := fun W => fun pi sa => let s' := pi sa in
-                  reward_sa sa s' + γ*Max_{act_list s'}(fun a => W (existT _ s' a)).
+                  sa_reward sa s' + γ*Max_{act_list s'}(fun a => W (existT _ s' a)).
 
   Context (alpha : nat -> sigT M.(act) -> R)
           (pi : nat -> sigT M.(act) -> M.(state))
@@ -92,7 +92,7 @@ Section MDP.
   (* lemma 5 *)
   Lemma upper_bound_step :
     0 < γ < 1 ->
-    (forall sa s', reward_sa sa s' <= max_reward) ->
+    (forall sa s', sa_reward sa s' <= max_reward) ->
     (forall t sa, 0 <= alpha t sa < 1) ->
     forall t,
       Max_{s_act_list}(Q (S t)) <= Rmax (max_reward/(1-γ)) 
@@ -111,7 +111,7 @@ Section MDP.
         match_destr.
     }
     assert (step2: forall (t:nat) (sa:sigT M.(act)),
-               (alpha t sa)*(reward_sa sa (pi t sa) +
+               (alpha t sa)*(sa_reward sa (pi t sa) +
                              γ*Max_{act_list (pi t sa)}
                                    (fun a => Q t (existT _ (pi t sa) a))) <=
                (alpha t sa)*(max_reward + γ*Max_{s_act_list}(Q t))).
@@ -218,7 +218,7 @@ Section MDP.
   (* lemma 6 *)
   Lemma lower_bound_step :
     0 < γ < 1 ->
-    (forall sa s', reward_sa sa s' >= min_reward) ->
+    (forall sa s', sa_reward sa s' >= min_reward) ->
     (forall t sa, 0 <= alpha t sa < 1) ->
     forall t,
       Min_{s_act_list}(Q (S t)) >= Rmin (min_reward/(1-γ)) 
@@ -237,7 +237,7 @@ Section MDP.
         match_destr.
     }
     assert (step2: forall (t:nat) (sa:sigT M.(act)),
-               (alpha t sa)*(reward_sa sa (pi t sa) +
+               (alpha t sa)*(sa_reward sa (pi t sa) +
                              γ*Max_{act_list (pi t sa)}
                                    (fun a => Q t (existT _ (pi t sa) a))) >=
                (alpha t sa)*(min_reward + γ*Min_{s_act_list}(Q t))).
@@ -335,7 +335,7 @@ Section MDP.
   (* Theorem 7 *)
   Lemma upper_bound :
     0 < γ < 1 ->
-    (forall sa s', reward_sa sa s' <= max_reward) ->
+    (forall sa s', sa_reward sa s' <= max_reward) ->
     (forall t sa, 0 <= alpha t sa < 1) ->
     exists (Cmax : R),
       forall t sa, Q t sa <= Cmax.
@@ -382,7 +382,7 @@ Section MDP.
   (* Theorem 7 *)
   Lemma lower_bound :
     0 < γ < 1 ->
-    (forall sa s', reward_sa sa s' >= min_reward) ->
+    (forall sa s', sa_reward sa s' >= min_reward) ->
     (forall t sa, 0 <= alpha t sa < 1) ->
     exists (Cmin : R),
       forall t sa, Q t sa >= Cmin.
@@ -440,8 +440,8 @@ Section MDP.
   
   Lemma noise_bound :
        0 < γ < 1 ->
-       (forall sa s', reward_sa sa s' <= max_reward) ->
-       (forall sa s', reward_sa sa s' >= min_reward) ->
+       (forall sa s', sa_reward sa s' <= max_reward) ->
+       (forall sa s', sa_reward sa s' >= min_reward) ->
        (forall t sa, 0 <= alpha t sa < 1) ->
         exists (sigma : R),
         forall n sa,
@@ -451,7 +451,7 @@ Section MDP.
      intros glim maxr minr alim.
      destruct (upper_bound glim maxr alim) as [Cmax ?].
      destruct (lower_bound glim minr alim) as [Cmin ?].
-     assert (forall sa s', Rabs (reward_sa sa s') <= Rabs min_reward + Rabs max_reward).
+     assert (forall sa s', Rabs (sa_reward sa s') <= Rabs min_reward + Rabs max_reward).
      {
        intros.
        apply abs_bound.
@@ -469,7 +469,7 @@ Section MDP.
        - apply Rplus_le_le_0_compat; apply Rplus_le_le_0_compat; apply Rabs_pos.
        - intros.
          unfold bellmanQ'.
-         generalize (Rabs_triang  (reward_sa sa (pi n sa))
+         generalize (Rabs_triang  (sa_reward sa (pi n sa))
                                 (γ *
                                  (Max_{ act_list (pi n sa)}
                                       (fun a : act M (pi n sa) => 
@@ -538,13 +538,13 @@ Section MDP.
              unfold act_expt_reward.
              split.
              -- apply expt_value_lbdd.
-                unfold reward_sa in minr.
+                unfold sa_reward in minr.
                 intros.
                 apply Rge_le.
                 specialize (minr (existT _ x a) a0).
                 apply minr.
              -- apply expt_value_bdd.
-                unfold reward_sa in maxr.
+                unfold sa_reward in maxr.
                 intros.
                 specialize (maxr (existT _ x a) a0).
                 apply maxr.
@@ -932,7 +932,7 @@ Section stuff.
   Context (act_eqdec:forall s, EqDec (act M s) eq).
   
   Definition fun_space := forall s:M.(state), M.(act) s -> M.(state).
-  Definition fun_space_sa := sigT M.(act) -> M.(state).
+  Definition sa_fun_space := sigT M.(act) -> M.(state).
 
   Instance fun_space_finite : Finite fun_space.
   Proof.
@@ -944,7 +944,7 @@ Section stuff.
       + apply M.(fs).
   Qed.
 
-  Instance fun_space_sa_finite : Finite fun_space_sa.
+  Instance sa_fun_space_finite : Finite sa_fun_space.
   Proof.
     apply (@Finite_fun _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _  _ _); intros.
   Qed.
@@ -1016,7 +1016,7 @@ Section stuff.
       + apply M.(st_eqdec).
   Qed.
   
-  Instance fun_space_sa_eqdec : EqDec fun_space_sa eq.
+  Instance sa_fun_space_eqdec : EqDec sa_fun_space eq.
   Proof.
     unfold fun_space.
     apply @eqdec_finite_fun_ext.
@@ -1043,25 +1043,25 @@ Section stuff.
                   )
                   (nodup M.(st_eqdec) (@elms _ M.(fs)))).
 
-  Definition f_sa (sa : sigT M.(act)) (s' : M.(state)) : nonnegreal := 
+  Definition fsa (sa : sigT M.(act)) (s' : M.(state)) : nonnegreal := 
     let (s,a) := sa in f s a s'.
     
-  Definition fun_space_sa_pmf_pmf (sp:fun_space_sa) : R :=
-    fold_right Rmult 1 (map (fun sa => nonneg (f_sa sa (sp sa)))
+  Definition sa_fun_space_pmf_pmf (sp:sa_fun_space) : R :=
+    fold_right Rmult 1 (map (fun sa => nonneg (fsa sa (sp sa)))
                             (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms)).
 
-  Lemma fun_space_sa_pmf_equal (sp : fun_space) :
-    fun_space_pmf_pmf sp = fun_space_sa_pmf_pmf  (fun (sa : sigT M.(act)) => sp (projT1 sa) (projT2 sa)).
+  Lemma sa_fun_space_pmf_equal (sp : fun_space) :
+    fun_space_pmf_pmf sp = sa_fun_space_pmf_pmf  (fun (sa : sigT M.(act)) => sp (projT1 sa) (projT2 sa)).
   Proof.
-    unfold fun_space_pmf_pmf, fun_space_sa_pmf_pmf.
-    unfold f_sa.
+    unfold fun_space_pmf_pmf, sa_fun_space_pmf_pmf.
+    unfold fsa.
     Admitted.
 
-  Lemma f_sa_sum_one (sa : sigT M.(act)) :
-    list_sum (map (fun s' => nonneg (f_sa sa s')) 
+  Lemma fsa_sum_one (sa : sigT M.(act)) :
+    list_sum (map (fun s' => nonneg (fsa sa s')) 
                   (nodup M.(st_eqdec) (@elms _ M.(fs)))) = 1.
    Proof.
-     unfold f_sa.
+     unfold fsa.
      destruct sa.
      apply fsum_one.
    Qed.
@@ -2015,14 +2015,14 @@ Section stuff.
      Admitted.
   
 
-  Lemma fun_space_sa_pmf_finite_sum_one :
+  Lemma sa_fun_space_pmf_finite_sum_one :
     inhabited (sigT M.(act)) ->
-    list_sum (map fun_space_sa_pmf_pmf 
-                  (nodup fun_space_sa_eqdec elms)) = 1.
+    list_sum (map sa_fun_space_pmf_pmf 
+                  (nodup sa_fun_space_eqdec elms)) = 1.
    Proof.
-     generalize (f_sa_sum_one); intros fsa_sum_one.
-     unfold fun_space_sa_pmf_pmf.
-     generalize (fun_finite_sum_one _ _ (sigT_eqdec  M.(st_eqdec) act_eqdec) (M.(st_eqdec)) _ _ f_sa); intros.
+     generalize (fsa_sum_one); intros fsa_sum_one.
+     unfold sa_fun_space_pmf_pmf.
+     generalize (fun_finite_sum_one _ _ (sigT_eqdec  M.(st_eqdec) act_eqdec) (M.(st_eqdec)) _ _ fsa); intros.
      now apply H.
    Qed.
       
@@ -2057,8 +2057,8 @@ Section stuff.
     apply cond_nonneg.
   Qed.
 
-    Lemma fun_space_sa_pmf_pmf_nonneg (sp:fun_space_sa) :
-      0 <= fun_space_sa_pmf_pmf sp.
+    Lemma sa_fun_space_pmf_pmf_nonneg (sp:sa_fun_space) :
+      0 <= sa_fun_space_pmf_pmf sp.
     Proof.
       apply fold_right_Rmult_nneg; [lra |].
       apply Forall_forall; intros.
@@ -2067,14 +2067,14 @@ Section stuff.
       apply cond_nonneg.
     Qed.
       
-    Lemma fun_space_sa_pmf_list_fst_sum_one (inh : inhabited (sigT M.(act))):
+    Lemma sa_fun_space_pmf_list_fst_sum_one (inh : inhabited (sigT M.(act))):
       list_fst_sum
-        (map (fun fsa => (mknonnegreal _ (fun_space_sa_pmf_pmf_nonneg fsa), fsa))
-             (nodup fun_space_sa_eqdec elms)) = 1.
+        (map (fun fsa => (mknonnegreal _ (sa_fun_space_pmf_pmf_nonneg fsa), fsa))
+             (nodup sa_fun_space_eqdec elms)) = 1.
     Proof.
       rewrite list_fst_sum_compat.
       unfold list_fst_sum'.
-      generalize (fun_space_sa_pmf_finite_sum_one inh); intros.
+      generalize (sa_fun_space_pmf_finite_sum_one inh); intros.
       rewrite <- H.
       f_equal.
       rewrite pmf_prob.seqmap_map.
@@ -2084,10 +2084,10 @@ Section stuff.
       now simpl.
    Qed.
     
-  Definition fun_space_sa_Pmf (inh : inhabited (sigT M.(act))) : Pmf fun_space_sa :=
-    mkPmf (map (fun fsa => (mknonnegreal _ (fun_space_sa_pmf_pmf_nonneg fsa), fsa))
-                 (nodup fun_space_sa_eqdec elms))
-          (fun_space_sa_pmf_list_fst_sum_one inh).
+  Definition sa_fun_space_Pmf (inh : inhabited (sigT M.(act))) : Pmf sa_fun_space :=
+    mkPmf (map (fun fsa => (mknonnegreal _ (sa_fun_space_pmf_pmf_nonneg fsa), fsa))
+                 (nodup sa_fun_space_eqdec elms))
+          (sa_fun_space_pmf_list_fst_sum_one inh).
 
   Definition sa_space_pmf_pmf (sa : sigT M.(act)) : M.(state) -> R
     := let (s,a) := sa in f s a.
@@ -2418,9 +2418,9 @@ Section stuff.
   Definition ivector_to_finite_fun {A B} (finA : Finite A) (decA : EqDec A eq) (vec : ivector B (length (nodup decA elms))) : A -> B :=
     (fun (a : A) => ivector_nth (finite_index _ a) (finite_index_bound _ _ ) vec).
 
-  Definition fun_space_sa_to_ivector (g : fun_space_sa) := finite_fun_to_ivector _ (sigT_eqdec M.(st_eqdec) act_eqdec) g.
+  Definition sa_fun_space_to_ivector (g : sa_fun_space) := finite_fun_to_ivector _ (sigT_eqdec M.(st_eqdec) act_eqdec) g.
 
-  Definition ivector_to_fun_space_sa (vec : ivector M.(state) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))) : fun_space_sa :=
+  Definition ivector_to_sa_fun_space (vec : ivector M.(state) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))) : sa_fun_space :=
     ivector_to_finite_fun _ _ vec.
 
 
@@ -2714,7 +2714,7 @@ Section stuff.
   Definition vec_sa_space_ps :=
     ivector_ps (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))).
 
-  Definition finite_fun_sa : SigmaAlgebra fun_space_sa :=
+  Definition finite_fun_sa : SigmaAlgebra sa_fun_space :=
     (iso_sa
             (ivector_sa
                (ivector_const
