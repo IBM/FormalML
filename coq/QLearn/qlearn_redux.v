@@ -2707,16 +2707,23 @@ Section stuff.
   Instance vec_finite_fun_encoder_alt :
     Isomorphism  (ivector (M.(state)) (length (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms)))) ((sigT (M.(act))) -> M.(state)).
   Proof.
-  Admitted.
+    rewrite map_length.
+    apply vec_finite_fun_encoder.
+  Defined.
 
   Definition vec_sa_space_ps :=
     ivector_ps (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))).
 
-  Definition finite_fun_ps := @iso_ps _ _ _ vec_sa_space_ps
-                                      vec_finite_fun_encoder_alt.
+  Definition finite_fun_sa : SigmaAlgebra fun_space_sa :=
+    (iso_sa
+            (ivector_sa
+               (ivector_const
+                  (length (map sa_space_ps (nodup (sigT_eqdec M act_eqdec) elms)))
+                  (discrete_sa (state M))))).
 
+  Definition finite_fun_ps : ProbSpace finite_fun_sa := iso_ps vec_sa_space_ps vec_finite_fun_encoder_alt.
 
-(* Existing Instance finite_fun_ps. *)
+ Existing Instance finite_fun_ps.
 
 End stuff.
 

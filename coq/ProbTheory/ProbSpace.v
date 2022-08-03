@@ -1366,7 +1366,7 @@ Section iso.
   Program Instance iso_ps {A B: Type}
           {σ:SigmaAlgebra A}
           (prts:ProbSpace σ)
-          {iso:Isomorphism A B} :
+          (iso:Isomorphism A B) :
     ProbSpace (iso_sa σ)
     := {|
       ps_P e := ps_P (iso_event_b e)
