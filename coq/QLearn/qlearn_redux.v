@@ -2472,8 +2472,6 @@ Section stuff.
     unfold preimage_singleton.
     unfold pre_event_singleton.
     unfold pre_event_preimage.
-    
-    
   Admitted.
 
   Lemma NonnegExpectation_proj_fst {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
@@ -2487,28 +2485,10 @@ Section stuff.
     intros inhb.
     unfold NonnegExpectation.
     unfold SimpleExpectationSup.
-    apply Lub.Lub_Rbar_eqset.
-    intros.
-    split; intros.
-    - destruct H as [? [? [? [? ?]]]].
-      destruct inhb.
-      exists (fun a => x0 (a, X)).
-      eexists.
-      eexists.
-      split.
-      + unfold BoundedNonnegativeFunction in *.
-        destruct H.
-        split.
-        * unfold NonnegativeFunction.
-          intros.
-          apply H.
-        * unfold rv_le, pointwise_relation.
-          intros.
-          apply H1.
-      + 
-        
+    unfold Lub.Lub_Rbar, proj1_sig; repeat match_destr.
+    destruct i as [ub1 lub1].
+    destruct i0 as [ub2 lub2].
   Admitted.
-
 
 
   Lemma Expectation_proj_fst {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
