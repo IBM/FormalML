@@ -715,6 +715,34 @@ Section ps_product.
       now rewrite product_sa_product.
   Qed.
 
+  Lemma prod_fst_rv : RandomVariable (product_sa A B) A fst.
+  Proof.
+    intros ?? ?.
+    apply H.
+    exists B0; exists Ω.
+    destruct B0.
+    split; trivial.
+    split.
+    - apply sa_all.
+    - unfold equiv, pre_event_equiv; simpl.
+      unfold pre_Ω.
+      tauto.
+  Qed.
+     
+  Lemma prod_snd_rv : RandomVariable (product_sa A B) B snd.
+  Proof.
+    intros ?? ?.
+    apply H.
+    exists Ω; exists B0.
+    split.
+    - apply sa_all.
+    - destruct B0.
+      split; trivial.
+      unfold equiv, pre_event_equiv; simpl.
+      unfold pre_Ω.
+      tauto.
+  Qed.
+
 End ps_product.
 
 Section ps_ivector_product.
