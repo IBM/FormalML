@@ -850,16 +850,11 @@ Section prod_space.
     red.
     exists (event_pre B).
     exists (pre_Ω).
-    repeat split.
-    - now destruct B.
-    - apply sa_all.
-    - destruct x.
-      intros HH; split.
-      + apply HH.
-      + unfold pre_Ω; trivial.
-    - destruct x; intros [HH _].
-      red; simpl.
-      apply HH.
+    destruct B.
+    split; trivial.
+    split; [apply sa_all |].
+    unfold equiv, pre_event_equiv, pre_Ω.
+    tauto.
   Qed.
 
   Global Instance snd_rv {T1 T2} (a:SigmaAlgebra T1) (b:SigmaAlgebra T2) :
@@ -872,16 +867,11 @@ Section prod_space.
     red.
     exists (pre_Ω).
     exists (event_pre B).
-    repeat split.
-    - apply sa_all.
-    - now destruct B.
-    - destruct x.
-      intros HH; split.
-      + unfold pre_Ω; trivial.
-      + apply HH.
-    - destruct x; intros [_ HH].
-      red; simpl.
-      apply HH.
+    split; [apply sa_all |].
+    destruct B.
+    split; trivial.
+    unfold equiv, pre_event_equiv, pre_Ω.
+    tauto.
   Qed.
 
   Global Instance product_sa_rv
