@@ -2410,6 +2410,140 @@ Section stuff.
 
   Definition state_act_index (sa : sigT M.(act)) : nat :=
     (@finite_index _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _ sa).
+
+  Program Definition vector_map_length {T} {S1 S2} {l : list S1} {g : S1 -> S2} 
+             (vec : ivector T (length (map g l))) : ivector T (length l) := vec.
+  Next Obligation.
+    apply map_length.
+  Qed.
+
+  Definition vec_sa_space_ps :=
+    ivector_ps (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))).
+
+  Program Instance outer_frf_compose {A B C} (g1 : A -> B) (g2 : B -> C) (frf2 : FiniteRangeFunction g2) :
+    FiniteRangeFunction (compose g2 g1)
+    := { frf_vals := frf_vals }.
+  Next Obligation.
+    destruct frf2.
+    now unfold compose.
+  Qed.
+  
+  Lemma SimpleExpectation_proj_fst {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
+        (g : A -> R) 
+        (rv : RandomVariable dom1 borel_sa g)
+        (frg : FiniteRangeFunction g) :
+
+    SimpleExpectation (Prts := (product_ps ps1 ps2)) (compose g fst) = 
+    SimpleExpectation g.
+  Proof.
+    unfold SimpleExpectation.
+    f_equal.
+    apply map_ext.
+    intros.
+    f_equal.
+    generalize (@product_measure_product A B dom1 dom2 _ (Measures.ps_measure ps1)
+                                         _ (Measures.ps_measure ps2)); intros.
+    cut_to H.
+    - specialize (H (preimage_singleton g a) Ω).
+      unfold preimage_singleton in *.
+      unfold pre_event_singleton in *.
+      unfold pre_event_preimage in *.
+    
+  Admitted.
+
+  Lemma SimpleExpectation_proj_snd {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
+        (g : B -> R) 
+        (rv : RandomVariable dom2 borel_sa g)
+        (frg : FiniteRangeFunction g) :
+
+    SimpleExpectation (Prts := (product_ps ps1 ps2)) (compose g snd) = 
+    SimpleExpectation g.
+  Proof.
+    unfold SimpleExpectation.
+    f_equal.
+    apply map_ext.
+    intros.
+    f_equal.
+    generalize product_measure_product; intros.
+    unfold ps_P.
+    unfold product_ps; simpl.
+    match_destr.
+    simpl.
+    unfold preimage_singleton.
+    unfold pre_event_singleton.
+    unfold pre_event_preimage.
+    
+    
+  Admitted.
+
+  Lemma NonnegExpectation_proj_fst {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
+        (g : A -> R) 
+        (nng : NonnegativeFunction g) 
+        (nnfstg : NonnegativeFunction (fun tt  => g (fst tt))) :
+    inhabited B ->
+    NonnegExpectation (Prts := (product_ps ps1 ps2)) (fun tt  => g (fst tt)) =
+    NonnegExpectation g.
+  Proof.
+    intros inhb.
+    unfold NonnegExpectation.
+    unfold SimpleExpectationSup.
+    apply Lub.Lub_Rbar_eqset.
+    intros.
+    split; intros.
+    - destruct H as [? [? [? [? ?]]]].
+      destruct inhb.
+      exists (fun a => x0 (a, X)).
+      eexists.
+      eexists.
+      split.
+      + unfold BoundedNonnegativeFunction in *.
+        destruct H.
+        split.
+        * unfold NonnegativeFunction.
+          intros.
+          apply H.
+        * unfold rv_le, pointwise_relation.
+          intros.
+          apply H1.
+      + 
+        
+  Admitted.
+
+
+
+  Lemma Expectation_proj_fst {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
+        (g : A -> R) :
+    @Expectation _ _ (product_ps ps1 ps2) (fun tt  => g (fst tt)) =
+    @Expectation _ _ ps1 g.
+  Proof.
+    
+  Admitted.
+
+  Lemma Expectation_proj_snd {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
+        (g : B -> R) 
+        (rv : RandomVariable dom2 borel_sa g):
+    @Expectation _ _ (product_ps ps1 ps2) (fun tt  => g (snd tt)) =
+    @Expectation _ _ ps2 g.
+  Proof.
+  Admitted.
+
+Lemma Expectation_proj_nth_aux {T} {dom : SigmaAlgebra T} {n} i pf (g : T -> R) (vecps : ivector (ProbSpace dom) n) :
+    @Expectation _ _ (ivector_ps vecps) (fun tvec => g (ivector_nth i pf tvec)) =
+    @Expectation _ _ (ivector_nth i pf vecps) (fun t => g t).
+  Proof.
+    Admitted.
+
+
+Lemma Expectation_proj_nth (sa: sigT M.(act)) (g : (sigT M.(act)) -> M.(state) -> R) :
+    @Expectation _ _ vec_sa_space_ps (fun stvec => g sa (ivector_nth (state_act_index sa) 
+                                                                     (finite_index_bound _ sa) (vector_map_length stvec))) = @Expectation _ _ (sa_space_ps sa) (fun st => g sa st).
+Proof.
+  generalize (Expectation_proj_nth_aux (state_act_index sa) (finite_index_bound _ sa)
+                                       (g sa) 
+                                       (vector_map_length (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))))); intros.
+  
+  
+  Admitted.
   
 
   Definition finite_fun_to_ivector {A B} (finA : Finite A) (decA : EqDec A eq) (g : A -> B) :=
@@ -2424,7 +2558,6 @@ Section stuff.
     ivector_to_finite_fun _ _ vec.
 
 
-  
   Lemma find_index_aux_S {A} (decA : EqDec A eq) (la : list A) (x: A) (n: nat) (x0 : nat):
     find_index_aux la x (S n) = Some (S x0) ->
     find_index_aux la x n = Some x0.
@@ -2711,8 +2844,6 @@ Section stuff.
     apply vec_finite_fun_encoder.
   Defined.
 
-  Definition vec_sa_space_ps :=
-    ivector_ps (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))).
 
   Definition finite_fun_sa : SigmaAlgebra sa_fun_space :=
     (iso_sa
