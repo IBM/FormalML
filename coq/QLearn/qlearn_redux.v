@@ -2441,15 +2441,15 @@ Section stuff.
     apply map_ext.
     intros.
     f_equal.
-    generalize (@product_measure_product A B dom1 dom2 _ (Measures.ps_measure ps1)
-                                         _ (Measures.ps_measure ps2)); intros.
-    cut_to H.
-    - specialize (H (preimage_singleton g a) Ω).
-      unfold preimage_singleton in *.
-      unfold pre_event_singleton in *.
-      unfold pre_event_preimage in *.
-    
-  Admitted.
+    generalize (@product_sa_product A B dom1 dom2 ps1 ps2 (preimage_singleton g a) Ω); intros HH.
+    rewrite ps_all, Rmult_1_r in HH.
+    rewrite <- HH.
+    apply ps_proper.
+    intros ?; simpl.
+    destruct x; simpl.
+    unfold pre_event_preimage, pre_event_singleton, compose, pre_Ω; simpl.
+    tauto.
+  Qed.
 
   Lemma SimpleExpectation_proj_snd {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
         (g : B -> R) 
