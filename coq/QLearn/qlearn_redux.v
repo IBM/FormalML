@@ -2474,6 +2474,77 @@ Section stuff.
     tauto.
   Qed.
 
+   Program Instance outer_frf_vector_nth {n:nat} (i : nat) (pf : (i < n)%nat) {A B}  (g : A -> B) (frf2 : FiniteRangeFunction g) :
+    FiniteRangeFunction (fun v => g (ivector_nth i pf v))
+    := { frf_vals := frf_vals }.
+  Next Obligation.
+    destruct frf2.
+    apply frf_vals_complete.
+  Qed.
+
+  Lemma ivector_fold_left_Rmult_all1_but_i {n} i pf (vec : ivector R n) :
+    vec = ivector_create n (fun j _ => if i == j then (ivector_nth i pf vec) else 1) ->
+    ivector_fold_left Rmult vec 1 = ivector_nth i pf vec.
+  Proof.
+  Admitted.
+
+  Lemma ivector_nth_zip {T1 T2} {n} i pf (vec1 : ivector T1 n) (vec2 : ivector T2 n) :
+    ivector_nth i pf (ivector_zip vec1 vec2) = (ivector_nth i pf vec1, ivector_nth i pf vec2).
+  Proof.
+  Admitted.
+
+  Lemma ivector_nth_create {T} {n} (f0: forall i (pf:(i<n)%nat), T) j pf2:
+    ivector_nth j pf2 (ivector_create n f0) = f0 j pf2.
+  Proof.
+    Admitted.
+
+  Lemma SimpleExpectation_proj_nth {T} {dom : SigmaAlgebra T} {n} i pf (g : T -> R) (vecps : ivector (ProbSpace dom) n) 
+        (rvg : RandomVariable dom borel_sa g)
+        (frg : FiniteRangeFunction g) 
+        (rvnth: RandomVariable 
+                  (ivector_sa (ivector_const n dom)) borel_sa
+                  (fun tvec : ivector T n => g (ivector_nth i pf tvec))) :
+    SimpleExpectation (Prts := (ivector_ps vecps)) (fun tvec => g (ivector_nth i pf tvec)) =
+    SimpleExpectation (Prts := (ivector_nth i pf vecps)) (fun t => g t).
+  Proof.
+    unfold SimpleExpectation.
+    f_equal.
+    apply map_ext.
+    intros.
+    f_equal.
+    generalize (ivector_sa_product vecps); intros.
+    pose (ve := ivector_create n (fun j _ => if i == j then (preimage_singleton (fun t : T => g t) a) else  Ω)).
+    specialize (H ve).
+    rewrite (ivector_fold_left_Rmult_all1_but_i i pf) in H.
+    - rewrite ivector_nth_map in H.
+      rewrite ivector_nth_zip in H.
+      unfold ve in H.
+      rewrite ivector_nth_create in H.
+      match_destr_in H; try congruence.
+      rewrite <- H.
+      apply ps_proper.
+      intros ?; simpl.
+      unfold preimage_singleton.
+      unfold pre_event_preimage, pre_event_singleton; simpl.
+      admit.
+    - apply ivector_nth_eq.
+      intros.
+      rewrite ivector_nth_map.
+      rewrite ivector_nth_zip.
+      rewrite ivector_nth_create.
+      match_destr.
+      + rewrite ivector_nth_map.
+        rewrite ivector_nth_zip.
+        destruct e.
+        f_equal.
+        * now apply ivector_nth_ext.
+        * now apply ivector_nth_ext.
+      + unfold ve.
+        rewrite ivector_nth_create.
+        match_destr; try congruence.
+        apply ps_all.
+    Admitted.
+
   Lemma NonnegExpectation_proj_fst {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
         (g : A -> R) 
         (rv : RandomVariable dom1 borel_sa g)
@@ -2622,12 +2693,10 @@ Section stuff.
   Proof.
     unfold Expectation.
     f_equal.
-    - erewrite <- (NonnegExpectation_proj_fst ps1 ps2).
-      + now apply NonnegExpectation_ext.
-      + typeclasses eauto.
-    - erewrite <- (NonnegExpectation_proj_fst ps1 ps2).
-      + now apply NonnegExpectation_ext.
-      + typeclasses eauto.
+    - erewrite <- (NonnegExpectation_proj_fst ps1 ps2); [|typeclasses eauto].
+      now apply NonnegExpectation_ext.
+    - erewrite <- (NonnegExpectation_proj_fst ps1 ps2); [|typeclasses eauto].
+      now apply NonnegExpectation_ext.
   Qed.
 
   Lemma Expectation_proj_snd {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
@@ -2638,18 +2707,24 @@ Section stuff.
   Proof.
     unfold Expectation.
     f_equal.
-    - erewrite <- (NonnegExpectation_proj_snd ps1 ps2).
-      + now apply NonnegExpectation_ext.
-      + typeclasses eauto.
-    - erewrite <- (NonnegExpectation_proj_snd ps1 ps2).
-      + now apply NonnegExpectation_ext.
-      + typeclasses eauto.
+    - erewrite <- (NonnegExpectation_proj_snd ps1 ps2); [|typeclasses eauto].
+      now apply NonnegExpectation_ext.
+    - erewrite <- (NonnegExpectation_proj_snd ps1 ps2); [|typeclasses eauto].
+      now apply NonnegExpectation_ext.
   Qed.
 
-Lemma Expectation_proj_nth_aux {T} {dom : SigmaAlgebra T} {n} i pf (g : T -> R) (vecps : ivector (ProbSpace dom) n) :
+Lemma Expectation_proj_nth_aux {T} {dom : SigmaAlgebra T} {n} i pf (g : T -> R) (vecps : ivector (ProbSpace dom) n) 
+      (rvg : RandomVariable dom borel_sa g) :
     @Expectation _ _ (ivector_ps vecps) (fun tvec => g (ivector_nth i pf tvec)) =
     @Expectation _ _ (ivector_nth i pf vecps) (fun t => g t).
   Proof.
+    clear act_eqdec fsum_one f M.
+    revert vecps i pf.
+    induction n; intros.
+    - lia.
+    - destruct i.
+      + simpl.
+    
     Admitted.
 
 
