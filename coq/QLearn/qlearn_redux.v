@@ -2441,7 +2441,7 @@ Section stuff.
     apply map_ext.
     intros.
     f_equal.
-    generalize (@product_sa_product A B dom1 dom2 ps1 ps2 (preimage_singleton g a) Ω); intros HH.
+    generalize (product_sa_product ps1 ps2 (preimage_singleton g a) Ω); intros HH.
     rewrite ps_all, Rmult_1_r in HH.
     rewrite <- HH.
     apply ps_proper.
@@ -2464,32 +2464,177 @@ Section stuff.
     apply map_ext.
     intros.
     f_equal.
-    generalize product_measure_product; intros.
-    unfold ps_P.
-    unfold product_ps; simpl.
-    match_destr.
-    simpl.
-    unfold preimage_singleton.
-    unfold pre_event_singleton.
-    unfold pre_event_preimage.
-  Admitted.
+    generalize (product_sa_product ps1 ps2 Ω (preimage_singleton g a)); intros HH.
+    rewrite ps_all, Rmult_1_l in HH.
+    rewrite <- HH.
+    apply ps_proper.
+    intros ?; simpl.
+    destruct x; simpl.
+    unfold pre_event_preimage, pre_event_singleton, compose, pre_Ω; simpl.
+    tauto.
+  Qed.
+
+(*
+  Lemma NonnegExpectation_simple_approx
+        (rv_X1  : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {nnf1:NonnegativeFunction rv_X1} :
+     Lim_seq
+         (fun n : nat =>
+          NonnegExpectation (simple_approx (fun x : Ts => rv_X1 x) n)) =
+       NonnegExpectation rv_X1.
+  Proof.
+    generalize (simple_approx_lim_seq rv_X1 nnf1); intros.
+    generalize (simple_approx_rv rv_X1); intro apx_rv1.
+    generalize (simple_approx_pofrf rv_X1); intro apx_nnf1.
+    generalize (simple_approx_frf rv_X1); intro apx_frf1.
+    generalize (simple_approx_le rv_X1 nnf1); intro apx_le1.
+    generalize (simple_approx_increasing rv_X1 nnf1); intro apx_inc1.
+    generalize (monotone_convergence rv_X1 (simple_approx rv_X1) rv1 nnf1 apx_rv1 apx_nnf1 apx_le1 apx_inc1 (fun n => simple_expectation_real (simple_approx rv_X1 n))); intros.
+    apply H0.
+    apply H.
+  Qed.        
+*)
 
   Lemma NonnegExpectation_proj_fst {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
         (g : A -> R) 
+        (rv : RandomVariable dom1 borel_sa g)
         (nng : NonnegativeFunction g) 
         (nnfstg : NonnegativeFunction (fun tt  => g (fst tt))) :
-    inhabited B ->
     NonnegExpectation (Prts := (product_ps ps1 ps2)) (fun tt  => g (fst tt)) =
     NonnegExpectation g.
   Proof.
-    intros inhb.
-    unfold NonnegExpectation.
-    unfold SimpleExpectationSup.
-    unfold Lub.Lub_Rbar, proj1_sig; repeat match_destr.
-    destruct i as [ub1 lub1].
-    destruct i0 as [ub2 lub2].
-  Admitted.
+    symmetry.
+    rewrite <- NonnegExpectation_simple_approx; trivial.
+    generalize (simple_approx_lim_seq (fun a => Rbar.Finite (g a)) nng); intros approxlim.
+    assert (prodlim:forall (ab : A * B),
+               Lim_seq.is_lim_seq (fun n => simple_approx (fun (a : A) => Rbar.Finite (g a)) n (fst ab)) (Rbar.Finite (g (fst ab)))) by (intros; apply approxlim).
+    assert (rvstg:RandomVariable (product_sa dom1 dom2) borel_sa (fun tt : A * B => g (fst tt))).
+    {
+      apply compose_rv; trivial.
+      apply fst_rv.
+    }
+    generalize (monotone_convergence 
+                  (fun tt : A * B => g (fst tt))
+                  (fun n ab => simple_approx (fun (a : A) => Rbar.Finite (g a)) n (fst ab)) rvstg nnfstg ); intros.
+    assert (Xnrv:forall n : nat,
+               RandomVariable 
+                 (product_sa dom1 dom2) borel_sa
+                 (fun ab : A * B =>
+                    simple_approx (fun a : A => Rbar.Finite (g a)) n (fst ab))).
+    {
+      intros.
+      apply simple_approx_rv; trivial.
+      typeclasses eauto.
+    }
+    assert (Xn_pos : forall n : nat,
+                 NonnegativeFunction
+                   (fun ab : A * B =>
+                    simple_approx (fun a : A => Rbar.Finite (g a)) n (fst ab))).
+    {
+      intros.
+      apply simple_approx_pofrf.
+    }
+    specialize (H Xnrv Xn_pos).
+    rewrite <- H; trivial.
+    - apply Lim_seq.Lim_seq_ext.
+      intros.
+      f_equal.
+      erewrite <- simple_NonnegExpectation.
+      erewrite <- simple_NonnegExpectation.
+      f_equal.
+      erewrite <-  SimpleExpectation_proj_fst.
+      now unfold compose.
+    - intros.
+      generalize (simple_approx_le (fun a : A => Rbar.Finite (g a)) nng); intros.
+      unfold rv_le, pointwise_relation.
+      intros.
+      apply H0.
+    - intros.
+      generalize (simple_approx_increasing (fun a : A => Rbar.Finite (g a)) nng); intros.
+      unfold rv_le, pointwise_relation.
+      intros.
+      apply H0.
+    - intros.
+      erewrite <- simple_NonnegExpectation.
+      unfold Rbar.is_finite.
+      now simpl.
+      Unshelve.
+      + apply simple_approx_rv; trivial.
+        typeclasses eauto.
+      + apply simple_approx_frf.
+      + apply simple_approx_frf.
+   Qed.
 
+  Lemma NonnegExpectation_proj_snd {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
+        (g : B -> R) 
+        (rv : RandomVariable dom2 borel_sa g)
+        (nng : NonnegativeFunction g) 
+        (nnsndg : NonnegativeFunction (fun tt  => g (snd tt))) :
+    NonnegExpectation (Prts := (product_ps ps1 ps2)) (fun tt  => g (snd tt)) =
+    NonnegExpectation g.
+  Proof.
+    symmetry.
+    rewrite <- NonnegExpectation_simple_approx; trivial.
+    generalize (simple_approx_lim_seq (fun a => Rbar.Finite (g a)) nng); intros approxlim.
+    assert (prodlim:forall (ab : A * B),
+               Lim_seq.is_lim_seq (fun n => simple_approx (fun (b : B) => Rbar.Finite (g b)) n (snd ab)) (Rbar.Finite (g (snd ab)))) by (intros; apply approxlim).
+    assert (rvstg:RandomVariable (product_sa dom1 dom2) borel_sa (fun tt : A * B => g (snd tt))).
+    {
+      apply compose_rv; trivial.
+      apply snd_rv.
+    }
+    generalize (monotone_convergence 
+                  (fun tt : A * B => g (snd tt))
+                  (fun n ab => simple_approx (fun (b : B) => Rbar.Finite (g b)) n (snd ab)) rvstg nnsndg ); intros.
+    assert (Xnrv:forall n : nat,
+               RandomVariable 
+                 (product_sa dom1 dom2) borel_sa
+                 (fun ab : A * B =>
+                    simple_approx (fun b : B => Rbar.Finite (g b)) n (snd ab))).
+    {
+      intros.
+      apply simple_approx_rv; trivial.
+      typeclasses eauto.
+    }
+    assert (Xn_pos : forall n : nat,
+                 NonnegativeFunction
+                   (fun ab : A * B =>
+                    simple_approx (fun b : B => Rbar.Finite (g b)) n (snd ab))).
+    {
+      intros.
+      apply simple_approx_pofrf.
+    }
+    specialize (H Xnrv Xn_pos).
+    rewrite <- H; trivial.
+    - apply Lim_seq.Lim_seq_ext.
+      intros.
+      f_equal.
+      erewrite <- simple_NonnegExpectation.
+      erewrite <- simple_NonnegExpectation.
+      f_equal.
+      erewrite <- (SimpleExpectation_proj_snd ps1 ps2).
+      now unfold compose.
+    - intros.
+      generalize (simple_approx_le (fun b : B => Rbar.Finite (g b)) nng); intros.
+      unfold rv_le, pointwise_relation.
+      intros.
+      apply H0.
+    - intros.
+      generalize (simple_approx_increasing (fun b : B => Rbar.Finite (g b)) nng); intros.
+      unfold rv_le, pointwise_relation.
+      intros.
+      apply H0.
+    - intros.
+      erewrite <- simple_NonnegExpectation.
+      unfold Rbar.is_finite.
+      now simpl.
+      Unshelve.
+      + apply simple_approx_rv; trivial.
+        typeclasses eauto.
+      + apply simple_approx_frf.
+      + apply simple_approx_frf.
+   Qed.
 
   Lemma Expectation_proj_fst {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
         (g : A -> R) :
