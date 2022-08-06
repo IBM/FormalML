@@ -2819,7 +2819,7 @@ Section stuff.
     f_equal; (erewrite <- (NonnegExpectation_proj_nth i pf vecps); [|typeclasses eauto]; now apply NonnegExpectation_ext).
   Qed.
 
-  Lemma ivector_map_length_from_list {A B} (g : A -> B) (l : list A) i pf pf2:
+  Lemma ivector_nth_map_length_from_list {A B} (g : A -> B) (l : list A) i pf pf2:
     ivector_nth i pf2 (ivector_from_list (map g l)) =
     ivector_nth i pf (ivector_map_length (ivector_from_list (map g l))).
   Proof.
@@ -2835,7 +2835,7 @@ Section stuff.
     {
       now rewrite map_length.
     }
-    rewrite <- ivector_map_length_from_list with (pf3 := pf2).
+    rewrite <- ivector_nth_map_length_from_list with (pf3 := pf2).
     apply (map_nth_error g) in H.
     rewrite ivector_nth_from_list with (pf0 := pf2) in H.
     now inversion H.
