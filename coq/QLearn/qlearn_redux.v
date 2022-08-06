@@ -2517,7 +2517,7 @@ Section stuff.
     match_destr.
   Qed.
 
-  Lemma ivector_fold_left_Rmult_allbut_i_ident {n} i pf (vec : ivector R n) :
+  Lemma ivector_fold_left_Rmult_allbut_ident {n} i pf (vec : ivector R n) :
     vec = ivector_create n (fun j _ => if i == j then (ivector_nth i pf vec) else 1) ->
     ivector_fold_left Rmult vec 1 = ivector_nth i pf vec.
   Proof.
@@ -2545,7 +2545,7 @@ Section stuff.
     generalize (ivector_sa_product vecps); intros.
     pose (ve := ivector_create n (fun j _ => if i == j then (preimage_singleton (fun t : T => g t) a) else  Ω)).
     specialize (H ve).
-    rewrite (ivector_fold_left_Rmult_allbut_i_ident i pf) in H.
+    rewrite (ivector_fold_left_Rmult_allbut_ident i pf) in H.
     - rewrite ivector_nth_map, ivector_nth_zip in H.
       unfold ve in H.
       rewrite ivector_nth_create in H; [|intros; match_destr].
