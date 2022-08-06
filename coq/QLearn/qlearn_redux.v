@@ -2500,9 +2500,19 @@ Section stuff.
   Qed.
 
   Lemma ivector_nth_create {T} {n} (f0: forall i (pf:(i<n)%nat), T) j pf2:
+    (forall i pf1 pf2, f0 i pf1 = f0 i pf2) ->
     ivector_nth j pf2 (ivector_create n f0) = f0 j pf2.
   Proof.
-    Admitted.
+    intros.
+    revert j pf2.
+    induction n; intros; try lia.
+    simpl.
+    match_destr.
+    rewrite IHn.
+    - apply H.
+    - intros.
+      apply H.
+  Qed.
 
   Lemma ivector_nth_const {A} {n} i pf (a : A) :
     ivector_nth i pf (ivector_const n a) = a.
@@ -2533,7 +2543,7 @@ Section stuff.
     rewrite (ivector_fold_left_Rmult_allbut_i_ident i pf) in H.
     - rewrite ivector_nth_map, ivector_nth_zip in H.
       unfold ve in H.
-      rewrite ivector_nth_create in H.
+      rewrite ivector_nth_create in H; [|intros; match_destr].
       match_destr_in H; try congruence.
       rewrite <- H.
       apply ps_proper.
@@ -2542,7 +2552,7 @@ Section stuff.
       unfold pre_event_preimage, pre_event_singleton; simpl.
       rewrite <- ivector_Forall2_nth_iff.
       split; intros.
-      + rewrite ivector_nth_create.
+      + rewrite ivector_nth_create; [|intros; match_destr].
         match_destr; simpl.
         * rewrite <- H0.
           f_equal.
@@ -2550,18 +2560,18 @@ Section stuff.
           apply ivector_nth_prf_irrelevance.
         * now unfold pre_Ω.
       + specialize (H0 i pf).
-        rewrite ivector_nth_create in H0.
+        rewrite ivector_nth_create in H0; [| intros; match_destr].
         match_destr_in H0.
         congruence.
     - apply ivector_nth_eq.
       intros.
-      rewrite ivector_nth_map, ivector_nth_zip, ivector_nth_create.
+      rewrite ivector_nth_map, ivector_nth_zip, ivector_nth_create; [|intros; match_destr].
       match_destr.
       + rewrite ivector_nth_map, ivector_nth_zip.
         destruct e.
         f_equal; now apply ivector_nth_ext.
       + unfold ve.
-        rewrite ivector_nth_create.
+        rewrite ivector_nth_create; [|intros; match_destr].
         match_destr; try congruence.
         apply ps_all.
    Qed.
@@ -3131,7 +3141,7 @@ Proof.
     iso_f_b := finite_fun_iso_b_f finA decA }.
 
   Instance vec_finite_fun_encoder_alt :
-    Isomorphism  (ivector (M.(state)) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))) ((sigT (M.(act))) -> M.(state)).
+    Isomorphism (ivector (M.(state)) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))) ((sigT (M.(act))) -> M.(state)).
   Proof.
     apply vec_finite_fun_encoder.
   Defined.
