@@ -2819,11 +2819,21 @@ Section stuff.
     f_equal; (erewrite <- (NonnegExpectation_proj_nth i pf vecps); [|typeclasses eauto]; now apply NonnegExpectation_ext).
   Qed.
 
-  Lemma ivector_nth_list_map {B} (sa: sigT M.(act)) (g : sigT M.(act) -> B) :
-    g sa = ivector_nth (state_act_index sa) (finite_index_bound (act_finite M) sa)
-                       (ivector_map_length (ivector_from_list (map g (nodup (sigT_eqdec M act_eqdec) elms)))).
+  Lemma ivector_nth_list_map {A B} (a: A) (g : A -> B) (l : list A) i pf :
+    nth_error l i = Some a ->
+    g a = ivector_nth i pf
+                       (ivector_map_length (ivector_from_list (map g l))).
   Proof.
     Admitted.
+
+  Lemma ivector_nth_list_map_sa {B} (sa: sigT M.(act)) (g : sigT M.(act) -> B) pf :
+    g sa = ivector_nth (state_act_index sa) pf
+                       (ivector_map_length (ivector_from_list (map g (nodup (sigT_eqdec M act_eqdec) elms)))).
+  Proof.
+    apply ivector_nth_list_map.
+    unfold state_act_index.
+    apply finite_index_correct.
+  Qed.
 
   Lemma Expectation_sa_proj_nth (sa: sigT M.(act)) (g : (sigT M.(act)) -> M.(state) -> R) 
       (rv : forall (sa: sigT M.(act)),
@@ -2839,7 +2849,7 @@ Proof.
   cut_to H; trivial.
   etransitivity; [etransitivity |]; [| apply H |].
   - now apply Expectation_ext.
-  - rewrite <- ivector_nth_list_map.
+  - rewrite <- ivector_nth_list_map_sa.
     now apply Expectation_ext.
   Qed.
 
