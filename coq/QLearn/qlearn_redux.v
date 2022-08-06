@@ -2482,7 +2482,7 @@ Section stuff.
     apply frf_vals_complete.
   Qed.
 
-  Lemma ivector_fold_left_Rmult_all1_but_i {n} i pf (vec : ivector R n) :
+  Lemma ivector_fold_left_Rmult_allbut_i_ident{n} i pf (vec : ivector R n) :
     vec = ivector_create n (fun j _ => if i == j then (ivector_nth i pf vec) else 1) ->
     ivector_fold_left Rmult vec 1 = ivector_nth i pf vec.
   Proof.
@@ -2515,9 +2515,8 @@ Section stuff.
     generalize (ivector_sa_product vecps); intros.
     pose (ve := ivector_create n (fun j _ => if i == j then (preimage_singleton (fun t : T => g t) a) else  Ω)).
     specialize (H ve).
-    rewrite (ivector_fold_left_Rmult_all1_but_i i pf) in H.
-    - rewrite ivector_nth_map in H.
-      rewrite ivector_nth_zip in H.
+    rewrite (ivector_fold_left_Rmult_allbut_i_ident i pf) in H.
+    - rewrite ivector_nth_map, ivector_nth_zip in H.
       unfold ve in H.
       rewrite ivector_nth_create in H.
       match_destr_in H; try congruence.
@@ -2526,24 +2525,31 @@ Section stuff.
       intros ?; simpl.
       unfold preimage_singleton.
       unfold pre_event_preimage, pre_event_singleton; simpl.
-      admit.
+      rewrite <- ivector_Forall2_nth_iff.
+      split; intros.
+      + rewrite ivector_nth_create.
+        match_destr; simpl.
+        * rewrite <- H0.
+          f_equal.
+          destruct e0.
+          apply ivector_nth_prf_irrelevance.
+        * now unfold pre_Ω.
+      + specialize (H0 i pf).
+        rewrite ivector_nth_create in H0.
+        match_destr_in H0.
+        congruence.
     - apply ivector_nth_eq.
       intros.
-      rewrite ivector_nth_map.
-      rewrite ivector_nth_zip.
-      rewrite ivector_nth_create.
+      rewrite ivector_nth_map, ivector_nth_zip, ivector_nth_create.
       match_destr.
-      + rewrite ivector_nth_map.
-        rewrite ivector_nth_zip.
+      + rewrite ivector_nth_map, ivector_nth_zip.
         destruct e.
-        f_equal.
-        * now apply ivector_nth_ext.
-        * now apply ivector_nth_ext.
+        f_equal; now apply ivector_nth_ext.
       + unfold ve.
         rewrite ivector_nth_create.
         match_destr; try congruence.
         apply ps_all.
-    Admitted.
+   Qed.
 
   Lemma NonnegExpectation_proj_fst {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
         (g : A -> R) 
