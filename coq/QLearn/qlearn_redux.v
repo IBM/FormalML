@@ -2819,18 +2819,33 @@ Section stuff.
     f_equal; (erewrite <- (NonnegExpectation_proj_nth i pf vecps); [|typeclasses eauto]; now apply NonnegExpectation_ext).
   Qed.
 
-  Lemma ivector_nth_list_map {A B} (a: A) (g : A -> B) (l : list A) i pf :
+  Lemma ivector_map_length_from_list {A B} (g : A -> B) (l : list A) i pf pf2:
+    ivector_nth i pf2 (ivector_from_list (map g l)) =
+    ivector_nth i pf (ivector_map_length (ivector_from_list (map g l))).
+  Proof.
+    Admitted.
+
+  Lemma ivector_nth_list_map' {A B} (a: A) (g : A -> B) (l : list A) i pf :
     nth_error l i = Some a ->
     g a = ivector_nth i pf
                        (ivector_map_length (ivector_from_list (map g l))).
   Proof.
-    Admitted.
+    intros.
+    assert (pf2 : (i < length (map g l))%nat).
+    {
+      now rewrite map_length.
+    }
+    rewrite <- ivector_map_length_from_list with (pf3 := pf2).
+    apply (map_nth_error g) in H.
+    rewrite ivector_nth_from_list with (pf0 := pf2) in H.
+    now inversion H.
+  Qed.
 
   Lemma ivector_nth_list_map_sa {B} (sa: sigT M.(act)) (g : sigT M.(act) -> B) pf :
     g sa = ivector_nth (state_act_index sa) pf
                        (ivector_map_length (ivector_from_list (map g (nodup (sigT_eqdec M act_eqdec) elms)))).
   Proof.
-    apply ivector_nth_list_map.
+    apply ivector_nth_list_map'.
     unfold state_act_index.
     apply finite_index_correct.
   Qed.
