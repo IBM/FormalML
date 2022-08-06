@@ -2418,7 +2418,7 @@ Section stuff.
   Qed.
 
   Definition vec_sa_space_ps :=
-    ivector_ps (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))).
+    ivector_ps (vector_map_length (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms)))).
 
   Program Instance outer_frf_compose {A B C} (g1 : A -> B) (g2 : B -> C) (frf2 : FiniteRangeFunction g2) :
     FiniteRangeFunction (compose g2 g1)
@@ -2491,12 +2491,27 @@ Section stuff.
   Lemma ivector_nth_zip {T1 T2} {n} i pf (vec1 : ivector T1 n) (vec2 : ivector T2 n) :
     ivector_nth i pf (ivector_zip vec1 vec2) = (ivector_nth i pf vec1, ivector_nth i pf vec2).
   Proof.
-  Admitted.
+    revert i pf vec1 vec2.
+    induction n; intros; try lia.
+    simpl.
+    destruct vec1.
+    destruct vec2.
+    match_destr.
+  Qed.
 
   Lemma ivector_nth_create {T} {n} (f0: forall i (pf:(i<n)%nat), T) j pf2:
     ivector_nth j pf2 (ivector_create n f0) = f0 j pf2.
   Proof.
     Admitted.
+
+  Lemma ivector_nth_const {A} {n} i pf (a : A) :
+    ivector_nth i pf (ivector_const n a) = a.
+  Proof.
+    revert i pf.
+    induction n; intros; try lia.
+    simpl.
+    match_destr.
+  Qed.
 
   Lemma SimpleExpectation_proj_nth {T} {dom : SigmaAlgebra T} {n} i pf (g : T -> R) (vecps : ivector (ProbSpace dom) n) 
         (rvg : RandomVariable dom borel_sa g)
@@ -2549,6 +2564,74 @@ Section stuff.
         rewrite ivector_nth_create.
         match_destr; try congruence.
         apply ps_all.
+   Qed.
+
+  Lemma NonnegExpectation_proj_nth {A} {n} {dom : SigmaAlgebra A} i pf (vecps : ivector (ProbSpace dom) n) 
+        (g : A -> R) 
+        (rv : RandomVariable dom borel_sa g)
+        (nng : NonnegativeFunction g) 
+        (nnfstg : NonnegativeFunction (fun vec  => g (ivector_nth i pf vec))) :
+    NonnegExpectation (Prts := (ivector_ps vecps)) (fun vec => g (ivector_nth i pf vec)) =
+    NonnegExpectation (Prts := ivector_nth i pf vecps) g.
+  Proof.
+    symmetry.
+    rewrite <- NonnegExpectation_simple_approx; trivial.
+    generalize (simple_approx_lim_seq (fun a => Rbar.Finite (g a)) nng); intros approxlim.
+    assert (prodlim:forall (vec : ivector A n),
+               Lim_seq.is_lim_seq (fun m => simple_approx (fun (a : A) => Rbar.Finite (g a)) m (ivector_nth i pf vec)) (Rbar.Finite (g (ivector_nth i pf vec)))) by (intros; apply approxlim).
+    assert (rvstg:RandomVariable (ivector_sa (ivector_const n dom)) borel_sa (fun vec : ivector A n => g (ivector_nth i pf vec))).
+    {
+      apply compose_rv; trivial.
+      generalize (ivector_nth_rv (ivector_const n dom) i pf); intros.
+      now rewrite ivector_nth_const in H.
+    }
+    generalize (monotone_convergence (Prts := (ivector_ps vecps))
+                  (fun vec : ivector A n => g (ivector_nth i pf vec))
+                  (fun m vec => simple_approx (fun (a : A) => Rbar.Finite (g a)) m (ivector_nth i pf vec)) rvstg nnfstg ); intros.
+    assert (Xnrv:forall n0 : nat,
+               RandomVariable (ivector_sa (ivector_const n dom)) borel_sa
+         (fun vec : ivector A n => simple_approx (fun a : A => Rbar.Finite (g a)) n0 (ivector_nth i pf vec))).
+    {
+      intros.
+      apply simple_approx_rv; trivial.
+      typeclasses eauto.
+    }
+    assert (Xn_pos : forall n0 : nat,
+               NonnegativeFunction
+                  (fun vec : ivector A n => simple_approx (fun a : A => Rbar.Finite (g a)) n0 (ivector_nth i pf vec))).
+    {
+      intros.
+      apply simple_approx_pofrf.
+    }
+    specialize (H Xnrv Xn_pos).
+    rewrite <- H; trivial.
+    - apply Lim_seq.Lim_seq_ext.
+      intros.
+      f_equal.
+      erewrite <- simple_NonnegExpectation.
+      erewrite <- simple_NonnegExpectation.
+      f_equal.
+      erewrite <-  SimpleExpectation_proj_nth.
+      now unfold compose.
+    - intros.
+      generalize (simple_approx_le (fun a : A => Rbar.Finite (g a)) nng); intros.
+      unfold rv_le, pointwise_relation.
+      intros.
+      apply H0.
+    - intros.
+      generalize (simple_approx_increasing (fun a : A => Rbar.Finite (g a)) nng); intros.
+      unfold rv_le, pointwise_relation.
+      intros.
+      apply H0.
+    - intros.
+      erewrite <- simple_NonnegExpectation.
+      unfold Rbar.is_finite.
+      now simpl.
+      Unshelve.
+      + apply simple_approx_rv; trivial.
+        typeclasses eauto.
+      + apply simple_approx_frf.
+      + apply simple_approx_frf.
    Qed.
 
   Lemma NonnegExpectation_proj_fst {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
@@ -2694,55 +2777,65 @@ Section stuff.
   Lemma Expectation_proj_fst {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
         (g : A -> R) 
         (rvg : RandomVariable dom1 borel_sa g) :
-    @Expectation _ _ (product_ps ps1 ps2) (fun tt  => g (fst tt)) =
-    @Expectation _ _ ps1 g.
+    Expectation (Prts := (product_ps ps1 ps2)) (fun tt  => g (fst tt)) =
+    Expectation g.
   Proof.
     unfold Expectation.
-    f_equal.
-    - erewrite <- (NonnegExpectation_proj_fst ps1 ps2); [|typeclasses eauto].
-      now apply NonnegExpectation_ext.
-    - erewrite <- (NonnegExpectation_proj_fst ps1 ps2); [|typeclasses eauto].
-      now apply NonnegExpectation_ext.
+    f_equal; (erewrite <- (NonnegExpectation_proj_fst ps1 ps2); [|typeclasses eauto]; now apply NonnegExpectation_ext).
   Qed.
 
   Lemma Expectation_proj_snd {A B} {dom1 : SigmaAlgebra A} {dom2 : SigmaAlgebra B} (ps1 : ProbSpace dom1) (ps2 : ProbSpace dom2)
         (g : B -> R) 
         (rvg : RandomVariable dom2 borel_sa g) :
-    @Expectation _ _ (product_ps ps1 ps2) (fun tt  => g (snd tt)) =
-    @Expectation _ _ ps2 g.
+    Expectation (Prts := (product_ps ps1 ps2)) (fun tt  => g (snd tt)) =
+    Expectation g.
   Proof.
     unfold Expectation.
-    f_equal.
-    - erewrite <- (NonnegExpectation_proj_snd ps1 ps2); [|typeclasses eauto].
-      now apply NonnegExpectation_ext.
-    - erewrite <- (NonnegExpectation_proj_snd ps1 ps2); [|typeclasses eauto].
-      now apply NonnegExpectation_ext.
+    f_equal; (erewrite <- (NonnegExpectation_proj_snd ps1 ps2); [|typeclasses eauto]; now apply NonnegExpectation_ext).
   Qed.
 
-Lemma Expectation_proj_nth_aux {T} {dom : SigmaAlgebra T} {n} i pf (g : T -> R) (vecps : ivector (ProbSpace dom) n) 
-      (rvg : RandomVariable dom borel_sa g) :
-    @Expectation _ _ (ivector_ps vecps) (fun tvec => g (ivector_nth i pf tvec)) =
-    @Expectation _ _ (ivector_nth i pf vecps) (fun t => g t).
+  Lemma Expectation_proj_nth {A} {n} {dom : SigmaAlgebra A} i pf (vecps : ivector (ProbSpace dom) n) 
+        (g : A -> R) 
+        (rv : RandomVariable dom borel_sa g) :
+    Expectation (Prts := (ivector_ps vecps)) (fun vec => g (ivector_nth i pf vec)) =
+    Expectation (Prts := ivector_nth i pf vecps) g.
   Proof.
-    clear act_eqdec fsum_one f M.
-    revert vecps i pf.
-    induction n; intros.
-    - lia.
-    - destruct i.
-      + simpl.
-    
-    Admitted.
+    unfold Expectation.
+    f_equal; (erewrite <- (NonnegExpectation_proj_nth i pf vecps); [|typeclasses eauto]; now apply NonnegExpectation_ext).
+  Qed.
 
-
-Lemma Expectation_proj_nth (sa: sigT M.(act)) (g : (sigT M.(act)) -> M.(state) -> R) :
-    @Expectation _ _ vec_sa_space_ps (fun stvec => g sa (ivector_nth (state_act_index sa) 
-                                                                     (finite_index_bound _ sa) (vector_map_length stvec))) = @Expectation _ _ (sa_space_ps sa) (fun st => g sa st).
+  Lemma Expectation_sa_proj_nth (sa: sigT M.(act)) (g : (sigT M.(act)) -> M.(state) -> R) 
+      (rv : forall (sa: sigT M.(act)),
+          RandomVariable (discrete_sa M.(state)) borel_sa (g sa)) :
+  Expectation (Prts := vec_sa_space_ps) 
+              (fun stvec => g sa (ivector_nth (state_act_index sa) 
+                                              (finite_index_bound _ sa) stvec)) =
+  Expectation (Prts := (sa_space_ps sa)) (g sa).
 Proof.
-  generalize (Expectation_proj_nth_aux (state_act_index sa) (finite_index_bound _ sa)
-                                       (g sa) 
-                                       (vector_map_length (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))))); intros.
-  
-  
+  generalize (Expectation_proj_nth (state_act_index sa) (finite_index_bound _ sa)
+                                   (vector_map_length (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))))
+                                   (g sa) ); intros.
+  cut_to H; trivial.
+  etransitivity; [etransitivity |]; [| apply H |].
+  - now apply Expectation_ext.
+  - replace
+       (@ivector_nth (@ProbSpace (state M) (discrete_sa (state M)))
+          (@length (@sigT (state M) (act M))
+             (@nodup (@sigT (state M) (act M)) (@sigT_eqdec (state M) (act M) (st_eqdec M) act_eqdec)
+                (@elms (@sigT (state M) (act M)) (act_finite M)))) (state_act_index sa)
+          (@finite_index_bound (@sigT (state M) (act M)) (@sigT_eqdec (state M) (act M) (st_eqdec M) act_eqdec) (act_finite M) sa)
+          (@vector_map_length (@ProbSpace (state M) (discrete_sa (state M))) (@sigT (state M) (act M))
+             (@ProbSpace (state M) (discrete_sa (state M)))
+             (@nodup (@sigT (state M) (act M)) (@sigT_eqdec (state M) (act M) (st_eqdec M) act_eqdec)
+                (@elms (@sigT (state M) (act M)) (act_finite M))) sa_space_ps
+             (@ivector_from_list (@ProbSpace (state M) (discrete_sa (state M)))
+                (@map (@sigT (state M) (act M)) (@ProbSpace (state M) (discrete_sa (state M))) sa_space_ps
+                   (@nodup (@sigT (state M) (act M)) (@sigT_eqdec (state M) (act M) (st_eqdec M) act_eqdec)
+                           (@elms (@sigT (state M) (act M)) (act_finite M)))))))
+       with (sa_space_ps sa).
+    + now apply Expectation_ext.
+    + unfold sa_space_ps.
+      
   Admitted.
   
 
@@ -3052,9 +3145,12 @@ Proof.
                   (length (map sa_space_ps (nodup (sigT_eqdec M act_eqdec) elms)))
                   (discrete_sa (state M))))).
 
-  Definition finite_fun_ps : ProbSpace finite_fun_sa := iso_ps vec_sa_space_ps vec_finite_fun_encoder_alt.
+(*
+  Definition finite_fun_ps : ProbSpace finite_fun_sa := iso_ps vec_sa_space_ps vec_finite_fun_encoder_alt.  
 
  Existing Instance finite_fun_ps.
+
+*)
 
 End stuff.
 
