@@ -2482,12 +2482,6 @@ Section stuff.
     apply frf_vals_complete.
   Qed.
 
-  Lemma ivector_fold_left_Rmult_allbut_i_ident{n} i pf (vec : ivector R n) :
-    vec = ivector_create n (fun j _ => if i == j then (ivector_nth i pf vec) else 1) ->
-    ivector_fold_left Rmult vec 1 = ivector_nth i pf vec.
-  Proof.
-  Admitted.
-
   Lemma ivector_nth_zip {T1 T2} {n} i pf (vec1 : ivector T1 n) (vec2 : ivector T2 n) :
     ivector_nth i pf (ivector_zip vec1 vec2) = (ivector_nth i pf vec1, ivector_nth i pf vec2).
   Proof.
@@ -2522,6 +2516,17 @@ Section stuff.
     simpl.
     match_destr.
   Qed.
+
+  Lemma ivector_fold_left_Rmult_allbut_i_ident {n} i pf (vec : ivector R n) :
+    vec = ivector_create n (fun j _ => if i == j then (ivector_nth i pf vec) else 1) ->
+    ivector_fold_left Rmult vec 1 = ivector_nth i pf vec.
+  Proof.
+    induction n; intros; try lia.
+    simpl.
+    destruct vec.
+    match_destr.
+    - rewrite Rmult_1_l.
+  Admitted.
 
   Lemma SimpleExpectation_proj_nth {T} {dom : SigmaAlgebra T} {n} i pf (g : T -> R) (vecps : ivector (ProbSpace dom) n) 
         (rvg : RandomVariable dom borel_sa g)
@@ -2814,6 +2819,12 @@ Section stuff.
     f_equal; (erewrite <- (NonnegExpectation_proj_nth i pf vecps); [|typeclasses eauto]; now apply NonnegExpectation_ext).
   Qed.
 
+  Lemma ivector_nth_list_map {B} (sa: sigT M.(act)) (g : sigT M.(act) -> B) :
+    g sa = ivector_nth (state_act_index sa) (finite_index_bound (act_finite M) sa)
+                       (ivector_map_length (ivector_from_list (map g (nodup (sigT_eqdec M act_eqdec) elms)))).
+  Proof.
+    Admitted.
+
   Lemma Expectation_sa_proj_nth (sa: sigT M.(act)) (g : (sigT M.(act)) -> M.(state) -> R) 
       (rv : forall (sa: sigT M.(act)),
           RandomVariable (discrete_sa M.(state)) borel_sa (g sa)) :
@@ -2828,26 +2839,9 @@ Proof.
   cut_to H; trivial.
   etransitivity; [etransitivity |]; [| apply H |].
   - now apply Expectation_ext.
-  - replace
-       (@ivector_nth (@ProbSpace (state M) (discrete_sa (state M)))
-          (@length (@sigT (state M) (act M))
-             (@nodup (@sigT (state M) (act M)) (@sigT_eqdec (state M) (act M) (st_eqdec M) act_eqdec)
-                (@elms (@sigT (state M) (act M)) (act_finite M)))) (state_act_index sa)
-          (@finite_index_bound (@sigT (state M) (act M)) (@sigT_eqdec (state M) (act M) (st_eqdec M) act_eqdec) (act_finite M) sa)
-          (@ivector_map_length (@ProbSpace (state M) (discrete_sa (state M))) (@sigT (state M) (act M))
-             (@ProbSpace (state M) (discrete_sa (state M)))
-             (@nodup (@sigT (state M) (act M)) (@sigT_eqdec (state M) (act M) (st_eqdec M) act_eqdec)
-                (@elms (@sigT (state M) (act M)) (act_finite M))) sa_space_ps
-             (@ivector_from_list (@ProbSpace (state M) (discrete_sa (state M)))
-                (@map (@sigT (state M) (act M)) (@ProbSpace (state M) (discrete_sa (state M))) sa_space_ps
-                   (@nodup (@sigT (state M) (act M)) (@sigT_eqdec (state M) (act M) (st_eqdec M) act_eqdec)
-                           (@elms (@sigT (state M) (act M)) (act_finite M)))))))
-       with (sa_space_ps sa).
-    + now apply Expectation_ext.
-    + unfold sa_space_ps.
-      
-  Admitted.
-  
+  - rewrite <- ivector_nth_list_map.
+    now apply Expectation_ext.
+  Qed.
 
   Definition finite_fun_to_ivector {A B} (finA : Finite A) (decA : EqDec A eq) (g : A -> B) :=
     ivector_map g (ivector_from_list (nodup decA elms)).
