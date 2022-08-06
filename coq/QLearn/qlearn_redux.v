@@ -2411,14 +2411,14 @@ Section stuff.
   Definition state_act_index (sa : sigT M.(act)) : nat :=
     (@finite_index _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _ sa).
 
-  Program Definition vector_map_length {T} {S1 S2} {l : list S1} {g : S1 -> S2} 
+  Program Definition ivector_map_length {T} {S1 S2} {l : list S1} {g : S1 -> S2} 
              (vec : ivector T (length (map g l))) : ivector T (length l) := vec.
   Next Obligation.
     apply map_length.
   Qed.
 
   Definition vec_sa_space_ps :=
-    ivector_ps (vector_map_length (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms)))).
+    ivector_ps (ivector_map_length (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms)))).
 
   Program Instance outer_frf_compose {A B C} (g1 : A -> B) (g2 : B -> C) (frf2 : FiniteRangeFunction g2) :
     FiniteRangeFunction (compose g2 g1)
@@ -2813,7 +2813,7 @@ Section stuff.
   Expectation (Prts := (sa_space_ps sa)) (g sa).
 Proof.
   generalize (Expectation_proj_nth (state_act_index sa) (finite_index_bound _ sa)
-                                   (vector_map_length (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))))
+                                   (ivector_map_length (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))))
                                    (g sa) ); intros.
   cut_to H; trivial.
   etransitivity; [etransitivity |]; [| apply H |].
@@ -2824,7 +2824,7 @@ Proof.
              (@nodup (@sigT (state M) (act M)) (@sigT_eqdec (state M) (act M) (st_eqdec M) act_eqdec)
                 (@elms (@sigT (state M) (act M)) (act_finite M)))) (state_act_index sa)
           (@finite_index_bound (@sigT (state M) (act M)) (@sigT_eqdec (state M) (act M) (st_eqdec M) act_eqdec) (act_finite M) sa)
-          (@vector_map_length (@ProbSpace (state M) (discrete_sa (state M))) (@sigT (state M) (act M))
+          (@ivector_map_length (@ProbSpace (state M) (discrete_sa (state M))) (@sigT (state M) (act M))
              (@ProbSpace (state M) (discrete_sa (state M)))
              (@nodup (@sigT (state M) (act M)) (@sigT_eqdec (state M) (act M) (st_eqdec M) act_eqdec)
                 (@elms (@sigT (state M) (act M)) (act_finite M))) sa_space_ps
@@ -3131,26 +3131,21 @@ Proof.
     iso_f_b := finite_fun_iso_b_f finA decA }.
 
   Instance vec_finite_fun_encoder_alt :
-    Isomorphism  (ivector (M.(state)) (length (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms)))) ((sigT (M.(act))) -> M.(state)).
+    Isomorphism  (ivector (M.(state)) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))) ((sigT (M.(act))) -> M.(state)).
   Proof.
-    rewrite map_length.
     apply vec_finite_fun_encoder.
   Defined.
 
-
   Definition finite_fun_sa : SigmaAlgebra sa_fun_space :=
     (iso_sa
-            (ivector_sa
-               (ivector_const
-                  (length (map sa_space_ps (nodup (sigT_eqdec M act_eqdec) elms)))
-                  (discrete_sa (state M))))).
+       (ivector_sa
+          (ivector_const
+             (length (nodup (sigT_eqdec M act_eqdec) elms))
+             (discrete_sa (state M))))).
 
-(*
-  Definition finite_fun_ps : ProbSpace finite_fun_sa := iso_ps vec_sa_space_ps vec_finite_fun_encoder_alt.  
-
- Existing Instance finite_fun_ps.
-
-*)
+  Definition finite_fun_ps : ProbSpace finite_fun_sa := iso_ps vec_sa_space_ps vec_finite_fun_encoder_alt.
+  
+  Existing Instance finite_fun_ps.
 
 End stuff.
 
