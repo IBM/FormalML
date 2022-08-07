@@ -2411,11 +2411,12 @@ Section stuff.
   Definition state_act_index (sa : sigT M.(act)) : nat :=
     (@finite_index _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _ sa).
 
-  Program Definition ivector_map_length {T} {S1 S2} {l : list S1} {g : S1 -> S2} 
-             (vec : ivector T (length (map g l))) : ivector T (length l) := vec.
-  Next Obligation.
-    apply map_length.
-  Qed.
+  Fixpoint ivector_map_length {T} {S1 S2} {l : list S1} {g : S1 -> S2} :
+    (ivector T (length (map g l))) -> ivector T (length l) :=
+    match l with
+    | nil => fun v => v
+    | x::ls => fun '(h,tl) => (h, ivector_map_length tl)
+    end.
 
   Definition vec_sa_space_ps :=
     ivector_ps (ivector_map_length (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms)))).
@@ -2517,16 +2518,59 @@ Section stuff.
     match_destr.
   Qed.
 
+
+  Lemma ivector_fold_left_const {n} c d : ivector_fold_left Rmult (ivector_create n (fun j _ => c)) d =
+                                            c ^ n  * d.
+  Proof.
+    revert d.
+    induction n; intros d; simpl; [lra |].
+    rewrite IHn; lra.
+  Qed.
+  
+  Lemma ivector_fold_left_ext {A B} {n} (g h:A->B->A) (v:ivector B n) c :
+    (forall x y, g x y = h x y) ->
+    ivector_fold_left g v c = ivector_fold_left h v c.
+  Proof.
+    revert c v.
+    induction n; simpl; trivial; intros.
+    destruct v.
+    rewrite H.
+    now apply IHn.
+  Qed.    
+
+  Lemma ivector_create_ext {A} n (g h:(forall i : nat, (i < n)%nat -> A)) :
+    (forall x y, g x y = h x y) ->
+    ivector_create n g = ivector_create n h.
+  Proof.
+    induction n; simpl; trivial; intros.
+    f_equal; auto.
+  Qed.
+
+  Lemma ivector_fold_left_Rmult_allbut_create_ident {n} i c (pf:(i<n)%nat) :
+    ivector_fold_left Rmult (ivector_create n (fun j _ => if i == j then c else 1)) 1 = c.
+  Proof.
+    revert i pf.
+    induction n; intros; try lia; simpl.
+    destruct i; simpl.
+    - rewrite ivector_fold_left_const.
+      rewrite pow1; lra.
+    - rewrite Rmult_1_r.
+      specialize (IHn i).
+      cut_to IHn; [| lia].
+      rewrite <- IHn at 1.
+      f_equal.
+      apply ivector_create_ext; intros.
+      repeat match_destr; unfold equiv, complement in *; lia.
+  Qed.
+
   Lemma ivector_fold_left_Rmult_allbut_ident {n} i pf (vec : ivector R n) :
     vec = ivector_create n (fun j _ => if i == j then (ivector_nth i pf vec) else 1) ->
     ivector_fold_left Rmult vec 1 = ivector_nth i pf vec.
   Proof.
-    induction n; intros; try lia.
-    simpl.
-    destruct vec.
-    match_destr.
-    - rewrite Rmult_1_l.
-  Admitted.
+    intros HH.
+    rewrite HH at 1.
+    now apply ivector_fold_left_Rmult_allbut_create_ident.
+  Qed.    
 
   Lemma SimpleExpectation_proj_nth {T} {dom : SigmaAlgebra T} {n} i pf (g : T -> R) (vecps : ivector (ProbSpace dom) n) 
         (rvg : RandomVariable dom borel_sa g)
@@ -2818,12 +2862,15 @@ Section stuff.
     unfold Expectation.
     f_equal; (erewrite <- (NonnegExpectation_proj_nth i pf vecps); [|typeclasses eauto]; now apply NonnegExpectation_ext).
   Qed.
-
+  
   Lemma ivector_nth_map_length_from_list {A B} (g : A -> B) (l : list A) i pf pf2:
     ivector_nth i pf2 (ivector_from_list (map g l)) =
     ivector_nth i pf (ivector_map_length (ivector_from_list (map g l))).
   Proof.
-    Admitted.
+    revert i pf pf2.
+    induction l; simpl; intros; [lia |].
+    destruct i; simpl; intros; trivial.
+  Qed.
 
   Lemma ivector_nth_list_map' {A B} (a: A) (g : A -> B) (l : list A) i pf :
     nth_error l i = Some a ->
