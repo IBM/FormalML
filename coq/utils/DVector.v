@@ -1294,4 +1294,32 @@ Qed.
     congruence.
   Qed.
 
+  Definition vector_to_ivector {A} {n} (vec : vector A n) : ivector A n .
+  Proof.
+    destruct vec.
+    pose (v := ivector_from_list x).
+    rewrite e in v.
+    exact v.
+  Defined.
+
+  Fixpoint ivector_to_vector {A} {n} : ivector A n -> vector A n :=
+    match n with
+    | 0%nat => fun _ => vector0
+    | S n' => fun '(hd,tl) => vector_cons hd (ivector_to_vector tl)
+    end.
+
+  Lemma vec_to_ivec_to_vec {A} {n} (vec : vector A n) :
+    vec = ivector_to_vector (vector_to_ivector vec).
+  Proof.
+    unfold vector_to_ivector, ivector_to_vector.
+    Admitted.
+
+  Lemma ivec_to_vec_to_ivec {A} {n} (ivec : ivector A n) :
+    ivec = vector_to_ivector (ivector_to_vector ivec).
+  Proof.
+    unfold vector_to_ivector, ivector_to_vector.
+    Admitted.
+
+  
+
 End ivector.
