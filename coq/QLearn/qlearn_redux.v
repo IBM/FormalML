@@ -2099,147 +2099,13 @@ Section stuff.
     apply cond_nonneg.
   Qed.
 
-(*
-  Instance countable_state_m : Countable M.(state).
-  Proof.
-    apply finite_countable.
-    - apply st_eqdec.
-    - apply M.(fs).
-  Qed.
-*)
-
-  Instance countable_finite_eqdec {A : Type} (fsA : Finite A) (eqdec: EqDec A eq) :
-    Countable A.
-  Proof.
-    intros.
-    now apply finite_countable.
-  Qed.
-
-  Lemma finite_countable_inv { A : Type} 
-        (fsA : Finite A) (eqdec: EqDec A eq) :
-    exists (n:nat), 
-      forall m, (m>n)%nat ->
-                (@countable_inv A _ m) = None.
-  Proof.
-    intros.
-    exists (list_max (map countable_index (@elms _ fsA))).
-    intros.
-    unfold countable_inv.
-    match_destr.
-    destruct e.
-    generalize (list_max_upper (map countable_index (@elms _ fsA))); intros.
-    destruct (Forall_forall
-                  (fun k : nat => (k <= list_max (map countable_index (@elms _ fsA)))%nat) (map countable_index (@elms _ fsA))).
-    specialize (H1 H0 m).
-    cut_to H1; try lia.
-    apply in_map_iff.
-    exists x.
-    split; trivial.
-    apply fsA.
-  Qed.
-                              
-  Lemma finite_countable_inv_sum { A : Type} (g : A -> R)
-    (fsA : Finite A) (eqdec: EqDec A eq) :
-    exists (n : nat),
-      countable_sum g (sum_f_R0' (fun k => 
-                                    match countable_inv k with
-                                    | Some a => g a
-                                    | None => 0
-                                    end) n) /\
-      forall m, (m>=n)%nat ->
-                (@countable_inv A _ m) = None.
-      
-  Proof.
-    destruct (finite_countable_inv fsA eqdec).
-    exists (S x).
-    unfold countable_sum.
-    generalize (infinite_sum'_split (S x) (fun k : nat => match countable_inv k with
-                       | Some a => g a
-                       | None => 0
-                       end)
-                (sum_f_R0'
-       (fun k : nat => match countable_inv k with
-                       | Some a => g a
-                       | None => 0
-                       end) (S x))); intros.
-    split.
-    - apply H0; clear H0.
-      rewrite Rminus_eq_0.
-      apply infinite_sum'_ext with (s1 := fun _ => 0).
-      + intros.
-        match_case.
-        intros.
-        specialize (H (x0 + S x)%nat).
-        cut_to H; try lia.
-        congruence.
-      + apply infinite_sum'0.
-    - intros.
-      apply H.
-      lia.
-  Qed.
-
-
-  Lemma perm_countable_inv_elms (x:nat) {A : Type} 
-        (fsA : Finite A) (eqdec: EqDec A eq) :
-    (forall m : nat, (m >= x)%nat -> (@countable_inv _ (countable_finite_eqdec _ eqdec) m) = None) ->
-    Permutation 
-      (filter (fun x => match x with | Some _ => true | None => false end)
-              (map (@countable_inv _ (countable_finite_eqdec _ eqdec)) (seq 0 x)))
-      (map Some (nodup eqdec elms)).
-    Proof.
-        intros.
-        apply NoDup_Permutation'.
-        - clear H.
-          generalize 0%nat.
-          induction x; simpl; [constructor |]; intros n.
-          match_case; match_case; intros.
-          constructor; trivial.
-          intros inn.
-          apply filter_In in inn.
-          destruct inn as [inn _].
-          apply in_map_iff in inn.
-          destruct inn as [? [? inn]].
-          apply in_seq in inn.
-          apply countable_inv_sound in H.
-          apply countable_inv_sound in H1.
-          assert (n = x0) by congruence.
-          subst.
-          lia.
-        - apply FinFun.Injective_map_NoDup.
-          + red; congruence.
-          + apply NoDup_nodup.
-        - intros so; split; intros inn.
-          + apply filter_In in inn.
-            destruct inn as [??].
-            destruct so; try discriminate.
-            apply in_map.
-            apply nodup_In.
-            apply finite.
-          + apply in_map_iff in inn.
-            destruct inn as [s [? inn]]; subst.
-            apply filter_In.
-            split; trivial.
-            apply in_map_iff.
-            exists (@countable_index _ (countable_finite_eqdec _ eqdec) s).
-            split.
-            * apply countable_inv_index.
-            * apply in_seq.
-              split; try lia.
-              simpl.
-              destruct (Nat.lt_ge_cases (@countable_index _ (countable_finite_eqdec _ eqdec) s) x); trivial.
-              specialize (H _ H0).
-              rewrite countable_inv_index in H.
-              discriminate.
-     Qed.
-
-
   Lemma fun_space_pmf_one : countable_sum fun_space_pmf_pmf 1.
   Proof.
     destruct (finite_countable_inv_sum fun_space_pmf_pmf _ _) as [? [? ?]].
     unfold countable_sum.
     assert ((sum_f_R0'
                (fun k : nat =>
-                  match (@countable_inv fun_space (countable_finite_eqdec _ fun_space_eqdec) k) with
+                  match (@countable_inv fun_space (finite_countable fun_space) k) with
                   | Some a => fun_space_pmf_pmf a
                   | None => 0
                   end) x) = 1).
@@ -2258,7 +2124,7 @@ Section stuff.
                          | Some s => fun_space_pmf_pmf s
                          end)
                        (filter (fun x => match x with | Some _ => true | None => false end)
-                         (map (@countable_inv _ (countable_finite_eqdec _ fun_space_eqdec)) (seq 0 x))))
+                         (map (@countable_inv _ (finite_countable fun_space)) (seq 0 x))))
                  (map (fun so =>
                          match so with
                          | None => 0
@@ -2277,7 +2143,7 @@ Section stuff.
                          | Some s => fun_space_pmf_pmf s
                          end)
                        (filter (fun x => match x with | Some _ => true | None => false end)
-                         (map (@countable_inv _ (countable_finite_eqdec _ fun_space_eqdec)) (seq 0 x)))))
+                         (map (@countable_inv _ (finite_countable fun_space)) (seq 0 x)))))
                  (remove Req_EM_T 0 (map (fun so =>
                          match so with
                          | None => 0
@@ -2326,87 +2192,11 @@ Section stuff.
      unfold fun_space_pmf_pmf.
      Admitted.
 
-  Lemma sa_space_pmf_one (sa : sigT M.(act)) : 
-    @countable_sum _ (countable_finite_eqdec _ M.(st_eqdec)) (sa_space_pmf_pmf sa) 1.
-  Proof.
-    destruct (finite_countable_inv_sum (sa_space_pmf_pmf sa) _ M.(st_eqdec)) as [? [? ?]].
-    assert ((sum_f_R0'
-               (fun k : nat =>
-                  match (@countable_inv M.(state) (countable_finite_eqdec _ M.(st_eqdec)) k) with
-                  | Some s' => sa_space_pmf_pmf sa s'
-                  | None => 0
-                  end) x) = 1).
-    {
-      unfold sa_space_pmf_pmf.
-      destruct sa.
-      specialize (fsum_one x0 a).
-      rewrite sum_f_R0'_list_sum.
-      rewrite <- fsum_one.
-      rewrite list_sum_perm_eq_nzero
-        with (l2 := (map (fun s' : state M => nonneg (f x0 a s')) (nodup M.(st_eqdec) elms))); trivial.
-      generalize (perm_countable_inv_elms x M.(fs) M.(st_eqdec) H0); intro perm1.
-      assert (perm2:
-               Permutation
-                 (map (fun so =>
-                         match so with
-                         | None => 0
-                         | Some s =>  nonneg (f x0 a s)
-                         end)
-                       (filter (fun x => match x with | Some _ => true | None => false end)
-                         (map (@countable_inv _ (countable_finite_eqdec _ M.(st_eqdec))) (seq 0 x))))
-                 (map (fun so =>
-                         match so with
-                         | None => 0
-                         | Some s => nonneg (f x0 a s)
-                         end)
-                      (map Some (nodup M.(st_eqdec) elms)))).
-      {
-        now apply Permutation_map.
-      }
-
-      assert (perm3:
-               Permutation
-                 (remove Req_EM_T 0
-                 (map (fun so =>
-                         match so with
-                         | None => 0
-                         | Some s =>  nonneg (f x0 a s)
-                         end)
-                       (filter (fun x => match x with | Some _ => true | None => false end)
-                         (map (@countable_inv _ (countable_finite_eqdec _ M.(st_eqdec))) (seq 0 x)))))
-                 (remove Req_EM_T 0 (map (fun so =>
-                         match so with
-                         | None => 0
-                         | Some s => nonneg (f x0 a s)
-                         end)
-                      (map Some (nodup M.(st_eqdec) elms))))).
-      {
-        now apply Permutation_remove.
-      }
-      rewrite map_map in perm3.
-      rewrite <- perm3.
-      apply refl_refl.
-      generalize (seq 0 x); intros l.
-      clear.
-      induction l; simpl; trivial.
-      match_option; simpl
-      ; destruct (Req_EM_T _ _)
-      ; trivial
-      ; try lra.
-      congruence.
-    }
-    now rewrite H1 in H.
-  Qed.
-
-
-  Definition sa_space_pmf (sa : sigT M.(act)) : prob_mass_fun M.(state)
-    := {|
-      pmf_pmf := sa_space_pmf_pmf sa
-    ; pmf_pmf_pos := sa_space_pmf_nneg sa
-    ; pmf_pmf_one := sa_space_pmf_one sa
-      |}.
-
-  Instance sa_space_ps (sa : sigT M.(act)) : ProbSpace (discrete_sa M.(state)) := discrete_ps (sa_space_pmf sa).
+   Instance sa_space_ps (sa : sigT M.(act)) : ProbSpace (discrete_sa M.(state)) 
+     := let (s,a) := sa in
+        @finite_discrete_ps (M.(state)) _  (M.(st_eqdec))
+                            (f s a) (fsum_one s a).
+  
 
   Definition state_act_index (sa : sigT M.(act)) : nat :=
     (@finite_index _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _ sa).
@@ -2869,7 +2659,7 @@ Section stuff.
   Proof.
     revert i pf pf2.
     induction l; simpl; intros; [lia |].
-    destruct i; simpl; intros; trivial.
+    destruct i; simpl; trivial.
   Qed.
 
   Lemma ivector_nth_list_map' {A B} (a: A) (g : A -> B) (l : list A) i pf :
@@ -2914,6 +2704,33 @@ Proof.
   - rewrite <- ivector_nth_list_map_sa.
     now apply Expectation_ext.
   Qed.
+
+  Lemma Expectation_finite_discrete_ps {A} {finA:Finite A} (decA : EqDec A eq) 
+        (pmf:Pmf A)
+        (g : A -> R) :
+    Expectation (Prts := pmf_prob.ps_pmf pmf) g =
+    Some (Rbar.Finite (list_sum (map (fun a => (g a)*(pmf_prob.pmf_PMF_fun pmf a)) 
+                                     (nodup decA elms)))).
+  Proof.
+    generalize (pmf_prob.pmf_value_Expectation pmf g); intros.
+    unfold expt_value in H.
+    rewrite pmf_prob.seqmap_map in H.
+    rewrite H.
+    do 2 f_equal.
+    apply list_sum_perm_eq.
+    unfold pmf_prob.pmf_PMF_fun.
+    Admitted.
+
+  Lemma Expectation_discrete_ps {A} {countableA:Countable A} (PMF:prob_mass_fun A)
+        (g : A -> R) :
+    Expectation (Prts := discrete_ps PMF) g =
+    Some (Lim_seq.Lim_seq (fun n =>
+                       match countable_inv n with
+                        | Some a => (g a)*(pmf_pmf PMF a)
+                        | None => 0
+                        end)).
+  Proof.
+    Admitted.
 
   Definition finite_fun_to_ivector {A B} (finA : Finite A) (decA : EqDec A eq) (g : A -> B) :=
     ivector_map g (ivector_from_list (nodup decA elms)).
