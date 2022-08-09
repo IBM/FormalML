@@ -1,7 +1,7 @@
 Require Import Program.Basics.
 Require Import List Lia.
 Require Import Eqdep_dec.
-Require Import Equivalence EquivDec.
+Require Import Equivalence EquivDec Isomorphism.
 Require Import LibUtils ListAdd.
 Require Import Arith.
 
@@ -1308,18 +1308,74 @@ Qed.
     | S n' => fun '(hd,tl) => vector_cons hd (ivector_to_vector tl)
     end.
 
-  Lemma vec_to_ivec_to_vec {A} {n} (vec : vector A n) :
-    vec = ivector_to_vector (vector_to_ivector vec).
+  Lemma vector_to_ivector_nth {A} {n} (vec : vector A n) i pf :
+    vector_nth i pf vec = ivector_nth i pf (vector_to_ivector vec).
   Proof.
-    unfold vector_to_ivector, ivector_to_vector.
-    Admitted.
-
-  Lemma ivec_to_vec_to_ivec {A} {n} (ivec : ivector A n) :
-    ivec = vector_to_ivector (ivector_to_vector ivec).
+    unfold vector_to_ivector.
+    destruct vec.
+    unfold vector_nth, proj1_sig, vector_nth_packed.
+    simpl.
+    match_destr.
+    unfold eq_rect.
+    match_destr.
+    rewrite (ivector_nth_from_list _ i pf) in e0.
+    now invcs e0.
+  Qed.
+    
+  Lemma vector_nth_cons_0 {A} {n} a (vec : vector A n) pf :
+    vector_nth 0 pf (vector_cons a vec) = a.
   Proof.
-    unfold vector_to_ivector, ivector_to_vector.
-    Admitted.
+    unfold vector_cons, vector_nth.
+    now simpl.
+  Qed.
 
+  Lemma vector_nth_cons_S {A} {n} a (vec : vector A n) i pf :
+    vector_nth (S i) pf (vector_cons a vec) = 
+    vector_nth i (lt_S_n i n pf) vec.
+  Proof.
+    unfold vector_cons, vector_nth, proj1_sig.
+    destruct vec.
+    match_destr.
+    match_destr.
+    unfold proj1_sig in *.
+    simpl in e0.
+    rewrite <- e1 in e0.
+    now invcs e0.
+  Qed.
+
+  Lemma ivector_to_vector_nth {A} {n} (ivec : ivector A n) i pf :
+    ivector_nth i pf ivec = vector_nth i pf (ivector_to_vector ivec).
+  Proof.
+    unfold ivector_to_vector.
+    revert i pf.
+    induction n.
+    - lia.
+    - intros.
+      destruct ivec.
+      destruct i.
+      + simpl.
+        now rewrite vector_nth_cons_0.
+      + rewrite vector_nth_cons_S.
+        simpl.
+        apply IHn.
+   Qed.
+
+  Program Instance vec_to_ivec_encoder {A} {n} :
+    Isomorphism (vector A n) (ivector A n)
+    := {
+    iso_f := vector_to_ivector;
+    iso_b := ivector_to_vector }.
+  Next Obligation.
+    apply ivector_nth_eq.
+    intros.
+    rewrite <- vector_to_ivector_nth.
+    now rewrite ivector_to_vector_nth.
+  Qed.
+  Next Obligation.
+    apply vector_nth_eq.
+    intros.
+    rewrite <- ivector_to_vector_nth.
+    now rewrite vector_to_ivector_nth.
+  Qed.
   
-
 End ivector.
