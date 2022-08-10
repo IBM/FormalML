@@ -1313,13 +1313,13 @@ Qed.
   Proof.
     unfold vector_to_ivector.
     destruct vec.
+    unfold eq_rect.
+    match_destr.
     unfold vector_nth, proj1_sig, vector_nth_packed.
     simpl.
     match_destr.
-    unfold eq_rect.
-    match_destr.
-    rewrite (ivector_nth_from_list _ i pf) in e0.
-    now invcs e0.
+    rewrite (ivector_nth_from_list _ i pf) in e.
+    now invcs e.
   Qed.
     
   Lemma vector_nth_cons_0 {A} {n} a (vec : vector A n) pf :

@@ -1915,6 +1915,7 @@ Section RealRandomVariables.
     : event dom
     := @exist (pre_event Ts) _ _ (sa_le_le_rv rv_X x).
 
+
   Lemma sa_le_lt_rv 
         (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
     : sa_sigma _ (fun omega => rv_X omega < x).
@@ -3669,7 +3670,12 @@ Section RbarRandomVariables.
    Definition event_Rbar_gt  x1 x2
              {rv1:RandomVariable dom Rbar_borel_sa x1}
              {rv2:RandomVariable dom Rbar_borel_sa x2} : event dom
-    := exist _ _ (event_Rbar_gt_sa x1 x2).
+     := exist _ _ (event_Rbar_gt_sa x1 x2).
+
+   Definition event_Rbar_le x1 x2
+             {rv1:RandomVariable dom Rbar_borel_sa x1}
+             {rv2:RandomVariable dom Rbar_borel_sa x2} : event dom
+     := event_complement (event_Rbar_gt x2 x2).
 
   Lemma event_Rbar_gt_dec x1 x2
         {rv1:RandomVariable dom Rbar_borel_sa x1}

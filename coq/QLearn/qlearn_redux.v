@@ -1,4 +1,5 @@
 Require Import List.
+Require Coquelicot.Coquelicot.
 Require Import mdp qvalues pmf_monad Finite EquivDec Permutation Morphisms.
 Require Import Reals RealAdd CoquelicotAdd.
 Require Import utils.Utils.
@@ -9,6 +10,7 @@ Require Import Classical.
 Require Import SigmaAlgebras ProbSpace DiscreteProbSpace ProductSpace.
 Require Import DVector.
 Require Import pmf_monad.
+Require qlearn.
 Require pmf_prob.
 Require SetoidList.
 
@@ -3042,6 +3044,55 @@ Proof.
 
 End stuff.
 
+Section converge.
+Context {Ts : Type}
+        {dom : SigmaAlgebra Ts}
+        (prts : ProbSpace dom).
+
+
+Lemma conv_as_prob_sup_delta_eps (f : nat->Ts->R) (eps : posreal)
+      (rv: forall n, RandomVariable dom borel_sa (f n)) :
+  almost prts (fun omega => Lim_seq.is_lim_seq (fun n => f n omega) (Rbar.Finite 0)) ->
+  forall (delta : posreal),
+  exists (N:nat),
+    ps_P (qlearn.event_Rbar_le (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (f (N + n)%nat omega))) (Rbar.Finite (eps))) >= 1 - delta.
+  Proof.
+    intros alm.
+    generalize (qlearn.conv_as_prob_sup_1_alt f alm eps); intros.
+    rewrite <- Lim_seq.is_lim_seq_spec in H.
+    unfold Lim_seq.is_lim_seq' in H.
+    specialize (H delta).
+    unfold Hierarchy.eventually in H.
+    destruct H.
+    exists x.
+    specialize (H x).
+    cut_to H; try lia.
+    apply Rabs_def2 in H.
+    lra.
+  Qed.
+    
+Lemma conv_as_prob_inf_delta_eps (f : nat->Ts->R) (eps : posreal)
+      (rv: forall n, RandomVariable dom borel_sa (f n)) :
+  almost prts (fun omega => Lim_seq.is_lim_seq (fun n => f n omega) (Rbar.Finite 0)) ->
+  forall (delta : posreal),
+  exists (N:nat),
+    ps_P (qlearn.event_Rbar_ge (fun omega => Lim_seq.Inf_seq (fun n => Rbar.Finite (f (N + n)%nat omega))) (Rbar.Finite (-eps))) >= 1 - delta.
+Proof.
+  intros alm.
+  generalize (qlearn.conv_as_prob_inf_1_alt f alm eps); intros.
+  rewrite <- Lim_seq.is_lim_seq_spec in H.
+  unfold Lim_seq.is_lim_seq' in H.
+  specialize (H delta).
+  unfold Hierarchy.eventually in H.
+  destruct H.
+  exists x.
+  specialize (H x).
+  cut_to H; try lia.
+  apply Rabs_def2 in H.
+  lra.
+ Qed.
+
+End converge.
 
 Section FiniteDomain.
   

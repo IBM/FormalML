@@ -4412,7 +4412,7 @@ End rv_expressible.
         now apply is_Elim_seq_fin.
    Qed.
 
-(*
+
   Lemma sa_le_Rbar_gt_rv {domm}
         (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
     : sa_sigma _ (fun omega => Rbar_gt (rv_X omega) x).
@@ -4426,6 +4426,20 @@ End rv_expressible.
              (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
     : event domm
     := @exist (pre_event Ts) _ _ (sa_le_Rbar_gt_rv rv_X x).
+
+  Lemma sa_le_Rbar_ge_rv {domm}
+        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
+    : sa_sigma _ (fun omega => Rbar_ge (rv_X omega) x).
+  Proof.
+    apply Rbar_sa_le_ge.
+    intros.
+    now apply rv_Rbar_measurable.
+  Qed.
+
+  Definition event_Rbar_ge {domm}
+             (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
+    : event domm
+    := @exist (pre_event Ts) _ _ (sa_le_Rbar_ge_rv rv_X x).
 
   Lemma sa_le_Rbar_lt_rv {domm}
         (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
@@ -4489,6 +4503,85 @@ End rv_expressible.
               simpl in H0.
               apply H0.
               now exists (0%nat).
+    Qed.                         
+
+  Lemma inter_coll_le_sup_alt {prts: ProbSpace dom} (f : nat -> Ts -> R) (eps:R)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} 
+          {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => (f (n + m)%nat x)))}:
+    forall n,
+      event_equiv
+        (inter_of_collection (fun t : nat => event_le dom (f (n + t)%nat) eps))
+        (event_Rbar_le (fun x0 : Ts => Sup_seq (fun m : nat => (f (n + m)%nat x0))) eps).
+    Proof.
+      intros n z.
+      simpl.
+      split; intros.
+      - replace (Finite eps) with (Sup_seq (fun n => eps)).
+        + apply Sup_seq_le.
+          intros.
+          simpl.
+          apply H.
+        + apply Sup_seq_const.
+          - rewrite Rbar_sup_eq_lub in H.
+            unfold Rbar_lub, proj1_sig in H.
+            match_destr_in H.
+            unfold Rbar_is_lub, Rbar_is_upper_bound in r.
+            destruct r.
+            generalize (Rbar_le_trans (f (n + n0)%nat z) x eps); intros.
+            simpl in H2.
+            apply H2; trivial.
+            destruct x.
+            + specialize (H0 (f (n + n0)%nat z)).
+              simpl in H0.
+              apply H0.
+              now exists n0.
+            + trivial.
+            + specialize (H0 (f (n + 0)%nat z)).
+              simpl in H0.
+              apply H0.
+              now exists (0%nat).
+    Qed.                         
+
+  Lemma inter_coll_ge_inf_alt {prts: ProbSpace dom} (f : nat -> Ts -> R) (eps:R)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} 
+          {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Inf_seq (fun m => (f (n + m)%nat x)))}:
+    forall n,
+      event_equiv
+        (inter_of_collection (fun t : nat => event_ge dom (f (n + t)%nat) (eps)))
+        (event_Rbar_ge (fun x0 : Ts => Inf_seq (fun m : nat => (f (n + m)%nat x0))) (eps)).
+    Proof.
+      intros n z.
+      split; intros.
+      - simpl in H.
+        unfold proj1_sig, event_Rbar_ge, Rbar_ge.
+        replace (Finite eps) with (Inf_seq (fun n => eps)).        
+        + apply Inf_seq_le.
+          intros.
+          simpl.
+          apply Rge_le.
+          apply H.
+        + apply Inf_seq_const.
+      - unfold proj1_sig, event_Rbar_ge, Rbar_ge in H.        
+        simpl; intros.
+        rewrite Inf_eq_glb in H.
+        unfold Rbar_glb, proj1_sig in H.
+        match_destr_in H.
+        unfold Rbar_is_glb, Rbar_is_lower_bound in r.
+        destruct r.
+        generalize (Rbar_le_trans eps x (f (n + n0)%nat z) H); intros.
+        simpl in H2.
+        apply Rle_ge.
+        apply H2.
+        destruct x; simpl.
+        + specialize (H0 (f (n + n0)%nat z)).
+          simpl in H0.
+          apply H0.
+          now exists n0.
+        + specialize (H0 (f (n + 0)%nat z)).
+          simpl in H0.
+          apply H0.
+          now exists (0%nat).
+        + trivial.
     Qed.                         
 
     Lemma event_Rbar_gt_complement (f : Ts -> Rbar) (eps:posreal)
@@ -4588,6 +4681,124 @@ End rv_expressible.
         - apply H2.
       Qed.
           
+    Lemma conv_as_prob_sup_1_alt {prts: ProbSpace dom} (f : nat -> Ts -> R)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} 
+          {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => (f (n + m)%nat x)))}:
+      almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
+      forall (eps:posreal),
+        is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => f (n + m)%nat x)) eps)) 1. 
+      Proof.
+        intros.
+        destruct H as [? [? ?]].
+        pose (A := union_of_collection (fun m => inter_of_collection (fun t => event_le dom (f (m + t)%nat) eps))).
+        assert (ps_P A = 1).
+        {
+          assert (ps_P x <= ps_P A).
+          {
+            apply ps_sub.
+            intros ? ?.
+            simpl.
+            specialize (H0 x0 H1).
+            apply is_lim_seq_spec in H0.
+            specialize (H0 eps).
+            destruct H0.
+            exists x1.
+            setoid_rewrite Rminus_0_r in H0.
+            intros.
+            specialize (H0 (x1 + n)%nat).
+            cut_to H0; try lia.
+            apply Rlt_le in H0.
+            eapply Rle_trans.
+            - apply Rle_abs.
+            - trivial.
+          }
+          rewrite H in H1.
+          generalize (ps_le1 prts A); intros.
+          lra.
+        }
+        assert (is_lim_seq (fun m => ps_P (inter_of_collection (fun t => event_le dom (f (m + t)%nat) eps))) (ps_P A)).
+        {
+          unfold A.
+          apply lim_prob.
+          - intros n ? ?.
+            simpl.
+            simpl in H2.
+            intros.
+            specialize (H2 (S n0)).
+            now replace (S (n + n0)%nat) with (n + S n0)%nat by lia.
+          - intros ?.
+            simpl.
+            tauto.
+        }
+        generalize (inter_coll_le_sup_alt f eps); intros.
+        rewrite H1 in H2.
+        apply is_lim_seq_ext with
+            (u :=  (fun m : nat =>
+          ps_P (inter_of_collection (fun t : nat => event_le dom (f (m + t)%nat) eps)))).
+        - intros.
+          now rewrite H3.
+        - apply H2.
+      Qed.
+
+
+    Lemma conv_as_prob_inf_1_alt {prts: ProbSpace dom} (f : nat -> Ts -> R)
+          {rv : forall n, RandomVariable dom borel_sa (f n)} 
+          {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Inf_seq (fun m => (f (n + m)%nat x)))}:
+      almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
+      forall (eps:posreal),
+        is_lim_seq (fun n => ps_P (event_Rbar_ge (fun x => Inf_seq (fun m => f (n + m)%nat x)) (-eps))) 1. 
+      Proof.
+        intros.
+        destruct H as [? [? ?]].
+        pose (A := union_of_collection (fun m => inter_of_collection (fun t => event_ge dom (f (m + t)%nat) (-eps)))).
+        assert (ps_P A = 1).
+        {
+          assert (ps_P x <= ps_P A).
+          {
+            apply ps_sub.
+            intros ? ?.
+            simpl.
+            specialize (H0 x0 H1).
+            apply is_lim_seq_spec in H0.
+            specialize (H0 eps).
+            destruct H0.
+            exists x1.
+            setoid_rewrite Rminus_0_r in H0.
+            intros.
+            specialize (H0 (x1 + n)%nat).
+            cut_to H0; try lia.
+            apply Rlt_le in H0.
+            apply Rabs_le_both in H0.
+            lra.
+          }
+          rewrite H in H1.
+          generalize (ps_le1 prts A); intros.
+          lra.
+        }
+        assert (is_lim_seq (fun m => ps_P (inter_of_collection (fun t => event_ge dom (f (m + t)%nat) (- eps)))) (ps_P A)).
+        {
+          unfold A.
+          apply lim_prob.
+          - intros n ? ?.
+            simpl.
+            simpl in H2.
+            intros.
+            specialize (H2 (S n0)).
+            now replace (S (n + n0)%nat) with (n + S n0)%nat by lia.
+          - intros ?.
+            simpl.
+            tauto.
+        }
+        generalize (inter_coll_ge_inf_alt f (-eps)); intros.
+        rewrite H1 in H2.
+        apply is_lim_seq_ext with
+            (u :=  (fun m : nat =>
+          ps_P (inter_of_collection (fun t : nat => event_ge dom (f (m + t)%nat) (-eps))))).
+        - intros.
+          now rewrite H3.
+        - apply H2.
+      Qed.
+
      Lemma conv_prob_sup_0_as {prts: ProbSpace dom} (f : nat -> Ts -> R)
           {rv : forall n, RandomVariable dom borel_sa (f n)} 
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
@@ -4627,7 +4838,7 @@ End rv_expressible.
           + apply rv.
     Qed.
 
- *)
+
     
     Lemma L2_convergent_x_nth_RMseq (i n:nat) (pf : (i < S n)%nat) (α : nat -> R) 
           (w : nat -> Ts -> vector R (S n)) (omega:Ts) :
