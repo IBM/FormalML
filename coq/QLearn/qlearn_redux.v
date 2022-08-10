@@ -3092,6 +3092,42 @@ Proof.
   lra.
  Qed.
 
+Lemma list_inter_prob_bound (l : list (event dom * nonnegreal)) :
+  (forall ep, 
+      In ep l ->
+      ps_P (fst ep) >= snd ep) ->
+  ps_P (list_inter (map fst l)) >= list_sum (map (fun x => nonneg (snd x)) l)
+                                   - INR (length l) + 1.
+ Proof.
+   induction l; intros; simpl.
+   - rewrite list_inter_nil.
+     rewrite ps_all.
+     lra.
+   - cut_to IHl.
+     + rewrite list_inter_cons.
+       eapply Rge_trans.
+       apply qlearn.ps_inter_bound.
+       unfold Rminus.
+       do 3 rewrite Rplus_assoc.
+       apply Rplus_ge_compat.
+       * apply H.
+         simpl; tauto.
+       * apply Rplus_ge_reg_l with (r := 1).
+         ring_simplify.
+         eapply Rge_trans.
+         apply IHl.
+         unfold Rminus.
+         do 2 rewrite Rplus_assoc.
+         apply Rplus_ge_compat_l.
+         match_destr.
+         -- simpl.
+            lra.
+         -- lra.
+     + intros.
+       apply H.
+       now apply in_cons.
+  Qed.
+
 End converge.
 
 Section FiniteDomain.
