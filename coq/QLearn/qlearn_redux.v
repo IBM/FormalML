@@ -3324,7 +3324,50 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
     }
     rewrite H4 in H1.
     lra.
-    Qed.
+  Qed.
+
+  Lemma event_complement_Rbar_le (f : Ts -> Rbar.Rbar) (c : Rbar.Rbar) 
+        {rv : RandomVariable dom Rbar_borel_sa f} :
+    event_equiv
+      (event_complement
+         (qlearn.event_Rbar_le f c))
+      (qlearn.event_Rbar_gt f c).
+  Proof.
+    intro x.
+    simpl.
+    unfold pre_event_complement.
+    unfold Rbar_gt.
+    split; intros.
+    - now apply Rbar.Rbar_not_le_lt.
+    - now apply Rbar.Rbar_lt_not_le.
+  Qed.
+
+   Lemma conv_prob_sup_1_as (f : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (f n)} 
+        {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Lim_seq.Sup_seq (fun m => Rbar.Finite (Rabs (f (n + m)%nat x))))}:
+    (forall (eps:posreal),
+        Lim_seq.is_lim_seq (fun n => ps_P (qlearn.event_Rbar_le (fun x => Lim_seq.Sup_seq (fun m => Rbar.Finite (Rabs (f (n + m)%nat x)))) (Rbar.Finite eps))) (Rbar.Finite 1)) ->
+    almost prts (fun x => Lim_seq.is_lim_seq (fun n => f n x) (Rbar.Finite 0)).
+  Proof.
+    intros.
+    apply qlearn.conv_prob_sup_0_as with (rv3 := rv2); trivial.
+    intros.
+    specialize (H eps).
+    apply Lim_seq.is_lim_seq_ext with
+        (u :=  (fun n : nat =>
+         1- ps_P
+           (qlearn.event_Rbar_le (fun x : Ts => Lim_seq.Sup_seq (fun m : nat => Rbar.Finite (Rabs (f (n + m)%nat x))))
+              (Rbar.Finite eps)))).
+    - intros.
+      rewrite <- ps_complement.
+      apply ps_proper.
+      apply event_complement_Rbar_le.
+    - replace (Rbar.Finite 0) with (Rbar.Finite (1 - 1)).
+      + apply Lim_seq.is_lim_seq_minus'; trivial.
+        apply Lim_seq.is_lim_seq_const.
+      + f_equal.
+        lra.
+  Qed.
 
 Lemma list_inter_prob_bound (l : list (event dom * nonnegreal)) :
   (forall ep, 
