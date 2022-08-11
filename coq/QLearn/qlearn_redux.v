@@ -3051,10 +3051,11 @@ Context {Ts : Type}
 
 
 Lemma conv_as_prob_sup_delta_eps (f : nat->Ts->R) (eps : posreal)
-      (rv: forall n, RandomVariable dom borel_sa (f n)) :
+      {rv: forall n, RandomVariable dom borel_sa (f n)} :
   almost prts (fun omega => Lim_seq.is_lim_seq (fun n => f n omega) (Rbar.Finite 0)) ->
   forall (delta : posreal),
-  exists (N:nat),
+  exists (NN:nat),
+    forall N, (N >= NN)%nat ->
     ps_P (qlearn.event_Rbar_le (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (f (N + n)%nat omega))) (Rbar.Finite (eps))) >= 1 - delta.
   Proof.
     intros alm.
@@ -3065,17 +3066,19 @@ Lemma conv_as_prob_sup_delta_eps (f : nat->Ts->R) (eps : posreal)
     unfold Hierarchy.eventually in H.
     destruct H.
     exists x.
-    specialize (H x).
+    intros.
+    specialize (H N).
     cut_to H; try lia.
     apply Rabs_def2 in H.
     lra.
   Qed.
     
 Lemma conv_as_prob_inf_delta_eps (f : nat->Ts->R) (eps : posreal)
-      (rv: forall n, RandomVariable dom borel_sa (f n)) :
+      {rv: forall n, RandomVariable dom borel_sa (f n)} :
   almost prts (fun omega => Lim_seq.is_lim_seq (fun n => f n omega) (Rbar.Finite 0)) ->
   forall (delta : posreal),
-  exists (N:nat),
+  exists (NN:nat),
+    forall N, (N >= NN)%nat ->
     ps_P (qlearn.event_Rbar_ge (fun omega => Lim_seq.Inf_seq (fun n => Rbar.Finite (f (N + n)%nat omega))) (Rbar.Finite (-eps))) >= 1 - delta.
 Proof.
   intros alm.
@@ -3086,11 +3089,242 @@ Proof.
   unfold Hierarchy.eventually in H.
   destruct H.
   exists x.
-  specialize (H x).
+  intros.
+  specialize (H N).
   cut_to H; try lia.
   apply Rabs_def2 in H.
   lra.
  Qed.
+
+Lemma conv_pair_as_prob_inf_delta_eps (f g : nat->Ts->R) (eps : posreal)
+      {rvf: forall n, RandomVariable dom borel_sa (f n)} 
+      {rvg: forall n, RandomVariable dom borel_sa (g n)} :  
+  almost prts (fun omega => Lim_seq.is_lim_seq (fun n => f n omega) (Rbar.Finite 0)) ->
+  almost prts (fun omega => Lim_seq.is_lim_seq (fun n => g n omega) (Rbar.Finite 0)) ->    
+  forall (delta : posreal),
+  exists (NN:nat),
+    forall N, (N >= NN)%nat ->
+    ps_P (event_inter
+            (qlearn.event_Rbar_ge (fun omega => Lim_seq.Inf_seq (fun n => Rbar.Finite (g (N + n)%nat omega))) (Rbar.Finite (-eps)))
+            (qlearn.event_Rbar_le (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (f (N + n)%nat omega))) (Rbar.Finite (eps)))) >= 1 - delta.
+  Proof.
+    intros limf limg delta.
+    assert (0 < delta / 2).
+    {
+      generalize (cond_pos delta); intros.
+      lra.
+    }
+    destruct (conv_as_prob_sup_delta_eps f eps limf (mkposreal _ H)).
+    destruct (conv_as_prob_inf_delta_eps g eps limg (mkposreal _ H)).
+    exists (max x x0).
+    intros.
+    eapply Rge_trans.
+    apply qlearn.ps_inter_bound.
+    specialize (H0 N).
+    specialize (H1 N).
+    cut_to H0; try lia.
+    cut_to H1; try lia.
+    simpl in H0.
+    simpl in H1.
+    lra.
+  Qed.
+
+ Lemma Sup_seq_minus_const (f : nat -> R) (c : R):
+   Lim_seq.Sup_seq (fun n : nat => Rbar.Finite (f n - c)) =
+   Rbar.Rbar_minus (Lim_seq.Sup_seq (fun n : nat => Rbar.Finite (f n))) (Rbar.Finite c).
+ Proof.
+   unfold Lim_seq.Sup_seq, proj1_sig.
+   match_destr; match_destr.
+   apply is_sub_seq_lub_R in i.
+   apply is_sub_seq_lub_R in i0.   
+   unfold Lub.is_lub_Rbar in *.
+   unfold Lub.is_ub_Rbar in *.
+   destruct i; destruct i0.
+   apply Rbar.Rbar_le_antisym.
+   - apply H0.
+     intros.
+     destruct x0; simpl; try tauto; destruct H3; specialize (H1 (x1 + c)); simpl in H1.
+     + cut_to H1; try lra.
+       exists x0.
+       lra.
+     + apply H1.
+       exists x0.
+       lra.
+  - unfold Rbar.Rbar_minus.
+    simpl.
+    replace x with (Rbar.Rbar_plus (Rbar.Rbar_plus x (Rbar.Finite c)) (Rbar.Finite (- c))).
+    + apply Rbar.Rbar_plus_le_compat; simpl; try lra.
+      apply H2.
+      intros.
+      destruct x; simpl; try tauto; destruct H3; specialize (H (x1 - c)); simpl in H.
+      * cut_to H; try lra.
+        exists x.
+        lra.
+      * apply H.
+        exists x.
+        lra.
+    + rewrite Rbar_plus_assoc.
+      * simpl.
+        replace (c + -c) with 0 by lra.
+        now rewrite Rbar.Rbar_plus_0_r.
+      * apply ex_Rbar_plus_Finite_r.
+      * apply ex_Rbar_plus_Finite_r.
+  Qed.
+
+ Lemma Inf_seq_minus_const (f : nat -> R) (c : R):
+   Lim_seq.Inf_seq (fun n : nat => Rbar.Finite (f n - c)) =
+   Rbar.Rbar_minus (Lim_seq.Inf_seq (fun n : nat => Rbar.Finite (f n))) (Rbar.Finite c).
+ Proof.
+   unfold Lim_seq.Inf_seq, proj1_sig.
+   match_destr; match_destr.
+   apply Lim_seq.is_inf_seq_glb in i.
+   apply Lim_seq.is_inf_seq_glb in i0.   
+   unfold Lub.Rbar_is_glb in *.
+   destruct i; destruct i0.
+   unfold Lub.Rbar_is_lower_bound in *.
+   apply Rbar.Rbar_le_antisym.
+   - unfold Rbar.Rbar_minus.
+     simpl.
+     replace x with (Rbar.Rbar_plus (Rbar.Rbar_plus x (Rbar.Finite c)) (Rbar.Finite (- c))).
+     + apply Rbar.Rbar_plus_le_compat; simpl; try lra.
+       apply H2.
+       intros.
+       destruct H3.
+       rewrite H3.
+       destruct x; simpl; try tauto; specialize (H (Rbar.Finite (f x2 - c))); simpl in H.
+         cut_to H; try lra.
+         now exists x2.
+       * apply H.
+         now exists x2.
+    + rewrite Rbar_plus_assoc.
+      * simpl.
+        replace (c + -c) with 0 by lra.
+        now rewrite Rbar.Rbar_plus_0_r.
+      * apply ex_Rbar_plus_Finite_r.
+      * apply ex_Rbar_plus_Finite_r.
+  - apply H0.
+    intros.
+    destruct H3.
+    rewrite H3.
+    destruct x0; simpl; try tauto; specialize (H1 (Rbar.Finite (f x2))); simpl in H1.
+      cut_to H1; try lra.
+      now exists x2.
+    + apply H1.
+      now exists x2.
+  Qed.
+
+Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (flim glim : R)
+      {rvf: forall n, RandomVariable dom borel_sa (f n)} 
+      {rvg: forall n, RandomVariable dom borel_sa (g n)} :  
+  almost prts (fun omega => Lim_seq.is_lim_seq (fun n => f n omega) (Rbar.Finite flim)) ->
+  almost prts (fun omega => Lim_seq.is_lim_seq (fun n => g n omega) (Rbar.Finite glim)) ->    
+  forall (delta : posreal),
+  exists (NN:nat),
+    forall N, (N >= NN)%nat ->
+    ps_P (event_inter
+            (qlearn.event_Rbar_ge (fun omega => Lim_seq.Inf_seq (fun n => Rbar.Finite (g (N + n)%nat omega))) (Rbar.Finite (glim-eps)))
+            (qlearn.event_Rbar_le (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (f (N + n)%nat omega))) (Rbar.Finite (flim+eps)))) >= 1 - delta.
+  Proof.
+    intros limf limg delta.
+    assert (0 < delta / 2).
+    {
+      generalize (cond_pos delta); intros.
+      lra.
+    }
+    assert (limf0:almost prts (fun omega => Lim_seq.is_lim_seq (fun n => f n omega - flim) (Rbar.Finite 0))).
+    {
+      revert limf.
+      apply almost_impl.
+      apply all_almost.
+      unfold impl.
+      intros.
+      replace (Rbar.Finite 0) with (Rbar.Finite (flim - flim)).
+      - apply Lim_seq.is_lim_seq_minus'; trivial.
+        apply Lim_seq.is_lim_seq_const.
+      - f_equal.
+        lra.
+    }
+    assert (limg0:almost prts (fun omega => Lim_seq.is_lim_seq (fun n => g n omega - glim) (Rbar.Finite 0))).    
+    {
+      revert limg.
+      apply almost_impl.
+      apply all_almost.
+      unfold impl.
+      intros.
+      replace (Rbar.Finite 0) with (Rbar.Finite (glim - glim)).
+      - apply Lim_seq.is_lim_seq_minus'; trivial.
+        apply Lim_seq.is_lim_seq_const.
+      - f_equal.
+        lra.
+    }
+    assert (rvf0:forall n : nat, RandomVariable dom borel_sa ((fun (n0 : nat) (omega : Ts) => f n0 omega - flim) n)).
+    {
+      intros.
+      assert (rv_eq
+                (fun omega : Ts => f n omega - flim)
+                (rvminus (f n) (const flim))).
+      {
+        intro x.
+        rv_unfold.
+        lra.
+      }
+      rewrite H0.
+      typeclasses eauto.
+    }
+    assert (rvg0:forall n : nat, RandomVariable dom borel_sa ((fun (n0 : nat) (omega : Ts) => g n0 omega - glim) n)).
+    {
+      intros.
+      assert (rv_eq
+                (fun omega : Ts => g n omega - glim)
+                (rvminus (g n) (const glim))).
+      {
+        intro x.
+        rv_unfold.
+        lra.
+      }
+      rewrite H0.
+      typeclasses eauto.
+    }
+    destruct (conv_as_prob_sup_delta_eps _ eps limf0 (mkposreal _ H)).
+    destruct (conv_as_prob_inf_delta_eps _ eps limg0 (mkposreal _ H)).
+    exists (max x x0).
+    intros.
+    eapply Rge_trans.
+    apply qlearn.ps_inter_bound.
+    specialize (H0 N).
+    specialize (H1 N).
+    cut_to H0; try lia.
+    cut_to H1; try lia.
+    simpl in H0.
+    simpl in H1.
+    assert (event_equiv
+               (qlearn.event_Rbar_le (fun omega : Ts => Lim_seq.Sup_seq (fun n : nat => Rbar.Finite (f (N + n)%nat omega - flim))) 
+                                     (Rbar.Finite eps))
+               (qlearn.event_Rbar_le (fun omega : Ts => Lim_seq.Sup_seq (fun n : nat => Rbar.Finite (f (N + n)%nat omega)))
+                                     (Rbar.Finite (flim + eps)))).
+    {
+     intro z.
+     simpl.
+     rewrite Sup_seq_minus_const.
+     destruct (Lim_seq.Sup_seq (fun n : nat => Rbar.Finite (f (N + n)%nat z))); simpl; try tauto.
+     lra.
+    }
+    rewrite H3 in H0.
+    assert (event_equiv
+               (qlearn.event_Rbar_ge (fun omega : Ts => Lim_seq.Inf_seq (fun n : nat => Rbar.Finite (g (N + n)%nat omega - glim))) 
+                                     (Rbar.Finite (-eps)))
+               (qlearn.event_Rbar_ge (fun omega : Ts => Lim_seq.Inf_seq (fun n : nat => Rbar.Finite (g (N + n)%nat omega)))
+                                     (Rbar.Finite (glim - eps)))).
+    {
+      intro z.
+      simpl.
+      rewrite Inf_seq_minus_const.
+      destruct (Lim_seq.Inf_seq (fun n : nat => Rbar.Finite (g (N + n)%nat z))); simpl; try tauto.
+      lra.
+    }
+    rewrite H4 in H1.
+    lra.
+    Qed.
 
 Lemma list_inter_prob_bound (l : list (event dom * nonnegreal)) :
   (forall ep, 
