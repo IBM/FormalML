@@ -3459,7 +3459,31 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
           }
           generalize (qlearn.up_pow_ln (mkposreal _ H3) geps geps1); intros.      
           simpl in H4.
-          assert (Eps / C0 < 1) by admit.
+          assert (Eps / C0 < 1).
+          {
+            subst kstar.
+            assert (ln geps < 0).
+            {
+              apply ln_lt_0.
+              split; trivial.
+              apply cond_pos.
+            }
+            
+            generalize Rmult_lt_gt_compat_neg_l; intros.
+            apply Rgt_lt in r.
+            apply Rmult_lt_gt_compat_neg_l with (r := ln geps) in r; trivial.
+            field_simplify in r; try lra.
+            generalize (cond_pos Eps); intros.
+            generalize (cond_pos C0); intros.
+            rewrite Rcomplements.ln_div in r; try lra.
+            assert (ln Eps < ln C0) by lra.
+            apply ln_lt_inv in H9; try lra.
+            apply Rmult_lt_reg_r with (r := C0); trivial.
+            field_simplify; trivial.
+            apply Rgt_not_eq.
+            lra.
+          }
+            
           specialize (H4 H5).
           apply Rmult_le_reg_l with (r := /C0).
           -- apply Rinv_0_lt_compat.
