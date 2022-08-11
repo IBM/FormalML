@@ -3369,6 +3369,159 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
         lra.
   Qed.
 
+  (* theorem 16 *)
+  Lemma box_log_lim (f : nat -> Ts -> R) (geps C0 : posreal) 
+        {rv : forall n, RandomVariable dom borel_sa (f n)} 
+        {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Lim_seq.Sup_seq (fun m => Rbar.Finite (Rabs (f (n + m)%nat x))))}:
+
+    geps < 1 ->
+    (forall (delta : posreal) (k : nat), 
+        exists (N : nat),
+          ps_P (qlearn.event_Rbar_le (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (Rabs (f (N + n)%nat omega)))) (Rbar.Finite (C0 * geps ^ k))) >=
+          1 - (INR k) * delta) ->
+    forall (Eps Delta : posreal),
+    exists (N : nat),
+      ps_P (qlearn.event_Rbar_le (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (Rabs (f (N + n)%nat omega)))) (Rbar.Finite Eps)) >=
+      1 - Delta.
+  Proof.
+    intros geps1 lim.
+    intros.
+    pose (kstar := Rmax(ln (Eps / C0) / ln geps) Delta).
+    destruct (Rgt_dec (ln (Eps / C0) / ln geps) 0).
+    - assert (kstar > 0).
+      {
+        subst kstar.
+        apply Rge_gt_trans with (r2 := Delta).
+        - generalize Rmax_r; intros.
+          apply Rle_ge, Rmax_r.
+        - apply cond_pos.
+     }
+      pose (khat := Z.to_nat (up kstar)).
+      assert (0 < Delta / INR khat).
+      {
+        apply Rdiv_lt_0_compat.
+        - apply cond_pos.
+        - subst khat.
+          rewrite INR_up_pos; try lra.
+          apply IZR_lt.
+          generalize (up_pos _ H); intros.
+          lia.
+      }
+      specialize (lim (mkposreal _ H0) khat).
+      destruct lim.
+      exists x.
+      simpl in H1.
+      field_simplify in H1.
+      + eapply Rge_trans.
+        shelve.
+        replace (1 - Delta) with (- Delta + 1) by lra.
+        apply H1.
+        Unshelve.
+        apply Rle_ge.
+        apply ps_sub.
+        intro z.
+        simpl.
+        intros.
+        eapply Rbar.Rbar_le_trans.
+        apply H2.
+        simpl.
+        assert (gepslim: 0 < geps < 1).
+        {
+          split; trivial.
+          apply cond_pos.
+        }
+        subst khat.
+        apply Rle_trans with (r2 := C0 * geps ^ Z.to_nat (up (ln (Eps / C0)/ ln geps))).
+        * apply Rmult_le_compat_l.
+          -- left.
+             apply cond_pos.
+          -- generalize (cond_pos geps); intros.
+             rewrite <- Rpower_pow; try lra.
+             rewrite <- Rpower_pow; try lra.
+             destruct (Rlt_dec (INR (Z.to_nat (up (ln (Eps / C0) / ln geps))))
+                               (INR (Z.to_nat (up kstar)))).
+             ++ generalize (Rpower_lt1 _ _ _ gepslim r0); intros; try lra.
+             ++ assert (INR (Z.to_nat (up (ln (Eps / C0) / ln geps))) =
+                        (INR (Z.to_nat (up kstar)))).
+                {
+                  f_equal.
+                  f_equal.
+                  f_equal.
+                  subst kstar.
+                  rewrite Rmax_left; trivial.
+                  admit.
+                }
+                rewrite H4.
+                lra.
+        * assert (0 < Eps / C0).
+          {
+            apply Rdiv_lt_0_compat; apply cond_pos.
+          }
+          generalize (qlearn.up_pow_ln (mkposreal _ H3) geps geps1); intros.      
+          simpl in H4.
+          assert (Eps / C0 < 1) by admit.
+          specialize (H4 H5).
+          apply Rmult_le_reg_l with (r := /C0).
+          -- apply Rinv_0_lt_compat.
+             apply cond_pos.
+          -- rewrite <- Rmult_assoc.
+             assert (pos C0 <> 0).
+             {
+               apply Rgt_not_eq.
+               apply cond_pos.
+             }
+             field_simplify; try lra.
+      + subst khat.
+        rewrite INR_up_pos in H1; try lra.
+        generalize (up_pos _ H); intros.        
+        assert (0 < up kstar)%Z by lia.
+        apply IZR_lt in H3.
+        lra.
+    -  specialize (lim Delta 0%nat).
+       destruct lim.
+       exists x.
+       simpl in H.
+       replace (1 - 0 * Delta) with 1 in H by lra.
+       generalize (cond_pos Delta); intros.
+       apply Rge_trans with (r2 := 1); try lra.
+       eapply Rge_trans.
+       shelve.
+       apply H.
+       Unshelve.
+       apply Rle_ge.
+       apply ps_sub.
+       intro z.
+       simpl.
+       intros.
+       eapply Rbar.Rbar_le_trans.
+       apply H1.
+       simpl.
+       rewrite Rmult_1_r.
+       assert (ln (Eps / C0)/ln geps <= 0) by lra.
+       assert (ln (Eps / C0) >= 0).
+       {
+         assert (ln geps < 0).
+         {
+           apply ln_lt_0.
+           split; trivial.
+           apply cond_pos.
+         }
+         unfold Rdiv in H2.
+         assert (ln geps <= 0) by lra.
+         generalize (Rmult_le_pos_from_neg _ _ H2 H4); intros.
+         rewrite Rmult_assoc in H5.
+         rewrite Rinv_l in H5; lra.
+       }
+       generalize (cond_pos Eps); intros.
+       generalize (cond_pos C0); intros.
+       rewrite Rcomplements.ln_div in H3; try lra.
+       assert (ln C0 <= ln Eps) by lra.
+       destruct (Rlt_dec (ln C0) (ln Eps)).
+       + apply ln_lt_inv in r; lra.
+       + assert (ln C0 = ln Eps) by lra.
+         apply ln_inv in H7; lra.
+  Admitted.          
+          
 Lemma list_inter_prob_bound (l : list (event dom * nonnegreal)) :
   (forall ep, 
       In ep l ->
