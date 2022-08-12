@@ -3370,18 +3370,20 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
   Qed.
 
   (* theorem 16 *)
-  Lemma box_log_lim (f : nat -> Ts -> R) (geps C0 : posreal) 
+  Lemma box_log_lim_Delta_Eps (f : nat -> Ts -> R) (geps C0 : posreal) 
         {rv : forall n, RandomVariable dom borel_sa (f n)} 
         {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Lim_seq.Sup_seq (fun m => Rbar.Finite (Rabs (f (n + m)%nat x))))}:
 
     geps < 1 ->
     (forall (delta : posreal) (k : nat), 
-        exists (N : nat),
+        exists (NN : nat),
+          forall N, (N >= NN)%nat ->
           ps_P (qlearn.event_Rbar_le (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (Rabs (f (N + n)%nat omega)))) (Rbar.Finite (C0 * geps ^ k))) >=
           1 - (INR k) * delta) ->
     forall (Eps Delta : posreal),
     Delta < 1 ->
-    exists (N : nat),
+    exists (NN : nat),
+      forall N, (N >= NN)%nat ->
       ps_P (qlearn.event_Rbar_le (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (Rabs (f (N + n)%nat omega)))) (Rbar.Finite Eps)) >=
       1 - Delta.
   Proof.
@@ -3410,6 +3412,8 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
       specialize (lim (mkposreal _ H0) khat).
       destruct lim.
       exists x.
+      intros ? Nge.
+      specialize (H1 N Nge).
       simpl in H1.
       field_simplify in H1.
       + eapply Rge_trans.
@@ -3473,6 +3477,8 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
     -  specialize (lim Delta 0%nat).
        destruct lim.
        exists x.
+       intros ? Nge.
+       specialize (H0 N Nge).
        simpl in H0.
        replace (1 - 0 * Delta) with 1 in H0 by lra.
        apply Rge_trans with (r2 := 1); try lra.
@@ -3511,6 +3517,61 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
          apply ln_inv in H5; lra.
   Qed.
           
+  (* Theorem 16 *)
+  Lemma box_log_lim (f : nat -> Ts -> R) (geps C0 : posreal) 
+        {rv : forall n, RandomVariable dom borel_sa (f n)} 
+        {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Lim_seq.Sup_seq (fun m => Rbar.Finite (Rabs (f (n + m)%nat x))))}:
+
+    geps < 1 ->
+    (forall (delta : posreal) (k : nat), 
+        exists (NN : nat),
+          forall N, (N >= NN)%nat ->
+          ps_P (qlearn.event_Rbar_le (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (Rabs (f (N + n)%nat omega)))) (Rbar.Finite (C0 * geps ^ k))) >=
+          1 - (INR k) * delta) ->
+    almost prts (fun x => Lim_seq.is_lim_seq (fun n => f n x) (Rbar.Finite 0)).
+  Proof.
+    intros.
+    apply conv_prob_sup_1_as with (rv2 := rv2); trivial.
+    intros.
+    apply Lim_seq.is_lim_seq_spec.
+    unfold Lim_seq.is_lim_seq'.
+    intros.
+    unfold Hierarchy.eventually.
+    generalize (box_log_lim_Delta_Eps f geps C0 H H0 eps); intros.
+    destruct (Rlt_dec eps0 1).
+    - generalize (cond_pos eps0); intros eps0pos.
+      assert (0 < eps0/2) by lra.
+      assert (eps0/2 < 1) by lra.
+      specialize (H1 (mkposreal _ H2) H3).
+      destruct H1.
+      exists x.
+      intros ? xlim.
+      specialize (H1 n xlim).
+      apply Rabs_def1.
+      + apply Rle_lt_trans with (r2 := 0).
+        * apply Rplus_le_reg_r with (r := 1).
+          ring_simplify.
+          apply ps_le1.
+        * apply cond_pos.
+      + simpl in H1.
+        lra.
+   - assert (0 < 1/2) by lra.
+     assert (1/2 < 1) by lra.
+     specialize (H1 (mkposreal _ H2) H3).
+     destruct H1.
+     exists x.
+     intros ? xlim.
+     specialize (H1 n0 xlim).
+     apply Rabs_def1.
+      + apply Rle_lt_trans with (r2 := 0).
+        * apply Rplus_le_reg_r with (r := 1).
+          ring_simplify.
+          apply ps_le1.
+        * apply cond_pos.
+      + simpl in H1.
+        lra.
+  Qed.     
+
 Lemma list_inter_prob_bound (l : list (event dom * nonnegreal)) :
   (forall ep, 
       In ep l ->
