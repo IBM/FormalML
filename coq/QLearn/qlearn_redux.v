@@ -3125,7 +3125,6 @@ Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R)
       {isfeBB : forall n, IsFiniteExpectation prts (BB n)}
       {isfemult : forall n, IsFiniteExpectation prts (rvmult (BB n) (alpha n))}
       {rvalpha : forall n, RandomVariable dom borel_sa (alpha n)}      
-      {svy1 : forall n : nat, IsFiniteExpectation prts (rvsqr (alpha n))}
       {svy2 : forall n : nat, IsFiniteExpectation prts (rvsqr (rvmult (BB n) (alpha n)))}
       (alpha_pos:forall n x, 0 <= alpha n x) 
       (alpha_one:forall n x, 0 < 1 - alpha n x ) :
@@ -3136,13 +3135,29 @@ Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R)
                 Rbar.Finite (const 0 x))) ->
    almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
                                                      Rbar.p_infty)  ->
-   almost prts (fun omega => @Series.ex_series Hierarchy.R_AbsRing Hierarchy.R_NormedModule (fun n : nat => Rsqr (alpha n omega))) -> 
+   (exists (A2 : R),
+       almost prts (fun omega => Rbar.Rbar_lt (Lim_seq.Lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => rvsqr (alpha n) omega))) (Rbar.Finite A2))) ->
    (exists (sigma : R), forall n, rv_le (rvsqr (BB n)) (const (Rsqr sigma))) ->
   rv_eq (Z 0%nat) (const 0) ->
   (forall n, rv_eq (Z (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Z n)) (rvmult (BB n) (alpha n)))) ->
   almost _ (fun omega => Lim_seq.is_lim_seq (fun n => Z n omega) (Rbar.Finite 0)).
 Proof.
   intros condexpBB alpha_inf alpha_sqr sigma_BB Z0 Zrel.
+  assert (svy1: forall n : nat, IsFiniteExpectation prts (rvsqr (alpha n))).
+  {
+    intros.
+    apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const 1).
+    - apply IsFiniteExpectation_const.
+    - apply IsFiniteExpectation_const.
+    - intro z; rv_unfold.
+      apply Rle_0_sqr.
+    - intro z; rv_unfold.
+      unfold Rsqr.
+      replace (1) with (1 * 1) by lra.
+      specialize (alpha_one n z).
+      apply Rmult_le_compat; trivial; try lra.
+  }
+  
   assert (forall (n:nat) (x:Ts), 0 <= (fun n x => 0) n x).
   {
     intros.
@@ -3227,9 +3242,25 @@ Proof.
       * apply Rle_ge, (FiniteExpectation_sq_nneg prts (rvmult (BB n) (alpha n)) (svy2 n)).
     + apply (@Series.ex_series_scal Hierarchy.R_AbsRing).
       rewrite <- ex_finite_lim_series.
-      unfold Lim_seq.ex_finite_lim_seq.
-      generalize series_expectation; intros.
-      admit.
+      rewrite Lim_seq.ex_finite_lim_seq_correct.
+      split.
+      * apply Lim_seq.ex_lim_seq_incr.
+        intros.
+        apply sum_n_pos_incr; try lia.
+        intros.
+        apply FiniteExpectation_pos.
+        typeclasses eauto.
+      * generalize (sum_expectation prts (fun n => rvsqr (alpha n))); intros.
+        assert (forall n, RandomVariable dom borel_sa (rvsqr (alpha n))).
+        {
+          intros.
+          typeclasses eauto.
+        }
+        specialize (H4 H5 svy1).
+        rewrite (Lim_seq.Lim_seq_ext _ _ H4).
+        destruct alpha_sqr.
+        generalize FiniteExpectation_ale; intros.
+        admit.
   - apply all_almost; intros.
     apply Lim_seq.is_lim_seq_const.
   - apply all_almost; intros.
