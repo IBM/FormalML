@@ -3212,6 +3212,9 @@ Proof.
         unfold pow; lra.
       * apply Rle_ge, (FiniteExpectation_sq_nneg prts (rvmult (alpha n) (BB n)) (svy2 n)).
     + apply (@Series.ex_series_scal Hierarchy.R_AbsRing).
+      rewrite <- ex_finite_lim_series.
+      unfold Lim_seq.ex_finite_lim_seq.
+      generalize series_expectation; intros.
       admit.
   - apply all_almost; intros.
     apply Lim_seq.is_lim_seq_const.
