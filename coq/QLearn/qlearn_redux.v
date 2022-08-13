@@ -3158,9 +3158,8 @@ Proof.
     generalize (ConditionalExpectation.Condexp_factor_out prts (filt_sub n) (BB n) (alpha n)); intros.
     apply almost_prob_space_sa_sub_lift with (sub := filt_sub n).
     generalize (ConditionalExpectation.Condexp_Expectation prts (filt_sub n) (BB n)); intros.
-    rewrite expBB in H6.    
-    
-    
+    rewrite expBB in H6.
+    generalize Expectation_nonneg_zero_almost_zero; intros.
     admit.
   - intros ??.
     rv_unfold.
