@@ -3123,17 +3123,20 @@ Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R)
       {adaptZ : IsAdapted borel_sa Z F} (adapt_alpha : IsAdapted borel_sa alpha F) 
       {rvBB : forall n, RandomVariable dom borel_sa (BB n)}
       {rvalpha : forall n, RandomVariable dom borel_sa (alpha n)}      
+      {svy1 : forall n : nat, IsFiniteExpectation prts (rvsqr (alpha n))}
       {svy2 : forall n : nat, IsFiniteExpectation prts (rvsqr (rvmult (alpha n) (BB n)))}
       (alpha_pos:forall n x, 0 <= alpha n x) 
       (alpha_one:forall n x, 0 < 1 - alpha n x ) :
    (forall n, Expectation (BB n) = Some (Rbar.Finite 0)) ->
    almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
                                                      Rbar.p_infty)  ->
+   almost prts (fun omega => @Series.ex_series Hierarchy.R_AbsRing Hierarchy.R_NormedModule (fun n : nat => Rsqr (alpha n omega))) -> 
+   (exists (sigma : R), forall n, rv_le (rvsqr (BB n)) (const (Rsqr sigma))) ->
   rv_eq (Z 0%nat) (const 0) ->
   (forall n, rv_eq (Z (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Z n)) (rvmult (alpha n) (BB n)))) ->
   almost _ (fun omega => Lim_seq.is_lim_seq (fun n => Z n omega) (Rbar.Finite 0)).
 Proof.
-  intros expBB alpha_inf Z0 Zrel.
+  intros expBB alpha_inf alpha_sqr sigma_BB Z0 Zrel.
   assert (forall (n:nat) (x:Ts), 0 <= (fun n x => 0) n x).
   {
     intros.
@@ -3176,7 +3179,40 @@ Proof.
       rewrite Rmult_0_r in H3.
       rewrite Rmult_comm in H3.
       lra.
-  - admit.
+  - destruct sigma_BB as [sigma ?].
+    assert (forall n,
+               FiniteExpectation prts (rvsqr (rvmult (alpha n) (BB n))) <= sigma^2 * FiniteExpectation prts (rvsqr (alpha n))).
+    {
+      intros.
+      apply Rle_trans with (r2 := FiniteExpectation prts (rvscale (sigma^2) (rvsqr (alpha n)))).
+      - apply FiniteExpectation_le.
+        intro z.
+        rv_unfold.
+        rewrite Rsqr_mult.
+        rewrite Rmult_comm.
+        apply Rmult_le_compat_r.
+        + apply Rle_0_sqr.
+        + specialize (H2 n z).
+          simpl in H2.
+          eapply Rle_trans.
+          apply H2.
+          right.
+          unfold Rsqr, pow.
+          lra.
+     - now rewrite FiniteExpectation_scale.
+    }
+    apply (@Series.ex_series_le Hierarchy.R_AbsRing Hierarchy.R_CompleteNormedModule ) with 
+        (b := fun n => sigma^2 * FiniteExpectation prts (rvsqr (alpha n))).
+    + intros.
+      unfold Hierarchy.norm; simpl.
+      unfold Hierarchy.abs; simpl.
+      rewrite Rabs_right.
+      * eapply Rle_trans.
+        apply H3.
+        unfold pow; lra.
+      * apply Rle_ge, (FiniteExpectation_sq_nneg prts (rvmult (alpha n) (BB n)) (svy2 n)).
+    + apply (@Series.ex_series_scal Hierarchy.R_AbsRing).
+      admit.
   - apply all_almost; intros.
     apply Lim_seq.is_lim_seq_const.
   - apply all_almost; intros.
