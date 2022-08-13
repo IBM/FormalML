@@ -3122,12 +3122,18 @@ Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R)
       {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
       {adaptZ : IsAdapted borel_sa Z F} (adapt_alpha : IsAdapted borel_sa alpha F) 
       {rvBB : forall n, RandomVariable dom borel_sa (BB n)}
+      {isfeBB : forall n, IsFiniteExpectation prts (BB n)}
+      {isfemult : forall n, IsFiniteExpectation prts (rvmult (BB n) (alpha n))}
       {rvalpha : forall n, RandomVariable dom borel_sa (alpha n)}      
       {svy1 : forall n : nat, IsFiniteExpectation prts (rvsqr (alpha n))}
       {svy2 : forall n : nat, IsFiniteExpectation prts (rvsqr (rvmult (BB n) (alpha n)))}
       (alpha_pos:forall n x, 0 <= alpha n x) 
       (alpha_one:forall n x, 0 < 1 - alpha n x ) :
-   (forall n, Expectation (BB n) = Some (Rbar.Finite 0)) ->
+  (forall n,
+      almost (prob_space_sa_sub prts (filt_sub n))
+             (fun x : Ts =>
+                ConditionalExpectation.ConditionalExpectation prts (filt_sub n) (rvmult (BB n) (alpha n)) x = 
+                Rbar.Finite (const 0 x))) ->
    almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
                                                      Rbar.p_infty)  ->
    almost prts (fun omega => @Series.ex_series Hierarchy.R_AbsRing Hierarchy.R_NormedModule (fun n : nat => Rsqr (alpha n omega))) -> 
@@ -3136,7 +3142,7 @@ Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R)
   (forall n, rv_eq (Z (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Z n)) (rvmult (BB n) (alpha n)))) ->
   almost _ (fun omega => Lim_seq.is_lim_seq (fun n => Z n omega) (Rbar.Finite 0)).
 Proof.
-  intros expBB alpha_inf alpha_sqr sigma_BB Z0 Zrel.
+  intros condexpBB alpha_inf alpha_sqr sigma_BB Z0 Zrel.
   assert (forall (n:nat) (x:Ts), 0 <= (fun n x => 0) n x).
   {
     intros.
@@ -3153,14 +3159,15 @@ Proof.
   apply H1.
   - intros.
     assert (RandomVariable (F n) borel_sa (alpha n)) by apply adapt_alpha.
-    assert (IsFiniteExpectation prts (BB n)) by admit.
-    assert (IsFiniteExpectation prts (rvmult (BB n) (alpha n))) by admit.    
     generalize (ConditionalExpectation.Condexp_factor_out prts (filt_sub n) (BB n) (alpha n)); intros.
     apply almost_prob_space_sa_sub_lift with (sub := filt_sub n).
-    generalize (ConditionalExpectation.Condexp_Expectation prts (filt_sub n) (BB n)); intros.
-    rewrite expBB in H6.
-    generalize Expectation_nonneg_zero_almost_zero; intros.
-    admit.
+    specialize (condexpBB n).
+    revert condexpBB.
+    apply almost_impl, all_almost.
+    intros; red; intros.
+    rewrite <- H4.
+    apply ConditionalExpectation.ConditionalExpectation_ext.
+    now intro z.
   - intros ??.
     rv_unfold.
     unfold Rabs, Rmax.
