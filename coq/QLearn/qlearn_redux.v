@@ -3054,14 +3054,14 @@ Lemma Dvoretzky_converge_Y (C : R) (Y : nat -> Ts -> R) (alpha : nat -> Ts -> R)
       {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
       {adaptY : IsAdapted borel_sa Y F} (adapt_alpha : IsAdapted borel_sa alpha F) 
       (alpha_pos:forall n x, 0 <= alpha n x) 
-      (alpha_one:forall n x, 0 <= 1 - alpha n x ) :
+      (alpha_one:forall n x, 0 < 1 - alpha n x ) :
    almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
                                                      Rbar.p_infty)  ->
   rv_eq (Y 0%nat) (const C) ->
   (forall n, rv_eq (Y (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Y n)) (rvscale C (alpha n)))) ->
   almost _ (fun omega => Lim_seq.is_lim_seq (fun n => Y n omega) (Rbar.Finite C)).
 Proof.
-  intros alpha_inf ??.
+  intros alpha_inf Y0 Yrel.
   assert (forall (n:nat) (x:Ts), 0 <= (fun n x => 0) n x).
   {
     intros.
@@ -3070,9 +3070,9 @@ Proof.
   generalize (Dvoretzky_DS_extended_alt (fun n => rvminus (Y n) (const C)) 
                                         (fun n => const 0) (fun n => rvmult (rvminus (const 1) (alpha n)) 
                                                                             (rvminus (Y n) (const C)))
-                                        isfilt filt_sub H1 H1 alpha_pos (fun n => rvconst dom borel_sa 0)); intros.
-  cut_to H2; trivial.
-  - revert H2.
+                                        isfilt filt_sub H H alpha_pos (fun n => rvconst dom borel_sa 0)); intros.
+  cut_to H0; trivial.
+  - revert H0.
     apply almost_impl, all_almost.
     intros; unfold impl.
     intros.
@@ -3084,7 +3084,7 @@ Proof.
       * now rewrite Rplus_0_l.
   - intros ??.
     rv_unfold.
-    rewrite H0.
+    rewrite Yrel.
     lra.
   - intros.
     apply all_almost; intros.
@@ -3099,8 +3099,9 @@ Proof.
       * apply Rabs_pos.
       * rewrite Rabs_pos_eq; try lra.
         specialize (alpha_one n omega); lra.
-    + apply Rmult_le_pos; trivial.
-      apply Rabs_pos.
+    + apply Rmult_le_pos.
+      * specialize (alpha_one n omega); lra.
+      * apply Rabs_pos.
   - apply Series.ex_series_ext with (a := const 0).
     + intros.
       erewrite FiniteExpectation_ext with (rv_X2 := const 0).
@@ -3116,6 +3117,72 @@ Proof.
   - apply all_almost; intros.
     apply ex_series_const0.
   Qed.
+
+Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R) 
+      {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
+      {adaptZ : IsAdapted borel_sa Z F} (adapt_alpha : IsAdapted borel_sa alpha F) 
+      {rvBB : forall n, RandomVariable dom borel_sa (BB n)}
+      {rvalpha : forall n, RandomVariable dom borel_sa (alpha n)}      
+      {svy2 : forall n : nat, IsFiniteExpectation prts (rvsqr (rvmult (alpha n) (BB n)))}
+      (alpha_pos:forall n x, 0 <= alpha n x) 
+      (alpha_one:forall n x, 0 < 1 - alpha n x ) :
+   (forall n, Expectation (BB n) = Some (Rbar.Finite 0)) ->
+   almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
+                                                     Rbar.p_infty)  ->
+  rv_eq (Z 0%nat) (const 0) ->
+  (forall n, rv_eq (Z (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Z n)) (rvmult (alpha n) (BB n)))) ->
+  almost _ (fun omega => Lim_seq.is_lim_seq (fun n => Z n omega) (Rbar.Finite 0)).
+Proof.
+  intros expBB alpha_inf Z0 Zrel.
+  assert (forall (n:nat) (x:Ts), 0 <= (fun n x => 0) n x).
+  {
+    intros.
+    lra.
+  }
+  assert (forall n, RandomVariable dom borel_sa (rvmult (alpha n) (BB n))).
+  {
+    intros.
+    typeclasses eauto.
+  }
+  generalize (Dvoretzky_DS_extended_alt Z (fun n => rvmult (alpha n) (BB n)) 
+                                        (fun n => rvmult (rvminus (const 1) (alpha n)) (Z n)) 
+                                        isfilt filt_sub H H alpha_pos H0 Zrel); intros.
+  apply H1.
+  - intros.
+    admit.
+  - intros ??.
+    rv_unfold.
+    unfold Rabs, Rmax.
+    match_destr; match_destr.
+    + match_destr; try lra.
+    + match_destr_in n0; try lra.
+      assert (0 <= (1 + -1 * alpha n omega)).
+      {
+        specialize (alpha_one n omega).
+        lra.
+      }
+      apply Rge_le in r0.
+      generalize (Rmult_le_pos _ _ H2 r0).
+      lra.
+    + match_destr; try lra.
+    + match_destr_in n0; try lra.
+      assert (0 < (1 + -1 * alpha n omega)).
+      {
+        specialize (alpha_one n omega).
+        lra.
+      }
+      apply Rlt_gt in r0.
+      generalize (Rmult_lt_gt_compat_neg_l _ _ _ r0 H2); intros.
+      rewrite Rmult_0_r in H3.
+      rewrite Rmult_comm in H3.
+      lra.
+  - admit.
+  - apply all_almost; intros.
+    apply Lim_seq.is_lim_seq_const.
+  - apply all_almost; intros.
+    apply ex_series_const0.
+  - trivial.
+ Admitted.
 
 Lemma conv_as_prob_sup_delta_eps (f : nat->Ts->R) (eps : posreal)
       {rv: forall n, RandomVariable dom borel_sa (f n)} :
