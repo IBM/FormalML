@@ -3258,7 +3258,7 @@ Proof.
         }
         specialize (H4 H5 svy1).
         rewrite (Lim_seq.Lim_seq_ext _ _ H4).
-        destruct alpha_sqr as [A2 alphs_sqr].
+        destruct alpha_sqr as [A2 alpha_sqr].
         generalize (Dominated_convergence_almost 
                       prts 
                       (fun n omega => Rbar.Finite (rvsum (fun n0 => rvsqr (alpha n0)) n omega))
@@ -3272,6 +3272,9 @@ Proof.
                       Rbar.Finite
                         (rvsum (fun n0 : nat => rvsqr (alpha n0)) n omega))).
            { 
+             intros.
+             unfold Rbar_IsFiniteExpectation.
+             generalize FinExp_Rbar_FinExp; intros.
              admit.
            }
            assert
@@ -3300,7 +3303,26 @@ Proof.
                  --- typeclasses eauto.
            ++ apply Rbar_IsFiniteExpectation_const.
            ++ intros.
-              admit.
+              revert alpha_sqr.
+              unfold almostR2.
+              apply almost_impl, all_almost.
+              intros; red; intros.
+              unfold Rbar_rvabs, const.
+              simpl.
+              unfold rvsum.
+              rewrite Rabs_right.
+              ** generalize (Lim_seq_increasing_le (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n0 : nat => rvsqr (alpha n0) x))); intros.
+                 cut_to H8.
+                 --- specialize (H8 n).
+                     generalize (Rbar.Rbar_le_lt_trans _ _ _ H8 H7); intros.
+                     simpl in H9; lra.
+                 --- intros.
+                     apply sum_n_pos_incr; try lia.                     
+                     intros.
+                     apply nnfsqr.
+              ** apply Rle_ge, sum_n_nneg.
+                 intros.
+                 apply nnfsqr.
            ++ apply all_almost.
               intros.
               unfold Rbar_rvlim.
