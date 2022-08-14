@@ -609,7 +609,35 @@ Section MDP.
      - rewrite Rabs_right; try lra.
        rewrite Rabs_right; try lra.
        rewrite Rabs_right; try lra.
-  Qed.
+   Qed.
+
+    Lemma noise_bound2 :
+       0 < γ < 1 ->
+       (forall sa s', sa_reward sa s' <= max_reward) ->
+       (forall sa s', sa_reward sa s' >= min_reward) ->
+       (forall t sa, 0 <= alpha t sa < 1) ->
+        exists (sigma : nonnegreal),
+        forall n sa,
+          - sigma <=
+          ((bellmanQ' (Q n) (pi n) sa) -
+                bellmanQbar γ (Q n) sa) <= 
+          sigma.
+    Proof.
+      intros.
+      generalize noise_bound; intros.
+      cut_to H3; trivial.
+      destruct H3.
+      assert (0 <= Rabs x).
+      {
+        apply Rabs_pos.
+      }
+      exists (mknonnegreal _ H4).
+      intros.
+      simpl.
+      specialize (H3 n sa).
+      apply Rsqr_le_abs_0 in H3.
+      now apply qlearn.Rabs_le_both.
+    Qed.
 
    Fixpoint Y (tk:nat) (C: R) (n:nat) sa : R :=
     match n with
@@ -3198,10 +3226,8 @@ Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R)
       {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
       {adaptZ : IsAdapted borel_sa Z F} (adapt_alpha : IsAdapted borel_sa alpha F) 
       {rvBB : forall n, RandomVariable dom borel_sa (BB n)}
-      {isfeBB : forall n, IsFiniteExpectation prts (BB n)} 
-      {isfemult : forall n, IsFiniteExpectation prts (rvmult (BB n) (alpha n))}
+
       {rvalpha : forall n, RandomVariable dom borel_sa (alpha n)}      
-      {svy2 : forall n : nat, IsFiniteExpectation prts (rvsqr (rvmult (BB n) (alpha n)))}
       (alpha_pos:forall n x, 0 <= alpha n x) 
       (alpha_one:forall n x, 0 < 1 - alpha n x ) :
   (forall n,
@@ -3214,11 +3240,14 @@ Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R)
    (exists (A2 : R),
        almost prts (fun omega => Rbar.Rbar_lt (Lim_seq.Lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => rvsqr (alpha n) omega))) (Rbar.Finite A2))) ->
    (exists (sigma : R), forall n, rv_le (rvsqr (BB n)) (const (Rsqr sigma))) ->
+   (exists (sigma : nonnegreal), forall n, 
+         rv_le (BB n) (const sigma) /\ rv_le (const (-sigma)) (BB n)) ->   
   rv_eq (Z 0%nat) (const 0) ->
   (forall n, rv_eq (Z (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Z n)) (rvmult (BB n) (alpha n)))) ->
   almost _ (fun omega => Lim_seq.is_lim_seq (fun n => Z n omega) (Rbar.Finite 0)).
 Proof.
-  intros condexpBB alpha_inf alpha_sqr sigma_BB Z0 Zrel.
+  intros condexpBB alpha_inf alpha_sqr sigma_BB sigma_BB2 Z0 Zrel.
+  
   assert (svy1: forall n : nat, IsFiniteExpectation prts (rvsqr (alpha n))).
   {
     intros.
@@ -3233,7 +3262,80 @@ Proof.
       specialize (alpha_one n z).
       apply Rmult_le_compat; trivial; try lra.
   }
-  
+  assert (isfeBB : forall n, IsFiniteExpectation prts (BB n)).
+  {
+    intros.
+    destruct sigma_BB2.
+    specialize (H n).
+    apply IsFiniteExpectation_bounded with (rv_X1 := const (-x)) (rv_X3 := (const x)); try tauto.
+    - apply IsFiniteExpectation_const.
+    - unfold const.
+      apply IsFiniteExpectation_const.    
+  }
+      
+  assert (isfemult : forall n, IsFiniteExpectation prts (rvmult (BB n) (alpha n))).
+  {
+    intros.
+    destruct sigma_BB2.
+    destruct (H n).
+    apply IsFiniteExpectation_bounded with (rv_X1 := const (-x)) (rv_X3 := (const x)).
+    - apply IsFiniteExpectation_const.
+    - unfold const.
+      apply IsFiniteExpectation_const.
+    - intro z.
+      rv_unfold.
+      specialize (alpha_pos n z).
+      specialize (alpha_one n z).
+      specialize (H1 z); simpl in H1.
+      apply Rle_trans with (r2 := (-x) * (alpha n z)).
+      + replace (- x) with ((- x) * 1) at 1 by lra.
+        apply Rmult_le_compat_neg_l; try lra.
+        generalize (cond_nonneg x); lra.
+      + now apply Rmult_le_compat_r.
+    - intro z.
+      rv_unfold.
+      specialize (alpha_pos n z).
+      specialize (alpha_one n z).
+      specialize (H0 z); simpl in H0.
+      apply Rle_trans with (r2 := x * alpha n z).
+      + now apply Rmult_le_compat_r.
+      + replace (nonneg x) with (x * 1) at 2 by lra.
+        apply Rmult_le_compat_l.
+        * apply cond_nonneg.
+        * lra.
+  }
+
+  assert (svy2 : forall n : nat, IsFiniteExpectation prts (rvsqr (rvmult (BB n) (alpha n)))).
+  {
+    intros.
+    destruct sigma_BB2.
+    apply IsFiniteExpectation_abs_bound with (g := (const (Rsqr x))).
+    - typeclasses eauto.
+    - typeclasses eauto.
+    - intro z.
+      specialize (alpha_pos n z).
+      specialize (alpha_one n z).
+      unfold rvabs.
+      rewrite Rabs_right.
+      + destruct (H n).
+        rv_unfold.
+        apply neg_pos_Rsqr_le.
+        * apply Rle_trans with (r2 := (-x) * (alpha n z)).
+          -- replace (- x) with ((- x) * 1) at 1 by lra.
+             apply Rmult_le_compat_neg_l; try lra.
+             generalize (cond_nonneg x); lra.
+          -- now apply Rmult_le_compat_r.
+        * apply Rle_trans with (r2 := x * alpha n z).
+          -- now apply Rmult_le_compat_r.
+          -- replace (nonneg x) with (x * 1) at 2 by lra.
+             apply Rmult_le_compat_l.
+             ++ apply cond_nonneg.
+             ++ lra.
+      + apply Rle_ge.
+        apply nnfsqr.
+    - apply IsFiniteExpectation_const.
+   }
+    
   assert (forall (n:nat) (x:Ts), 0 <= (fun n x => 0) n x).
   {
     intros.
