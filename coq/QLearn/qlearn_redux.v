@@ -3122,7 +3122,7 @@ Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R)
       {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
       {adaptZ : IsAdapted borel_sa Z F} (adapt_alpha : IsAdapted borel_sa alpha F) 
       {rvBB : forall n, RandomVariable dom borel_sa (BB n)}
-      {isfeBB : forall n, IsFiniteExpectation prts (BB n)}
+      {isfeBB : forall n, IsFiniteExpectation prts (BB n)} 
       {isfemult : forall n, IsFiniteExpectation prts (rvmult (BB n) (alpha n))}
       {rvalpha : forall n, RandomVariable dom borel_sa (alpha n)}      
       {svy2 : forall n : nat, IsFiniteExpectation prts (rvsqr (rvmult (BB n) (alpha n)))}
@@ -3258,9 +3258,63 @@ Proof.
         }
         specialize (H4 H5 svy1).
         rewrite (Lim_seq.Lim_seq_ext _ _ H4).
-        destruct alpha_sqr.
-        generalize FiniteExpectation_ale; intros.
-        admit.
+        destruct alpha_sqr as [A2 alphs_sqr].
+        generalize (Dominated_convergence_almost 
+                      prts 
+                      (fun n omega => Rbar.Finite (rvsum (fun n0 => rvsqr (alpha n0)) n omega))
+                      (Rbar_rvlim (fun n omega => Rbar.Finite (rvsum (fun n0 => rvsqr (alpha n0)) n omega)))
+                   ); intros.
+        specialize (H6 (const (Rbar.Finite A2))).
+        cut_to H6.
+        -- assert  (isfefn : forall n : nat,
+                   Rbar_IsFiniteExpectation prts
+                     (fun omega : Ts =>
+                      Rbar.Finite
+                        (rvsum (fun n0 : nat => rvsqr (alpha n0)) n omega))).
+           { 
+             admit.
+           }
+           assert
+             (isfe : Rbar_IsFiniteExpectation prts
+                   (Rbar_rvlim
+                      (fun (n : nat) (omega : Ts) =>
+                       Rbar.Finite
+                         (rvsum (fun n0 : nat => rvsqr (alpha n0)) n omega)))).
+           {
+             admit.
+           }
+           specialize (H6 isfefn isfe).
+           apply Lim_seq.is_lim_seq_unique in H6.
+           ++ rewrite Lim_seq.Lim_seq_ext with
+                  (v :=  (fun n : nat =>
+                            Rbar_FiniteExpectation 
+                              prts
+                              (fun omega : Ts =>
+                                 Rbar.Finite (rvsum (fun n0 : nat => rvsqr (alpha n0)) n omega)))).
+              ** rewrite H6.
+                 now simpl.
+              ** intros.
+                 rewrite <- FinExp_Rbar_FinExp.
+                 --- apply Rbar_FiniteExpectation_ext.
+                     now intro z.
+                 --- typeclasses eauto.
+           ++ apply Rbar_IsFiniteExpectation_const.
+           ++ intros.
+              admit.
+           ++ apply all_almost.
+              intros.
+              unfold Rbar_rvlim.
+              apply ELim_seq_correct.
+              rewrite ex_Elim_seq_fin.
+              apply Lim_seq.ex_lim_seq_incr.
+              intros.
+              apply sum_n_pos_incr; try lia.
+              intros.
+              apply nnfsqr.
+        -- intros.
+           typeclasses eauto.
+        -- typeclasses eauto.
+        -- typeclasses eauto.
   - apply all_almost; intros.
     apply Lim_seq.is_lim_seq_const.
   - apply all_almost; intros.
