@@ -3135,6 +3135,65 @@ Qed.
     - apply Rbar_IsFiniteExpectation_proper_almostR2 with (rv_X1 := g); trivial.
   Qed.
 
+  Lemma Rbar_le_abs (z : Rbar.Rbar) :
+    Rbar.Rbar_le z (Rbar.Rbar_abs z).
+  Proof.
+    unfold Rbar.Rbar_abs.
+    match_destr; simpl; try tauto.
+    apply Rle_abs.
+  Qed.
+  
+  Lemma Rbar_IsFiniteExpectation_abs_id (f : Ts -> Rbar.Rbar)
+          {rvf : RandomVariable dom Rbar_borel_sa f} :
+    Rbar_IsFiniteExpectation prts (Rbar_rvabs f) ->
+    Rbar_IsFiniteExpectation prts f.
+  Proof.
+    intros.
+    apply Rbar_IsFiniteExpectation_bounded with (rv_X1 := Rbar_rvopp (Rbar_rvabs f)) (rv_X3 := Rbar_rvabs f); trivial.
+    - apply Rbar_IsFiniteExpectation_opp; trivial.
+      typeclasses eauto.
+    - intro x.
+      unfold Rbar_rvopp, Rbar_rvabs.
+      rewrite <- Rbar_opp_le_contravar.
+      rewrite Rbar.Rbar_opp_involutive.
+      rewrite <- Rbar.Rbar_abs_opp.
+      apply Rbar_le_abs.
+    - intro x.
+      unfold Rbar_rvabs.
+      apply Rbar_le_abs.
+  Qed.
+
+  Lemma Rbar_IsFiniteExpectation_abs_bound (f g : Ts -> Rbar.Rbar)
+          {rvf : RandomVariable dom Rbar_borel_sa f}
+          {rvg : RandomVariable dom Rbar_borel_sa g} :
+    Rbar_rv_le (Rbar_rvabs f) g ->
+    Rbar_IsFiniteExpectation prts g ->
+    Rbar_IsFiniteExpectation prts f.
+  Proof.
+    intros.
+    apply Rbar_IsFiniteExpectation_abs_id; trivial.
+    apply Rbar_IsFiniteExpectation_bounded with (rv_X1 := fun (x:Ts) => (Rbar.Finite 0)) (rv_X3 := g); trivial.
+    - apply Rbar_IsFiniteExpectation_const.
+    - intro x.
+      unfold Rbar_rvabs.
+      apply Rbar_abs_nneg.
+  Qed.
+  
+  Lemma Rbar_IsFiniteExpectation_abs_bound_almost (f g : Ts -> Rbar.Rbar)
+          {rvf : RandomVariable dom Rbar_borel_sa f}
+          {rvg : RandomVariable dom Rbar_borel_sa g} :
+    almostR2 prts Rbar.Rbar_le (Rbar_rvabs f) g ->
+    Rbar_IsFiniteExpectation prts g ->
+    Rbar_IsFiniteExpectation prts f.
+  Proof.
+    intros ale isfe.
+    destruct (almostR2_Rbar_le_split_r _ _ _ ale)
+      as [g' [eqq [lee rvg']]].
+    cut_to rvg'; try typeclasses eauto.
+    eapply Rbar_IsFiniteExpectation_abs_bound; try eapply lee; trivial.
+    eapply Rbar_IsFiniteExpectation_proper_almostR2; try eapply isfe; eauto.
+  Qed.
+
 Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R) 
       {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
       {adaptZ : IsAdapted borel_sa Z F} (adapt_alpha : IsAdapted borel_sa alpha F) 
