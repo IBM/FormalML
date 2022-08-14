@@ -3116,6 +3116,23 @@ Proof.
     apply Lim_seq.is_lim_seq_const.
   - apply all_almost; intros.
     apply ex_series_const0.
+Qed.
+
+  Lemma Rbar_IsFiniteExpectation_nnf_bounded_almost (f g : Ts -> Rbar.Rbar)
+          {rvf : RandomVariable dom Rbar_borel_sa f}
+          {rvg : RandomVariable dom Rbar_borel_sa g} :
+    Rbar_NonnegativeFunction f ->
+    almostR2 prts Rbar.Rbar_le f g ->
+    Rbar_IsFiniteExpectation prts g ->
+    Rbar_IsFiniteExpectation prts f.
+  Proof.
+    intros nnf ale isfe.
+    destruct (almostR2_Rbar_le_split_r _ _ _ ale)
+      as [g' [eqq [lee rvg']]].
+    cut_to rvg'; try typeclasses eauto.
+    apply Rbar_IsFiniteExpectation_bounded with (rv_X1 := const (Rbar.Finite 0)) (rv_X3 := g'); trivial.
+    - apply Rbar_IsFiniteExpectation_const.
+    - apply Rbar_IsFiniteExpectation_proper_almostR2 with (rv_X1 := g); trivial.
   Qed.
 
 Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R) 
@@ -3273,9 +3290,28 @@ Proof.
                         (rvsum (fun n0 : nat => rvsqr (alpha n0)) n omega))).
            { 
              intros.
-             unfold Rbar_IsFiniteExpectation.
-             generalize FinExp_Rbar_FinExp; intros.
-             admit.
+             apply Rbar_IsFiniteExpectation_nnf_bounded_almost with
+                 (g := const (Rbar.Finite A2)).
+             - typeclasses eauto.
+             - typeclasses eauto.
+             - typeclasses eauto.
+             - revert alpha_sqr.
+               apply almost_impl, all_almost.
+               intros; red; intros.
+               simpl.
+               unfold rvsum.
+               left.
+               generalize (Lim_seq_increasing_le
+                             (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n0 : nat => rvsqr (alpha n0) x))); intros.
+                 cut_to H8.
+                 --- specialize (H8 n).
+                     generalize (Rbar.Rbar_le_lt_trans _ _ _ H8 H7); intros.
+                     simpl in H9; lra.
+                 --- intros.
+                     apply sum_n_pos_incr; try lia.                     
+                     intros.
+                     apply nnfsqr.
+             - apply Rbar_IsFiniteExpectation_const.
            }
            assert
              (isfe : Rbar_IsFiniteExpectation prts
@@ -3284,7 +3320,19 @@ Proof.
                        Rbar.Finite
                          (rvsum (fun n0 : nat => rvsqr (alpha n0)) n omega)))).
            {
-             admit.
+             apply Rbar_IsFiniteExpectation_nnf_bounded_almost with
+                 (g := const (Rbar.Finite A2)).
+             - typeclasses eauto.
+             - typeclasses eauto.
+             - typeclasses eauto.
+             - revert alpha_sqr.
+               apply almost_impl, all_almost.
+               intros; red; intros.
+               unfold Rbar_rvlim.
+               rewrite Elim_seq_fin.
+               unfold const, rvsum.
+               now apply Rbar.Rbar_lt_le.
+             - apply Rbar_IsFiniteExpectation_const.
            }
            specialize (H6 isfefn isfe).
            apply Lim_seq.is_lim_seq_unique in H6.
@@ -3342,7 +3390,7 @@ Proof.
   - apply all_almost; intros.
     apply ex_series_const0.
   - trivial.
- Admitted.
+  Qed.
 
 Lemma conv_as_prob_sup_delta_eps (f : nat->Ts->R) (eps : posreal)
       {rv: forall n, RandomVariable dom borel_sa (f n)} :
