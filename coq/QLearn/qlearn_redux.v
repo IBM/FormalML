@@ -3240,14 +3240,38 @@ Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R)
    (exists (A2 : R),
        almost prts (fun omega => Rbar.Rbar_lt (Lim_seq.Lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => rvsqr (alpha n) omega))) (Rbar.Finite A2))) ->
    (exists (sigma : R), forall n, rv_le (rvsqr (BB n)) (const (Rsqr sigma))) ->
-   (exists (sigma : nonnegreal), forall n, 
-         rv_le (BB n) (const sigma) /\ rv_le (const (-sigma)) (BB n)) ->   
   rv_eq (Z 0%nat) (const 0) ->
   (forall n, rv_eq (Z (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Z n)) (rvmult (BB n) (alpha n)))) ->
   almost _ (fun omega => Lim_seq.is_lim_seq (fun n => Z n omega) (Rbar.Finite 0)).
 Proof.
-  intros condexpBB alpha_inf alpha_sqr sigma_BB sigma_BB2 Z0 Zrel.
+  intros condexpBB alpha_inf alpha_sqr sigma_BB Z0 Zrel.
   
+  assert (sigma_BB2: exists (sigma : nonnegreal), forall n, 
+         rv_le (BB n) (const sigma) /\ rv_le (const (-sigma)) (BB n)).
+  {
+    intros.
+    destruct sigma_BB.
+    assert (0 <= Rabs x).
+    {
+      apply Rabs_pos.
+    }
+    exists (mknonnegreal _ H0).
+    intros.
+    simpl.
+    specialize (H n).
+    unfold rvsqr, const in H.
+    split.
+    - intro z.
+      specialize (H z); simpl in H.
+      apply Rsqr_le_abs_0 in H.
+      now apply qlearn.Rabs_le_both in H.
+    - intros z.
+      specialize (H z); simpl in H.
+      apply Rsqr_le_abs_0 in H.
+      unfold const.
+      now apply qlearn.Rabs_le_both in H.
+  }
+
   assert (svy1: forall n : nat, IsFiniteExpectation prts (rvsqr (alpha n))).
   {
     intros.
