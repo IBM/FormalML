@@ -3233,7 +3233,7 @@ Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R)
   (forall n,
       almost (prob_space_sa_sub prts (filt_sub n))
              (fun x : Ts =>
-                ConditionalExpectation.ConditionalExpectation prts (filt_sub n) (rvmult (BB n) (alpha n)) x = 
+                ConditionalExpectation.ConditionalExpectation prts (filt_sub n) (BB n) x = 
                 Rbar.Finite (const 0 x))) ->
    almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
                                                      Rbar.p_infty)  ->
@@ -3380,11 +3380,20 @@ Proof.
     apply almost_prob_space_sa_sub_lift with (sub := filt_sub n).
     specialize (condexpBB n).
     revert condexpBB.
+    apply almost_impl.
+    revert H3.
+    unfold almostR2.
     apply almost_impl, all_almost.
-    intros; red; intros.
-    rewrite <- H4.
-    apply ConditionalExpectation.ConditionalExpectation_ext.
-    now intro z.
+    intros; red; intros; red; intros.
+    rewrite H3.
+    unfold Rbar_rvmult.
+    replace (Rbar.Finite (const 0 x)) with (Rbar.Rbar_mult  (Rbar.Finite (alpha n x)) (Rbar.Finite  (const 0 x))).
+    + f_equal.
+      rewrite <- H4.
+      apply ConditionalExpectation.ConditionalExpectation_ext.
+      now intro z.
+    + unfold const.
+      now rewrite Rbar.Rbar_mult_0_r.
   - intros ??.
     rv_unfold.
     unfold Rabs, Rmax.
