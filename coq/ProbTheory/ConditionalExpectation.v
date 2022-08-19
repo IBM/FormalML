@@ -20,6 +20,7 @@ Require Import List.
 Require Import NumberIso.
 Require Import PushNeg.
 
+
 Set Bullet Behavior "Strict Subproofs". 
 
 Section is_cond_exp.
@@ -58,6 +59,63 @@ Section is_cond_exp.
     rewrite Expectation_Rbar_Expectation.
     reflexivity.
   Qed.
+
+    Lemma is_conditional_expectation_independent_sa
+          (f : Ts -> R) 
+          {rv:RandomVariable dom borel_sa f} 
+          {isfe : IsFiniteExpectation prts f} :
+      independent_sas prts (pullback_rv_sub _ _ _ rv) sub ->
+      is_conditional_expectation dom2 f (const (FiniteExpectation prts f)).
+    Proof.
+      intros indep_sub.
+      unfold is_conditional_expectation.
+      intros.
+      assert (RandomVariable dom borel_sa (EventIndicator dec)).
+      {
+        apply RandomVariable_sa_sub; trivial.
+        now apply EventIndicator_pre_rv.
+      }
+      assert (indep_ind: independent_rvs prts borel_sa borel_sa f (EventIndicator dec)).
+      {
+        apply independent_rv_sas.
+        revert indep_sub.
+        apply independent_sas_sub_proper.
+        - now apply sa_equiv_sub.
+        - apply pullback_rv_sub.
+          now apply EventIndicator_pre_rv.
+      }
+      assert (IsFiniteExpectation prts (EventIndicator dec)).
+      {
+        apply IsFiniteExpectation_simple; trivial.
+        typeclasses eauto.
+      }
+      assert (isfexy : IsFiniteExpectation prts (rvmult f (EventIndicator dec))).
+      {
+        apply IsFiniteExpectation_indicator; trivial.
+        now apply sub.
+      }
+      generalize (independent_expectation_prod prts f (EventIndicator dec) indep_ind); intros.
+      rewrite FiniteExpectation_Expectation with (isfe0 := isfexy).
+      rewrite H2.
+      assert (rv_eq
+                 (Rbar_rvmult (fun x : Ts => const (FiniteExpectation prts f) x)
+                              (fun x : Ts => EventIndicator dec x))
+                 (rvscale (FiniteExpectation prts f)
+                                              (EventIndicator dec))).
+      {
+        intro x.
+        unfold Rbar_rvmult.
+        simpl.
+        rewrite Rbar_finite_eq.
+        now rv_unfold.
+      }
+      rewrite (Rbar_Expectation_ext H3).
+      rewrite <- Expectation_Rbar_Expectation.
+      rewrite FiniteExpectation_Expectation with (isfe0 := IsFiniteExpectation_scale prts (FiniteExpectation prts f) _ ).
+      f_equal.
+      rewrite Rbar_finite_eq.
+      now rewrite FiniteExpectation_scale.
+   Qed.
 
   Theorem is_conditional_expectation_Expectation
         (f : Ts -> R)

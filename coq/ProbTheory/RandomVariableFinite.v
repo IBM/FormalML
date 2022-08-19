@@ -1685,3 +1685,188 @@ Section sa_sub.
 
 End sa_sub.
 
+Section Independence.
+
+    Context {Ts:Type} 
+          {dom: SigmaAlgebra Ts}
+          (prts:ProbSpace dom).
+
+   Lemma pos_parts_mult (X Y : Ts -> R) :
+     rv_eq (fun x => nonneg (pos_fun_part (rvmult X Y) x))
+           (rvplus (rvmult (pos_fun_part X) (pos_fun_part Y))
+                   (rvmult (neg_fun_part X) (neg_fun_part Y))).
+     Proof.
+       intro x.
+       rv_unfold.
+       generalize (rv_pos_neg_id X); intros.
+       generalize (rv_pos_neg_id Y); intros.       
+       simpl.
+       rewrite H at 1.
+       rewrite Rmult_comm.
+       rewrite H0 at 1.
+       rv_unfold.
+       simpl.
+       unfold Rmax.
+       match_destr; match_destr; match_destr; match_destr; match_destr; try lra.
+       - assert (0 < - X x) by lra.
+         assert (0 < - Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+       - assert (0 < X x) by lra.
+         assert (0 < Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+       - assert (0 < X x) by lra.
+         assert (0 < - Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+       - assert (0 < - X x) by lra.
+         assert (0 < Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+    Qed.
+
+   Lemma neg_parts_mult (X Y : Ts -> R) :
+     rv_eq (fun x => nonneg (neg_fun_part (rvmult X Y) x))
+           (rvplus (rvmult (pos_fun_part X) (neg_fun_part Y))
+                   (rvmult (neg_fun_part X) (pos_fun_part Y))).
+     Proof.
+       intro x.
+       rv_unfold.
+       generalize (rv_pos_neg_id X); intros.
+       generalize (rv_pos_neg_id Y); intros.       
+       simpl.
+       rewrite H at 1.
+       rewrite Rmult_comm.
+       rewrite H0 at 1.
+       rv_unfold.
+       simpl.
+       unfold Rmax.
+       match_destr; match_destr; match_destr; match_destr; match_destr; try lra.
+       - assert (0 < - X x) by lra.
+         assert (0 < Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+       - assert (0 < X x) by lra.
+         assert (0 < - Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+       - assert (0 < - X x) by lra.
+         assert (0 < - Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+       - assert (0 < X x) by lra.
+         assert (0 < Y x) by lra.
+         generalize (Rmult_lt_0_compat _ _ H1 H2); intros.
+         lra.
+    Qed.
+
+  Lemma Expectation_abs_neg_part_finite (rv_X : Ts -> R)
+(*        {rv:RandomVariable dom borel_sa rv_X} *) : 
+    is_finite (NonnegExpectation (rvabs rv_X)) ->
+    is_finite (NonnegExpectation (neg_fun_part rv_X)).
+  Proof.
+    apply Finite_NonnegExpectation_le.
+    apply neg_fun_part_le.
+  Qed.
+  
+  Lemma Expectation_pos_part_finite (rv_X : Ts -> R)
+        {isfe:IsFiniteExpectation prts rv_X} :
+    is_finite (NonnegExpectation (pos_fun_part rv_X)).
+  Proof.
+    red in isfe.
+    unfold Expectation in isfe.
+    destruct (NonnegExpectation (fun x : Ts => pos_fun_part rv_X x)).
+    destruct (NonnegExpectation (fun x : Ts => neg_fun_part rv_X x)).     
+    now unfold is_finite.
+    simpl in isfe; tauto.
+    simpl in isfe; tauto.     
+    destruct (NonnegExpectation (fun x : Ts => neg_fun_part rv_X x));
+      simpl in isfe; tauto.
+    destruct (NonnegExpectation (fun x : Ts => neg_fun_part rv_X x));
+      simpl in isfe; tauto.
+  Qed.
+
+  Lemma Expectation_neg_part_finite (rv_X : Ts -> R)
+        {isfe:IsFiniteExpectation prts rv_X} :
+    is_finite (NonnegExpectation (neg_fun_part rv_X)).
+  Proof.
+    red in isfe.
+    unfold Expectation in isfe.
+    destruct (NonnegExpectation (fun x : Ts => pos_fun_part rv_X x)).
+    destruct (NonnegExpectation (fun x : Ts => neg_fun_part rv_X x)).     
+    now unfold is_finite.
+    simpl in isfe; tauto.
+    simpl in isfe; tauto.     
+    destruct (NonnegExpectation (fun x : Ts => neg_fun_part rv_X x));
+      simpl in isfe; tauto.
+    destruct (NonnegExpectation (fun x : Ts => neg_fun_part rv_X x));
+      simpl in isfe; tauto.
+  Qed.
+
+   Lemma Finite_expectation_pos_neg_parts (X : Ts -> R) 
+         {rvx : RandomVariable dom borel_sa X}
+         {isfe : IsFiniteExpectation prts X} :
+     FiniteExpectation prts X = NonnegExpectation(pos_fun_part X) -
+                                NonnegExpectation(neg_fun_part X).
+   Proof.
+     unfold FiniteExpectation, proj1_sig.
+     match_destr.
+     unfold Expectation in e.
+     rewrite <- (Expectation_pos_part_finite X) in e.
+     rewrite <- (Expectation_neg_part_finite X) in e.     
+     simpl in e.
+     invcs e.
+     simpl.
+     ring.
+  Qed.
+
+  Lemma independent_expectation_prod (X Y : Ts -> R)
+        {rvx : RandomVariable dom borel_sa X}
+        {rvy : RandomVariable dom borel_sa Y}        
+        {isfex : IsFiniteExpectation prts X}
+        {isfey : IsFiniteExpectation prts Y}
+        {isfexy : IsFiniteExpectation prts (rvmult X Y)}:    
+    independent_rvs prts borel_sa borel_sa X Y ->
+    FiniteExpectation prts (rvmult X Y) = FiniteExpectation prts X * FiniteExpectation prts Y.
+  Proof.
+    intros.
+    generalize (independent_expectation_prod_nneg prts (pos_fun_part X) (pos_fun_part Y)
+                                                  (indep_pos_part X Y H)); intros.
+    generalize (independent_expectation_prod_nneg prts (neg_fun_part X) (neg_fun_part Y)
+                                                  (indep_neg_part X Y H)); intros.
+    generalize (independent_expectation_prod_nneg prts (pos_fun_part X) (neg_fun_part Y)
+                                                  (indep_pos_neg_part X Y H)); intros.
+    generalize (independent_expectation_prod_nneg prts (neg_fun_part X) (pos_fun_part Y)
+                                                  (indep_neg_pos_part X Y H)); intros.
+    rewrite  Finite_expectation_pos_neg_parts; try typeclasses eauto.
+    rewrite  Finite_expectation_pos_neg_parts; try typeclasses eauto.
+    rewrite  Finite_expectation_pos_neg_parts; try typeclasses eauto.
+    generalize (pos_parts_mult X Y); intros.
+    generalize (neg_parts_mult X Y); intros.    
+    rewrite (NonnegExpectation_ext _ _ H4).
+    rewrite (NonnegExpectation_ext _ _ H5).
+    rewrite NonnegExpectation_sum; try typeclasses eauto.
+    rewrite NonnegExpectation_sum; try typeclasses eauto.
+    rewrite H0, H1, H2, H3.
+    - rewrite <- (Expectation_pos_part_finite X); trivial.
+      rewrite <- (Expectation_pos_part_finite Y); trivial.
+      rewrite <- (Expectation_neg_part_finite X); trivial.
+      rewrite <- (Expectation_neg_part_finite Y); trivial.
+      simpl.
+      ring.
+    - rewrite <- (Expectation_neg_part_finite X); trivial.
+      rewrite <- (Expectation_pos_part_finite Y); trivial.
+      now simpl.
+    - rewrite <- (Expectation_pos_part_finite X); trivial.
+      rewrite <- (Expectation_neg_part_finite Y); trivial.             
+      now simpl.
+    - rewrite <- (Expectation_neg_part_finite X); trivial.
+      rewrite <- (Expectation_neg_part_finite Y); trivial.
+      now simpl.
+    - rewrite <- (Expectation_pos_part_finite X); trivial.
+      rewrite <- (Expectation_pos_part_finite Y); trivial.             
+      now simpl.
+   Qed.
+  
+End Independence.

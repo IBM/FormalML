@@ -5044,6 +5044,129 @@ Section indep.
       apply independent_rvs_proper; reflexivity.
     Qed.
 
+    Lemma independent_expectation_prod_nneg (X Y : Ts -> R)
+        {rvx : RandomVariable dom borel_sa X}
+        {rvy : RandomVariable dom borel_sa Y}        
+        {nnx : NonnegativeFunction X}
+        {nny : NonnegativeFunction Y} :
+    independent_rvs prts borel_sa borel_sa X Y ->
+    ex_Rbar_mult (NonnegExpectation X) (NonnegExpectation Y) ->
+    NonnegExpectation (rvmult X Y) = Rbar_mult (NonnegExpectation X) (NonnegExpectation Y).
+  Proof.
+    intros.
+    assert (forall n, RandomVariable dom borel_sa (simple_approx X n)).
+    {
+      intros.
+      apply simple_approx_rv; trivial.
+      now apply Real_Rbar_rv.
+    }
+    assert (forall n, RandomVariable dom borel_sa (simple_approx Y n)).
+    {
+      intros.
+      apply simple_approx_rv; trivial.
+      now apply Real_Rbar_rv.
+    }
+    assert (forall n, FiniteRangeFunction (simple_approx X n)).
+    {
+      intros.
+      apply simple_approx_frf.
+    }
+    assert (forall n, FiniteRangeFunction (simple_approx Y n)).
+    {
+      intros.
+      apply simple_approx_frf.
+    }
+    assert (forall n, NonnegativeFunction (simple_approx X n)) by (intros n x; apply simple_approx_pos).
+    assert (forall n, NonnegativeFunction (simple_approx Y n)) by (intros n x; apply simple_approx_pos).    
+    assert (forall n, NonnegativeFunction (rvmult (simple_approx X n) (simple_approx Y n))).
+    {
+      intros.
+      apply NonNegMult; intro x; apply simple_approx_pos.
+   }
+    assert (forall n,
+               real (NonnegExpectation (rvmult (simple_approx X n) (simple_approx Y n))) =
+               real (NonnegExpectation (simple_approx X n)) *
+               real (NonnegExpectation (simple_approx Y n))).
+    {
+      intros.
+      do 3 erewrite frf_NonnegExpectation.
+      simpl.
+      apply SimpleExpectation_indep.
+      now eapply simple_approx_independent'.
+    }
+    generalize (monotone_convergence X (simple_approx X) _ _ _ (fun n => simple_approx_pos _ n)); intros.
+    generalize (monotone_convergence Y (simple_approx Y) _ _ _ (fun n => simple_approx_pos _ n)); intros.    
+    generalize (monotone_convergence (rvmult X Y) (fun n => rvmult (simple_approx X n) (simple_approx Y n)) _ _ _ H5); intros.
+    rewrite <- H7, <- H8, <- H9.
+    - rewrite Lim_seq_ext with
+          (v := fun n =>
+               NonnegExpectation (simple_approx X n) *
+               NonnegExpectation (simple_approx Y n)); trivial.
+      rewrite Lim_seq_mult; trivial.
+      + apply ex_lim_seq_incr.
+        intros.
+        generalize (NonnegExpectation_le (simple_approx X n) (simple_approx X (S n))); intros.
+        erewrite <- (simple_expectation_real (simple_approx X n)) in H10.
+        erewrite <- (simple_expectation_real (simple_approx X (S n))) in H10.
+        simpl in H10.
+        apply H10.
+        intro x.
+        now apply simple_approx_increasing.
+      + apply ex_lim_seq_incr.
+        intros.
+        generalize (NonnegExpectation_le (simple_approx Y n) (simple_approx Y (S n))); intros.
+        erewrite <- (simple_expectation_real (simple_approx Y n)) in H10.
+        erewrite <- (simple_expectation_real (simple_approx Y (S n))) in H10.
+        simpl in H10.
+        apply H10.
+        intro x.
+        now apply simple_approx_increasing.
+      + replace  (Lim_seq
+                    (fun n : nat => NonnegExpectation (simple_approx (fun x : Ts => X x) n)))
+          with
+            (NonnegExpectation X).
+        * replace  (Lim_seq
+                      (fun n : nat => NonnegExpectation (simple_approx (fun x : Ts => Y x) n)))
+            with
+              (NonnegExpectation Y); trivial.
+          rewrite <- NonnegExpectation_simple_approx; trivial.
+        * rewrite <- NonnegExpectation_simple_approx; trivial.
+    - intros n x.
+      unfold rvmult.
+      apply Rmult_le_compat; try apply simple_approx_pos.
+      + now apply (simple_approx_le X).
+      + now apply (simple_approx_le Y).
+    - intros n x.
+      unfold rvmult.
+      apply Rmult_le_compat; try apply simple_approx_pos.
+      + now apply simple_approx_increasing.
+      + now apply simple_approx_increasing.
+    - intros.
+      apply simple_expectation_real; typeclasses eauto.
+    - intros.
+      unfold rvmult.
+      apply is_lim_seq_mult'.
+      + now apply (simple_approx_lim_seq X).
+      + now apply (simple_approx_lim_seq Y).
+    - intros n x.
+      now apply (simple_approx_le Y).
+    - intros n x.
+      now apply simple_approx_increasing.
+    - intros.
+      apply simple_expectation_real; typeclasses eauto.
+    - intro.
+      now apply (simple_approx_lim_seq Y).
+    - intros n x.
+      now apply (simple_approx_le X).
+    - intros n x.
+      now apply simple_approx_increasing.
+    - intros.
+      apply simple_expectation_real; typeclasses eauto.
+    - intro.
+      now apply (simple_approx_lim_seq X).
+  Qed.
+
+
 End indep.
 
 Section ident.
