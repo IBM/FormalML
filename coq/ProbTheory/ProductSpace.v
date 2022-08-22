@@ -725,18 +725,16 @@ Section ps_product.
     assert (ps_P (rv_preimage fst A0) = ps_P A0).
     {
       specialize (H A0 Ω).
-      rewrite ps_one in H.
-      rewrite Rmult_1_r in H.
+      rewrite ps_one, Rmult_1_r in H.
       rewrite <- H.
       apply ps_proper.
       intro x; simpl.
       destruct x; destruct A0; now simpl.
     }
-    assert (ps_P (@rv_preimage (prod X Y) Y (product_sa A B) B snd _ B0) = ps_P B0).
+    assert (ps_P (@rv_preimage (prod X Y) _ _ _ snd _ B0) = ps_P B0).
     {
       specialize (H Ω B0).
-      rewrite ps_one in H.
-      rewrite Rmult_1_l in H.
+      rewrite ps_one, Rmult_1_l in H.
       rewrite <- H.
       apply ps_proper.
       intro x; simpl.
