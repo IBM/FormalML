@@ -715,6 +715,65 @@ Section ps_product.
       now rewrite product_sa_product.
   Qed.
 
+  Lemma product_independent_fst_snd :
+    independent_rvs product_ps A B fst snd.
+  Proof.
+    unfold independent_rvs.
+    intros.
+    unfold independent_events.
+    generalize product_sa_product; intros.
+    assert (ps_P (rv_preimage fst A0) = ps_P A0).
+    {
+      unfold rv_preimage, event_preimage.
+      specialize (H A0 Ω).
+      rewrite ps_one in H.
+      rewrite Rmult_1_r in H.
+      rewrite <- H.
+      apply ps_proper.
+      intro x.
+      simpl.
+      destruct x.
+      destruct A0.
+      simpl.
+      unfold pre_Ω.
+      tauto.
+    }
+    assert (ps_P (@rv_preimage (prod X Y) Y (product_sa A B) B snd _ B0) = ps_P B0).
+    {
+      unfold rv_preimage, event_preimage.
+      specialize (H Ω B0).
+      rewrite ps_one in H.
+      rewrite Rmult_1_l in H.
+      rewrite <- H.
+      apply ps_proper.
+      intro x.
+      simpl.
+      destruct x.
+      destruct B0.
+      simpl.
+      unfold pre_Ω.
+      tauto.
+    }
+    rewrite H0.
+    rewrite H1.
+    rewrite <- H.
+    apply ps_proper.
+    intro x.
+    simpl.
+    unfold pre_event_inter, event_preimage.
+    destruct x; destruct A0; destruct B0.
+    now simpl.
+ Qed.
+  
+  Lemma product_independent_sas :
+    independent_sas product_ps
+                    (pullback_rv_sub (product_sa A B) A fst (fst_rv _ _))
+                    (pullback_rv_sub (product_sa A B) B snd (snd_rv _ _)).
+  Proof.
+    rewrite <- independent_rv_sas.
+    apply product_independent_fst_snd.
+  Qed.
+
 End ps_product.
 
 Section ps_ivector_product.
