@@ -724,43 +724,27 @@ Section ps_product.
     generalize product_sa_product; intros.
     assert (ps_P (rv_preimage fst A0) = ps_P A0).
     {
-      unfold rv_preimage, event_preimage.
       specialize (H A0 Ω).
       rewrite ps_one in H.
       rewrite Rmult_1_r in H.
       rewrite <- H.
       apply ps_proper.
-      intro x.
-      simpl.
-      destruct x.
-      destruct A0.
-      simpl.
-      unfold pre_Ω.
-      tauto.
+      intro x; simpl.
+      destruct x; destruct A0; now simpl.
     }
     assert (ps_P (@rv_preimage (prod X Y) Y (product_sa A B) B snd _ B0) = ps_P B0).
     {
-      unfold rv_preimage, event_preimage.
       specialize (H Ω B0).
       rewrite ps_one in H.
       rewrite Rmult_1_l in H.
       rewrite <- H.
       apply ps_proper.
-      intro x.
-      simpl.
-      destruct x.
-      destruct B0.
-      simpl.
-      unfold pre_Ω.
-      tauto.
+      intro x; simpl.
+      destruct x; destruct B0; now simpl.
     }
-    rewrite H0.
-    rewrite H1.
-    rewrite <- H.
+    rewrite H0, H1, <- H.
     apply ps_proper.
-    intro x.
-    simpl.
-    unfold pre_event_inter, event_preimage.
+    intro x; simpl.
     destruct x; destruct A0; destruct B0.
     now simpl.
  Qed.
