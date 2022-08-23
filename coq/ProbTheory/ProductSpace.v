@@ -731,7 +731,7 @@ Section ps_product.
       intro x; simpl.
       destruct x; destruct A0; now simpl.
     }
-    assert (ps_P (@rv_preimage (prod X Y) _ _ _ snd _ B0) = ps_P B0).
+    assert (ps_P (rv_preimage (dom := product_sa A B) snd B0) = ps_P B0).
     {
       specialize (H Ω B0).
       rewrite ps_one, Rmult_1_l in H.

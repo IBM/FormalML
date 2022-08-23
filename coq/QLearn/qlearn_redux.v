@@ -3917,7 +3917,6 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
           ps_P (qlearn.event_Rbar_le (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (Rabs (f (N + n)%nat omega)))) (Rbar.Finite (C0 * geps ^ k))) >=
           1 - (INR k) * delta) ->
     forall (Eps Delta : posreal),
-    Delta < 1 ->
     exists (NN : nat),
       forall N, (N >= NN)%nat ->
       ps_P (qlearn.event_Rbar_le (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (Rabs (f (N + n)%nat omega)))) (Rbar.Finite Eps)) >=
@@ -3945,17 +3944,17 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
         generalize (up_pos _ r); intros.
         lia.
       }
-      specialize (lim (mkposreal _ H0) khat).
+      specialize (lim (mkposreal _ H) khat).
       destruct lim.
       exists x.
       intros ? Nge.
-      specialize (H1 N Nge).
-      simpl in H1.
-      field_simplify in H1.
+      specialize (H0 N Nge).
+      simpl in H0.
+      field_simplify in H0.
       + eapply Rge_trans.
         shelve.
         replace (1 - Delta) with (- Delta + 1) by lra.
-        apply H1.
+        apply H0.
         Unshelve.
         apply Rle_ge.
         apply ps_sub.
@@ -3963,15 +3962,15 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
         simpl.
         intros.
         eapply Rbar.Rbar_le_trans.
-        apply H2.
+        apply H1.
         simpl.
         subst khat.
         assert (0 < Eps / C0).
         {
           now apply Rdiv_lt_0_compat.
         }
-        generalize (qlearn.up_pow_ln (mkposreal _ H3) geps geps1); intros.      
-        simpl in H4.
+        generalize (qlearn.up_pow_ln (mkposreal _ H2) geps geps1); intros.      
+        simpl in H3.
         assert (Eps / C0 < 1).
         {
           subst kstar.
@@ -3987,14 +3986,14 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
           field_simplify in r; try lra.
           rewrite Rcomplements.ln_div in r; try lra.
           assert (ln Eps < ln C0) by lra.
-          apply ln_lt_inv in H7; try lra.
+          apply ln_lt_inv in H6; try lra.
           apply Rmult_lt_reg_r with (r := C0); trivial.
           field_simplify; trivial.
           apply Rgt_not_eq.
           lra.
         }
             
-        specialize (H4 H5).
+        specialize (H3 H4).
         apply Rmult_le_reg_l with (r := /C0).
         * now apply Rinv_0_lt_compat.
         * rewrite <- Rmult_assoc.
@@ -4005,22 +4004,22 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
           subst kstar.
           field_simplify; try lra.
       + subst khat.
-        rewrite INR_up_pos in H1; try lra.
+        rewrite INR_up_pos in H0; try lra.
         generalize (up_pos _ r); intros.        
         assert (0 < up kstar)%Z by lia.
-        apply IZR_lt in H3.
+        apply IZR_lt in H2.
         lra.
     -  specialize (lim Delta 0%nat).
        destruct lim.
        exists x.
        intros ? Nge.
-       specialize (H0 N Nge).
-       simpl in H0.
-       replace (1 - 0 * Delta) with 1 in H0 by lra.
+       specialize (H N Nge).
+       simpl in H.
+       replace (1 - 0 * Delta) with 1 in H by lra.
        apply Rge_trans with (r2 := 1); try lra.
        eapply Rge_trans.
        shelve.
-       apply H0.
+       apply H.
        Unshelve.
        apply Rle_ge.
        apply ps_sub.
@@ -4028,7 +4027,7 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
        simpl.
        intros.
        eapply Rbar.Rbar_le_trans.
-       apply H1.
+       apply H0.
        simpl.
        rewrite Rmult_1_r.
        subst kstar.
@@ -4039,18 +4038,18 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
          {
            now apply ln_lt_0.
          }
-         unfold Rdiv at 1 in H2.
+         unfold Rdiv at 1 in H1.
          assert (ln geps <= 0) by lra.
-         generalize (Rmult_le_pos_from_neg _ _ H2 H4); intros.
-         rewrite Rmult_assoc in H5.
-         rewrite Rinv_l in H5; lra.
+         generalize (Rmult_le_pos_from_neg _ _ H1 H3); intros.
+         rewrite Rmult_assoc in H4.
+         rewrite Rinv_l in H4; lra.
        }
-       rewrite Rcomplements.ln_div in H3; try lra.
+       rewrite Rcomplements.ln_div in H2; try lra.
        assert (ln C0 <= ln Eps) by lra.
        destruct (Rlt_dec (ln C0) (ln Eps)).
        + apply ln_lt_inv in r; lra.
        + assert (ln C0 = ln Eps) by lra.
-         apply ln_inv in H5; lra.
+         apply ln_inv in H4; lra.
   Qed.
           
   (* Theorem 16 *)
@@ -4074,38 +4073,21 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
     intros.
     unfold Hierarchy.eventually.
     generalize (box_log_lim_Delta_Eps f geps C0 H H0 eps); intros.
-    destruct (Rlt_dec eps0 1).
-    - generalize (cond_pos eps0); intros eps0pos.
-      assert (0 < eps0/2) by lra.
-      assert (eps0/2 < 1) by lra.
-      specialize (H1 (mkposreal _ H2) H3).
-      destruct H1.
-      exists x.
-      intros ? xlim.
-      specialize (H1 n xlim).
-      apply Rabs_def1.
-      + apply Rle_lt_trans with (r2 := 0).
-        * apply Rplus_le_reg_r with (r := 1).
-          ring_simplify.
-          apply ps_le1.
-        * apply cond_pos.
-      + simpl in H1.
-        lra.
-   - assert (0 < 1/2) by lra.
-     assert (1/2 < 1) by lra.
-     specialize (H1 (mkposreal _ H2) H3).
-     destruct H1.
-     exists x.
-     intros ? xlim.
-     specialize (H1 n0 xlim).
-     apply Rabs_def1.
-      + apply Rle_lt_trans with (r2 := 0).
-        * apply Rplus_le_reg_r with (r := 1).
-          ring_simplify.
-          apply ps_le1.
-        * apply cond_pos.
-      + simpl in H1.
-        lra.
+    generalize (cond_pos eps0); intros eps0pos.
+    assert (0 < eps0/2) by lra.
+    specialize (H1 (mkposreal _ H2)).
+    destruct H1.
+    exists x.
+    intros ? xlim.
+    specialize (H1 n xlim).
+    apply Rabs_def1.
+    - apply Rle_lt_trans with (r2 := 0).
+      + apply Rplus_le_reg_r with (r := 1).
+        ring_simplify.
+        apply ps_le1.
+      + apply cond_pos.
+    - simpl in H1.
+      lra.
   Qed.     
 
 Lemma list_inter_prob_bound (l : list (event dom * nonnegreal)) :
