@@ -4064,23 +4064,30 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
       apply cond_pos.
     }
     generalize (fun a => conv_pair_as_prob_inf_delta_eps_lim' (f a) (g a) eps (flim a) (glim a) (mkposreal _ H0) (limf a) (limg a)); intros.
-    exists (list_max (finite_fun_to_list finA decA (fun a => proj1_sig (X a)))).
+    pose (Nmax := (list_max (finite_fun_to_list finA decA (fun a => proj1_sig (X a))))).
+    exists Nmax.
+    unfold finite_fun_to_list.
     intros.
     apply Rge_trans with
         (r2 := (INR (length (nodup decA elms))) * ((1 - {| pos := delta / INR (length (nodup decA elms)); cond_pos := H0 |})-1) + 1).
     - apply list_inter_prob_bound_const_fin_alt.
       intros.
-      generalize (list_max_upper  (map (fun a0 : A => ` (X a0)) (nodup decA elms)) ); intros.
-      rewrite Forall_forall in H2.
-      unfold finite_fun_to_list in H1.
-      destruct (X a).
-      apply r.
-      specialize (H2 x).
-      cut_to H2; try lia.
-      admit.
+      apply (proj2_sig (X a)).
+      assert (proj1_sig (X a) <= Nmax)%nat.
+      {
+        generalize (list_max_upper  (map (fun a0 : A => ` (X a0)) (nodup decA elms)) ); intros.        
+        rewrite Forall_forall in H2.
+        apply H2.
+        apply in_map_iff.
+        exists a.
+        split; trivial.
+        rewrite nodup_In.
+        apply finA.
+      }
+      lia.
     - simpl.
       field_simplify; try lra.
-  Admitted.      
+  Qed.
 
   Lemma event_complement_Rbar_le (f : Ts -> Rbar.Rbar) (c : Rbar.Rbar) 
         {rv : RandomVariable dom Rbar_borel_sa f} :
