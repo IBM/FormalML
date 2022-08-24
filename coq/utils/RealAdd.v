@@ -701,6 +701,23 @@ Section list_sum.
       + simpl ; lra.
       + lra.
   Qed.
+  
+ Lemma list_sum_map_const_alt {A} (l : list A) (c : R) :
+    list_sum (map (fun x => c) l) = INR(length l)* c.
+  Proof.
+    induction l.
+    - simpl ; lra.
+    - simpl. rewrite IHl.
+      enough (match length l with
+              | 0%nat => 1
+              | S _ => INR (length l) + 1
+              end = INR(length l) + 1).
+      rewrite H ; lra.
+      generalize (length l) as n.
+      intro n.  induction n.
+      + simpl ; lra.
+      + lra.
+  Qed.
 
   Lemma list_sum_map_zero {A} (s : list A)  :
     list_sum (List.map (fun _ => 0) s) = 0.

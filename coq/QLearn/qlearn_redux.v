@@ -4,6 +4,7 @@ Require Import mdp qvalues pmf_monad Finite EquivDec Permutation Morphisms.
 Require Import Reals RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia PushNeg.
+Require Import IndefiniteDescription ClassicalDescription.
 Require Import RandomVariableL2 infprod Dvoretzky Expectation.
 Require Import RandomVariableFinite RbarExpectation.
 Require Import Classical.
@@ -3862,6 +3863,225 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
     lra.
   Qed.
 
+  Definition finite_fun_to_list {A B : Type} 
+             (finA : Finite A)
+             (decA : EqDec A eq)
+             (f : A -> B) : list B :=
+    map f (nodup decA elms).
+  
+Lemma list_inter_prob_bound (l : list (event dom * R)) :
+  (forall ep, 
+      In ep l ->
+      ps_P (fst ep) >= snd ep) ->
+  ps_P (list_inter (map fst l)) >= list_sum (map (fun x => (snd x)) l)
+                                   - INR (length l) + 1.
+ Proof.
+   induction l; intros; simpl.
+   - rewrite list_inter_nil.
+     rewrite ps_all.
+     lra.
+   - cut_to IHl.
+     + rewrite list_inter_cons.
+       eapply Rge_trans.
+       apply qlearn.ps_inter_bound.
+       unfold Rminus.
+       do 3 rewrite Rplus_assoc.
+       apply Rplus_ge_compat.
+       * apply H.
+         simpl; tauto.
+       * apply Rplus_ge_reg_l with (r := 1).
+         ring_simplify.
+         eapply Rge_trans.
+         apply IHl.
+         unfold Rminus.
+         do 2 rewrite Rplus_assoc.
+         apply Rplus_ge_compat_l.
+         match_destr.
+         -- simpl.
+            lra.
+         -- lra.
+     + intros.
+       apply H.
+       now apply in_cons.
+ Qed.
+
+ Lemma list_sum_map_const_alt {A} (l : list A) (c : R) :
+    list_sum (map (fun x => c) l) = INR(length l)* c.
+  Proof.
+    induction l.
+    - simpl ; lra.
+    - simpl. rewrite IHl.
+      enough (match length l with
+              | 0%nat => 1
+              | S _ => INR (length l) + 1
+              end = INR(length l) + 1).
+      rewrite H ; lra.
+      generalize (length l) as n.
+      intro n.  induction n.
+      + simpl ; lra.
+      + lra.
+  Qed.
+
+ Lemma list_inter_prob_bound_const (l : list (event dom)) (bound: R) :
+   (forall (ep : event dom), 
+       In ep l ->
+       ps_P ep >= bound) ->
+   ps_P (list_inter l) >= (INR (length l)) * (bound - 1) + 1.
+ Proof.
+   intros.
+   pose (ll := map (fun x => (x, bound)) l).
+   assert (len: length l = length ll).
+   {
+     subst ll.
+     now rewrite map_length.
+   }
+   generalize (list_inter_prob_bound ll); intros.
+   cut_to H0.
+   - replace (l) with (map fst ll).
+     + eapply Rge_trans.
+       apply H0.
+       right.
+       f_equal.
+       rewrite Rmult_minus_distr_l.
+       rewrite Rmult_1_r.
+       f_equal.
+       * replace (length (map fst ll)) with (length l).
+         -- rewrite len.
+            rewrite <- list_sum_map_const_alt.
+            subst ll.
+            do 2 rewrite map_map.
+            apply list_sum_map_ext.
+            intros.
+            now simpl.
+         -- rewrite map_length.
+            subst ll.
+            now rewrite map_length.
+       * f_equal.
+         now rewrite map_length.
+    + subst ll.
+      simpl.
+      rewrite map_map.
+      simpl.
+      now rewrite map_id.
+   - intros.
+     subst ll.
+     rewrite in_map_iff in H1.
+     destruct H1 as [? [? ?]].
+     destruct ep.
+     simpl.
+     inversion H1.
+     rewrite <- H4, <- H5.
+     now specialize (H x H2).
+  Qed. 
+     
+ Lemma list_inter_prob_bound_const_fin {A : Type} (finA : Finite A) (decA : EqDec A eq)
+       (f : A -> event dom) (bound: R) :
+   (forall (a : A),
+       ps_P (f a) >= bound) ->
+   ps_P (list_inter (finite_fun_to_list finA decA f)) >= (INR (length (finite_fun_to_list finA decA f))) * (bound - 1) + 1.
+  Proof.
+    intros.
+    apply list_inter_prob_bound_const.
+    intros.
+    unfold finite_fun_to_list in H0.
+    apply in_map_iff in H0.
+    destruct H0 as [? [? ?]].
+    rewrite <- H0.
+    apply H.
+  Qed.
+
+ Lemma list_inter_prob_bound_const_fin_alt {A : Type} (finA : Finite A) (decA : EqDec A eq)
+       (f : A -> event dom) (bound: R) :
+   (forall (a : A),
+       ps_P (f a) >= bound) ->
+   ps_P (list_inter (finite_fun_to_list finA decA f)) >= (INR (length (nodup decA elms))) * (bound - 1) + 1.  
+  Proof.
+    intros.
+    generalize (list_inter_prob_bound_const_fin finA decA f bound H); intros.
+    eapply Rge_trans.
+    apply H0.
+    right.
+    do 3 f_equal.
+    unfold finite_fun_to_list.
+    now rewrite map_length.
+  Qed.
+
+  Lemma conv_pair_as_prob_inf_delta_eps_lim' (f g : nat->Ts->R) (eps : posreal) (flim glim : R) (delta : posreal)
+      {rvf: forall n, RandomVariable dom borel_sa (f n)} 
+      {rvg: forall n, RandomVariable dom borel_sa (g n)} :  
+  almost prts (fun omega => Lim_seq.is_lim_seq (fun n => f n omega) (Rbar.Finite flim)) ->
+  almost prts (fun omega => Lim_seq.is_lim_seq (fun n => g n omega) (Rbar.Finite glim)) ->    
+  {NN:nat |
+    (forall N, (N >= NN)%nat ->
+               ps_P (event_inter
+                       (qlearn.event_Rbar_ge (fun omega => Lim_seq.Inf_seq (fun n => Rbar.Finite (g (N + n)%nat omega))) (Rbar.Finite (glim-eps)))
+                       (qlearn.event_Rbar_le (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (f (N + n)%nat omega))) (Rbar.Finite (flim+eps)))) >= 1 - delta )}.
+  Proof.
+    intros.
+    apply constructive_indefinite_description.
+    now apply conv_pair_as_prob_inf_delta_eps_lim.
+  Qed.
+
+  Lemma conv_pair_as_prob_inf_delta_eps_lim_finA 
+        {A : Type} (finA : Finite A) (decA : EqDec A eq) (inh : inhabited A)
+        (f : A -> nat->Ts->R ) (flim : A -> R)
+        (g : A -> nat->Ts->R ) (glim : A -> R) 
+        (eps : posreal)
+        {rvf: forall a n, RandomVariable dom borel_sa (f a n)} 
+        {rvg: forall a n, RandomVariable dom borel_sa (g a n)}  :    
+    (forall a, almost prts (fun omega => Lim_seq.is_lim_seq (fun n => f a n omega) (Rbar.Finite (flim a)))) ->
+    (forall a, almost prts (fun omega => Lim_seq.is_lim_seq (fun n => g a n omega) (Rbar.Finite (glim a)))) ->    
+  forall (delta : posreal),
+  exists (NN:nat),
+    forall N, (N >= NN)%nat ->
+    ps_P (list_inter
+            (finite_fun_to_list 
+               finA decA 
+               (fun a =>
+                  (event_inter
+                     (qlearn.event_Rbar_ge (fun omega => Lim_seq.Inf_seq (fun n => Rbar.Finite (g a (N + n)%nat omega))) (Rbar.Finite (glim a -eps)))
+                     (qlearn.event_Rbar_le (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (f a (N + n)%nat omega))) (Rbar.Finite (flim a +eps))))
+))    ) >= 1 - delta.
+  Proof.
+    intros limf limg.
+    intros.
+    assert (INR (length (nodup decA elms)) > 0).
+    {
+      apply lt_0_INR.
+      destruct inh.
+      generalize (finite X); intros.
+      generalize (nodup_In decA elms X); intros.
+      apply H0 in H.
+      case_eq (nodup decA elms); intros.
+      - rewrite H1 in H.
+        now simpl in H.
+      - simpl.
+        lia.
+    }
+    assert (0 < (delta/INR (length (nodup decA elms)))).
+    {
+      apply Rdiv_lt_0_compat; trivial.
+      apply cond_pos.
+    }
+    generalize (fun a => conv_pair_as_prob_inf_delta_eps_lim' (f a) (g a) eps (flim a) (glim a) (mkposreal _ H0) (limf a) (limg a)); intros.
+    exists (list_max (finite_fun_to_list finA decA (fun a => proj1_sig (X a)))).
+    intros.
+    apply Rge_trans with
+        (r2 := (INR (length (nodup decA elms))) * ((1 - {| pos := delta / INR (length (nodup decA elms)); cond_pos := H0 |})-1) + 1).
+    - apply list_inter_prob_bound_const_fin_alt.
+      intros.
+      generalize (list_max_upper  (map (fun a0 : A => ` (X a0)) (nodup decA elms)) ); intros.
+      rewrite Forall_forall in H2.
+      unfold finite_fun_to_list in H1.
+      destruct (X a).
+      apply r.
+      specialize (H2 x).
+      cut_to H2; try lia.
+      admit.
+    - simpl.
+      field_simplify; try lra.
+  Admitted.      
+
   Lemma event_complement_Rbar_le (f : Ts -> Rbar.Rbar) (c : Rbar.Rbar) 
         {rv : RandomVariable dom Rbar_borel_sa f} :
     event_equiv
@@ -4090,41 +4310,6 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
       lra.
   Qed.     
 
-Lemma list_inter_prob_bound (l : list (event dom * nonnegreal)) :
-  (forall ep, 
-      In ep l ->
-      ps_P (fst ep) >= snd ep) ->
-  ps_P (list_inter (map fst l)) >= list_sum (map (fun x => nonneg (snd x)) l)
-                                   - INR (length l) + 1.
- Proof.
-   induction l; intros; simpl.
-   - rewrite list_inter_nil.
-     rewrite ps_all.
-     lra.
-   - cut_to IHl.
-     + rewrite list_inter_cons.
-       eapply Rge_trans.
-       apply qlearn.ps_inter_bound.
-       unfold Rminus.
-       do 3 rewrite Rplus_assoc.
-       apply Rplus_ge_compat.
-       * apply H.
-         simpl; tauto.
-       * apply Rplus_ge_reg_l with (r := 1).
-         ring_simplify.
-         eapply Rge_trans.
-         apply IHl.
-         unfold Rminus.
-         do 2 rewrite Rplus_assoc.
-         apply Rplus_ge_compat_l.
-         match_destr.
-         -- simpl.
-            lra.
-         -- lra.
-     + intros.
-       apply H.
-       now apply in_cons.
-  Qed.
 
 End converge.
 
