@@ -3358,6 +3358,27 @@ Section RbarRandomVariables.
       eauto.
   Qed.
 
+  Lemma inf_ge_bound (f : nat -> Rbar) (B : Rbar) :
+    (forall n, Rbar_ge (f n) B) <-> Rbar_ge (Inf_seq f) B.
+  Proof.
+    rewrite Inf_eq_glb.
+    split; intros.
+    - unfold Rbar_glb, proj1_sig.
+      match_destr.
+      destruct r as [lb glb].
+      apply glb.
+      intros ?[??]; subst.
+      apply H.
+    - unfold Rbar_glb, proj1_sig in H.
+      match_destr_in H.
+      destruct r as [lb glb].
+      unfold Rbar_is_lower_bound in *.
+      unfold Rbar_ge in *.
+      eapply Rbar_le_trans; try apply H.
+      apply lb.
+      eauto.
+  Qed.
+
   Global Instance Sup_seq_rv (f : nat -> Ts-> Rbar)
          {rv : forall n, RandomVariable dom Rbar_borel_sa (f n)} :
     RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun n => f n x)).
