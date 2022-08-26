@@ -4276,6 +4276,30 @@ Qed.
     intros ?; reflexivity.
   Qed.
         
+  Lemma filtration_history_pullback_independent_gen {Td} cod (X : nat -> Ts -> Td)
+        {rv : forall n, RandomVariable dom cod (X n)}  
+        {rv2 : forall n, RandomVariable dom (const cod n) (X n)} :
+    independent_rv_collection Prts (const cod) X ->
+    forall n, independent_sas Prts (filtration_history_sa_sub X n) (pullback_rv_sub dom cod (X (S n)) _ ).
+  Proof.
+    intros.
+    assert (independent_sa_collection Prts (fun n : nat => pullback_sa cod (X n))).
+    {
+      apply independent_rv_collection_sas.
+      unfold const in H.
+      revert H.
+      now apply independent_rv_collection_proper.
+    }
+    generalize (filtration_history_sa_sub X); intros fsub.
+    generalize (independent_sas_split1 _ fsub H0 n); intros.
+    unfold is_sub_algebras in H1.
+    unfold independent_sas in *.
+    intros.
+    generalize (H1 A B).
+    apply independent_events_proper; try reflexivity.
+    apply event_sa_sub_pf_irrel.
+  Qed.
+
   Lemma filtration_history_pullback_independent (X : nat -> Ts -> R)
         {rv : forall n, RandomVariable dom borel_sa (X n)} :
     independent_rv_collection Prts (const borel_sa) X ->
