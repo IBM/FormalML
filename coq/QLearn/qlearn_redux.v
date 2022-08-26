@@ -10,6 +10,7 @@ Require Import RandomVariableFinite RbarExpectation.
 Require Import Classical.
 Require Import SigmaAlgebras ProbSpace DiscreteProbSpace ProductSpace.
 Require Import DVector.
+Require Import slln ConditionalExpectation.
 Require Import pmf_monad.
 Require qlearn.
 Require pmf_prob.
@@ -4406,13 +4407,11 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
         apply Real_Rbar_rv.
         typeclasses eauto.
       }
-      rewrite frf_NonnegExpectation with (rvx_rv := H) (frf := X1).
-      rewrite frf_NonnegExpectation with (rvx_rv := H0) (frf := X0).
+      erewrite frf_NonnegExpectation.
+      erewrite frf_NonnegExpectation.
       f_equal.
       rewrite <- pullback_ps_SimpleExpectation.
       apply SimpleExpectation_ext.
-      intro z.
-      unfold simple_approx.
       now unfold compose.
     - typeclasses eauto.
    Qed.
@@ -4423,8 +4422,67 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
     Expectation (Prts := prts) (compose f X) = Expectation (Prts := pullback_ps dom cod prts X) f.
   Proof.
     unfold Expectation.
-    rewrite (pullback_ps_NonnegExpectation cod X (fun x => nonneg (pos_fun_part f x))) with (nnf := positive_part_nnf f).
-    now rewrite (pullback_ps_NonnegExpectation cod X (fun x => nonneg (neg_fun_part f x))) with (nnf := negative_part_nnf f).    
+    rewrite (pullback_ps_NonnegExpectation cod X _) with (nnf := positive_part_nnf f).
+    now rewrite (pullback_ps_NonnegExpectation cod X _) with (nnf := negative_part_nnf f).    
+  Qed.
+
+  Lemma filtration_history_pullback_independent_gen {Td} cod (X : nat -> Ts -> Td)
+        {rv : forall n, RandomVariable dom cod (X n)}  
+        {rv2 : forall n, RandomVariable dom (const cod n) (X n)} :
+    independent_rv_collection prts (const cod) X ->
+    forall n, independent_sas prts (filtration_history_sa_sub X n) (pullback_rv_sub dom cod (X (S n)) _ ).
+  Proof.
+    intros.
+    assert (independent_sa_collection prts (fun n : nat => pullback_sa cod (X n))).
+    {
+      apply independent_rv_collection_sas.
+      unfold const in H.
+      revert H.
+      now apply independent_rv_collection_proper.
+    }
+    generalize (filtration_history_sa_sub X); intros fsub.
+    generalize (independent_sas_split1 _ fsub H0 n); intros.
+    unfold is_sub_algebras in H1.
+    unfold independent_sas in *.
+    intros.
+    generalize (H1 A B).
+    apply independent_events_proper; try reflexivity.
+    apply event_sa_sub_pf_irrel.
+  Qed.
+
+  Lemma independent_sas_symm {dom1} (sub1:sa_sub dom1 dom) {dom2} (sub2:sa_sub dom2 dom) :
+    independent_sas prts sub1 sub2 <-> independent_sas prts sub2 sub1.
+  Proof.
+    unfold independent_sas.
+    split; intros HH; symmetry; apply HH.
+  Qed.
+  
+  Lemma filtration_history_pullback_independent_expectation
+        {Td} cod (X : nat -> Ts -> Td) 
+        (f : Td -> R)
+        {rvf : RandomVariable cod borel_sa f} 
+        {rv : forall n, RandomVariable dom cod (X n)} 
+        {rv2 : forall n, RandomVariable dom (const cod n) (X n)} 
+        (isfe: forall n, IsFiniteExpectation prts (compose f (X n))) :
+    independent_rv_collection prts (const cod) X ->
+    forall n,
+      is_conditional_expectation 
+        prts (filtration_history_sa X n) (compose f (X (S n)))
+        (fun x : Ts => Rbar.Finite (const (FiniteExpectation prts (compose f (X (S n)))) x)).
+    Proof.
+      intros.
+      generalize (is_conditional_expectation_independent_sa 
+                    prts
+                    (filtration_history_sa_sub X n)
+                    (compose f (X (S n)))); intros.
+      apply H0.
+      generalize (filtration_history_pullback_independent_gen cod X H n); intros.
+      rewrite independent_sas_symm.
+      revert H1.
+      apply independent_sas_sub_proper.
+      - do 2 red; now intros.
+      - apply pullback_rv_sub.
+        now apply pullback_compose_rv.
   Qed.
 
   (* lemma 15 *) 
