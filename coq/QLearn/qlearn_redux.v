@@ -4317,6 +4317,116 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
       lra.
   Qed.     
 
+  Program Instance frf_finite_dom {A B} {finA : Finite.Finite A} (f : A -> B) :
+    FiniteRangeFunction f :=
+    { frf_vals := map f elms }.
+  Next Obligation.
+    destruct finA.
+    now apply in_map.
+  Qed.
+
+  Program Definition Pmf_measure {A} {finA : Finite.Finite A} {decA : EqDec A eq}
+        (mu : A -> nonnegreal)
+        (mu_sum1 : list_sum (map (fun x => nonneg (mu x)) (nodup decA elms)) = 1) : Pmf A
+    := {| outcomes := map (fun a => (mu a, a)) (nodup decA elms) |}.
+  Next Obligation.
+    assert (R1 = 1) by lra.
+    rewrite H.
+    rewrite <- mu_sum1.
+    rewrite list_fst_sum_compat.
+    unfold list_fst_sum'.
+    rewrite pmf_prob.seqmap_map.
+    rewrite map_map.
+    f_equal.
+  Qed.
+
+  Lemma finite_discrete_ps_expectation {A} {finA : Finite.Finite A} {decA : EqDec A eq}
+        (mu : A -> nonnegreal)
+        (mu_sum1 : list_sum (map (fun x => nonneg (mu x)) (nodup decA elms)) = 1)
+        (f : A -> R)
+        {rv : RandomVariable (discrete_sa A) borel_sa f} :
+    Expectation (Prts := pmf_prob.ps_pmf (Pmf_measure mu mu_sum1)) f =
+    Some (Rbar.Finite (list_sum (map (fun x => (f x) * (mu x)) (nodup decA elms)))).
+  Proof.
+    rewrite (pmf_prob.pmf_value_Expectation (Pmf_measure mu mu_sum1) f).
+    do 2 f_equal.
+    unfold expt_value.
+    rewrite pmf_prob.seqmap_map.
+    unfold Pmf_measure.
+    simpl.
+    rewrite map_map.
+    f_equal.
+  Qed.
+
+  Existing Instance outer_frf_compose. 
+  
+  Lemma pullback_ps_SimpleExpectation {Td} (cod : SigmaAlgebra Td) (X : Ts -> Td) (f : Td -> R)
+        {rvX : RandomVariable dom cod X}
+        {rvf : RandomVariable cod borel_sa f}  
+        (nnf : FiniteRangeFunction f) :
+    SimpleExpectation (Prts := prts) (compose f X) = SimpleExpectation (Prts := pullback_ps dom cod prts X) f.
+  Proof.
+    unfold SimpleExpectation, pullback_ps.
+    f_equal.
+    apply map_ext.
+    intros.
+    f_equal.
+    unfold ps_P.
+    match_destr.
+    apply ps_proper.
+    intro z.
+    simpl.
+    now unfold pre_event_preimage, compose.
+  Qed.
+
+  Lemma pullback_ps_NonnegExpectation {Td} (cod : SigmaAlgebra Td) (X : Ts -> Td) (f : Td -> R)
+        {rvX : RandomVariable dom cod X}
+        {rvf : RandomVariable cod borel_sa f}  
+        (nnf : NonnegativeFunction f)
+        (nnfX : NonnegativeFunction (compose f X)):
+    NonnegExpectation (Prts := prts) (compose f X) = NonnegExpectation (Prts := pullback_ps dom cod prts X) f.
+  Proof.
+    rewrite <- NonnegExpectation_simple_approx.
+    rewrite <- NonnegExpectation_simple_approx; trivial.
+    - apply Lim_seq.Lim_seq_ext.
+      intros.
+      f_equal.
+      assert (FiniteRangeFunction  (simple_approx (fun x : Ts => Rbar.Finite ((f ∘ X) x)) n) ) by apply simple_approx_frf.
+      assert (FiniteRangeFunction (simple_approx (fun x : Td => Rbar.Finite (f x)) n)) by apply simple_approx_frf.
+      assert (RandomVariable cod borel_sa (simple_approx (fun x : Td => Rbar.Finite (f x)) n)).
+      {
+        apply simple_approx_rv.
+        typeclasses eauto.
+        now apply Real_Rbar_rv.
+      }
+      assert (RandomVariable dom borel_sa (simple_approx (fun x : Ts => Rbar.Finite ((f ∘ X) x)) n)).
+      {
+        apply simple_approx_rv.
+        typeclasses eauto.        
+        apply Real_Rbar_rv.
+        typeclasses eauto.
+      }
+      rewrite frf_NonnegExpectation with (rvx_rv := H) (frf := X1).
+      rewrite frf_NonnegExpectation with (rvx_rv := H0) (frf := X0).
+      f_equal.
+      rewrite <- pullback_ps_SimpleExpectation.
+      apply SimpleExpectation_ext.
+      intro z.
+      unfold simple_approx.
+      now unfold compose.
+    - typeclasses eauto.
+   Qed.
+    
+  Lemma pullback_ps_Expectation {Td} (cod : SigmaAlgebra Td) (X : Ts -> Td) (f : Td -> R)
+        {rvX : RandomVariable dom cod X}
+        {rvf : RandomVariable cod borel_sa f}  :
+    Expectation (Prts := prts) (compose f X) = Expectation (Prts := pullback_ps dom cod prts X) f.
+  Proof.
+    unfold Expectation.
+    rewrite (pullback_ps_NonnegExpectation cod X (fun x => nonneg (pos_fun_part f x))) with (nnf := positive_part_nnf f).
+    now rewrite (pullback_ps_NonnegExpectation cod X (fun x => nonneg (neg_fun_part f x))) with (nnf := negative_part_nnf f).    
+  Qed.
+
   (* lemma 15 *) 
     Lemma core_contraction_conv (f Y Z alpha BB : nat -> Ts -> R) (delta eps C0 gamma : posreal) (k tk:nat)
           {rv : forall n, RandomVariable dom borel_sa (f n)}
