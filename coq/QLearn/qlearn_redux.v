@@ -1484,6 +1484,7 @@ Section stuff.
      forall x, In x (nodupA (holds_on_dec dec l1) l) ->
           Exists (fun y => forall a, (In a l2 \/ ~ In a l1) -> x a = y a) (nodupA (holds_on_dec dec l2) l).
    Proof.
+     intros.
    Admitted.
 
    
@@ -4468,7 +4469,7 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
     forall n,
       is_conditional_expectation 
         prts (filtration_history_sa X n) (compose f (X (S n)))
-        (fun x : Ts => Rbar.Finite (const (FiniteExpectation prts (compose f (X (S n)))) x)).
+        (const (Rbar.Finite (FiniteExpectation prts (compose f (X (S n)))))).
     Proof.
       intros.
       generalize (is_conditional_expectation_independent_sa 
@@ -4483,6 +4484,28 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
       - do 2 red; now intros.
       - apply pullback_rv_sub.
         now apply pullback_compose_rv.
+    Qed.
+
+  Lemma filtration_history_pullback_independent_condexp_0 (n : nat)
+        {Td} cod (X : nat -> Ts -> Td) 
+        (f : Td -> R)
+        {rvf : RandomVariable cod borel_sa f} 
+        {rv : forall n, RandomVariable dom cod (X n)} 
+        {rv2 : forall n, RandomVariable dom (const cod n) (X n)} 
+        (isfe: forall n, IsFiniteExpectation prts (compose f (X n))) :
+    independent_rv_collection prts (const cod) X ->
+    FiniteExpectation prts (compose f (X (S n))) = 0 ->
+    almost (prob_space_sa_sub prts (filtration_history_sa_sub X n))
+           (fun x : Ts =>
+              ConditionalExpectation prts (filtration_history_sa_sub X n) (compose f (X (S n))) x = 
+              (const (Rbar.Finite 0) x)).
+    Proof.
+      intros.
+      generalize (is_conditional_expectation_unique prts  (filtration_history_sa_sub X n) (compose f (X (S n)))); intros.
+      eapply H1; trivial.
+      - now apply Condexp_cond_exp.
+      - rewrite <- H0.
+        now eapply filtration_history_pullback_independent_expectation.
   Qed.
 
   (* lemma 15 *) 
