@@ -4427,6 +4427,29 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
     now rewrite (pullback_ps_NonnegExpectation cod X _) with (nnf := negative_part_nnf f).    
   Qed.
 
+    Lemma pullback_ps_vector_Expectation {Td} {n} (cod : SigmaAlgebra Td) (X : Ts -> Td) (f : Td -> vector R n)
+        {rvX : RandomVariable dom cod X}
+        {rvf : RandomVariable cod (Rvector_borel_sa n) f}  :
+    vector_Expectation (compose f X) = vector_Expectation (prts := pullback_ps dom cod prts X) f.
+  Proof.
+    unfold vector_Expectation; f_equal.
+    apply vector_nth_eq; intros.
+    do 2 rewrite vector_nth_map.
+    rewrite <- pullback_ps_Expectation.
+    - apply Expectation_ext.
+      intro x.
+      simpl.
+      do 2 rewrite vector_nth_fun_to_vector.
+      apply vector_nth_ext.
+    - generalize (vecrvnth_rv i pf (iso_f f)); intros.
+      revert H.
+      apply RandomVariable_proper; try easy.
+      intro x.
+      unfold vecrvnth.
+      simpl.
+      now rewrite vector_nth_fun_to_vector.
+  Qed.
+
   Lemma filtration_history_pullback_independent_gen {Td} cod (X : nat -> Ts -> Td)
         {rv : forall n, RandomVariable dom cod (X n)}  
         {rv2 : forall n, RandomVariable dom (const cod n) (X n)} :
@@ -4486,7 +4509,7 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
         now apply pullback_compose_rv.
     Qed.
 
-  Lemma filtration_history_pullback_independent_condexp_0 (n : nat)
+  Lemma filtration_history_pullback_independent_condexp_0 
         {Td} cod (X : nat -> Ts -> Td) 
         (f : Td -> R)
         {rvf : RandomVariable cod borel_sa f} 
@@ -4494,11 +4517,12 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
         {rv2 : forall n, RandomVariable dom (const cod n) (X n)} 
         (isfe: forall n, IsFiniteExpectation prts (compose f (X n))) :
     independent_rv_collection prts (const cod) X ->
-    FiniteExpectation prts (compose f (X (S n))) = 0 ->
-    almost (prob_space_sa_sub prts (filtration_history_sa_sub X n))
-           (fun x : Ts =>
-              ConditionalExpectation prts (filtration_history_sa_sub X n) (compose f (X (S n))) x = 
-              (const (Rbar.Finite 0) x)).
+    forall n,
+      FiniteExpectation prts (compose f (X (S n))) = 0 ->
+      almost (prob_space_sa_sub prts (filtration_history_sa_sub X n))
+             (fun x : Ts =>
+                ConditionalExpectation prts (filtration_history_sa_sub X n) (compose f (X (S n))) x = 
+                (const (Rbar.Finite 0) x)).
     Proof.
       intros.
       generalize (is_conditional_expectation_unique prts  (filtration_history_sa_sub X n) (compose f (X (S n)))); intros.
