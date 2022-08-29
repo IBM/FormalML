@@ -1730,9 +1730,9 @@ Section countable_products.
      now apply (sup_seq_squeeze f g l).
    Qed.
 
-   Lemma list_sum_nest_prod (f : nat -> nat -> R ) (l1 l2 : list nat) :
+   Lemma list_sum_nest_prod {A B} (f : A -> B -> R ) (l1 : list A) (l2 : list B) :
      list_sum
-       (map (fun i : nat => list_sum (map (fun j : nat => f i j) l2)) l1) =
+       (map (fun i : A => list_sum (map (fun j : B => f i j) l2)) l1) =
      list_sum (map (fun '(a, b) => f a b) (list_prod l1 l2)).
    Proof.
      intros.
