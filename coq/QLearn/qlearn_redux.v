@@ -1535,6 +1535,22 @@ Section stuff.
        reflexivity. *)
    Admitted.
    
+   Lemma list_sum_mult_list_prod  (la lb : list R) :
+     list_sum (map (fun '(a,b) => a * b) (list_prod la lb)) = (list_sum la) * (list_sum lb).
+   Proof.
+     induction la.
+     - simpl.
+       lra.
+     - simpl.
+       rewrite map_app.
+       rewrite map_map.
+       rewrite list_sum_cat.
+       rewrite IHla.
+       rewrite list_sum_mult_const.
+       rewrite map_id.
+       lra.
+   Qed.
+
    Lemma fun_finite_sum_one_aux {A B : Type}
          (decA : EqDec A eq)
          (decB : EqDec B eq)        
@@ -2765,6 +2781,7 @@ Proof.
   Proof.
     Admitted.
 
+  
   Definition finite_fun_to_ivector {A B} (finA : Finite A) (decA : EqDec A eq) (g : A -> B) :=
     ivector_map g (ivector_from_list (nodup decA elms)).
 
@@ -3080,6 +3097,13 @@ Context {Ts : Type}
         {dom : SigmaAlgebra Ts}
         (prts : ProbSpace dom).
 
+Definition parametricExpectation {T} (rv_X : T -> Ts -> R) : T -> option Rbar.Rbar :=
+  fun (t : T) => Expectation (rv_X t).
+
+Definition parametricConditionalExpectation {T} {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom)
+           (rv_X : T -> Ts -> R) 
+           {rv : forall (t:T), RandomVariable dom borel_sa (rv_X t)}: T -> Ts -> Rbar.Rbar :=
+  fun (t : T) => ConditionalExpectation prts sub (rv_X t).
 
 Lemma Dvoretzky_converge_Y (C : R) (Y : nat -> Ts -> R) (alpha : nat -> Ts -> R) (gamma : posreal)
       {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
@@ -3589,6 +3613,7 @@ Proof.
   - trivial.
   Qed.
 
+  
 Lemma conv_as_prob_sup_delta_eps (f : nat->Ts->R) (eps : posreal)
       {rv: forall n, RandomVariable dom borel_sa (f n)} :
   almost prts (fun omega => Lim_seq.is_lim_seq (fun n => f n omega) (Rbar.Finite 0)) ->
@@ -4531,6 +4556,100 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
       - rewrite <- H0.
         now eapply filtration_history_pullback_independent_expectation.
   Qed.
+
+    Lemma filtration_history_pullback_independent_expectation_filt_sub
+          {Td} cod (X : nat -> Ts -> Td) 
+          {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
+          (f : Td -> R)
+          {rvf : RandomVariable cod borel_sa f} 
+          {rv : forall n, RandomVariable dom cod (X n)} 
+          {rv2 : forall n, RandomVariable dom (const cod n) (X n)}  
+          (isfe: forall n, IsFiniteExpectation prts (compose f (X n))) :
+      (forall n, independent_sas prts (filt_sub n)
+         (pullback_rv_sub dom cod (X (S n)) (rv (S n)))) ->
+      forall n,
+        is_conditional_expectation 
+          prts (F n) (compose f (X (S n)))
+          (const (Rbar.Finite (FiniteExpectation prts (compose f (X (S n)))))).
+    Proof.
+      intros.
+      generalize (is_conditional_expectation_independent_sa 
+                    prts
+                    (filt_sub n)
+                    (compose f (X (S n)))); intros.
+      apply H0.
+      specialize (H n).
+      revert H.
+      rewrite independent_sas_symm.
+      apply independent_sas_sub_proper.
+      - apply pullback_rv_sub.
+        now apply pullback_compose_rv.
+      - easy.
+   Qed.
+    
+  Lemma filtration_history_pullback_independent_condexp_filt_sub
+        {Td} cod (X : nat -> Ts -> Td) 
+        {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
+        (f : Td -> R)
+        {rvf : RandomVariable cod borel_sa f} 
+        {rv : forall n, RandomVariable dom cod (X n)} 
+        {rv2 : forall n, RandomVariable dom (const cod n) (X n)} 
+        (isfe: forall n, IsFiniteExpectation prts (compose f (X n))) :
+    (forall n, independent_sas prts (filt_sub n)
+                               (pullback_rv_sub dom cod (X (S n)) (rv (S n)))) ->
+    forall n,
+      FiniteExpectation prts (compose f (X (S n))) = 0 ->
+      almost (prob_space_sa_sub prts (filt_sub n))
+             (fun x : Ts =>
+                ConditionalExpectation prts (filt_sub n) (compose f (X (S n))) x = 
+                (const (Rbar.Finite 0) x)).
+    Proof.
+      intros.
+      generalize (is_conditional_expectation_unique prts  (filt_sub n) (compose f (X (S n)))); intros.
+      eapply H1; trivial.
+      - now apply Condexp_cond_exp.
+      - rewrite <- H0.
+        now eapply filtration_history_pullback_independent_expectation_filt_sub.
+  Qed.
+
+    Lemma Dvoretzky_converge_Z_indep {Td} cod (X : nat -> Ts -> Td)
+          (Z : nat -> Ts -> R) (BB : Td -> R) (alpha : nat -> Ts -> R) 
+          {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
+          {adaptZ : IsAdapted borel_sa Z F} (adapt_alpha : IsAdapted borel_sa alpha F) 
+          {rvBB : RandomVariable cod borel_sa BB}
+          {rvX : forall n : nat, RandomVariable dom cod (X n)}
+          {isfe : forall n, IsFiniteExpectation prts (BB ∘ X n)}
+          {rv2 : forall n, RandomVariable dom (const cod n) (X n)} 
+          {rvalpha : forall n, RandomVariable dom borel_sa (alpha n)}      
+          (alpha_pos:forall n x, 0 <= alpha n x) 
+          (alpha_one:forall n x, 0 < 1 - alpha n x ) :
+      (forall n, independent_sas prts (filt_sub n)
+                                 (pullback_rv_sub dom cod (X (S n)) (rvX (S n)))) ->
+      (forall n, FiniteExpectation prts (BB ∘ X n) = 0) ->
+      almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
+                                                        Rbar.p_infty)  ->
+      (exists (A2 : R),
+          almost prts (fun omega => Rbar.Rbar_lt (Lim_seq.Lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => rvsqr (alpha n) omega))) (Rbar.Finite A2))) ->
+      (exists (sigma : R), forall n, rv_le (rvsqr (BB ∘ X n)) (const (Rsqr sigma))) ->
+      rv_eq (Z 0%nat) (const 0) ->
+      (forall n, rv_eq (Z (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Z n)) (rvmult (BB ∘ X (S n)) (alpha n)))) ->
+      almost _ (fun omega => Lim_seq.is_lim_seq (fun n => Z n omega) (Rbar.Finite 0)).
+    Proof.
+      intros.
+      assert (rvBB2 : forall n : nat, RandomVariable dom borel_sa (BB ∘ X (S n))) by (intros; typeclasses eauto).
+      generalize (Dvoretzky_converge_Z Z (fun n => (BB ∘ X (S n))) alpha isfilt filt_sub adapt_alpha); intros.
+      apply H6; trivial.
+      - intros.
+        generalize (filtration_history_pullback_independent_condexp_filt_sub cod X isfilt filt_sub BB isfe H n (H0 (S n))); intros.
+        revert H7.
+        apply almost_impl, all_almost; intros; red; intros.
+        replace (Rbar.Finite (const 0 x)) with (const (Rbar.Finite 0) x) by (unfold const; now simpl).
+        rewrite <- H7.
+        now apply ConditionalExpectation_ext.
+      - destruct H3.
+        exists x; intros.
+        apply H3.
+     Qed.
 
   (* lemma 15 *) 
     Lemma core_contraction_conv (f Y Z alpha BB : nat -> Ts -> R) (delta eps C0 gamma : posreal) (k tk:nat)
