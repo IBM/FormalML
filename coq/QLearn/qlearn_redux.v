@@ -4829,7 +4829,67 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
      apply Rabs_le.
      lra.
   Qed.
-   
+
+   (* lemma 15 *)
+   Lemma core_contraction {Td} (cod :SigmaAlgebra Td) (f Y Z alpha : nat -> Ts -> R)
+         (X : nat -> Ts -> Td)  (BB : Td -> R)
+         (delta eps C0 gamma : posreal) (k tk:nat)
+          {rv : forall n, RandomVariable dom borel_sa (f n)}
+          {rvY : forall n, RandomVariable dom borel_sa (Y n)}
+          {rvZ : forall n, RandomVariable dom borel_sa (Z n)}           
+          {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Lim_seq.Sup_seq (fun m => Rbar.Finite (Rabs (f (n + m)%nat x))))}
+          {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
+          {adaptY : IsAdapted borel_sa Y F} {adaptZ : IsAdapted borel_sa Z F} (adapt_alpha : IsAdapted borel_sa alpha F) 
+          {rvBB : RandomVariable cod borel_sa BB}
+          {rvX : forall n : nat, RandomVariable dom cod (X n)}
+          {rv_alpha : forall n : nat, RandomVariable dom borel_sa (alpha n)}
+          {isfe : forall n, IsFiniteExpectation prts (BB ∘ X n)} 
+          (alpha_pos:forall n x, 0 <= alpha n x) 
+          (alpha_one:forall n x, 0 < 1 - alpha n x ) :
+     almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
+                                                     Rbar.p_infty)  ->
+      gamma + eps < 1 ->
+      gamma < 1 ->
+      (forall n, independent_sas prts (filt_sub n)
+                                 (pullback_rv_sub dom cod (X (S n)) (rvX (S n)))) ->
+      (forall n, FiniteExpectation prts (BB ∘ X n) = 0) ->
+
+      let Ck := C0 * (gamma + eps) ^ k in
+      rv_eq (Y 0%nat) (const Ck) ->
+      (forall n, rv_eq (Y (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Y n)) (rvscale (gamma * Ck) (alpha n)))) ->
+      rv_eq (Z 0%nat) (const 0) ->
+      (forall n, rv_eq (Z (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Z n)) (rvmult (BB ∘ X (S n)) (alpha n)))) ->
+
+       (exists (A2 : R),
+          almost prts (fun omega => Rbar.Rbar_lt (Lim_seq.Lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => rvsqr (alpha n) omega))) (Rbar.Finite A2))) ->
+      (exists (sigma : R), forall n, rv_le (rvsqr (BB ∘ X n)) (const (Rsqr sigma))) ->
+      (forall N, (N >= tk)%nat ->
+          forall omega,
+          Rbar.Rbar_le
+            (Lim_seq.Sup_seq (fun n => Rbar.Finite (Rabs (f (N + n)%nat omega))))
+            (Rbar.Finite Ck) ->
+          forall n,
+            - (Y (N + n)%nat omega) + (Z (N + n)%nat omega) <= f (N + n)%nat omega <= (Y (N + n)%nat omega) + (Z (N + n)%nat omega)) ->
+    (forall N, 
+        (N >= tk)%nat ->
+        (ps_P (qlearn.event_Rbar_le 
+                 (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (Rabs (f (N + n)%nat omega)))) 
+                 (Rbar.Finite Ck)) >=
+         1 - (INR k) * delta)) ->
+    exists (NN : nat),
+    forall N, 
+      (N >= NN)%nat ->
+      ps_P (qlearn.event_Rbar_le 
+              (fun omega => Lim_seq.Sup_seq (fun n => Rbar.Finite (Rabs (f (N + n)%nat omega)))) 
+              (Rbar.Finite ((gamma + eps) * Ck))) >=
+      1 - (INR (S k)) * delta.
+   Proof.
+     intros.
+     apply core_contraction_conv with (Y := Y) (Z := Z) (alpha := alpha) (tk := tk) (BB := (fun (n:nat) => BB ∘ X (S n)) ); trivial.
+     - now apply Dvoretzky_converge_Y with (alpha := alpha) (F := F).
+     - now apply (Dvoretzky_converge_Z_indep cod X Z BB alpha) with (filt_sub0 := filt_sub) (rvX0 := rvX) (isfe0 := isfe).
+   Qed.
+
 End converge.
 
 Section FiniteDomain.
