@@ -1058,6 +1058,476 @@ Section algebra.
 
 End algebra.
 
+Section Ash_1_2_8.
+  
+  Context {T:Type}.
+  Context {Alg:Algebra T}.
+
+  Definition is_finitely_additive (λ:alg_set Alg -> Rbar) :=
+    forall (l : list (alg_set Alg)),
+      ForallOrdPairs pre_event_disjoint (map alg_pre l) ->
+      λ (alg_list_union l) = list_Rbar_sum (map λ l).
+
+  Definition is_countably_additive (λ:alg_set Alg -> Rbar) :=
+    forall (B : nat -> alg_set Alg),
+      pre_collection_is_pairwise_disjoint (fun x => B x) ->
+      forall (pf:alg_in (pre_union_of_collection (fun x => B x))),
+        λ (exist _ _ pf) = (ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => λ (B n)) i)).
+      
+  Lemma alg_union_none (x : alg_set Alg) :
+    alg_equiv (alg_union x alg_none) x.
+  Proof.
+    intro z.
+    destruct x.
+    apply pre_event_union_false_r.
+  Qed.
+
+  Lemma alg_inter_none (x : alg_set Alg) :
+    alg_equiv (alg_inter x alg_none) alg_none.
+  Proof.
+    intro z.
+    destruct x.
+    apply pre_event_inter_false_r.
+  Qed.
+
+  Lemma alg_union_comm (A B : alg_set Alg) :
+    alg_equiv (alg_union A B) (alg_union B A).
+  Proof.
+    intro z.
+    destruct A; destruct B.
+    apply pre_event_union_comm.
+  Qed.
+
+  Lemma alg_inter_comm (A B : alg_set Alg) :
+    alg_equiv (alg_inter A B) (alg_inter B A).
+  Proof.
+    intro z.
+    destruct A; destruct B.
+    apply pre_event_inter_comm.
+  Qed.
+
+  Lemma finitely_additive_union (λ:alg_set Alg -> Rbar) (A B : alg_set Alg) :
+    is_finitely_additive λ ->
+    Proper (alg_equiv ==> eq) λ ->
+    alg_equiv (alg_inter A B) alg_none ->
+    λ (alg_union A B) = Rbar_plus (λ A) (λ B).
+  Proof.
+    intros.
+    unfold is_finitely_additive in H.
+    specialize (H [A; B]).
+    cut_to H.
+    - rewrite alg_list_union_cons in H.
+      rewrite alg_list_union_cons in H.
+      rewrite alg_list_union_nil in H.
+      rewrite alg_union_none in H.
+      unfold alg_list_union in H.
+      simpl in H.
+      now rewrite Rbar_plus_0_r in H.
+    - simpl.
+      apply FOP_cons.
+      + apply Forall_cons.
+        * rewrite pre_event_disjoint_inter.
+          unfold alg_equiv, alg_inter, alg_none in H1.
+          simpl in H1.
+          now rewrite H1.
+        * apply Forall_nil.
+      + apply FOP_cons.
+        * apply Forall_nil.
+        * apply FOP_nil.
+  Qed.
+
+  Lemma Ash_1_2_5_a (λ:alg_set Alg -> Rbar) :
+    is_finitely_additive λ ->
+    Proper (alg_equiv ==> eq) λ ->
+    (exists c, is_finite (λ c)) ->
+    λ alg_none = Finite 0.
+  Proof.
+    intros.
+    destruct H1.
+    assert  (λ x = λ (alg_union x alg_none)).
+    {
+      now rewrite alg_union_none.
+    }
+    rewrite finitely_additive_union in H2; trivial.
+    rewrite <- H1 in H2.
+    - destruct  (λ (@alg_none T Alg)).
+      + simpl in H2.
+        rewrite Rbar_finite_eq in H2.
+        rewrite Rbar_finite_eq.
+        lra.
+      + simpl in H2.
+        discriminate.
+      + simpl in H2.
+        discriminate.
+    - now rewrite alg_inter_none.
+  Qed.
+
+  Program Definition alg_complement (A : alg_set Alg) : alg_set Alg :=
+    exist _ (pre_event_complement (proj1_sig A)) _.
+  Next Obligation.
+    apply alg_in_complement.
+    destruct A.
+    now simpl.
+  Qed.
+
+  (* this needs law of excluded middle *)
+  Lemma alg_diff_union_inter (A B : alg_set Alg) :
+    alg_equiv A (alg_union (alg_diff A B) (alg_inter A B)).
+  Proof.
+    intros z.
+    destruct A; destruct B; simpl.
+    unfold pre_event_union, pre_event_diff, pre_event_inter.
+    generalize (classic (x0 z)).
+    firstorder.
+  Qed.
+
+  Lemma disjoint_alg_inter_alg_diff (A B : alg_set Alg) :
+    pre_event_disjoint (alg_inter A B) (alg_diff A B).
+  Proof.
+    unfold pre_event_disjoint, alg_inter, alg_diff.
+    destruct A; destruct B; unfold pre_event_inter, pre_event_diff; simpl.
+    firstorder.
+  Qed.
+
+   Lemma disjoint_alg_inter_alg_diff2 (A B : alg_set Alg) :
+    pre_event_disjoint (alg_inter B A) (alg_diff A B).
+  Proof.
+    unfold pre_event_disjoint, alg_inter, alg_diff.
+    destruct A; destruct B; unfold pre_event_inter, pre_event_diff; simpl.
+    firstorder.
+  Qed.
+
+  Lemma disjoint_alg_diff (A B : alg_set Alg) :
+    pre_event_disjoint (alg_diff A B) (alg_diff B A).
+  Proof.
+    unfold pre_event_disjoint, alg_diff.
+    destruct A; destruct B; unfold pre_event_diff; simpl.
+    firstorder.
+  Qed.
+
+  Lemma Ash_1_2_5_b (λ:alg_set Alg -> Rbar) (A B : alg_set Alg) :
+    is_finitely_additive λ ->
+    Proper (alg_equiv ==> eq) λ ->
+    (forall (C : alg_set Alg), is_finite ( λ C)) ->
+    Rbar_plus (λ (alg_union A B)) (λ (alg_inter A B)) =  
+    Rbar_plus (λ A) (λ B).
+  Proof.
+    intros.
+    assert (λ A = Rbar_plus (λ (alg_inter A B)) (λ (alg_diff A B))).
+    {
+      rewrite <- finitely_additive_union; trivial.
+      rewrite alg_union_comm.
+      rewrite <- alg_diff_union_inter; trivial.
+      intro z.
+      destruct A; destruct B; simpl.
+      firstorder.
+    }
+    assert (λ B = Rbar_plus (λ (alg_inter A B)) (λ (alg_diff B A))).
+    {
+      rewrite <- finitely_additive_union; trivial.      
+      rewrite alg_union_comm, alg_inter_comm.
+      rewrite <- alg_diff_union_inter; trivial.
+      intro z.
+      destruct A; destruct B; simpl.
+      firstorder.
+    }
+    rewrite H2, H3.
+    rewrite Rbar_plus_assoc.
+    - rewrite Rbar_plus_comm.
+      f_equal.
+      assert (alg_equiv (alg_union A B)
+                        (alg_union
+                           (alg_diff A B)
+                           (alg_union (alg_inter A B) (alg_diff B A)))).
+      {
+        intro z.
+        destruct A; destruct B.
+        unfold alg_union, alg_diff, proj1_sig; simpl.
+        unfold pre_event_union, pre_event_diff, pre_event_inter.
+        generalize (classic (x0 z)).
+        generalize (classic (x z)).
+        firstorder.
+      }
+      rewrite H4.
+      unfold is_finitely_additive in H.
+      specialize (H [alg_diff A B; alg_inter A B; alg_diff B A]).
+      cut_to H.
+      + assert (alg_equiv
+                  (alg_union (alg_diff A B) (alg_union (alg_inter A B) (alg_diff B A)))
+                  (alg_list_union [alg_diff A B; alg_inter A B; alg_diff B A]) ).
+        {
+          do 2 rewrite alg_list_union_cons.
+          now rewrite alg_list_union_singleton.
+        }
+        rewrite H5.
+        rewrite H.
+        simpl.
+        now rewrite Rbar_plus_0_r.
+      + apply FOP_cons.
+        * apply Forall_cons.
+          -- symmetry.
+             apply disjoint_alg_inter_alg_diff.
+          -- apply Forall_cons.
+             ++ apply disjoint_alg_diff.
+             ++ apply Forall_nil.
+        * apply FOP_cons.
+          -- apply Forall_cons.
+             ++ apply disjoint_alg_inter_alg_diff2.
+             ++ apply Forall_nil.
+          -- apply FOP_cons.
+             ++ apply Forall_nil.
+             ++ apply FOP_nil.
+    - rewrite <- H1.
+      apply ex_Rbar_plus_Finite_l.
+    - rewrite <- H1.
+      apply ex_Rbar_plus_Finite_l.      
+  Qed.
+
+  Lemma Ash_1_2_5_c (λ:alg_set Alg -> Rbar) (A B : alg_set Alg) :
+    is_finitely_additive λ ->
+    Proper (alg_equiv ==> eq) λ ->
+    alg_sub B A ->
+    λ A = Rbar_plus (λ B) (λ (alg_diff A B)).
+  Proof.
+    intros.
+    generalize (alg_sub_diff_union A B H1); intros.
+    rewrite H2 at 1.
+    rewrite alg_union_comm.
+    rewrite finitely_additive_union; trivial.
+    unfold alg_equiv, alg_inter, alg_diff, alg_none, proj1_sig.
+    intro x.
+    simpl.
+    unfold pre_event_inter, pre_event_diff, pre_event_none.
+    firstorder.
+  Qed.
+  
+  Lemma Ash_1_2_8_a (λ:alg_set Alg -> Rbar) :
+    is_finitely_additive λ ->
+    Proper (alg_equiv ==> eq) λ ->
+    (forall (B : nat -> alg_set Alg),
+        (forall n, alg_sub (B n) (B (S n))) ->
+        forall (pf:alg_in (pre_union_of_collection (fun x => B x))),
+          is_Elim_seq (fun n : nat =>  λ (B n)) (λ (exist _ _ pf))) ->
+    is_countably_additive  λ.
+  Proof.
+    unfold is_countably_additive.
+    intros.
+    pose (BB := fun (n : nat) => alg_list_union (collection_take B n)).
+    specialize (H1 BB).
+    cut_to H1.
+    - assert (pre_event_equiv (pre_union_of_collection (fun x : nat => BB x))
+                              (pre_union_of_collection (fun x : nat => B x))).
+      {
+
+        unfold BB, pre_event_equiv, pre_union_of_collection; intros.
+        split; intros; destruct H3.
+        - destruct H3 as [? [? ?]].
+          unfold collection_take in H3.
+          rewrite map_map in H3.
+          rewrite in_map_iff in H3.
+          destruct H3 as [? [? ?]].
+          exists x2.
+          now rewrite <- H3 in H4.
+        - exists (S x0).
+          unfold alg_list_union, collection_take.
+          replace (S x0) with (x0 + 1)%nat by lia.
+          simpl.
+          replace (x0 + 1)%nat with (S x0) by lia.
+          rewrite map_map.
+          unfold pre_list_union.
+          exists (B x0).
+          split; trivial.
+          rewrite in_map_iff.
+          exists x0.
+          split; trivial.
+          rewrite in_seq.
+          lia.
+      }
+      assert (alg_in (pre_union_of_collection (fun x : nat => BB x))).
+      {
+        revert pf.
+        now apply alg_proper.
+      }
+      specialize (H1 H4).
+      apply is_Elim_seq_unique in H1.
+      unfold is_finitely_additive in H.
+      rewrite ELim_seq_ext with (v := fun n => λ (BB n)).
+      + rewrite H1.
+        now apply H0.
+      + intros.
+        unfold BB.
+        specialize (H (collection_take B n)).
+        rewrite H.
+        * unfold sum_Rbar_n.
+          unfold collection_take.
+          now rewrite map_map.
+        * replace (map alg_pre (collection_take B n)) with
+              (collection_take (fun j => alg_pre (B j)) n).
+          -- now apply pre_collection_take_preserves_disjoint.
+          -- unfold collection_take.
+             now rewrite map_map.
+    - intros.
+      unfold BB.
+      unfold collection_take, alg_sub, alg_list_union, pre_list_union, pre_event_sub, proj1_sig.
+      intros.
+      destruct H3 as [? [? ?]].
+      exists x0.
+      split; trivial.
+      rewrite map_map in H3; rewrite map_map.
+      apply in_map_iff in H3.
+      destruct H3 as [? [? ?]].
+      apply in_map_iff.
+      exists x1.
+      split; trivial.
+      apply in_seq;  apply in_seq in H5.
+      lia.
+    Qed.
+
+  Lemma is_Rbar_minus_0 (a : Rbar) :
+    is_Rbar_minus a 0 a.
+  Proof.
+    unfold is_Rbar_minus.
+    rewrite Rbar_opp0.
+    unfold is_Rbar_plus.
+    destruct a; simpl; trivial.
+    now rewrite Rplus_0_r.
+  Qed.
+
+  Lemma Rbar_minus_0_r (a : Rbar) :
+    Rbar_minus a 0 = a.
+  Proof.
+    unfold Rbar_minus.
+    rewrite Rbar_opp0.
+    now rewrite Rbar_plus_0_r.
+  Qed.
+
+  Lemma alg_sub_diff_sub (A B C : alg_set Alg) :
+    alg_sub B C ->
+    alg_sub (alg_diff A C) (alg_diff A B).
+  Proof.
+    destruct A; destruct B; destruct C.
+    unfold alg_sub, alg_diff, pre_event_sub, pre_event_diff; simpl; intros.
+    firstorder.
+  Qed.
+  
+  (* added is_finite hypothesis *)
+  Lemma Ash_1_2_8_b (λ:alg_set Alg -> Rbar) :
+    is_finitely_additive λ ->
+    Proper (alg_equiv ==> eq) λ ->
+    (forall (C : alg_set Alg), is_finite ( λ C)) ->
+    (forall (B : nat -> alg_set Alg),
+        (forall n, alg_sub (B (S n)) (B n)) ->
+        (pre_event_equiv (pre_inter_of_collection (fun x => B x)) pre_event_none) ->
+        is_Elim_seq (fun n : nat => λ (B n)) (Rbar.Finite 0)) ->
+    is_countably_additive  λ.
+  Proof.
+    unfold is_countably_additive; intros.
+    pose (BB := fun (n : nat) => alg_list_union (collection_take B n)).
+    assert (forall n,
+               λ (exist alg_in (pre_union_of_collection (fun x : nat => B x)) pf)  =
+               Rbar_plus (λ (BB n))
+                         (λ (alg_diff 
+                               (exist alg_in (pre_union_of_collection (fun x : nat => B x)) pf)
+                               (BB n)))).
+    {
+      intros.
+      apply Ash_1_2_5_c; trivial.
+      unfold alg_sub, proj1_sig; simpl.
+      generalize (pre_list_union_take_collection_sub B n); intros.
+      unfold collection_take.
+      rewrite map_map.
+      apply H4.
+    }
+    specialize (H2 (fun n =>
+                      (alg_diff
+                         (exist alg_in (pre_union_of_collection (fun x : nat => B x)) pf)
+                         (BB n)))).
+    cut_to H2.
+    - assert (is_Elim_seq (fun n => λ (BB n)) ( λ (exist alg_in (pre_union_of_collection (fun x : nat => B x)) pf))).
+      {
+        generalize (is_Elim_seq_ext _ _ (λ (exist alg_in (pre_union_of_collection (fun x : nat => B x)) pf)) H4); intros.
+        cut_to H5; [| apply is_Elim_seq_const].
+        generalize (is_Elim_seq_minus _ _ _ _ (Rbar_minus (λ (exist alg_in (pre_union_of_collection (fun x : nat => B x)) pf)) 0) H5 H2); intros.
+        cut_to H6.
+        - revert H6.
+          rewrite Rbar_minus_0_r.
+          apply is_Elim_seq_ext.
+          intros.
+          case_eq (λ (BB n))
+          ; case_eq  (λ
+                        (alg_diff (exist alg_in (pre_union_of_collection (fun x : nat => B x)) pf)
+                                  (BB n)))
+          ; intros; simpl; (rewrite <- H1 in H6; try discriminate); trivial.
+          apply Rbar_finite_eq.
+          lra.
+        - unfold Rbar_minus.
+          rewrite Rbar_opp0.
+          rewrite Rbar_plus_0_r.
+          apply is_Rbar_minus_0.
+      }
+      unfold is_finitely_additive in H.
+      rewrite ELim_seq_ext with (v := fun n => λ (BB n)).
+      + apply is_Elim_seq_unique in H5.
+        now rewrite H5.
+      + intros.
+        unfold BB.
+        specialize (H (collection_take B n)).
+        rewrite H.
+        * unfold sum_Rbar_n.
+          unfold collection_take.
+          now rewrite map_map.
+        * replace (map alg_pre (collection_take B n)) with
+              (collection_take (fun j => alg_pre (B j)) n).
+          -- now apply pre_collection_take_preserves_disjoint.
+          -- unfold collection_take.
+             now rewrite map_map.
+    - intros.
+      apply alg_sub_diff_sub.
+      unfold BB.
+      unfold collection_take, alg_sub, alg_list_union, pre_list_union, pre_event_sub, proj1_sig.
+      intros.
+      destruct H5 as [? [? ?]].
+      exists x0.
+      split; trivial.
+      rewrite map_map in H5; rewrite map_map.
+      apply in_map_iff in H5.
+      destruct H5 as [? [? ?]].
+      apply in_map_iff.
+      exists x1.
+      split; trivial.
+      apply in_seq;  apply in_seq in H7.
+      lia.
+    - intro z.
+      unfold pre_inter_of_collection, pre_event_none.
+      split; intros; try easy.
+      unfold BB in H5.
+      unfold alg_diff in H5.
+      simpl in H5.
+      unfold collection_take in H5.
+      setoid_rewrite map_map in H5.
+      unfold pre_event_diff, pre_union_of_collection in H5.
+      destruct (H5 0%nat) as [[nn Bnn] _].
+      specialize (H5 (S nn)).
+      destruct H5.
+      unfold pre_list_union in H6.
+      generalize (PushNeg.not_exists 
+                    (fun (a : pre_event T) =>
+                       In a (map (fun x : nat => alg_pre (B x))
+                                 (seq 0 (S nn))) /\ a z)); intros.
+      rewrite H7 in H6.
+      specialize (H6 (B nn)).
+      unfold not in H6.
+      cut_to H6; trivial.
+      split; trivial.
+      apply in_map_iff.
+      exists nn.
+      split; trivial.
+      rewrite in_seq.
+      lia.
+  Qed.
+    
+End Ash_1_2_8.
+  
 Section premeasure.
 
   Local Existing Instance Rbar_le_pre.
@@ -1073,7 +1543,7 @@ Section premeasure.
       ; premeasure_none : λ alg_none = 0%R
       ; premeasure_nneg a : Rbar_le 0 (λ a)
       ; premeasure_countable_disjoint_union (B:nat->alg_set Alg) :
-        pre_collection_is_pairwise_disjoint (fun x => B x) ->
+        pre_collection_is_pairwise_disjoint (fun x => B x) ->        
         forall (pf:alg_in (pre_union_of_collection (fun x => B x))),
         λ (exist _ _ pf) = (ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => λ (B n)) i))
       }.
