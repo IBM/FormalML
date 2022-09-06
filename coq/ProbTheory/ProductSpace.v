@@ -756,6 +756,65 @@ Section ps_product.
     apply product_independent_fst_snd.
   Qed.
 
+
+  Lemma product_pullback_fst :
+    forall (a : event A),
+      ps_P (ProbSpace := ps1) a = 
+      ps_P (ProbSpace := (pullback_ps _ _  product_ps fst)) a.
+  Proof.
+    intros.
+    unfold product_ps, pullback_ps; simpl.
+    generalize (product_measure_product  
+                  (fun x : event A => Rbar.Finite (ps_P x))
+                  (Measures.ps_measure ps1)
+                  (fun x : event B => Rbar.Finite (ps_P x))
+                  (Measures.ps_measure ps2)); intros.
+    cut_to H.
+    - specialize (H a Ω).
+      rewrite ps_all in H.
+      simpl in H.
+      rewrite Rmult_1_r in H.
+      replace (ps_P a) with (Rbar.real (Rbar.Finite (ps_P a))) by now simpl.
+      f_equal.
+      rewrite <- H.
+      f_equal.
+      apply functional_extensionality.
+      intros.
+      destruct x; destruct a.
+      unfold event_preimage, pre_Ω, proj1_sig; simpl.
+      now apply PropExtensionality.propositional_extensionality.
+    - apply product_measure_Hyp_ps.
+  Qed.
+  
+  Lemma product_pullback_snd :
+    forall (b : event B),
+      ps_P (ProbSpace := ps2) b = 
+      ps_P (ProbSpace := (pullback_ps _ _  product_ps snd)) b.
+  Proof.
+    intros.
+    unfold product_ps, pullback_ps; simpl.
+    generalize (product_measure_product  
+                  (fun x : event A => Rbar.Finite (ps_P x))
+                  (Measures.ps_measure ps1)
+                  (fun x : event B => Rbar.Finite (ps_P x))
+                  (Measures.ps_measure ps2)); intros.
+    cut_to H.
+    - specialize (H Ω b).
+      rewrite ps_all in H.
+      simpl in H.
+      rewrite Rmult_1_l in H.
+      replace (ps_P b) with (Rbar.real (Rbar.Finite (ps_P b))) by now simpl.
+      f_equal.
+      rewrite <- H.
+      f_equal.
+      apply functional_extensionality.
+      intros.
+      destruct x; destruct b.
+      unfold event_preimage, pre_Ω, proj1_sig; simpl.
+      now apply PropExtensionality.propositional_extensionality.
+    - apply product_measure_Hyp_ps.
+  Qed.
+    
 End ps_product.
 
 Section ps_ivector_product.
