@@ -925,9 +925,7 @@ Section ps_ivector_product.
                            (fun x : ivector T n => ivector_nth idx pf x) .
   Proof.
     generalize (ivector_nth_rv (ivector_const n σ) idx pf); intros.
-    replace  (ivector_nth idx pf (ivector_const n σ)) with σ in H.
-    - apply H.
-    - now rewrite ivector_nth_const.
+    now rewrite ivector_nth_const in H.
   Qed.
            
   Lemma ivector_nth_pullback {n} {T} {σ:SigmaAlgebra T} 
@@ -966,18 +964,16 @@ Section ps_ivector_product.
                        (ps_P (ProbSpace := (ivector_ps i))
                              (rv_preimage 
                                 (fun x => ivector_nth idx (lt_S_n idx n pf) x)
-                                a)))).
-          * f_equal.
-            rewrite <- H.
-            f_equal.
-            apply functional_extensionality.
-            intros.
-            destruct x.
-            unfold event_preimage, pre_Ω, proj1_sig; simpl.
-            destruct a.
-            now apply PropExtensionality.propositional_extensionality.
-          * simpl.
-            now apply ps_proper.
+                                a)))) by (simpl; now apply ps_proper).
+          f_equal.
+          rewrite <- H.
+          f_equal.
+          apply functional_extensionality.
+          intros.
+          destruct x.
+          unfold event_preimage, pre_Ω, proj1_sig; simpl.
+          destruct a.
+          now apply PropExtensionality.propositional_extensionality.
         + apply product_measure_Hyp_ps.
    Qed.
      
