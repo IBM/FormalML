@@ -953,16 +953,10 @@ Section ps_ivector_product.
         rewrite ps_all in H.
         simpl in H.
         rewrite Rmult_1_l in H.
-        replace (ps_P (ProbSpace := (ivector_ps i))
-                      (rv_preimage
-                         (fun x => ivector_nth idx (lt_S_n idx n pf) x)
-                         a))
-          with
-            (real (Finite
-                     (ps_P (ProbSpace := (ivector_ps i))
-                           (rv_preimage 
-                              (fun x => ivector_nth idx (lt_S_n idx n pf) x)
-                              a)))) by (simpl; now apply ps_proper).
+        match goal with
+        | [ |- ?X  = _ ] =>
+          replace X with (real (Finite X)) by (simpl; now apply ps_proper)
+        end.
         f_equal.
         rewrite <- H.
         f_equal.
