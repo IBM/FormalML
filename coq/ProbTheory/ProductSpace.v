@@ -920,20 +920,23 @@ Section ps_ivector_product.
       + apply IHn.
   Qed.
 
-  Lemma ivector_nth_const {T} n (c:T) i pf : ivector_nth i pf (ivector_const n c) = c.
-  Admitted.
-
-  Lemma ivector_nth_pullback {n} {T} {σ:SigmaAlgebra T} 
-        (ivec_ps : ivector (ProbSpace σ) n)
-        (rv: forall idx pf,
+  Instance ivector_nth_rv_const {n} {T} {σ:SigmaAlgebra T} idx pf :
             RandomVariable (ivector_sa (ivector_const n σ)) σ
-                           (fun x : ivector T n => ivector_nth idx pf x)) :
+                           (fun x : ivector T n => ivector_nth idx pf x) .
+  Proof.
+    generalize (ivector_nth_rv (ivector_const n σ) idx pf); intros.
+    replace  (ivector_nth idx pf (ivector_const n σ)) with σ in H.
+    - apply H.
+    - now rewrite ivector_nth_const.
+  Qed.
+           
+  Lemma ivector_nth_pullback {n} {T} {σ:SigmaAlgebra T} 
+        (ivec_ps : ivector (ProbSpace σ) n) :
      forall idx pf,
      forall (a : event σ),
        ps_P (ProbSpace := (ivector_nth idx pf ivec_ps)) a = 
        ps_P (ProbSpace := (pullback_ps _ _  (ivector_ps ivec_ps) 
                                        (fun x => ivector_nth idx pf x))) a.
-
     Proof.
       intros.
       revert ivec_ps idx pf.
@@ -943,17 +946,6 @@ Section ps_ivector_product.
       - match_destr.
         apply product_pullback_fst.
       - match_destr.
-        assert (rv2: 
-                  forall (idx0 : nat) (pf0 : (idx0 < n)%nat),
-                    RandomVariable (ivector_sa (ivector_const n σ)) σ
-                                   (fun x : ivector T n => ivector_nth idx0 pf0 x)).
-        {
-          intros.
-          generalize (ivector_nth_rv (ivector_const n σ) idx0 pf0); intros.
-          replace  (ivector_nth idx0 pf0 (ivector_const n σ)) with σ in H.
-          - apply H.
-          - now rewrite ivector_nth_const.
-        }            
         erewrite IHn.
         unfold pullback_ps; simpl.
         generalize (product_measure_product

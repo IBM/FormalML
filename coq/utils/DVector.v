@@ -1294,6 +1294,15 @@ Qed.
     congruence.
   Qed.
 
+  Lemma ivector_nth_const {T} n (c:T) i pf : ivector_nth i pf (ivector_const n c) = c.
+  Proof.
+    revert i pf.
+    induction n.
+    - now simpl.
+    - intros; simpl.
+      match_destr.
+  Qed.
+
   Definition vector_to_ivector {A} {n} (vec : vector A n) : ivector A n .
   Proof.
     destruct vec.
