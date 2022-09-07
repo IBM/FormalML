@@ -949,10 +949,10 @@ Section ps_ivector_product.
                       (fun x : event (ivector_sa (ivector_const n σ)) => ps_P  x)
                       (ps_measure (ivector_ps i))); intros.
         cut_to H; [|apply product_measure_Hyp_ps].
-        specialize (H Ω  (rv_preimage (fun x : ivector T n => ivector_nth idx (lt_S_n idx n pf) x) a)).
+        specialize (H Ω).
         rewrite ps_all in H.
         simpl in H.
-        rewrite Rmult_1_l in H.
+        setoid_rewrite Rmult_1_l in H.
         match goal with
         | [ |- ?X  = _ ] =>
           replace X with (real (Finite X)) by (simpl; now apply ps_proper)
