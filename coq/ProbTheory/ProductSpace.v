@@ -957,15 +957,15 @@ Section ps_ivector_product.
           rewrite ps_all in H.
           simpl in H.
           rewrite Rmult_1_l in H.
-          replace (ps_P (ProbSpace := (@ivector_ps n T σ i))
+          replace (ps_P (ProbSpace := (ivector_ps i))
                         (rv_preimage
-                           (fun x : ivector T n => @ivector_nth T n idx (lt_S_n idx n pf) x)
+                           (fun x => ivector_nth idx (lt_S_n idx n pf) x)
                            a))
             with
               (real (Finite
-                       (ps_P (ProbSpace := (@ivector_ps n T σ i))
+                       (ps_P (ProbSpace := (ivector_ps i))
                              (rv_preimage 
-                                (fun x : ivector T n => @ivector_nth T n idx (lt_S_n idx n pf) x)
+                                (fun x => ivector_nth idx (lt_S_n idx n pf) x)
                                 a)))).
           * f_equal.
             rewrite <- H.
