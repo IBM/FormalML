@@ -920,7 +920,8 @@ Section ps_ivector_product.
       + apply IHn.
   Qed.
 
-(*  Arguments ps_P {T} {σ}. *)
+  Lemma ivector_nth_const {T} n (c:T) i pf : ivector_nth i pf (ivector_const n c) = c.
+  Admitted.
 
   Lemma ivector_nth_pullback {n} {T} {σ:SigmaAlgebra T} 
         (ivec_ps : ivector (ProbSpace σ) n)
@@ -930,7 +931,7 @@ Section ps_ivector_product.
      forall idx pf,
      forall (a : event σ),
        ps_P (ProbSpace := (ivector_nth idx pf ivec_ps)) a = 
-       ps_P (ProbSpace :=  (pullback_ps _ _  (ivector_ps ivec_ps) 
+       ps_P (ProbSpace := (pullback_ps _ _  (ivector_ps ivec_ps) 
                                        (fun x => ivector_nth idx pf x))) a.
 
     Proof.
@@ -941,16 +942,52 @@ Section ps_ivector_product.
       destruct idx.
       - match_destr.
         apply product_pullback_fst.
-      - 
-(*
-        generalize (product_pullback_snd (fst ivec_ps) (ivector_ps (snd ivec_ps))); intros.
-*)
-        match_destr.
+      - match_destr.
+        assert (rv2: 
+                  forall (idx0 : nat) (pf0 : (idx0 < n)%nat),
+                    RandomVariable (ivector_sa (ivector_const n σ)) σ
+                                   (fun x : ivector T n => ivector_nth idx0 pf0 x)).
+        {
+          intros.
+          generalize (ivector_nth_rv (ivector_const n σ) idx0 pf0); intros.
+          replace  (ivector_nth idx0 pf0 (ivector_const n σ)) with σ in H.
+          - apply H.
+          - now rewrite ivector_nth_const.
+        }            
         erewrite IHn.
-
-        
-        
-   Admitted.
+        unfold pullback_ps; simpl.
+        generalize (product_measure_product
+                      (fun x : event σ => ps_P x) (ps_measure p)
+                      (fun x : event (ivector_sa (ivector_const n σ)) => ps_P  x)
+                      (ps_measure (ivector_ps i))); intros.
+        cut_to H.
+        + specialize (H Ω  (rv_preimage (fun x : ivector T n => ivector_nth idx (lt_S_n idx n pf) x) a)).
+          rewrite ps_all in H.
+          simpl in H.
+          rewrite Rmult_1_l in H.
+          replace (ps_P (ProbSpace := (@ivector_ps n T σ i))
+                        (rv_preimage
+                           (fun x : ivector T n => @ivector_nth T n idx (lt_S_n idx n pf) x)
+                           a))
+            with
+              (real (Finite
+                       (ps_P (ProbSpace := (@ivector_ps n T σ i))
+                             (rv_preimage 
+                                (fun x : ivector T n => @ivector_nth T n idx (lt_S_n idx n pf) x)
+                                a)))).
+          * f_equal.
+            rewrite <- H.
+            f_equal.
+            apply functional_extensionality.
+            intros.
+            destruct x.
+            unfold event_preimage, pre_Ω, proj1_sig; simpl.
+            destruct a.
+            now apply PropExtensionality.propositional_extensionality.
+          * simpl.
+            now apply ps_proper.
+        + apply product_measure_Hyp_ps.
+   Qed.
      
   Lemma ivector_take_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
         (idx_le : (idx <= n)%nat) :
