@@ -769,21 +769,20 @@ Section ps_product.
                   (Measures.ps_measure ps1)
                   (fun x : event B => Rbar.Finite (ps_P x))
                   (Measures.ps_measure ps2)); intros.
-    cut_to H.
-    - specialize (H a Ω).
-      rewrite ps_all in H.
-      simpl in H.
-      rewrite Rmult_1_r in H.
-      replace (ps_P a) with (Rbar.real (Rbar.Finite (ps_P a))) by now simpl.
-      f_equal.
-      rewrite <- H.
-      f_equal.
-      apply functional_extensionality.
-      intros.
-      destruct x; destruct a.
-      unfold event_preimage, pre_Ω, proj1_sig; simpl.
-      now apply PropExtensionality.propositional_extensionality.
-    - apply product_measure_Hyp_ps.
+    cut_to H; [|apply product_measure_Hyp_ps].
+    specialize (H a Ω).
+    rewrite ps_all in H.
+    simpl in H.
+    rewrite Rmult_1_r in H.
+    replace (ps_P a) with (Rbar.real (Rbar.Finite (ps_P a))) by now simpl.
+    f_equal.
+    rewrite <- H.
+    f_equal.
+    apply functional_extensionality.
+    intros.
+    destruct x; destruct a.
+    unfold event_preimage, pre_Ω, proj1_sig; simpl.
+    now apply PropExtensionality.propositional_extensionality.
   Qed.
   
   Lemma product_pullback_snd :
@@ -798,21 +797,20 @@ Section ps_product.
                   (Measures.ps_measure ps1)
                   (fun x : event B => Rbar.Finite (ps_P x))
                   (Measures.ps_measure ps2)); intros.
-    cut_to H.
-    - specialize (H Ω b).
-      rewrite ps_all in H.
-      simpl in H.
-      rewrite Rmult_1_l in H.
-      replace (ps_P b) with (Rbar.real (Rbar.Finite (ps_P b))) by now simpl.
-      f_equal.
-      rewrite <- H.
-      f_equal.
-      apply functional_extensionality.
-      intros.
-      destruct x; destruct b.
-      unfold event_preimage, pre_Ω, proj1_sig; simpl.
-      now apply PropExtensionality.propositional_extensionality.
-    - apply product_measure_Hyp_ps.
+    cut_to H; [|apply product_measure_Hyp_ps].
+    specialize (H Ω b).
+    rewrite ps_all in H.
+    simpl in H.
+    rewrite Rmult_1_l in H.
+    replace (ps_P b) with (Rbar.real (Rbar.Finite (ps_P b))) by now simpl.
+    f_equal.
+    rewrite <- H.
+    f_equal.
+    apply functional_extensionality.
+    intros.
+    destruct x; destruct b.
+    unfold event_preimage, pre_Ω, proj1_sig; simpl.
+    now apply PropExtensionality.propositional_extensionality.
   Qed.
     
 End ps_product.
@@ -950,31 +948,30 @@ Section ps_ivector_product.
                       (fun x : event σ => ps_P x) (ps_measure p)
                       (fun x : event (ivector_sa (ivector_const n σ)) => ps_P  x)
                       (ps_measure (ivector_ps i))); intros.
-        cut_to H.
-        + specialize (H Ω  (rv_preimage (fun x : ivector T n => ivector_nth idx (lt_S_n idx n pf) x) a)).
-          rewrite ps_all in H.
-          simpl in H.
-          rewrite Rmult_1_l in H.
-          replace (ps_P (ProbSpace := (ivector_ps i))
-                        (rv_preimage
-                           (fun x => ivector_nth idx (lt_S_n idx n pf) x)
-                           a))
-            with
-              (real (Finite
-                       (ps_P (ProbSpace := (ivector_ps i))
-                             (rv_preimage 
-                                (fun x => ivector_nth idx (lt_S_n idx n pf) x)
-                                a)))) by (simpl; now apply ps_proper).
-          f_equal.
-          rewrite <- H.
-          f_equal.
-          apply functional_extensionality.
-          intros.
-          destruct x.
-          unfold event_preimage, pre_Ω, proj1_sig; simpl.
-          destruct a.
-          now apply PropExtensionality.propositional_extensionality.
-        + apply product_measure_Hyp_ps.
+        cut_to H; [|apply product_measure_Hyp_ps].
+        specialize (H Ω  (rv_preimage (fun x : ivector T n => ivector_nth idx (lt_S_n idx n pf) x) a)).
+        rewrite ps_all in H.
+        simpl in H.
+        rewrite Rmult_1_l in H.
+        replace (ps_P (ProbSpace := (ivector_ps i))
+                      (rv_preimage
+                         (fun x => ivector_nth idx (lt_S_n idx n pf) x)
+                         a))
+          with
+            (real (Finite
+                     (ps_P (ProbSpace := (ivector_ps i))
+                           (rv_preimage 
+                              (fun x => ivector_nth idx (lt_S_n idx n pf) x)
+                              a)))) by (simpl; now apply ps_proper).
+        f_equal.
+        rewrite <- H.
+        f_equal.
+        apply functional_extensionality.
+        intros.
+        destruct x.
+        unfold event_preimage, pre_Ω, proj1_sig; simpl.
+        destruct a.
+        now apply PropExtensionality.propositional_extensionality.
    Qed.
      
   Lemma ivector_take_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
