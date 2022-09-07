@@ -920,6 +920,38 @@ Section ps_ivector_product.
       + apply IHn.
   Qed.
 
+(*  Arguments ps_P {T} {σ}. *)
+
+  Lemma ivector_nth_pullback {n} {T} {σ:SigmaAlgebra T} 
+        (ivec_ps : ivector (ProbSpace σ) n)
+        (rv: forall idx pf,
+            RandomVariable (ivector_sa (ivector_const n σ)) σ
+                           (fun x : ivector T n => ivector_nth idx pf x)) :
+     forall idx pf,
+     forall (a : event σ),
+       ps_P (ProbSpace := (ivector_nth idx pf ivec_ps)) a = 
+       ps_P (ProbSpace :=  (pullback_ps _ _  (ivector_ps ivec_ps) 
+                                       (fun x => ivector_nth idx pf x))) a.
+
+    Proof.
+      intros.
+      revert ivec_ps idx pf.
+      induction n; simpl; [lia |].
+      intros.
+      destruct idx.
+      - match_destr.
+        apply product_pullback_fst.
+      - 
+(*
+        generalize (product_pullback_snd (fst ivec_ps) (ivector_ps (snd ivec_ps))); intros.
+*)
+        match_destr.
+        erewrite IHn.
+
+        
+        
+   Admitted.
+     
   Lemma ivector_take_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
         (idx_le : (idx <= n)%nat) :
         RandomVariable (ivector_sa ivsa) 
