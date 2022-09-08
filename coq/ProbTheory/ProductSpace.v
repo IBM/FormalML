@@ -937,6 +937,55 @@ Section ps_ivector_product.
     now rewrite ivector_nth_const in H.
   Qed.
            
+  Lemma ivector_nth_independent_rv_0 {n} {T} {σ:SigmaAlgebra T} 
+        (ivec_ps : ivector (ProbSpace σ) n) :
+    forall idx2 pf1 pf2,
+      independent_rvs (ivector_ps ivec_ps)  σ  σ
+                      (fun x => ivector_nth 0 pf1 x)
+                      (fun x => ivector_nth (S idx2) pf2 x).
+   Proof.
+     intros.
+     destruct n; try lia.
+     assert (independent_rvs (ivector_ps ivec_ps) σ (ivector_sa (ivector_const n σ))
+                             (fun x : ivector T (S n) => ivector_hd x)
+                             (fun x : ivector T (S n) => ivector_tl x)).
+     {
+       simpl.
+       destruct ivec_ps.
+       generalize (product_independent_fst_snd p (ivector_ps i)); intros.
+       revert H.
+       apply independent_rvs_proper; try easy.
+     }
+     assert (idx2 < n)%nat by lia.
+     assert (RandomVariable (ivector_sa (ivector_const (S n) σ)) σ (fun x : ivector T (S n) => ivector_nth idx2 H0 (ivector_tl x))).
+     {
+       generalize (@compose_rv (ivector T (S n)) (ivector T n) T); intros.
+       specialize (H1 (ivector_sa (ivector_const (S n) σ)) (ivector_sa (ivector_const n σ)) σ (fun (x : ivector T (S n)) => ivector_tl x) (fun (x : ivector T n)  => ivector_nth idx2 H0 x)).
+       apply H1; typeclasses eauto.
+     }
+     assert (independent_rvs (ivector_ps ivec_ps) σ σ
+                             (fun x : ivector T (S n) => ivector_hd x)
+                             (fun x : ivector T (S n) => ivector_nth idx2 H0 (ivector_tl x))).
+     {
+       generalize (independent_rv_compose 
+                     (ivector_ps ivec_ps) σ (ivector_sa (ivector_const n σ)) σ σ
+                     ivector_hd
+                     ivector_tl
+                     (fun x => x)
+                     (fun x => ivector_nth idx2 H0 x)
+                     H
+                  ); intros.
+         revert H2.
+         now apply independent_rvs_proper.
+     }
+     revert H2.
+     apply independent_rvs_proper; try easy.       
+     intro z.
+     destruct z.
+     simpl.
+     now apply ivector_nth_ext.
+  Qed.
+
   Lemma ivector_nth_pullback {n} {T} {σ:SigmaAlgebra T} 
         (ivec_ps : ivector (ProbSpace σ) n) :
      forall idx pf,
@@ -970,13 +1019,11 @@ Section ps_ivector_product.
         end.
         f_equal.
         rewrite <- H.
-        f_equal.
-        apply functional_extensionality.
-        intros.
-        destruct x.
-        unfold event_preimage, pre_Ω, proj1_sig; simpl.
-        destruct a.
-        now apply PropExtensionality.propositional_extensionality.
+        apply product_measure_proper.
+        + apply product_measure_Hyp_ps.
+        + intros [??]; destruct a; simpl.
+          unfold event_preimage, pre_Ω, proj1_sig; simpl.
+          tauto.
    Qed.
      
   Lemma ivector_take_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
