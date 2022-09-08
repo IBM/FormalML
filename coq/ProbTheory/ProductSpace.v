@@ -1019,11 +1019,10 @@ Section ps_ivector_product.
         end.
         f_equal.
         rewrite <- H.
-        apply product_measure_proper.
-        + apply product_measure_Hyp_ps.
-        + intros [??]; destruct a; simpl.
-          unfold event_preimage, pre_Ω, proj1_sig; simpl.
-          tauto.
+        apply product_ps_proper.
+        intros [??]; destruct a; simpl.
+        unfold event_preimage, pre_Ω, proj1_sig; simpl.
+        tauto.
    Qed.
      
   Lemma ivector_take_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
