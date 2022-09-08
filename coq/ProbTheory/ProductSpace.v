@@ -946,39 +946,32 @@ Section ps_ivector_product.
    Proof.
      intros.
      destruct n; try lia.
-     assert (independent_rvs (ivector_ps ivec_ps) σ (ivector_sa (ivector_const n σ))
-                             (fun x : ivector T (S n) => ivector_hd x)
-                             (fun x : ivector T (S n) => ivector_tl x)).
-     {
-       simpl.
-       destruct ivec_ps.
-       generalize (product_independent_fst_snd p (ivector_ps i)); intros.
-       revert H.
-       apply independent_rvs_proper; try easy.
-     }
-     assert (idx2 < n)%nat by lia.
-     assert (RandomVariable (ivector_sa (ivector_const (S n) σ)) σ (fun x : ivector T (S n) => ivector_nth idx2 H0 (ivector_tl x))).
+     assert (RandomVariable (ivector_sa (ivector_const (S n) σ)) σ (fun x : ivector T (S n) => ivector_nth idx2 (lt_S_n idx2 n pf2) (ivector_tl x))).
      {
        generalize (@compose_rv (ivector T (S n)) (ivector T n) T); intros.
-       specialize (H1 (ivector_sa (ivector_const (S n) σ)) (ivector_sa (ivector_const n σ)) σ (fun (x : ivector T (S n)) => ivector_tl x) (fun (x : ivector T n)  => ivector_nth idx2 H0 x)).
-       apply H1; typeclasses eauto.
+       specialize (H (ivector_sa (ivector_const (S n) σ)) (ivector_sa (ivector_const n σ)) σ (fun (x : ivector T (S n)) => ivector_tl x) (fun (x : ivector T n)  => ivector_nth idx2 (lt_S_n idx2 n pf2) x)).
+       apply H; typeclasses eauto.
      }
      assert (independent_rvs (ivector_ps ivec_ps) σ σ
                              (fun x : ivector T (S n) => ivector_hd x)
-                             (fun x : ivector T (S n) => ivector_nth idx2 H0 (ivector_tl x))).
+                             (fun x : ivector T (S n) => ivector_nth idx2 _ (ivector_tl x))).
      {
        generalize (independent_rv_compose 
                      (ivector_ps ivec_ps) σ (ivector_sa (ivector_const n σ)) σ σ
                      ivector_hd
                      ivector_tl
                      (fun x => x)
-                     (fun x => ivector_nth idx2 H0 x)
-                     H
+                     (fun x => ivector_nth idx2 (lt_S_n idx2 n pf2) x)
                   ); intros.
-         revert H2.
+       cut_to H0.
+       - revert H0.
          now apply independent_rvs_proper.
+       - unfold ivector_hd, ivector_tl.
+         destruct ivec_ps.
+         simpl.
+         apply product_independent_fst_snd.
      }
-     revert H2.
+     revert H0.
      apply independent_rvs_proper; try easy.       
      intro z.
      destruct z.
