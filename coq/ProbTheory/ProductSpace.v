@@ -976,6 +976,54 @@ Section ps_ivector_product.
      now apply ivector_nth_ext.
   Qed.
 
+  Lemma ivector_nth_independent_rv {n} {T} {σ:SigmaAlgebra T} 
+        (ivec_ps : ivector (ProbSpace σ) n) :
+    forall idx1 idx2 pf1 pf2,
+      (idx1 < idx2)%nat ->
+      independent_rvs (ivector_ps ivec_ps)  σ  σ
+                      (fun x => ivector_nth idx1 pf1 x)
+                      (fun x => ivector_nth idx2 pf2 x).
+  Proof.
+    revert ivec_ps.
+    induction n; simpl.
+    - intros.
+      repeat red; intros.
+      unfold rv_preimage; simpl.
+      repeat match_destr; try lra; intuition.
+    - intros [??]?????.
+      destruct idx2; [lia |].
+      destruct idx1.
+      + apply (ivector_nth_independent_rv_0 (n:=S n) (p,i) idx2).
+      + generalize (IHn i idx1 idx2 (lt_S_n idx1 n pf1) (lt_S_n idx2 n pf2) (lt_S_n idx1 idx2 H)).
+        unfold independent_rvs, independent_events; intros HH A B.
+        specialize (HH A B).
+        etransitivity; [| etransitivity; [apply HH |]].
+        * generalize (product_sa_product p (ivector_ps i)
+                                         Ω
+                                         (rv_preimage (fun tl => ivector_nth idx1 (lt_S_n idx1 n pf1) tl) A
+                                                      ∩ rv_preimage (fun tl => ivector_nth idx2 (lt_S_n idx2 n pf2) tl) B)); intros HH2.
+        rewrite ps_one, Rmult_1_l in HH2.
+        rewrite <- HH2.
+        apply ps_proper; intros [??]; simpl.
+        unfold pre_Ω, event_preimage, pre_event_inter; tauto.
+        * { f_equal.
+            - generalize (product_sa_product p (ivector_ps i)
+                                             Ω
+                                             (rv_preimage (fun tl => ivector_nth idx1 (lt_S_n idx1 n pf1) tl) A)); intros HH2.
+              rewrite ps_one, Rmult_1_l in HH2.
+              rewrite <- HH2.
+              apply ps_proper; intros [??]; simpl.
+              unfold pre_Ω, event_preimage, pre_event_inter; tauto.
+            - generalize (product_sa_product p (ivector_ps i)
+                                             Ω
+                                             (rv_preimage (fun tl => ivector_nth idx2 (lt_S_n idx2 n pf2) tl) B)); intros HH2.
+              rewrite ps_one, Rmult_1_l in HH2.
+              rewrite <- HH2.
+              apply ps_proper; intros [??]; simpl.
+              unfold pre_Ω, event_preimage, pre_event_inter; tauto.
+          }
+  Qed.
+   
   Lemma ivector_nth_pullback {n} {T} {σ:SigmaAlgebra T} 
         (ivec_ps : ivector (ProbSpace σ) n) :
      forall idx pf,
