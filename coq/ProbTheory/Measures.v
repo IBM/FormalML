@@ -1756,6 +1756,13 @@ Section omf.
                      pre_event_sub A (pre_union_of_collection an) /\
                        x = outer_λ_of_covers an).
 
+  Global Instance outer_λ_proper : Proper (pre_event_equiv ==> eq) outer_λ.
+  Proof.
+    intros ???.
+    apply Rbar_glb_rw; intros.
+    firstorder.
+  Qed.
+
   Lemma outer_λ_nneg (A:pre_event T) 
     : Rbar_le 0 (outer_λ A).
   Proof.
@@ -3032,6 +3039,14 @@ Section caratheodory_semi.
   Definition semi_μ : pre_event T -> Rbar
     := outer_λ ((premeasure_of_semipremeasure λ)).
 
+  Global Instance semi_μ_proper : Proper (pre_event_equiv ==> eq) semi_μ.
+  Proof.
+    intros ???.
+    unfold semi_μ.
+    apply outer_λ_proper; trivial.
+    eapply premeasure_of_semipremeasure_premeasure; eauto.
+  Qed.
+  
   Instance semi_μ_measurable : is_measure (σ:=semi_σ) semi_μ.
   Proof.
     apply μ_measurable_sa_measure.

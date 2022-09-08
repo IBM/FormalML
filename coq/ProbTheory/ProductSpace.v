@@ -293,6 +293,15 @@ Section measure_product.
     - exact Hyp.
   Qed.
 
+  Instance product_measure_proper : Proper (pre_event_equiv ==> eq) product_measure.
+  Proof.
+    intros ???.
+    unfold product_measure.
+    eapply semi_μ_proper; trivial.
+    - apply measurable_rectangle_pm_semipremeasure.
+    - apply measurable_rectangle_pm_none.
+  Qed.    
+
   Instance product_measure_is_measurable_large :
     is_measure (σ:= semi_σ is_measurable_rectangle_none
                            measurable_rectangle_pm
@@ -668,6 +677,13 @@ Section ps_product.
                                                                   (ps_measure ps2)) Ω (exist _ _ sa)).
     now red; simpl.
   Defined.
+
+  Global Instance product_ps_proper : Proper (pre_event_equiv ==> eq)
+                                                  (product_measure (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _)).
+  Proof.
+    apply product_measure_proper.
+    apply product_measure_Hyp_ps.
+  Qed.    
   
   Theorem product_sa_product (a:event A) (b:event B) :
     ps_P (ProbSpace:=product_ps) (product_sa_event a b) =
@@ -756,7 +772,6 @@ Section ps_product.
     apply product_independent_fst_snd.
   Qed.
 
-
   Lemma product_pullback_fst :
     forall (a : event A),
       ps_P (ProbSpace := ps1) a = 
@@ -777,12 +792,10 @@ Section ps_product.
     replace (ps_P a) with (Rbar.real (Rbar.Finite (ps_P a))) by now simpl.
     f_equal.
     rewrite <- H.
-    f_equal.
-    apply functional_extensionality.
-    intros.
-    destruct x; destruct a.
+    apply product_ps_proper.
+    intros [??]; destruct a; simpl.
     unfold event_preimage, pre_Ω, proj1_sig; simpl.
-    now apply PropExtensionality.propositional_extensionality.
+    tauto.
   Qed.
   
   Lemma product_pullback_snd :
@@ -805,12 +818,10 @@ Section ps_product.
     replace (ps_P b) with (Rbar.real (Rbar.Finite (ps_P b))) by now simpl.
     f_equal.
     rewrite <- H.
-    f_equal.
-    apply functional_extensionality.
-    intros.
-    destruct x; destruct b.
+    apply product_ps_proper.
+    intros [??]; destruct b; simpl.
     unfold event_preimage, pre_Ω, proj1_sig; simpl.
-    now apply PropExtensionality.propositional_extensionality.
+    tauto.
   Qed.
     
 End ps_product.
