@@ -973,9 +973,7 @@ Section ps_ivector_product.
      }
      revert H0.
      apply independent_rvs_proper; try easy.       
-     intro z.
-     destruct z.
-     simpl.
+     intros [?]; simpl.
      now apply ivector_nth_ext.
   Qed.
 
