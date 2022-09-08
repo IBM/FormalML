@@ -948,20 +948,19 @@ Section ps_ivector_product.
      destruct n; try lia.
      assert (RandomVariable (ivector_sa (ivector_const (S n) σ)) σ (fun x : ivector T (S n) => ivector_nth idx2 (lt_S_n idx2 n pf2) (ivector_tl x))).
      {
-       generalize (@compose_rv (ivector T (S n)) (ivector T n) T); intros.
-       specialize (H (ivector_sa (ivector_const (S n) σ)) (ivector_sa (ivector_const n σ)) σ (fun (x : ivector T (S n)) => ivector_tl x) (fun (x : ivector T n)  => ivector_nth idx2 (lt_S_n idx2 n pf2) x)).
+       generalize (compose_rv (dom1 := (ivector_sa (ivector_const (S n) σ)))
+                              (dom2 := (ivector_sa (ivector_const n σ)))
+                              ivector_tl
+                              (fun x => ivector_nth idx2 (lt_S_n idx2 n pf2) x)); intros.
        apply H; typeclasses eauto.
      }
-     assert (independent_rvs (ivector_ps ivec_ps) σ σ
-                             (fun x : ivector T (S n) => ivector_hd x)
-                             (fun x : ivector T (S n) => ivector_nth idx2 _ (ivector_tl x))).
+     assert (independent_rvs (ivector_ps ivec_ps) σ σ ivector_hd
+                             (fun x => ivector_nth idx2 _ (ivector_tl x))).
      {
        generalize (independent_rv_compose 
                      (ivector_ps ivec_ps) σ (ivector_sa (ivector_const n σ)) σ σ
-                     ivector_hd
-                     ivector_tl
-                     (fun x => x)
-                     (fun x => ivector_nth idx2 (lt_S_n idx2 n pf2) x)
+                     ivector_hd ivector_tl
+                     (fun x => x) (fun x => ivector_nth idx2 (lt_S_n idx2 n pf2) x)
                   ); intros.
        cut_to H0.
        - revert H0.
