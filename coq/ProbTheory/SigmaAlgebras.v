@@ -1136,6 +1136,26 @@ Section ivector.
 
 End ivector.
 
+Section infalg.
+
+  Context {Idx:Type}.
+
+  Definition pre_event_set_infinite_product
+             {types:Idx->Type}
+             (v:forall (i:Idx), ((pre_event (types i))->Prop)) : pre_event (forall (i:Idx), types i) -> Prop
+    := fun (e:pre_event (forall (i:Idx), types i)) =>
+         exists (l:list Idx),
+           NoDup l ->
+           exists (sub_e:(forall (i:Idx), pre_event (types i))),
+             Forall (fun i => (v i) (sub_e i)) l /\
+               e === fun x => Forall (fun i => (sub_e i) (x i)) l.
+
+Instance infinite_product_sa {spaces:Idx->sigT SigmaAlgebra} : SigmaAlgebra (forall (i:Idx), projT1 (spaces i))
+  := generated_sa (pre_event_set_infinite_product (fun i => sa_sigma (projT2 (spaces i)))).
+
+End infalg.
+
+
 Definition is_pre_partition_list {T} (l:list (pre_event T)) :=
   ForallOrdPairs pre_event_disjoint l /\ pre_list_union l === pre_Ω.
 
