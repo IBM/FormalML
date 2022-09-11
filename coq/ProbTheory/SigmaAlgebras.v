@@ -458,6 +458,66 @@ Qed.
 Definition product_sa_event {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (a:event sa1) (b:event sa2)
   := exist _ _ (product_sa_sa a b).
 
+Lemma product_section_fst {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂}
+      (E:event (product_sa sa1 sa2)) :
+  forall x, sa_sigma sa2 (fun y => E (x, y)).
+Proof.
+  intros.
+  pose (C := fun (e : pre_event (T₁ * T₂)) => sa_sigma sa2 (fun y => e (x, y))).
+  assert (forall A B,
+             sa_sigma sa1 A /\ sa_sigma sa2 B ->
+             C (fun '(x, y) => A x /\ B y)).
+  {
+    intros ? ? [? ?].
+    unfold C.
+    destruct (classic (A x)).
+    - revert H0.
+      apply sa_proper.
+      intro z.
+      tauto.
+    - generalize sa_none.
+      apply sa_proper.
+      intro z.
+      unfold pre_event_none.
+      tauto.
+  }
+  assert (C pre_event_none).
+  {
+    apply sa_none.
+  }
+  assert (forall (e : pre_event (T₁ * T₂)), C e -> C (pre_event_complement e)).
+  {
+    intros.
+    unfold C, pre_event_complement.
+    now apply sa_complement.
+  }
+  assert (C pre_Ω).
+  {
+    apply sa_all.
+  }
+  assert (forall coll, (forall n, C (coll n)) -> C (pre_union_of_collection coll)).
+  {
+     intros.
+     now apply sa_countable_union.
+  }
+  assert (forall (e : pre_event (T₁ * T₂)), sa_sigma (product_sa sa1 sa2) e -> C e).
+  {
+    intros.
+    unfold product_sa in H0.
+    unfold sa_sigma in H0.
+    admit.
+  }
+  specialize (H4 E).
+  destruct E.
+  specialize (H4 s).
+  now unfold C in H4.
+  Admitted.
+
+Lemma product_section_snd {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (E:event (product_sa sa1 sa2)) :
+  forall y, sa_sigma sa1 (fun x => E (x, y)).
+Proof.
+  Admitted.
+
 (* dependent product *)
 Definition pre_event_set_dep_product {T₁:Type} {T₂:T₁->Type} (s₁ : pre_event T₁ -> Prop) (s₂ : forall x, pre_event (T₂ x) -> Prop) : pre_event (sigT T₂) -> Prop
   := fun (e:pre_event (sigT T₂)) =>
@@ -1423,3 +1483,6 @@ Section filtration.
   Qed.
 
 End filtration.
+
+
+  
