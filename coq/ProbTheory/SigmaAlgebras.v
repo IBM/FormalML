@@ -500,17 +500,48 @@ Proof.
      intros.
      now apply sa_countable_union.
   }
+  assert (forall (e : pre_event (T₁ * T₂)), 
+             (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2) e) -> C e). 
+  {
+    unfold C, pre_event_set_product.
+    intros.
+    destruct H4 as [? [? [? [? ?]]]].
+    destruct (classic (x0 x)).
+    - revert H5.
+      apply sa_proper.
+      intro z.
+      specialize (H6 (x, z)).
+      simpl in H6.
+      tauto.
+    - generalize sa_none.
+      apply sa_proper.
+      intro z.
+      unfold pre_event_none.
+      specialize (H6 (x, z)).
+      simpl in H6.
+      tauto.
+   }
   assert (forall (e : pre_event (T₁ * T₂)), sa_sigma (product_sa sa1 sa2) e -> C e).
   {
     intros.
-    unfold product_sa in H0.
-    unfold sa_sigma in H0.
-    admit.
+    unfold product_sa in H5.
+    apply generated_sa_closure in H5.
+    unfold closure_sigma_algebra in H5.
+    simpl in H5.
+    case_eq H5; intros.
+    - apply H2.
+    - unfold C.
+      unfold pre_event_set_product in H5.
+      admit.
+    - apply H3.
+      intros.
+      admit.
+    - admit.
   }
-  specialize (H4 E).
+  specialize (H5 E).
   destruct E.
-  specialize (H4 s).
-  now unfold C in H4.
+  specialize (H5 s).
+  now unfold C in H5.
   Admitted.
 
 Lemma product_section_snd {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (E:event (product_sa sa1 sa2)) :
