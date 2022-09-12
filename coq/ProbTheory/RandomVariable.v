@@ -916,9 +916,43 @@ Section prod_space.
     intros ?.
     generalize (product_sa_rv f1 f2); intros.
     apply (H (exist _ _ (rvg B))).
-  Qed.  
+  Qed.
+
 
 End prod_space.
+
+  Instance prod_section_fst_rv {Ts1 Ts2 Td} 
+           {dom1 : SigmaAlgebra Ts1} 
+           {dom2 : SigmaAlgebra Ts2} 
+           {cod : SigmaAlgebra Td} 
+           (f : (Ts1 * Ts2) -> Td)
+           {rv : RandomVariable (product_sa dom1 dom2) cod f} :
+    forall (x : Ts1), RandomVariable dom2 cod (fun y => f (x, y)).
+  Proof.
+    unfold RandomVariable, event_preimage.
+    intros.
+    generalize (product_section_fst (sa1 := dom1) (sa2 := dom2) (exist _ _ (rv B)) x).
+    apply sa_proper.
+    intro z.
+    destruct B; now simpl.
+  Qed.
+
+  Instance prod_section_snd_rv {Ts1 Ts2 Td} 
+           {dom1 : SigmaAlgebra Ts1} 
+           {dom2 : SigmaAlgebra Ts2} 
+           {cod : SigmaAlgebra Td} 
+           (f : (Ts1 * Ts2) -> Td)
+           {rv : RandomVariable (product_sa dom1 dom2) cod f} :
+    forall (y : Ts2), RandomVariable dom1 cod (fun x => f (x, y)).
+  Proof.
+    unfold RandomVariable, event_preimage.
+    intros.
+    generalize (product_section_snd (sa1 := dom1) (sa2 := dom2) (exist _ _ (rv B)) y).
+    apply sa_proper.
+    intro z.
+    destruct B; now simpl.
+  Qed.
+
 
 Section pullback_prod_space.
   

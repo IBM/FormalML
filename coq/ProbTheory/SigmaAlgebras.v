@@ -648,7 +648,7 @@ Proof.
   apply pullback_sa_proper; try reflexivity.
 Qed.
 
-Program Instance prod_section_fst {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (x : T₁) : SigmaAlgebra (T₁ * T₂) :=
+Program Instance prod_section_fst_sa {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (x : T₁) : SigmaAlgebra (T₁ * T₂) :=
   {| sa_sigma := fun (e : pre_event (T₁ * T₂)) => sa_sigma sa2 (fun y => e (x, y)) |}.
 Next Obligation.
   now apply sa_countable_union.
@@ -660,7 +660,7 @@ Next Obligation.
   apply sa_all.  
 Qed.
 
-Program Instance prod_section_snd {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (y :  T₂) : SigmaAlgebra (T₁ * T₂) :=
+Program Instance prod_section_snd_sa {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (y :  T₂) : SigmaAlgebra (T₁ * T₂) :=
   {| sa_sigma := fun (e : pre_event (T₁ * T₂)) => sa_sigma sa1 (fun x => e (x, y)) |}.
 Next Obligation.
   now apply sa_countable_union.
@@ -677,7 +677,7 @@ Lemma product_section_fst {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra 
   forall x, sa_sigma sa2 (fun y => E (x, y)).
 Proof.
   intros.
-  pose (C := prod_section_fst x).
+  pose (C := prod_section_fst_sa x).
   assert (forall (e : pre_event (T₁ * T₂)), 
              (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2) e) -> sa_sigma C e). 
   {
@@ -717,7 +717,7 @@ Lemma product_section_snd {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra 
   forall y, sa_sigma sa1 (fun x => E (x, y)).
 Proof.
   intros.
-  pose (C := prod_section_snd (T₁ := T₁) y).
+  pose (C := prod_section_snd_sa (T₁ := T₁) y).
   assert (forall (e : pre_event (T₁ * T₂)), 
              (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2) e) -> sa_sigma C e). 
   {
