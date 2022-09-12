@@ -87,9 +87,9 @@ Section dynkin.
   Lemma lambda_complement_alt_suffices (c:pre_event T -> Prop)
         (lambda_Ω : c pre_Ω)
         (lambda_proper : Proper (pre_event_equiv ==> iff) c)
-        (lambda_complement : forall a b, c a -> c b ->
-                                 pre_event_sub a b ->
-                                 c (pre_event_diff b a))
+        (lambda_diff : forall a b, c a -> c b ->
+                                   pre_event_sub a b ->
+                                   c (pre_event_diff b a))
         (lambda_disjoint_countable_union : forall (an : nat -> pre_event T),
             (forall x, c (an x)) ->
             pre_collection_is_pairwise_disjoint an ->
@@ -97,11 +97,158 @@ Section dynkin.
   Proof.
     constructor; trivial.
     intros.
-    specialize (lambda_complement a pre_Ω).
-    rewrite pre_event_diff_true_l in lambda_complement.
-    apply lambda_complement; trivial.
+    specialize (lambda_diff a pre_Ω).
+    rewrite pre_event_diff_true_l in lambda_diff.
+    apply lambda_diff; trivial.
     apply pre_event_sub_true.
   Qed.
+
+  Lemma pre_collection_increasing_trans (an : nat -> pre_event T) (x : nat) :
+    (forall x, pre_event_sub (an x) (an (S x))) ->
+    forall x0,
+      x0 < S x -> pre_event_sub (an x0) (an x).
+  Proof.
+    intros.
+    pose (h := x - x0).
+    replace x with (x0 + h) by lia.
+    induction h.
+    - now replace (x0 + 0) with x0 by lia.
+    - unfold pre_event_sub in *.
+      intros.
+      specialize (IHh x1 H1).
+      specialize (H (x0 + h) x1 IHh).
+      now replace (x0 + S h) with (S (x0 + h)) by lia.
+  Qed.
+
+  Lemma lambda_union_alt  (c:pre_event T -> Prop) {c_lambda:Lambda_system c}  :
+    forall (an : nat -> pre_event T),
+      (forall x, c (an x)) ->
+      (forall x, pre_event_sub (an x) (an (S x))) ->
+      c (pre_union_of_collection an).
+  Proof.
+    intros.
+    pose (bn := make_pre_collection_disjoint an).
+    generalize (lambda_complement_alt c); intros.
+    destruct c_lambda.
+    specialize (lambda_disjoint_countable_union0 bn).
+    cut_to lambda_disjoint_countable_union0.
+    - revert lambda_disjoint_countable_union0.
+      apply lambda_proper0.
+      apply make_pre_collection_disjoint_union.
+    - induction x.
+      + specialize (H 0).
+        revert H.
+        apply lambda_proper0.
+        apply make_pre_collection_disjoint0.
+      + unfold bn.
+        unfold make_pre_collection_disjoint.
+        specialize (H1 (an x) (an (S x))).
+        cut_to H1; try easy.
+        revert H1.
+        apply lambda_proper0.
+        intro z.
+        assert (pre_event_equiv  (pre_union_of_collection
+                                    (fun y : nat =>
+                                       if Compare_dec.lt_dec y (S x) then an y else pre_event_none))
+                                 (an x)).
+        {
+          intro w.
+          unfold pre_union_of_collection.
+          split; intros.
+          - destruct H1.
+            match_destr_in H1; try easy.
+            revert H1.
+            now apply pre_collection_increasing_trans.
+          - exists x.
+            match_destr.
+            lia.
+        }
+        specialize (H1 z).
+        unfold pre_event_diff.
+        now rewrite H1.
+    - apply make_pre_collection_disjoint_disjoint.
+  Qed.
+
+  Lemma lambda_union_alt_suffices (c:pre_event T -> Prop)
+        (lambda_Ω : c pre_Ω)
+        (lambda_proper : Proper (pre_event_equiv ==> iff) c)
+        (lambda_diff : forall a b, c a -> c b ->
+                                   pre_event_sub a b ->
+                                   c (pre_event_diff b a))
+        (lambda_union_increasing : forall (an : nat -> pre_event T),
+            (forall x, c (an x)) ->
+            (forall x, pre_event_sub (an x) (an (S x))) ->            
+            c (pre_union_of_collection an)) : Lambda_system c.
+  Proof.
+    constructor; trivial.
+    - intros.
+      specialize (lambda_diff a pre_Ω).
+      rewrite pre_event_diff_true_l in lambda_diff.
+      apply lambda_diff; trivial.
+      apply pre_event_sub_true.
+    - intros.
+      pose (bn := fun n => pre_list_union (collection_take an (S n))).
+      specialize (lambda_union_increasing bn).
+      cut_to lambda_union_increasing.
+      + revert lambda_union_increasing.
+        apply lambda_proper.
+        intro z.
+        unfold pre_union_of_collection.
+        split; intros; destruct H1.
+        * exists x.
+          unfold bn.
+          unfold pre_list_union, collection_take.
+          exists (an x).
+          split; trivial.
+          apply in_map_iff.
+          exists x.
+          split; trivial.
+          apply in_seq.
+          lia.
+        * unfold bn in H1.
+          unfold pre_list_union, collection_take in H1.
+          destruct H1 as [? [? ?]].
+          apply in_map_iff in H1.
+          destruct H1 as [? [? ?]].
+          exists x1.
+          now rewrite <- H1 in H2.
+      + induction x.
+        * unfold bn.
+          unfold pre_list_union, collection_take.
+          specialize (H 0%nat).
+          revert H.
+          apply lambda_proper.
+          intro z.
+          split; intros.
+          -- destruct H as [? [? ?]].
+             apply in_map_iff in H.
+             destruct H as [? [? ?]].
+             apply in_seq in H2.
+             assert (x0 = 0%nat) by lia.
+             rewrite H3 in H.
+             now rewrite <- H in H1.
+          -- exists (an 0); split; trivial.
+             apply in_map_iff.
+             exists 0; split; trivial.
+             apply in_seq.
+             lia.
+        * admit.
+      + unfold pre_event_sub, bn.
+        unfold pre_list_union, collection_take.
+        intros.
+        destruct H1 as [? [? ?]].
+        apply in_map_iff in H1.
+        destruct H1 as [? [? ?]].
+        exists x1.
+        split; trivial.
+        rewrite <- H1.
+        apply in_map_iff.
+        exists x2; split; trivial.
+        apply in_seq.
+        apply in_seq in H3.
+        lia.
+     Admitted.
+
 
   Program Instance Pi_Lambda_sa (c:pre_event T -> Prop) (c_pi:Pi_system c) {c_lambda:Lambda_system c}
     : SigmaAlgebra T
