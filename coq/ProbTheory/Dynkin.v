@@ -169,12 +169,15 @@ Section dynkin.
     - apply make_pre_collection_disjoint_disjoint.
   Qed.
 
-  Lemma pre_list_union_take_S (an : nat -> pre_event T) (x : nat):
+  Lemma pre_list_union_take_Sn (an : nat -> pre_event T) (x : nat):
     pre_event_equiv
       (pre_list_union (collection_take an (S x)))
       (pre_event_union (pre_list_union (collection_take an x)) (an x)).
   Proof.
-    Admitted.
+    rewrite collection_take_Sn.
+    rewrite pre_list_union_app.
+    now rewrite pre_list_union_singleton.
+  Qed.
 
   Lemma lambda_union_alt_suffices (c:pre_event T -> Prop) (c_pi:Pi_system c)
         (lambda_Ω : c pre_Ω)
@@ -264,7 +267,7 @@ Section dynkin.
                   (pre_event_union (an (S x)) (bn x))).
         {
           unfold bn.
-          rewrite (pre_list_union_take_S an (S x)).
+          rewrite (pre_list_union_take_Sn an (S x)).
           now rewrite pre_event_union_comm.
         }
         rewrite H3.
