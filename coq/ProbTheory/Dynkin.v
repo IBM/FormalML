@@ -169,6 +169,122 @@ Section dynkin.
     - apply make_pre_collection_disjoint_disjoint.
   Qed.
 
+  Lemma pre_list_union_take_S (an : nat -> pre_event T) (x : nat):
+    pre_event_equiv
+      (pre_list_union (collection_take an (S x)))
+      (pre_event_union (pre_list_union (collection_take an x)) (an x)).
+  Proof.
+    Admitted.
+
+  Lemma lambda_union_alt_suffices (c:pre_event T -> Prop) (c_pi:Pi_system c)
+        (lambda_Ω : c pre_Ω)
+        (lambda_proper : Proper (pre_event_equiv ==> iff) c)
+        (lambda_diff : forall a b, c a -> c b ->
+                                   pre_event_sub a b ->
+                                   c (pre_event_diff b a))
+        (lambda_union_increasing : forall (an : nat -> pre_event T),
+            (forall x, c (an x)) ->
+            (forall x, pre_event_sub (an x) (an (S x))) ->            
+            c (pre_union_of_collection an)) : Lambda_system c.
+  Proof.
+    assert (forall a : pre_event T, c a -> c (pre_event_complement a)).
+    {
+      intros.
+      specialize (lambda_diff a pre_Ω).
+      rewrite pre_event_diff_true_l in lambda_diff.
+      apply lambda_diff; trivial.
+      apply pre_event_sub_true.
+    }
+    constructor; trivial.
+    intros.
+    pose (bn := fun n => pre_list_union (collection_take an (S n))).
+    specialize (lambda_union_increasing bn).
+    cut_to lambda_union_increasing.
+    - revert lambda_union_increasing.
+      apply lambda_proper.
+      intro z.
+      unfold pre_union_of_collection.
+      split; intros; destruct H2.
+      + exists x.
+        unfold bn.
+        unfold pre_list_union, collection_take.
+        exists (an x).
+        split; trivial.
+        apply in_map_iff.
+        exists x.
+        split; trivial.
+        apply in_seq.
+        lia.
+      + unfold bn in H2.
+        unfold pre_list_union, collection_take in H2.
+        destruct H2 as [? [? ?]].
+        apply in_map_iff in H2.
+        destruct H2 as [? [? ?]].
+        exists x1.
+        now rewrite <- H2 in H3.
+    - induction x.
+      + unfold bn.
+        unfold pre_list_union, collection_take.
+        specialize (H0 0%nat).
+        revert H0.
+        apply lambda_proper.
+        intro z.
+        split; intros.
+        * destruct H0 as [? [? ?]].
+          apply in_map_iff in H0.
+          destruct H0 as [? [? ?]].
+          apply in_seq in H3.
+          assert (x0 = 0%nat) by lia.
+          rewrite H4 in H0.
+          now rewrite <- H0 in H2.
+        * exists (an 0); split; trivial.
+          apply in_map_iff.
+          exists 0; split; trivial.
+          apply in_seq.
+          lia.
+      + assert (forall a b : pre_event T,
+                   c a -> c b -> c (pre_event_union a b)).
+        {
+          intros.
+          assert (pre_event_equiv
+                    (pre_event_union a b)
+                    (pre_event_complement (pre_event_inter (pre_event_complement a)
+                                                           (pre_event_complement b)))).
+          {
+            intro z.
+            unfold pre_event_union, pre_event_complement, pre_event_inter; simpl.
+            tauto.
+          }
+          rewrite H4.
+          apply H.
+          apply c_pi; now apply H.
+        }
+        assert (pre_event_equiv
+                  (bn (S x))
+                  (pre_event_union (an (S x)) (bn x))).
+        {
+          unfold bn.
+          rewrite (pre_list_union_take_S an (S x)).
+          now rewrite pre_event_union_comm.
+        }
+        rewrite H3.
+        now apply H2.
+    - unfold pre_event_sub, bn.
+      unfold pre_list_union, collection_take.
+      intros.
+      destruct H2 as [? [? ?]].
+      apply in_map_iff in H2.
+      destruct H2 as [? [? ?]].
+      exists x1.
+      split; trivial.
+      rewrite <- H2.
+      apply in_map_iff.
+      exists x2; split; trivial.
+      apply in_seq.
+      apply in_seq in H4.
+      lia.
+     Qed.
+
   Program Instance Pi_Lambda_sa (c:pre_event T -> Prop) (c_pi:Pi_system c) {c_lambda:Lambda_system c}
     : SigmaAlgebra T
     := {|
