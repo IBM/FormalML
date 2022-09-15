@@ -179,7 +179,7 @@ Section dynkin.
     now rewrite pre_list_union_singleton.
   Qed.
 
-  Lemma lambda_union_alt_suffices (c:pre_event T -> Prop) (c_pi:Pi_system c)
+  Lemma lambda_union_alt_suffices (c:pre_event T -> Prop) 
         (lambda_Ω : c pre_Ω)
         (lambda_proper : Proper (pre_event_equiv ==> iff) c)
         (lambda_diff : forall a b, c a -> c b ->
@@ -245,24 +245,7 @@ Section dynkin.
           exists 0; split; trivial.
           apply in_seq.
           lia.
-      + assert (forall a b : pre_event T,
-                   c a -> c b -> c (pre_event_union a b)).
-        {
-          intros.
-          assert (pre_event_equiv
-                    (pre_event_union a b)
-                    (pre_event_complement (pre_event_inter (pre_event_complement a)
-                                                           (pre_event_complement b)))).
-          {
-            intro z.
-            unfold pre_event_union, pre_event_complement, pre_event_inter; simpl.
-            tauto.
-          }
-          rewrite H4.
-          apply H.
-          apply c_pi; now apply H.
-        }
-        assert (pre_event_equiv
+      + assert (pre_event_equiv
                   (bn (S x))
                   (pre_event_union (an (S x)) (bn x))).
         {
@@ -270,8 +253,33 @@ Section dynkin.
           rewrite (pre_list_union_take_Sn an (S x)).
           now rewrite pre_event_union_comm.
         }
+        assert (pre_event_equiv
+                  (bn (S x))
+                  (pre_event_complement
+                     (pre_event_diff (pre_event_complement (an (S x)))
+                                     (bn x)))).
+        {
+          rewrite H2.
+          intro z.
+          unfold pre_event_union, pre_event_diff, pre_event_complement; simpl.
+          tauto.          
+        }
         rewrite H3.
-        now apply H2.
+        apply H.
+        apply lambda_diff; trivial.
+        * now apply H.
+        * unfold pre_event_sub, pre_event_complement.
+          intros.
+          unfold bn, pre_list_union, collection_take in H4.
+          destruct H4 as [? [? ?]].
+          apply in_map_iff in H4.
+          destruct H4 as [? [? ?]].
+          rewrite <- H4 in H5.
+          apply in_seq in H6.
+          specialize (H1 x2 (S x)).
+          cut_to H1; try lia.
+          specialize (H1 x0).
+          tauto.
     - unfold pre_event_sub, bn.
       unfold pre_list_union, collection_take.
       intros.
