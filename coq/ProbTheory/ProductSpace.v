@@ -823,7 +823,428 @@ Section ps_product.
     unfold event_preimage, pre_Ω, proj1_sig; simpl.
     tauto.
   Qed.
+
+  Lemma product_ps_section_measurable_fst (E:event (product_sa A B)) :
+    RandomVariable A borel_sa 
+                   (fun x => ps_P (exist _ _ (product_section_fst E x))).
+  Proof.
+    pose (F := (fun (e : event (product_sa A B)) =>
+                  RandomVariable A borel_sa 
+                                 (fun x => ps_P (exist _ _ (product_section_fst e x))))).
+    assert (forall (a : event A) (b : event B),
+               F (exist _ (fun '(x,y) => a x /\ b y) (product_sa_sa a b))).
+    {
+      intros.
+      unfold F.
+      simpl.
+      assert (RandomVariable A borel_sa
+                             (fun x => (ps_P b) * (EventIndicator (classic_dec a) x))) by typeclasses eauto.
+      revert H.
+      apply RandomVariable_proper; try easy.
+      intro x.
+      unfold EventIndicator.
+      match_destr.
+      - rewrite Rmult_1_r.
+        apply ps_proper.
+        intro y.
+        simpl.
+        tauto.
+      - rewrite Rmult_0_r.
+        generalize (ps_none ps2); intros.
+        replace R0 with 0 in H by lra.
+        rewrite <- H.
+        apply ps_proper.
+        intro y.
+        simpl.
+        unfold pre_event_none.
+        tauto.
+    }
+    assert (F Ω).
+    {
+      unfold F.
+      specialize (H Ω Ω).
+      unfold F in H.
+      revert H.
+      apply RandomVariable_proper; try easy.
+      intro x.
+      apply ps_proper.
+      intro y.
+      simpl.
+      unfold pre_Ω.
+      tauto.
+    }
+    assert (forall (a1 a2 : event A) (b1 b2 : event B),
+               pre_event_equiv
+                 (pre_event_inter (fun '(x,y) => a1 x /\ b1 y)
+                                  (fun '(x,y) => a2 x /\ b2 y))
+                 (fun '(x, y) =>
+                    ((pre_event_inter a1 a2) x) /\
+                    ((pre_event_inter b1 b2) y))).
+    {
+      intros.
+      intro z.
+      unfold pre_event_inter.
+      destruct z; simpl.
+      tauto.
+    }
+    assert (forall (e f : event (product_sa A B)),
+               event_sub e f ->
+               F e -> F f ->
+               F (event_diff f e)).
+    {
+      intros.
+      unfold F in *.
+      assert (RandomVariable 
+                A borel_sa
+                (rvminus 
+                   (fun x =>
+                      (ps_P
+                         (exist (sa_sigma B) (fun y : Y => f (x, y)) (product_section_fst f x))))
+                   (fun x => (ps_P
+                      (exist (sa_sigma B) (fun y : Y => e (x, y)) (product_section_fst e x)))))) by typeclasses eauto.
+      revert H5.
+      apply RandomVariable_proper; try easy.
+      intro x.
+      rv_unfold.
+      simpl.
+      generalize (ps_diff_sub 
+                    ps2 
+                    (exist (sa_sigma B) (fun y : Y => f (x, y)) (product_section_fst f x))
+                    (exist (sa_sigma B) (fun y : Y => e (x, y)) (product_section_fst e x))); intros.
+      cut_to H5.
+      - etransitivity; [etransitivity |]; [| apply H5 |]; try lra.
+        apply ps_proper.
+        intro y.
+        simpl.
+        unfold pre_event_diff.
+        tauto.
+      - intro y.
+        simpl.
+        apply H2.
+    }
+    assert (forall (an : nat -> event (product_sa A B)),
+               (forall x, F (an x)) ->
+               (forall x, event_sub (an x) (an (S x))) ->            
+               F (union_of_collection an)).
+    {
+      intros.
+      unfold F.
+      assert (RandomVariable A borel_sa
+                             (rvlim
+                                (fun n x =>
+                                   ps_P 
+                                     (exist _ (fun y => an n (x,y)) 
+                                            (product_section_fst (an n) x))))).
+      {
+        apply rvlim_rv; try easy.
+        intros.
+        apply ex_finite_lim_seq_incr with (M := 1).
+        - intros.
+          apply ps_sub.
+          intros y.
+          simpl.
+          apply H4.
+        - intros.
+          apply ps_le1.
+      }
+      revert H5.
+      apply RandomVariable_proper; try easy.
+      intro x.
+      unfold rvlim.
+      generalize (is_lim_ascending 
+                    ps2
+                    (fun n : nat =>
+                       (exist (sa_sigma B) (fun y : Y => an n (x, y))
+                              (product_section_fst (an n) x)))); intros.
+      cut_to H5.
+      - apply is_lim_seq_unique in H5.
+        assert (is_finite
+                  (Lim_seq
+         (fun n : nat =>
+          ps_P
+            (exist (sa_sigma B) (fun y : Y => an n (x, y))
+               (product_section_fst (an n) x))))).
+        {
+          now rewrite H5.
+        }
+        rewrite <- H6 in H5.
+        apply Rbar_finite_eq in H5.
+        unfold pre_event in H5.
+        rewrite H5.
+        apply ps_proper.
+        intro y.
+        simpl.
+        tauto.
+      - unfold ascending_collection.
+        intros.
+        intro y.
+        simpl.
+        apply H4.
+    }
+    pose (C := (fun (e : pre_event (X * Y)) =>
+                  exists (a : event A) (b : event B),
+                      e === (fun '(x, y) => a x /\ b y))).
+    assert (Pi_system C).
+    {
+      unfold Pi_system, C.
+      intros.
+      destruct H4 as [? [? ?]].
+      destruct H5 as [? [? ?]].      
+      exists (event_inter x x1).
+      exists (event_inter x0 x2).
+      rewrite <- (H1 x x1 x0 x2).
+      rewrite H4, H5.
+      intro z.
+      unfold pre_event_inter.
+      tauto.
+    }
+    pose (CC := (pre_event_set_product (sa_sigma A) (sa_sigma B))).
+    assert (Pi_system CC).
+    {
+      unfold Pi_system, CC.
+      intros.
+      destruct H5 as [? [? [? [? ?]]]].
+      destruct H6 as [? [? [? [? ?]]]].
+      unfold pre_event_set_product.
+      exists (pre_event_inter x x1).
+      exists (pre_event_inter x0 x2).
+      split; try apply sa_inter; try easy.
+      split; try apply sa_inter; try easy.
+      rewrite H8, H10.
+      unfold pre_event_inter.
+      intro z; destruct z; simpl.
+      tauto.
+    }
+    pose (FF := fun (e : pre_event (X * Y)) =>
+                  exists (pf:sa_sigma (product_sa A B) e),
+                  F (exist _ e pf)).
+    assert (Lambda_system FF).
+    {
+      apply lambda_union_alt_suffices.
+      - assert  (pf : sa_sigma (product_sa A B) pre_Ω) by apply sa_all.
+        exists pf.
+        revert H0.
+        apply RandomVariable_proper; try easy.
+        intro z.
+        apply ps_proper.
+        now intro y.
+      - intros ???.
+        unfold FF.
+        split; intros.
+        + destruct H7.
+          assert (sa_sigma (product_sa A B) y).
+          {
+            now rewrite <- H6.
+          }
+          exists H8.
+          revert H7.
+          apply RandomVariable_proper; try easy.
+          intro xx.
+          apply ps_proper.
+          intro yy.
+          simpl.
+          now specialize (H6 (xx, yy)).
+        + destruct H7.
+          assert (sa_sigma (product_sa A B) x).
+          {
+            now rewrite H6.
+          }
+          exists H8.
+          revert H7.
+          apply RandomVariable_proper; try easy.
+          intro xx.
+          apply ps_proper.
+          intro yy.
+          simpl.
+          now specialize (H6 (xx, yy)).
+      - unfold FF; intros.
+        destruct H6.
+        destruct H7.
+        exists (sa_diff x0 x).
+        specialize (H2 (exist _ _ x) (exist _ _ x0)).
+        now apply H2.
+      - unfold FF; intros.
+        assert (forall n, sa_sigma (product_sa A B) (an n)).
+        {
+          intros.
+          now destruct (H6 n).
+        }
+        assert (pf : sa_sigma (product_sa A B) (pre_union_of_collection an)).
+        {
+          now apply sa_countable_union.
+        }
+        exists pf.
+        + specialize (H3 (fun n => exist _ _ (H8 n))).
+          cut_to H3; try easy.
+          * revert H3.
+            apply RandomVariable_proper; try easy.
+            intro x.
+            apply ps_proper.
+            intro y.
+            simpl.
+            tauto.
+          * intros.
+            destruct (H6 x).
+            revert H9.
+            apply RandomVariable_proper; try easy.
+            intro xx.
+            now apply ps_proper.
+    }
+    assert (pre_event_equiv FF (sa_sigma (product_sa A B))).
+    {
+      intros ?.
+      split; intros.
+      - now destruct H7.
+      - apply (Dynkin CC FF).
+        + unfold pre_event_sub, CC, FF.
+          intros.
+          unfold pre_event_set_product in H8.
+          destruct H8 as [? [? [? [? ?]]]].
+          specialize (H (exist _ _ H8) (exist _ _ H9)).
+          assert (pf : sa_sigma (product_sa A B) x0).
+          {
+            rewrite H10.
+            generalize (product_sa_sa (exist _ _ H8) (exist _ _ H9)); intros.
+            revert H11.
+            apply sa_proper.
+            intro z; now destruct z.
+          }
+          exists pf.
+          revert H.
+          apply RandomVariable_proper; try easy.
+          intro xx.
+          apply ps_proper.
+          intro y.
+          simpl.
+          specialize (H10 (xx, y)).
+          now simpl in H10.
+        + apply H7.
+    }
+    clear H0 H2 H3.
+    assert (FF E).
+    {
+      apply H7.
+      apply (proj2_sig E).
+    }
+    unfold FF in H0.
+    destruct H0.
+    unfold F in H0.
+    revert H0.
+    apply RandomVariable_proper; try easy.
+    intro xx.
+    apply ps_proper.
+    intro y.
+    now simpl.
+  Qed.
     
+  Lemma product_ps_section_measurable_snd (E:event (product_sa A B)) :
+    RandomVariable B borel_sa 
+                   (fun y => ps_P (exist _ _ (product_section_snd E y))).
+  Proof.
+    pose (FF := fun (e : pre_event (X * Y)) =>
+                  exists (pf: sa_sigma (product_sa A B) e),
+                    RandomVariable B borel_sa 
+                                   (fun y => ps_P (exist _ _ (product_section_snd (exist _ e pf)  y)))).
+    assert (forall (a : event A) (b : event B),
+               FF (fun '(x,y) => a x /\ b y)).
+    {
+      intros.
+      unfold FF.
+      exists (product_sa_sa a b).
+      assert (RandomVariable B borel_sa
+                             (fun y => (ps_P a) * (EventIndicator (classic_dec b) y))) by typeclasses eauto.
+      revert H.
+      apply RandomVariable_proper; try easy.
+      intro x.
+      unfold EventIndicator.
+      match_destr.
+      - rewrite Rmult_1_r.
+        apply ps_proper.
+        intro y.
+        simpl.
+        tauto.
+      - rewrite Rmult_0_r.
+        generalize (ps_none ps1); intros.
+        replace R0 with 0 in H by lra.
+        rewrite <- H.
+        apply ps_proper.
+        intro y.
+        simpl.
+        unfold pre_event_none.
+        tauto.
+    }
+    assert (Lambda_system FF).
+    {
+      apply lambda_union_alt_suffices.
+      - specialize (H Ω Ω).
+        unfold FF in *.
+        destruct H.
+        assert  (pf : sa_sigma (product_sa A B) pre_Ω) by apply sa_all.
+        exists pf.
+        revert H.
+        apply RandomVariable_proper; try easy.
+        intro y.
+        apply ps_proper.
+        intro xx; simpl.
+        unfold pre_Ω; tauto.
+      - intros ???.
+        unfold FF.
+        split; intros; destruct H1.
+        + assert (sa_sigma (product_sa A B) y) by now rewrite <- H0.
+          exists H2.
+          revert H1.
+          apply RandomVariable_proper; try easy.
+          intro yy.
+          apply ps_proper.
+          intro xx.
+          simpl.
+          now specialize (H0 (xx, yy)).
+        + assert (sa_sigma (product_sa A B) x) by now rewrite H0.
+          exists H2.
+          revert H1.
+          apply RandomVariable_proper; try easy.
+          intro yy.
+          apply ps_proper.
+          intro xx.
+          simpl.
+          now specialize (H0 (xx, yy)).
+      - unfold FF; intros.
+        destruct H0.
+        destruct H1.
+        exists (sa_diff x0 x).
+        assert (RandomVariable 
+                  B borel_sa
+                  (rvminus 
+                     (fun y =>
+                        (ps_P
+                           (exist (sa_sigma A) (fun x => b (x, y)) (product_section_snd (exist _ b x0) y))))
+                     (fun y => (ps_P
+                                  (exist (sa_sigma A) (fun x => a (x, y)) (product_section_snd (exist _ a x) y)))))) by typeclasses eauto.
+        revert H3.
+        apply RandomVariable_proper; try easy.
+        intro y.
+        rv_unfold.
+        generalize (ps_diff_sub 
+                    ps1
+                    (exist (sa_sigma A) (fun x => b (x, y)) (product_section_snd (exist _ b x0) y))
+                    (exist (sa_sigma A) (fun x => a (x, y)) (product_section_snd (exist _ a x) y))); intros.
+        cut_to H3.
+        + etransitivity; [etransitivity |]; [| apply H3 |]; try lra.
+          apply ps_proper.
+          intro xx.
+          simpl.
+          unfold pre_event_diff.
+          tauto.
+        + intro xx.
+          simpl.
+          apply H2.
+     - intros.
+       
+
+
+    Admitted.
+
+
 End ps_product.
 
 Section ps_ivector_product.
