@@ -1571,7 +1571,94 @@ Section ps_product.
         * apply Rbar_finite_eq.
           apply ps_proper.
           easy.
-    Qed.      
+    Qed.
+
+    Lemma NonnegExpectation_EventIndicator {Ts : Type} {dom : SigmaAlgebra Ts} {Prts : ProbSpace dom}
+          {P : event dom} (dec : forall x : Ts, {P x} + {~ P x}):
+      NonnegExpectation (EventIndicator dec) = ps_P P.
+    Proof.
+      generalize (Expectation_EventIndicator dec); intros.
+      erewrite Expectation_pos_pofrf in H.
+      now invcs H.
+    Qed.
+
+    Theorem explicit_product_sa_product_fst (a:event A) (b:event B) :
+      NonnegExpectation (fun x => ps_P (exist _ _ (product_section_fst (product_sa_event a b) x))) = 
+      ps_P a * ps_P b.
+    Proof.
+      assert (NonnegativeFunction
+                 (rvscale (ps_P b) (EventIndicator (classic_dec a)))).
+      {
+        intro x.
+        apply Rmult_le_pos.
+        - apply ps_pos.
+        - apply EventIndicator_pos.
+      }
+      replace (Finite (ps_P a * ps_P b)) with (Finite (Rbar_mult (ps_P a) (ps_P b))).
+      - rewrite NonnegExpectation_ext with (nnf2 := H).
+        + erewrite NonnegExpectation_scale'.
+          rewrite NonnegExpectation_EventIndicator.
+          * now rewrite Rbar_mult_comm.
+          * apply ps_pos.
+        + intro x.
+          unfold EventIndicator, rvscale.
+          simpl.
+          destruct (classic_dec a x).
+          * rewrite Rmult_1_r.
+            apply ps_proper.
+            intros y.
+            simpl.
+            tauto.
+          * rewrite Rmult_0_r.
+            generalize (ps_none ps2); intros.
+            replace R0 with 0 in H0 by lra.
+            rewrite <- H0.
+            apply ps_proper.
+            intro y.
+            simpl.
+            unfold pre_event_none.
+            tauto.
+      - now simpl.
+    Qed.
+
+    Theorem explicit_product_sa_product_snd (a:event A) (b:event B) :
+      NonnegExpectation (fun y => ps_P (exist _ _ (product_section_snd (product_sa_event a b) y))) = 
+      ps_P a * ps_P b.
+    Proof.
+      assert (NonnegativeFunction
+                 (rvscale (ps_P a) (EventIndicator (classic_dec b)))).
+      {
+        intro y.
+        apply Rmult_le_pos.
+        - apply ps_pos.
+        - apply EventIndicator_pos.
+      }
+      replace (Finite (ps_P a * ps_P b)) with (Finite (Rbar_mult (ps_P a) (ps_P b))).
+      - rewrite NonnegExpectation_ext with (nnf2 := H).
+        + erewrite NonnegExpectation_scale'.
+          rewrite NonnegExpectation_EventIndicator.
+          * now rewrite Rbar_mult_comm.
+          * apply ps_pos.
+        + intro y.
+          unfold EventIndicator, rvscale.
+          simpl.
+          destruct (classic_dec b y).
+          * rewrite Rmult_1_r.
+            apply ps_proper.
+            intros x.
+            simpl.
+            tauto.
+          * rewrite Rmult_0_r.
+            generalize (ps_none ps1); intros.
+            replace R0 with 0 in H0 by lra.
+            rewrite <- H0.
+            apply ps_proper.
+            intro x.
+            simpl.
+            unfold pre_event_none.
+            tauto.
+      - now simpl.
+    Qed.
 
 End ps_product.
 
