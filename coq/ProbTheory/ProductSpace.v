@@ -1297,6 +1297,281 @@ Section ps_product.
     now simpl.
   Qed.
 
+  Instance nonneg_prod_section_fst (e : event (product_sa A B)) :
+    NonnegativeFunction 
+      (fun x => ps_P (exist _ _ (product_section_fst e x))).
+  Proof.
+    intro x.
+    apply ps_pos.
+  Qed.
+
+  Instance nonneg_prod_section_snd (e : event (product_sa A B)) :
+    NonnegativeFunction 
+      (fun y => ps_P (exist _ _ (product_section_snd e y))).
+  Proof.
+    intro y.
+    apply ps_pos.
+  Qed.
+
+  Lemma explicit_product_measure_fst :
+        forall (e : event (product_sa A B)),         
+          is_measure (fun (e : event (product_sa A B)) =>
+                        NonnegExpectation (fun x => ps_P (exist _ _ (product_section_fst e x)))).
+  Proof.
+    intros.
+    constructor.
+    - intros ???.
+      apply NonnegExpectation_ext.
+      intro xx.
+      apply ps_proper.
+      intro yy.
+      simpl.
+      specialize (H (xx, yy)).
+      destruct x; destruct y.
+      now simpl in *.
+    - assert (0 <= 0) by lra.
+      assert (NonnegativeFunction (fun (x : X) => 0)) by (intro x; apply H).
+      rewrite NonnegExpectation_ext with (nnf2 := H0).
+      + apply NonnegExpectation_const0.
+      + intro x.
+        replace (0) with (ps_P (ProbSpace := ps2) ∅) by apply ps_none.
+        apply ps_proper.
+        intro y.
+        now simpl.
+    - intros.
+      apply NonnegExpectation_pos.
+    - intros.
+      assert (forall (x:X),
+                 collection_is_pairwise_disjoint
+                   (fun n => exist _ _ (product_section_fst (B0 n) x))).
+      {
+       unfold collection_is_pairwise_disjoint.
+       intros.
+       specialize (H n1 n2 H0).
+       unfold event_disjoint, pre_event_disjoint, proj1_sig in *.
+       intros.
+       specialize (H (x, x0)).
+       match_destr_in H.
+       match_destr_in H.
+       simpl in H1.
+       simpl in H2.
+       now specialize (H H1 H2).
+      }
+      assert (forall (x:X),
+                  sum_of_probs_equals ps_P (fun n => exist _ _ (product_section_fst (B0 n) x))
+                                      (ps_P (union_of_collection (fun n => exist _ _ (product_section_fst (B0 n) x))))).
+      {
+        intros.
+        destruct ps2.
+        now apply ps_countable_disjoint_union.
+      }
+      unfold sum_of_probs_equals in H1.
+      rewrite NNExpectation_Rbar_NNExpectation.
+      generalize (Rbar_series_expectation ps1); intros.
+      specialize (H2 (fun n x =>
+                        ps_P
+                          (exist (sa_sigma B) (fun y : Y => B0 n (x, y))
+                                 (product_section_fst (B0 n) x)))).
+      assert (forall n,
+                 RandomVariable 
+                   A Rbar_borel_sa
+                   (fun x => 
+                      ps_P
+                        (exist (sa_sigma B) (fun y : Y => B0 n (x, y))
+                               (product_section_fst (B0 n) x)))).
+      {
+        intros.
+        generalize (product_ps_section_measurable_fst (B0 n)); intros.
+        now apply Real_Rbar_rv in H3.
+      }
+      assert (forall n,
+                 (Rbar_NonnegativeFunction
+                   (fun x => 
+                      ps_P
+                        (exist (sa_sigma B) (fun y : Y => B0 n (x, y))
+                               (product_section_fst (B0 n) x))))).
+      {
+        intros.
+        intro x.
+        apply ps_pos.
+      }
+      assert (Xlim_pos : Rbar_NonnegativeFunction
+                      (fun omega : X =>
+                       ELim_seq
+                         (sum_Rbar_n
+                            (fun n : nat =>
+                             (fun (n0 : nat) (x : X) =>
+                              Finite
+                                (ps_P
+                                   (exist (sa_sigma B)
+                                      (fun y : Y => B0 n0 (x, y))
+                                      (product_section_fst (B0 n0) x)))) n omega)))).
+      {
+        intros x.
+        apply ELim_seq_nneg.
+        intros.
+        apply sum_Rbar_n_nneg_nneg.
+        intros.
+        apply ps_pos.
+      }
+      specialize (H2 H3 H4 Xlim_pos).
+      symmetry.
+      etransitivity; [etransitivity |]; [| apply H2 |].
+      + apply ELim_seq_ext.
+        intros.
+        apply sum_Rbar_n_proper; trivial.
+        red; intros.
+        now rewrite NNExpectation_Rbar_NNExpectation.
+      + apply Rbar_NonnegExpectation_ext.
+        intro x.
+        specialize (H1 x).
+        clear Xlim_pos H2 H3 H4.
+        rewrite <- infinite_sum_infinite_sum' in H1.        
+        rewrite <- infinite_sum_is_lim_seq in H1.
+        rewrite <- ELim_seq_incr_1.
+        apply is_lim_seq_unique in H1.
+        rewrite <- Elim_seq_fin in H1.
+        etransitivity; [etransitivity |]; [| apply H1 |].        
+        * apply ELim_seq_ext.
+          intros.
+          rewrite <- sum_n_Reals.
+          rewrite <- sum_Rbar_n_finite_sum_n.
+          apply sum_Rbar_n_proper; trivial.
+          now red; intros.
+        * apply Rbar_finite_eq.
+          apply ps_proper.
+          easy.
+    Qed.
+         
+  Lemma explicit_product_measure_snd :
+        forall (e : event (product_sa A B)),         
+          is_measure (fun (e : event (product_sa A B)) =>
+                        NonnegExpectation (fun y => ps_P (exist _ _ (product_section_snd e y)))).
+    Proof.
+    intros.
+    constructor.
+    - intros ???.
+      apply NonnegExpectation_ext.
+      intro yy.
+      apply ps_proper.
+      intro xx.
+      simpl.
+      specialize (H (xx, yy)).
+      destruct x; destruct y.
+      now simpl in *.
+    - assert (0 <= 0) by lra.
+      assert (NonnegativeFunction (fun (y : Y) => 0)) by (intro y; apply H).
+      rewrite NonnegExpectation_ext with (nnf2 := H0).
+      + apply NonnegExpectation_const0.
+      + intro y.
+        replace (0) with (ps_P (ProbSpace := ps1) ∅) by apply ps_none.
+        apply ps_proper.
+        intro x.
+        now simpl.
+    - intros.
+      apply NonnegExpectation_pos.
+    - intros.
+      assert (forall (y:Y),
+                 collection_is_pairwise_disjoint
+                   (fun n => exist _ _ (product_section_snd (B0 n) y))).
+      {
+       unfold collection_is_pairwise_disjoint.
+       intros.
+       specialize (H n1 n2 H0).
+       unfold event_disjoint, pre_event_disjoint, proj1_sig in *.
+       intros.
+       specialize (H (x, y)).
+       match_destr_in H.
+       match_destr_in H.
+       simpl in H1.
+       simpl in H2.
+       now specialize (H H1 H2).
+      }
+      assert (forall (y:Y),
+                  sum_of_probs_equals ps_P (fun n => exist _ _ (product_section_snd (B0 n) y))
+                                      (ps_P (union_of_collection (fun n => exist _ _ (product_section_snd (B0 n) y))))).
+      {
+        intros.
+        destruct ps1.
+        now apply ps_countable_disjoint_union.
+      }
+      unfold sum_of_probs_equals in H1.
+      rewrite NNExpectation_Rbar_NNExpectation.
+      generalize (Rbar_series_expectation ps2); intros.
+      specialize (H2 (fun n y =>
+                        ps_P
+                          (exist (sa_sigma A) (fun x : X => B0 n (x, y))
+                                 (product_section_snd (B0 n) y)))).
+      assert (forall n,
+                 RandomVariable 
+                   B Rbar_borel_sa
+                   (fun y => 
+                      ps_P
+                        (exist (sa_sigma A) (fun x : X => B0 n (x, y))
+                               (product_section_snd (B0 n) y)))).
+      {
+        intros.
+        generalize (product_ps_section_measurable_snd (B0 n)); intros.
+        now apply Real_Rbar_rv in H3.
+      }
+      assert (forall n,
+                 (Rbar_NonnegativeFunction
+                   (fun y => 
+                      ps_P
+                        (exist (sa_sigma A) (fun x : X => B0 n (x, y))
+                               (product_section_snd (B0 n) y))))).
+      {
+        intros.
+        intro y.
+        apply ps_pos.
+      }
+      assert (Xlim_pos : Rbar_NonnegativeFunction
+                      (fun omega : Y =>
+                       ELim_seq
+                         (sum_Rbar_n
+                            (fun n : nat =>
+                             (fun (n0 : nat) (y : Y) =>
+                              Finite
+                                (ps_P
+                                   (exist (sa_sigma A)
+                                      (fun x : X => B0 n0 (x, y))
+                                      (product_section_snd (B0 n0) y)))) n omega)))).
+      {
+        intros x.
+        apply ELim_seq_nneg.
+        intros.
+        apply sum_Rbar_n_nneg_nneg.
+        intros.
+        apply ps_pos.
+      }
+      specialize (H2 H3 H4 Xlim_pos).
+      symmetry.
+      etransitivity; [etransitivity |]; [| apply H2 |].
+      + apply ELim_seq_ext.
+        intros.
+        apply sum_Rbar_n_proper; trivial.
+        red; intros.
+        now rewrite NNExpectation_Rbar_NNExpectation.
+      + apply Rbar_NonnegExpectation_ext.
+        intro y.
+        specialize (H1 y).
+        clear Xlim_pos H2 H3 H4.
+        rewrite <- infinite_sum_infinite_sum' in H1.        
+        rewrite <- infinite_sum_is_lim_seq in H1.
+        rewrite <- ELim_seq_incr_1.
+        apply is_lim_seq_unique in H1.
+        rewrite <- Elim_seq_fin in H1.
+        etransitivity; [etransitivity |]; [| apply H1 |].        
+        * apply ELim_seq_ext.
+          intros.
+          rewrite <- sum_n_Reals.
+          rewrite <- sum_Rbar_n_finite_sum_n.
+          apply sum_Rbar_n_proper; trivial.
+          now red; intros.
+        * apply Rbar_finite_eq.
+          apply ps_proper.
+          easy.
+    Qed.      
 
 End ps_product.
 
