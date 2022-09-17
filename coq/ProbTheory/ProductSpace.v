@@ -1314,11 +1314,9 @@ Section ps_product.
   Qed.
 
   Lemma explicit_product_measure_fst :
-        forall (e : event (product_sa A B)),         
-          is_measure (fun (e : event (product_sa A B)) =>
-                        NonnegExpectation (fun x => ps_P (exist _ _ (product_section_fst e x)))).
+    is_measure (fun (e : event (product_sa A B)) =>
+                  NonnegExpectation (fun x => ps_P (exist _ _ (product_section_fst e x)))).
   Proof.
-    intros.
     constructor.
     - intros ???.
       apply NonnegExpectation_ext.
@@ -1444,11 +1442,9 @@ Section ps_product.
     Qed.
          
   Lemma explicit_product_measure_snd :
-        forall (e : event (product_sa A B)),         
-          is_measure (fun (e : event (product_sa A B)) =>
-                        NonnegExpectation (fun y => ps_P (exist _ _ (product_section_snd e y)))).
+    is_measure (fun (e : event (product_sa A B)) =>
+                  NonnegExpectation (fun y => ps_P (exist _ _ (product_section_snd e y)))).
     Proof.
-    intros.
     constructor.
     - intros ???.
       apply NonnegExpectation_ext.
@@ -1659,6 +1655,49 @@ Section ps_product.
             tauto.
       - now simpl.
     Qed.
+
+   Lemma explicit_product_1 :
+     (fun e : event (product_sa A B) =>
+        NonnegExpectation
+          (fun x : X =>
+           ps_P
+             (exist (sa_sigma B) (fun y : Y => e (x, y))
+                    (product_section_fst e x)))) Ω = R1 .
+     Proof.
+       simpl.
+       generalize (explicit_product_sa_product_fst Ω Ω); intros.
+       do 2 rewrite ps_all in H.
+       rewrite Rmult_1_r in H.
+       rewrite <- H.
+       apply NonnegExpectation_ext.
+       intro x.
+       apply ps_proper.
+       intro y.
+       simpl.
+       tauto.       
+    Qed.
+
+
+  Theorem explicit_product_product_pse :
+    forall e, 
+      ps_P (ProbSpace:=product_ps) e =
+      NonnegExpectation (fun x => ps_P (exist _ _ (product_section_fst e x))).
+  Proof.
+    intros.
+    generalize explicit_product_measure_fst; intros.
+    generalize (measure_all_one_ps 
+                  (T := X * Y) 
+                  (σ := product_sa A B) _
+                  explicit_product_1); intros.
+    rewrite <- (product_ps_unique X0).
+    - destruct X0.
+      simpl.
+      admit.
+    - intros.
+      generalize (explicit_product_sa_product_fst a b); intros.
+      
+      admit.
+    Admitted.
 
 End ps_product.
 
