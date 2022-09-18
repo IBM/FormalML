@@ -1656,7 +1656,7 @@ Section ps_product.
       - now simpl.
     Qed.
 
-   Lemma explicit_product_1 :
+   Lemma explicit_product_1_fst :
      (fun e : event (product_sa A B) =>
         NonnegExpectation
           (fun x : X =>
@@ -1677,8 +1677,28 @@ Section ps_product.
        tauto.       
     Qed.
 
+   Lemma explicit_product_1_snd :
+     (fun e : event (product_sa A B) =>
+        NonnegExpectation
+          (fun y: Y =>
+           ps_P
+             (exist (sa_sigma A) (fun x : X => e (x, y))
+                    (product_section_snd e y)))) Ω = R1 .
+     Proof.
+       simpl.
+       generalize (explicit_product_sa_product_snd Ω Ω); intros.
+       do 2 rewrite ps_all in H.
+       rewrite Rmult_1_r in H.
+       rewrite <- H.
+       apply NonnegExpectation_ext.
+       intro x.
+       apply ps_proper.
+       intro y.
+       simpl.
+       tauto.       
+    Qed.
 
-  Theorem explicit_product_product_pse :
+  Theorem explicit_product_product_pse_fst :
     forall e, 
       ps_P (ProbSpace:=product_ps) e =
       NonnegExpectation (fun x => ps_P (exist _ _ (product_section_fst e x))).
@@ -1689,9 +1709,27 @@ Section ps_product.
     apply (product_ps_unique (measure_all_one_ps 
                   (T := X * Y) 
                   (σ := product_sa A B) _
-                  explicit_product_1)).
+                  explicit_product_1_fst)).
     intros; simpl.
     generalize (explicit_product_sa_product_fst a b); intros HH.
+    erewrite NonnegExpectation_ext; [now rewrite HH |].
+    reflexivity.
+  Qed.
+
+  Theorem explicit_product_product_pse_snd :
+    forall e, 
+      ps_P (ProbSpace:=product_ps) e =
+      NonnegExpectation (fun y => ps_P (exist _ _ (product_section_snd e y))).
+  Proof.
+    intros.
+    generalize explicit_product_measure_snd; intros.
+    symmetry.
+    apply (product_ps_unique (measure_all_one_ps 
+                  (T := X * Y) 
+                  (σ := product_sa A B) _
+                  explicit_product_1_snd)).
+    intros; simpl.
+    generalize (explicit_product_sa_product_snd a b); intros HH.
     erewrite NonnegExpectation_ext; [now rewrite HH |].
     reflexivity.
   Qed.

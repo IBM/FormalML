@@ -8,7 +8,8 @@ Require Import Classical_Prop.
 Require Import Classical.
 Require Import IndefiniteDescription ClassicalDescription.
 
-Require Import Utils.
+Require Import utils.Utils.
+Require Import PushNeg.
 Require Import NumberIso.
 Require Export Almost SimpleExpectation.
 
@@ -17,7 +18,7 @@ Import ListNotations.
 Set Bullet Behavior "Strict Subproofs".
 
 Section Expectation_sec.
-  
+
   Context 
     {Ts:Type}
     {dom: SigmaAlgebra Ts}
@@ -835,6 +836,62 @@ Section Expectation_sec.
   Proof.
     rewrite <- NonnegExpectation_const0.
     apply NonnegExpectation_le; trivial.
+  Qed.
+
+  Lemma NonnegExpectation_le_val_nneg
+        (rv_X : Ts -> R)
+        {nnf : NonnegativeFunction rv_X}
+        (val : R) :
+    0 <= val ->
+    (forall (omega : Ts), (rv_X omega) <= val) ->
+    Rbar_le (NonnegExpectation rv_X) val.
+  Proof.
+    intros.
+    assert (NonnegativeFunction (const (B := Ts) val)).
+    {
+      now intro x.
+    }
+    replace (Finite val) with (NonnegExpectation (const (B := Ts) val)).
+    - apply NonnegExpectation_le.
+      intro x.
+      now unfold const.
+    - apply (NonnegExpectation_const val H).
+   Qed.
+      
+  Lemma NonnegExpectation_le_val
+        (rv_X : Ts -> R)
+        {nnf : NonnegativeFunction rv_X}
+        (val : R) :
+    inhabited Ts ->
+    (forall (omega : Ts), (rv_X omega) <= val) ->
+    Rbar_le (NonnegExpectation rv_X) val.
+  Proof.
+    intros.
+    destruct (Rle_dec 0 val).
+    - now apply NonnegExpectation_le_val_nneg.
+    - destruct H.
+      generalize (nnf X); intros.
+      specialize (H0 X).
+      lra.
+   Qed.     
+
+  Lemma NonnegExpectation_gt_val_nneg
+        (rv_X : Ts -> R)
+        {nnf : NonnegativeFunction rv_X}
+        (val : R) :
+    0 <= val ->
+    Rbar_gt (NonnegExpectation rv_X) val ->
+    exists (omega : Ts), rv_X omega > val.
+  Proof.
+    intros val_pos.
+    contrapose.
+    intros.
+    apply Rbar_le_not_lt.
+    apply NonnegExpectation_le_val_nneg; trivial.
+    rewrite not_exists in H.
+    intros.
+    specialize (H omega).
+    lra.
   Qed.
 
   Lemma Finite_NonnegExpectation_le 
