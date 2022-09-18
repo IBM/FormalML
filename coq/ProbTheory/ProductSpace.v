@@ -1815,6 +1815,52 @@ Section ps_ivector_product.
       lra.
   Qed.
 
+  Lemma ivector_product_section {n} {T} 
+        (ivsa : ivector (SigmaAlgebra T) (S n))
+        (E:event (ivector_sa ivsa)) :
+    forall x, sa_sigma (ivector_sa (ivector_tl ivsa)) (fun y => E (x, y)).
+  Proof.
+    intros.
+    destruct ivsa. 
+    apply product_section_fst.
+  Qed.
+
+  Instance ivector_ps_section_nneg {n} {T}  {σ:SigmaAlgebra T} 
+           (vps : ivector (ProbSpace σ) (S n)) 
+           (e : event (ivector_sa (ivector_const (S n) σ))) :
+    NonnegativeFunction
+        (fun x => ps_P 
+                    (ProbSpace := ivector_ps (ivector_tl vps))
+                    (exist _ _ (ivector_product_section (ivector_const (S n) σ) e x))).
+  Proof.
+    intro yy.
+    apply ps_pos.
+  Qed.
+  
+  Theorem explicit_ivector_product_pse {n} {T}  {σ:SigmaAlgebra T} 
+          (vps : ivector (ProbSpace σ) (S n)) :
+    forall e, 
+      ps_P (ProbSpace:=ivector_ps vps) e =
+      NonnegExpectation 
+        (Prts := (ivector_hd vps))
+        (fun x => ps_P 
+                    (ProbSpace := ivector_ps (ivector_tl vps))
+                    (exist _ _ (ivector_product_section (ivector_const (S n) σ) e x))).
+  Proof.
+    intros.
+    generalize (explicit_product_product_pse_fst (ivector_hd vps) 
+                                                 (ivector_ps (ivector_tl vps)) e); intros.
+    etransitivity; [etransitivity |]; [| apply H |].        
+    - destruct vps.
+      now simpl.
+    - f_equal.
+      apply NonnegExpectation_ext.
+      intro x.
+      apply ps_proper.
+      intro yy.
+      now simpl.
+   Qed.
+
   Lemma ivector_nth_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
         (idx_lt : (idx < n)%nat) :
         RandomVariable (ivector_sa ivsa) 
