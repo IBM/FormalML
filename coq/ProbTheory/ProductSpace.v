@@ -1685,19 +1685,16 @@ Section ps_product.
   Proof.
     intros.
     generalize explicit_product_measure_fst; intros.
-    generalize (measure_all_one_ps 
+    symmetry.
+    apply (product_ps_unique (measure_all_one_ps 
                   (T := X * Y) 
                   (σ := product_sa A B) _
-                  explicit_product_1); intros.
-    rewrite <- (product_ps_unique X0).
-    - destruct X0.
-      simpl.
-      admit.
-    - intros.
-      generalize (explicit_product_sa_product_fst a b); intros.
-      
-      admit.
-    Admitted.
+                  explicit_product_1)).
+    intros; simpl.
+    generalize (explicit_product_sa_product_fst a b); intros HH.
+    erewrite NonnegExpectation_ext; [now rewrite HH |].
+    reflexivity.
+  Qed.
 
 End ps_product.
 
