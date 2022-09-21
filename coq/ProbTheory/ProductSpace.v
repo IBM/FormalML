@@ -2274,6 +2274,48 @@ Section ps_sequence_product.
   Proof.
   Admitted.
 
+  Lemma decr_le_strong f 
+        (decr:forall (n:nat), f (S n) <= f n) a b :
+    (a <= b)%nat -> f b <= f a.
+  Proof.
+    revert a.
+    induction b; intros.
+    - assert (a = 0%nat) by lia.
+      subst.
+      lra.
+    - apply Nat.le_succ_r in H.
+      destruct H.
+      + apply Rle_trans with (r2 := f b).
+        * apply decr.
+        * now apply IHb.
+      + subst.
+        lra.
+  Qed.
+
+  Lemma Lim_seq_decreasing_le (f : nat -> R) :
+    (forall n, f (S n) <= f n) ->
+    forall n, Rbar_le (Lim_seq f) (f n).
+  Proof.
+    intros.
+    rewrite <- Lim_seq_const.
+    apply Lim_seq_le_loc.
+    exists n.
+    intros.
+    now apply decr_le_strong.
+  Qed.
+
+  Lemma Lim_seq_increasing_le (f : nat -> R) :
+    (forall n, f n <= f (S n)) ->
+    forall n, Rbar_le (f n) (Lim_seq f).
+  Proof.
+    intros.
+    rewrite <- Lim_seq_const.
+    apply Lim_seq_le_loc.
+    exists n.
+    intros.
+    now apply incr_le_strong.
+  Qed.
+
   Lemma decreasing_cyl_nonempty_1  {T} {σ:SigmaAlgebra T}
              (ps : nat -> ProbSpace σ)        
              (es : nat -> (pre_event (nat -> T))) 
@@ -2356,11 +2398,36 @@ Section ps_sequence_product.
         now rewrite (X (es n) (ecyl n)).
       + intros.
         apply ps_P_cylinder_g_rv.
-      + admit.
+      + intros.
+        unfold f1, rvlim.
+        generalize (Lim_seq_le_loc 
+                      (fun n : nat => ps_P_cylinder_g ps (es n) (ecyl n) omega)
+                      (fun _ => 1)); intros.
+        cut_to H5.
+        * rewrite Lim_seq_const in H5.
+          specialize (exfin omega).
+          apply ex_finite_lim_seq_correct in exfin.
+          destruct exfin.
+          rewrite <- H7 in H5.
+          now simpl in H5.
+        * exists 0%nat.
+          intros.
+          apply ps_P_cylinder_g_le_1. 
       + intros.
         apply ps_P_cylinder_g_le_1.
-      + admit.
-      + admit.
+      + intros.
+        unfold f1, rvlim.
+        intros ?.
+        generalize (Lim_seq_decreasing_le (fun n0 : nat => ps_P_cylinder_g ps (es n0) (ecyl n0) a)); intros.
+        cut_to H5; try easy.
+        specialize (H5 n).
+        specialize (exfin a).
+        apply ex_finite_lim_seq_correct in exfin.
+        destruct exfin.
+        rewrite <- H7 in H5.
+        now simpl in H5.
+      + intros ? ?.
+        apply decrx.
       + intros.
         now rewrite <- X.
       + intros.
