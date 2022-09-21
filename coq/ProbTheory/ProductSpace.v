@@ -2161,9 +2161,10 @@ Section ps_sequence_product.
 
   Definition ps_P_cylinder_g {T} {σ:SigmaAlgebra T} 
              (ps : nat -> ProbSpace σ)
-             (ee:{e : (pre_event (nat -> T)) | inf_cylinder e}) : T -> nonnegreal.
+             
+             (e : (pre_event (nat -> T)))
+             (ecyl :inf_cylinder e) : T -> nonnegreal.
   Proof.
-    destruct ee as [e ecyl].
     destruct (ps_P_cylinder_expectation ps e ecyl) as [n [g ?]].
     refine (fun x : T =>
               mknonnegreal (ps_P
@@ -2186,12 +2187,13 @@ Section ps_sequence_product.
               Finite  (ps_P_cylinder ps e ecyl) =
                 NonnegExpectation 
                   (Prts := ps 0%nat)
-                  (ps_P_cylinder_g ps (exist _ e ecyl)).
+                  (ps_P_cylinder_g ps e ecyl).
   Proof.
+    unfold ps_P_cylinder_g.
     simpl.
     destruct (ps_P_cylinder_expectation ps e ecyl) as [n [ee [_ [_ HH]]]].
     now simpl.
-  Qed.    
+  Qed.
 
   Lemma ps_P_cylinder_expectation2 {T} {σ:SigmaAlgebra T} 
              (ps : nat -> ProbSpace σ)
