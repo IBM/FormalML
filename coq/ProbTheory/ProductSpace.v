@@ -2086,6 +2086,10 @@ Section ps_sequence_product.
       | S n => xs n
       end.
 
+  Definition section_seq_event {T} {σ:SigmaAlgebra T} (x : T) 
+             (e : pre_event (nat -> T)) : pre_event (nat -> T) :=
+    fun (w : (nat -> T)) => e (sequence_cons x w).
+
   Definition inf_cylinder_event {T} {n} {σ:SigmaAlgebra T} 
              (e : pre_event (ivector T n)) : (pre_event (nat -> T)) :=
     fun (w : nat -> T) => e (sequence_to_ivector w 0%nat n).
@@ -2097,10 +2101,6 @@ Section ps_sequence_product.
           sa_sigma (ivector_sa (ivector_const (S n) σ)) ee /\ 
           e === inf_cylinder_event ee.
 
-  Definition section_seq_event {T} {σ:SigmaAlgebra T} (x : T) 
-             (e : pre_event (nat -> T)) : pre_event (nat -> T) :=
-    fun (w : (nat -> T)) => e (sequence_cons x w).
-      
   Definition ps_P_cylinder  {T} {σ:SigmaAlgebra T} 
              (ps : nat -> ProbSpace σ)
              (e : (pre_event (nat -> T))) 
@@ -2148,18 +2148,16 @@ Section ps_sequence_product.
                                (ivector_product_section (ivector_const (S n) σ) 
                                                         ee x))).
   Proof.
-    destruct ecyl as [? [? [? ?] ]].
-    exists x.
-    exists (exist _ _ s).
-    split; try easy.
-    split; try easy.
-    
     unfold ps_P_cylinder.
     match_destr; intros.
     match_destr; intros.
     match_destr; intros.
-    (* need that x = x2, x0 === x2, s == s0 *)
-  Admitted.
+    exists x.
+    exists (exist _ x0 s).
+    split; try easy.
+    split; try easy.
+    now rewrite explicit_ivector_product_pse.
+  Qed.
 
   Instance nonneg_fun_nonnegreal {T} (g : T -> nonnegreal) :
     NonnegativeFunction g.
