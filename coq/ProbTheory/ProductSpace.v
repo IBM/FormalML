@@ -12,11 +12,11 @@ Require Import Equivalence.
 Require Import Classical ClassicalFacts ClassicalChoice.
 Require Ensembles.
 
-Require Import Utils DVector.
+Require Import utils.Utils DVector PushNeg.
 Import ListNotations.
 Require Export Event SigmaAlgebras ProbSpace.
 Require Export RandomVariable VectorRandomVariable.
-Require Import ClassicalDescription.
+Require Import IndefiniteDescription ClassicalDescription.
 Require Import Measures.
 Require Import Dynkin.
 
@@ -1571,7 +1571,7 @@ Section ps_product.
 
     Lemma NonnegExpectation_EventIndicator {Ts : Type} {dom : SigmaAlgebra Ts} {Prts : ProbSpace dom}
           {P : event dom} (dec : forall x : Ts, {P x} + {~ P x}):
-      NonnegExpectation (EventIndicator dec) = ps_P P.
+      NonnegExpectation (EventIndicator dec) = Finite (ps_P P).
     Proof.
       generalize (Expectation_EventIndicator dec); intros.
       erewrite Expectation_pos_pofrf in H.
@@ -1700,12 +1700,22 @@ Section ps_product.
 
   Theorem explicit_product_product_pse_fst :
     forall e, 
-      ps_P (ProbSpace:=product_ps) e =
+      Finite (ps_P (ProbSpace:=product_ps) e) =
       NonnegExpectation (fun x => ps_P (exist _ _ (product_section_fst e x))).
   Proof.
     intros.
     generalize explicit_product_measure_fst; intros.
     symmetry.
+    assert (is_finite (NonnegExpectation (fun x => ps_P (exist _ _ (product_section_fst e x))))).
+    {
+      assert (0 <= 1) by lra.
+      apply Finite_NonnegExpectation_le with (nnf2 := nnfconst 1 H0).
+      - intros ?.
+        apply ps_le1.
+      - now rewrite NonnegExpectation_const.
+    }
+    rewrite <- H0.
+    apply Rbar_finite_eq.
     apply (product_ps_unique (measure_all_one_ps 
                   (T := X * Y) 
                   (σ := product_sa A B) _
@@ -1718,12 +1728,22 @@ Section ps_product.
 
   Theorem explicit_product_product_pse_snd :
     forall e, 
-      ps_P (ProbSpace:=product_ps) e =
+      Finite (ps_P (ProbSpace:=product_ps) e) =
       NonnegExpectation (fun y => ps_P (exist _ _ (product_section_snd e y))).
   Proof.
     intros.
     generalize explicit_product_measure_snd; intros.
     symmetry.
+    assert (is_finite (NonnegExpectation (fun y => ps_P (exist _ _ (product_section_snd e y))))).
+    {
+      assert (0 <= 1) by lra.
+      apply Finite_NonnegExpectation_le with (nnf2 := nnfconst 1 H0).
+      - intros ?.
+        apply ps_le1.
+      - now rewrite NonnegExpectation_const.
+    }
+    rewrite <- H0.
+    apply Rbar_finite_eq.
     apply (product_ps_unique (measure_all_one_ps 
                   (T := X * Y) 
                   (σ := product_sa A B) _
@@ -1840,7 +1860,7 @@ Section ps_ivector_product.
   Theorem explicit_ivector_product_pse {n} {T}  {σ:SigmaAlgebra T} 
           (vps : ivector (ProbSpace σ) (S n)) :
     forall e, 
-      ps_P (ProbSpace:=ivector_ps vps) e =
+      Finite (ps_P (ProbSpace:=ivector_ps vps) e) =
       NonnegExpectation 
         (Prts := (ivector_hd vps))
         (fun x => ps_P 
@@ -2051,3 +2071,305 @@ Section ps_ivector_product.
   Qed.
 
 End ps_ivector_product.
+Section ps_sequence_product.
+  
+  Fixpoint sequence_to_ivector {T} (x : nat -> T) j h : ivector T h
+    := match h with
+       | 0 => tt
+       | S n => (x j, sequence_to_ivector x (S j) n)
+       end.
+
+  Definition sequence_cons {T} (x : T) (xs : nat -> T) : nat -> T :=
+    fun n0 =>
+      match n0 with
+      | 0 => x
+      | S n => xs n
+      end.
+
+  Definition inf_cylinder_event {T} {n} {σ:SigmaAlgebra T} 
+             (e : pre_event (ivector T n)) : (pre_event (nat -> T)) :=
+    fun (w : nat -> T) => e (sequence_to_ivector w 0%nat n).
+
+  Definition inf_cylinder {T} {σ:SigmaAlgebra T} : (pre_event (nat -> T)) -> Prop :=
+    fun (e : pre_event (nat -> T)) =>
+      exists (n : nat),
+        exists (ee : pre_event (ivector T (S n))),
+          sa_sigma (ivector_sa (ivector_const (S n) σ)) ee /\ 
+          e === inf_cylinder_event ee.
+
+  Definition section_seq_event {T} {σ:SigmaAlgebra T} (x : T) 
+             (e : pre_event (nat -> T)) : pre_event (nat -> T) :=
+    fun (w : (nat -> T)) => e (sequence_cons x w).
+      
+  Definition ps_P_cylinder  {T} {σ:SigmaAlgebra T} 
+             (ps : nat -> ProbSpace σ)
+             (e : (pre_event (nat -> T))) 
+             (ecyl : inf_cylinder e) : R.
+    unfold inf_cylinder in ecyl.
+    apply constructive_indefinite_description in ecyl; destruct ecyl.
+    apply constructive_indefinite_description in e0; destruct e0 as [? [? ?]].
+    exact (ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat (S x)))
+                (exist _ _ H)).
+  Defined.
+
+  Instance ps_P_cyl_nonneg {T} {σ:SigmaAlgebra T} {n} 
+           (ps : nat -> ProbSpace σ)
+           (ee : event (ivector_sa (ivector_const (S n) σ))) :
+    let vps := sequence_to_ivector ps 0%nat(S n) in
+    NonnegativeFunction
+          (fun x : T =>
+             ps_P (ProbSpace := ivector_ps (ivector_tl vps))
+               (exist
+                  (sa_sigma (ivector_sa (ivector_tl (ivector_const (S n) σ))))
+                  (fun y : ivector T n => ee (x, y))
+                  (ivector_product_section (ivector_const (S n) σ) ee x))).
+  Proof.
+    intros.
+    unfold NonnegativeFunction.
+    intros.
+    apply ps_pos.
+  Qed.
+
+  Lemma ps_P_cylinder_expectation {T} {σ:SigmaAlgebra T} 
+             (ps : nat -> ProbSpace σ)
+             (e : (pre_event (nat -> T))) 
+             (ecyl : inf_cylinder e) : 
+    exists n,
+      let vps := sequence_to_ivector ps 0%nat (S n) in
+      exists (ee : event (ivector_sa (ivector_const (S n) σ))),
+          sa_sigma (ivector_sa (ivector_const (S n) σ)) ee /\ 
+          e === inf_cylinder_event ee /\
+          Finite  (ps_P_cylinder ps e ecyl) =
+          NonnegExpectation 
+            (Prts := (ivector_hd vps))
+            (fun x => ps_P 
+                        (ProbSpace := ivector_ps (ivector_tl vps))
+                        (exist _ _ 
+                               (ivector_product_section (ivector_const (S n) σ) 
+                                                        ee x))).
+  Proof.
+    destruct ecyl as [? [? [? ?] ]].
+    exists x.
+    exists (exist _ _ s).
+    split; try easy.
+    split; try easy.
+    
+    unfold ps_P_cylinder.
+    match_destr; intros.
+    match_destr; intros.
+    match_destr; intros.
+    (* need that x = x2, x0 === x2, s == s0 *)
+  Admitted.
+
+  Instance nonneg_fun_nonnegreal {T} (g : T -> nonnegreal) :
+    NonnegativeFunction g.
+  Proof.
+    intro x.
+    apply cond_nonneg.
+  Qed.
+
+  Lemma ps_P_cylinder_expectation2 {T} {σ:SigmaAlgebra T} 
+             (ps : nat -> ProbSpace σ)
+             (e : (pre_event (nat -> T))) 
+             (ecyl : inf_cylinder e) : 
+    exists (g : T -> nonnegreal),
+      Finite (ps_P_cylinder ps e ecyl) =
+      NonnegExpectation (Prts := ps 0%nat) g /\
+      RandomVariable σ borel_sa g.
+   Proof.
+     generalize (ps_P_cylinder_expectation ps e ecyl); intros.
+     destruct H as [? [? [? [? ?]]]].
+     assert (forall (x1 : T),
+                0 <=
+                ps_P
+                  (ProbSpace := (ivector_ps 
+                                   (ivector_tl (sequence_to_ivector ps 0%nat (S x)))))
+                  (exist (sa_sigma (ivector_sa (ivector_tl (ivector_const (S x) σ))))
+                         (fun y : ivector T x => x0 (x1, y))
+                         (ivector_product_section (ivector_const (S x) σ) x0 x1))).
+     {
+       intros.
+       apply ps_pos.
+     }
+     exists (fun x1 : T => mknonnegreal _ (H2 x1)).
+     split.
+     - apply H1.
+     - simpl.
+       generalize (product_ps_section_measurable_fst (ivector_ps 
+                                                        (ivector_tl (sequence_to_ivector ps 0%nat (S x)))) x0); intros.
+       revert H3.
+       apply RandomVariable_proper; try easy.
+       intro x1.
+       apply ps_proper.
+       now intro xx.
+   Qed.
+
+  Lemma ps_P_cylinder_expectation3 {T} {σ:SigmaAlgebra T} 
+             (ps : nat -> ProbSpace σ)
+             (e : (pre_event (nat -> T))) 
+             (ecyl : inf_cylinder e) : 
+    {g : T -> nonnegreal |
+      Finite (ps_P_cylinder ps e ecyl) =
+      NonnegExpectation (Prts := ps 0%nat) g /\
+      RandomVariable σ borel_sa g}.
+  Proof.
+    generalize (ps_P_cylinder_expectation2 ps e ecyl); intros.
+    now apply constructive_indefinite_description in H.
+  Qed.
+
+  Lemma ps_P_cylinder_expectation4 {T} {σ:SigmaAlgebra T} 
+             (ps : nat -> ProbSpace σ) :
+    exists (g : {e : (pre_event (nat -> T)) | inf_cylinder e} -> T -> nonnegreal),
+    forall (ee : {e : (pre_event (nat -> T)) | inf_cylinder e}),
+      Finite (ps_P_cylinder ps (proj1_sig ee) (proj2_sig ee)) =
+      NonnegExpectation (Prts := ps 0 %nat) (g ee)  /\
+      RandomVariable σ borel_sa (g ee).
+  Proof.
+    exists (fun ee => proj1_sig (ps_P_cylinder_expectation3 ps (proj1_sig ee) (proj2_sig ee))).
+    intros.
+    unfold proj1_sig.
+    match_destr.
+    unfold proj2_sig.
+    match_destr.
+  Qed.
+
+  Lemma ps_P_cylinder_expectation5 {T} {σ:SigmaAlgebra T} 
+             (ps : nat -> ProbSpace σ) :
+    {g : {e : (pre_event (nat -> T)) | inf_cylinder e} -> T -> nonnegreal |
+      forall (ee : {e : (pre_event (nat -> T)) | inf_cylinder e}),
+        Finite (ps_P_cylinder ps (proj1_sig ee) (proj2_sig ee)) =
+        NonnegExpectation (Prts := ps 0 %nat) (g ee) /\
+      RandomVariable σ borel_sa (g ee)}.
+   Proof.
+     generalize (ps_P_cylinder_expectation4 ps); intros.
+    now apply constructive_indefinite_description in H.
+   Qed.     
+
+   Lemma Lim_seq_decreasing_pos (f : nat -> nonnegreal) :
+     (forall n, f (S n) <= f n) ->
+     Rbar_gt (Lim_seq f) 0 ->
+     forall n, f n > 0.
+   Proof.
+     intro decr.
+     contrapose.
+     intros.
+     rewrite not_forall in H.
+     destruct H.
+     generalize (cond_nonneg (f x)); intros.
+     assert (nonneg (f x) = 0) by lra.
+     rewrite <- Lim_seq_incr_n with (N := x).
+     rewrite Lim_seq_ext with (v := fun _ => 0).
+     - rewrite Lim_seq_const.
+       simpl.
+       lra.
+     - intros.
+       assert (f (n + x)%nat <= f x).
+       {
+         induction n.
+         - replace (0 + x)%nat with (x) by lia; lra.
+         - apply Rle_trans with (r2 := f (n + x)%nat); trivial.
+           now replace (S n + x)%nat with (S (n + x)) by lia.
+       }
+       generalize (cond_nonneg (f (n + x)%nat)); intros.
+       lra.
+    Qed.
+
+  Lemma decreasing_cyl_nonempty_1  {T} {σ:SigmaAlgebra T}
+             (ps : nat -> ProbSpace σ)        
+             (es : nat -> (pre_event (nat -> T))) 
+             (ecyl : forall n, inf_cylinder (es n)) :
+    (forall n, pre_event_sub (es (S n)) (es n)) ->
+    Rbar_gt (Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n))) 0 ->
+    exists (x : T),
+    forall n, 
+      Rbar_gt (proj1_sig (ps_P_cylinder_expectation5 ps) (exist _ (es n) (ecyl n)) x) 0.
+  Proof.
+    intros.
+    destruct (ps_P_cylinder_expectation5 ps).
+    pose (f1 := rvlim (fun n x1 => x (exist _ (es n) (ecyl n)) x1)).
+    assert (NonnegativeFunction f1).
+    {
+      apply nnflim.
+      intros.
+      intro z.
+      simpl.
+      apply cond_nonneg.
+    }
+    assert (decrx: forall n omega,
+               x (exist _ (es (S n)) (ecyl (S n))) omega <= x (exist _ (es n) (ecyl n)) omega).
+    {
+      intros.
+      
+      admit.
+    }
+    assert (exfin: forall omega,  ex_finite_lim_seq (fun n : nat => x (exist _ (es n) (ecyl n)) omega)).
+    {
+      intros.
+      apply ex_finite_lim_seq_decr with (M := 0).
+      - intros.
+        apply decrx.
+      - intros.
+        apply cond_nonneg.
+     }
+    assert (RandomVariable σ borel_sa f1).
+    {
+      apply rvlim_rv.
+      - intros.
+        simpl.
+        now destruct (a (exist _ (es n) (ecyl n))) as [? ?].
+      - intros.
+        apply exfin.
+    }
+    generalize (NonnegExpectation_gt_val_nneg (Prts := ps 0%nat) f1 0); intros.
+    cut_to H3; try lra.
+    - destruct H3.
+      exists x0.
+      intros.
+      simpl.
+      apply (Lim_seq_decreasing_pos (fun n =>  x (exist _ (es n) (ecyl n)) x0)).
+      + intros; apply decrx.
+      + simpl in f1.
+        unfold rvlim in f1.
+        unfold f1 in H3.
+        specialize (exfin x0).
+        apply ex_finite_lim_seq_correct in exfin.
+        destruct exfin.
+        rewrite <- H5.
+        simpl.
+        apply H3.
+    - generalize (monotone_convergence (Prts := ps 0%nat) f1  
+                                       (fun (n : nat) (x1 : T) => x (exist inf_cylinder (es n) (ecyl n)) x1) H2); intros.
+      erewrite <- H4.
+      + rewrite Lim_seq_ext with
+            (v := fun n => Finite (ps_P_cylinder ps (es n) (ecyl n))); trivial.
+        intros.
+        destruct (a (exist _ (es n) (ecyl n))).
+        simpl in H5.
+        now rewrite H5.
+      + intros.
+        now destruct (a (exist _ (es n) (ecyl n))).
+      + (* need descending monontone convergence *) admit.
+      + (* need descending monontone convergence *) admit.
+      + intros.
+        destruct (a (exist _ (es n) (ecyl n))).
+        simpl in H5.
+        now rewrite <- H5.
+      + intros.
+        now apply Lim_seq_correct'.
+  Admitted.   
+    
+  
+  Lemma decreasing_cyl_nonempty  {T} {σ:SigmaAlgebra T}
+             (ps : nat -> ProbSpace σ)        
+             (es : nat -> (pre_event (nat -> T))) 
+             (ecyl : forall n, inf_cylinder (es n)) :
+    (forall n, pre_event_sub (es (S n)) (es n)) ->
+    Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n)) > 0 ->
+    exists (z : nat -> T), (pre_inter_of_collection es) z.
+  Proof.
+    intros decr limpos.
+    Admitted.
+
+
+End ps_sequence_product.
+
