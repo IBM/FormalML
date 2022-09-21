@@ -2106,10 +2106,10 @@ Section ps_sequence_product.
              (e : (pre_event (nat -> T))) 
              (ecyl : inf_cylinder e) : R.
     unfold inf_cylinder in ecyl.
-    apply constructive_indefinite_description in ecyl; destruct ecyl.
-    apply constructive_indefinite_description in e0; destruct e0 as [? [? ?]].
-    exact (ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat (S x)))
-                (exist _ _ H)).
+    apply constructive_indefinite_description in ecyl; destruct ecyl as [n HH].
+    apply constructive_indefinite_description in HH; destruct HH as [ee [sa_ee eq_e]].
+    exact (ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat (S n)))
+                (exist _ _ sa_ee)).
   Defined.
 
   Instance ps_P_cyl_nonneg {T} {σ:SigmaAlgebra T} {n} 
@@ -2134,9 +2134,9 @@ Section ps_sequence_product.
              (ps : nat -> ProbSpace σ)
              (e : (pre_event (nat -> T))) 
              (ecyl : inf_cylinder e) : 
-    exists n,
+    { n & 
       let vps := sequence_to_ivector ps 0%nat (S n) in
-      exists (ee : event (ivector_sa (ivector_const (S n) σ))),
+      {ee : event (ivector_sa (ivector_const (S n) σ)) |
           sa_sigma (ivector_sa (ivector_const (S n) σ)) ee /\ 
           e === inf_cylinder_event ee /\
           Finite  (ps_P_cylinder ps e ecyl) =
@@ -2146,7 +2146,7 @@ Section ps_sequence_product.
                         (ProbSpace := ivector_ps (ivector_tl vps))
                         (exist _ _ 
                                (ivector_product_section (ivector_const (S n) σ) 
-                                                        ee x))).
+                                                        ee x)))}}.
   Proof.
     unfold ps_P_cylinder.
     match_destr; intros.
@@ -2157,8 +2157,21 @@ Section ps_sequence_product.
     split; try easy.
     split; try easy.
     now rewrite explicit_ivector_product_pse.
-  Qed.
+  Defined.
 
+  Definition ps_P_cylinder_g {T} {σ:SigmaAlgebra T} 
+             (ps : nat -> ProbSpace σ)
+             (ee:{e : (pre_event (nat -> T)) | inf_cylinder e}) : T -> nonnegreal.
+  Proof.
+    destruct ee as [e ecyl].
+    destruct (ps_P_cylinder_expectation ps e ecyl) as [n [g ?]].
+    refine (fun x : T =>
+              mknonnegreal (ps_P
+               (exist (sa_sigma (ivector_sa (ivector_tl (ivector_const (S n) σ))))
+                      (fun y : ivector T n => g (x, y)) (ivector_product_section (ivector_const (S n) σ) g x))) _).
+    apply (ps_pos (ProbSpace := ivector_ps (ivector_tl (sequence_to_ivector ps 0%nat (S n))))).
+  Defined.
+  
   Instance nonneg_fun_nonnegreal {T} (g : T -> nonnegreal) :
     NonnegativeFunction g.
   Proof.
@@ -2166,17 +2179,31 @@ Section ps_sequence_product.
     apply cond_nonneg.
   Qed.
 
+  Lemma ps_P_cylinder_g_proper {T} {σ:SigmaAlgebra T} 
+             (ps : nat -> ProbSpace σ)
+             (e : (pre_event (nat -> T))) 
+             (ecyl : inf_cylinder e) :
+              Finite  (ps_P_cylinder ps e ecyl) =
+                NonnegExpectation 
+                  (Prts := ps 0%nat)
+                  (ps_P_cylinder_g ps (exist _ e ecyl)).
+  Proof.
+    simpl.
+    destruct (ps_P_cylinder_expectation ps e ecyl) as [n [ee [_ [_ HH]]]].
+    now simpl.
+  Qed.    
+
   Lemma ps_P_cylinder_expectation2 {T} {σ:SigmaAlgebra T} 
              (ps : nat -> ProbSpace σ)
              (e : (pre_event (nat -> T))) 
              (ecyl : inf_cylinder e) : 
-    exists (g : T -> nonnegreal),
+    {g : T -> nonnegreal | 
       Finite (ps_P_cylinder ps e ecyl) =
       NonnegExpectation (Prts := ps 0%nat) g /\
-      RandomVariable σ borel_sa g.
+      RandomVariable σ borel_sa g}.
    Proof.
      generalize (ps_P_cylinder_expectation ps e ecyl); intros.
-     destruct H as [? [? [? [? ?]]]].
+     destruct X as [? [? [? [? ?]]]].
      assert (forall (x1 : T),
                 0 <=
                 ps_P
@@ -2211,8 +2238,7 @@ Section ps_sequence_product.
       NonnegExpectation (Prts := ps 0%nat) g /\
       RandomVariable σ borel_sa g}.
   Proof.
-    generalize (ps_P_cylinder_expectation2 ps e ecyl); intros.
-    now apply constructive_indefinite_description in H.
+    apply (ps_P_cylinder_expectation2 ps e ecyl).
   Qed.
 
   Lemma ps_P_cylinder_expectation4 {T} {σ:SigmaAlgebra T} 
