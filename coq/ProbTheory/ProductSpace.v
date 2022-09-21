@@ -2195,81 +2195,35 @@ Section ps_sequence_product.
     now simpl.
   Qed.
 
-  Lemma ps_P_cylinder_expectation2 {T} {σ:SigmaAlgebra T} 
+  Lemma ps_P_cylinder_g_rv {T} {σ:SigmaAlgebra T} 
              (ps : nat -> ProbSpace σ)
              (e : (pre_event (nat -> T))) 
              (ecyl : inf_cylinder e) : 
-    {g : T -> nonnegreal | 
-      Finite (ps_P_cylinder ps e ecyl) =
-      NonnegExpectation (Prts := ps 0%nat) g /\
-      RandomVariable σ borel_sa g}.
-   Proof.
-     generalize (ps_P_cylinder_expectation ps e ecyl); intros.
-     destruct X as [? [? [? [? ?]]]].
-     assert (forall (x1 : T),
-                0 <=
-                ps_P
-                  (ProbSpace := (ivector_ps 
-                                   (ivector_tl (sequence_to_ivector ps 0%nat (S x)))))
-                  (exist (sa_sigma (ivector_sa (ivector_tl (ivector_const (S x) σ))))
-                         (fun y : ivector T x => x0 (x1, y))
-                         (ivector_product_section (ivector_const (S x) σ) x0 x1))).
-     {
-       intros.
-       apply ps_pos.
-     }
-     exists (fun x1 : T => mknonnegreal _ (H2 x1)).
-     split.
-     - apply H1.
-     - simpl.
-       generalize (product_ps_section_measurable_fst (ivector_ps 
+    RandomVariable σ borel_sa (ps_P_cylinder_g ps e ecyl).
+  Proof.
+    unfold ps_P_cylinder_g.
+    match_destr; match_destr.
+    simpl.
+    generalize (product_ps_section_measurable_fst (ivector_ps 
                                                         (ivector_tl (sequence_to_ivector ps 0%nat (S x)))) x0); intros.
-       revert H3.
-       apply RandomVariable_proper; try easy.
-       intro x1.
-       apply ps_proper.
-       now intro xx.
-   Qed.
+    revert H.
+    apply RandomVariable_proper; try easy.
+    intro x1.
+    apply ps_proper.
+    now intro xx.
+  Qed.
 
-  Lemma ps_P_cylinder_expectation3 {T} {σ:SigmaAlgebra T} 
+  Lemma ps_P_cylinder_g_le_1 {T} {σ:SigmaAlgebra T} 
              (ps : nat -> ProbSpace σ)
              (e : (pre_event (nat -> T))) 
              (ecyl : inf_cylinder e) : 
-    {g : T -> nonnegreal |
-      Finite (ps_P_cylinder ps e ecyl) =
-      NonnegExpectation (Prts := ps 0%nat) g /\
-      RandomVariable σ borel_sa g}.
+    forall x, ps_P_cylinder_g ps e ecyl x <= 1.
   Proof.
-    apply (ps_P_cylinder_expectation2 ps e ecyl).
-  Qed.
-
-  Lemma ps_P_cylinder_expectation4 {T} {σ:SigmaAlgebra T} 
-             (ps : nat -> ProbSpace σ) :
-    exists (g : {e : (pre_event (nat -> T)) | inf_cylinder e} -> T -> nonnegreal),
-    forall (ee : {e : (pre_event (nat -> T)) | inf_cylinder e}),
-      Finite (ps_P_cylinder ps (proj1_sig ee) (proj2_sig ee)) =
-      NonnegExpectation (Prts := ps 0 %nat) (g ee)  /\
-      RandomVariable σ borel_sa (g ee).
-  Proof.
-    exists (fun ee => proj1_sig (ps_P_cylinder_expectation3 ps (proj1_sig ee) (proj2_sig ee))).
     intros.
-    unfold proj1_sig.
-    match_destr.
-    unfold proj2_sig.
-    match_destr.
+    unfold ps_P_cylinder_g.
+    match_destr; match_destr.
+    apply ps_le1.
   Qed.
-
-  Lemma ps_P_cylinder_expectation5 {T} {σ:SigmaAlgebra T} 
-             (ps : nat -> ProbSpace σ) :
-    {g : {e : (pre_event (nat -> T)) | inf_cylinder e} -> T -> nonnegreal |
-      forall (ee : {e : (pre_event (nat -> T)) | inf_cylinder e}),
-        Finite (ps_P_cylinder ps (proj1_sig ee) (proj2_sig ee)) =
-        NonnegExpectation (Prts := ps 0 %nat) (g ee) /\
-      RandomVariable σ borel_sa (g ee)}.
-   Proof.
-     generalize (ps_P_cylinder_expectation4 ps); intros.
-    now apply constructive_indefinite_description in H.
-   Qed.     
 
    Lemma Lim_seq_decreasing_pos (f : nat -> nonnegreal) :
      (forall n, f (S n) <= f n) ->
@@ -2300,6 +2254,26 @@ Section ps_sequence_product.
        lra.
     Qed.
 
+   Lemma monotone_converge_descending_bounded {Ts} {dom : SigmaAlgebra Ts}
+         (Prts : ProbSpace dom)
+        (X : Ts -> R )
+        (Xn : nat -> Ts -> R)
+        (bound : R) 
+        (rvx : RandomVariable dom borel_sa X)
+        (posX: NonnegativeFunction X) 
+        (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
+        (Xn_pos : forall n, NonnegativeFunction (Xn n)) :
+
+    (forall (omega : Ts), X omega <= bound) ->
+    (forall n omega, Xn n omega <= bound) ->
+    (forall (n:nat), rv_le X (Xn n)) ->
+    (forall (n:nat), rv_le (Xn (S n)) (Xn n)) ->
+    (forall (n:nat), is_finite (NonnegExpectation (Xn n))) ->
+    (forall (omega:Ts), is_lim_seq (fun n => Xn n omega) (X omega)) ->
+    Lim_seq (fun n => NonnegExpectation (Xn n)) = (NonnegExpectation X).
+  Proof.
+  Admitted.
+
   Lemma decreasing_cyl_nonempty_1  {T} {σ:SigmaAlgebra T}
              (ps : nat -> ProbSpace σ)        
              (es : nat -> (pre_event (nat -> T))) 
@@ -2308,11 +2282,11 @@ Section ps_sequence_product.
     Rbar_gt (Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n))) 0 ->
     exists (x : T),
     forall n, 
-      Rbar_gt (proj1_sig (ps_P_cylinder_expectation5 ps) (exist _ (es n) (ecyl n)) x) 0.
+      Rbar_gt ((ps_P_cylinder_g ps (es n) (ecyl n)) x) 0.
   Proof.
     intros.
-    destruct (ps_P_cylinder_expectation5 ps).
-    pose (f1 := rvlim (fun n x1 => x (exist _ (es n) (ecyl n)) x1)).
+    generalize (ps_P_cylinder_g_proper ps); intros X.
+    pose (f1 := rvlim (fun n x1 => (ps_P_cylinder_g ps (es n) (ecyl n)) x1)).
     assert (NonnegativeFunction f1).
     {
       apply nnflim.
@@ -2322,13 +2296,20 @@ Section ps_sequence_product.
       apply cond_nonneg.
     }
     assert (decrx: forall n omega,
-               x (exist _ (es (S n)) (ecyl (S n))) omega <= x (exist _ (es n) (ecyl n)) omega).
+             (ps_P_cylinder_g ps (es (S n)) (ecyl (S n))) omega <= 
+             (ps_P_cylinder_g ps (es n) (ecyl n)) omega).
     {
       intros.
+      unfold ps_P_cylinder_g.
+      match_destr; match_destr.
+      match_destr; match_destr.
+      simpl.
       
       admit.
     }
-    assert (exfin: forall omega,  ex_finite_lim_seq (fun n : nat => x (exist _ (es n) (ecyl n)) omega)).
+    assert (exfin: forall omega,  
+               ex_finite_lim_seq (fun n : nat => 
+                                    (ps_P_cylinder_g ps (es n) (ecyl n)) omega)).
     {
       intros.
       apply ex_finite_lim_seq_decr with (M := 0).
@@ -2342,44 +2323,46 @@ Section ps_sequence_product.
       apply rvlim_rv.
       - intros.
         simpl.
-        now destruct (a (exist _ (es n) (ecyl n))) as [? ?].
+        apply ps_P_cylinder_g_rv.
       - intros.
         apply exfin.
     }
     generalize (NonnegExpectation_gt_val_nneg (Prts := ps 0%nat) f1 0); intros.
     cut_to H3; try lra.
     - destruct H3.
-      exists x0.
+      exists x.
       intros.
       simpl.
-      apply (Lim_seq_decreasing_pos (fun n =>  x (exist _ (es n) (ecyl n)) x0)).
+      apply (Lim_seq_decreasing_pos (fun n =>  
+                                       (ps_P_cylinder_g ps (es n) (ecyl n)) x)).
       + intros; apply decrx.
       + simpl in f1.
         unfold rvlim in f1.
         unfold f1 in H3.
-        specialize (exfin x0).
+        specialize (exfin x).
         apply ex_finite_lim_seq_correct in exfin.
         destruct exfin.
         rewrite <- H5.
         simpl.
         apply H3.
-    - generalize (monotone_convergence (Prts := ps 0%nat) f1  
-                                       (fun (n : nat) (x1 : T) => x (exist inf_cylinder (es n) (ecyl n)) x1) H2); intros.
+    - generalize (monotone_converge_descending_bounded 
+                    (ps 0%nat) f1  
+                    (fun (n : nat) (x1 : T) => 
+                       ((ps_P_cylinder_g ps (es n) (ecyl n)) x1)) 1 H2 H1); intros.
       erewrite <- H4.
       + rewrite Lim_seq_ext with
             (v := fun n => Finite (ps_P_cylinder ps (es n) (ecyl n))); trivial.
         intros.
-        destruct (a (exist _ (es n) (ecyl n))).
-        simpl in H5.
-        now rewrite H5.
+        now rewrite (X (es n) (ecyl n)).
       + intros.
-        now destruct (a (exist _ (es n) (ecyl n))).
-      + (* need descending monontone convergence *) admit.
-      + (* need descending monontone convergence *) admit.
+        apply ps_P_cylinder_g_rv.
+      + admit.
       + intros.
-        destruct (a (exist _ (es n) (ecyl n))).
-        simpl in H5.
-        now rewrite <- H5.
+        apply ps_P_cylinder_g_le_1.
+      + admit.
+      + admit.
+      + intros.
+        now rewrite <- X.
       + intros.
         now apply Lim_seq_correct'.
   Admitted.   
@@ -2395,7 +2378,6 @@ Section ps_sequence_product.
   Proof.
     intros decr limpos.
     Admitted.
-
 
 End ps_sequence_product.
 
