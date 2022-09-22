@@ -2264,20 +2264,41 @@ Section ps_sequence_product.
      NonnegExpectation (rvminus (fun (_:Ts) => c) rv_X) =
      Rbar_minus c (NonnegExpectation rv_X).
    Proof.
-     Admitted.
+     intros.
+     assert (Expectation (rvminus rv_X (fun (_:Ts) => c)) =
+             Some (Rbar_minus (NonnegExpectation rv_X) c)).
+     {
+       generalize (NonnegExpectation_const c H); intros.
+       unfold const in H0.
+       erewrite Expectation_dif_pos_unique with (p := nnf); try easy.
+       - rewrite H0.
+         destruct (NonnegExpectation rv_X); now simpl.
+       - apply rvconst.
+       - rewrite H0.
+         now simpl.
+     }
+     assert (rv_eq (rvminus rv_X (fun _ : Ts => c))
+                   (rvopp (rvminus (fun _ : Ts => c) rv_X))).
+     {
+       intros ?.
+       rv_unfold.
+       lra.
+     }
+     rewrite (Expectation_ext H1) in H0.
+     rewrite Expectation_opp in H0.
+     match_case_in H0; intros.
+     - rewrite H2 in H0.
+       inversion H0.
+       rewrite <- Rbar_opp_minus in H4.
+       apply (f_equal Rbar_opp) in H4.
+       repeat rewrite Rbar_opp_involutive in H4.
+       rewrite Expectation_pos_pofrf with (nnf0 := nncf) in H2.  
+       inversion H2.
+       now rewrite H4 in H5.
+     - rewrite H2 in H0.
+       congruence.
+   Qed.
                                 
-(*         
-
-  Lemma NonnegExpectation_sum 
-        (rv_X1 rv_X2 : Ts -> R)
-        {rv1 : RandomVariable dom borel_sa rv_X1}
-        {rv2 : RandomVariable dom borel_sa rv_X2}
-        {nnf1:NonnegativeFunction rv_X1}
-        {nnf2:NonnegativeFunction rv_X2} :     
-    NonnegExpectation (rvplus rv_X1 rv_X2) =
-    Rbar_plus (NonnegExpectation rv_X1) (NonnegExpectation rv_X2).
-*)
-
    Lemma monotone_convergence_descending_bounded {Ts} {dom : SigmaAlgebra Ts}
          (Prts : ProbSpace dom)
         (X : Ts -> R )
@@ -2491,10 +2512,12 @@ Section ps_sequence_product.
         rewrite <- H5.
         simpl.
         apply H3.
-    - generalize (monotone_convergence_descending_bounded 
+    - assert (nneg1: 0 <= 1) by lra.
+      generalize (monotone_convergence_descending_bounded 
                     (ps 0%nat) f1  
                     (fun (n : nat) (x1 : T) => 
-                       ((ps_P_cylinder_g ps (es n) (ecyl n)) x1)) 1 H2 H1); intros.
+                       ((ps_P_cylinder_g ps (es n) (ecyl n)) x1)) 
+                    (mknonnegreal 1 nneg1) H2 H1); intros.
       erewrite <- H4.
       + rewrite Lim_seq_ext with
             (v := fun n => Finite (ps_P_cylinder ps (es n) (ecyl n))); trivial.
@@ -2537,7 +2560,6 @@ Section ps_sequence_product.
       + intros.
         now apply Lim_seq_correct'.
   Admitted.   
-    
   
   Lemma decreasing_cyl_nonempty  {T} {σ:SigmaAlgebra T}
              (ps : nat -> ProbSpace σ)        
