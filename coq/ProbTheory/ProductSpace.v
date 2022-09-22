@@ -2252,13 +2252,37 @@ Section ps_sequence_product.
        }
        generalize (cond_nonneg (f (n + x)%nat)); intros.
        lra.
-    Qed.
+   Qed.
 
-   Lemma monotone_converge_descending_bounded {Ts} {dom : SigmaAlgebra Ts}
+   Lemma NonnegExpectation_const_minus {Ts} {dom : SigmaAlgebra Ts}
+         (Prts : ProbSpace dom)
+         (c : R) (rv_X : Ts -> R)
+         {rv : RandomVariable dom borel_sa rv_X}
+         {nnf : NonnegativeFunction rv_X} 
+         {nncf : NonnegativeFunction (rvminus (fun _ : Ts => c) rv_X)}:
+     0 <= c ->
+     NonnegExpectation (rvminus (fun (_:Ts) => c) rv_X) =
+     Rbar_minus c (NonnegExpectation rv_X).
+   Proof.
+     Admitted.
+                                
+(*         
+
+  Lemma NonnegExpectation_sum 
+        (rv_X1 rv_X2 : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2}
+        {nnf1:NonnegativeFunction rv_X1}
+        {nnf2:NonnegativeFunction rv_X2} :     
+    NonnegExpectation (rvplus rv_X1 rv_X2) =
+    Rbar_plus (NonnegExpectation rv_X1) (NonnegExpectation rv_X2).
+*)
+
+   Lemma monotone_convergence_descending_bounded {Ts} {dom : SigmaAlgebra Ts}
          (Prts : ProbSpace dom)
         (X : Ts -> R )
         (Xn : nat -> Ts -> R)
-        (bound : R) 
+        (bound : nonnegreal) 
         (rvx : RandomVariable dom borel_sa X)
         (posX: NonnegativeFunction X) 
         (Xn_rv : forall n, RandomVariable dom borel_sa (Xn n))
@@ -2271,8 +2295,88 @@ Section ps_sequence_product.
     (forall (n:nat), is_finite (NonnegExpectation (Xn n))) ->
     (forall (omega:Ts), is_lim_seq (fun n => Xn n omega) (X omega)) ->
     Lim_seq (fun n => NonnegExpectation (Xn n)) = (NonnegExpectation X).
-  Proof.
-  Admitted.
+   Proof.
+     generalize (monotone_convergence 
+                   (rvminus (fun (x:Ts) => bound) X)
+                   (fun n => rvminus (fun (x:Ts) => bound) (Xn n))
+                ); intros.
+     cut_to H.
+     assert (forall n : nat,
+                NonnegativeFunction (rvminus (fun _ : Ts => bound) (Xn n))).
+     {
+       intros ? ?.
+       rv_unfold.
+       specialize (H1 n x).
+       lra.
+     }
+     assert (NonnegativeFunction (rvminus (fun _ : Ts => bound) X)).
+     {
+       intros ?.
+       rv_unfold.
+       specialize (H0 x).
+       lra.
+     }
+     specialize (H H7).
+     cut_to H.
+     specialize (H H6).
+     cut_to H.
+     - rewrite NonnegExpectation_const_minus with (nnf := posX) in H; trivial.
+       + rewrite Lim_seq_ext with
+             (v := fun n => bound - NonnegExpectation (Xn n)) in H.
+         * rewrite Lim_seq_minus in H.
+           rewrite Lim_seq_const in H.
+           -- destruct (Lim_seq (fun n : nat => NonnegExpectation (Xn n))).
+              ++ destruct (NonnegExpectation X); simpl in H; try congruence.
+                 apply Rbar_finite_eq in H.
+                 apply Rbar_finite_eq.
+                 lra.
+              ++ destruct (NonnegExpectation X); simpl in H; try congruence.
+              ++ destruct (NonnegExpectation X); simpl in H; try congruence.
+           -- apply ex_lim_seq_const.
+           -- apply ex_lim_seq_decr.
+              intros.
+              generalize (NonnegExpectation_le (Xn (S n)) (Xn n) (H3 n)); intros.
+              rewrite <- (H4 (S n)) in H8.
+              rewrite <- (H4 n) in H8.
+              now simpl in H8.
+           -- rewrite Lim_seq_const.
+              unfold ex_Rbar_minus, ex_Rbar_plus.
+              simpl.
+              now destruct (Rbar_opp (Lim_seq (fun n : nat => NonnegExpectation (Xn n)))).
+         * intros.
+           rewrite NonnegExpectation_const_minus with (nnf := Xn_pos n); trivial.
+           -- rewrite <- (H4 n).
+              simpl; lra.
+           -- apply cond_nonneg.           
+       + apply cond_nonneg.
+     - intros ? ?.
+       rv_unfold.
+       specialize (H2 n a).
+       lra.
+     - intros ? ?.
+       rv_unfold.
+       specialize (H3 n a).
+       lra.
+     - intros.
+       rewrite NonnegExpectation_const_minus with (nnf := Xn_pos n); trivial.
+       + rewrite <- (H4 n); simpl.
+         unfold is_finite.
+         simpl.
+         apply Rbar_finite_eq.
+         lra.
+       + apply cond_nonneg.
+     - intros.
+       specialize (H5 omega).
+       rv_unfold.
+       apply is_lim_seq_plus'.
+       + apply is_lim_seq_const.
+       + now apply is_lim_seq_scal_l with (a := -1) (lu := X omega).
+     - intros.
+       apply rvminus_rv; trivial.
+       apply rvconst.
+     - apply rvminus_rv; trivial.
+       apply rvconst.
+  Qed.
 
   Lemma decr_le_strong f 
         (decr:forall (n:nat), f (S n) <= f n) a b :
@@ -2387,7 +2491,7 @@ Section ps_sequence_product.
         rewrite <- H5.
         simpl.
         apply H3.
-    - generalize (monotone_converge_descending_bounded 
+    - generalize (monotone_convergence_descending_bounded 
                     (ps 0%nat) f1  
                     (fun (n : nat) (x1 : T) => 
                        ((ps_P_cylinder_g ps (es n) (ecyl n)) x1)) 1 H2 H1); intros.
