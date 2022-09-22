@@ -2101,14 +2101,18 @@ Section ps_sequence_product.
           sa_sigma (ivector_sa (ivector_const (S n) σ)) ee /\ 
           e === inf_cylinder_event ee.
 
-  Lemma vector_take_sequence {T} (x : nat -> T) (n m : nat) 
+  Lemma vector_take_sequence {T} (x : nat -> T) (s n m : nat) 
         (lt : (S n <= S m)%nat) :
-    sequence_to_ivector x 0 (S n) =
-    ivector_take (S m) (S n) lt (sequence_to_ivector x 0 (S m)).
+    sequence_to_ivector x s (S n) =
+    ivector_take (S m) (S n) lt (sequence_to_ivector x s (S m)).
   Proof.
-    pose (h := (m - n)%nat).
-    replace (m) with (n + h)%nat by lia.
-    Admitted.
+    revert n s lt.
+    induction m; simpl; intros.
+    - now destruct n; [| lia]; simpl.
+    - destruct n; [simpl; trivial |].
+      assert (pf: (S n <= S m)%nat) by lia.
+      now rewrite IHm with (lt:=le_S_n (S n) (S m) lt); simpl.
+  Qed.
 
   Lemma sa_cylinder_shift {T} {σ:SigmaAlgebra T}
         (n m : nat) (e : pre_event (ivector T (S n)))
@@ -2116,7 +2120,8 @@ Section ps_sequence_product.
     sa_sigma (ivector_sa (ivector_const (S n) σ)) e ->
     sa_sigma (ivector_sa (ivector_const (S m) σ)) 
              (fun v => e (ivector_take (S m) (S n) lt v)).
-   Proof.
+  Proof.
+    simpl; intros HH1 sa all.
      Admitted.
 
   Lemma inf_cylinder_shift {T} {σ:SigmaAlgebra T}
