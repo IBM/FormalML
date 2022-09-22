@@ -4962,3 +4962,27 @@ Admitted.
 
 End FiniteDomain.
 
+
+  Instance prod_measure_fst_rv  {Ts1 Ts2} 
+           {dom1 : SigmaAlgebra Ts1} 
+           {dom2 : SigmaAlgebra Ts2}
+           (ps2 : ProbSpace dom2) :
+    forall (E : event (product_sa dom1 dom2)),
+      RandomVariable dom1 borel_sa 
+                     (fun x => ps_P (exist _ (fun y => E (x,y)) 
+                                           (product_section_fst E x))).
+  Proof.
+    Admitted.
+  
+    
+  Instance prod_measure_snd_rv  {Ts1 Ts2} 
+           {dom1 : SigmaAlgebra Ts1} 
+           {dom2 : SigmaAlgebra Ts2}
+           (ps1 : ProbSpace dom1) :
+    forall (E : event (product_sa dom1 dom2)),
+      RandomVariable dom2 borel_sa 
+                     (fun y => ps_P (exist _ (fun x => E (x,y)) 
+                                           (product_section_snd E y))).
+  Proof.
+    Admitted.
+           

@@ -2122,7 +2122,17 @@ Section ps_sequence_product.
              (fun v => e (ivector_take (S m) (S n) lt v)).
   Proof.
     simpl; intros HH1 sa all.
-     Admitted.
+  Admitted.
+
+  Lemma ps_cylinder_shift {T} {σ:SigmaAlgebra T}
+        (n m : nat) (e : pre_event (ivector T (S n)))
+        (sae: sa_sigma (ivector_sa (ivector_const (S n) σ)) e)
+        (ps : nat -> ProbSpace σ)
+        {lt : (S n <= S m)%nat} :
+    ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat (S n))) (exist _ _ sae) =
+    ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat (S m))) (exist _ _ (sa_cylinder_shift (lt := lt) n m e sae)).
+  Proof.
+    Admitted.
 
   Lemma inf_cylinder_shift {T} {σ:SigmaAlgebra T}
         (n : nat) (e : pre_event (ivector T (S n)))
