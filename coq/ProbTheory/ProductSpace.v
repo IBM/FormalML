@@ -2114,6 +2114,23 @@ Section ps_sequence_product.
       now rewrite IHm with (lt:=le_S_n (S n) (S m) lt); simpl.
   Qed.
 
+  Lemma sa_cylinder_drop_fst {T} {σ:SigmaAlgebra T}
+        (n : nat) (e : pre_event (ivector T n)) :
+    sa_sigma (ivector_sa (ivector_const n σ)) e ->
+    sa_sigma (ivector_sa (ivector_const (S n) σ)) 
+             (fun v => e (ivector_tl v)).
+  Proof.
+    simpl; intros.
+    apply H0.
+    exists pre_Ω; exists e.
+    split.
+    - apply sa_all.
+    - split; trivial.
+      intros ?.
+      match_destr; simpl.
+      unfold pre_Ω; tauto.
+  Qed.
+
   Lemma sa_cylinder_shift {T} {σ:SigmaAlgebra T}
         (n m : nat) (e : pre_event (ivector T (S n)))
         {lt : (S n <= S m)%nat} :
@@ -2124,13 +2141,38 @@ Section ps_sequence_product.
     simpl; intros HH1 sa all.
   Admitted.
 
+  Lemma ps_cylinder_drop_fst {T} {σ:SigmaAlgebra T}
+        (n : nat) (e : pre_event (ivector T n))
+        (sae: sa_sigma (ivector_sa (ivector_const n σ)) e)
+        (ps : nat -> ProbSpace σ) :
+    ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 1%nat n)) 
+         (exist _ _ sae) =
+    ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat (S n)))
+         (exist _ _ (sa_cylinder_drop_fst n e sae)).
+  Proof.
+    generalize (product_sa_product (ps 0%nat) (ivector_ps (sequence_to_ivector ps 1%nat n)) Ω (exist _ e sae)); intros.
+    rewrite ps_all in H.
+    rewrite Rmult_1_l in H.
+    rewrite <- H.
+    simpl.
+    f_equal.
+    apply product_measure_proper.
+    - apply product_measure_Hyp_ps.
+    - intros ?.
+      unfold pre_Ω.
+      match_destr.
+      tauto.
+    Qed.
+    
   Lemma ps_cylinder_shift {T} {σ:SigmaAlgebra T}
         (n m : nat) (e : pre_event (ivector T (S n)))
         (sae: sa_sigma (ivector_sa (ivector_const (S n) σ)) e)
         (ps : nat -> ProbSpace σ)
         {lt : (S n <= S m)%nat} :
-    ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat (S n))) (exist _ _ sae) =
-    ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat (S m))) (exist _ _ (sa_cylinder_shift (lt := lt) n m e sae)).
+    ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat (S n))) 
+         (exist _ _ sae) =
+    ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat (S m)))
+         (exist _ _ (sa_cylinder_shift (lt := lt) n m e sae)).
   Proof.
     Admitted.
 
