@@ -2039,7 +2039,7 @@ Section ps_ivector_product.
         tauto.
    Qed.
      
-  Lemma ivector_take_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
+  Instance ivector_take_rv {n} {T} (ivsa : ivector (SigmaAlgebra T) n) (idx : nat)
         (idx_le : (idx <= n)%nat) :
         RandomVariable (ivector_sa ivsa) 
                        (ivector_sa (ivector_take n idx idx_le ivsa))
@@ -2069,6 +2069,35 @@ Section ps_ivector_product.
           -- apply snd_rv.
           -- apply IHn.
   Qed.
+
+  Lemma ivector_take_const {T} (x:T) n m lt :
+    ivector_take m n lt (ivector_const m x) = ivector_const n x.
+  Proof.
+    revert n lt.
+    induction m; simpl; intros.
+    - now destruct n; [| lia]; simpl.
+    - destruct n; [simpl; trivial |].
+      now rewrite IHm with (lt:=le_S_n n m lt); simpl.
+  Qed.
+  
+  Instance ivector_take_rv_const {n} {T} {σ:SigmaAlgebra T} (idx : nat)
+        (idx_le : (idx <= n)%nat) :
+        RandomVariable (ivector_sa (ivector_const n σ))
+                       (ivector_sa (ivector_const idx σ))
+                       (ivector_take n idx idx_le).
+  Proof.
+    generalize (ivector_take_rv (ivector_const n σ) idx idx_le); intros.
+    now rewrite ivector_take_const in H.
+  Qed.
+
+  Lemma ivector_take_pullback {n} {T} {σ:SigmaAlgebra T}
+        (ivec_ps : ivector (ProbSpace σ) n) idx pf :
+     forall (a : event (ivector_sa (ivector_const idx σ))),
+       ps_P (ProbSpace := ivector_ps (ivector_take n idx pf ivec_ps)) a = 
+       ps_P (ProbSpace := pullback_ps _ _  (ivector_ps ivec_ps) (ivector_take n idx pf)) a.
+  Proof.
+    intros.
+  Admitted.
 
 End ps_ivector_product.
 Section ps_sequence_product.
@@ -2130,16 +2159,6 @@ Section ps_sequence_product.
       unfold pre_Ω; tauto.
   Qed.
 
-  Lemma ivector_take_const {T} (x:T) n m lt :
-    ivector_take m n lt (ivector_const m x) = ivector_const n x.
-  Proof.
-    revert n lt.
-    induction m; simpl; intros.
-    - now destruct n; [| lia]; simpl.
-    - destruct n; [simpl; trivial |].
-      now rewrite IHm with (lt:=le_S_n n m lt); simpl.
-  Qed.
-  
   Lemma sa_cylinder_shift {T} {σ:SigmaAlgebra T}
         (n m : nat) (e : pre_event (ivector T (S n)))
         {lt : (S n <= S m)%nat} :
@@ -2191,7 +2210,12 @@ Section ps_sequence_product.
     ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat (S m)))
          (exist _ _ (sa_cylinder_shift (lt := lt) n m e sae)).
   Proof.
-    Admitted.
+    generalize (ivector_take_pullback (sequence_to_ivector ps 0%nat (S m)) (S n) lt (exist _ _ sae)); intros.
+    rewrite <- ivector_take_sequence in H.
+    rewrite H.
+    unfold pullback_ps; simpl.
+    f_equal.
+  Qed.
 
   Lemma inf_cylinder_shift {T} {σ:SigmaAlgebra T}
         (n : nat) (e : pre_event (ivector T (S n)))
