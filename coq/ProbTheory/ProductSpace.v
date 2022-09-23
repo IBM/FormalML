@@ -2101,7 +2101,7 @@ Section ps_sequence_product.
           sa_sigma (ivector_sa (ivector_const (S n) σ)) ee /\ 
           e === inf_cylinder_event ee.
 
-  Lemma vector_take_sequence {T} (x : nat -> T) (s n m : nat) 
+  Lemma ivector_take_sequence {T} (x : nat -> T) (s n m : nat) 
         (lt : (S n <= S m)%nat) :
     sequence_to_ivector x s (S n) =
     ivector_take (S m) (S n) lt (sequence_to_ivector x s (S m)).
@@ -2110,7 +2110,6 @@ Section ps_sequence_product.
     induction m; simpl; intros.
     - now destruct n; [| lia]; simpl.
     - destruct n; [simpl; trivial |].
-      assert (pf: (S n <= S m)%nat) by lia.
       now rewrite IHm with (lt:=le_S_n (S n) (S m) lt); simpl.
   Qed.
 
@@ -2131,6 +2130,16 @@ Section ps_sequence_product.
       unfold pre_Ω; tauto.
   Qed.
 
+  Lemma ivector_take_const {T} (x:T) n m lt :
+    ivector_take m n lt (ivector_const m x) = ivector_const n x.
+  Proof.
+    revert n lt.
+    induction m; simpl; intros.
+    - now destruct n; [| lia]; simpl.
+    - destruct n; [simpl; trivial |].
+      now rewrite IHm with (lt:=le_S_n n m lt); simpl.
+  Qed.
+  
   Lemma sa_cylinder_shift {T} {σ:SigmaAlgebra T}
         (n m : nat) (e : pre_event (ivector T (S n)))
         {lt : (S n <= S m)%nat} :
@@ -2138,8 +2147,16 @@ Section ps_sequence_product.
     sa_sigma (ivector_sa (ivector_const (S m) σ)) 
              (fun v => e (ivector_take (S m) (S n) lt v)).
   Proof.
-    simpl; intros HH1 sa all.
-  Admitted.
+    intros.
+    generalize (ivector_take_rv (ivector_const (S m) σ) _ lt); intros.
+    unfold RandomVariable in H0.
+    rewrite ivector_take_const in H0.
+    specialize (H0 (exist _ e H)).
+    revert H0.
+    apply sa_proper.
+    intros ?.
+    now simpl.
+  Qed.
 
   Lemma ps_cylinder_drop_fst {T} {σ:SigmaAlgebra T}
         (n : nat) (e : pre_event (ivector T n))
@@ -2192,7 +2209,7 @@ Section ps_sequence_product.
     - now apply sa_cylinder_shift.
     - unfold inf_cylinder_event.
       intros ?.
-      now rewrite vector_take_sequence with (m0 := m) (lt := H0).
+      now rewrite ivector_take_sequence with (m0 := m) (lt := H0).
   Qed.
 
   Definition ps_P_cylinder  {T} {σ:SigmaAlgebra T} 
