@@ -1386,5 +1386,39 @@ Qed.
     rewrite <- ivector_to_vector_nth.
     now rewrite vector_to_ivector_nth.
   Qed.
+
+    Fixpoint ivector_add_to_end {n : nat} {T : Type} (x:T) : ivector T n -> ivector T (S n)
+    := match n with
+       | 0%nat => fun _ => (x, tt)
+       | S n => fun '(hd,tl) => (hd, ivector_add_to_end x tl)
+       end.
+
+  Fixpoint ivector_rev {n : nat} {T : Type} : ivector T n -> ivector T n
+    := match n with
+       | 0%nat => fun _ => tt
+       | S n => fun '(hd,tl) => ivector_add_to_end hd (ivector_rev tl)
+       end.
+
+  Lemma ivector_rev_add_to_end {n : nat} {T : Type} x (v:ivector T n) :
+    ivector_rev (ivector_add_to_end x v) = (x, ivector_rev v).
+  Proof.
+    revert x.
+    induction n; [simpl; trivial; intros |].
+    intros.
+    destruct v.
+    replace (ivector_rev (ivector_add_to_end (n:=S n) x (t, i))) with
+      (ivector_add_to_end t (ivector_rev (ivector_add_to_end x i))) by reflexivity.
+    now rewrite IHn.
+  Qed.
+    
+  Lemma ivector_rev_involutive {n : nat} {T : Type} (v:ivector T n) :
+    ivector_rev (ivector_rev v) = v.
+  Proof.
+    induction n; [destruct v; simpl; trivial |].
+    destruct v.
+    replace (ivector_rev (ivector_rev (n:=S n) (t, i))) with
+      (ivector_rev (ivector_add_to_end t (ivector_rev i))) by reflexivity.
+    now rewrite ivector_rev_add_to_end, IHn.
+  Qed.
   
 End ivector.
