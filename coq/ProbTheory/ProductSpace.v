@@ -2134,21 +2134,36 @@ Section ps_sequence_product.
        | right _ => default
        end).
 
-  Lemma ivec_to_seq_to_ivec {T} {n} (v : ivector T n) (default : T)  :
-    v = sequence_to_ivector (ivector_to_sequence v default) 0%nat n.
-  Proof.
-  Admitted.
-
   Lemma sequence_to_ivector_cons {T} {n} (x : nat -> T) (val : T) :
     sequence_to_ivector (sequence_cons val x) 0%nat (S n) =
     (val, sequence_to_ivector x 0%nat n).
   Proof.
   Admitted.
 
+  Lemma ivec_sequence_cons {T} {n} (x : ivector T n) (val : T) (default : T) :
+    ivector_to_sequence (n := S n) (val, x) default =
+    sequence_cons val (ivector_to_sequence x default).
+  Proof.
+    Admitted.
+
+  Lemma ivec_to_seq_to_ivec {T} {n} (v : ivector T n) (default : T)  :
+    v = sequence_to_ivector (ivector_to_sequence v default) 0%nat n.
+  Proof.
+    induction n.
+    - simpl.
+      now destruct v.
+    - destruct v.
+      rewrite ivec_sequence_cons.
+      rewrite sequence_to_ivector_cons.
+      specialize (IHn i).
+      now rewrite <- IHn.
+   Qed.
+
   Lemma ivector_take_cons {T} {N} (n : nat) (v : ivector T N)(val : T) 
         (le : (S n <= S N)%nat) :
     ivector_take (S N) (S n) le (val, v) = 
     (val, ivector_take N n (le_S_n _ _ le) v).
+  Proof.
   Admitted.
   
   Definition section_seq_event {T} {σ:SigmaAlgebra T} (x : T) 
