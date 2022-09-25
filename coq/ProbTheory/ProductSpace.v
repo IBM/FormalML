@@ -2720,8 +2720,8 @@ Section ps_sequence_product.
       pose (N := max x x1).
       destruct a as [? [? ?]].
       destruct a0 as [? [? ?]].
-      assert (ltx: (x <= N)%nat) by lia.      
-      assert (ltx1: (x1 <= N)%nat) by lia.
+      assert (ltx: (S x <= S N)%nat) by lia.      
+      assert (ltx1: (S x1 <= S N)%nat) by lia.
       simpl.
       clear H4 H7 X H0.
       generalize (ps_cylinder_shift2 
@@ -2729,24 +2729,23 @@ Section ps_sequence_product.
                     (fun y : ivector T x => x0 (omega, y))
                     (ivector_product_section (σ, ivector_const x σ) x0 omega)
                  ); intros cylx.
-      specialize (cylx ps ltx).
-
+      specialize (cylx ps (le_S_n _ _ ltx)).
       generalize (ps_cylinder_shift2 
                     x1 N
                     (fun y : ivector T x1 => x2 (omega, y))
                     (ivector_product_section (σ, ivector_const x1 σ) x2 omega)
                  ); intros cylx1.
-      specialize (cylx1 ps ltx1).
+      specialize (cylx1 ps (le_S_n _ _ ltx1)).
       
       assert (
           ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0 N))
             (exist (sa_sigma (ivector_sa (ivector_const N σ)))
-                   (fun v : ivector T N => x0 (omega, ivector_take N x ltx v))
+                   (fun v : ivector T N => x0 (omega, ivector_take N x (le_S_n _ _ ltx) v))
                    (sa_cylinder_shift2 x N (fun y : ivector T x => x0 (omega, y))
                                        (ivector_product_section (σ, ivector_const x σ) x0 omega))) <=
            ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0 N))
          (exist (sa_sigma (ivector_sa (ivector_const N σ)))
-            (fun v : ivector T N => x2 (omega, ivector_take N x1 ltx1 v))
+            (fun v : ivector T N => x2 (omega, ivector_take N x1 (le_S_n _ _ ltx1) v))
             (sa_cylinder_shift2 x1 N (fun y : ivector T x1 => x2 (omega, y))
                (ivector_product_section (σ, ivector_const x1 σ) x2 omega)))).
       {
@@ -2758,16 +2757,13 @@ Section ps_sequence_product.
         unfold event_sub, proj1_sig, pre_event_sub.
         intros.
         specialize (H (sequence_cons omega (ivector_to_sequence x3 omega))).
-        assert (S x <= S N)%nat by lia.
-        rewrite (ivector_take_sequence _ 0 _ _ H4) in H.
-        assert (S x1 <= S N)%nat by lia.
-        rewrite (ivector_take_sequence _ 0 _ _ H7) in H.        
+        rewrite (ivector_take_sequence _ 0 _ _ ltx) in H.
+        rewrite (ivector_take_sequence _ 0 _ _ ltx1) in H.        
         rewrite sequence_to_ivector_cons in H.
         rewrite <- (ivec_to_seq_to_ivec x3 omega) in H.
         do 2 rewrite ivector_take_cons in H.
-        admit.
+        now apply H.
      }
-      
       admit.
     }
     assert (exfin: forall omega,  
