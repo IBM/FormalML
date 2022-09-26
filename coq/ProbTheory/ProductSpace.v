@@ -2164,7 +2164,9 @@ Section ps_sequence_product.
     ivector_take (S N) (S n) le (val, v) = 
     (val, ivector_take N n (le_S_n _ _ le) v).
   Proof.
-  Admitted.
+    apply ivector_eq2.
+    now simpl.
+  Qed.
   
   Definition section_seq_event {T} {σ:SigmaAlgebra T} (x : T) 
              (e : pre_event (nat -> T)) : pre_event (nat -> T) :=
