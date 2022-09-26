@@ -2284,6 +2284,25 @@ Section ps_sequence_product.
     now simpl.
   Qed.
 
+  Lemma ps_cylinder_shift1 {T} {σ:SigmaAlgebra T}
+        (n m : nat) (e : pre_event (ivector T n))
+        (sae: sa_sigma (ivector_sa (ivector_const n σ)) e)
+        (ps : nat -> ProbSpace σ)
+        {lt : (n <= m)%nat} :
+    ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 1%nat n)) 
+         (exist _ _ sae) =
+    ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 1%nat m))
+         (exist _ _ (sa_cylinder_shift (lt := lt) n m e sae)).
+  Proof.
+    generalize (ivector_take_pullback (sequence_to_ivector ps 1%nat m) n lt (exist _ _ sae)); intros.
+    rewrite <- ivector_take_sequence in H.
+    rewrite H.
+    unfold pullback_ps; simpl.
+    apply ps_proper.
+    intros ?.
+    now simpl.
+  Qed.
+
   Lemma inf_cylinder_shift {T} {σ:SigmaAlgebra T}
         (n : nat) (e : pre_event (ivector T n))
         {sa : sa_sigma (ivector_sa (ivector_const n σ)) e} :
@@ -2684,6 +2703,7 @@ Section ps_sequence_product.
       unfold ps_P_cylinder_g.
       match_destr; match_destr.
       match_destr; match_destr.
+      simpl.
       pose (N := max x x1).
       destruct a as [? [? ?]].
       destruct a0 as [? [? ?]].
@@ -2691,47 +2711,40 @@ Section ps_sequence_product.
       assert (ltx1: (S x1 <= S N)%nat) by lia.
       simpl.
       clear H4 H7 X H0.
-      generalize (ps_cylinder_shift 
+      generalize (ps_cylinder_shift1 
                     x N
                     (fun y : ivector T x => x0 (omega, y))
                     (ivector_product_section (σ, ivector_const x σ) x0 omega)
                  ); intros cylx.
       specialize (cylx ps (le_S_n _ _ ltx)).
-      generalize (ps_cylinder_shift 
+      unfold ivector_sa at 1 in cylx.
+      simpl in cylx.
+      simpl.
+      rewrite cylx.
+      generalize (ps_cylinder_shift1
                     x1 N
                     (fun y : ivector T x1 => x2 (omega, y))
                     (ivector_product_section (σ, ivector_const x1 σ) x2 omega)
                  ); intros cylx1.
       specialize (cylx1 ps (le_S_n _ _ ltx1)).
-      
-      assert (
-          ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0 N))
-            (exist (sa_sigma (ivector_sa (ivector_const N σ)))
-                   (fun v : ivector T N => x0 (omega, ivector_take N x (le_S_n _ _ ltx) v))
-                   (sa_cylinder_shift x N (fun y : ivector T x => x0 (omega, y))
-                                       (ivector_product_section (σ, ivector_const x σ) x0 omega))) <=
-           ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0 N))
-         (exist (sa_sigma (ivector_sa (ivector_const N σ)))
-            (fun v : ivector T N => x2 (omega, ivector_take N x1 (le_S_n _ _ ltx1) v))
-            (sa_cylinder_shift x1 N (fun y : ivector T x1 => x2 (omega, y))
-               (ivector_product_section (σ, ivector_const x1 σ) x2 omega)))).
-      {
-        apply ps_sub.
-        clear cylx cylx1.
-        specialize (H n).
-        rewrite H3, H6 in H.
-        unfold inf_cylinder_event, pre_event_sub in H.
-        unfold event_sub, proj1_sig, pre_event_sub.
-        intros.
-        specialize (H (sequence_cons omega (ivector_to_sequence x3 omega))).
-        rewrite (ivector_take_sequence _ 0 _ _ ltx) in H.
-        rewrite (ivector_take_sequence _ 0 _ _ ltx1) in H.        
-        rewrite sequence_to_ivector_cons in H.
-        rewrite <- (ivec_to_seq_to_ivec x3 omega) in H.
-        do 2 rewrite ivector_take_cons in H.
-        now apply H.
-     }
-      admit.
+      unfold ivector_sa at 1 in cylx1.
+      simpl in cylx1.
+      simpl.
+      rewrite cylx1.
+      apply ps_sub.
+      clear cylx cylx1.
+      specialize (H n).
+      rewrite H3, H6 in H.
+      unfold inf_cylinder_event, pre_event_sub in H.
+      unfold event_sub, proj1_sig, pre_event_sub.
+      intros.
+      specialize (H (sequence_cons omega (ivector_to_sequence x3 omega))).
+      rewrite (ivector_take_sequence _ 0 _ _ ltx) in H.
+      rewrite (ivector_take_sequence _ 0 _ _ ltx1) in H.        
+      rewrite sequence_to_ivector_cons in H.
+      rewrite <- (ivec_to_seq_to_ivec x3 omega) in H.
+      do 2 rewrite ivector_take_cons in H.
+      now apply H.
     }
     assert (exfin: forall omega,  
                ex_finite_lim_seq (fun n : nat => 
@@ -2818,7 +2831,7 @@ Section ps_sequence_product.
         now rewrite <- X.
       + intros.
         now apply Lim_seq_correct'.
-  Admitted.   
+  Qed.
   
   Lemma decreasing_cyl_nonempty  {T} {σ:SigmaAlgebra T}
              (ps : nat -> ProbSpace σ)        
