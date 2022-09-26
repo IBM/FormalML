@@ -2157,11 +2157,35 @@ Section ps_sequence_product.
     - apply sequence_to_ivector_cons_shift.
   Qed.
 
+  Lemma ivec_nth_cons {T} {n} (x : ivector T n) (val : T) (x0 : nat) (l : (S x0 < S n)%nat) :
+    ivector_nth (S x0) l (val, x) = ivector_nth x0 (le_S_n _ _ l) x.
+  Proof.
+    destruct n.
+    - lia.
+    - simpl.
+      match_destr.
+      match_destr.
+      now apply ivector_nth_ext.
+  Qed.
+
   Lemma ivec_sequence_cons {T} {n} (x : ivector T n) (val : T) (default : T) :
     ivector_to_sequence (n := S n) (val, x) default =
     sequence_cons val (ivector_to_sequence x default).
   Proof.
-    Admitted.
+    apply functional_extensionality.
+    destruct x0.
+    - simpl.
+      unfold ivector_to_sequence.
+      match_destr.
+      lia.
+    - simpl.
+      unfold ivector_to_sequence.
+      match_destr; try lia.
+      match_destr; try lia.
+      + rewrite ivec_nth_cons.
+        now apply ivector_nth_ext.
+      + match_destr; try lia.
+  Qed.
 
   Lemma ivec_to_seq_to_ivec {T} {n} (v : ivector T n) (default : T)  :
     v = sequence_to_ivector (ivector_to_sequence v default) 0%nat n.
