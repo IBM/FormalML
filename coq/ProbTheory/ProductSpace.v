@@ -2134,11 +2134,28 @@ Section ps_sequence_product.
        | right _ => default
        end).
 
-  Lemma sequence_to_ivector_cons {T} {n} (x : nat -> T) (val : T) :
+   Lemma sequence_to_ivector_cons_shift {T} {n} (j : nat) (x : nat -> T) (val : T) :
+     sequence_to_ivector (sequence_cons val x) (S j) n = sequence_to_ivector x j n.
+   Proof.
+     revert j.
+     induction n.
+     - intros.
+       now simpl.
+     - intros.
+       simpl.
+       f_equal.
+       apply IHn.
+   Qed.
+
+   Lemma sequence_to_ivector_cons {T} {n} (x : nat -> T) (val : T) :
     sequence_to_ivector (sequence_cons val x) 0%nat (S n) =
     (val, sequence_to_ivector x 0%nat n).
   Proof.
-  Admitted.
+    apply ivector_eq2.
+    split.
+    - now simpl.
+    - apply sequence_to_ivector_cons_shift.
+  Qed.
 
   Lemma ivec_sequence_cons {T} {n} (x : ivector T n) (val : T) (default : T) :
     ivector_to_sequence (n := S n) (val, x) default =
