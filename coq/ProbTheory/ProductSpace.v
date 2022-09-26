@@ -2719,7 +2719,6 @@ Section ps_sequence_product.
       specialize (cylx ps (le_S_n _ _ ltx)).
       unfold ivector_sa at 1 in cylx.
       simpl in cylx.
-      simpl.
       rewrite cylx.
       generalize (ps_cylinder_shift1
                     x1 N
@@ -2729,7 +2728,6 @@ Section ps_sequence_product.
       specialize (cylx1 ps (le_S_n _ _ ltx1)).
       unfold ivector_sa at 1 in cylx1.
       simpl in cylx1.
-      simpl.
       rewrite cylx1.
       apply ps_sub.
       clear cylx cylx1.
