@@ -2209,10 +2209,6 @@ Section ps_sequence_product.
     now simpl.
   Qed.
   
-  Definition section_seq_event {T} {σ:SigmaAlgebra T} (x : T) 
-             (e : pre_event (nat -> T)) : pre_event (nat -> T) :=
-    fun (w : (nat -> T)) => e (sequence_cons x w).
-
   Definition inf_cylinder_event {T} {n} {σ:SigmaAlgebra T} 
              (e : pre_event (ivector T n)) : (pre_event (nat -> T)) :=
     fun (w : nat -> T) => e (sequence_to_ivector w 0%nat n).
@@ -2223,6 +2219,7 @@ Section ps_sequence_product.
         exists (ee : pre_event (ivector T (S n))),
           sa_sigma (ivector_sa (ivector_const (S n) σ)) ee /\ 
           e === inf_cylinder_event ee.
+
 
 (*
   Lemma ivector_take_sequence {T} (x : nat -> T) (s n m : nat) 
@@ -2357,6 +2354,45 @@ Section ps_sequence_product.
     unfold inf_cylinder_event.
     intros ?.
     now rewrite ivector_take_sequence with (m0 := m) (lt := pf).
+  Qed.
+
+  Definition section_seq_event {T} {σ:SigmaAlgebra T} (x : T) 
+             (e : pre_event (nat -> T)) : pre_event (nat -> T) :=
+    fun (w : (nat -> T)) => e (sequence_cons x w).
+
+  Lemma section_inf_cylinder_sa {T} {σ:SigmaAlgebra T} (x : T) 
+        (x0 : nat)
+        (x1 : pre_event (ivector T (S x0)))
+        (sa : sa_sigma (ivector_sa (ivector_const (S x0) σ)) x1) 
+        (pf : ((S x0) <= (S (S x0)))%nat) :
+    sa_sigma (ivector_sa (ivector_const (S x0) σ))
+             (fun v : ivector T (S x0) => x1 (ivector_take (S (S x0)) (S x0) pf (x, v))).
+  Proof.
+    generalize (sa_cylinder_shift (S x0) (S (S x0)) x1 (lt := pf) sa); intros.
+    generalize (ivector_product_section (ivector_const (S (S x0)) σ) (exist _ _ H) x).
+    now apply sa_proper.
+  Qed.
+
+  Lemma section_inf_cylinder {T} {σ:SigmaAlgebra T} (x : T) (e : pre_event (nat -> T)) (ecyl : inf_cylinder e):
+    inf_cylinder (section_seq_event x e).
+  Proof.
+    destruct ecyl as [? [? [? ?]]].
+    generalize (inf_cylinder_shift (S x0) x1 (sa := H) (S (S x0))); intros.
+    assert (S x0 <= S (S x0))%nat by lia.
+    specialize (H1 H2).
+    unfold inf_cylinder.
+    exists x0.
+    unfold inf_cylinder_event, section_seq_event.
+    unfold inf_cylinder_event in H0.
+    exists (fun (v : ivector T (S x0)) => x1 (ivector_take (S (S x0)) (S x0) H2 (x, v))).
+    split.
+    - now apply section_inf_cylinder_sa.
+    - intros ?.
+      specialize (H0 (sequence_cons x x2)).
+      rewrite H0.
+      rewrite sequence_to_ivector_cons.
+      rewrite ivector_take_cons.
+      now rewrite <- ivector_take_sequence.
   Qed.
 
   Definition ps_P_cylinder  {T} {σ:SigmaAlgebra T} 
@@ -2687,17 +2723,36 @@ Section ps_sequence_product.
     now apply decr_le_strong.
   Qed.
 
-  Lemma Lim_seq_increasing_le (f : nat -> R) :
-    (forall n, f n <= f (S n)) ->
-    forall n, Rbar_le (f n) (Lim_seq f).
-  Proof.
-    intros.
-    rewrite <- Lim_seq_const.
-    apply Lim_seq_le_loc.
-    exists n.
-    intros.
-    now apply incr_le_strong.
-  Qed.
+(*
+   Lemma Lim_seq_decreasing_ge (f : nat -> nonnegreal) (eps : posreal):
+     (forall n, f (S n) <= f n) ->
+     Rbar_ge (Lim_seq f) eps ->
+     forall n, f n >= eps.
+   Proof.
+     intro decr.
+     contrapose.
+     intros.
+     rewrite not_forall in H.
+     destruct H.
+     generalize (cond_nonneg (f x)); intros.
+     assert (nonneg (f x) = 0) by lra.
+     rewrite <- Lim_seq_incr_n with (N := x).
+     rewrite Lim_seq_ext with (v := fun _ => 0).
+     - rewrite Lim_seq_const.
+       simpl.
+       lra.
+     - intros.
+       assert (f (n + x)%nat <= f x).
+       {
+         induction n.
+         - replace (0 + x)%nat with (x) by lia; lra.
+         - apply Rle_trans with (r2 := f (n + x)%nat); trivial.
+           now replace (S n + x)%nat with (S (n + x)) by lia.
+       }
+       generalize (cond_nonneg (f (n + x)%nat)); intros.
+       lra.
+   Qed.
+*)
 
   Lemma pre_event_sub_ivector {T} {σ:SigmaAlgebra T}
         (e1 e2 : pre_event (nat -> T)) :
@@ -2725,7 +2780,7 @@ Section ps_sequence_product.
     Rbar_gt (Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n))) 0 ->
     exists (x : T),
     forall n, 
-      Rbar_gt ((ps_P_cylinder_g ps (es n) (ecyl n)) x) 0.
+      ((ps_P_cylinder_g ps (es n) (ecyl n)) x) > 0.
   Proof.
     intros.
     generalize (ps_P_cylinder_g_proper ps); intros X.
@@ -2873,6 +2928,38 @@ Section ps_sequence_product.
       + intros.
         now apply Lim_seq_correct'.
   Qed.
+
+   Lemma decreasing_cyl_nonempty_2  {T} {σ:SigmaAlgebra T}
+             (ps : nat -> ProbSpace σ)        
+             (es : nat -> (pre_event (nat -> T))) 
+             (ecyl : forall n, inf_cylinder (es n))
+             (eps : posreal) :
+    (forall n, pre_event_sub (es (S n)) (es n)) ->
+    Rbar_gt (Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n))) 0 ->
+    exists (x1 x2 : T),
+    forall n, 
+      Rbar_gt ((ps_P_cylinder_g (fun n => ps (S n)) (section_seq_event x1 (es n)) (section_inf_cylinder x1 (es n) (ecyl n))) x2) 0.
+  Proof.
+    intros.
+    destruct (decreasing_cyl_nonempty_1 ps es ecyl H H0).
+    exists x.
+    apply decreasing_cyl_nonempty_1.
+    - intros ? ?.
+      unfold section_seq_event.
+      apply H.
+    - unfold section_seq_event.
+      intros.
+      assert (forall n, 0 < ps_P_cylinder_g ps (es n) (ecyl n) x).
+      {
+        intros.
+        apply (Lim_seq_decreasing_pos (fun n =>  
+                                         (ps_P_cylinder_g ps (es n) (ecyl n)) x)).
+        - admit.
+        - admit.
+      }
+      
+         
+    Admitted.
   
   Lemma decreasing_cyl_nonempty  {T} {σ:SigmaAlgebra T}
              (ps : nat -> ProbSpace σ)        
