@@ -3300,6 +3300,18 @@ Section ps_sequence_product.
       + intros.
         now apply Lim_seq_correct'.
   Qed.
+   
+   Lemma sequence_to_ivector_shift {T} (x : nat -> T) (j N : nat) :
+     sequence_to_ivector x (S j) N = sequence_to_ivector (fun n0 : nat => x (S n0)) j N.
+   Proof.
+     revert j.
+     induction N.
+     - now simpl.
+     - intros.
+       simpl.
+       f_equal.
+       now rewrite IHN.
+   Qed.
 
    Lemma decreasing_cyl_nonempty_2  {T}  {σ:SigmaAlgebra T}
          {inh : inhabited T}
@@ -3355,7 +3367,7 @@ Section ps_sequence_product.
           unfold section_seq_event in e0.
           unfold inf_cylinder_event in H3.
           admit.
-        - admit.
+        - apply sequence_to_ivector_shift.
       }
       now rewrite <- H2.
       
