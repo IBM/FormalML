@@ -3316,7 +3316,21 @@ Section ps_sequence_product.
    Lemma cons_sequence_to_ivector {T} (w : nat -> T) (x2 : nat) :
      (w 0%nat, sequence_to_ivector w 1 x2) = sequence_to_ivector w 0 (S x2).
    Proof.
-   Admitted.
+     reflexivity.
+   Qed.
+
+(*   Lemma sequence_to_ivector_shift_n {T} (f:nat->T) start len offset :
+     sequence_to_ivector f (start + offset)%nat len = sequence_to_ivector (fun x => f (x + offset))%nat 0 len.
+ *)
+
+   Lemma sequence_to_ivector_ext {T} (f g : nat -> T) start len :
+     pointwise_relation _ eq f g ->
+     sequence_to_ivector f start len = sequence_to_ivector g start len.
+   Proof.
+     revert start.
+     induction len; simpl; trivial; intros start eqq.
+     now rewrite eqq, IHlen.
+   Qed.
    
    Lemma decreasing_cyl_nonempty_2  {T}  {σ:SigmaAlgebra T}
          {inh : inhabited T}
@@ -3377,7 +3391,15 @@ Section ps_sequence_product.
                               end).
           assert (x4 = sequence_to_ivector w 0 N).
           {
-            admit.
+            subst w.
+            clear.
+            induction N; simpl in *; destruct x4; trivial.
+            f_equal.
+            rewrite sequence_to_ivector_shift.
+            rewrite (IHN i) at 1.
+            apply sequence_to_ivector_ext; intros n.
+            repeat match_destr; try lia.
+            now apply ivector_nth_ext.
           }
 
           specialize (e0 w); simpl in e0.
@@ -3394,8 +3416,7 @@ Section ps_sequence_product.
         - apply sequence_to_ivector_shift.
       }
       now rewrite <- H2.
-      
-    Admitted.
+  Qed.
   
   Lemma decreasing_cyl_nonempty  {T} {σ:SigmaAlgebra T}
              (ps : nat -> ProbSpace σ)        
@@ -3406,7 +3427,7 @@ Section ps_sequence_product.
     exists (z : nat -> T), (pre_inter_of_collection es) z.
   Proof.
     intros decr limpos.
-    Admitted.
+  Admitted.
 
 End ps_sequence_product.
 
