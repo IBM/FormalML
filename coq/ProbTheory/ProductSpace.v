@@ -3421,7 +3421,7 @@ Section ps_sequence_product.
   Qed.
 
    Lemma decreasing_cyl_nonempty_2_alt  {T}  {σ:SigmaAlgebra T}
-         {inh : inhabited T}
+     (inh : inhabited T)
          (ps : nat -> ProbSpace σ)        
          (es : nat -> (pre_event (nat -> T))) 
          (ecyl : forall n, inf_cylinder (es n))
@@ -3449,9 +3449,9 @@ Section ps_sequence_product.
       | S n => sequence_cons (pre 0%nat) (sequence_prefix (fun n => pre (S n)) w n)
       end.
 
-  Definition iter_section_seq_event {T} {σ:SigmaAlgebra T} (x : nat -> T) (N : nat) 
+   Definition iter_section_seq_event {T} {σ:SigmaAlgebra T} (x : nat -> T) (N : nat) 
              (e : pre_event (nat -> T)) : pre_event (nat -> T) :=
-    fun (w : (nat -> T)) => e (sequence_prefix x w N).
+     fun (w : (nat -> T)) => e (sequence_prefix x w N).
 
   Lemma iter_section_inf_cylinder {T} {σ:SigmaAlgebra T} (x : nat -> T) (e : pre_event (nat -> T)) (ecyl : inf_cylinder e) (N : nat) :
     inf_cylinder (iter_section_seq_event x N e).
@@ -3460,6 +3460,68 @@ Section ps_sequence_product.
     - admit.
     Admitted.
 
+  Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T} 
+    (ps1 ps2 : nat -> ProbSpace σ)
+    (eqq1:forall n e, ps_P (ProbSpace:=ps1 n) e = ps_P (ProbSpace:=ps2 n) e)
+    (e1 e2 : (pre_event (nat -> T)))
+    (eqq2: pre_event_equiv e1 e2)
+    (ecyl1 : inf_cylinder e1)
+    (ecyl2 : inf_cylinder e2) :
+    ps_P_cylinder ps1 e1 ecyl1 = ps_P_cylinder ps2 e2 ecyl2.
+  Proof.
+    unfold ps_P_cylinder.
+    repeat match_destr.
+    unfold equiv in *.
+  Admitted.
+    
+  
+  Definition decreasing_cyl_nonempty_2_seq  {T}  {σ:SigmaAlgebra T}
+         (inh : inhabited T)
+         (ps : nat -> ProbSpace σ)        
+         (es : nat -> (pre_event (nat -> T))) 
+         (ecyl : forall n, inf_cylinder (es n))
+         (eps : posreal) 
+         (decr:(forall n, pre_event_sub (es (S n)) (es n)))
+         (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) (n:nat) :
+    {t : T & { tes : (nat -> (pre_event (nat -> T))) & { tecyl : forall n, inf_cylinder (tes n) |
+       (forall i, 
+           pre_event_sub
+             (tes (S i))
+             (tes i)) /\ 
+       (forall i, 
+           (ps_P_cylinder (fun j => ps (n + S j))%nat
+                          (tes i)
+                          (tecyl i)) >= eps)}}}.
+  Proof.
+    induction n.
+    - destruct (decreasing_cyl_nonempty_2_alt inh ps es ecyl eps decr epsbound)
+        as [t [tdecr tepsbound]].
+      exists t.
+      exists (fun i => section_seq_event t (es i)).
+      exists (fun i => (section_inf_cylinder t (es i) (ecyl i))).
+      auto.
+    - destruct IHn as [t [tes [tecyl [tdecr tepsbound]]]].
+      destruct (decreasing_cyl_nonempty_2_alt
+                  inh
+                  (fun i => ps (n + S i)%nat)
+                  tes
+                  tecyl
+                  eps
+               )
+        as [t' [tdecr' tepsbound']]
+      ; trivial.
+      exists t'.
+      exists (fun i => section_seq_event t' (tes i)).
+      exists (fun i => (section_inf_cylinder t' (tes i) (tecyl i))).
+      split; intros.
+      + auto.
+      + erewrite (ps_P_cylinder_ext _ (fun n1 : nat => ps (n + S (S n1))%nat)); try reflexivity.
+        * eauto.
+        * intros.
+          do 2 f_equal.
+          lia.
+  Defined.
+  
   Lemma iter_decreasing_cyl_eps {T} {σ:SigmaAlgebra T}
          {inh : inhabited T}
          (ps : nat -> ProbSpace σ)        
@@ -3475,6 +3537,7 @@ Section ps_sequence_product.
                      (iter_section_inf_cylinder x (es n) (ecyl n) j) >= eps.
    Proof.
      intros.
+     
      Admitted.
 
 
