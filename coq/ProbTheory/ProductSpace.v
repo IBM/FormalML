@@ -3546,6 +3546,7 @@ Section ps_sequence_product.
 
 
   Lemma decreasing_cyl_nonempty  {T} {σ:SigmaAlgebra T}
+             {inh : inhabited T}
              (ps : nat -> ProbSpace σ)        
              (es : nat -> (pre_event (nat -> T))) 
              (ecyl : forall n, inf_cylinder (es n)) :
@@ -3555,8 +3556,9 @@ Section ps_sequence_product.
   Proof.
     intros decr limpos.
     generalize (ps_P_cylinder_decreasing ps es ecyl decr); intros ps_decr.
-    destruct (decreasing_lim_pos_eps (fun n => ps_P_cylinder ps (es n) (ecyl n)) ps_decr limpos).
-    
+    destruct (decreasing_lim_pos_eps (fun n => ps_P_cylinder ps (es n) (ecyl n)) ps_decr limpos) as [eps ?].
+    destruct (iter_decreasing_cyl_eps (inh := inh) ps es ecyl eps decr H).
+    exists x.
   Admitted.
 
 End ps_sequence_product.
