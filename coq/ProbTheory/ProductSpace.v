@@ -3313,6 +3313,11 @@ Section ps_sequence_product.
        now rewrite IHN.
    Qed.
 
+   Lemma cons_sequence_to_ivector {T} (w : nat -> T) (x2 : nat) :
+     (w 0%nat, sequence_to_ivector w 1 x2) = sequence_to_ivector w 0 (S x2).
+   Proof.
+   Admitted.
+   
    Lemma decreasing_cyl_nonempty_2  {T}  {σ:SigmaAlgebra T}
          {inh : inhabited T}
          (ps : nat -> ProbSpace σ)        
@@ -3363,10 +3368,29 @@ Section ps_sequence_product.
         - apply ps_proper.
           intros ?.
           simpl.
-          unfold inf_cylinder_event in e0.
-          unfold section_seq_event in e0.
+          unfold inf_cylinder_event, section_seq_event in e0.
           unfold inf_cylinder_event in H3.
-          admit.
+          destruct inh.
+          pose (w := fun i => match lt_dec i N with
+                              | left pf => ivector_nth i pf x4
+                              | right _ => X0
+                              end).
+          assert (x4 = sequence_to_ivector w 0 N).
+          {
+            admit.
+          }
+
+          specialize (e0 w); simpl in e0.
+          specialize (H3 (sequence_cons x w)); simpl in H3.
+          replace (ivector_take N x0 lex0 x4) with (sequence_to_ivector (sequence_cons x w) 1 x0).
+          + replace (ivector_take N (S x2) lex2 x4) with (w 0%nat, sequence_to_ivector w 1 x2).
+            * now rewrite <- e0, <- H3.
+            * rewrite cons_sequence_to_ivector.
+              rewrite H7.
+              now rewrite <- ivector_take_sequence.
+          + rewrite sequence_to_ivector_cons_shift.
+            rewrite H7.
+            now rewrite <- ivector_take_sequence.            
         - apply sequence_to_ivector_shift.
       }
       now rewrite <- H2.
