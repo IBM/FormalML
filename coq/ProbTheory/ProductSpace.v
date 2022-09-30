@@ -3589,14 +3589,18 @@ Section ps_sequence_product.
     - generalize (Lim_seq_pos (fun n => ps_P_cylinder ps (es n) (ecyl n))); intros.
       cut_to H0.
       + unfold Rbar_gt.
-        admit.
+        apply Rbar_le_lt_or_eq_dec in H0.
+        destruct H0; trivial.
+        unfold not in H.
+        rewrite <- e in H.
+        tauto.
       + apply ps_P_cylinder_nneg.
     - unfold not.
       intros.
       specialize (H1 x).
       unfold pre_event_none in H1.
       tauto.
-  Admitted.
+  Qed.
 
 
 End ps_sequence_product.
