@@ -3460,7 +3460,8 @@ Section ps_sequence_product.
     - admit.
     Admitted.
 
-  Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T} 
+
+Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T} 
     (ps1 ps2 : nat -> ProbSpace σ)
     (eqq1:forall n e, ps_P (ProbSpace:=ps1 n) e = ps_P (ProbSpace:=ps2 n) e)
     (e1 e2 : (pre_event (nat -> T)))
@@ -3472,6 +3473,12 @@ Section ps_sequence_product.
     unfold ps_P_cylinder.
     repeat match_destr.
     unfold equiv in *.
+    pose (N := max x x1).
+    assert (lex: ((S x) <= S N)%nat) by lia.
+    rewrite (ps_cylinder_shift (S x) (S N) x0 s ps1 (lt := lex)).
+    assert (lex1: ((S x1) <= S N)%nat) by lia.
+    rewrite (ps_cylinder_shift (S x1) (S N) x2 s0 ps2 (lt := lex1)).
+
   Admitted.
     
   
@@ -3536,7 +3543,11 @@ Section ps_sequence_product.
                      (iter_section_seq_event x j (es n))
                      (iter_section_inf_cylinder x (es n) (ecyl n) j) >= eps.
    Proof.
+     intros decr epsbound.
+     pose (xx := decreasing_cyl_nonempty_2_seq inh ps es ecyl eps decr epsbound).
+     exists (fun n => projT1 (xx n)).
      intros.
+     destruct (xx n) as [t [tes [tecyl [tdecr tepsbound]]]].
      
      Admitted.
 
@@ -3665,6 +3676,18 @@ Section ps_sequence_product.
       tauto.
   Qed.
 
+(*
+  (* added is_finite hypothesis *)
+  Lemma Ash_1_2_8_b (λ:alg_set Alg -> Rbar) :
+    is_finitely_additive λ ->
+    Proper (alg_equiv ==> eq) λ ->
+    (forall (C : alg_set Alg), is_finite ( λ C)) ->
+    (forall (B : nat -> alg_set Alg),
+        (forall n, alg_sub (B (S n)) (B n)) ->
+        (pre_event_equiv (pre_inter_of_collection (fun x => B x)) pre_event_none) ->
+        is_Elim_seq (fun n : nat => λ (B n)) (Rbar.Finite 0)) ->
+    is_countably_additive  λ.
+*)
 
 End ps_sequence_product.
 
