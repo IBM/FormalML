@@ -3561,5 +3561,43 @@ Section ps_sequence_product.
     exists x.
   Admitted.
 
+  Lemma ps_P_cylinder_nneg  {T} {σ:SigmaAlgebra T}
+             (ps : nat -> ProbSpace σ)        
+             (es : nat -> (pre_event (nat -> T))) 
+             (ecyl : forall n, inf_cylinder (es n)) :
+    forall n, 0 <= ps_P_cylinder ps (es n) (ecyl n).
+  Proof.
+    intros.
+    unfold ps_P_cylinder.
+    repeat match_destr.
+    apply ps_pos.
+  Qed.
+
+  Lemma decreasing_cyl_empty  {T} {σ:SigmaAlgebra T}
+             {inh : inhabited T}
+             (ps : nat -> ProbSpace σ)        
+             (es : nat -> (pre_event (nat -> T))) 
+             (ecyl : forall n, inf_cylinder (es n)) :
+    (forall n, pre_event_sub (es (S n)) (es n)) ->
+    pre_event_equiv (pre_inter_of_collection es) pre_event_none ->
+    Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n)) = 0.
+  Proof.
+    intro decr.
+    contrapose.
+    intros.
+    destruct (decreasing_cyl_nonempty (inh := inh) ps es ecyl decr).
+    - generalize (Lim_seq_pos (fun n => ps_P_cylinder ps (es n) (ecyl n))); intros.
+      cut_to H0.
+      + unfold Rbar_gt.
+        admit.
+      + apply ps_P_cylinder_nneg.
+    - unfold not.
+      intros.
+      specialize (H1 x).
+      unfold pre_event_none in H1.
+      tauto.
+  Admitted.
+
+
 End ps_sequence_product.
 
