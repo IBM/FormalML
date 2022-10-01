@@ -3657,11 +3657,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     unfold inf_cylinder_event.
     specialize (H3 n).
     unfold ps_P_cylinder in H3.
-    match_destr_in H3.
-    match_destr_in H3.
-    match_destr_in H3.        
-    
-    
+    repeat match_destr_in H3.
     
   Admitted.
 
@@ -3761,7 +3757,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
              (ecyl2 : inf_cylinder es2) :
     pre_event_disjoint es1 es2 ->
     ps_P_cylinder ps (pre_event_union es1 es2) 
-                  (inf_cylinder_union ps es1 es2 ecyl1 ecyl2) = 
+                  (inf_cylinder_union es1 es2 ecyl1 ecyl2) = 
     ps_P_cylinder ps es1 ecyl1 + ps_P_cylinder ps es2 ecyl2.
   Proof.
     intros.
