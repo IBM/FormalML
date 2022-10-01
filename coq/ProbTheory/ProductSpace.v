@@ -3707,7 +3707,6 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
   Qed.
 
   Lemma inf_cylinder_union {T} {σ:SigmaAlgebra T}
-             (ps : nat -> ProbSpace σ)        
              (es1 es2 : (pre_event (nat -> T))) 
              (ecyl1 : inf_cylinder es1) 
              (ecyl2 : inf_cylinder es2) :
@@ -3729,6 +3728,30 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     - apply sa_union; now apply sa_cylinder_shift.
     - rewrite H0, H2.
       now rewrite H4, H6.
+  Qed.
+
+  Lemma inf_cylinder_complement {T} {σ:SigmaAlgebra T}
+             (es : (pre_event (nat -> T))) 
+             (ecyl : inf_cylinder es) :
+    inf_cylinder (pre_event_complement es).
+  Proof.
+    unfold inf_cylinder in *.
+    destruct ecyl as [? [? [? ?]]].
+    exists x.
+    exists (pre_event_complement x0).
+    split.
+    - now apply sa_complement.
+    - now rewrite H0.
+  Qed.
+
+  Lemma inf_cylinder_all {T} {σ:SigmaAlgebra T} :
+    inf_cylinder pre_Ω.
+  Proof.
+    unfold inf_cylinder.
+    exists 0%nat.
+    exists pre_Ω.
+    split; try easy.
+    apply sa_all.
   Qed.
 
   Lemma ps_P_cylinder_additive  {T} {σ:SigmaAlgebra T}
