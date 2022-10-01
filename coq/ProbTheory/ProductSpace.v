@@ -3750,6 +3750,35 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     apply sa_all.
   Qed.
   
+  Lemma inf_cylinder_none {T} {σ:SigmaAlgebra T} :
+    inf_cylinder pre_event_none.
+   Proof.
+     unfold inf_cylinder.
+     exists 0%nat.
+     exists pre_event_none.
+     split; try easy.
+     apply sa_none.
+  Qed.
+
+  Lemma inf_cylinder_ext {T} {σ:SigmaAlgebra T} (e1 e2 : pre_event (nat -> T)) :
+    pre_event_equiv e1 e2 ->
+    inf_cylinder e1 <-> inf_cylinder e2.
+  Proof.
+    intros.
+    unfold inf_cylinder.
+    split; intros.
+    - destruct H0 as [? [? [? ?]]].
+      exists x.
+      exists x0.
+      split; trivial.
+      now rewrite <- H.
+    - destruct H0 as [? [? [? ?]]].
+      exists x.
+      exists x0.
+      split; trivial.
+      now rewrite H.
+  Qed.
+
   Lemma inf_cylinder_list_union {T} {σ:SigmaAlgebra T}
              (l : list (pre_event (nat -> T))) :
     Forall (fun x : pre_event (nat -> T) => inf_cylinder x) l ->
@@ -3757,22 +3786,27 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
   Proof.
     intros.
     induction l.
-    - generalize (pre_list_union_nil (T := nat -> T)).
-    Admitted.
+    - generalize (pre_list_union_nil (T := nat -> T)); intros.
+      rewrite (inf_cylinder_ext _ _ H0).
+      apply inf_cylinder_none.
+    - generalize (pre_list_union_cons a l); intros.
+      rewrite (inf_cylinder_ext _ _ H0).
+      apply inf_cylinder_union.
+      + rewrite Forall_forall in H.
+        apply H.
+        simpl; tauto.
+      + apply IHl.
+        now apply Forall_inv_tail in H.
+   Qed.
 
-  Program Instance inf_cylinder_algebra {T} {σ:SigmaAlgebra T} : 
+  Instance inf_cylinder_algebra {T} {σ:SigmaAlgebra T} : 
     Algebra (nat -> T) :=
-    {| alg_in (x : pre_event (nat -> T)) := inf_cylinder x  |}.
-  Next Obligation.
-    now apply inf_cylinder_list_union.
-  Qed.
-  Next Obligation.
-    now apply inf_cylinder_complement.
-  Qed.
-  Next Obligation.
-    apply inf_cylinder_all.
-  Qed.
-  
+    {| alg_in (x : pre_event (nat -> T)) := inf_cylinder x ;
+       alg_in_list_union := inf_cylinder_list_union;
+       alg_in_complement := inf_cylinder_complement;
+       alg_in_all := inf_cylinder_all
+    |}.
+    
   Lemma ps_P_cylinder_additive  {T} {σ:SigmaAlgebra T}
              (ps : nat -> ProbSpace σ)        
              (es1 es2 : (pre_event (nat -> T))) 
