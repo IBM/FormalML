@@ -3758,7 +3758,6 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     intros.
     induction l.
     - generalize (pre_list_union_nil (T := nat -> T)).
-      Search inf_cylinder.
     Admitted.
 
   Program Instance inf_cylinder_algebra {T} {σ:SigmaAlgebra T} : 
