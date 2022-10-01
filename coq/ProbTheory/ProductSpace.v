@@ -3749,7 +3749,31 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     split; try easy.
     apply sa_all.
   Qed.
+  
+  Lemma inf_cylinder_list_union {T} {σ:SigmaAlgebra T}
+             (l : list (pre_event (nat -> T))) :
+    Forall (fun x : pre_event (nat -> T) => inf_cylinder x) l ->
+    inf_cylinder (pre_list_union l).
+  Proof.
+    intros.
+    induction l.
+    - generalize (pre_list_union_nil (T := nat -> T)).
+      Search inf_cylinder.
+    Admitted.
 
+  Program Instance inf_cylinder_algebra {T} {σ:SigmaAlgebra T} : 
+    Algebra (nat -> T) :=
+    {| alg_in (x : pre_event (nat -> T)) := inf_cylinder x  |}.
+  Next Obligation.
+    now apply inf_cylinder_list_union.
+  Qed.
+  Next Obligation.
+    now apply inf_cylinder_complement.
+  Qed.
+  Next Obligation.
+    apply inf_cylinder_all.
+  Qed.
+  
   Lemma ps_P_cylinder_additive  {T} {σ:SigmaAlgebra T}
              (ps : nat -> ProbSpace σ)        
              (es1 es2 : (pre_event (nat -> T))) 
