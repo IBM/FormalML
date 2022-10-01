@@ -3636,7 +3636,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
 
 
   Lemma decreasing_cyl_nonempty  {T} {σ:SigmaAlgebra T}
-             {inh : inhabited T}
+             (inh : inhabited T)
              (ps : nat -> ProbSpace σ)        
              (es : nat -> (pre_event (nat -> T))) 
              (ecyl : forall n, inf_cylinder (es n)) :
@@ -3663,9 +3663,9 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
 
   Lemma ps_P_cylinder_nneg  {T} {σ:SigmaAlgebra T}
              (ps : nat -> ProbSpace σ)        
-             (es : nat -> (pre_event (nat -> T))) 
-             (ecyl : forall n, inf_cylinder (es n)) :
-    forall n, 0 <= ps_P_cylinder ps (es n) (ecyl n).
+             (es : (pre_event (nat -> T))) 
+             (ecyl : inf_cylinder es) :
+    0 <= ps_P_cylinder ps es ecyl.
   Proof.
     intros.
     unfold ps_P_cylinder.
@@ -3674,7 +3674,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
   Qed.
 
   Lemma decreasing_cyl_empty  {T} {σ:SigmaAlgebra T}
-             {inh : inhabited T}
+             (inh : inhabited T)
              (ps : nat -> ProbSpace σ)        
              (es : nat -> (pre_event (nat -> T))) 
              (ecyl : forall n, inf_cylinder (es n)) :
@@ -3685,7 +3685,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     intro decr.
     contrapose.
     intros.
-    destruct (decreasing_cyl_nonempty (inh := inh) ps es ecyl decr).
+    destruct (decreasing_cyl_nonempty inh ps es ecyl decr).
     - generalize (Lim_seq_pos (fun n => ps_P_cylinder ps (es n) (ecyl n))); intros.
       cut_to H0.
       + unfold Rbar_gt.
@@ -3694,12 +3694,32 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
         unfold not in H.
         rewrite <- e in H.
         tauto.
-      + apply ps_P_cylinder_nneg.
+      + intros.
+        apply ps_P_cylinder_nneg.
     - unfold not.
       intros.
       specialize (H1 x).
       unfold pre_event_none in H1.
       tauto.
+  Qed.
+
+  Lemma decreasing_cyl_empty_alt  {T} {σ:SigmaAlgebra T}
+             (inh : inhabited T)
+             (ps : nat -> ProbSpace σ)        
+             (es : nat -> (pre_event (nat -> T))) 
+             (ecyl : forall n, inf_cylinder (es n)) :
+    (forall n, pre_event_sub (es (S n)) (es n)) ->
+    pre_event_equiv (pre_inter_of_collection es) pre_event_none ->
+    is_lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n)) 0.
+  Proof.
+    intros.
+    generalize (decreasing_cyl_empty inh ps es ecyl H H0); intros.
+    rewrite <- H1.
+    apply Lim_seq_correct.
+    apply ex_lim_seq_decr.
+    intros.
+    apply ps_P_cylinder_decreasing.
+    now intros.
   Qed.
 
   Lemma inf_cylinder_union {T} {σ:SigmaAlgebra T}
@@ -3799,7 +3819,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
         now apply Forall_inv_tail in H.
    Qed.
 
-  Instance inf_cylinder_algebra {T} {σ:SigmaAlgebra T} : 
+  Instance inf_cylinder_algebra {T} (σ:SigmaAlgebra T) : 
     Algebra (nat -> T) :=
     {| alg_in (x : pre_event (nat -> T)) := inf_cylinder x ;
        alg_in_list_union := inf_cylinder_list_union;
@@ -3844,8 +3864,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
       unfold inf_cylinder_event in e0.
       symmetry in e0.
       unfold seq in e0.
-      generalize (ivec_to_seq_to_ivec x5 (ivector_nth 0 H1 x5)); intros.
-      rewrite H3.
+      rewrite (ivec_to_seq_to_ivec x5 (ivector_nth 0 H1 x5)).
       now do 3 rewrite <- ivector_take_sequence.
     - intros ?.
       unfold proj1_sig.
@@ -3858,24 +3877,80 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
       specialize (e2 seq).
       specialize (e4 seq).
       rewrite e2, e4 in H.
-      generalize (ivec_to_seq_to_ivec x5 (ivector_nth 0 H1 x5)); intros iv5.
-      rewrite iv5.
+      rewrite (ivec_to_seq_to_ivec x5 (ivector_nth 0 H1 x5)).
       do 2 rewrite <- ivector_take_sequence.
       apply H.
    Qed.
 
-(*
-  (* added is_finite hypothesis *)
-  Lemma Ash_1_2_8_b (λ:alg_set Alg -> Rbar) :
-    is_finitely_additive λ ->
-    Proper (alg_equiv ==> eq) λ ->
-    (forall (C : alg_set Alg), is_finite ( λ C)) ->
-    (forall (B : nat -> alg_set Alg),
-        (forall n, alg_sub (B (S n)) (B n)) ->
-        (pre_event_equiv (pre_inter_of_collection (fun x => B x)) pre_event_none) ->
-        is_Elim_seq (fun n : nat => λ (B n)) (Rbar.Finite 0)) ->
-    is_countably_additive  λ.
-*)
+
+  Lemma ps_P_cylinder_none {T} {σ:SigmaAlgebra T} 
+          (inh : inhabited T)
+          (ps : nat -> ProbSpace σ) :
+    ps_P_cylinder ps pre_event_none (alg_in_none (inf_cylinder_algebra σ)) = 0.
+  Proof.
+    unfold ps_P_cylinder.
+    repeat match_destr.
+    assert (ps_P (ProbSpace := (ivector_ps (sequence_to_ivector ps 0 (S x)))) event_none = 0) 
+      by apply ps_none.
+    apply Rbar_finite_eq.
+    rewrite <- H.
+    apply Rbar_finite_eq.
+    apply ps_proper.
+    intros ?.
+    simpl.
+    assert (0 < S x)%nat by lia.
+    pose (seq := ivector_to_sequence x1 (ivector_nth 0 H0 x1)).
+    specialize (e0 seq).
+    unfold seq, inf_cylinder_event in e0.
+    rewrite (ivec_to_seq_to_ivec x1 (ivector_nth 0 H0 x1)).
+    now rewrite e0.
+  Qed.
+
+  Program Instance ps_P_cylinder_is_premeasure {T} {σ:SigmaAlgebra T} 
+          (inh : inhabited T)
+          (ps : nat -> ProbSpace σ) :
+    is_premeasure (fun (x : alg_set (inf_cylinder_algebra σ)) =>
+                     ps_P_cylinder ps (proj1_sig x) (proj2_sig x)).
+  Next Obligation.
+  Admitted.
+  Next Obligation.
+    apply Rbar_finite_eq.
+    now apply ps_P_cylinder_none.
+  Qed.
+  Next Obligation.
+    apply ps_P_cylinder_nneg.
+  Qed.
+  Next Obligation.
+    apply (Ash_1_2_8_b (fun (x : alg_set (inf_cylinder_algebra σ)) =>
+                          ps_P_cylinder ps (proj1_sig x) (proj2_sig x))); try easy.
+    - apply finitely_additive_2.
+      + admit.
+      + apply Rbar_finite_eq.
+        now apply ps_P_cylinder_none.
+      + intros.
+        simpl.
+        rewrite <- ps_P_cylinder_additive; try easy.
+        apply Rbar_finite_eq.
+        apply ps_P_cylinder_ext; try reflexivity.
+    - admit.
+    - intros.
+      rewrite is_Elim_seq_fin.
+      apply (decreasing_cyl_empty_alt inh ps B0 (fun n => proj2_sig (B0 n)) H0 H1).
+  Admitted.
+  
+  Definition ps_P_cylinder_measure {T} {σ:SigmaAlgebra T} 
+             (ps : nat -> ProbSpace σ) :=
+    fun (x : pre_event (nat -> T)) =>
+      outer_λ 
+            (fun (x : alg_set (inf_cylinder_algebra σ)) =>
+               ps_P_cylinder ps (proj1_sig x) (proj2_sig x)).
+
+
+
+
+
+
+
 
 End ps_sequence_product.
 
