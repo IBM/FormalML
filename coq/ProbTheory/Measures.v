@@ -1136,6 +1136,60 @@ Section Ash_1_2_8.
         * apply FOP_nil.
   Qed.
 
+  Lemma pre_event_disjoint_alg_list_union 
+    (a : alg_set Alg)
+    (l : list (alg_set Alg)) :
+    ForallOrdPairs pre_event_disjoint (map alg_pre (a :: l)) ->
+    pre_event_disjoint a (alg_list_union l).
+  Proof.
+    intros.
+    unfold pre_event_disjoint.
+    intros.
+    destruct H1 as [? [? ?]].
+    rewrite in_map_iff in H1.
+    destruct H1 as [? [? ?]].
+    rewrite <- H1 in H2.
+    clear x0 H1.
+    apply ForallOrdPairs_In with (x := a) (y := x1) in H.
+    - destruct H.
+      + admit.
+      + destruct H.
+        * specialize (H x); tauto.
+        * specialize (H x); tauto.
+    - simpl.
+      now left.
+    - simpl.
+      right.
+      now apply in_map.
+    Admitted.
+
+  Lemma finitely_additive_2 (λ:alg_set Alg -> Rbar) :
+    Proper (alg_equiv ==> eq) λ ->
+    λ alg_none = Finite 0 ->
+    (forall (A B : alg_set Alg),
+        pre_event_disjoint A B ->
+        λ (alg_union A B) = Rbar_plus (λ A) (λ B)) ->
+    is_finitely_additive λ.
+  Proof.
+    unfold is_finitely_additive.
+    intros.
+    induction l.
+    - simpl.
+      now rewrite alg_list_union_nil.
+    - simpl.
+      rewrite alg_list_union_cons.
+      rewrite H1.
+      + f_equal.
+        apply IHl.
+        revert H2.
+        apply ForallOrdPairs_sub; try easy.
+        unfold flip.
+        apply sublist_map.
+        apply sublist_skip.
+        reflexivity.
+      + now apply pre_event_disjoint_alg_list_union.
+  Qed.
+
   Lemma Ash_1_2_5_a (λ:alg_set Alg -> Rbar) :
     is_finitely_additive λ ->
     Proper (alg_equiv ==> eq) λ ->
@@ -1160,6 +1214,34 @@ Section Ash_1_2_8.
       + simpl in H2.
         discriminate.
     - now rewrite alg_inter_none.
+  Qed.
+
+  Lemma Ash_1_2_5_a_2 (λ:alg_set Alg -> Rbar) :
+    (forall (A B : alg_set Alg),
+        pre_event_disjoint A B ->
+        λ (alg_union A B) = Rbar_plus (λ A) (λ B)) ->
+    Proper (alg_equiv ==> eq) λ ->
+    (exists c, is_finite (λ c)) ->
+    λ alg_none = Finite 0.
+  Proof.
+    intros.
+    destruct H1.
+    assert  (λ x = λ (alg_union x alg_none)).
+    {
+      now rewrite alg_union_none.
+    }
+    rewrite H in H2.
+    rewrite <- H1 in H2.
+    - destruct  (λ (@alg_none T Alg)).
+      + simpl in H2.
+        rewrite Rbar_finite_eq in H2.
+        rewrite Rbar_finite_eq.
+        lra.
+      + simpl in H2.
+        discriminate.
+      + simpl in H2.
+        discriminate.
+    - easy.
   Qed.
 
   Program Definition alg_complement (A : alg_set Alg) : alg_set Alg :=
