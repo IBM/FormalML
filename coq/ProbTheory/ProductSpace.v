@@ -3505,7 +3505,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
         as [t [tdecr tepsbound]].
       exists t.
       exists (fun i => section_seq_event t (es i)).
-      exists (fun i => (section_inf_cylinder t (es i) (ecyl i))).
+      exists (fun i => section_inf_cylinder t (es i) (ecyl i)).
       auto.
     - destruct IHn as [t [tes [tecyl [tdecr tepsbound]]]].
       destruct (decreasing_cyl_nonempty_2_alt
@@ -3519,15 +3519,31 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
       ; trivial.
       exists t'.
       exists (fun i => section_seq_event t' (tes i)).
-      exists (fun i => (section_inf_cylinder t' (tes i) (tecyl i))).
+      exists (fun i => section_inf_cylinder t' (tes i) (tecyl i)).
       split; intros.
       + auto.
-      + erewrite (ps_P_cylinder_ext _ (fun n1 : nat => ps (n + S (S n1))%nat)); try reflexivity.
-        * eauto.
-        * intros.
-          do 2 f_equal.
-          lia.
-  Defined.
+      + specialize (tepsbound' i).
+        assert (ps_P_cylinder (fun n0 : nat => ps (n + S (S n0))%nat)
+                              (section_seq_event t' (tes i))
+                              (section_inf_cylinder t' (tes i) (tecyl i)) =
+                ps_P_cylinder (fun j : nat => ps (S n + S j)%nat)
+                              (section_seq_event t' (tes i))
+                              (section_inf_cylinder t' (tes i) (tecyl i))).
+        {
+          unfold ps_P_cylinder.
+          repeat match_destr.
+          replace (sequence_to_ivector 
+                     (fun n0 : nat => ps (n + (S (S n0)))%nat) 0 (S x)) with
+              (sequence_to_ivector 
+                 (fun j : nat => ps ((S n) + (S j))%nat) O (S x)).
+          - reflexivity.
+          - apply sequence_to_ivector_ext.
+            red; intros.
+            f_equal.
+            lia.
+        }
+        now rewrite <- H.
+   Defined.
   
   Lemma iter_decreasing_cyl_eps {T} {σ:SigmaAlgebra T}
          {inh : inhabited T}
@@ -3631,8 +3647,22 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     intros decr limpos.
     generalize (ps_P_cylinder_decreasing ps es ecyl decr); intros ps_decr.
     destruct (decreasing_lim_pos_eps (fun n => ps_P_cylinder ps (es n) (ecyl n)) ps_decr limpos) as [eps ?].
-    destruct (iter_decreasing_cyl_eps (inh := inh) ps es ecyl eps decr H).
-    exists x.
+    pose (xx := decreasing_cyl_nonempty_2_seq inh ps es ecyl eps decr H).
+    exists (fun n => projT1 (xx n)).
+    intros ?.
+    destruct (ecyl n) as [? [? [? ?]]].
+    destruct (xx n) as [t [tes [tecyl [? ?]]]].
+    specialize (H1  (fun n0 : nat => projT1 (xx n0))).
+    rewrite H1.
+    unfold inf_cylinder_event.
+    specialize (H3 n).
+    unfold ps_P_cylinder in H3.
+    match_destr_in H3.
+    match_destr_in H3.
+    match_destr_in H3.        
+    
+    
+    
   Admitted.
 
   Lemma ps_P_cylinder_nneg  {T} {σ:SigmaAlgebra T}
@@ -3675,6 +3705,88 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
       unfold pre_event_none in H1.
       tauto.
   Qed.
+
+  Lemma inf_cylinder_union {T} {σ:SigmaAlgebra T}
+             (ps : nat -> ProbSpace σ)        
+             (es1 es2 : (pre_event (nat -> T))) 
+             (ecyl1 : inf_cylinder es1) 
+             (ecyl2 : inf_cylinder es2) :
+    inf_cylinder (pre_event_union es1 es2).
+  Proof.
+    intros.
+    destruct ecyl1 as [? [? [? ?]]].
+    destruct ecyl2 as [? [? [? ?]]].    
+    pose (N := max x x1).
+    exists N.
+    assert (S x <= S N)%nat by lia.
+    generalize (inf_cylinder_shift (S x) x0 (sa := H) (S N) H3); intros.
+    assert (S x1 <= S N)%nat by lia.
+    generalize (inf_cylinder_shift (S x1) x2 (sa := H1) (S N) H5); intros.
+    exists (pre_event_union
+              (fun v : ivector T (S N) => x0 (ivector_take (S N) (S x) H3 v))
+              (fun v : ivector T (S N) => x2 (ivector_take (S N) (S x1) H5 v))).
+    split.
+    - apply sa_union; now apply sa_cylinder_shift.
+    - rewrite H0, H2.
+      now rewrite H4, H6.
+  Qed.
+
+  Lemma ps_P_cylinder_additive  {T} {σ:SigmaAlgebra T}
+             (ps : nat -> ProbSpace σ)        
+             (es1 es2 : (pre_event (nat -> T))) 
+             (ecyl1 : inf_cylinder es1) 
+             (ecyl2 : inf_cylinder es2) :
+    pre_event_disjoint es1 es2 ->
+    ps_P_cylinder ps (pre_event_union es1 es2) 
+                  (inf_cylinder_union ps es1 es2 ecyl1 ecyl2) = 
+    ps_P_cylinder ps es1 ecyl1 + ps_P_cylinder ps es2 ecyl2.
+  Proof.
+    intros.
+    unfold ps_P_cylinder.
+    repeat match_destr.
+    
+    pose (N := max (max x x1) x3).
+    assert (S x <= S N)%nat by lia.
+    generalize (ps_cylinder_shift (S x) (S N) x0 s ps (lt := H0)); intros.
+    assert (S x1 <= S N)%nat by lia.
+    generalize (ps_cylinder_shift (S x1) (S N) x2 s0 ps (lt := H2)); intros.    
+    assert (S x3 <= S N)%nat by lia.
+    generalize (ps_cylinder_shift (S x3) (S N) x4 s1 ps (lt := H4)); intros.
+    
+    rewrite H1, H3, H5.
+    clear H1 H3 H5.
+    rewrite <- ps_disjoint_union.
+    - apply ps_proper.
+      intros ?.
+      unfold event_union, pre_event_union, proj1_sig.
+      clear e e1 e3.
+      assert (0 < S N)%nat by lia.
+      pose (seq := ivector_to_sequence x5 (ivector_nth 0 H1 x5)).
+      specialize (e0 seq).
+      unfold pre_event_union in e0.
+      rewrite (e2 seq), (e4 seq) in e0.
+      unfold inf_cylinder_event in e0.
+      symmetry in e0.
+      unfold seq in e0.
+      generalize (ivec_to_seq_to_ivec x5 (ivector_nth 0 H1 x5)); intros.
+      rewrite H3.
+      now do 3 rewrite <- ivector_take_sequence.
+    - intros ?.
+      unfold proj1_sig.
+      unfold pre_event_disjoint in H.
+      unfold inf_cylinder_event in e4.
+      unfold inf_cylinder_event in e2.
+      assert (0 < S N)%nat by lia.
+      pose (seq := ivector_to_sequence x5 (ivector_nth 0 H1 x5)).
+      specialize (H seq).
+      specialize (e2 seq).
+      specialize (e4 seq).
+      rewrite e2, e4 in H.
+      generalize (ivec_to_seq_to_ivec x5 (ivector_nth 0 H1 x5)); intros iv5.
+      rewrite iv5.
+      do 2 rewrite <- ivector_take_sequence.
+      apply H.
+   Qed.
 
 (*
   (* added is_finite hypothesis *)
