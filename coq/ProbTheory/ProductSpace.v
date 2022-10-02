@@ -3458,10 +3458,66 @@ Section ps_sequence_product.
     - admit.
     Admitted.
 
+  Definition ps_equiv {T} {σ:SigmaAlgebra T} (ps1 ps2 : ProbSpace σ)
+    := forall x, ps_P (ProbSpace:=ps1) x = ps_P (ProbSpace:=ps2) x.
+
+  Global Instance ps_equiv_equiv {T} {σ:SigmaAlgebra T} :
+    Equivalence ps_equiv.
+  Proof.
+    constructor; repeat red; intros.
+    - reflexivity.
+    - now symmetry.
+    - etransitivity; eauto.
+  Qed.
+
+  Instance product_ps_proper' {X Y} {A:SigmaAlgebra X} {B:SigmaAlgebra Y} :
+    Proper (ps_equiv ==> ps_equiv ==> ps_equiv) (@product_ps X Y A B).
+  Proof.
+    intros ???????.
+    simpl.
+    unfold product_measure.
+  Admitted.
+
+  Instance ivector_ps_proper {T} {σ:SigmaAlgebra T} {N} :
+    Proper (ivector_Forall2 ps_equiv ==> ps_equiv) (@ivector_ps N T σ).
+  Proof.
+    intros ????.
+    induction N; simpl; trivial.
+    destruct x; destruct y.
+    invcs H.
+    apply product_ps_proper'; trivial.
+    intros ?.
+    now apply IHN.
+  Qed.    
+
+  Lemma sequence_to_ivector_Forall2 {T1 T2} (RR:T1->T2->Prop) (f:nat->T1) (g:nat->T2) s N :
+    (forall n : nat, (s <= n <= N + s)%nat -> RR (f n) (g n)) ->
+    ivector_Forall2 RR (sequence_to_ivector f s N) (sequence_to_ivector g s N).
+  Proof.
+    revert s.
+    induction N; simpl; trivial; intros.
+    split.
+    - apply H; lia.
+    - apply IHN.
+      intros.
+      apply H; lia.
+  Qed.
+
+  Lemma ivector_ps_seq_ext {T} {σ:SigmaAlgebra T} 
+    (ps1 ps2 : nat -> ProbSpace σ) N : 
+    (forall n, (n <= N)%nat -> ps_equiv (ps1 n) (ps2 n)) -> 
+    (ps_equiv (@ivector_ps N T σ (@sequence_to_ivector (@ProbSpace T σ) ps1 O N))
+       (@ivector_ps N T σ (@sequence_to_ivector (@ProbSpace T σ) ps2 O N))).
+  Proof.
+    intros.
+    apply ivector_ps_proper.
+    apply sequence_to_ivector_Forall2.
+    intros; apply H; lia.
+  Qed.      
 
 Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T} 
     (ps1 ps2 : nat -> ProbSpace σ)
-    (eqq1:forall n e, ps_P (ProbSpace:=ps1 n) e = ps_P (ProbSpace:=ps2 n) e)
+    (eqq1:forall n, ps_equiv (ps1 n) (ps2 n))
     (e1 e2 : (pre_event (nat -> T)))
     (eqq2: pre_event_equiv e1 e2)
     (ecyl1 : inf_cylinder e1)
@@ -3476,9 +3532,12 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     rewrite (ps_cylinder_shift (S x) (S N) x0 s ps1 (lt := lex)).
     assert (lex1: ((S x1) <= S N)%nat) by lia.
     rewrite (ps_cylinder_shift (S x1) (S N) x2 s0 ps2 (lt := lex1)).
-
+    rewrite (ivector_ps_seq_ext _ ps2).
+    - apply ps_proper.
+      intros ?; simpl.
+      admit.
+    - auto.
   Admitted.
-    
   
   Definition decreasing_cyl_nonempty_2_seq  {T}  {σ:SigmaAlgebra T}
          (inh : NonEmpty T)
@@ -3944,13 +4003,13 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
         rewrite is_Elim_seq_fin.
         apply (decreasing_cyl_empty_alt inh ps B (fun n => proj2_sig (B n)) H H0).
   Qed.
-  
-  Definition ps_P_cylinder_measure {T} {σ:SigmaAlgebra T} 
-             (ps : nat -> ProbSpace σ) :=
+
+  Definition ps_P_cylinder_measure {T} {σ:SigmaAlgebra T}
+    (ps : nat -> ProbSpace σ) :=
     fun (x : pre_event (nat -> T)) =>
-      outer_λ 
-            (fun (x : alg_set (inf_cylinder_algebra σ)) =>
-               ps_P_cylinder ps (proj1_sig x) (proj2_sig x)).
+      outer_λ
+        (fun (x : alg_set (inf_cylinder_algebra σ)) =>
+           ps_P_cylinder ps (proj1_sig x) (proj2_sig x)).
 
 End ps_sequence_product.
 
