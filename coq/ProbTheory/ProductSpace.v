@@ -3078,7 +3078,7 @@ Section ps_sequence_product.
   Lemma rvlt_nnexp_contra {T} {σ:SigmaAlgebra T} (prts : ProbSpace σ) (X : T -> R)
         (rv : RandomVariable σ borel_sa X)
         (Xpos : NonnegativeFunction X) (c : R) 
-        {inh : inhabited T}:
+        (inh : NonEmpty T):
     Rbar_ge (NonnegExpectation X) c ->
     exists (t : T), X t >= c.
   Proof.
@@ -3122,16 +3122,15 @@ Section ps_sequence_product.
         * unfold IsFiniteExpectation.
           rewrite Expectation_pos_pofrf with (nnf := Xpos).
           now rewrite H0.
-      + destruct inh.
-        exists X0.
-        generalize (Xpos X0); intros.
+      + exists inh.
+        generalize (Xpos inh); intros.
         lra.
     - rewrite H0 in H.
       now simpl in H.
   Qed.
 
   Lemma decreasing_cyl_nonempty_1_alt  {T} {σ:SigmaAlgebra T}
-             {inh : inhabited T}
+             (inh : NonEmpty T)
              (ps : nat -> ProbSpace σ)        
              (es : nat -> (pre_event (nat -> T))) 
              (ecyl : forall n, inf_cylinder (es n)) (eps : posreal) :
@@ -3227,7 +3226,7 @@ Section ps_sequence_product.
       - intros.
         apply exfin.
     }
-    generalize (rvlt_nnexp_contra (ps 0%nat) f1 H2 H1 eps (inh := inh)); intros.
+    generalize (rvlt_nnexp_contra (ps 0%nat) f1 H2 H1 eps inh); intros.
     cut_to H3.
     - destruct H3.
       exists x.
@@ -3329,7 +3328,7 @@ Section ps_sequence_product.
    Qed.
    
    Lemma decreasing_cyl_nonempty_2  {T}  {σ:SigmaAlgebra T}
-         {inh : inhabited T}
+         (inh : NonEmpty T)
          (ps : nat -> ProbSpace σ)        
          (es : nat -> (pre_event (nat -> T))) 
          (ecyl : forall n, inf_cylinder (es n))
@@ -3347,7 +3346,7 @@ Section ps_sequence_product.
                         (section_inf_cylinder x (es n) (ecyl n))) >= eps).
   Proof.
     intros.
-    destruct (decreasing_cyl_nonempty_1_alt ps es ecyl eps H H0 (inh := inh)).
+    destruct (decreasing_cyl_nonempty_1_alt inh ps es ecyl eps H H0).
     exists x.
     split.
     - intros ? ?.
@@ -3386,10 +3385,9 @@ Section ps_sequence_product.
           simpl.
           unfold inf_cylinder_event, section_seq_event in e0.
           unfold inf_cylinder_event in H3.
-          destruct inh.
           pose (w := fun i => match lt_dec i N with
                               | left pf => ivector_nth i pf x4
-                              | right _ => X0
+                              | right _ => inh
                               end).
           assert (x4 = sequence_to_ivector w 0 N).
           {
@@ -3421,7 +3419,7 @@ Section ps_sequence_product.
   Qed.
 
    Lemma decreasing_cyl_nonempty_2_alt  {T}  {σ:SigmaAlgebra T}
-     (inh : inhabited T)
+         (inh : NonEmpty T)
          (ps : nat -> ProbSpace σ)        
          (es : nat -> (pre_event (nat -> T))) 
          (ecyl : forall n, inf_cylinder (es n))
@@ -3439,7 +3437,7 @@ Section ps_sequence_product.
                           (section_inf_cylinder x (es n) (ecyl n))) >= eps)}.
    Proof.
      intros.
-     generalize (decreasing_cyl_nonempty_2 ps es ecyl eps H H0 (inh := inh)); intros.
+     generalize (decreasing_cyl_nonempty_2 inh ps es ecyl eps H H0); intros.
      now apply constructive_indefinite_description in H1.
   Qed.
 
@@ -3483,7 +3481,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     
   
   Definition decreasing_cyl_nonempty_2_seq  {T}  {σ:SigmaAlgebra T}
-         (inh : inhabited T)
+         (inh : NonEmpty T)
          (ps : nat -> ProbSpace σ)        
          (es : nat -> (pre_event (nat -> T))) 
          (ecyl : forall n, inf_cylinder (es n))
@@ -3546,7 +3544,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
    Defined.
   
   Lemma iter_decreasing_cyl_eps {T} {σ:SigmaAlgebra T}
-         {inh : inhabited T}
+         (inh : NonEmpty T)
          (ps : nat -> ProbSpace σ)        
          (es : nat -> (pre_event (nat -> T))) 
          (ecyl : forall n, inf_cylinder (es n))
@@ -3634,9 +3632,8 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     lra.
   Qed.
 
-
   Lemma decreasing_cyl_nonempty  {T} {σ:SigmaAlgebra T}
-             (inh : inhabited T)
+             (inh : NonEmpty T)
              (ps : nat -> ProbSpace σ)        
              (es : nat -> (pre_event (nat -> T))) 
              (ecyl : forall n, inf_cylinder (es n)) :
@@ -3674,7 +3671,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
   Qed.
 
   Lemma decreasing_cyl_empty  {T} {σ:SigmaAlgebra T}
-             (inh : inhabited T)
+             (inh : NonEmpty T)
              (ps : nat -> ProbSpace σ)        
              (es : nat -> (pre_event (nat -> T))) 
              (ecyl : forall n, inf_cylinder (es n)) :
@@ -3704,7 +3701,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
   Qed.
 
   Lemma decreasing_cyl_empty_alt  {T} {σ:SigmaAlgebra T}
-             (inh : inhabited T)
+             (inh : NonEmpty T)
              (ps : nat -> ProbSpace σ)        
              (es : nat -> (pre_event (nat -> T))) 
              (ecyl : forall n, inf_cylinder (es n)) :
@@ -3882,9 +3879,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
       apply H.
    Qed.
 
-
   Lemma ps_P_cylinder_none {T} {σ:SigmaAlgebra T} 
-          (inh : inhabited T)
           (ps : nat -> ProbSpace σ) :
     ps_P_cylinder ps pre_event_none (alg_in_none (inf_cylinder_algebra σ)) = 0.
   Proof.
@@ -3907,7 +3902,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
   Qed.
 
   Program Instance ps_P_cylinder_is_premeasure {T} {σ:SigmaAlgebra T} 
-          (inh : inhabited T)
+          (inh : NonEmpty T)
           (ps : nat -> ProbSpace σ) :
     is_premeasure (fun (x : alg_set (inf_cylinder_algebra σ)) =>
                      ps_P_cylinder ps (proj1_sig x) (proj2_sig x)).
@@ -3944,13 +3939,6 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
       outer_λ 
             (fun (x : alg_set (inf_cylinder_algebra σ)) =>
                ps_P_cylinder ps (proj1_sig x) (proj2_sig x)).
-
-
-
-
-
-
-
 
 End ps_sequence_product.
 
