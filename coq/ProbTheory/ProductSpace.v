@@ -3879,7 +3879,6 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
       apply H.
    Qed.
 
-  Search "R0".
   Lemma ps_P_cylinder_none {T} {σ:SigmaAlgebra T} 
           (ps : nat -> ProbSpace σ) :
     ps_P_cylinder ps pre_event_none (alg_in_none (inf_cylinder_algebra σ)) = 0.
@@ -3900,36 +3899,33 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     now rewrite e0.
   Qed.
 
-  Program Instance ps_P_cylinder_is_premeasure {T} {σ:SigmaAlgebra T} 
+  Instance ps_P_cylinder_is_premeasure {T} {σ:SigmaAlgebra T} 
           (inh : NonEmpty T)
           (ps : nat -> ProbSpace σ) :
     is_premeasure (fun (x : alg_set (inf_cylinder_algebra σ)) =>
                      ps_P_cylinder ps (proj1_sig x) (proj2_sig x)).
-  Next Obligation.
-  Admitted.
-  Next Obligation.
-    apply Rbar_finite_eq.
-    now apply ps_P_cylinder_none.
-  Qed.
-  Next Obligation.
-    apply ps_P_cylinder_nneg.
-  Qed.
-  Next Obligation.
-    apply (Ash_1_2_8_b (fun (x : alg_set (inf_cylinder_algebra σ)) =>
-                          ps_P_cylinder ps (proj1_sig x) (proj2_sig x))); try easy.
-    - apply finitely_additive_2.
-      + admit.
-      + apply Rbar_finite_eq.
-        now apply ps_P_cylinder_none.
-      + intros.
-        simpl.
-        rewrite <- ps_P_cylinder_additive; try easy.
-        apply Rbar_finite_eq.
-        apply ps_P_cylinder_ext; try reflexivity.
+  Proof.
+    constructor.
     - admit.
+    - apply Rbar_finite_eq.
+      now apply ps_P_cylinder_none.
     - intros.
-      rewrite is_Elim_seq_fin.
-      apply (decreasing_cyl_empty_alt inh ps B0 (fun n => proj2_sig (B0 n)) H0 H1).
+      apply ps_P_cylinder_nneg.
+    - apply (Ash_1_2_8_b (fun (x : alg_set (inf_cylinder_algebra σ)) =>
+                          ps_P_cylinder ps (proj1_sig x) (proj2_sig x))); try easy.
+      + apply finitely_additive_2.
+        * admit.
+        * apply Rbar_finite_eq.
+        now apply ps_P_cylinder_none.
+        * intros.
+          simpl.
+          rewrite <- ps_P_cylinder_additive; try easy.
+          apply Rbar_finite_eq.
+          apply ps_P_cylinder_ext; try reflexivity.
+      + admit.
+      + intros.
+        rewrite is_Elim_seq_fin.
+        apply (decreasing_cyl_empty_alt inh ps B (fun n => proj2_sig (B n)) H H0).
   Admitted.
   
   Definition ps_P_cylinder_measure {T} {σ:SigmaAlgebra T} 
