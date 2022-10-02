@@ -3916,34 +3916,33 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     now apply ps_P_cylinder_ext.
   Qed.
 
-  Program Instance ps_P_cylinder_is_premeasure {T} {σ:SigmaAlgebra T} 
+  Instance ps_P_cylinder_is_premeasure {T} {σ:SigmaAlgebra T} 
           (inh : NonEmpty T)
           (ps : nat -> ProbSpace σ) :
     is_premeasure (fun (x : alg_set (inf_cylinder_algebra σ)) =>
                      ps_P_cylinder ps (proj1_sig x) (proj2_sig x)).
-  Next Obligation.
-    apply Rbar_finite_eq.
-    now apply ps_P_cylinder_none.
-  Qed.
-  Next Obligation.
-    apply ps_P_cylinder_nneg.
-  Qed.
-  Next Obligation.
-    apply (Ash_1_2_8_b (fun (x : alg_set (inf_cylinder_algebra σ)) =>
-                          ps_P_cylinder ps (proj1_sig x) (proj2_sig x))); try easy.
-    - apply finitely_additive_2.
-      + apply alg_set_inf_cyl_fin_proper.
-      + apply Rbar_finite_eq.
-        now apply ps_P_cylinder_none.
-      + intros.
-        simpl.
-        rewrite <- ps_P_cylinder_additive; try easy.
-        apply Rbar_finite_eq.
-        apply ps_P_cylinder_ext; try reflexivity.
+  Proof.
+    constructor.
     - apply alg_set_inf_cyl_fin_proper.
+    - apply Rbar_finite_eq.
+      now apply ps_P_cylinder_none.
     - intros.
-      rewrite is_Elim_seq_fin.
-      apply (decreasing_cyl_empty_alt inh ps B0 (fun n => proj2_sig (B0 n)) H0 H1).
+      apply ps_P_cylinder_nneg.
+    - apply (Ash_1_2_8_b (fun (x : alg_set (inf_cylinder_algebra σ)) =>
+                            ps_P_cylinder ps (proj1_sig x) (proj2_sig x))); try easy.
+      + apply finitely_additive_2.
+        * apply alg_set_inf_cyl_fin_proper.
+        * apply Rbar_finite_eq.
+          now apply ps_P_cylinder_none.
+        * intros.
+          simpl.
+          rewrite <- ps_P_cylinder_additive; try easy.
+          apply Rbar_finite_eq.
+          apply ps_P_cylinder_ext; try reflexivity.
+      + apply alg_set_inf_cyl_fin_proper.
+      + intros.
+        rewrite is_Elim_seq_fin.
+        apply (decreasing_cyl_empty_alt inh ps B (fun n => proj2_sig (B n)) H H0).
   Qed.
   
   Definition ps_P_cylinder_measure {T} {σ:SigmaAlgebra T} 
