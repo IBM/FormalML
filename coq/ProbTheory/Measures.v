@@ -1142,27 +1142,12 @@ Section Ash_1_2_8.
     ForallOrdPairs pre_event_disjoint (map alg_pre (a :: l)) ->
     pre_event_disjoint a (alg_list_union l).
   Proof.
-    intros.
-    unfold pre_event_disjoint.
-    intros.
-    destruct H1 as [? [? ?]].
-    rewrite in_map_iff in H1.
-    destruct H1 as [? [? ?]].
-    rewrite <- H1 in H2.
-    clear x0 H1.
-    apply ForallOrdPairs_In with (x := a) (y := x1) in H.
-    - destruct H.
-      + admit.
-      + destruct H.
-        * specialize (H x); tauto.
-        * specialize (H x); tauto.
-    - simpl.
-      now left.
-    - simpl.
-      right.
-      now apply in_map.
-    Admitted.
-
+    intros HH ?? [?[??]].
+    invcs HH.
+    rewrite Forall_forall in H4.
+    eapply H4; eauto.
+  Qed.
+  
   Lemma finitely_additive_2 (λ:alg_set Alg -> Rbar) :
     Proper (alg_equiv ==> eq) λ ->
     λ alg_none = Finite 0 ->
