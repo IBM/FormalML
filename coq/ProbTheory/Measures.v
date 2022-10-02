@@ -1135,18 +1135,6 @@ Section Ash_1_2_8.
         * apply Forall_nil.
         * apply FOP_nil.
   Qed.
-
-  Lemma pre_event_disjoint_alg_list_union 
-    (a : alg_set Alg)
-    (l : list (alg_set Alg)) :
-    ForallOrdPairs pre_event_disjoint (map alg_pre (a :: l)) ->
-    pre_event_disjoint a (alg_list_union l).
-  Proof.
-    intros HH ?? [?[??]].
-    invcs HH.
-    rewrite Forall_forall in H4.
-    eapply H4; eauto.
-  Qed.
   
   Lemma finitely_additive_2 (λ:alg_set Alg -> Rbar) :
     Proper (alg_equiv ==> eq) λ ->
@@ -1172,7 +1160,10 @@ Section Ash_1_2_8.
         apply sublist_map.
         apply sublist_skip.
         reflexivity.
-      + now apply pre_event_disjoint_alg_list_union.
+      + intros ?? [?[??]].
+        invcs H2.
+        rewrite Forall_forall in H8.
+        eapply H8; eauto.
   Qed.
 
   Lemma Ash_1_2_5_a (λ:alg_set Alg -> Rbar) :
