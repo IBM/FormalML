@@ -3534,10 +3534,18 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     rewrite (ps_cylinder_shift (S x1) (S N) x2 s0 ps2 (lt := lex1)).
     rewrite (ivector_ps_seq_ext _ ps2).
     - apply ps_proper.
-      intros ?; simpl.
-      admit.
+      intros ?.
+      unfold proj1_sig.
+      assert (0 < (S N))%nat by lia.
+      pose (seq := ivector_to_sequence x3 (ivector_nth 0 H x3)).
+      rewrite eqq2 in e0.
+      rewrite e0 in e4.
+      specialize (e4 seq).
+      unfold inf_cylinder_event, seq in e4.
+      rewrite (ivec_to_seq_to_ivec x3 (ivector_nth 0 H x3)).
+      now do 2 rewrite <- ivector_take_sequence.
     - auto.
-  Admitted.
+  Qed.
   
   Definition decreasing_cyl_nonempty_2_seq  {T}  {σ:SigmaAlgebra T}
          (inh : NonEmpty T)
