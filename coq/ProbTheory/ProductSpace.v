@@ -3879,17 +3879,16 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
       apply H.
    Qed.
 
+  Search "R0".
   Lemma ps_P_cylinder_none {T} {σ:SigmaAlgebra T} 
           (ps : nat -> ProbSpace σ) :
     ps_P_cylinder ps pre_event_none (alg_in_none (inf_cylinder_algebra σ)) = 0.
   Proof.
     unfold ps_P_cylinder.
     repeat match_destr.
-    assert (ps_P (ProbSpace := (ivector_ps (sequence_to_ivector ps 0 (S x)))) event_none = 0) 
-      by apply ps_none.
-    apply Rbar_finite_eq.
+    generalize (ps_none (ivector_ps (sequence_to_ivector ps 0 (S x)))); intros.
+    replace 0 with R0 by lra.
     rewrite <- H.
-    apply Rbar_finite_eq.
     apply ps_proper.
     intros ?.
     simpl.
