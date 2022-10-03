@@ -3452,15 +3452,12 @@ Section ps_sequence_product.
       | 0 => w
       | S n => sequence_cons (pre 0%nat) (sequence_prefix (fun n => pre (S n)) w n)
       end.
-
-   Definition ivector_append {T} {n0 n1 : nat} (x0 : ivector T n0) (x1 : ivector T n1) :  ivector T (n0 + n1)%nat.
-   Proof.
-     induction n0.
-     - replace (0 + n1)%nat with (n1) by lia.
-       exact x1.
-     - destruct x0.
-       exact (t, IHn0 i).
-   Defined.
+   
+   Fixpoint ivector_append {T} {n1 n2} : ivector T n1 -> ivector T n2 -> ivector T (n1 + n2) :=
+     match n1 as n1' return ivector T n1' -> ivector T n2 -> ivector T (n1' + n2) with
+     | 0%nat => fun _ v2 => v2
+     | S n%nat => fun '(hd,tail) v2 => (hd, ivector_append tail v2)
+     end.
 
    Definition iter_section_seq_event {T} {σ:SigmaAlgebra T} (x : nat -> T) (N : nat) 
              (e : pre_event (nat -> T)) : pre_event (nat -> T) :=
@@ -3499,10 +3496,14 @@ sa_sigma (ivector_sa (ivector_const (S x0) σ))
      sequence_to_ivector (sequence_prefix x1 x2 n1) 0 (n1 + n2)%nat =
      ivector_append (sequence_to_ivector x1 0 n1) (sequence_to_ivector x2 0 n2).
    Proof.
-     induction n1.
-     - simpl.
-     
-  Admitted.
+     revert x1 n2.
+     induction n1; trivial; intros; simpl.
+     rewrite sequence_to_ivector_cons_shift.
+     f_equal.
+     rewrite IHn1.
+     f_equal.
+     now rewrite sequence_to_ivector_shift.
+   Qed.     
 
   Lemma iter_section_inf_cylinder {T} {σ:SigmaAlgebra T} (x : nat -> T) (e : pre_event (nat -> T)) (ecyl : inf_cylinder e) (N : nat) :
     inf_cylinder (iter_section_seq_event x N e).
