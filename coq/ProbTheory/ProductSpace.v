@@ -2377,19 +2377,16 @@ Section ps_sequence_product.
     inf_cylinder (section_seq_event x e).
   Proof.
     destruct ecyl as [? [? [? ?]]].
-    generalize (inf_cylinder_shift (S x0) x1 (sa := H) (S (S x0))); intros.
-    assert (S x0 <= S (S x0))%nat by lia.
-    specialize (H1 H2).
+    assert (ltS: (S x0 <= S (S x0))%nat) by lia.
     unfold inf_cylinder.
     exists x0.
-    unfold inf_cylinder_event, section_seq_event.
-    unfold inf_cylinder_event in H0.
-    exists (fun (v : ivector T (S x0)) => x1 (ivector_take (S (S x0)) (S x0) H2 (x, v))).
+    exists (fun (v : ivector T (S x0)) => x1 (ivector_take (S (S x0)) (S x0) ltS (x, v))).
     split.
     - now apply section_inf_cylinder_sa.
     - intros ?.
       specialize (H0 (sequence_cons x x2)).
       rewrite H0.
+      unfold inf_cylinder_event.
       rewrite sequence_to_ivector_cons.
       rewrite ivector_take_cons.
       now rewrite <- ivector_take_sequence.
@@ -3447,15 +3444,82 @@ Section ps_sequence_product.
       | S n => sequence_cons (pre 0%nat) (sequence_prefix (fun n => pre (S n)) w n)
       end.
 
+   Definition ivector_append {T} {n0 n1 : nat} (x0 : ivector T n0) (x1 : ivector T n1) :  ivector T (n0 + n1)%nat.
+   Proof.
+     induction n0.
+     - replace (0 + n1)%nat with (n1) by lia.
+       exact x1.
+     - destruct x0.
+       exact (t, IHn0 i).
+   Defined.
+
    Definition iter_section_seq_event {T} {σ:SigmaAlgebra T} (x : nat -> T) (N : nat) 
              (e : pre_event (nat -> T)) : pre_event (nat -> T) :=
      fun (w : (nat -> T)) => e (sequence_prefix x w N).
 
+
+
+(*
+  Lemma ivector_product_section {n} {T} 
+        (ivsa : ivector (SigmaAlgebra T) (S n))
+        (E:event (ivector_sa ivsa)) :
+    forall x, sa_sigma (ivector_sa (ivector_tl ivsa)) (fun y => E (x, y)).
+  Proof.
+    intros.
+    destruct ivsa. 
+    apply product_section_fst.
+  Qed.
+*)
+
+(*
+  Lemma iter_section_inf_cylinder_sa {T} {σ:SigmaAlgebra T} (x : nat -> T) (N : nat)
+        (x0 : nat)
+        (x1 : pre_event (ivector T (S x0)))
+        (sa : sa_sigma (ivector_sa (ivector_const (S x0) σ)) x1) 
+        (pf : (S x0 <= N + S x0)%nat) :
+    sa_sigma (ivector_sa (ivector_const (S x0) σ))
+             (fun v : ivector T (S x0) => x1 (ivector_take (S (S x0)) (S x0) pf (x, v))).
+*)
+(*
+sa_sigma (ivector_sa (ivector_const (S x0) σ))
+    (fun v : ivector T (S x0) => x1 (ivector_take (N + S x0) (S x0) pf (ivector_append (sequence_to_ivector x 0 N) v)))
+
+ *)
+
+   Lemma sequence_prefix_ivector_append {T} (x1 x2 : nat -> T) (n1 n2 : nat) :
+     sequence_to_ivector (sequence_prefix x1 x2 n1) 0 (n1 + n2)%nat =
+     ivector_append (sequence_to_ivector x1 0 n1) (sequence_to_ivector x2 0 n2).
+   Proof.
+     induction n1.
+     - simpl.
+     
+  Admitted.
+
   Lemma iter_section_inf_cylinder {T} {σ:SigmaAlgebra T} (x : nat -> T) (e : pre_event (nat -> T)) (ecyl : inf_cylinder e) (N : nat) :
     inf_cylinder (iter_section_seq_event x N e).
   Proof.
-    induction N.
-    - admit.
+    destruct ecyl as [? [? [? ?]]].
+    exists x0.
+    assert (pf: (S x0 <= N + S x0)%nat) by lia.
+    unfold iter_section_seq_event, inf_cylinder_event.
+    exists (fun (v : ivector T (S x0)) => x1 (ivector_take (N + S x0)%nat (S x0) pf
+                                                           (ivector_append (sequence_to_ivector x 0 N) v))).
+    split.
+    - generalize (sa_cylinder_shift (S x0) (N + (S x0))%nat x1 (lt := pf) H); intros.
+(*
+      assert (forall E : event (ivector_sa (ivector_const (S x0)  σ)),
+                 sa_sigma (ivector_sa  (ivector_const (N + S x0) σ))
+                          (fun v => (ivector_append (sequence_to_ivector x 0 N) v)).
+*)
+      generalize (ivector_product_section (ivector_const (S (N + x0)) σ)); intros.
+      admit.
+    - intros ?.
+      specialize (H0 (sequence_prefix x x2 N)).
+      rewrite H0.
+      unfold inf_cylinder_event.
+      f_equiv.
+      rewrite <- sequence_prefix_ivector_append.
+      now rewrite <- ivector_take_sequence.
     Admitted.
 
   Definition ps_equiv {T} {σ:SigmaAlgebra T} (ps1 ps2 : ProbSpace σ)
@@ -3720,8 +3784,10 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     rewrite H1.
     unfold inf_cylinder_event.
     specialize (H3 n).
+    destruct (tecyl n) as [? [? [? ?]]].
     unfold ps_P_cylinder in H3.
     repeat match_destr_in H3.
+    
     
   Admitted.
 
