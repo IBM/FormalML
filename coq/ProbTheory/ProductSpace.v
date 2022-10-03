@@ -30,9 +30,6 @@ Section measure_product.
   Context {A:SigmaAlgebra X}.
   Context {B:SigmaAlgebra Y}.
 
-  Context (α : event A -> Rbar) (meas_α : is_measure α).
-  Context (β : event B -> Rbar) (meas_β : is_measure β).
-  
   Definition is_measurable_rectangle (ab : pre_event (X*Y)) : Prop
     := exists (a:event A) (b:event B), forall x y, ab (x,y) <-> a x /\ b y.
 
@@ -104,6 +101,10 @@ Section measure_product.
       + exists a1, (event_complement b1); intros; tauto.
       + exists (event_complement a1), (event_complement b1); intros; tauto.
   Qed.
+
+  Context (α : event A -> Rbar) (meas_α : is_measure α).
+  Context (β : event B -> Rbar) (meas_β : is_measure β).
+  
 
   (* this is very classic *)
   Definition measurable_rectangle_pm (ab:salg_set PairSemiAlgebra) : Rbar.
@@ -373,7 +374,7 @@ Section ps_product.
   Context (ps2 : ProbSpace B).
   
   Lemma product_measure_Hyp_ps :
-    measure_rectangle_pm_additive_Hyp (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _).
+    measure_rectangle_pm_additive_Hyp (ps_P (σ:=A)) (ps_P (σ:=B)).
   Proof.
     red.
     intros c cdisj pf.
@@ -648,15 +649,17 @@ Section ps_product.
   (* We discharge the extra hypothesis here *)
   Instance product_measure_is_measurable_ps :
     is_measure (σ:=product_sa A B)
-               (product_measure (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _)).
+               (product_measure (ps_P (σ:=A)) (ps_P (σ:=B))).
   Proof.
     apply product_measure_is_measurable.
-    apply product_measure_Hyp_ps.
+    - apply ps_measure.
+    - apply ps_measure.
+    - apply product_measure_Hyp_ps.
   Qed.
 
   Global Instance product_ps : ProbSpace (product_sa A B).
   Proof.
-    apply (measure_all_one_ps (product_measure (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _))).
+    apply (measure_all_one_ps (product_measure (ps_P (σ:=A)) (ps_P (σ:=B)))).
     generalize (product_measure_product (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _) product_measure_Hyp_ps Ω Ω)
     ; intros HH.
     repeat rewrite ps_one in HH.
@@ -673,16 +676,18 @@ Section ps_product.
       rewrite <- pre_eqq.
       apply sa_all.
     }
-    apply (measure_proper (σ:=product_sa A B) (μ:=product_measure (fun x : event A => ps_P x) (ps_measure ps1) (fun x : event B => ps_P x) 
-                                                                  (ps_measure ps2)) Ω (exist _ _ sa)).
+    apply (measure_proper (σ:=product_sa A B) (μ:=product_measure (fun x : event A => ps_P x) (fun x : event B => ps_P x) 
+                                                                  ) Ω (exist _ _ sa)).
     now red; simpl.
   Defined.
 
   Global Instance product_ps_proper : Proper (pre_event_equiv ==> eq)
-                                                  (product_measure (ps_P (σ:=A)) (ps_measure _) (ps_P (σ:=B)) (ps_measure _)).
+                                                  (product_measure (ps_P (σ:=A)) (ps_P (σ:=B))).
   Proof.
     apply product_measure_proper.
-    apply product_measure_Hyp_ps.
+    - apply ps_measure.
+    - apply ps_measure.
+    - apply product_measure_Hyp_ps.
   Qed.    
   
   Theorem product_sa_product (a:event A) (b:event B) :
@@ -691,7 +696,9 @@ Section ps_product.
   Proof.
     simpl.
     rewrite product_measure_product; simpl; trivial.
-    apply product_measure_Hyp_ps.
+    - apply ps_measure.
+    - apply ps_measure.
+    - apply product_measure_Hyp_ps.
   Qed.
 
   Lemma pre_event_set_product_pi : Pi_system (pre_event_set_product (@sa_sigma _ A) (@sa_sigma _ B)).
@@ -2298,6 +2305,8 @@ Section ps_sequence_product.
     simpl.
     f_equal.
     apply product_measure_proper.
+    - apply ps_measure.
+    - apply ps_measure.
     - apply product_measure_Hyp_ps.
     - intros ?.
       unfold pre_Ω.
@@ -3534,13 +3543,282 @@ sa_sigma (ivector_sa (ivector_const (S x0) σ))
     - etransitivity; eauto.
   Qed.
 
+  Definition salg_equiv' {T}  (SAlg1 SAlg2 : SemiAlgebra T)
+    := forall x, salg_in (SemiAlgebra:=SAlg1) x <-> salg_in (SemiAlgebra:=SAlg2) x.
+
+  Global Instance salg_equiv_equiv' {T} : Equivalence (@salg_equiv' T).
+  Proof.
+    firstorder.
+  Qed.
+
+  Definition alg_equiv' {T}  (Alg1 Alg2 : Algebra T)
+    := forall x, alg_in (Algebra:=Alg1) x <-> alg_in (Algebra:=Alg2) x.
+
+  Global Instance alg_equiv_equiv' {T} : Equivalence (@alg_equiv' T).
+  Proof.
+    firstorder.
+  Qed.
+
+  Definition alg_transport {T : Type} {Alg1 Alg2 : Algebra T}
+                           (x:alg_set Alg1)
+                           (eqq:alg_equiv' Alg1 Alg2) :
+    alg_set Alg2.
+  Proof.
+    destruct x.
+    exists x.
+    now apply eqq.
+  Defined.
+  
+  Lemma outer_λ_proper' {T : Type} (Alg1 Alg2 : Algebra T)
+    (eqq1 : alg_equiv' Alg1 Alg2)
+    (λ1 : alg_set Alg1 -> Rbar)
+    (λ2 : alg_set Alg2 -> Rbar)
+    (eqq2 : forall x y, proj1_sig x = proj1_sig y ->
+                   λ1 x = λ2 y) :
+    forall e, outer_λ λ1 e = outer_λ λ2 e.
+  Proof.
+    intros.
+    unfold outer_λ.
+    apply Rbar_glb_rw; intros.
+    split; intros [? [??]].
+    - exists (fun n => alg_transport (x0 n) eqq1).
+      split.
+      + intros ??.
+        red.
+        destruct (H x1 H1).
+        exists x2.
+        unfold alg_transport.
+        now destruct (x0 x2).
+      + rewrite H0.
+        unfold outer_λ_of_covers.
+        apply ELim_seq_ext; intros.
+        apply sum_Rbar_n_proper; trivial; intros ?.
+        apply eqq2.
+        now destruct (x0 a).
+    - exists (fun n => alg_transport (x0 n) (symmetry eqq1)).
+      split.
+      + intros ??.
+        red.
+        destruct (H x1 H1).
+        exists x2.
+        unfold alg_transport.
+        now destruct (x0 x2).
+      + rewrite H0.
+        unfold outer_λ_of_covers.
+        apply ELim_seq_ext; intros.
+        apply sum_Rbar_n_proper; trivial; intros ?.
+        symmetry.
+        apply eqq2.
+        now destruct (x0 a).
+  Qed.        
+
+  Instance SemiAlgebra_Algebra_proper {T} :
+    Proper (salg_equiv' ==> alg_equiv') (@SemiAlgebra_Algebra T).
+  Proof.
+    intros ????; simpl.
+    unfold salgebra_algebra_in.
+    split; intros [? [?[??]]].
+    - exists x1.
+      split; [| tauto].
+      rewrite Forall_forall in H0 |- *.
+      firstorder.
+    - exists x1.
+      split; [| tauto].
+      rewrite Forall_forall in H0 |- *.
+      firstorder.
+  Qed.
+
+  Lemma premeasure_of_semipremeasure_ext {T : Type}
+    {SAlg1 SAlg2 : SemiAlgebra T}
+    {eqq1 : salg_equiv' SAlg1 SAlg2}
+    {λ1 : salg_set SAlg1 -> Rbar}
+    {λ2 : salg_set SAlg2 -> Rbar}
+    {meas1 : is_semipremeasure λ1}
+    {meas2 : is_semipremeasure λ2}
+    {eqq2 : forall (x : {x : pre_event T | salg_in x})
+           (y : {x0 : pre_event T | salg_in x0}), ` x = ` y -> λ1 x = λ2 y} :
+    forall (x : {x : pre_event T | alg_in x}) (y : {x0 : pre_event T | alg_in x0}),
+      ` x = ` y ->
+      premeasure_of_semipremeasure λ1 x = premeasure_of_semipremeasure λ2 y.
+  Proof.
+
+    intros.
+    unfold premeasure_of_semipremeasure.
+    repeat match_destr.
+    simpl in *; subst.
+    destruct a0; destruct a2.
+    generalize (semipremeasure_disjoint_list_irrel); intros HH.
+    assert (Forall (@salg_in _ SAlg2) x0).
+    {
+      revert f.
+      apply Forall_impl.
+      apply eqq1.
+    }
+    rewrite (HH λ2 meas2 (list_dep_zip x2 f0) (list_dep_zip x0 H3)); trivial.
+    - f_equal.
+      revert eqq2; clear; intros.
+      induction x0; simpl; trivial.
+      f_equal.
+      + now apply eqq2.
+      + apply IHx0.
+    - unfold salg_pre, salg_set.
+      now rewrite list_dep_zip_map1.
+    - unfold salg_pre, salg_set.
+      now rewrite list_dep_zip_map1.
+    - unfold salg_pre, salg_set.
+      repeat rewrite list_dep_zip_map1.
+      now rewrite <- H0, H2.
+  Qed.
+                                                                   
+  Lemma semi_μ_proper' {T : Type} (SAlg1 SAlg2 : SemiAlgebra T)
+    (eqq1 : salg_equiv' SAlg1 SAlg2)
+    (λ1 : salg_set SAlg1 -> Rbar)
+    (λ2 : salg_set SAlg2 -> Rbar)
+    {meas1 : is_semipremeasure λ1}
+    {meas2 : is_semipremeasure λ2}
+    (eqq2 : forall x y, proj1_sig x = proj1_sig y ->
+                   λ1 x = λ2 y) :
+    forall e, semi_μ λ1 e = semi_μ λ2 e.
+  Proof.
+    unfold semi_μ.
+    apply outer_λ_proper'.
+    - now apply SemiAlgebra_Algebra_proper.
+    - intros.
+      now eapply premeasure_of_semipremeasure_ext.
+      Unshelve.
+      eauto.
+      eauto.
+  Qed.
+
+
+  Lemma measurable_rectangle_pm_proper'' {X Y} {A:SigmaAlgebra X} {B:SigmaAlgebra Y}
+    (α α' : event A -> Rbar)
+    (meas_α : is_measure α) (meas_α' : is_measure α')
+    (eqqα:pointwise_relation _ eq α α')
+    (β β' : event B -> Rbar)
+    (meas_β : is_measure β) (meas_β' : is_measure β')
+    (eqqβ:pointwise_relation _ eq β β') (ab:pre_event (X*Y)) (ab2:pre_event (X*Y))
+    (pf1:is_measurable_rectangle ab) (pf2:is_measurable_rectangle ab2) :
+    (forall x, ab x = ab2 x) ->
+    measurable_rectangle_pm α β (exist is_measurable_rectangle ab pf1) =
+      measurable_rectangle_pm α' β' (exist _ ab2 pf2).
+  Proof.
+    intros eqq.
+    unfold measurable_rectangle_pm.
+    repeat match_destr.
+    destruct e as [??].
+    destruct e0 as [??].
+    simpl in *.
+    destruct pf1 as [? [??]].
+    destruct pf2 as [? [??]].
+
+    destruct (classic_event_none_or_has x) as [[??]|?].
+    - destruct (classic_event_none_or_has x0) as [[??]|?].
+      + destruct (i x9 x10) as [_ ?].
+        cut_to H5; [| tauto].
+        rewrite eqq in H5.
+        apply i0 in H5.
+        destruct H5.
+        f_equal.
+        * rewrite eqqα. apply measure_proper; intros c.
+          split; intros HH.
+          -- specialize (i c x10).
+             destruct i as [_ ?].
+             cut_to H7; [| tauto].
+             rewrite eqq in H7.
+             apply i0 in H7.
+             tauto.
+          -- specialize (i0 c x10).
+             destruct i0 as [_ ?].
+             cut_to H7; [| tauto].
+             rewrite <- eqq in H7.
+             apply i in H7.
+             tauto.
+        * rewrite eqqβ; apply measure_proper; intros c.
+          split; intros HH.
+          -- specialize (i x9 c).
+             destruct i as [_ ?].
+             cut_to H7; [| tauto].
+             rewrite eqq in H7.
+             apply i0 in H7.
+             tauto.
+          -- specialize (i0 x9 c).
+             destruct i0 as [_ ?].
+             cut_to H7; [| tauto].
+             rewrite <- eqq in H7.
+             apply i in H7.
+             tauto.
+      + rewrite H4.
+        destruct (classic_event_none_or_has x2) as [[??]|?].
+        * destruct (classic_event_none_or_has x1) as [[??]|?].
+          -- specialize (i0 x11 x10).
+             destruct i0 as [_ ?].
+             cut_to H7; [| tauto].
+             rewrite <- eqq in H7.
+             apply i in H7.
+             destruct H7 as [_ HH].
+             apply H4 in HH.
+             red in HH; tauto.
+          -- rewrite H6.
+             repeat rewrite measure_none.
+             now rewrite Rbar_mult_0_l, Rbar_mult_0_r.
+        * rewrite H5.
+          repeat rewrite measure_none.
+          now repeat rewrite Rbar_mult_0_r.
+    - rewrite H3.
+      destruct (classic_event_none_or_has x1) as [[??]|?].
+      + destruct (classic_event_none_or_has x2) as [[??]|?].
+        * destruct (i0 x9 x10) as [_ ?].
+          cut_to H6; [| tauto].
+          rewrite <- eqq in H6.
+          apply i in H6.
+          destruct H6 as [HH _].
+          apply H3 in HH.
+          red in HH; tauto.
+        * rewrite H5.
+          repeat rewrite measure_none.
+          now rewrite Rbar_mult_0_l, Rbar_mult_0_r.
+      + rewrite H4.
+        repeat rewrite measure_none.
+        now repeat rewrite Rbar_mult_0_l.
+  Qed.
+
+  Lemma product_measure_proper' {X Y} {A:SigmaAlgebra X} {B:SigmaAlgebra Y}
+    (α α' : event A -> Rbar)
+    (meas_α : is_measure α) (meas_α' : is_measure α')
+    (eqqα:pointwise_relation _ eq α α')
+    (β β' : event B -> Rbar)
+    (meas_β : is_measure β) (meas_β' : is_measure β')
+    (eqqβ:pointwise_relation _ eq β β')
+    (Hyp:measure_rectangle_pm_additive_Hyp α β)
+    (Hyp':measure_rectangle_pm_additive_Hyp α' β')
+:
+    pointwise_relation _ eq
+      (product_measure α β)
+      (product_measure α' β').
+  Proof.
+    intros ?.
+    unfold product_measure.
+    apply semi_μ_proper'.
+    - reflexivity.
+    - now apply measurable_rectangle_pm_semipremeasure.
+    - now apply measurable_rectangle_pm_semipremeasure.
+    - intros.
+      destruct x; destruct y; simpl in *; subst.
+      now apply measurable_rectangle_pm_proper''.
+Qed.
+    
   Instance product_ps_proper' {X Y} {A:SigmaAlgebra X} {B:SigmaAlgebra Y} :
     Proper (ps_equiv ==> ps_equiv ==> ps_equiv) (@product_ps X Y A B).
   Proof.
     intros ???????.
     simpl.
-    unfold product_measure.
-  Admitted.
+    f_equal.
+    apply product_measure_proper'
+    ; try apply ps_measure; intros ?
+    ; f_equal; auto
+    ; apply product_measure_Hyp_ps.
+  Qed.
 
   Instance ivector_ps_proper {T} {σ:SigmaAlgebra T} {N} :
     Proper (ivector_Forall2 ps_equiv ==> ps_equiv) (@ivector_ps N T σ).
@@ -3552,7 +3830,7 @@ sa_sigma (ivector_sa (ivector_const (S x0) σ))
     apply product_ps_proper'; trivial.
     intros ?.
     now apply IHN.
-  Qed.    
+  Qed.
 
   Lemma sequence_to_ivector_Forall2 {T1 T2} (RR:T1->T2->Prop) (f:nat->T1) (g:nat->T2) s N :
     (forall n : nat, (s <= n <= N + s)%nat -> RR (f n) (g n)) ->
