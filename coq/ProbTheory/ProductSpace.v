@@ -4044,14 +4044,30 @@ Qed.
          (eps : posreal) 
          (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) :
     let xx := decreasing_cyl_nonempty_2_seq eps epsbound in
+    let tes := decreasing_cyl_tes eps epsbound in 
     forall j n,
-      projT1 (projT2 (xx (S n))) j =
-        section_seq_event (projT1 (xx (S n))) ((projT1 (projT2 (xx n))) j).
+      tes (S n) j =
+        section_seq_event (projT1 (xx n)) (tes n j).
     Proof.
       intros.
       unfold xx.
       induction n; simpl; repeat match_destr.
     Qed.
+
+  Lemma decreasing_cyl_nonempty
+         (eps : posreal) 
+         (epsbound : forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps) :
+    forall n,
+      (es n) (decreasing_cyl_seq eps epsbound).
+  Proof.
+    intros.
+    destruct (ecyl n) as [? [? [? ?]]].
+    specialize (H0 (decreasing_cyl_seq eps epsbound)).
+    rewrite H0.
+    unfold inf_cylinder_event.
+    Admitted.
+      
+     
 
   Lemma iter_decreasing_cyl_eps0
          (eps : posreal) :
@@ -4090,7 +4106,7 @@ Qed.
 
 
 
-  Lemma decreasing_cyl_nonempty :
+  Lemma decreasing_cyl_nonempty_alt :
     Rbar_gt (Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n))) 0 ->
     exists (z : nat -> T), (pre_inter_of_collection es) z.
   Proof.
@@ -4119,7 +4135,7 @@ Qed.
   Proof.
     contrapose.
     intros.
-    destruct (decreasing_cyl_nonempty).
+    destruct (decreasing_cyl_nonempty_alt).
     - generalize (Lim_seq_pos (fun n => ps_P_cylinder ps (es n) (ecyl n))); intros.
       cut_to H0.
       + unfold Rbar_gt.
