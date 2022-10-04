@@ -3472,35 +3472,16 @@ Section ps_sequence_product.
   Proof.
     intros.
     induction n1.
-    - simpl.
-      destruct E.
-      assert (sa_sigma (ivector_sa (ivector_const (n2) σ)) x0).
-      {
-        revert s.
-        now apply sa_proper.
-      }
-      revert H.
-      apply sa_proper.
-      intros ?.
-      now simpl.
+    - apply sa_sigma_event_pre.
     - destruct x.
-      generalize (product_section_fst E t); intros.
-      Admitted.
-  
-
-
-
-(*
-  Lemma ivector_product_section {n} {T} 
-        (ivsa : ivector (SigmaAlgebra T) (S n))
-        (E:event (ivector_sa ivsa)) :
-    forall x, sa_sigma (ivector_sa (ivector_tl ivsa)) (fun y => E (x, y)).
-  Proof.
-    intros.
-    destruct ivsa. 
-    apply product_section_fst.
+      simpl.
+      assert (pf1:sa_sigma (ivector_sa (ivector_const (n1 + n2) σ)) (fun y => E (t, y))).
+      {
+        apply product_section_fst.
+      }
+      specialize (IHn1 (exist _ (fun y => E (t, y)) pf1) i).
+      now simpl.
   Qed.
-*)
 
   Lemma iter_section_inf_cylinder_sa {T} {σ:SigmaAlgebra T} (x : nat -> T) (N : nat)
         (x0 : nat)
