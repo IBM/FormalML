@@ -3464,6 +3464,31 @@ Section ps_sequence_product.
      fun (w : (nat -> T)) => e (sequence_prefix x w N).
 
 
+  Lemma iter_section_ivector_product {T} {σ:SigmaAlgebra T} {n1 n2}
+        (E:event (ivector_sa (ivector_const (n1 + n2)%nat σ))) :
+    forall (x : ivector T n1),
+      sa_sigma (ivector_sa (ivector_const n2 σ)) 
+               (fun y => E (ivector_append x y)).
+  Proof.
+    intros.
+    induction n1.
+    - simpl.
+      destruct E.
+      assert (sa_sigma (ivector_sa (ivector_const (n2) σ)) x0).
+      {
+        revert s.
+        now apply sa_proper.
+      }
+      revert H.
+      apply sa_proper.
+      intros ?.
+      now simpl.
+    - destruct x.
+      generalize (product_section_fst E t); intros.
+      Admitted.
+  
+
+
 
 (*
   Lemma ivector_product_section {n} {T} 
@@ -3477,20 +3502,17 @@ Section ps_sequence_product.
   Qed.
 *)
 
-(*
   Lemma iter_section_inf_cylinder_sa {T} {σ:SigmaAlgebra T} (x : nat -> T) (N : nat)
         (x0 : nat)
         (x1 : pre_event (ivector T (S x0)))
         (sa : sa_sigma (ivector_sa (ivector_const (S x0) σ)) x1) 
         (pf : (S x0 <= N + S x0)%nat) :
     sa_sigma (ivector_sa (ivector_const (S x0) σ))
-             (fun v : ivector T (S x0) => x1 (ivector_take (S (S x0)) (S x0) pf (x, v))).
-*)
-(*
-sa_sigma (ivector_sa (ivector_const (S x0) σ))
-    (fun v : ivector T (S x0) => x1 (ivector_take (N + S x0) (S x0) pf (ivector_append (sequence_to_ivector x 0 N) v)))
-
- *)
+             (fun v : ivector T (S x0) => x1 (ivector_take (N + S x0) (S x0) pf (ivector_append (sequence_to_ivector x 0 N) v))).
+  Proof.
+    generalize (sa_cylinder_shift (S x0) (N + (S x0))%nat x1 (lt := pf) sa); intros.
+    Search sa_sigma.
+  Admitted.
 
    Lemma sequence_prefix_ivector_append {T} (x1 x2 : nat -> T) (n1 n2 : nat) :
      sequence_to_ivector (sequence_prefix x1 x2 n1) 0 (n1 + n2)%nat =
@@ -3515,14 +3537,7 @@ sa_sigma (ivector_sa (ivector_const (S x0) σ))
     exists (fun (v : ivector T (S x0)) => x1 (ivector_take (N + S x0)%nat (S x0) pf
                                                            (ivector_append (sequence_to_ivector x 0 N) v))).
     split.
-    - generalize (sa_cylinder_shift (S x0) (N + (S x0))%nat x1 (lt := pf) H); intros.
-(*
-      assert (forall E : event (ivector_sa (ivector_const (S x0)  σ)),
-                 sa_sigma (ivector_sa  (ivector_const (N + S x0) σ))
-                          (fun v => (ivector_append (sequence_to_ivector x 0 N) v)).
-*)
-      generalize (ivector_product_section (ivector_const (S (N + x0)) σ)); intros.
-      admit.
+    - now apply iter_section_inf_cylinder_sa.
     - intros ?.
       specialize (H0 (sequence_prefix x x2 N)).
       rewrite H0.
@@ -3530,7 +3545,7 @@ sa_sigma (ivector_sa (ivector_const (S x0) σ))
       f_equiv.
       rewrite <- sequence_prefix_ivector_append.
       now rewrite <- ivector_take_sequence.
-    Admitted.
+  Qed.
 
   Definition ps_equiv {T} {σ:SigmaAlgebra T} (ps1 ps2 : ProbSpace σ)
     := forall x, ps_P (ProbSpace:=ps1) x = ps_P (ProbSpace:=ps2) x.
