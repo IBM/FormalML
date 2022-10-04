@@ -3946,7 +3946,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
             lia.
         }
         now rewrite <- H.
-   Defined.
+  Defined.
   
   Lemma decreasing_cyl_section_seq_event  {T}  {σ:SigmaAlgebra T}
          (inh : NonEmpty T)
@@ -3958,15 +3958,13 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
          (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) :
     let xx := decreasing_cyl_nonempty_2_seq inh ps es ecyl eps decr epsbound in
     forall j n,
-      projT1 (projT2 (xx (S n))) j = 
-      section_seq_event (projT1 (xx n)) ((projT1 (projT2 (xx n))) j).
+      projT1 (projT2 (xx (S n))) j =
+        section_seq_event (projT1 (xx (S n))) ((projT1 (projT2 (xx n))) j).
     Proof.
       intros.
       unfold xx.
-      induction n.
-      - simpl.
-   Admitted.
-
+      induction n; simpl; repeat match_destr.
+    Qed.
 
   Lemma iter_decreasing_cyl_eps0 {T} {σ:SigmaAlgebra T}
          (inh : NonEmpty T)
@@ -3990,8 +3988,6 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
      destruct (xx n) as [t [tes [tecyl [tdecr tepsbound]]]].
      
      Admitted.
-
-
 
 
   Lemma iter_decreasing_cyl_eps {T} {σ:SigmaAlgebra T}
