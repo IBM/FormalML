@@ -3901,7 +3901,7 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
        (forall i, 
            (ps_P_cylinder (fun j => ps (n + S j))%nat
                           (tes i)
-                          (tecyl i)) >= eps)}}}.
+                          (tecyl i)) >= eps) }}}.
   Proof.
     induction n.
     - destruct (decreasing_cyl_nonempty_2_alt inh ps es ecyl eps decr epsbound)
@@ -3948,6 +3948,52 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
         now rewrite <- H.
    Defined.
   
+  Lemma decreasing_cyl_section_seq_event  {T}  {σ:SigmaAlgebra T}
+         (inh : NonEmpty T)
+         (ps : nat -> ProbSpace σ)        
+         (es : nat -> (pre_event (nat -> T))) 
+         (ecyl : forall n, inf_cylinder (es n))
+         (eps : posreal) 
+         (decr:(forall n, pre_event_sub (es (S n)) (es n)))
+         (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) :
+    let xx := decreasing_cyl_nonempty_2_seq inh ps es ecyl eps decr epsbound in
+    forall j n,
+      projT1 (projT2 (xx (S n))) j = 
+      section_seq_event (projT1 (xx n)) ((projT1 (projT2 (xx n))) j).
+    Proof.
+      intros.
+      unfold xx.
+      induction n.
+      - simpl.
+   Admitted.
+
+
+  Lemma iter_decreasing_cyl_eps0 {T} {σ:SigmaAlgebra T}
+         (inh : NonEmpty T)
+         (ps : nat -> ProbSpace σ)        
+         (es : nat -> (pre_event (nat -> T))) 
+         (ecyl : forall n, inf_cylinder (es n))
+         (eps : posreal) :
+     (forall n, pre_event_sub (es (S n)) (es n)) ->
+     (forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps) ->
+     exists (x : nat -> T),
+     forall n j,
+       ps_P_cylinder (fun n => ps (n + j)%nat)
+                     (iter_section_seq_event x j (es n))
+                     (iter_section_inf_cylinder x (es n) (ecyl n) j) >= eps.
+   Proof.
+     intros decr epsbound.
+     generalize (decreasing_cyl_nonempty_2_alt inh); intros.
+     pose (xx := decreasing_cyl_nonempty_2_seq inh ps es ecyl eps decr epsbound).
+     exists (fun n => projT1 (xx n)).
+     intros.
+     destruct (xx n) as [t [tes [tecyl [tdecr tepsbound]]]].
+     
+     Admitted.
+
+
+
+
   Lemma iter_decreasing_cyl_eps {T} {σ:SigmaAlgebra T}
          (inh : NonEmpty T)
          (ps : nat -> ProbSpace σ)        
@@ -3967,6 +4013,8 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
      exists (fun n => projT1 (xx n)).
      intros.
      destruct (xx n) as [t [tes [tecyl [tdecr tepsbound]]]].
+     
+     Search ps_P_cylinder.
      
      Admitted.
 
