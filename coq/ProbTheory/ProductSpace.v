@@ -2378,8 +2378,7 @@ Section ps_sequence_product.
              (fun v : ivector T (S x0) => x1 (ivector_take (S (S x0)) (S x0) pf (x, v))).
   Proof.
     generalize (sa_cylinder_shift (S x0) (S (S x0)) x1 (lt := pf) sa); intros.
-    generalize (ivector_product_section (ivector_const (S (S x0)) σ) (exist _ _ H) x).
-    now apply sa_proper.
+    apply (ivector_product_section (ivector_const (S (S x0)) σ) (exist _ _ H) x).
   Qed.
 
   Lemma section_inf_cylinder {T} {σ:SigmaAlgebra T} (x : T) (e : pre_event (nat -> T)) (ecyl : inf_cylinder e):
