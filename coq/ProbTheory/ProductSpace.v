@@ -3464,7 +3464,7 @@ Section ps_sequence_product.
      fun (w : (nat -> T)) => e (sequence_prefix x w N).
 
 
-  Lemma iter_section_ivector_product {T} {σ:SigmaAlgebra T} {n1 n2}
+  Lemma iter_section_ivector_product {T} {σ:SigmaAlgebra T} (n1 n2 : nat)
         (E:event (ivector_sa (ivector_const (n1 + n2)%nat σ))) :
     forall (x : ivector T n1),
       sa_sigma (ivector_sa (ivector_const n2 σ)) 
@@ -3492,8 +3492,8 @@ Section ps_sequence_product.
              (fun v : ivector T (S x0) => x1 (ivector_take (N + S x0) (S x0) pf (ivector_append (sequence_to_ivector x 0 N) v))).
   Proof.
     generalize (sa_cylinder_shift (S x0) (N + (S x0))%nat x1 (lt := pf) sa); intros.
-    Search sa_sigma.
-  Admitted.
+    apply (iter_section_ivector_product N  (S x0) (exist _ _ H)).
+  Qed.
 
    Lemma sequence_prefix_ivector_append {T} (x1 x2 : nat -> T) (n1 n2 : nat) :
      sequence_to_ivector (sequence_prefix x1 x2 n1) 0 (n1 + n2)%nat =
