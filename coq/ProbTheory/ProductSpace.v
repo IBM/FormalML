@@ -3423,28 +3423,6 @@ Section ps_sequence_product.
       now rewrite <- H2.
   Qed.
 
-   Lemma decreasing_cyl_nonempty_2_alt  {T}  {σ:SigmaAlgebra T}
-         (inh : NonEmpty T)
-         (ps : nat -> ProbSpace σ)        
-         (es : nat -> (pre_event (nat -> T))) 
-         (ecyl : forall n, inf_cylinder (es n))
-         (eps : posreal) :
-     (forall n, pre_event_sub (es (S n)) (es n)) ->
-     (forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps) ->
-     {x : T |
-       (forall n, 
-           pre_event_sub
-             (section_seq_event x (es (S n)))
-             (section_seq_event x (es n))) /\        
-       (forall n, 
-           (ps_P_cylinder (fun n => ps (S n)) 
-                          (section_seq_event x (es n)) 
-                          (section_inf_cylinder x (es n) (ecyl n))) >= eps)}.
-   Proof.
-     intros.
-     generalize (decreasing_cyl_nonempty_2 inh ps es ecyl eps H H0); intros.
-     now apply constructive_indefinite_description in H1.
-  Qed.
 
    Fixpoint sequence_prefix {T} (pre w : nat -> T) (N : nat) : nat -> T :=
       match N with
@@ -3853,7 +3831,7 @@ Qed.
     intros; apply H; lia.
   Qed.      
 
-Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T} 
+ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T} 
     (ps1 ps2 : nat -> ProbSpace σ)
     (eqq1:forall n, ps_equiv (ps1 n) (ps2 n))
     (e1 e2 : (pre_event (nat -> T)))
@@ -3884,14 +3862,121 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
       now do 2 rewrite <- ivector_take_sequence.
     - auto.
   Qed.
-  
-  Definition decreasing_cyl_nonempty_2_seq  {T}  {σ:SigmaAlgebra T}
-         (inh : NonEmpty T)
-         (ps : nat -> ProbSpace σ)        
-         (es : nat -> (pre_event (nat -> T))) 
-         (ecyl : forall n, inf_cylinder (es n))
+
+   Lemma decreasing_cyl_nonempty_2_alt {T : Type}
+            {σ:SigmaAlgebra T}
+            (inh : NonEmpty T)
+            (ps : nat -> ProbSpace σ)        
+            (es : nat -> (pre_event (nat -> T))) 
+            (ecyl : forall n, inf_cylinder (es n))
+            (eps : posreal) :
+     (forall n, pre_event_sub (es (S n)) (es n)) ->
+     (forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps) ->
+     {x : T |
+       (forall n, 
+           pre_event_sub
+             (section_seq_event x (es (S n)))
+             (section_seq_event x (es n))) /\        
+       (forall n, 
+           (ps_P_cylinder (fun n => ps (S n)) 
+                          (section_seq_event x (es n)) 
+                          (section_inf_cylinder x (es n) (ecyl n))) >= eps)}.
+   Proof.
+     intros.
+     generalize (decreasing_cyl_nonempty_2 inh ps es ecyl eps H H0); intros.
+     now apply constructive_indefinite_description in H1.
+  Qed.
+
+  Lemma ps_P_cylinder_decreasing  {T} {σ:SigmaAlgebra T}
+             (ps : nat -> ProbSpace σ)        
+             (es : nat -> (pre_event (nat -> T))) 
+             (ecyl : forall n, inf_cylinder (es n)) :
+    (forall n, pre_event_sub (es (S n)) (es n)) ->
+    forall n,
+      ps_P_cylinder ps (es (S n)) (ecyl (S n)) <=
+      ps_P_cylinder ps (es n) (ecyl n).
+  Proof.
+    intros.
+    unfold ps_P_cylinder.
+    repeat match_destr.
+    pose (N := max x x1).
+    assert (lex: ((S x) <= S N)%nat) by lia.
+    rewrite (ps_cylinder_shift (S x) (S N) x0 s ps (lt := lex)).
+    assert (lex1: ((S x1) <= S N)%nat) by lia.
+    rewrite (ps_cylinder_shift (S x1) (S N) x2 s0 ps (lt := lex1)).
+    apply ps_sub.
+    intros ?.
+    simpl.
+    match_destr.
+    specialize (H n).
+    rewrite e0, e2 in H.
+    unfold inf_cylinder_event, pre_event_sub in H.
+    specialize (H (sequence_cons t (ivector_to_sequence i t))).
+    rewrite (ivector_take_sequence _ 0 _ _ lex) in H.
+    rewrite (ivector_take_sequence _ 0 _ _ lex1) in H.
+    rewrite sequence_to_ivector_cons in H.
+    rewrite <- ivec_to_seq_to_ivec in H.
+    do 2 rewrite ivector_take_cons in H.    
+    now apply H.
+  Qed.
+
+
+  Lemma decreasing_lim_pos_eps (f : nat -> R) :
+    (forall n, f (S n) <= f n) ->
+    Rbar_gt (Lim_seq f) 0 ->
+    exists (eps : posreal),
+      forall n, f n >= eps.
+  Proof.
+    intros.
+    generalize (Lim_seq_decreasing_le f H); intros.
+    assert (ex_finite_lim_seq f).
+    {
+      apply ex_finite_lim_seq_decr with (M := 0); trivial.
+      unfold Rbar_gt in H0.
+      left.
+      assert (Rbar_lt 0 (f n)).
+      {
+        eapply Rbar_lt_le_trans; trivial.
+        apply H0.
+      }
+      now simpl in H2.
+   }
+    destruct H2.
+    apply is_lim_seq_unique in H2.
+    rewrite H2 in H0.
+    simpl in H0.
+    exists (mkposreal _ H0).
+    intro.
+    simpl.
+    specialize (H1 n).
+    rewrite H2 in H1.
+    simpl in H1.
+    lra.
+  Qed.
+
+  Lemma ps_P_cylinder_nneg  {T} {σ:SigmaAlgebra T}
+             (ps : nat -> ProbSpace σ)        
+             (es : (pre_event (nat -> T))) 
+             (ecyl : inf_cylinder es) :
+    0 <= ps_P_cylinder ps es ecyl.
+  Proof.
+    intros.
+    unfold ps_P_cylinder.
+    repeat match_destr.
+    apply ps_pos.
+  Qed.
+
+  Section Decreasing_cyl_nonempty.
+    Context {T : Type}
+            (inh : NonEmpty T)
+            {σ:SigmaAlgebra T}
+            (ps : nat -> ProbSpace σ)        
+            (es : nat -> (pre_event (nat -> T))) 
+            (ecyl : forall n, inf_cylinder (es n))
+            (decr:(forall n, pre_event_sub (es (S n)) (es n))).
+
+  Definition decreasing_cyl_nonempty_2_seq 
          (eps : posreal) 
-         (decr:(forall n, pre_event_sub (es (S n)) (es n)))
          (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) (n:nat) :
     {t : T & { tes : (nat -> (pre_event (nat -> T))) & { tecyl : forall n, inf_cylinder (tes n) |
        (forall i, 
@@ -3933,30 +4018,32 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
                               (section_seq_event t' (tes i))
                               (section_inf_cylinder t' (tes i) (tecyl i))).
         {
-          unfold ps_P_cylinder.
-          repeat match_destr.
-          replace (sequence_to_ivector 
-                     (fun n0 : nat => ps (n + (S (S n0)))%nat) 0 (S x)) with
-              (sequence_to_ivector 
-                 (fun j : nat => ps ((S n) + (S j))%nat) O (S x)).
-          - reflexivity.
-          - apply sequence_to_ivector_ext.
-            red; intros.
-            f_equal.
-            lia.
+          apply ps_P_cylinder_ext; try easy.
+          intros ?.
+          now replace (n + S (S n0))%nat with (S n + S n0)%nat by lia.
         }
         now rewrite <- H.
   Defined.
-  
-  Lemma decreasing_cyl_section_seq_event  {T}  {σ:SigmaAlgebra T}
-         (inh : NonEmpty T)
-         (ps : nat -> ProbSpace σ)        
-         (es : nat -> (pre_event (nat -> T))) 
-         (ecyl : forall n, inf_cylinder (es n))
+
+
+  Definition decreasing_cyl_seq 
          (eps : posreal) 
-         (decr:(forall n, pre_event_sub (es (S n)) (es n)))
+         (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) n :=
+    projT1 (decreasing_cyl_nonempty_2_seq eps epsbound n).
+  
+  Definition decreasing_cyl_tes
+         (eps : posreal) 
+         (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) n :=
+    let xx := decreasing_cyl_nonempty_2_seq eps epsbound in
+    match n with
+    | 0%nat => es
+    | S n' => projT1 (projT2 (xx n'))
+    end.
+
+  Lemma decreasing_cyl_section_seq_event 
+         (eps : posreal) 
          (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) :
-    let xx := decreasing_cyl_nonempty_2_seq inh ps es ecyl eps decr epsbound in
+    let xx := decreasing_cyl_nonempty_2_seq eps epsbound in
     forall j n,
       projT1 (projT2 (xx (S n))) j =
         section_seq_event (projT1 (xx (S n))) ((projT1 (projT2 (xx n))) j).
@@ -3966,13 +4053,8 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
       induction n; simpl; repeat match_destr.
     Qed.
 
-  Lemma iter_decreasing_cyl_eps0 {T} {σ:SigmaAlgebra T}
-         (inh : NonEmpty T)
-         (ps : nat -> ProbSpace σ)        
-         (es : nat -> (pre_event (nat -> T))) 
-         (ecyl : forall n, inf_cylinder (es n))
+  Lemma iter_decreasing_cyl_eps0
          (eps : posreal) :
-     (forall n, pre_event_sub (es (S n)) (es n)) ->
      (forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps) ->
      exists (x : nat -> T),
      forall n j,
@@ -3980,9 +4062,8 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
                      (iter_section_seq_event x j (es n))
                      (iter_section_inf_cylinder x (es n) (ecyl n) j) >= eps.
    Proof.
-     intros decr epsbound.
-     generalize (decreasing_cyl_nonempty_2_alt inh); intros.
-     pose (xx := decreasing_cyl_nonempty_2_seq inh ps es ecyl eps decr epsbound).
+     intros epsbound.
+     pose (xx := decreasing_cyl_nonempty_2_seq eps epsbound).
      exists (fun n => projT1 (xx n)).
      intros.
      destruct (xx n) as [t [tes [tecyl [tdecr tepsbound]]]].
@@ -3990,13 +4071,8 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
      Admitted.
 
 
-  Lemma iter_decreasing_cyl_eps {T} {σ:SigmaAlgebra T}
-         (inh : NonEmpty T)
-         (ps : nat -> ProbSpace σ)        
-         (es : nat -> (pre_event (nat -> T))) 
-         (ecyl : forall n, inf_cylinder (es n))
+  Lemma iter_decreasing_cyl_eps 
          (eps : posreal) :
-     (forall n, pre_event_sub (es (S n)) (es n)) ->
      (forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps) ->
      exists (x : nat -> T),
      forall n j,
@@ -4004,96 +4080,24 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
                      (iter_section_seq_event x j (es n))
                      (iter_section_inf_cylinder x (es n) (ecyl n) j) >= eps.
    Proof.
-     intros decr epsbound.
-     pose (xx := decreasing_cyl_nonempty_2_seq inh ps es ecyl eps decr epsbound).
+     intros epsbound.
+     pose (xx := decreasing_cyl_nonempty_2_seq eps epsbound).
      exists (fun n => projT1 (xx n)).
      intros.
      destruct (xx n) as [t [tes [tecyl [tdecr tepsbound]]]].
      
-     Search ps_P_cylinder.
-     
      Admitted.
 
 
-  Lemma ps_P_cylinder_decreasing  {T} {σ:SigmaAlgebra T}
-             (ps : nat -> ProbSpace σ)        
-             (es : nat -> (pre_event (nat -> T))) 
-             (ecyl : forall n, inf_cylinder (es n)) :
-    (forall n, pre_event_sub (es (S n)) (es n)) ->
-    forall n,
-      ps_P_cylinder ps (es (S n)) (ecyl (S n)) <=
-      ps_P_cylinder ps (es n) (ecyl n).
-  Proof.
-    intros.
-    unfold ps_P_cylinder.
-    repeat match_destr.
-    pose (N := max x x1).
-    assert (lex: ((S x) <= S N)%nat) by lia.
-    rewrite (ps_cylinder_shift (S x) (S N) x0 s ps (lt := lex)).
-    assert (lex1: ((S x1) <= S N)%nat) by lia.
-    rewrite (ps_cylinder_shift (S x1) (S N) x2 s0 ps (lt := lex1)).
-    apply ps_sub.
-    intros ?.
-    simpl.
-    match_destr.
-    specialize (H n).
-    rewrite e0, e2 in H.
-    unfold inf_cylinder_event, pre_event_sub in H.
-    specialize (H (sequence_cons t (ivector_to_sequence i t))).
-    rewrite (ivector_take_sequence _ 0 _ _ lex) in H.
-    rewrite (ivector_take_sequence _ 0 _ _ lex1) in H.
-    rewrite sequence_to_ivector_cons in H.
-    rewrite <- ivec_to_seq_to_ivec in H.
-    do 2 rewrite ivector_take_cons in H.    
-    now apply H.
-  Qed.
 
-  Lemma decreasing_lim_pos_eps (f : nat -> R) :
-    (forall n, f (S n) <= f n) ->
-    Rbar_gt (Lim_seq f) 0 ->
-    exists (eps : posreal),
-      forall n, f n >= eps.
-  Proof.
-    intros.
-    generalize (Lim_seq_decreasing_le f H); intros.
-    assert (ex_finite_lim_seq f).
-    {
-      apply ex_finite_lim_seq_decr with (M := 0); trivial.
-      unfold Rbar_gt in H0.
-      left.
-      assert (Rbar_lt 0 (f n)).
-      {
-        eapply Rbar_lt_le_trans; trivial.
-        apply H0.
-      }
-      now simpl in H2.
-   }
-    destruct H2.
-    apply is_lim_seq_unique in H2.
-    rewrite H2 in H0.
-    simpl in H0.
-    exists (mkposreal _ H0).
-    intro.
-    simpl.
-    specialize (H1 n).
-    rewrite H2 in H1.
-    simpl in H1.
-    lra.
-  Qed.
-
-  Lemma decreasing_cyl_nonempty  {T} {σ:SigmaAlgebra T}
-             (inh : NonEmpty T)
-             (ps : nat -> ProbSpace σ)        
-             (es : nat -> (pre_event (nat -> T))) 
-             (ecyl : forall n, inf_cylinder (es n)) :
-    (forall n, pre_event_sub (es (S n)) (es n)) ->
+  Lemma decreasing_cyl_nonempty :
     Rbar_gt (Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n))) 0 ->
     exists (z : nat -> T), (pre_inter_of_collection es) z.
   Proof.
-    intros decr limpos.
+    intros limpos.
     generalize (ps_P_cylinder_decreasing ps es ecyl decr); intros ps_decr.
     destruct (decreasing_lim_pos_eps (fun n => ps_P_cylinder ps (es n) (ecyl n)) ps_decr limpos) as [eps ?].
-    pose (xx := decreasing_cyl_nonempty_2_seq inh ps es ecyl eps decr H).
+    pose (xx := decreasing_cyl_nonempty_2_seq eps H).
     exists (fun n => projT1 (xx n)).
     intros ?.
     destruct (ecyl n) as [? [? [? ?]]].
@@ -4106,34 +4110,16 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
     unfold ps_P_cylinder in H3.
     repeat match_destr_in H3.
     
-    
   Admitted.
 
-  Lemma ps_P_cylinder_nneg  {T} {σ:SigmaAlgebra T}
-             (ps : nat -> ProbSpace σ)        
-             (es : (pre_event (nat -> T))) 
-             (ecyl : inf_cylinder es) :
-    0 <= ps_P_cylinder ps es ecyl.
-  Proof.
-    intros.
-    unfold ps_P_cylinder.
-    repeat match_destr.
-    apply ps_pos.
-  Qed.
 
-  Lemma decreasing_cyl_empty  {T} {σ:SigmaAlgebra T}
-             (inh : NonEmpty T)
-             (ps : nat -> ProbSpace σ)        
-             (es : nat -> (pre_event (nat -> T))) 
-             (ecyl : forall n, inf_cylinder (es n)) :
-    (forall n, pre_event_sub (es (S n)) (es n)) ->
+  Lemma decreasing_cyl_empty :
     pre_event_equiv (pre_inter_of_collection es) pre_event_none ->
     Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n)) = 0.
   Proof.
-    intro decr.
     contrapose.
     intros.
-    destruct (decreasing_cyl_nonempty inh ps es ecyl decr).
+    destruct (decreasing_cyl_nonempty).
     - generalize (Lim_seq_pos (fun n => ps_P_cylinder ps (es n) (ecyl n))); intros.
       cut_to H0.
       + unfold Rbar_gt.
@@ -4151,24 +4137,22 @@ Lemma ps_P_cylinder_ext {T} {σ:SigmaAlgebra T}
       tauto.
   Qed.
 
-  Lemma decreasing_cyl_empty_alt  {T} {σ:SigmaAlgebra T}
-             (inh : NonEmpty T)
-             (ps : nat -> ProbSpace σ)        
-             (es : nat -> (pre_event (nat -> T))) 
-             (ecyl : forall n, inf_cylinder (es n)) :
-    (forall n, pre_event_sub (es (S n)) (es n)) ->
+  Lemma decreasing_cyl_empty_alt :
     pre_event_equiv (pre_inter_of_collection es) pre_event_none ->
     is_lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n)) 0.
   Proof.
     intros.
-    generalize (decreasing_cyl_empty inh ps es ecyl H H0); intros.
-    rewrite <- H1.
+    generalize (decreasing_cyl_empty H); intros.
+    rewrite <- H0.
     apply Lim_seq_correct.
     apply ex_lim_seq_decr.
     intros.
     apply ps_P_cylinder_decreasing.
     now intros.
   Qed.
+
+  End Decreasing_cyl_nonempty.
+
 
   Lemma inf_cylinder_union {T} {σ:SigmaAlgebra T}
              (es1 es2 : (pre_event (nat -> T))) 
