@@ -3083,7 +3083,7 @@ Section ps_sequence_product.
   Lemma rvlt_nnexp_contra {T} {σ:SigmaAlgebra T} (prts : ProbSpace σ) (X : T -> R)
         (rv : RandomVariable σ borel_sa X)
         (Xpos : NonnegativeFunction X) (c : R) 
-        (inh : NonEmpty T):
+        {inh : NonEmpty T}:
     Rbar_ge (NonnegExpectation X) c ->
     exists (t : T), X t >= c.
   Proof.
@@ -3135,10 +3135,10 @@ Section ps_sequence_product.
   Qed.
 
   Lemma decreasing_cyl_nonempty_1_alt  {T} {σ:SigmaAlgebra T}
-             (inh : NonEmpty T)
-             (ps : nat -> ProbSpace σ)        
-             (es : nat -> (pre_event (nat -> T))) 
-             (ecyl : forall n, inf_cylinder (es n)) (eps : posreal) :
+        {inh : NonEmpty T}
+        (ps : nat -> ProbSpace σ)        
+        (es : nat -> (pre_event (nat -> T))) 
+        (ecyl : forall n, inf_cylinder (es n)) (eps : posreal) :
     (forall n, pre_event_sub (es (S n)) (es n)) ->
     (forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps) ->
     exists (x : T),
@@ -3231,7 +3231,7 @@ Section ps_sequence_product.
       - intros.
         apply exfin.
     }
-    generalize (rvlt_nnexp_contra (ps 0%nat) f1 H2 H1 eps inh); intros.
+    generalize (rvlt_nnexp_contra (ps 0%nat) f1 H2 H1 eps); intros.
     cut_to H3.
     - destruct H3.
       exists x.
@@ -3333,7 +3333,7 @@ Section ps_sequence_product.
    Qed.
    
    Lemma decreasing_cyl_nonempty_2  {T}  {σ:SigmaAlgebra T}
-         (inh : NonEmpty T)
+         {inh : NonEmpty T}
          (ps : nat -> ProbSpace σ)        
          (es : nat -> (pre_event (nat -> T))) 
          (ecyl : forall n, inf_cylinder (es n))
@@ -3351,7 +3351,7 @@ Section ps_sequence_product.
                         (section_inf_cylinder x (es n) (ecyl n))) >= eps).
   Proof.
     intros.
-    destruct (decreasing_cyl_nonempty_1_alt inh ps es ecyl eps H H0).
+    destruct (decreasing_cyl_nonempty_1_alt ps es ecyl eps H H0).
     exists x.
     split.
     - intros ? ?.
@@ -3865,7 +3865,7 @@ Qed.
 
    Lemma decreasing_cyl_nonempty_2_alt {T : Type}
             {σ:SigmaAlgebra T}
-            (inh : NonEmpty T)
+            {inh : NonEmpty T}
             (ps : nat -> ProbSpace σ)        
             (es : nat -> (pre_event (nat -> T))) 
             (ecyl : forall n, inf_cylinder (es n))
@@ -3883,7 +3883,7 @@ Qed.
                           (section_inf_cylinder x (es n) (ecyl n))) >= eps)}.
    Proof.
      intros.
-     generalize (decreasing_cyl_nonempty_2 inh ps es ecyl eps H H0); intros.
+     generalize (decreasing_cyl_nonempty_2 ps es ecyl eps H H0); intros.
      now apply constructive_indefinite_description in H1.
   Qed.
 
@@ -3968,7 +3968,7 @@ Qed.
 
   Section Decreasing_cyl_nonempty.
     Context {T : Type}
-            (inh : NonEmpty T)
+            {inh : NonEmpty T}
             {σ:SigmaAlgebra T}
             (ps : nat -> ProbSpace σ)        
             (es : nat -> (pre_event (nat -> T))) 
@@ -3989,7 +3989,7 @@ Qed.
                           (tecyl i)) >= eps) }}}.
   Proof.
     induction n.
-    - destruct (decreasing_cyl_nonempty_2_alt inh ps es ecyl eps decr epsbound)
+    - destruct (decreasing_cyl_nonempty_2_alt ps es ecyl eps decr epsbound)
         as [t [tdecr tepsbound]].
       exists t.
       exists (fun i => section_seq_event t (es i)).
@@ -3997,7 +3997,6 @@ Qed.
       auto.
     - destruct IHn as [t [tes [tecyl [tdecr tepsbound]]]].
       destruct (decreasing_cyl_nonempty_2_alt
-                  inh
                   (fun i => ps (n + S i)%nat)
                   tes
                   tecyl
@@ -4031,6 +4030,7 @@ Qed.
          (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) n :=
     projT1 (decreasing_cyl_nonempty_2_seq eps epsbound n).
   
+(*
   Definition decreasing_cyl_tes
          (eps : posreal) 
          (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) n :=
@@ -4039,7 +4039,6 @@ Qed.
     | 0%nat => es
     | S n' => projT1 (projT2 (xx n'))
     end.
-
 
   Lemma decreasing_cyl_section_seq_event 
          (eps : posreal) 
@@ -4053,6 +4052,7 @@ Qed.
       unfold decreasing_cyl_seq.
       destruct n; simpl; repeat match_destr.
     Qed.
+*)
 
   Lemma sequence_prefix_cons (x x0 : nat -> T) (N : nat) :
     sequence_prefix x x0 (S N) =
@@ -4080,6 +4080,7 @@ Qed.
     apply sequence_prefix_cons.
   Qed.      
 
+(*
   Lemma iter_decreasing_cyl_section_seq_event 
          (eps : posreal) 
          (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) :
@@ -4103,7 +4104,7 @@ Qed.
       unfold x in IHn.
       now rewrite <- IHn.
   Qed.
-
+*)
   Lemma decreasing_cyl_section_seq_event_alt
          (eps : posreal) 
          (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) :
@@ -4193,29 +4194,17 @@ Qed.
       destruct j.
       - unfold iter_section_seq_event.
         simpl.
-        generalize (epsbound n).
-        generalize (ps_P_cylinder_ext ps (fun n0 : nat => ps n0)); intros ps_ext.
-        cut_to ps_ext; try reflexivity.
-        specialize (ps_ext (es n) (fun w : nat -> T => es n w)).
-        cut_to ps_ext; try reflexivity.
-        intros.
-        specialize (ps_ext (ecyl n)).
-        rewrite <- ps_ext; trivial.
-      - generalize (ps_P_cylinder_iter_section_seq1 eps epsbound n j).
+        generalize (epsbound n); intros.
+        eapply Rge_trans; try apply H.
+        right.
+        apply ps_P_cylinder_ext; try reflexivity.
+      - generalize (ps_P_cylinder_iter_section_seq1 eps epsbound n j); intros.
         unfold x.
-        generalize (ps_P_cylinder_ext (fun n0 : nat => ps (j + S n0))
-                                       (fun n0 : nat => ps (S j + n0))); intros.
-        cut_to H.
-        + specialize (H  (iter_section_seq_event (decreasing_cyl_seq eps epsbound) (S j) (es n))
-                          (iter_section_seq_event (decreasing_cyl_seq eps epsbound) (S j) (es n))).
-          cut_to H; try reflexivity.
-          specialize (H (iter_section_inf_cylinder (decreasing_cyl_seq eps epsbound) 
-                                                   (es n) (ecyl n) (S j))
-                        (iter_section_inf_cylinder (decreasing_cyl_seq eps epsbound) 
-            (es n) (ecyl n) (S j))).
-          rewrite <- H; trivial.
-        + intros.
-          now replace (j + S n0)%nat with (S j + n0)%nat by lia.
+        eapply Rge_trans; try apply H.
+        right.
+        apply ps_P_cylinder_ext; try reflexivity.
+        intros.
+        now replace (S j + n0)%nat with (j + S n0)%nat by lia.
    Qed.
 
   Lemma decreasing_cyl_nonempty
@@ -4226,12 +4215,32 @@ Qed.
   Proof.
     intros.
     destruct (ecyl n) as [? [? [? ?]]].
-    specialize (H0 (decreasing_cyl_seq eps epsbound)).
+    generalize (ps_P_cylinder_iter_section_seq eps epsbound n); intros.
     destruct (classic (es n (decreasing_cyl_seq eps epsbound))); trivial.
-    rewrite H0 in H1.
-    unfold inf_cylinder_event in H1.
-    
-    Admitted.
+    assert (ps_P_cylinder
+              (fun n : nat => ps ((S x) + n))
+              (iter_section_seq_event (decreasing_cyl_seq eps epsbound) (S x) (es n))
+              (iter_section_inf_cylinder (decreasing_cyl_seq eps epsbound) 
+                                         (es n) (ecyl n) (S x)) = 0).
+    {
+      unfold ps_P_cylinder.
+      repeat match_destr.
+      specialize (H0  (decreasing_cyl_seq eps epsbound)).
+      rewrite H0 in H2.
+      assert (@event_equiv _
+                (ivector_sa (ivector_const (S x1) σ))
+                (exist (sa_sigma (ivector_sa (ivector_const (S x1) σ))) x2 s) 
+                (event_none)).
+      {
+        admit.
+      }
+      
+      admit.
+    }
+    specialize (H1 (S x)).
+    rewrite H3 in H1.
+    generalize (cond_pos eps); lra.
+  Admitted.
       
   Lemma decreasing_cyl_nonempty_alt :
     Rbar_gt (Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n))) 0 ->
@@ -4509,7 +4518,7 @@ Qed.
       + apply alg_set_inf_cyl_fin_proper.
       + intros.
         rewrite is_Elim_seq_fin.
-        apply (decreasing_cyl_empty_alt inh ps B (fun n => proj2_sig (B n)) H H0).
+        apply (decreasing_cyl_empty_alt ps B (fun n => proj2_sig (B n)) H H0).
   Qed.
 
   Definition ps_P_cylinder_measure {T} {σ:SigmaAlgebra T}
