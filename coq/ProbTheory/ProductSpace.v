@@ -4174,16 +4174,12 @@ Qed.
    Proof.
      intros.
      generalize (iter_decreasing_cyl_eps_ps_P_cyl eps epsbound n j); intros.
-     generalize (ps_P_cylinder_ext  (fun n0 : nat => ps (j + S n0))  (fun n0 : nat => ps (j + S n0))); intros.
-     cut_to H0.
-     - specialize (H0  (projT1 (projT2 (decreasing_cyl_nonempty_2_seq eps epsbound j)) n)
-                        (iter_section_seq_event x (S j) (es n))).
-       cut_to H0.
-       + specialize (H0  ((` (projT2 (projT2 (decreasing_cyl_nonempty_2_seq eps epsbound j)))) n)).
-         rewrite <- H0; trivial.
-       + apply iter_decreasing_cyl_section_seq_event_alt.
-     - intros; easy.
-  Qed.
+     eapply Rge_trans; try apply H.
+     right.
+     apply ps_P_cylinder_ext.
+     - reflexivity.
+     - symmetry; apply iter_decreasing_cyl_section_seq_event_alt.
+   Qed.
 
   Lemma ps_P_cylinder_iter_section_seq
          (eps : posreal) 
