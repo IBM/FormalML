@@ -4526,10 +4526,13 @@ Qed.
     apply μ_measurable_sa_measure.
   Qed.
 
+  Definition infinite_product_sa {T} (σ:SigmaAlgebra T)
+    := generated_sa (alg_in (Algebra:=inf_cylinder_algebra σ)).
+  
   Instance ps_P_cylinder_measure_is_meas {T} {σ:SigmaAlgebra T}
     {inh : NonEmpty T}
     (ps : nat -> ProbSpace σ) 
-    : is_measure (σ:=generated_sa (alg_in (Algebra:=inf_cylinder_algebra σ))) (ps_P_cylinder_measure ps).
+    : is_measure (σ:=infinite_product_sa σ) (ps_P_cylinder_measure ps).
   Proof.
     assert (sub:sa_sub (generated_sa alg_in) (μ_measurable_sa (ps_P_cylinder_measure ps))).
     {
@@ -4544,5 +4547,24 @@ Qed.
     now simpl in HH.
   Admitted.
 
+  Lemma ps_P_cylinder_measure_is_one {T} {σ:SigmaAlgebra T}
+    {inh : NonEmpty T}
+    (ps : nat -> ProbSpace σ) : 
+    ps_P_cylinder_measure ps (@Ω _ (infinite_product_sa σ))  = R1.
+  Proof.
+    unfold ps_P_cylinder_measure.
+    simpl.
+    generalize (outer_λ_λ (fun (x : alg_set (inf_cylinder_algebra σ)) =>
+                             ps_P_cylinder ps (proj1_sig x) (proj2_sig x)) alg_all); intros HH.
+    simpl in HH.
+    rewrite HH.
+  Admitted.
+
+  Instance infinite_product_ps {T} {σ:SigmaAlgebra T}
+    {inh : NonEmpty T}
+    (ps : nat -> ProbSpace σ) : ProbSpace (infinite_product_sa σ)
+    
+    := measure_all_one_ps (ps_P_cylinder_measure ps) (ps_P_cylinder_measure_is_one ps).
+  
 End ps_sequence_product.
 
