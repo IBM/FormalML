@@ -4488,7 +4488,7 @@ Qed.
   Qed.
 
   Instance ps_P_cylinder_is_premeasure {T} {σ:SigmaAlgebra T} 
-          (inh : NonEmpty T)
+          {inh : NonEmpty T}
           (ps : nat -> ProbSpace σ) :
     is_premeasure (fun (x : alg_set (inf_cylinder_algebra σ)) =>
                      ps_P_cylinder ps (proj1_sig x) (proj2_sig x)).
@@ -4518,10 +4518,35 @@ Qed.
 
   Definition ps_P_cylinder_measure {T} {σ:SigmaAlgebra T}
     (ps : nat -> ProbSpace σ) :=
-    fun (x : pre_event (nat -> T)) =>
       outer_λ
         (fun (x : alg_set (inf_cylinder_algebra σ)) =>
            ps_P_cylinder ps (proj1_sig x) (proj2_sig x)).
+
+  Instance ps_P_cylinder_measure_is_meas_large {T} {σ:SigmaAlgebra T}
+    {inh : NonEmpty T}
+    (ps : nat -> ProbSpace σ) 
+    : is_measure (σ:=μ_measurable_sa (ps_P_cylinder_measure ps)) (ps_P_cylinder_measure ps).
+  Proof.
+    apply μ_measurable_sa_measure.
+  Qed.
+
+  Instance ps_P_cylinder_measure_is_meas {T} {σ:SigmaAlgebra T}
+    {inh : NonEmpty T}
+    (ps : nat -> ProbSpace σ) 
+    : is_measure (σ:=generated_sa (alg_in (Algebra:=inf_cylinder_algebra σ))) (ps_P_cylinder_measure ps).
+  Proof.
+    assert (sub:sa_sub (generated_sa alg_in) (μ_measurable_sa (ps_P_cylinder_measure ps))).
+    {
+      intros ?.
+      apply generated_sa_minimal; simpl; intros.
+      red; intros.
+      
+      admit.
+    } 
+    generalize (ps_P_cylinder_measure_is_meas_large ps); intros HH.
+    apply (is_measure_proper_sub _ _ sub) in HH.
+    now simpl in HH.
+  Admitted.
 
 End ps_sequence_product.
 
