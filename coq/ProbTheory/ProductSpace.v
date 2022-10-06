@@ -4040,19 +4040,187 @@ Qed.
     | S n' => projT1 (projT2 (xx n'))
     end.
 
+
   Lemma decreasing_cyl_section_seq_event 
          (eps : posreal) 
          (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) :
-    let xx := decreasing_cyl_nonempty_2_seq eps epsbound in
     let tes := decreasing_cyl_tes eps epsbound in 
     forall j n,
       tes (S n) j =
-        section_seq_event (projT1 (xx n)) (tes n j).
+        section_seq_event (decreasing_cyl_seq eps epsbound n) (tes n j).
+    Proof.
+      intros.
+      unfold decreasing_cyl_seq.
+      destruct n; simpl; repeat match_destr.
+    Qed.
+
+  Lemma sequence_prefix_cons (x x0 : nat -> T) (N : nat) :
+    sequence_prefix x x0 (S N) =
+    sequence_prefix x (sequence_cons (x N) x0) N.
+  Proof.
+    revert x x0.
+    induction N.
+    - now simpl.
+    - intros.
+      simpl.
+      f_equal.
+      now rewrite <- IHN.
+  Qed.
+
+  Lemma iter_section_seq_event_Sn (x : nat -> T)
+             (e : pre_event (nat -> T)) :
+    forall N,
+      pre_event_equiv
+        (iter_section_seq_event x (S N) e)
+        (section_seq_event (x N) (iter_section_seq_event x N e)).
+  Proof.
+    unfold iter_section_seq_event, section_seq_event.
+    intros ? ?.
+    f_equiv.
+    apply sequence_prefix_cons.
+  Qed.      
+
+  Lemma iter_decreasing_cyl_section_seq_event 
+         (eps : posreal) 
+         (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) :
+    let x := (decreasing_cyl_seq eps epsbound) in
+    let tes := decreasing_cyl_tes eps epsbound in 
+    forall j n,
+      pre_event_equiv (tes n j)
+                      (iter_section_seq_event x n (es j)).
+  Proof.
+    intros.
+    induction n.
+    - intros ?.
+      now unfold iter_section_seq_event.
+    - unfold tes.
+      rewrite decreasing_cyl_section_seq_event.
+      intros ?.
+      rewrite (iter_section_seq_event_Sn x (es j) n x0).
+      unfold x.
+      unfold section_seq_event.
+      specialize (IHn (sequence_cons (decreasing_cyl_seq eps epsbound n) x0)).
+      unfold x in IHn.
+      now rewrite <- IHn.
+  Qed.
+
+  Lemma decreasing_cyl_section_seq_event_alt
+         (eps : posreal) 
+         (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) :
+    let xx := decreasing_cyl_nonempty_2_seq eps epsbound in
+    forall j n,
+      projT1 (projT2 (xx (S j))) n =
+        section_seq_event (projT1 (xx (S j)))
+                          (projT1 (projT2 (xx j)) n).
     Proof.
       intros.
       unfold xx.
-      induction n; simpl; repeat match_destr.
+      simpl.
+      match_destr.
+      destruct s as [? [? [? ?]]].
+      match_destr.
+      now destruct a.
     Qed.
+
+  Lemma iter_decreasing_cyl_section_seq_event_alt
+         (eps : posreal) 
+         (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) :
+    let x := (decreasing_cyl_seq eps epsbound) in
+    forall j n,
+      pre_event_equiv
+        (projT1 (projT2 (decreasing_cyl_nonempty_2_seq eps epsbound j)) n)
+        (iter_section_seq_event x (S j) (es n)).
+  Proof.
+    intros.
+    induction j.
+    - intros ?.
+      unfold x, iter_section_seq_event, decreasing_cyl_seq.
+      simpl.
+      match_destr.
+      destruct a.
+      now simpl.
+    - rewrite decreasing_cyl_section_seq_event_alt.
+      rewrite iter_section_seq_event_Sn.
+      intros ?.
+      unfold x.
+      unfold section_seq_event.
+      specialize (IHj (sequence_cons (decreasing_cyl_seq eps epsbound (S j)) x0)).
+      unfold x in IHj.
+      now rewrite <- IHj.
+   Qed.
+
+  Lemma iter_decreasing_cyl_eps_ps_P_cyl
+         (eps : posreal) 
+         (epsbound: forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps) :
+     let xx := (decreasing_cyl_nonempty_2_seq eps epsbound) in
+     forall n j,
+       ps_P_cylinder (fun k => ps (j + S k)%nat)
+                     (projT1 (projT2 (xx j)) n)
+                     (proj1_sig (projT2 (projT2 (xx j))) n) >= eps.
+   Proof.
+     intros.
+     destruct (xx j) as [? [? [? [? ?]]]].
+     now simpl.
+   Qed.
+
+  Lemma ps_P_cylinder_iter_section_seq1
+         (eps : posreal) 
+         (epsbound: forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps) :
+     let x := (decreasing_cyl_seq eps epsbound) in
+     forall n j,
+       ps_P_cylinder (fun n => ps (j + S n)%nat)
+                     (iter_section_seq_event x (S j) (es n))
+                     (iter_section_inf_cylinder x (es n) (ecyl n) (S j)) >= eps.
+   Proof.
+     intros.
+     generalize (iter_decreasing_cyl_eps_ps_P_cyl eps epsbound n j); intros.
+     generalize (ps_P_cylinder_ext  (fun n0 : nat => ps (j + S n0))  (fun n0 : nat => ps (j + S n0))); intros.
+     cut_to H0.
+     - specialize (H0  (projT1 (projT2 (decreasing_cyl_nonempty_2_seq eps epsbound j)) n)
+                        (iter_section_seq_event x (S j) (es n))).
+       cut_to H0.
+       + specialize (H0  ((` (projT2 (projT2 (decreasing_cyl_nonempty_2_seq eps epsbound j)))) n)).
+         rewrite <- H0; trivial.
+       + apply iter_decreasing_cyl_section_seq_event_alt.
+     - intros; easy.
+  Qed.
+
+  Lemma ps_P_cylinder_iter_section_seq
+         (eps : posreal) 
+         (epsbound: forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps) :
+     let x := (decreasing_cyl_seq eps epsbound) in
+     forall n j,
+       ps_P_cylinder (fun n => ps (j + n)%nat)
+                     (iter_section_seq_event x j (es n))
+                     (iter_section_inf_cylinder x (es n) (ecyl n) j) >= eps.
+    Proof.
+      destruct j.
+      - unfold iter_section_seq_event.
+        simpl.
+        generalize (epsbound n).
+        generalize (ps_P_cylinder_ext ps (fun n0 : nat => ps n0)); intros ps_ext.
+        cut_to ps_ext; try reflexivity.
+        specialize (ps_ext (es n) (fun w : nat -> T => es n w)).
+        cut_to ps_ext; try reflexivity.
+        intros.
+        specialize (ps_ext (ecyl n)).
+        rewrite <- ps_ext; trivial.
+      - generalize (ps_P_cylinder_iter_section_seq1 eps epsbound n j).
+        unfold x.
+        generalize (ps_P_cylinder_ext (fun n0 : nat => ps (j + S n0))
+                                       (fun n0 : nat => ps (S j + n0))); intros.
+        cut_to H.
+        + specialize (H  (iter_section_seq_event (decreasing_cyl_seq eps epsbound) (S j) (es n))
+                          (iter_section_seq_event (decreasing_cyl_seq eps epsbound) (S j) (es n))).
+          cut_to H; try reflexivity.
+          specialize (H (iter_section_inf_cylinder (decreasing_cyl_seq eps epsbound) 
+                                                   (es n) (ecyl n) (S j))
+                        (iter_section_inf_cylinder (decreasing_cyl_seq eps epsbound) 
+            (es n) (ecyl n) (S j))).
+          rewrite <- H; trivial.
+        + intros.
+          now replace (j + S n0)%nat with (S j + n0)%nat by lia.
+   Qed.
 
   Lemma decreasing_cyl_nonempty
          (eps : posreal) 
@@ -4063,49 +4231,12 @@ Qed.
     intros.
     destruct (ecyl n) as [? [? [? ?]]].
     specialize (H0 (decreasing_cyl_seq eps epsbound)).
-    rewrite H0.
-    unfold inf_cylinder_event.
+    destruct (classic (es n (decreasing_cyl_seq eps epsbound))); trivial.
+    rewrite H0 in H1.
+    unfold inf_cylinder_event in H1.
+    
     Admitted.
       
-     
-
-  Lemma iter_decreasing_cyl_eps0
-         (eps : posreal) :
-     (forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps) ->
-     exists (x : nat -> T),
-     forall n j,
-       ps_P_cylinder (fun n => ps (n + j)%nat)
-                     (iter_section_seq_event x j (es n))
-                     (iter_section_inf_cylinder x (es n) (ecyl n) j) >= eps.
-   Proof.
-     intros epsbound.
-     pose (xx := decreasing_cyl_nonempty_2_seq eps epsbound).
-     exists (fun n => projT1 (xx n)).
-     intros.
-     destruct (xx n) as [t [tes [tecyl [tdecr tepsbound]]]].
-     
-     Admitted.
-
-
-  Lemma iter_decreasing_cyl_eps 
-         (eps : posreal) :
-     (forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps) ->
-     exists (x : nat -> T),
-     forall n j,
-       ps_P_cylinder (fun n => ps (n + j)%nat)
-                     (iter_section_seq_event x j (es n))
-                     (iter_section_inf_cylinder x (es n) (ecyl n) j) >= eps.
-   Proof.
-     intros epsbound.
-     pose (xx := decreasing_cyl_nonempty_2_seq eps epsbound).
-     exists (fun n => projT1 (xx n)).
-     intros.
-     destruct (xx n) as [t [tes [tecyl [tdecr tepsbound]]]].
-     
-     Admitted.
-
-
-
   Lemma decreasing_cyl_nonempty_alt :
     Rbar_gt (Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n))) 0 ->
     exists (z : nat -> T), (pre_inter_of_collection es) z.
@@ -4113,21 +4244,10 @@ Qed.
     intros limpos.
     generalize (ps_P_cylinder_decreasing ps es ecyl decr); intros ps_decr.
     destruct (decreasing_lim_pos_eps (fun n => ps_P_cylinder ps (es n) (ecyl n)) ps_decr limpos) as [eps ?].
-    pose (xx := decreasing_cyl_nonempty_2_seq eps H).
-    exists (fun n => projT1 (xx n)).
+    exists (decreasing_cyl_seq eps H).
     intros ?.
-    destruct (ecyl n) as [? [? [? ?]]].
-    destruct (xx n) as [t [tes [tecyl [? ?]]]].
-    specialize (H1  (fun n0 : nat => projT1 (xx n0))).
-    rewrite H1.
-    unfold inf_cylinder_event.
-    specialize (H3 n).
-    destruct (tecyl n) as [? [? [? ?]]].
-    unfold ps_P_cylinder in H3.
-    repeat match_destr_in H3.
-    
-  Admitted.
-
+    apply decreasing_cyl_nonempty.
+  Qed.
 
   Lemma decreasing_cyl_empty :
     pre_event_equiv (pre_inter_of_collection es) pre_event_none ->
