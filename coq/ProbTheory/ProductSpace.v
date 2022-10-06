@@ -4569,16 +4569,26 @@ Qed.
     unfold ps_P_cylinder.
     repeat match_destr.
     unfold inf_cylinder_event in e0.
+    unfold  pre_Ω in e0.
     assert (@event_equiv _ (ivector_sa (ivector_const (S x) σ))
               (exist (sa_sigma (ivector_sa (ivector_const (S x) σ))) x0 s)
               Ω).
     {
-      admit.
+      intros ?.
+      simpl.
+      assert (0 < S x)%nat by lia.
+      pose (default := ivector_nth 0 H x1).
+      specialize (e0 (ivector_to_sequence x1 default)).
+      simpl in e0.
+      generalize (ivec_to_seq_to_ivec x1 default); intros.
+      simpl in H0.
+      rewrite <- H0 in e0.
+      now rewrite <- e0.
     }
     rewrite H.
     apply Rbar_finite_eq.
     apply ps_all.
-  Admitted.
+  Qed.
 
   Instance infinite_product_ps {T} {σ:SigmaAlgebra T}
     {inh : NonEmpty T}
