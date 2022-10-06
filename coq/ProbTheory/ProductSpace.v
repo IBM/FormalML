@@ -4207,7 +4207,7 @@ Qed.
         now replace (S j + n0)%nat with (j + S n0)%nat by lia.
    Qed.
 
-  Lemma decreasing_cyl_nonempty
+  Lemma decreasing_cyl_nonempty_eps
          (eps : posreal) 
          (epsbound : forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps) :
     forall n,
@@ -4227,22 +4227,21 @@ Qed.
       repeat match_destr.
       specialize (H0  (decreasing_cyl_seq eps epsbound)).
       rewrite H0 in H2.
-      assert (@event_equiv _
-                (ivector_sa (ivector_const (S x1) σ))
+      assert (@event_equiv _ (ivector_sa (ivector_const (S x1) σ))
                 (exist (sa_sigma (ivector_sa (ivector_const (S x1) σ))) x2 s) 
                 (event_none)).
       {
         admit.
       }
-      
-      admit.
+      rewrite H3.
+      apply ps_none.
     }
     specialize (H1 (S x)).
     rewrite H3 in H1.
     generalize (cond_pos eps); lra.
   Admitted.
       
-  Lemma decreasing_cyl_nonempty_alt :
+  Lemma decreasing_cyl_nonempty :
     Rbar_gt (Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n))) 0 ->
     exists (z : nat -> T), (pre_inter_of_collection es) z.
   Proof.
@@ -4251,16 +4250,16 @@ Qed.
     destruct (decreasing_lim_pos_eps (fun n => ps_P_cylinder ps (es n) (ecyl n)) ps_decr limpos) as [eps ?].
     exists (decreasing_cyl_seq eps H).
     intros ?.
-    apply decreasing_cyl_nonempty.
+    apply decreasing_cyl_nonempty_eps.
   Qed.
 
-  Lemma decreasing_cyl_empty :
+  Lemma decreasing_cyl_empty_lim_0 :
     pre_event_equiv (pre_inter_of_collection es) pre_event_none ->
     Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n)) = 0.
   Proof.
     contrapose.
     intros.
-    destruct (decreasing_cyl_nonempty_alt).
+    destruct (decreasing_cyl_nonempty).
     - generalize (Lim_seq_pos (fun n => ps_P_cylinder ps (es n) (ecyl n))); intros.
       cut_to H0.
       + unfold Rbar_gt.
@@ -4278,12 +4277,12 @@ Qed.
       tauto.
   Qed.
 
-  Lemma decreasing_cyl_empty_alt :
+  Lemma decreasing_cyl_empty_is_lim_0 :
     pre_event_equiv (pre_inter_of_collection es) pre_event_none ->
     is_lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n)) 0.
   Proof.
     intros.
-    generalize (decreasing_cyl_empty H); intros.
+    generalize (decreasing_cyl_empty_lim_0 H); intros.
     rewrite <- H0.
     apply Lim_seq_correct.
     apply ex_lim_seq_decr.
@@ -4518,7 +4517,7 @@ Qed.
       + apply alg_set_inf_cyl_fin_proper.
       + intros.
         rewrite is_Elim_seq_fin.
-        apply (decreasing_cyl_empty_alt ps B (fun n => proj2_sig (B n)) H H0).
+        apply (decreasing_cyl_empty_is_lim_0 ps B (fun n => proj2_sig (B n)) H H0).
   Qed.
 
   Definition ps_P_cylinder_measure {T} {σ:SigmaAlgebra T}
@@ -4567,6 +4566,18 @@ Qed.
                              ps_P_cylinder ps (proj1_sig x) (proj2_sig x)) alg_all); intros HH.
     simpl in HH.
     rewrite HH.
+    unfold ps_P_cylinder.
+    repeat match_destr.
+    unfold inf_cylinder_event in e0.
+    assert (@event_equiv _ (ivector_sa (ivector_const (S x) σ))
+              (exist (sa_sigma (ivector_sa (ivector_const (S x) σ))) x0 s)
+              Ω).
+    {
+      admit.
+    }
+    rewrite H.
+    apply Rbar_finite_eq.
+    apply ps_all.
   Admitted.
 
   Instance infinite_product_ps {T} {σ:SigmaAlgebra T}
