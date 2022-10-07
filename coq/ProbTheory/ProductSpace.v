@@ -4546,14 +4546,12 @@ Qed.
     {
       intros ?.
       apply generated_sa_minimal; simpl; intros.
-      red; intros.
-      
-      admit.
+      apply (outer_λ_is_measurable (fun x1 : alg_set (inf_cylinder_algebra σ) => ps_P_cylinder ps (` x1) (proj2_sig x1)) (exist _ _ H)).
     } 
     generalize (ps_P_cylinder_measure_is_meas_large ps); intros HH.
     apply (is_measure_proper_sub _ _ sub) in HH.
     now simpl in HH.
-  Admitted.
+  Qed.
 
   Lemma ps_P_cylinder_measure_is_one {T} {σ:SigmaAlgebra T}
     {inh : NonEmpty T}
