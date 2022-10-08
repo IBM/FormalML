@@ -4205,7 +4205,19 @@ Qed.
         apply ps_P_cylinder_ext; try reflexivity.
         intros.
         now replace (S j + n0)%nat with (j + S n0)%nat by lia.
-   Qed.
+    Qed.
+
+  Lemma sequence_cons_prefix_shift (x x0 : nat -> T) (N : nat) :
+    sequence_cons (x 0%nat) 
+                  (sequence_prefix (fun n => x (S n)) x0 N) =
+    sequence_prefix x x0 (S N).
+  Admitted.
+
+  Lemma sequence_to_ivector_prefix (x x0 : nat -> T) (N : nat) :
+    sequence_to_ivector (sequence_prefix x x0 N) 0 N =
+    sequence_to_ivector x 0 N.
+  Proof.
+    Admitted.
 
   Lemma decreasing_cyl_nonempty_eps
          (eps : posreal) 
@@ -4225,13 +4237,31 @@ Qed.
     {
       unfold ps_P_cylinder.
       repeat match_destr.
-      specialize (H0  (decreasing_cyl_seq eps epsbound)).
-      rewrite H0 in H2.
+      rewrite (H0  (decreasing_cyl_seq eps epsbound)) in H2.
       assert (@event_equiv _ (ivector_sa (ivector_const (S x1) σ))
                 (exist (sa_sigma (ivector_sa (ivector_const (S x1) σ))) x2 s) 
                 (event_none)).
       {
-        admit.
+        unfold iter_section_seq_event, inf_cylinder_event in e0.
+        intros ?.
+        simpl.
+        unfold pre_event_none.
+        assert (0 < S x1)%nat by lia.
+        pose (default := ivector_nth 0 H3 x3).
+        specialize (e0 (ivector_to_sequence x3 default)).
+        simpl in e0.
+        generalize (ivec_to_seq_to_ivec x3 default); intros.
+        simpl in H4.
+        rewrite <- H4 in e0.
+        split; intros; try easy.
+        clear H4.
+        apply H2.
+        unfold inf_cylinder_event.
+        rewrite <- e0 in H5.
+        rewrite (H0 _) in H5.
+        unfold inf_cylinder_event in H5.
+        rewrite sequence_cons_prefix_shift in H5.
+        now rewrite sequence_to_ivector_prefix in H5.
       }
       rewrite H3.
       apply ps_none.
@@ -4239,7 +4269,7 @@ Qed.
     specialize (H1 (S x)).
     rewrite H3 in H1.
     generalize (cond_pos eps); lra.
-  Admitted.
+  Qed.
       
   Lemma decreasing_cyl_nonempty :
     Rbar_gt (Lim_seq (fun n => ps_P_cylinder ps (es n) (ecyl n))) 0 ->
