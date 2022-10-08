@@ -4211,13 +4211,21 @@ Qed.
     sequence_cons (x 0%nat) 
                   (sequence_prefix (fun n => x (S n)) x0 N) =
     sequence_prefix x x0 (S N).
-  Admitted.
+  Proof.
+    easy.
+  Qed.
 
   Lemma sequence_to_ivector_prefix (x x0 : nat -> T) (N : nat) :
     sequence_to_ivector (sequence_prefix x x0 N) 0 N =
     sequence_to_ivector x 0 N.
   Proof.
-    Admitted.
+    revert x.
+    induction N; trivial; intros; simpl.    
+    f_equal.
+    rewrite sequence_to_ivector_cons_shift.
+    rewrite IHN.
+    now rewrite sequence_to_ivector_shift.
+  Qed.     
 
   Lemma decreasing_cyl_nonempty_eps
          (eps : posreal) 
@@ -4254,9 +4262,7 @@ Qed.
         simpl in H4.
         rewrite <- H4 in e0.
         split; intros; try easy.
-        clear H4.
         apply H2.
-        unfold inf_cylinder_event.
         rewrite <- e0 in H5.
         rewrite (H0 _) in H5.
         unfold inf_cylinder_event in H5.
