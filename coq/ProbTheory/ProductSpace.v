@@ -4627,8 +4627,24 @@ Qed.
   Instance infinite_product_ps {T} {σ:SigmaAlgebra T}
     {inh : NonEmpty T}
     (ps : nat -> ProbSpace σ) : ProbSpace (infinite_product_sa σ)
-    
     := measure_all_one_ps (ps_P_cylinder_measure ps) (ps_P_cylinder_measure_is_one ps).
   
+  Instance seq_nth_rv {T} {σ:SigmaAlgebra T} (idx : nat) :
+    RandomVariable (infinite_product_sa σ) σ (fun (x : nat -> T) => x idx).
+  Proof.
+    Admitted.
+
+  Lemma seq_nth_independent_rv {T} {σ:SigmaAlgebra T} 
+        {inh : NonEmpty T}
+        (ps : nat -> ProbSpace σ) :
+    forall idx1 idx2,
+      (idx1 < idx2)%nat ->
+      independent_rvs (infinite_product_ps ps) σ σ
+                      (fun x => x idx1)
+                      (fun x => x idx2).
+  Proof.
+    Admitted.
+
+
 End ps_sequence_product.
 
