@@ -4628,21 +4628,47 @@ Qed.
     {inh : NonEmpty T}
     (ps : nat -> ProbSpace σ) : ProbSpace (infinite_product_sa σ)
     := measure_all_one_ps (ps_P_cylinder_measure ps) (ps_P_cylinder_measure_is_one ps).
+
+  Lemma inf_cylinder_sa {T} {σ:SigmaAlgebra T}
+        (e : pre_event (nat -> T))
+        (cyl : inf_cylinder e) :
+    sa_sigma (infinite_product_sa σ) e.
+  Proof.
+    assert ((alg_in (Algebra:=inf_cylinder_algebra σ)) e) by apply cyl.
+    apply (generated_sa_sub _ _  H).
+  Qed.
+
+  Lemma infinite_product_ps_cylinder {T} {σ:SigmaAlgebra T}
+    {inh : NonEmpty T}
+    (ps : nat -> ProbSpace σ) :
+    forall (e : pre_event (nat -> T))
+           (cyl : inf_cylinder e),
+      ps_P_cylinder ps e cyl = ps_P (ProbSpace := infinite_product_ps ps)
+                                    (exist _ e (inf_cylinder_sa e cyl)).
+   Proof.
+     Admitted.
   
   Instance seq_nth_rv {T} {σ:SigmaAlgebra T} (idx : nat) :
     RandomVariable (infinite_product_sa σ) σ (fun (x : nat -> T) => x idx).
   Proof.
+    unfold RandomVariable.
+    intros.
+    unfold infinite_product_sa.
     Admitted.
 
   Lemma seq_nth_independent_rv {T} {σ:SigmaAlgebra T} 
         {inh : NonEmpty T}
         (ps : nat -> ProbSpace σ) :
-    forall idx1 idx2,
+       forall idx1 idx2,
       (idx1 < idx2)%nat ->
       independent_rvs (infinite_product_ps ps) σ σ
                       (fun x => x idx1)
                       (fun x => x idx2).
   Proof.
+    unfold independent_rvs.
+    intros.
+    unfold independent_events.
+    
     Admitted.
 
 
