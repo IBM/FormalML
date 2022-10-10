@@ -1762,8 +1762,81 @@ Section ps_product.
   Qed.
 
 End ps_product.
+     
+   Program Instance rev_sa {X Y:Type} (sa : SigmaAlgebra (X * Y)) : SigmaAlgebra (Y * X)
+  := {
+      sa_sigma := (fun (f:pre_event (Y * X)) =>
+        sa_sigma sa (fun (v : (X * Y)) => f (snd v, fst v)))
+    }.
+   Next Obligation.
+     now apply sa_countable_union.
+   Qed.
+   Next Obligation.
+     now apply sa_complement in H.
+   Qed.
+   Next Obligation.
+     apply sa_all.
+   Qed.
 
-Section ps_ivector_product.
+   Lemma rev_sa_product_sa {X Y : Type} (A : SigmaAlgebra X) (B : SigmaAlgebra Y) :
+     product_sa B A === rev_sa (product_sa A B).
+   Proof.
+     intros ?.
+     unfold product_sa.
+     Admitted.
+
+  Lemma product_sa_rev {X Y : Type} {A : SigmaAlgebra X} {B : SigmaAlgebra Y}
+      (e : pre_event (X * Y))
+      (sae : sa_sigma (product_sa A B) e) :
+    sa_sigma (product_sa B A) (fun '(a,b) => e (b,a)).
+  Proof.
+    assert (sa_sigma (rev_sa (product_sa A B)) (fun '(a,b) => e (b,a))).
+    {
+      simpl; intros.
+      specialize (sae sa H).
+      revert sae.
+      apply sa_proper.
+      intros ?.
+      destruct x.
+      now simpl.
+    }
+    generalize (rev_sa_product_sa A B (fun '(a,b) => e (b,a))); intros.
+    now apply H0 in H.
+  Qed.
+
+  Lemma RandomVariable_rev {X Y : Type} {A : SigmaAlgebra X} {B : SigmaAlgebra Y} :
+    RandomVariable (product_sa B A) (product_sa A B) (fun '(a,b) => (b,a)).
+  Proof.
+    unfold RandomVariable.
+    intros.
+    unfold event_preimage.
+    destruct B0.
+    generalize (product_sa_rev x s).
+    apply sa_proper.
+    intros ?.
+    destruct x0.
+    now simpl.
+  Qed.
+
+  Lemma product_ps_rev (X Y : Type) (A : SigmaAlgebra X) (B : SigmaAlgebra Y)
+        (ps1 : ProbSpace A) (ps2 : ProbSpace B)
+        (e : pre_event (X * Y))
+        (sae : sa_sigma (product_sa A B) e) :
+    ps_P (ProbSpace := product_ps ps1 ps2) (exist _ _ sae) = 
+    ps_P (ProbSpace := product_ps ps2 ps1) (exist _ _ (product_sa_rev e sae)).
+  Proof.
+    apply Rbar_finite_eq.
+    rewrite (explicit_product_product_pse_fst ps1 ps2).
+    rewrite (explicit_product_product_pse_snd ps2 ps1).
+    apply NonnegExpectation_ext.
+    intros ?.
+    apply ps_proper.
+    intros ?.
+    now simpl.
+  Qed.
+
+  Section ps_ivector_product.
+    
 
   Program Global Instance trivial_ps {T} (elem:inhabited T) : ProbSpace (trivial_sa T)
     := {|
@@ -2313,7 +2386,57 @@ Section ps_sequence_product.
       match_destr.
       tauto.
     Qed.
+
+  Lemma ivector_rev_sa {T} {σ:SigmaAlgebra T} {n : nat}
+        (e : pre_event (ivector T n))
+        (sae: sa_sigma (ivector_sa (ivector_const n σ)) e) :
+    sa_sigma (ivector_sa (ivector_const n σ)) 
+             (fun (v : ivector T n) => e (ivector_rev v)).
+  Proof.
+    revert sae.
     
+  Admitted.
+  
+  Lemma ps_ivector_rev {T} {σ:SigmaAlgebra T} {n : nat}
+        (ivecps : ivector (ProbSpace σ) n)
+        (e : pre_event (ivector T n))
+        (sae: sa_sigma (ivector_sa (ivector_const n σ)) e) :
+    ps_P (ProbSpace := ivector_ps ivecps) (exist _ _ sae) =
+    ps_P (ProbSpace := ivector_ps (ivector_rev ivecps))
+         (exist _ _ (ivector_rev_sa e sae)).
+  Proof.
+  Admitted.
+  
+  Lemma ps_cylinder_shift_S {T} {σ:SigmaAlgebra T}
+        (n : nat) (e : pre_event (ivector T n))
+        (sae: sa_sigma (ivector_sa (ivector_const n σ)) e)
+        (ps : nat -> ProbSpace σ)
+        {lt : (n <= S n)%nat} :
+    ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat n)) 
+         (exist _ _ sae) =
+    ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat (S n)))
+         (exist _ _ (sa_cylinder_shift (lt := lt) n (S n) e sae)).
+  Proof.
+    revert e sae.
+    induction n.
+    - intros.
+      admit.
+    - generalize (explicit_ivector_product_pse (sequence_to_ivector ps 0%nat (S n))); intros.
+      apply Rbar_finite_eq.
+      rewrite explicit_ivector_product_pse.
+      rewrite explicit_ivector_product_pse.
+      replace  (@ivector_hd (@ProbSpace T σ) n (@sequence_to_ivector (@ProbSpace T σ) ps O (S n))) with
+          (ps 0%nat) by now simpl.
+      replace (@ivector_hd (@ProbSpace T σ) (S n) (@sequence_to_ivector (@ProbSpace T σ) ps O (S (S n))))
+              with (ps 0%nat) by now simpl.
+      apply NonnegExpectation_ext.
+      intros ?.
+      
+      simpl.
+      unfold ivector_hd.
+      match_destr.
+    Admitted.
+
   Lemma ps_cylinder_shift {T} {σ:SigmaAlgebra T}
         (n m : nat) (e : pre_event (ivector T n))
         (sae: sa_sigma (ivector_sa (ivector_const n σ)) e)
@@ -4778,7 +4901,8 @@ Qed.
     assert (ltx3: (S x3 <= S xx)%nat) by lia.        
     rewrite (ps_cylinder_shift (S x) (S xx)) with (lt := ltx).
     rewrite (ps_cylinder_shift (S x1) (S xx)) with (lt := ltx1).
-    rewrite (ps_cylinder_shift (S x3) (S xx)) with (lt := ltx3).        
+    rewrite (ps_cylinder_shift (S x3) (S xx)) with (lt := ltx3).
+    
     
     Admitted.
 
