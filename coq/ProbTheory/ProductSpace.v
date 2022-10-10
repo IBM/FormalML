@@ -4674,13 +4674,10 @@ Qed.
    Proof.
      intros.
      generalize (outer_λ_λ (fun (x : alg_set (inf_cylinder_algebra σ)) =>
-                              ps_P_cylinder ps (proj1_sig x) (proj2_sig x))); intros HH.
+                              ps_P_cylinder ps (proj1_sig x) (proj2_sig x)) (exist _ _ cyl)); intros HH.
      unfold ps_P, infinite_product_ps, measure_all_one_ps, ps_P_cylinder_measure.
-     specialize (HH (exist _ _ cyl)).
-     simpl in HH.
-     simpl.
-     rewrite HH.
-     now simpl.
+     simpl in HH; simpl.
+     now rewrite HH.
    Qed.
 
    Lemma sequence_to_ivector_nth {T} (x : nat -> T) (idx : nat) pf :
