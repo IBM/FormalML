@@ -3317,8 +3317,8 @@ Section ps_sequence_product.
        now rewrite IHN.
    Qed.
 
-   Lemma cons_sequence_to_ivector {T} (w : nat -> T) (x2 : nat) :
-     (w 0%nat, sequence_to_ivector w 1 x2) = sequence_to_ivector w 0 (S x2).
+   Lemma cons_sequence_to_ivector {T} (w : nat -> T) (x2 s : nat) :
+     (w s, sequence_to_ivector w (S s) x2) = sequence_to_ivector w s (S x2).
    Proof.
      reflexivity.
    Qed.
@@ -4680,14 +4680,18 @@ Qed.
      now rewrite HH.
    Qed.
 
-   Lemma sequence_to_ivector_nth {T} (x : nat -> T) (idx : nat) pf :
-     x idx = ivector_nth idx pf (sequence_to_ivector x 0 (S idx)).
+   Lemma sequence_to_ivector_nth {T} (x : nat -> T) (idx s : nat) pf :
+     x (idx + s)%nat  = ivector_nth idx pf (sequence_to_ivector x s (S idx)).
    Proof.
-     revert pf.
+     revert pf s.
      induction idx; intros.
      - now simpl.
-     -        
-     Admitted.
+     - rewrite <- cons_sequence_to_ivector.
+       rewrite ivec_nth_cons.
+       rewrite <- IHidx.
+       f_equal.
+       lia.
+    Qed.
 
   Instance seq_nth_rv {T} {σ:SigmaAlgebra T} (idx : nat) :
     RandomVariable (infinite_product_sa σ) σ (fun (x : nat -> T) => x idx).
@@ -4706,7 +4710,8 @@ Qed.
     unfold event_preimage.
     unfold proj1_sig.
     unfold inf_cylinder_event.
-    now rewrite <- sequence_to_ivector_nth.
+    rewrite <- sequence_to_ivector_nth.
+    now replace (idx + 0)%nat with idx by lia.
   Qed.
 
   Lemma inf_cylinder_preimage_nth  {T} {σ:SigmaAlgebra T} 
@@ -4726,7 +4731,8 @@ Qed.
     unfold event_preimage.
     unfold proj1_sig.
     unfold inf_cylinder_event.
-    now rewrite <- sequence_to_ivector_nth.
+    rewrite <- sequence_to_ivector_nth.
+    now replace (idx + 0)%nat with idx by lia.
   Qed.
 
   Lemma seq_nth_independent_rv {T} {σ:SigmaAlgebra T} 
