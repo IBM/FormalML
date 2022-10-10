@@ -4871,12 +4871,29 @@ Qed.
 
   Lemma sequence_to_ivector_take {T} (x1 xx : nat)
         (default : T)
-        (vec : ivector T (S xx)) 
+        (vec : ivector T xx) 
         pf :
-    sequence_to_ivector (ivector_to_sequence vec default) 0 (S x1) = 
-    ivector_take (S xx) (S x1) pf vec.
+    sequence_to_ivector (ivector_to_sequence vec default) 0 x1 = 
+    ivector_take xx x1 pf vec.
   Proof.
-  Admitted.
+    revert x1 pf.
+    induction xx.
+    - intros.
+      simpl.
+      assert (x1 = 0)%nat by lia.
+      destruct x1; try lia.
+      now simpl.
+    - intros.
+      destruct vec.
+      rewrite ivec_sequence_cons.
+      specialize (IHxx i).
+      destruct x1.
+      + now simpl.
+      + rewrite sequence_to_ivector_cons.
+        specialize (IHxx x1 (le_S_n x1 xx pf)).
+        rewrite IHxx.
+        now simpl.
+   Qed.
   
   Lemma seq_nth_independent_rv {T} {σ:SigmaAlgebra T} 
         {inh : NonEmpty T}
