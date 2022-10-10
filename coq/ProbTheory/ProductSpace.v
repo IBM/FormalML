@@ -4864,7 +4864,10 @@ Qed.
         pf :
     ivector_to_sequence vec default idx1 = ivector_nth idx1 pf vec.
   Proof.
-    Admitted.
+    unfold ivector_to_sequence.
+    match_destr; try lia.
+    apply ivector_nth_prf_irrelevance.
+  Qed.
 
   Lemma sequence_to_ivector_take {T} (x1 xx : nat)
         (default : T)
