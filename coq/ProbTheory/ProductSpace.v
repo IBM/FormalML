@@ -4858,6 +4858,23 @@ Qed.
     now replace (idx + 0)%nat with idx by lia.
   Qed.
 
+  Lemma ivector_to_sequence_nth  {T} (idx1 xx : nat)
+        (default : T)
+        (vec : ivector T (S xx)) 
+        pf :
+    ivector_to_sequence vec default idx1 = ivector_nth idx1 pf vec.
+  Proof.
+    Admitted.
+
+  Lemma sequence_to_ivector_take {T} (x1 xx : nat)
+        (default : T)
+        (vec : ivector T (S xx)) 
+        pf :
+    sequence_to_ivector (ivector_to_sequence vec default) 0 (S x1) = 
+    ivector_take (S xx) (S x1) pf vec.
+  Proof.
+  Admitted.
+  
   Lemma seq_nth_independent_rv {T} {σ:SigmaAlgebra T} 
         {inh : NonEmpty T}
         (ps : nat -> ProbSpace σ) :
@@ -4895,17 +4912,62 @@ Qed.
     clear H0 H1 H2.
     unfold ps_P_cylinder.
     repeat match_destr.
-    pose (xx := max x (max x1 x3)).
+    pose (xx := max (max x idx2) (max x1 x3)).
     assert (ltx: (S x <= S xx)%nat) by lia.
     assert (ltx1: (S x1 <= S xx)%nat) by lia.
-    assert (ltx3: (S x3 <= S xx)%nat) by lia.        
+    assert (ltx3: (S x3 <= S xx)%nat) by lia. 
     rewrite (ps_cylinder_shift (S x) (S xx)) with (lt := ltx).
     rewrite (ps_cylinder_shift (S x1) (S xx)) with (lt := ltx1).
     rewrite (ps_cylinder_shift (S x3) (S xx)) with (lt := ltx3).
-    
-    
-    Admitted.
-
+    generalize (ivector_nth_independent_rv (sequence_to_ivector ps 0 (S xx)) idx1 idx2); intros.
+    unfold independent_rvs, independent_events, rv_preimage in H0.
+    assert (idx1 < S xx)%nat by lia.
+    assert (idx2 < S xx)%nat by lia.
+    specialize (H0 H1 H2 H A B).
+    etransitivity; [etransitivity |]; [| apply H0 |].
+    - clear H0.
+      apply ps_proper.
+      intros ?.
+      unfold proj1_sig.
+      unfold rv_preimage, inf_cylinder_event, event_preimage in e0.
+      specialize (e0 (ivector_to_sequence x5 inh)).
+      simpl in e0.
+      replace (ivector_to_sequence x5 inh 0, sequence_to_ivector (ivector_to_sequence x5 inh) 1 x) with
+          (sequence_to_ivector (ivector_to_sequence x5 inh) 0 (S x)) in e0 by now simpl.
+      replace (sequence_to_ivector (ivector_to_sequence x5 inh) 0 (S x)) with
+          (ivector_take (S xx) (S x) ltx x5) in e0.
+      + rewrite <- e0.
+        unfold event_inter, pre_event_inter, event_preimage, proj1_sig.
+        f_equiv.
+        * destruct A.
+          f_equiv.
+          now rewrite ivector_to_sequence_nth with (pf := H1).
+        * destruct B.
+          f_equiv.
+          now rewrite ivector_to_sequence_nth with (pf := H2).          
+      + now rewrite sequence_to_ivector_take with (pf := ltx).
+    - f_equal; apply ps_proper; intros ?; unfold proj1_sig, rv_preimage, event_preimage; clear H0.
+      + unfold rv_preimage, inf_cylinder_event, event_preimage in e2.
+        specialize (e2 (ivector_to_sequence x5 inh)).
+        simpl in e2.
+        replace (ivector_to_sequence x5 inh 0, sequence_to_ivector (ivector_to_sequence x5 inh) 1 x1) with
+          (sequence_to_ivector (ivector_to_sequence x5 inh) 0 (S x1)) in e2 by now simpl.
+        replace (ivector_nth idx1 H1 x5) with (ivector_to_sequence x5 inh idx1).
+        * rewrite e2.
+          f_equiv.
+          now rewrite sequence_to_ivector_take with (pf := ltx1).
+        * now rewrite ivector_to_sequence_nth with (pf := H1).
+     +  unfold rv_preimage, inf_cylinder_event, event_preimage in e4.
+        specialize (e4 (ivector_to_sequence x5 inh)).
+        simpl in e4.
+        replace (ivector_to_sequence x5 inh 0, sequence_to_ivector (ivector_to_sequence x5 inh) 1 x3) with
+          (sequence_to_ivector (ivector_to_sequence x5 inh) 0 (S x3)) in e4 by now simpl.
+        replace (ivector_nth idx2 H2 x5) with (ivector_to_sequence x5 inh idx2).
+        * rewrite e4.
+          f_equiv.
+          now rewrite sequence_to_ivector_take with (pf := ltx3).
+        * now rewrite ivector_to_sequence_nth with (pf := H2).
+  Qed.
 
 End ps_sequence_product.
 
