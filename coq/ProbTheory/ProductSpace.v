@@ -4354,6 +4354,31 @@ Qed.
       now rewrite H4, H6.
   Qed.
 
+
+  Lemma inf_cylinder_inter {T} {σ:SigmaAlgebra T}
+             (es1 es2 : (pre_event (nat -> T))) 
+             (ecyl1 : inf_cylinder es1) 
+             (ecyl2 : inf_cylinder es2) :
+    inf_cylinder (pre_event_inter es1 es2).
+  Proof.
+    intros.
+    destruct ecyl1 as [? [? [? ?]]].
+    destruct ecyl2 as [? [? [? ?]]].    
+    pose (N := max x x1).
+    exists N.
+    assert (S x <= S N)%nat by lia.
+    generalize (inf_cylinder_shift (S x) x0 (sa := H) (S N) H3); intros.
+    assert (S x1 <= S N)%nat by lia.
+    generalize (inf_cylinder_shift (S x1) x2 (sa := H1) (S N) H5); intros.
+    exists (pre_event_inter
+              (fun v : ivector T (S N) => x0 (ivector_take (S N) (S x) H3 v))
+              (fun v : ivector T (S N) => x2 (ivector_take (S N) (S x1) H5 v))).
+    split.
+    - apply sa_inter; now apply sa_cylinder_shift.
+    - rewrite H0, H2.
+      now rewrite H4, H6.
+  Qed.
+
   Lemma inf_cylinder_complement {T} {σ:SigmaAlgebra T}
              (es : (pre_event (nat -> T))) 
              (ecyl : inf_cylinder es) :
@@ -4643,18 +4668,69 @@ Qed.
     (ps : nat -> ProbSpace σ) :
     forall (e : pre_event (nat -> T))
            (cyl : inf_cylinder e),
-      ps_P_cylinder ps e cyl = ps_P (ProbSpace := infinite_product_ps ps)
+      (ps_P_cylinder ps e cyl) = ps_P (ProbSpace := infinite_product_ps ps)
                                     (exist _ e (inf_cylinder_sa e cyl)).
+
    Proof.
+     intros.
+     generalize (outer_λ_λ (fun (x : alg_set (inf_cylinder_algebra σ)) =>
+                              ps_P_cylinder ps (proj1_sig x) (proj2_sig x))); intros HH.
+     unfold ps_P, infinite_product_ps, measure_all_one_ps, ps_P_cylinder_measure.
+     specialize (HH (exist _ _ cyl)).
+     simpl in HH.
+     simpl.
+     rewrite HH.
+     now simpl.
+   Qed.
+
+   Lemma sequence_to_ivector_nth {T} (x : nat -> T) (idx : nat) pf :
+     x idx = ivector_nth idx pf (sequence_to_ivector x 0 (S idx)).
+   Proof.
+     revert pf.
+     induction idx; intros.
+     - now simpl.
+     -        
      Admitted.
-  
+
   Instance seq_nth_rv {T} {σ:SigmaAlgebra T} (idx : nat) :
     RandomVariable (infinite_product_sa σ) σ (fun (x : nat -> T) => x idx).
   Proof.
     unfold RandomVariable.
     intros.
-    unfold infinite_product_sa.
-    Admitted.
+    apply inf_cylinder_sa.
+    unfold inf_cylinder, event_preimage.
+    exists idx.
+    assert (idx < S idx)%nat by lia.
+    generalize (ivector_nth_rv_const idx H B); intros.
+    exists (event_preimage (fun x : ivector T (S idx) => ivector_nth idx H x) B).
+    split; trivial.
+    intros ?.
+    destruct B.
+    unfold event_preimage.
+    unfold proj1_sig.
+    unfold inf_cylinder_event.
+    now rewrite <- sequence_to_ivector_nth.
+  Qed.
+
+  Lemma inf_cylinder_preimage_nth  {T} {σ:SigmaAlgebra T} 
+        {inh : NonEmpty T}
+        (ps : nat -> ProbSpace σ) idx
+        (A : event  σ) :
+    (inf_cylinder (rv_preimage (dom := (infinite_product_sa σ))
+                                (fun x : nat -> T => x idx) A)).
+  Proof.
+    exists idx.
+    assert (idx < S idx)%nat by lia.
+    generalize (ivector_nth_rv_const idx H A); intros.
+    exists (event_preimage (fun x : ivector T (S idx) => ivector_nth idx H x) A).
+    split; trivial.
+    intros ?.
+    destruct A.
+    unfold event_preimage.
+    unfold proj1_sig.
+    unfold inf_cylinder_event.
+    now rewrite <- sequence_to_ivector_nth.
+  Qed.
 
   Lemma seq_nth_independent_rv {T} {σ:SigmaAlgebra T} 
         {inh : NonEmpty T}
@@ -4668,6 +4744,38 @@ Qed.
     unfold independent_rvs.
     intros.
     unfold independent_events.
+    generalize (inf_cylinder_preimage_nth ps idx1 A); intros cylA.
+    generalize (inf_cylinder_preimage_nth ps idx2 B); intros cylB.
+    generalize (infinite_product_ps_cylinder ps _ cylA); intros.
+    generalize (infinite_product_ps_cylinder ps _ cylB); intros.
+    generalize (infinite_product_ps_cylinder 
+                  ps _ (inf_cylinder_inter _ _ cylA cylB)); intros.
+    replace (ps_P (@rv_preimage _ T (infinite_product_sa σ) σ
+                                (fun x => x idx1) _ A)) with
+        (ps_P_cylinder ps (rv_preimage (fun x => x idx1) A) cylA).
+    replace  (ps_P (@rv_preimage _ T (infinite_product_sa σ) σ
+                                 (fun x => x idx2) _ B)) 
+      with (ps_P_cylinder ps (rv_preimage (fun x => x idx2) B) cylB).
+    replace (ps_P (event_inter
+                     (@rv_preimage _ T (@infinite_product_sa T σ) σ
+                                   (fun x => x idx1) _ A)
+                     (@rv_preimage _ T (@infinite_product_sa T σ) σ
+                                   (fun x => x idx2) _ B))) with
+        (ps_P_cylinder ps
+                       (pre_event_inter (rv_preimage (fun x => x idx1) A)
+                                        (rv_preimage (fun x => x idx2) B))
+                       (inf_cylinder_inter (rv_preimage (fun x => x idx1) A)
+                                           (rv_preimage (fun x => x idx2) B) cylA cylB)).
+    clear H0 H1 H2.
+    unfold ps_P_cylinder.
+    repeat match_destr.
+    pose (xx := max x (max x1 x3)).
+    assert (ltx: (S x <= S xx)%nat) by lia.
+    assert (ltx1: (S x1 <= S xx)%nat) by lia.
+    assert (ltx3: (S x3 <= S xx)%nat) by lia.        
+    rewrite (ps_cylinder_shift (S x) (S xx)) with (lt := ltx).
+    rewrite (ps_cylinder_shift (S x1) (S xx)) with (lt := ltx1).
+    rewrite (ps_cylinder_shift (S x3) (S xx)) with (lt := ltx3).        
     
     Admitted.
 
