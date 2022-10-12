@@ -2455,45 +2455,43 @@ Section ps_sequence_product.
      apply sa_all.
    Qed.
 
-   Lemma ivector_add_to_end_const {T} {n} {x:T} :
-     ivector_add_to_end x (ivector_rev (ivector_const n x)) =
-                        ivector_const (S n) x.
-    Proof.
-      Search ivector_add_to_end.
-      Admitted.
-
-    Lemma ivector_rev_const {T} {n} {x:T} :
-      ivector_rev (ivector_const n x) = ivector_const n x.
-    Proof.
-      Admitted.
-
-   Lemma rev_sa_ivector_sa {T} {σ:SigmaAlgebra T} {n : nat} :
-     ivector_sa (ivector_const n σ) === 
-                ivector_rev_sa (ivector_sa 
-                                  (ivector_rev (ivector_const n σ))).
+   Lemma ivector_sa_rev {T} {σ:SigmaAlgebra T} {n : nat} 
+      (e : pre_event (ivector T n))
+      (sae : sa_sigma (ivector_sa (ivector_const n σ)) e) :
+   sa_sigma (ivector_sa (ivector_const n σ)) (fun v => e (ivector_rev v)).
    Proof.
      induction n.
      - simpl.
        admit.
-     - simpl.
-       match_case; intros.
-       rewrite ivector_add_to_end_const in H.
-       simpl in H.
-       invcs H.
+     - 
+    Admitted.
 
-   Admitted.
-     
-(*
   Lemma ps_ivector_rev {T} {σ:SigmaAlgebra T} {n : nat}
         (ivecps : ivector (ProbSpace σ) n)
         (e : pre_event (ivector T n))
         (sae: sa_sigma (ivector_sa (ivector_const n σ)) e) :
     ps_P (ProbSpace := ivector_ps ivecps) (exist _ _ sae) =
     ps_P (ProbSpace := ivector_ps (ivector_rev ivecps))
-         (exist _ _ (ivector_rev_sa e sae)).
+         (exist _ _ (ivector_sa_rev e sae)).
   Proof.
-  Admitted.
-*)  
+    induction n.
+    - simpl.
+      match_destr.
+      + match_destr.
+        destruct e0.
+        unfold not in n.
+        cut_to n; try easy.
+        exists x.
+        now destruct x.
+      + match_destr.
+        destruct e0.
+        unfold not in n.
+        cut_to n; try easy.
+        exists x.
+        now destruct x.
+    - 
+  Admitted
+
   Lemma ps_cylinder_shift_S {T} {σ:SigmaAlgebra T}
         (n : nat) (e : pre_event (ivector T n))
         (sae: sa_sigma (ivector_sa (ivector_const n σ)) e)
