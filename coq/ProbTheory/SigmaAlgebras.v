@@ -413,7 +413,8 @@ Definition pre_event_set_product {T₁ T₂} (s₁ : pre_event T₁ -> Prop) (s�
          s₁ e₁ /\ s₂ e₂ /\
          e === (fun '(x₁, x₂) => e₁ x₁ /\ e₂ x₂).
 
-Instance pre_event_set_product_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv) (@pre_event_set_product T1 T2).
+   
+Instance pre_event_set_product_proper {T1 T2} : Proper (equiv ==> equiv ==> equiv ==> iff) (@pre_event_set_product T1 T2).
 Proof.
   repeat red.
   unfold equiv, pre_event_equiv, pre_event_set_product; simpl; intros.
@@ -435,14 +436,16 @@ Proof.
     apply HH.
     revert H1.
     apply all_included_proper.
-    rewrite H, H0.
-    reflexivity.
+    split; intros HH2.
+    + now rewrite <- H, <- H0.
+    + now rewrite H, H0.
   - intros.
     apply HH.
     revert H1.
     apply all_included_proper.
-    rewrite H, H0.
-    reflexivity.
+    split; intros HH2.
+    + now rewrite H, H0.
+    + now rewrite <- H, <- H0.
 Qed.
 
 Theorem product_sa_sa {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (a:event sa1) (b:event sa2) :

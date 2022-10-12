@@ -1778,12 +1778,64 @@ End ps_product.
      apply sa_all.
    Qed.
 
+   Lemma rev_sa_involutive {X Y: Type} (S : SigmaAlgebra (X * Y)) :
+     rev_sa (rev_sa S) === S.
+   Proof.
+     intros; split; intros
+     ; unfold rev_sa in *; simpl in *
+     ; eapply sa_proper; try apply H
+     ; intros [??]; simpl; tauto.
+   Qed.
+
+   Lemma rev_sa_generated {X Y: Type} (S:pre_event (X*Y) -> Prop) (propS:Proper (pre_event_equiv ==> iff) S):
+     rev_sa (generated_sa S) === generated_sa (fun f => S (fun v => f (snd v, fst v))).
+   Proof.
+     intros v; split; simpl; intros HH.
+     - intros sa saAll.
+       specialize (HH (rev_sa sa)).
+       simpl in HH.
+       eapply sa_proper; try apply HH.
+       + now intros [??].
+       + intros ??.
+         simpl.
+         apply saAll; simpl.
+         eapply propS; try eapply H.
+         now intros [??].
+     - intros sa saAll.
+       specialize (HH (rev_sa sa)).
+       simpl in HH.
+       eapply sa_proper; try apply HH.
+       + now intros [??].
+       + intros ??.
+         simpl.
+         apply saAll; simpl.
+         eapply propS; try eapply H.
+         now intros [??].
+   Qed.
+
+   Lemma pre_event_set_product_flip {X Y: Type} {A : SigmaAlgebra X} {B : SigmaAlgebra Y} :
+     pre_event_equiv (pre_event_set_product (sa_sigma B) (sa_sigma A))
+       (fun f : pre_event (Y * X) =>
+          pre_event_set_product (sa_sigma A) (sa_sigma B) (fun v : X * Y => f (snd v, fst v))).
+   Proof.
+     intros x; split
+     ; intros [a[b[?[??]]]]
+     ; exists b; exists a
+     ; do 2 (split; trivial)
+     ; intros [??]; simpl.
+     - firstorder.
+     - specialize (H1 (x0,y)); simpl in *; firstorder.
+   Qed.
+     
    Lemma rev_sa_product_sa {X Y : Type} (A : SigmaAlgebra X) (B : SigmaAlgebra Y) :
      product_sa B A === rev_sa (product_sa A B).
    Proof.
-     intros ?.
      unfold product_sa.
-     Admitted.
+     rewrite rev_sa_generated.
+     - apply generated_sa_proper.
+       apply pre_event_set_product_flip.
+     - apply pre_event_set_product_proper; try reflexivity.
+   Qed.
 
   Lemma product_sa_rev {X Y : Type} {A : SigmaAlgebra X} {B : SigmaAlgebra Y}
       (e : pre_event (X * Y))
