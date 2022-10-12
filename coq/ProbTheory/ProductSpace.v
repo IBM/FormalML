@@ -2476,18 +2476,12 @@ Section ps_sequence_product.
   Proof.
     induction n.
     - simpl.
-      match_destr.
-      + match_destr.
-        destruct e0.
-        unfold not in n.
-        cut_to n; try easy.
-        exists x.
-        now destruct x.
-      + match_destr.
-        destruct e0.
-        unfold not in n.
-        cut_to n; try easy.
-        exists x.
+      match_destr;
+        match_destr;
+        destruct e0;
+        unfold not in n;
+        cut_to n; try easy;
+        exists x;
         now destruct x.
     - 
   Admitted
