@@ -2483,8 +2483,7 @@ Section ps_sequence_product.
         cut_to n; try easy;
         exists x;
         now destruct x.
-    - 
-  Admitted
+  Admitted.
 
   Lemma ps_cylinder_shift_S {T} {σ:SigmaAlgebra T}
         (n : nat) (e : pre_event (ivector T n))
