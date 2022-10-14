@@ -2323,11 +2323,25 @@ End ps_product.
     - apply ps_proper.
       intros ?.
       simpl.
-      
-    
-    
     Admitted.
 
+  Lemma generated_sa_rectangle  {n} {T} {σ:SigmaAlgebra T} :
+    let C := fun (e : pre_event (ivector T n)) =>
+               exists (ve : ivector (event σ) n),
+                 pre_event_equiv 
+                   e (ivector_sa_event ve) in
+    generated_sa C === (ivector_sa (ivector_const n σ)).
+  Proof.
+    intros ?.
+    split; intros.
+    - apply (generated_sa_minimal C); trivial.
+      intros.
+      destruct H0.
+      rewrite H0.
+      apply ivector_sa_sa.
+    - admit.
+  Admitted.
+    
   Lemma ivector_take_pullback {n} {T} {σ:SigmaAlgebra T}
         (ivec_ps : ivector (ProbSpace σ) n) idx pf :
      forall (a : event (ivector_sa (ivector_const idx σ))),
@@ -2391,14 +2405,7 @@ End ps_product.
     generalize (pi_prob_extension_unique C); intros.
     assert (generated_sa C === (ivector_sa (ivector_const idx σ))).
     {
-      intros ?.
-      split; intros.
-      - apply (generated_sa_minimal C); trivial.
-        intros.
-        destruct H2.
-        rewrite H2.
-        apply ivector_sa_sa.
-      - admit.
+      apply generated_sa_rectangle.
     }
     assert (sa_sub (generated_sa C) (ivector_sa (ivector_const idx σ))).
     {
@@ -2435,8 +2442,7 @@ End ps_product.
       
       simpl.
       apply ivector_take_pullback_rectangle_x.
-    
-  Admitted.
+  Qed.
 
 End ps_ivector_product.
 Section ps_sequence_product.
