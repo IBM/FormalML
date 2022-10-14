@@ -2294,6 +2294,40 @@ End ps_product.
       match_destr.
     Qed.
 
+  Lemma ivector_take_pullback_rectangle_x {n} {T} {σ:SigmaAlgebra T}
+        (ivec_ps : ivector (ProbSpace σ) n) idx pf :
+    let C :=  fun (e : pre_event (ivector T idx)) =>
+                 exists (ve : ivector (event σ) idx),
+                   pre_event_equiv 
+                     e (ivector_sa_event ve) in
+    forall (a0 : pre_event (ivector T idx)) (Ca : C a0)
+      (sub :  sa_sub (generated_sa C) (ivector_sa (ivector_const idx σ))),
+      ps_P (ProbSpace := ivector_ps (ivector_take n idx pf ivec_ps))
+           (event_sa_sub sub (generated_sa_base_event Ca)) =
+      ps_P (ProbSpace := ivector_ps ivec_ps)
+           (rv_preimage (ivector_take n idx pf)
+                        (event_sa_sub sub (generated_sa_base_event Ca))).
+  Proof.
+    intros.
+    symmetry.
+    unfold C in Ca.
+    destruct Ca.
+    generalize (ivector_take_pullback_rectangle ivec_ps idx pf x); intros.
+    unfold pullback_ps in H.
+    simpl in H.
+    etransitivity; [| etransitivity; [apply H |]].
+    - apply ps_proper.
+      intros ?.
+      simpl.
+      admit.
+    - apply ps_proper.
+      intros ?.
+      simpl.
+      
+    
+    
+    Admitted.
+
   Lemma ivector_take_pullback {n} {T} {σ:SigmaAlgebra T}
         (ivec_ps : ivector (ProbSpace σ) n) idx pf :
      forall (a : event (ivector_sa (ivector_const idx σ))),
@@ -2355,11 +2389,52 @@ End ps_product.
           apply H2.
     }
     generalize (pi_prob_extension_unique C); intros.
-    assert (generated_sa C === ivector_sa (ivector_const idx σ)) by admit.
-    unfold ps_P.
-    match_case; intros.
-    match_case; intros.
-    generalize product_ps_unique; intros.
+    assert (generated_sa C === (ivector_sa (ivector_const idx σ))).
+    {
+      intros ?.
+      split; intros.
+      - apply (generated_sa_minimal C); trivial.
+        intros.
+        destruct H2.
+        rewrite H2.
+        apply ivector_sa_sa.
+      - admit.
+    }
+    assert (sa_sub (generated_sa C) (ivector_sa (ivector_const idx σ))).
+    {
+      now apply sa_equiv_sub.
+    }
+    specialize (H0 (prob_space_sa_sub (ivector_ps (ivector_take n idx pf ivec_ps)) H2)).
+    specialize (H0 (prob_space_sa_sub  (pullback_ps (ivector_sa (ivector_const n σ)) (ivector_sa (ivector_const idx σ)) (ivector_ps ivec_ps)
+       (ivector_take n idx pf)) H2)).
+    cut_to H0.
+    - assert (sa_sigma (generated_sa C) a).
+      {
+        rewrite (H1 a).
+        now destruct a.
+      }
+      specialize (H0 (exist _ _ H3)).
+      etransitivity; [| etransitivity; [apply H0 |]].
+      + unfold prob_space_sa_sub.
+        simpl.
+        apply ps_proper.
+        intros ?.
+        simpl.
+        now destruct a.
+      + unfold prob_space_sa_sub.
+        simpl.
+        apply ps_proper.
+        intros ?.
+        simpl.
+        unfold event_preimage.
+        now destruct a.
+    - intros.
+      unfold prob_space_sa_sub.
+      simpl.
+      unfold generated_sa_base_event.
+      
+      simpl.
+      apply ivector_take_pullback_rectangle_x.
     
   Admitted.
 
