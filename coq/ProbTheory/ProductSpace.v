@@ -2239,7 +2239,6 @@ End ps_product.
     Proof.
       intros.
       rewrite (ivector_sa_product (ivector_take (S n) n (Nat.le_succ_diag_r n) ivec_ps)).
-      Search pullback_ps.
       generalize (ivector_sa_product (n := S n)); intros.
       
       unfold pullback_ps.
@@ -2274,7 +2273,6 @@ End ps_product.
       {
         intros ?.
         simpl.
-        Search ivector_Forall2.
         split; intros.
         admit.
         admit.
@@ -2339,7 +2337,23 @@ End ps_product.
       destruct H0.
       rewrite H0.
       apply ivector_sa_sa.
-    - admit.
+    - unfold C.
+      clear C.
+      revert x H.
+      induction n.
+      + intros.
+        simpl in H.
+        destruct H.
+        * rewrite H.
+          apply sa_none.
+        * rewrite H.
+          apply sa_all.
+      + intros.
+        apply H.
+        intros ??.
+        unfold pre_event_set_product in H0.
+        destruct H0 as  [? [? [? [? ?]]]].
+        admit.
   Admitted.
     
   Lemma ivector_take_pullback {n} {T} {σ:SigmaAlgebra T}
@@ -2664,7 +2678,7 @@ Section ps_sequence_product.
    Proof.
      induction n.
      - admit.
-     - Search ivector_sa.
+     - 
     Admitted.
 
   Lemma ps_ivector_rev {T} {σ:SigmaAlgebra T} {n : nat}
