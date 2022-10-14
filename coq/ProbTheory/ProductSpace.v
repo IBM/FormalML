@@ -2222,13 +2222,77 @@ End ps_product.
     now rewrite ivector_take_const in H.
   Qed.
 
+  Program Definition ivector_concat {T} {n1 n2 : nat}
+             (v1 : ivector T n1)
+             (v2 : ivector T n2) : ivector T (n1 + n2)%nat :=
+    ivector_from_list
+      ((ivector_to_list v1) ++ (ivector_to_list v2)).
+  Next Obligation.
+    Admitted.
+
+    Lemma ivector_take_pullback_rectangle_Sn {n} {T} {σ:SigmaAlgebra T}
+        (ivec_ps : ivector (ProbSpace σ) (S n)) :
+    forall (ve : ivector (event σ) n),
+      ps_P (ProbSpace := pullback_ps _ _  (ivector_ps ivec_ps) 
+                                     (ivector_take (S n) n (Nat.le_succ_diag_r n))) (ivector_sa_event ve) =
+      ps_P (ProbSpace:=ivector_ps (ivector_take (S n) n (Nat.le_succ_diag_r n) ivec_ps)) (ivector_sa_event ve).
+    Proof.
+      intros.
+      rewrite (ivector_sa_product (ivector_take (S n) n (Nat.le_succ_diag_r n) ivec_ps)).
+      Search pullback_ps.
+      generalize (ivector_sa_product (n := S n)); intros.
+      
+      unfold pullback_ps.
+      simpl.
+      
+
+
+      intros.
+
+      match_destr.
+      match_destr.
+      - simpl.
+      Admitted.
+
+
     Lemma ivector_take_pullback_rectangle {n} {T} {σ:SigmaAlgebra T}
         (ivec_ps : ivector (ProbSpace σ) n) idx pf :
     forall (ve : ivector (event σ) idx),
       ps_P (ProbSpace := pullback_ps _ _  (ivector_ps ivec_ps) (ivector_take n idx pf)) (ivector_sa_event ve) =
       ps_P (ProbSpace:=ivector_ps (ivector_take n idx pf ivec_ps)) (ivector_sa_event ve).
     Proof.
+      unfold pullback_ps.
+      simpl.
+      intros.
+      rewrite (ivector_sa_product (ivector_take n idx pf ivec_ps)).
+      generalize (ivector_sa_product (n := n)); intros.
+      pose (ve2 := ivector_concat ve (ivector_const (n - idx)%nat Ω)).
+      replace (idx + (n - idx))%nat with n in ve2 by lia.
+      assert (event_equiv
+                (rv_preimage (ivector_take n idx pf) (ivector_sa_event ve))
+                (ivector_sa_event ve2)).
+      {
+        intros ?.
+        simpl.
+        Search ivector_Forall2.
+        split; intros.
+        admit.
+        admit.
+      }
+      
+      rewrite H0.
+      rewrite ivector_sa_product.
       Admitted.
+
+    Lemma ivector_nth_zip {T} {n} (x1 x2 : ivector T n) i pf :
+      ivector_nth i pf (ivector_zip x1 x2) = (ivector_nth i pf x1, ivector_nth i pf x2).
+    Proof.
+      revert i pf x1 x2.
+      induction n; try lia.
+      destruct x1; destruct x2.
+      simpl.
+      match_destr.
+    Qed.
 
   Lemma ivector_take_pullback {n} {T} {σ:SigmaAlgebra T}
         (ivec_ps : ivector (ProbSpace σ) n) idx pf :
@@ -2237,8 +2301,65 @@ End ps_product.
        ps_P (ProbSpace := pullback_ps _ _  (ivector_ps ivec_ps) (ivector_take n idx pf)) a.
   Proof.
     intros.
+    pose (C := fun (e : pre_event (ivector T idx)) =>
+                 exists (ve : ivector (event σ) idx),
+                   pre_event_equiv 
+                     e (ivector_sa_event ve)).
+    assert (Pi_system C).
+    {
+      unfold Pi_system, C.
+      intros.
+      destruct H.
+      destruct H0.
+      exists (ivector_map (fun '(x, y) => x ∩ y)
+                          (ivector_zip x x0)).
+      intros ?.
+      unfold pre_event_inter.
+      specialize (H x1).
+      specialize (H0 x1).
+      rewrite H, H0.
+      unfold ivector_sa_event; simpl.
+      split; intros.
+      - destruct H1.
+        apply ivector_Forall2_nth_iff.
+        rewrite <- ivector_Forall2_nth_iff in H1.
+        rewrite <- ivector_Forall2_nth_iff in H2.        
+        intros.
+        specialize (H1 i pf0).
+        specialize (H2 i pf0).
+        rewrite ivector_nth_map, ivector_nth_zip.
+        unfold event_inter, pre_event_inter, proj1_sig.
+        simpl.
+        match_destr.
+        match_destr.
+        simpl in H1.
+        simpl in H2.
+        tauto.
+      - rewrite <- ivector_Forall2_nth_iff in H1.
+        split.
+        + apply ivector_Forall2_nth_iff.        
+          intros.
+          specialize (H1 i pf0).
+          rewrite ivector_nth_map, ivector_nth_zip in H1.
+          unfold event_inter, pre_event_inter, proj1_sig in H1.
+          simpl in H1.
+          destruct H1.
+          apply H1.
+        + apply ivector_Forall2_nth_iff.        
+          intros.
+          specialize (H1 i pf0).
+          rewrite ivector_nth_map, ivector_nth_zip in H1.
+          unfold event_inter, pre_event_inter, proj1_sig in H1.
+          simpl in H1.
+          destruct H1.
+          apply H2.
+    }
+    generalize (pi_prob_extension_unique C); intros.
+    assert (generated_sa C === ivector_sa (ivector_const idx σ)) by admit.
+    unfold ps_P.
+    match_case; intros.
+    match_case; intros.
     generalize product_ps_unique; intros.
-    generalize (ivector_sa_product (ivector_take n idx pf ivec_ps)); intros.
     
   Admitted.
 
@@ -2461,9 +2582,8 @@ Section ps_sequence_product.
    sa_sigma (ivector_sa (ivector_const n σ)) (fun v => e (ivector_rev v)).
    Proof.
      induction n.
-     - simpl.
-       admit.
-     - 
+     - admit.
+     - Search ivector_sa.
     Admitted.
 
   Lemma ps_ivector_rev {T} {σ:SigmaAlgebra T} {n : nat}
@@ -2478,11 +2598,8 @@ Section ps_sequence_product.
     - simpl.
       match_destr;
         match_destr;
-        destruct e0;
-        unfold not in n;
-        cut_to n; try easy;
-        exists x;
-        now destruct x.
+        destruct e0; firstorder.
+    - 
   Admitted.
 
   Lemma ps_cylinder_shift_S {T} {σ:SigmaAlgebra T}
