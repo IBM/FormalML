@@ -2355,8 +2355,66 @@ End ps_product.
         destruct H0 as  [? [? [? [? ?]]]].
         admit.
   Admitted.
-    
+
+  Lemma ivector_hd_take {T} {n idx} pf (ivec : ivector T (S n)) :
+    ivector_hd (ivector_take (S n) (S idx) pf ivec) = ivector_hd ivec.
+  Proof.
+    destruct ivec.
+    now simpl.
+  Qed.
+
+  Lemma ivector_tl_take {T} {n idx} pf (ivec : ivector T (S n)) :
+    ivector_tl (ivector_take (S n) (S idx) pf ivec) =
+    ivector_take n idx (le_S_n idx n pf) (ivector_tl ivec).
+  Proof.
+    destruct ivec.
+    now simpl.
+  Qed.
+  
+  Lemma ivector_take_0 {T} {n} pf (ivec : ivector T n) :
+    ivector_take n 0 pf ivec = tt.
+    Proof.
+      induction n.
+      - now simpl.
+      - simpl.
+        now destruct ivec.
+  Qed.
+
   Lemma ivector_take_pullback {n} {T} {σ:SigmaAlgebra T}
+        (ivec_ps : ivector (ProbSpace σ) n) idx pf :
+     forall (a : event (ivector_sa (ivector_const idx σ))),
+       ps_P (ProbSpace := ivector_ps (ivector_take n idx pf ivec_ps)) a = 
+       ps_P (ProbSpace := pullback_ps _ _  (ivector_ps ivec_ps) (ivector_take n idx pf)) a.
+  Proof.
+    intros.
+    revert n pf ivec_ps.
+    induction idx.
+    - intros.
+      destruct a.
+      simpl.
+      admit.
+    - intros.
+      apply Rbar_finite_eq.
+      rewrite explicit_ivector_product_pse.      
+      unfold pullback_ps; simpl.
+      unfold pullback_ps in IHidx; simpl in IHidx.
+      destruct n; try lia.
+      rewrite explicit_ivector_product_pse.      
+      rewrite ivector_hd_take.
+      apply NonnegExpectation_ext.
+      intros ?.
+      unfold pullback_ps in IHidx.
+      simpl in IHidx.
+      rewrite ivector_tl_take.
+      rewrite IHidx.
+      apply ps_proper.
+      intros ?.
+      simpl.
+      unfold event_preimage.
+      tauto.
+  Admitted.
+  
+  Lemma ivector_take_pullback_alt {n} {T} {σ:SigmaAlgebra T}
         (ivec_ps : ivector (ProbSpace σ) n) idx pf :
      forall (a : event (ivector_sa (ivector_const idx σ))),
        ps_P (ProbSpace := ivector_ps (ivector_take n idx pf ivec_ps)) a = 
