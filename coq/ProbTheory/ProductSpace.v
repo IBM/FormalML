@@ -2267,57 +2267,33 @@ End ps_product.
     induction idx.
     - intros.
       destruct a.
-      simpl in *.
-      unfold rv_preimage, event_preimage; simpl.
-      unfold rv_preimage_sa.
       destruct s.
-      + assert (event_equiv   
-                  (exist (sa_sigma (ivector_sa (ivector_const n σ)))
-                         (fun omega : ivector T n => x (ivector_take n 0 pf omega))
-                         (ivector_take_rv_const 
-                            0 pf
-                            (exist (fun e0 : pre_event () => e0 === pre_event_none \/ e0 === pre_Ω) x
-                                   (or_introl e))))
+      + assert (event_equiv
+                   (exist
+                      (fun e0 : pre_event (ivector T 0) =>
+                         sa_sigma (ivector_sa (ivector_const 0 σ)) e0) x 
+                      (or_introl e))
                    ∅).
         {
           intros ?.
           simpl.
-          rewrite ivector_take_0.
-          specialize (e ()).
-          rewrite e.
-          now simpl.
+          now rewrite (e x0).
         }
         rewrite H.
-        rewrite ps_none.
-        match_destr.
-        destruct e0.
-        generalize (e x0); intros.
-        rewrite H1 in H0.
-        now unfold pre_event_none in H0.
+        now do 2 rewrite ps_none.
       + assert (event_equiv
-                   (exist (sa_sigma (ivector_sa (ivector_const n σ)))
-       (fun omega : ivector T n => x (ivector_take n 0 pf omega))
-       (ivector_take_rv_const 0 pf
-          (exist (fun e0 : pre_event () => e0 === pre_event_none \/ e0 === pre_Ω) x
-             (or_intror e))))
-                  Ω).
+                   (exist
+                      (fun e0 : pre_event (ivector T 0) =>
+                         sa_sigma (ivector_sa (ivector_const 0 σ)) e0) x 
+                      (or_intror e))
+                   Ω).
         {
           intros ?.
           simpl.
-          rewrite ivector_take_0.
-          specialize (e ()).
-          rewrite e.
-          now simpl.
+          now rewrite (e x0).
         }
         rewrite H.
-        rewrite ps_all.
-        match_destr.
-        unfold not in n0.
-        cut_to n0; try easy.
-        exists ().
-        generalize (e ()); intros.
-        rewrite H0.
-        now unfold pre_Ω.
+        now do 2 rewrite ps_all.
     - intros.
       apply Rbar_finite_eq.
       rewrite explicit_ivector_product_pse.      
@@ -2339,8 +2315,6 @@ End ps_product.
       tauto.
   Qed.
   
-
-
 End ps_ivector_product.
 Section ps_sequence_product.
   
