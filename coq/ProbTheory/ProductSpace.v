@@ -2297,21 +2297,15 @@ End ps_product.
     - intros.
       apply Rbar_finite_eq.
       rewrite explicit_ivector_product_pse.      
-      unfold pullback_ps; simpl.
-      unfold pullback_ps in IHidx; simpl in IHidx.
+      simpl.
+      simpl in IHidx.
       destruct n; try lia.
-      rewrite explicit_ivector_product_pse.      
-      rewrite ivector_hd_take.
+      rewrite explicit_ivector_product_pse, ivector_hd_take.
       apply NonnegExpectation_ext.
       intros ?.
-      unfold pullback_ps in IHidx.
-      simpl in IHidx.
-      rewrite ivector_tl_take.
-      rewrite IHidx.
+      rewrite ivector_tl_take, IHidx.
       apply ps_proper.
       intros ?.
-      simpl.
-      unfold event_preimage.
       tauto.
   Qed.
   
