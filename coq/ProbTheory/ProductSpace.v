@@ -4654,25 +4654,20 @@ Qed.
      now rewrite HH.
    Qed.
 
-
   Instance seq_nth_rv {T} {σ:SigmaAlgebra T} (idx : nat) :
     RandomVariable (infinite_product_sa σ) σ (fun (x : nat -> T) => x idx).
   Proof.
-    unfold RandomVariable.
-    intros.
-    apply inf_cylinder_sa.
-    unfold inf_cylinder, event_preimage.
-    exists idx.
-    generalize (ivector_nth_rv_const idx (Nat.lt_succ_diag_r idx) B); intros.
-    exists (event_preimage (fun x : ivector T (S idx) => ivector_nth idx (Nat.lt_succ_diag_r idx) x) B).
-    split; trivial.
     intros ?.
-    destruct B.
-    unfold event_preimage.
-    unfold proj1_sig.
-    unfold inf_cylinder_event.
-    rewrite <- sequence_to_ivector_nth.
-    now replace (idx + 0)%nat with idx by lia.
+    apply inf_cylinder_sa.
+    exists idx.
+    exists (event_preimage (fun x : ivector T (S idx) => ivector_nth idx (Nat.lt_succ_diag_r idx) x) B).
+    split.
+    - apply ivector_nth_rv_const.
+    - intros ?.
+      destruct B.
+      unfold event_preimage, proj1_sig, inf_cylinder_event.
+      rewrite <- sequence_to_ivector_nth, Nat.add_comm.
+      now simpl.
   Qed.
 
   Lemma inf_cylinder_preimage_nth  {T} {σ:SigmaAlgebra T} idx
@@ -4681,26 +4676,22 @@ Qed.
                                 (fun x : nat -> T => x idx) A)).
   Proof.
     exists idx.
-    generalize (ivector_nth_rv_const idx (Nat.lt_succ_diag_r idx) A); intros.
     exists (event_preimage (fun x : ivector T (S idx) => ivector_nth idx (Nat.lt_succ_diag_r idx) x) A).
-    split; trivial.
-    intros ?.
-    destruct A.
-    unfold event_preimage.
-    unfold proj1_sig.
-    unfold inf_cylinder_event.
-    rewrite <- sequence_to_ivector_nth.
-    now replace (idx + 0)%nat with idx by lia.
+    split.
+    - apply ivector_nth_rv_const.
+    - intros ?.
+      destruct A.
+      unfold event_preimage, proj1_sig, inf_cylinder_event.
+      rewrite <- sequence_to_ivector_nth, Nat.add_comm.
+      now simpl.
   Qed.
-
 
   Instance seq_to_ivec_rv {T} {σ:SigmaAlgebra T} (idx : nat) :
     RandomVariable (infinite_product_sa σ)
                    (ivector_sa (ivector_const (S idx) σ))
                    (fun x : nat -> T => sequence_to_ivector x 0 (S idx)).
   Proof.
-    unfold RandomVariable.
-    intros.
+    intros ?.
     apply inf_cylinder_sa.
     exists idx.
     destruct B.
@@ -4810,6 +4801,62 @@ Qed.
           now rewrite sequence_to_ivector_take with (pf := ltx3).
         * now rewrite ivector_to_sequence_nth with (pf := H2).
   Qed.
+
+   Lemma sequence_to_ivector_nth_alt {T} (x : nat -> T) (idx idx2 s : nat) pf :
+     (idx < idx2)%nat ->
+     x (idx + s)%nat  = ivector_nth idx pf (sequence_to_ivector x s idx2).
+   Proof.
+     Admitted.
+
+  Lemma sequence_nth_pullback {T} {σ:SigmaAlgebra T} 
+        {inh : NonEmpty T}
+        (ps : nat -> ProbSpace σ) :
+     forall idx,
+     forall (a : event σ),
+       ps_P (ProbSpace := ps idx) a = 
+       ps_P (ProbSpace := (pullback_ps _ _ (infinite_product_ps ps) 
+                                       (fun x => x idx))) a.
+  Proof.
+    intros.
+    generalize (inf_cylinder_preimage_nth idx a); intros cyl.
+    generalize (infinite_product_ps_cylinder ps _ cyl); intros.
+    simpl in H.
+    unfold pullback_ps; simpl.
+    rewrite <- H.
+    unfold ps_P_cylinder.
+    repeat match_destr.
+    pose (xx := max idx x).
+    assert (ltx: (S x <= S xx)%nat) by lia.
+    generalize (ps_cylinder_shift (S x) (S xx)); intros.
+    rewrite H0 with (lt := ltx).
+    assert (ltidx: (idx < S xx)%nat) by lia.
+    generalize (ivector_nth_pullback (sequence_to_ivector ps 0 (S xx)) idx ltidx a); intros.
+    rewrite <- sequence_to_ivector_nth_alt in H1; try lia.
+    replace (idx + 0)%nat with idx in H1 by lia.
+    rewrite H1.
+    unfold pullback_ps, ps_P.
+    repeat match_destr.
+    apply ps_proper.
+    intros ?.
+    destruct a.
+    unfold rv_preimage, event_preimage, proj1_sig.
+    rewrite <- ivector_to_sequence_nth with (default := inh).
+    rewrite (e0 (ivector_to_sequence x1 inh)).
+    unfold inf_cylinder_event.
+    now rewrite sequence_to_ivector_take with (pf := ltx).
+  Qed.
+
+(*  Arguments ps_P {T} {σ} ProbSpace. *)
+  Lemma sequence_ivector_pullback {T} {σ:SigmaAlgebra T}
+        {inh : NonEmpty T}
+        (ps : nat -> ProbSpace σ) :
+    forall idx,
+     forall (a : event (ivector_sa (ivector_const (S idx) σ))),
+       ps_P (ProbSpace := ivector_ps (sequence_to_ivector ps 0%nat (S idx))) a = 
+       ps_P (ProbSpace := pullback_ps _ _ (infinite_product_ps ps)
+                                      (fun x => sequence_to_ivector x 0%nat (S idx))) a.
+  Proof.
+    Admitted.
 
 End ps_sequence_product.
 
