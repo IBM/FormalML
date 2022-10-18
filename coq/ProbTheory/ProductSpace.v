@@ -2269,83 +2269,6 @@ End ps_product.
   
 End ps_ivector_product.
 Section ps_sequence_product.
-  
-  Fixpoint sequence_to_ivector {T} (x : nat -> T) j h : ivector T h
-    := match h with
-       | 0 => tt
-       | S n => (x j, sequence_to_ivector x (S j) n)
-       end.
-
-  Definition sequence_cons {T} (x : T) (xs : nat -> T) : nat -> T :=
-    fun n0 =>
-      match n0 with
-      | 0 => x
-      | S n => xs n
-      end.
-
-  Definition ivector_to_sequence {T} {n} (v : ivector T n) (default : T) 
-    : nat -> T :=
-    (fun i => 
-       match lt_dec i n with
-       | left pf => ivector_nth i pf v
-       | right _ => default
-       end).
-
-   Lemma sequence_to_ivector_cons_shift {T} {n} (j : nat) (x : nat -> T) (val : T) :
-     sequence_to_ivector (sequence_cons val x) (S j) n = sequence_to_ivector x j n.
-   Proof.
-     revert j.
-     induction n.
-     - intros.
-       now simpl.
-     - intros.
-       simpl.
-       f_equal.
-       apply IHn.
-   Qed.
-
-   Lemma sequence_to_ivector_cons {T} {n} (x : nat -> T) (val : T) :
-    sequence_to_ivector (sequence_cons val x) 0%nat (S n) =
-    (val, sequence_to_ivector x 0%nat n).
-  Proof.
-    apply ivector_eq2.
-    split.
-    - now simpl.
-    - apply sequence_to_ivector_cons_shift.
-  Qed.
-
-
-  Lemma ivec_sequence_cons {T} {n} (x : ivector T n) (val : T) (default : T) :
-    ivector_to_sequence (n := S n) (val, x) default =
-    sequence_cons val (ivector_to_sequence x default).
-  Proof.
-    apply functional_extensionality.
-    destruct x0.
-    - simpl.
-      unfold ivector_to_sequence.
-      match_destr.
-      lia.
-    - simpl.
-      unfold ivector_to_sequence.
-      match_destr; try lia.
-      match_destr; try lia.
-      + rewrite ivec_nth_cons.
-        now apply ivector_nth_ext.
-      + match_destr; try lia.
-  Qed.
-
-  Lemma ivec_to_seq_to_ivec {T} {n} (v : ivector T n) (default : T)  :
-    v = sequence_to_ivector (ivector_to_sequence v default) 0%nat n.
-  Proof.
-    induction n.
-    - simpl.
-      now destruct v.
-    - destruct v.
-      rewrite ivec_sequence_cons.
-      rewrite sequence_to_ivector_cons.
-      specialize (IHn i).
-      now rewrite <- IHn.
-   Qed.
 
   Definition inf_cylinder_event {T} {n} {σ:SigmaAlgebra T} 
              (e : pre_event (ivector T n)) : (pre_event (nat -> T)) :=
@@ -2357,33 +2280,6 @@ Section ps_sequence_product.
         exists (ee : pre_event (ivector T (S n))),
           sa_sigma (ivector_sa (ivector_const (S n) σ)) ee /\ 
           e === inf_cylinder_event ee.
-
-
-(*
-  Lemma ivector_take_sequence {T} (x : nat -> T) (s n m : nat) 
-        (lt : (S n <= S m)%nat) :
-    sequence_to_ivector x s (S n) =
-    ivector_take (S m) (S n) lt (sequence_to_ivector x s (S m)).
-  Proof.
-    revert n s lt.
-    induction m; simpl; intros.
-    - now destruct n; [| lia]; simpl.
-    - destruct n; [simpl; trivial |].
-      now rewrite IHm with (lt:=le_S_n (S n) (S m) lt); simpl.
-  Qed.
- *)
-  
-  Lemma ivector_take_sequence {T} (x : nat -> T) (s n m : nat) 
-        (lt : (n <= m)%nat) :
-    sequence_to_ivector x s n =
-    ivector_take m n lt (sequence_to_ivector x s m).
-  Proof.
-    revert n s lt.
-    induction m; simpl; intros.
-    - now destruct n; [| lia]; simpl.
-    - destruct n; [simpl; trivial |].
-      now rewrite <- IHm.
-   Qed.
 
   Lemma sa_cylinder_drop_fst {T} {σ:SigmaAlgebra T}
         (n : nat) (e : pre_event (ivector T n)) :
@@ -3478,32 +3374,6 @@ Section ps_sequence_product.
         now apply Lim_seq_correct'.
   Qed.
    
-   Lemma sequence_to_ivector_shift {T} (x : nat -> T) (j N : nat) :
-     sequence_to_ivector x (S j) N = sequence_to_ivector (fun n0 : nat => x (S n0)) j N.
-   Proof.
-     revert j.
-     induction N.
-     - now simpl.
-     - intros.
-       simpl.
-       f_equal.
-       now rewrite IHN.
-   Qed.
-
-   Lemma cons_sequence_to_ivector {T} (w : nat -> T) (x2 s : nat) :
-     (w s, sequence_to_ivector w (S s) x2) = sequence_to_ivector w s (S x2).
-   Proof.
-     reflexivity.
-   Qed.
-
-   Lemma sequence_to_ivector_ext {T} (f g : nat -> T) start len :
-     pointwise_relation _ eq f g ->
-     sequence_to_ivector f start len = sequence_to_ivector g start len.
-   Proof.
-     revert start.
-     induction len; simpl; trivial; intros start eqq.
-     now rewrite eqq, IHlen.
-   Qed.
    
    Lemma decreasing_cyl_nonempty_2  {T}  {σ:SigmaAlgebra T}
          {inh : NonEmpty T}
@@ -3596,13 +3466,6 @@ Section ps_sequence_product.
       now rewrite <- H2.
   Qed.
 
-
-   Fixpoint sequence_prefix {T} (pre w : nat -> T) (N : nat) : nat -> T :=
-      match N with
-      | 0 => w
-      | S n => sequence_cons (pre 0%nat) (sequence_prefix (fun n => pre (S n)) w n)
-      end.
-   
    Definition iter_section_seq_event {T} {σ:SigmaAlgebra T} (x : nat -> T) (N : nat) 
              (e : pre_event (nat -> T)) : pre_event (nat -> T) :=
      fun (w : (nat -> T)) => e (sequence_prefix x w N).
@@ -3638,19 +3501,6 @@ Section ps_sequence_product.
     generalize (sa_cylinder_shift (S x0) (N + (S x0))%nat x1 (lt := pf) sa); intros.
     apply (iter_section_ivector_product N  (S x0) (exist _ _ H)).
   Qed.
-
-   Lemma sequence_prefix_ivector_append {T} (x1 x2 : nat -> T) (n1 n2 : nat) :
-     sequence_to_ivector (sequence_prefix x1 x2 n1) 0 (n1 + n2)%nat =
-     ivector_append (sequence_to_ivector x1 0 n1) (sequence_to_ivector x2 0 n2).
-   Proof.
-     revert x1 n2.
-     induction n1; trivial; intros; simpl.
-     rewrite sequence_to_ivector_cons_shift.
-     f_equal.
-     rewrite IHn1.
-     f_equal.
-     now rewrite sequence_to_ivector_shift.
-   Qed.     
 
   Lemma iter_section_inf_cylinder {T} {σ:SigmaAlgebra T} (x : nat -> T) (e : pre_event (nat -> T)) (ecyl : inf_cylinder e) (N : nat) :
     inf_cylinder (iter_section_seq_event x N e).
@@ -3973,18 +3823,6 @@ Qed.
     now apply IHN.
   Qed.
 
-  Lemma sequence_to_ivector_Forall2 {T1 T2} (RR:T1->T2->Prop) (f:nat->T1) (g:nat->T2) s N :
-    (forall n : nat, (s <= n <= N + s)%nat -> RR (f n) (g n)) ->
-    ivector_Forall2 RR (sequence_to_ivector f s N) (sequence_to_ivector g s N).
-  Proof.
-    revert s.
-    induction N; simpl; trivial; intros.
-    split.
-    - apply H; lia.
-    - apply IHN.
-      intros.
-      apply H; lia.
-  Qed.
 
   Lemma ivector_ps_seq_ext {T} {σ:SigmaAlgebra T} 
     (ps1 ps2 : nat -> ProbSpace σ) N : 
@@ -4221,18 +4059,6 @@ Qed.
     Qed.
 *)
 
-  Lemma sequence_prefix_cons (x x0 : nat -> T) (N : nat) :
-    sequence_prefix x x0 (S N) =
-    sequence_prefix x (sequence_cons (x N) x0) N.
-  Proof.
-    revert x x0.
-    induction N.
-    - now simpl.
-    - intros.
-      simpl.
-      f_equal.
-      now rewrite <- IHN.
-  Qed.
 
   Lemma iter_section_seq_event_Sn (x : nat -> T)
              (e : pre_event (nat -> T)) :
@@ -4374,25 +4200,6 @@ Qed.
         now replace (S j + n0)%nat with (j + S n0)%nat by lia.
     Qed.
 
-  Lemma sequence_cons_prefix_shift (x x0 : nat -> T) (N : nat) :
-    sequence_cons (x 0%nat) 
-                  (sequence_prefix (fun n => x (S n)) x0 N) =
-    sequence_prefix x x0 (S N).
-  Proof.
-    easy.
-  Qed.
-
-  Lemma sequence_to_ivector_prefix (x x0 : nat -> T) (N : nat) :
-    sequence_to_ivector (sequence_prefix x x0 N) 0 N =
-    sequence_to_ivector x 0 N.
-  Proof.
-    revert x.
-    induction N; trivial; intros; simpl.    
-    f_equal.
-    rewrite sequence_to_ivector_cons_shift.
-    rewrite IHN.
-    now rewrite sequence_to_ivector_shift.
-  Qed.     
 
   Lemma decreasing_cyl_nonempty_eps
          (eps : posreal) 
@@ -4847,18 +4654,6 @@ Qed.
      now rewrite HH.
    Qed.
 
-   Lemma sequence_to_ivector_nth {T} (x : nat -> T) (idx s : nat) pf :
-     x (idx + s)%nat  = ivector_nth idx pf (sequence_to_ivector x s (S idx)).
-   Proof.
-     revert pf s.
-     induction idx; intros.
-     - now simpl.
-     - rewrite <- cons_sequence_to_ivector.
-       rewrite ivec_nth_cons.
-       rewrite <- IHidx.
-       f_equal.
-       lia.
-    Qed.
 
   Instance seq_nth_rv {T} {σ:SigmaAlgebra T} (idx : nat) :
     RandomVariable (infinite_product_sa σ) σ (fun (x : nat -> T) => x idx).
@@ -4898,42 +4693,6 @@ Qed.
     now replace (idx + 0)%nat with idx by lia.
   Qed.
 
-  Lemma ivector_to_sequence_nth  {T} (idx1 xx : nat)
-        (default : T)
-        (vec : ivector T (S xx)) 
-        pf :
-    ivector_to_sequence vec default idx1 = ivector_nth idx1 pf vec.
-  Proof.
-    unfold ivector_to_sequence.
-    match_destr; try lia.
-    apply ivector_nth_prf_irrelevance.
-  Qed.
-
-  Lemma sequence_to_ivector_take {T} (x1 xx : nat)
-        (default : T)
-        (vec : ivector T xx) 
-        pf :
-    sequence_to_ivector (ivector_to_sequence vec default) 0 x1 = 
-    ivector_take xx x1 pf vec.
-  Proof.
-    revert x1 pf.
-    induction xx.
-    - intros.
-      simpl.
-      assert (x1 = 0)%nat by lia.
-      destruct x1; try lia.
-      now simpl.
-    - intros.
-      destruct vec.
-      rewrite ivec_sequence_cons.
-      specialize (IHxx i).
-      destruct x1.
-      + now simpl.
-      + rewrite sequence_to_ivector_cons.
-        specialize (IHxx x1 (le_S_n x1 xx pf)).
-        rewrite IHxx.
-        now simpl.
-   Qed.
 
   Instance seq_to_ivec_rv {T} {σ:SigmaAlgebra T} (idx : nat) :
     RandomVariable (infinite_product_sa σ)
