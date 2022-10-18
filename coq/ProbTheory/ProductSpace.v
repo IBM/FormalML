@@ -2202,15 +2202,6 @@ End ps_product.
           -- apply IHn.
   Qed.
 
-  Lemma ivector_take_const {T} (x:T) n m lt :
-    ivector_take m n lt (ivector_const m x) = ivector_const n x.
-  Proof.
-    revert n lt.
-    induction m; simpl; intros.
-    - now destruct n; [| lia]; simpl.
-    - destruct n; [simpl; trivial |].
-      now rewrite IHm with (lt:=le_S_n n m lt); simpl.
-  Qed.
   
   Instance ivector_take_rv_const {n} {T} {σ:SigmaAlgebra T} (idx : nat)
         (idx_le : (idx <= n)%nat) :
@@ -2222,39 +2213,6 @@ End ps_product.
     now rewrite ivector_take_const in H.
   Qed.
 
-    Lemma ivector_nth_zip {T} {n} (x1 x2 : ivector T n) i pf :
-      ivector_nth i pf (ivector_zip x1 x2) = (ivector_nth i pf x1, ivector_nth i pf x2).
-    Proof.
-      revert i pf x1 x2.
-      induction n; try lia.
-      destruct x1; destruct x2.
-      simpl.
-      match_destr.
-    Qed.
-
-  Lemma ivector_hd_take {T} {n idx} pf (ivec : ivector T (S n)) :
-    ivector_hd (ivector_take (S n) (S idx) pf ivec) = ivector_hd ivec.
-  Proof.
-    destruct ivec.
-    now simpl.
-  Qed.
-
-  Lemma ivector_tl_take {T} {n idx} pf (ivec : ivector T (S n)) :
-    ivector_tl (ivector_take (S n) (S idx) pf ivec) =
-    ivector_take n idx (le_S_n idx n pf) (ivector_tl ivec).
-  Proof.
-    destruct ivec.
-    now simpl.
-  Qed.
-  
-  Lemma ivector_take_0 {T} {n} pf (ivec : ivector T n) :
-    ivector_take n 0 pf ivec = tt.
-    Proof.
-      induction n.
-      - now simpl.
-      - simpl.
-        now destruct ivec.
-  Qed.
 
   Lemma ivector_take_pullback {n} {T} {σ:SigmaAlgebra T}
         (ivec_ps : ivector (ProbSpace σ) n) idx pf :
@@ -2356,16 +2314,6 @@ Section ps_sequence_product.
     - apply sequence_to_ivector_cons_shift.
   Qed.
 
-  Lemma ivec_nth_cons {T} {n} (x : ivector T n) (val : T) (x0 : nat) (l : (S x0 < S n)%nat) :
-    ivector_nth (S x0) l (val, x) = ivector_nth x0 (le_S_n _ _ l) x.
-  Proof.
-    destruct n.
-    - lia.
-    - simpl.
-      match_destr.
-      match_destr.
-      now apply ivector_nth_ext.
-  Qed.
 
   Lemma ivec_sequence_cons {T} {n} (x : ivector T n) (val : T) (default : T) :
     ivector_to_sequence (n := S n) (val, x) default =
@@ -2399,15 +2347,6 @@ Section ps_sequence_product.
       now rewrite <- IHn.
    Qed.
 
-  Lemma ivector_take_cons {T} {N} (n : nat) (v : ivector T N)(val : T) 
-        (le : (S n <= S N)%nat) :
-    ivector_take (S N) (S n) le (val, v) = 
-    (val, ivector_take N n (le_S_n _ _ le) v).
-  Proof.
-    apply ivector_eq2.
-    now simpl.
-  Qed.
-  
   Definition inf_cylinder_event {T} {n} {σ:SigmaAlgebra T} 
              (e : pre_event (ivector T n)) : (pre_event (nat -> T)) :=
     fun (w : nat -> T) => e (sequence_to_ivector w 0%nat n).
@@ -3664,12 +3603,6 @@ Section ps_sequence_product.
       | S n => sequence_cons (pre 0%nat) (sequence_prefix (fun n => pre (S n)) w n)
       end.
    
-   Fixpoint ivector_append {T} {n1 n2} : ivector T n1 -> ivector T n2 -> ivector T (n1 + n2) :=
-     match n1 as n1' return ivector T n1' -> ivector T n2 -> ivector T (n1' + n2) with
-     | 0%nat => fun _ v2 => v2
-     | S n%nat => fun '(hd,tail) v2 => (hd, ivector_append tail v2)
-     end.
-
    Definition iter_section_seq_event {T} {σ:SigmaAlgebra T} (x : nat -> T) (N : nat) 
              (e : pre_event (nat -> T)) : pre_event (nat -> T) :=
      fun (w : (nat -> T)) => e (sequence_prefix x w N).
@@ -4935,9 +4868,8 @@ Qed.
     apply inf_cylinder_sa.
     unfold inf_cylinder, event_preimage.
     exists idx.
-    assert (idx < S idx)%nat by lia.
-    generalize (ivector_nth_rv_const idx H B); intros.
-    exists (event_preimage (fun x : ivector T (S idx) => ivector_nth idx H x) B).
+    generalize (ivector_nth_rv_const idx (Nat.lt_succ_diag_r idx) B); intros.
+    exists (event_preimage (fun x : ivector T (S idx) => ivector_nth idx (Nat.lt_succ_diag_r idx) x) B).
     split; trivial.
     intros ?.
     destruct B.
@@ -4948,17 +4880,14 @@ Qed.
     now replace (idx + 0)%nat with idx by lia.
   Qed.
 
-  Lemma inf_cylinder_preimage_nth  {T} {σ:SigmaAlgebra T} 
-        {inh : NonEmpty T}
-        (ps : nat -> ProbSpace σ) idx
+  Lemma inf_cylinder_preimage_nth  {T} {σ:SigmaAlgebra T} idx
         (A : event  σ) :
     (inf_cylinder (rv_preimage (dom := (infinite_product_sa σ))
                                 (fun x : nat -> T => x idx) A)).
   Proof.
     exists idx.
-    assert (idx < S idx)%nat by lia.
-    generalize (ivector_nth_rv_const idx H A); intros.
-    exists (event_preimage (fun x : ivector T (S idx) => ivector_nth idx H x) A).
+    generalize (ivector_nth_rv_const idx (Nat.lt_succ_diag_r idx) A); intros.
+    exists (event_preimage (fun x : ivector T (S idx) => ivector_nth idx (Nat.lt_succ_diag_r idx) x) A).
     split; trivial.
     intros ?.
     destruct A.
@@ -5005,8 +4934,31 @@ Qed.
         rewrite IHxx.
         now simpl.
    Qed.
-  
-  Lemma seq_nth_independent_rv {T} {σ:SigmaAlgebra T} 
+
+  Instance seq_to_ivec_rv {T} {σ:SigmaAlgebra T} (idx : nat) :
+    RandomVariable (infinite_product_sa σ)
+                   (ivector_sa (ivector_const (S idx) σ))
+                   (fun x : nat -> T => sequence_to_ivector x 0 (S idx)).
+  Proof.
+    unfold RandomVariable.
+    intros.
+    apply inf_cylinder_sa.
+    exists idx.
+    destruct B.
+    now exists x.
+  Qed.
+
+  Lemma inf_cylinder_preimage_seq_to_ivector  {T} {σ:SigmaAlgebra T} idx
+        (A : event (ivector_sa (ivector_const (S idx) σ))) :
+    (inf_cylinder (rv_preimage (dom := (infinite_product_sa σ))
+                               (fun x : nat -> T => sequence_to_ivector x 0 (S idx)) A)).
+  Proof.
+    exists idx.
+    destruct A.
+    now exists x.
+  Qed.
+    
+  Lemma seq_nth_independent_rvs {T} {σ:SigmaAlgebra T} 
         {inh : NonEmpty T}
         (ps : nat -> ProbSpace σ) :
        forall idx1 idx2,
@@ -5018,8 +4970,8 @@ Qed.
     unfold independent_rvs.
     intros.
     unfold independent_events.
-    generalize (inf_cylinder_preimage_nth ps idx1 A); intros cylA.
-    generalize (inf_cylinder_preimage_nth ps idx2 B); intros cylB.
+    generalize (inf_cylinder_preimage_nth idx1 A); intros cylA.
+    generalize (inf_cylinder_preimage_nth idx2 B); intros cylB.
     generalize (infinite_product_ps_cylinder ps _ cylA); intros.
     generalize (infinite_product_ps_cylinder ps _ cylB); intros.
     generalize (infinite_product_ps_cylinder 

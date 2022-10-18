@@ -1076,6 +1076,32 @@ Section ivector.
              end
     end.
 
+  Lemma ivector_take_const {T} (x:T) n m lt :
+    ivector_take m n lt (ivector_const m x) = ivector_const n x.
+  Proof.
+    revert n lt.
+    induction m; simpl; intros.
+    - now destruct n; [| lia]; simpl.
+    - destruct n; [simpl; trivial |].
+      now rewrite IHm with (lt:=le_S_n n m lt); simpl.
+  Qed.
+
+
+  Lemma ivector_take_0 {T} {n} pf (ivec : ivector T n) :
+    ivector_take n 0 pf ivec = tt.
+    Proof.
+      induction n.
+      - now simpl.
+      - simpl.
+        now destruct ivec.
+    Qed.
+    
+    Fixpoint ivector_append {T} {n1 n2} : ivector T n1 -> ivector T n2 -> ivector T (n1 + n2) :=
+     match n1 as n1' return ivector T n1' -> ivector T n2 -> ivector T (n1' + n2) with
+     | 0%nat => fun _ v2 => v2
+     | S n%nat => fun '(hd,tail) v2 => (hd, ivector_append tail v2)
+     end.
+
   Fixpoint ivector_map {A B} {n} (f : A -> B ) : ivector A n -> ivector B n
     := match n with
        | 0%nat => fun _ => tt
@@ -1089,6 +1115,16 @@ Section ivector.
        | S _ =>
            fun '(hd1,tl1) '(hd2,tl2) => ((hd1,hd2), ivector_zip tl1 tl2)
        end.
+
+    Lemma ivector_nth_zip {T} {n} (x1 x2 : ivector T n) i pf :
+      ivector_nth i pf (ivector_zip x1 x2) = (ivector_nth i pf x1, ivector_nth i pf x2).
+    Proof.
+      revert i pf x1 x2.
+      induction n; try lia.
+      destruct x1; destruct x2.
+      simpl.
+      match_destr.
+    Qed.
 
   Fixpoint ivector_fold_left {A} {n} {T} (f : A -> T -> A) : ivector T n -> A -> A
     := match n with
@@ -1216,6 +1252,22 @@ Section ivector.
   Definition ivector_tl {A} {n} (vec : ivector A (S n)) : ivector A n :=
     (fun '(hd, tl) => tl) vec.
   
+
+  Lemma ivector_hd_take {T} {n idx} pf (ivec : ivector T (S n)) :
+    ivector_hd (ivector_take (S n) (S idx) pf ivec) = ivector_hd ivec.
+  Proof.
+    destruct ivec.
+    now simpl.
+  Qed.
+
+  Lemma ivector_tl_take {T} {n idx} pf (ivec : ivector T (S n)) :
+    ivector_tl (ivector_take (S n) (S idx) pf ivec) =
+    ivector_take n idx (le_S_n idx n pf) (ivector_tl ivec).
+  Proof.
+    destruct ivec.
+    now simpl.
+  Qed.
+
   Lemma ivector_eq2 {A} {n} (vec1 vec2 : ivector A (S n)) :
     vec1 = vec2 <-> ivector_hd vec1 = ivector_hd vec2 /\ ivector_tl vec1 = ivector_tl vec2.
   Proof.
@@ -1301,6 +1353,26 @@ Qed.
     - now simpl.
     - intros; simpl.
       match_destr.
+  Qed.
+
+  Lemma ivec_nth_cons {T} {n} (x : ivector T n) (val : T) (x0 : nat) (l : (S x0 < S n)%nat) :
+    ivector_nth (S x0) l (val, x) = ivector_nth x0 (le_S_n _ _ l) x.
+  Proof.
+    destruct n.
+    - lia.
+    - simpl.
+      match_destr.
+      match_destr.
+      now apply ivector_nth_ext.
+  Qed.
+
+  Lemma ivector_take_cons {T} {N} (n : nat) (v : ivector T N)(val : T) 
+        (le : (S n <= S N)%nat) :
+    ivector_take (S N) (S n) le (val, v) = 
+    (val, ivector_take N n (le_S_n _ _ le) v).
+  Proof.
+    apply ivector_eq2.
+    now simpl.
   Qed.
 
   Definition vector_to_ivector {A} {n} (vec : vector A n) : ivector A n .
