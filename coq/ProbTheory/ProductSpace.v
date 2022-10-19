@@ -4802,12 +4802,6 @@ Qed.
         * now rewrite ivector_to_sequence_nth with (pf := H2).
   Qed.
 
-   Lemma sequence_to_ivector_nth_alt {T} (x : nat -> T) (idx idx2 s : nat) pf :
-     (idx < idx2)%nat ->
-     x (idx + s)%nat  = ivector_nth idx pf (sequence_to_ivector x s idx2).
-   Proof.
-     Admitted.
-
   Lemma sequence_nth_pullback {T} {σ:SigmaAlgebra T} 
         {inh : NonEmpty T}
         (ps : nat -> ProbSpace σ) :
@@ -4831,7 +4825,7 @@ Qed.
     rewrite H0 with (lt := ltx).
     assert (ltidx: (idx < S xx)%nat) by lia.
     generalize (ivector_nth_pullback (sequence_to_ivector ps 0 (S xx)) idx ltidx a); intros.
-    rewrite <- sequence_to_ivector_nth_alt in H1; try lia.
+    rewrite <- sequence_to_ivector_nth in H1.
     replace (idx + 0)%nat with idx in H1 by lia.
     rewrite H1.
     unfold pullback_ps, ps_P.

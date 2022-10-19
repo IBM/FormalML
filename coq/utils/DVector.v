@@ -1680,17 +1680,19 @@ Section Sequence.
     now rewrite sequence_to_ivector_shift.
   Qed.     
 
-   Lemma sequence_to_ivector_nth {T} (x : nat -> T) (idx s : nat) pf :
-     x (idx + s)%nat  = ivector_nth idx pf (sequence_to_ivector x s (S idx)).
+  Lemma sequence_to_ivector_nth {T} (x : nat -> T) (idx idx2 s : nat) pf :
+     x (idx + s)%nat  = ivector_nth idx pf (sequence_to_ivector x s idx2).
    Proof.
-     revert pf s.
-     induction idx; intros.
-     - now simpl.
+     revert idx pf s.
+     induction idx2; intros.
+     - lia.
      - rewrite <- cons_sequence_to_ivector.
-       rewrite ivec_nth_cons.
-       rewrite <- IHidx.
-       f_equal.
-       lia.
+       destruct idx.
+       + now simpl.
+       + rewrite ivec_nth_cons.
+         rewrite <- IHidx2.
+         f_equal.
+         lia.
     Qed.
 
   Lemma ivector_to_sequence_nth  {T} (idx1 xx : nat)
