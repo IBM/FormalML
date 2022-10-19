@@ -4846,7 +4846,6 @@ Qed.
     now rewrite sequence_to_ivector_take with (pf := ltx).
   Qed.
 
-(*  Arguments ps_P {T} {σ} ProbSpace. *)
   Lemma sequence_ivector_pullback {T} {σ:SigmaAlgebra T}
         {inh : NonEmpty T}
         (ps : nat -> ProbSpace σ) :
@@ -4856,7 +4855,44 @@ Qed.
        ps_P (ProbSpace := pullback_ps _ _ (infinite_product_ps ps)
                                       (fun x => sequence_to_ivector x 0%nat (S idx))) a.
   Proof.
-    Admitted.
+    intros ??.
+    generalize (inf_cylinder_preimage_seq_to_ivector idx a); intros cyl.
+    generalize (infinite_product_ps_cylinder ps _ cyl); intros.    
+    simpl in H.
+    replace 
+      (ps_P
+         (ProbSpace := (pullback_ps (infinite_product_sa σ) (ivector_sa (ivector_const (S idx) σ))
+                      (infinite_product_ps ps)
+                      (fun x : nat -> T => sequence_to_ivector x 0 (S idx)))) a) 
+      with
+        (ps_P_cylinder ps
+                       (event_preimage
+                          (fun x : nat -> T => (x 0%nat, sequence_to_ivector x 1 idx)) a) cyl).
+    unfold ps_P_cylinder.
+    repeat match_destr.
+    pose (xx := max idx x).
+    assert (ltx: (S x <= S xx)%nat) by lia.
+    generalize (ps_cylinder_shift (S x) (S xx)); intros.
+    rewrite H0 with (lt := ltx).
+    assert (ltidx: (S idx <= S xx)%nat) by lia.
+    generalize (ps_cylinder_shift (S idx) (S xx)); intros.
+    destruct a.
+    rewrite H1 with (lt := ltidx).
+    apply ps_proper.
+    intros ?.
+    unfold proj1_sig.
+    specialize (e0 (ivector_to_sequence x2 inh)).
+    simpl in e0.
+    unfold inf_cylinder_event in e0.
+    rewrite sequence_to_ivector_take with (pf := ltx) in e0.
+    rewrite <- e0.
+    f_equiv.
+    replace  (ivector_to_sequence x2 inh 0,
+              sequence_to_ivector (ivector_to_sequence x2 inh) 1 idx)
+      with
+        (sequence_to_ivector (ivector_to_sequence x2 inh) 0 (S idx)) by now simpl.
+    now rewrite sequence_to_ivector_take with (pf := ltidx).
+  Qed.
 
 End ps_sequence_product.
 
