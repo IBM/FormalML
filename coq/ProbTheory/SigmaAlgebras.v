@@ -1275,7 +1275,8 @@ Section ivector.
   Lemma lt_S_n_S i1 n pf :
     (Lt.lt_S_n i1 n (Lt.lt_n_S i1 n pf)) = pf.
   Proof.
-  Admitted.
+    apply digit_pf_irrel.
+  Qed.
   
   Lemma ivector_rectangles_generate_sa {n} {T} 
         (sav:ivector (SigmaAlgebra T) n) : 
@@ -1368,7 +1369,6 @@ Section ivector.
 End ivector.
 
 Section infalg.
-.ivector_map
   Context {Idx:Type}.
 
   Definition pre_event_set_infinite_product
