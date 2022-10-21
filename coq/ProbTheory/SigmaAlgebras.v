@@ -1244,10 +1244,131 @@ Section ivector.
     reflexivity.
   Qed.
 
+  Definition pre_event_set_ivector_product {T} {n} (v:ivector ((pre_event T)->Prop) n) : pre_event (ivector T n) -> Prop
+    := fun (e:pre_event (ivector T n)) =>
+         exists (sub_e:ivector (pre_event T) n),
+           (forall i pf, (ivector_nth i pf v) (ivector_nth i pf sub_e))
+           /\
+           e === (fun (x:ivector T n) => forall i pf, (ivector_nth i pf sub_e) (ivector_nth i pf x)).
+
+  Instance pre_event_set_ivector_product_proper {n} {T} : Proper (equiv ==> equiv) (@pre_event_set_ivector_product T n).
+  Proof.
+    repeat red.
+    unfold equiv, pre_event_equiv, pre_event_set_ivector_product; simpl; intros.
+    split; intros [v [HH1 HH2]].
+    - unfold equiv in *.
+      exists v.
+      split; intros.
+      + rewrite <- ivector_Forall2_nth_iff in H.
+        apply H; eauto.
+      + rewrite HH2.
+        reflexivity.
+    - unfold equiv in *.
+      exists v.
+      split; intros.
+      + rewrite <- ivector_Forall2_nth_iff in H.
+         apply H; eauto.
+      + rewrite HH2.
+        reflexivity.
+  Qed.
+
+  Lemma lt_S_n_S i1 n pf :
+    (Lt.lt_S_n i1 n (Lt.lt_n_S i1 n pf)) = pf.
+  Proof.
+  Admitted.
+  
+  Lemma ivector_rectangles_generate_sa {n} {T} 
+        (sav:ivector (SigmaAlgebra T) n) : 
+    sa_equiv 
+      (ivector_sa sav)
+      (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma sav))).
+  Proof.
+    intros ?.
+    revert sav x.
+    induction n; intros.
+    - simpl in x.
+      simpl in sav.
+      simpl.
+      split; intros.      
+      + destruct H.
+        * rewrite H.
+          apply sa_none.
+        * rewrite H.
+          apply sa_all.
+      + specialize (H (trivial_sa unit)).
+        apply H.
+        intros ??.
+        simpl.
+        destruct H0 as [? [? ?]].
+        rewrite H1.
+        right.
+        intros ?.
+        split; try easy.
+    - destruct sav.
+      specialize (IHn i).
+      simpl; split; intros.
+      + apply H.
+        intros ??.
+        destruct H1 as [? [? [? [? ?]]]].
+        assert (pre_event_equiv
+                  (fun '(x₁, x₂) => x0 x₁ /\ x1 x₂)
+                  (pre_event_inter
+                     (fun '(x₁, x₂) => x0 x₁)
+                     (fun '(x₁, x₂) => x1 x₂))).
+        {
+          intros ?.
+          destruct x2.
+          split; intros; easy.
+        }
+        rewrite H4 in H3.
+        admit.
+      + apply H.
+        intros ??.
+        apply H0.
+        destruct H1 as [? [? ?]].
+        unfold pre_event_set_product.
+        case_eq x0; intros.
+        exists p.
+        exists (fun v => ivector_Forall2 (fun a0 (x : T) => a0 x) i0 v).
+        generalize (H1 0 (NPeano.Nat.lt_0_succ n)); intros.
+        rewrite H3 in H4.
+        simpl in H4.
+        split; trivial.
+        split.
+        * apply IHn.
+          apply generated_sa_sub.
+          unfold pre_event_set_ivector_product.
+          exists i0; split.
+          -- intros.
+             specialize (H1 (S i1) (Lt.lt_n_S i1 n pf)).
+             rewrite H3 in H1.
+             simpl in H1.
+             now rewrite lt_S_n_S in H1.
+          -- intros ?.
+             now rewrite <- ivector_Forall2_nth_iff.
+        * rewrite H2, H3.
+          intros ?.
+          destruct x1.
+          split; intros.
+          generalize (H5 0 (NPeano.Nat.lt_0_succ n)); intros.
+          simpl in H6.
+          split; trivial.
+          -- rewrite <- ivector_Forall2_nth_iff.
+             intros.
+             specialize (H5 (S i2) (Lt.lt_n_S i2 n pf)).
+             simpl in H5.
+             now rewrite lt_S_n_S in H5.             
+          -- destruct H5.
+             rewrite <- ivector_Forall2_nth_iff in H6.
+             destruct i2.
+             ++ now simpl.
+             ++ apply H6.
+      Admitted.
+
 End ivector.
 
 Section infalg.
-
+.ivector_map
   Context {Idx:Type}.
 
   Definition pre_event_set_infinite_product
