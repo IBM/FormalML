@@ -2045,7 +2045,7 @@ End ps_product.
     now rewrite ivector_nth_const in H.
   Qed.
            
-  Lemma ivector_nth_independent_rv_0 {n} {T} {σ:SigmaAlgebra T} 
+  Lemma ivector_nth_independent_rvs_0 {n} {T} {σ:SigmaAlgebra T} 
         (ivec_ps : ivector (ProbSpace σ) n) :
     forall idx2 pf1 pf2,
       independent_rvs (ivector_ps ivec_ps)  σ  σ
@@ -2084,7 +2084,7 @@ End ps_product.
      now apply ivector_nth_ext.
   Qed.
 
-  Lemma ivector_nth_independent_rv {n} {T} {σ:SigmaAlgebra T} 
+  Lemma ivector_nth_independent_rvs {n} {T} {σ:SigmaAlgebra T} 
         (ivec_ps : ivector (ProbSpace σ) n) :
     forall idx1 idx2 pf1 pf2,
       (idx1 < idx2)%nat ->
@@ -2101,7 +2101,7 @@ End ps_product.
     - intros [??]?????.
       destruct idx2; [lia |].
       destruct idx1.
-      + apply (ivector_nth_independent_rv_0 (n:=S n) (p,i) idx2).
+      + apply (ivector_nth_independent_rvs_0 (n:=S n) (p,i) idx2).
       + generalize (IHn i idx1 idx2 (lt_S_n idx1 n pf1) (lt_S_n idx2 n pf2) (lt_S_n idx1 idx2 H)).
         unfold independent_rvs, independent_events; intros HH A B.
         specialize (HH A B).
@@ -4035,30 +4035,6 @@ Qed.
          (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) n :=
     projT1 (decreasing_cyl_nonempty_2_seq eps epsbound n).
   
-(*
-  Definition decreasing_cyl_tes
-         (eps : posreal) 
-         (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) n :=
-    let xx := decreasing_cyl_nonempty_2_seq eps epsbound in
-    match n with
-    | 0%nat => es
-    | S n' => projT1 (projT2 (xx n'))
-    end.
-
-  Lemma decreasing_cyl_section_seq_event 
-         (eps : posreal) 
-         (epsbound:(forall n, ps_P_cylinder ps (es n) (ecyl n) >= eps)) :
-    let tes := decreasing_cyl_tes eps epsbound in 
-    forall j n,
-      tes (S n) j =
-        section_seq_event (decreasing_cyl_seq eps epsbound n) (tes n j).
-    Proof.
-      intros.
-      unfold decreasing_cyl_seq.
-      destruct n; simpl; repeat match_destr.
-    Qed.
-*)
-
 
   Lemma iter_section_seq_event_Sn (x : nat -> T)
              (e : pre_event (nat -> T)) :
@@ -4752,7 +4728,7 @@ Qed.
     rewrite (ps_cylinder_shift (S x) (S xx)) with (lt := ltx).
     rewrite (ps_cylinder_shift (S x1) (S xx)) with (lt := ltx1).
     rewrite (ps_cylinder_shift (S x3) (S xx)) with (lt := ltx3).
-    generalize (ivector_nth_independent_rv (sequence_to_ivector ps 0 (S xx)) idx1 idx2); intros.
+    generalize (ivector_nth_independent_rvs (sequence_to_ivector ps 0 (S xx)) idx1 idx2); intros.
     unfold independent_rvs, independent_events, rv_preimage in H0.
     assert (idx1 < S xx)%nat by lia.
     assert (idx2 < S xx)%nat by lia.

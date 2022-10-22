@@ -7,6 +7,7 @@ Require Import Morphisms EquivDec Program.
 
 Require Import Utils DVector.
 Require Export Event.
+Require Import Lia.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -1287,30 +1288,25 @@ Section ivector.
     intros ?.
     revert sav x.
     induction n; intros.
-    - simpl in x.
-      simpl in sav.
-      simpl.
+    - simpl.
       split; intros.      
-      + destruct H.
-        * rewrite H.
-          apply sa_none.
-        * rewrite H.
-          apply sa_all.
-      + specialize (H (trivial_sa unit)).
-        apply H.
+      + destruct H; rewrite  H.
+        * apply sa_none.
+        * apply sa_all.
+      + apply (H (trivial_sa unit)).
         intros ??.
-        simpl.
         destruct H0 as [? [? ?]].
         rewrite H1.
-        right.
-        intros ?.
-        split; try easy.
+        simpl; right.
+        easy.
     - destruct sav.
       specialize (IHn i).
-      simpl; split; intros.
+      split; intros.
       + apply H.
         intros ??.
-        destruct H1 as [? [? [? [? ?]]]].
+        destruct H0 as [? [? [? [? ?]]]].
+        specialize (IHn x1).
+        rewrite H2.
         assert (pre_event_equiv
                   (fun '(x₁, x₂) => x0 x₁ /\ x1 x₂)
                   (pre_event_inter
@@ -1319,21 +1315,21 @@ Section ivector.
         {
           intros ?.
           destruct x2.
-          split; intros; easy.
+          easy.
         }
-        rewrite H4 in H3.
+        
         admit.
-      + apply H.
+      + simpl; intros.
+        apply H.
         intros ??.
         apply H0.
         destruct H1 as [? [? ?]].
         unfold pre_event_set_product.
-        case_eq x0; intros.
+        destruct x0.
         exists p.
         exists (fun v => ivector_Forall2 (fun a0 (x : T) => a0 x) i0 v).
         generalize (H1 0 (NPeano.Nat.lt_0_succ n)); intros.
-        rewrite H3 in H4.
-        simpl in H4.
+        simpl in H3.
         split; trivial.
         split.
         * apply IHn.
@@ -1342,28 +1338,27 @@ Section ivector.
           exists i0; split.
           -- intros.
              specialize (H1 (S i1) (Lt.lt_n_S i1 n pf)).
-             rewrite H3 in H1.
              simpl in H1.
              now rewrite lt_S_n_S in H1.
           -- intros ?.
              now rewrite <- ivector_Forall2_nth_iff.
-        * rewrite H2, H3.
+        * rewrite H2.
           intros ?.
-          destruct x1.
+          destruct x0.
           split; intros.
-          generalize (H5 0 (NPeano.Nat.lt_0_succ n)); intros.
-          simpl in H6.
+          generalize (H4 0 (NPeano.Nat.lt_0_succ n)); intros.
+          simpl in H5.
           split; trivial.
           -- rewrite <- ivector_Forall2_nth_iff.
              intros.
-             specialize (H5 (S i2) (Lt.lt_n_S i2 n pf)).
-             simpl in H5.
-             now rewrite lt_S_n_S in H5.             
-          -- destruct H5.
-             rewrite <- ivector_Forall2_nth_iff in H6.
+             specialize (H4 (S i2) (Lt.lt_n_S i2 n pf)).
+             simpl in H4.
+             now rewrite lt_S_n_S in H4.             
+          -- destruct H4.
+             rewrite <- ivector_Forall2_nth_iff in H5.
              destruct i2.
              ++ now simpl.
-             ++ apply H6.
+             ++ apply H5.
       Admitted.
 
 End ivector.
