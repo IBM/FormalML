@@ -1329,13 +1329,44 @@ Qed.
   Next Obligation.
     now apply sa_all. 
   Qed.
-  
+
   Lemma generated_rectangle_proj {T} {inh : inhabited T} {n} (s : SigmaAlgebra T) (i : ivector (SigmaAlgebra T) n) (e : pre_event (ivector T n)) :
     sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma (n:=S n) (s, i)))) (fun '(_, x₂) => e x₂) <->
     sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma i))) e.
   Proof.
     split; simpl; intros HH sa saInc.
-    - destruct inh.
+    - specialize (HH (pullback_sa sa ivector_tl)).
+      simpl in HH.
+      cut_to HH.
+      + destruct HH as [?[??]].
+        eapply sa_proper; try apply H.
+        intros ?.
+        destruct inh.
+        specialize (H0 (X,x0)).
+        now simpl in H0.
+      + clear HH e.
+        intros ? [?[??]].
+        simpl.
+        red.
+        red in saInc.
+        destruct x.
+        pose (pe:=(fun x : ivector T n =>
+                     forall (i : nat) (pf : i < n), ivector_nth i pf i0 (ivector_nth i pf x))).
+        specialize (saInc pe).
+        exists pe.
+        split.
+        * apply saInc.
+          admit.
+        * intros [??]; simpl.
+          subst pe.
+          rewrite (H0 (t, i1)).
+          split; intros HH; intros.
+          -- specialize (HH (S i2) (Lt.lt_n_S _ _ pf)); simpl in HH.
+             now rewrite lt_S_n_S in HH.
+          -- destruct i2.
+             ++ simpl.
+(*    - destruct inh.
+      
       specialize (HH (sa_elem_cons X sa)).
       eapply sa_proper; try eapply HH.
       + now intros ?.
@@ -1361,6 +1392,9 @@ Qed.
                 admit.
              ++ simpl.
                 apply HH.
+ *)
+                admit.
+      ++ admit.
     - specialize (HH (ivector_tl_sa sa)).
       eapply sa_proper; try eapply HH.
       + now intros [??]; simpl.
