@@ -550,6 +550,7 @@ Definition pullback_sa_sigma {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : pre_event
          sa_sigma sa ye /\
          forall a, xe a <-> ye (f a).
 
+
 Program Instance pullback_sa {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : SigmaAlgebra X
   := {|
   sa_sigma := pullback_sa_sigma sa f |}.
@@ -575,8 +576,7 @@ Next Obligation.
   - now apply sa_complement.
   - unfold pre_event_complement.
     intros a.
-    split; intros HH1 HH2
-    ; now apply H0 in HH2.
+    split; intros HH1 HH2; now apply H0 in HH2.
 Qed.
 Next Obligation.
   unfold pullback_sa_sigma in *.
@@ -1245,6 +1245,40 @@ Section ivector.
     reflexivity.
   Qed.
 
+Program Instance ivector_tl_sa {T:Type} {n:nat} (sa:SigmaAlgebra (ivector T (S n)))
+        : SigmaAlgebra (ivector T n)
+  := {|
+  sa_sigma := fun (ye:pre_event (ivector T n)) =>
+                sa_sigma sa 
+                         (fun (v : (ivector T (S n))) => ye (ivector_tl v))
+    |}.
+Next Obligation.
+  now apply sa_countable_union.
+Qed.
+Next Obligation.
+  now apply sa_complement.
+Qed.
+Next Obligation.
+  apply sa_all.
+Qed.
+
+Program Instance ivector_hd_sa {T:Type} {n:nat} (sa:SigmaAlgebra (ivector T (S n)))
+        : SigmaAlgebra T
+  := {|
+  sa_sigma := fun (ye:pre_event T) =>
+                sa_sigma sa 
+                         (fun (v : (ivector T (S n))) => ye (ivector_hd v))
+    |}.
+Next Obligation.
+  now apply sa_countable_union.
+Qed.
+Next Obligation.
+  now apply sa_complement.
+Qed.
+Next Obligation.
+  apply sa_all.
+Qed.
+
   Definition pre_event_set_ivector_product {T} {n} (v:ivector ((pre_event T)->Prop) n) : pre_event (ivector T n) -> Prop
     := fun (e:pre_event (ivector T n)) =>
          exists (sub_e:ivector (pre_event T) n),
@@ -1279,16 +1313,19 @@ Section ivector.
     apply digit_pf_irrel.
   Qed.
   
+  Definition ivector_cons {n} {T} (x : T) (v : ivector T n) : ivector T (S n) :=
+    (x, v).
+
   Lemma ivector_rectangles_generate_sa {n} {T} 
         (sav:ivector (SigmaAlgebra T) n) : 
     sa_equiv 
       (ivector_sa sav)
       (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma sav))).
   Proof.
-    intros ?.
-    revert sav x.
+    revert sav.
     induction n; intros.
-    - simpl.
+    - intros ?.
+      simpl.
       split; intros.      
       + destruct H; rewrite  H.
         * apply sa_none.
@@ -1299,25 +1336,63 @@ Section ivector.
         rewrite H1.
         simpl; right.
         easy.
-    - destruct sav.
-      specialize (IHn i).
+    - intros ?.
+      destruct sav.
       split; intros.
-      + apply H.
-        intros ??.
+      + unfold ivector_sa, product_sa in H.
+        destruct
+          (generated_sa_sub_sub 
+             (pre_event_set_product 
+                (sa_sigma s)
+                (sa_sigma
+                   ((fix ivector_sa (n : nat) (T : Type) {struct n} : ivector (SigmaAlgebra T) n -> SigmaAlgebra (ivector T n) :=
+                       match n as n0 return (ivector (SigmaAlgebra T) n0 -> SigmaAlgebra (ivector T n0)) with
+                       | 0 => fun _ : ivector (SigmaAlgebra T) 0 => trivial_sa ()
+                       | S m => fun '(hd, tl) => generated_sa (pre_event_set_product (sa_sigma hd) (sa_sigma (ivector_sa m T tl)))
+                       end) n T i)))
+             (pre_event_set_ivector_product (ivector_map sa_sigma (ivector_cons s i)))).
+        clear H0.
+        apply H1; [|apply H].
+        clear H1.
+        unfold pre_event_sub.
+        intros.
         destruct H0 as [? [? [? [? ?]]]].
-        specialize (IHn x1).
         rewrite H2.
         assert (pre_event_equiv
-                  (fun '(x₁, x₂) => x0 x₁ /\ x1 x₂)
+                  (fun '(x₁, x₂) => x1 x₁ /\ x2 x₂)
                   (pre_event_inter
-                     (fun '(x₁, x₂) => x0 x₁)
-                     (fun '(x₁, x₂) => x1 x₂))).
+                     (fun '(x₁, x₂) => x1 x₁)
+                     (fun '(x₁, x₂) => x2 x₂))).
         {
           intros ?.
-          destruct x2.
+          destruct x3.
           easy.
         }
-        
+        rewrite H3.
+        specialize (IHn i).
+        apply sa_inter.
+        * apply generated_sa_sub.
+          unfold pre_event_set_ivector_product.
+          exists (ivector_cons x1 (ivector_const n pre_Ω)).
+          split.
+          -- intros.
+             destruct i0.
+             ++ now simpl.
+             ++ simpl.
+                rewrite ivector_nth_const, ivector_nth_map.
+                apply sa_all.  
+          -- intros ?.
+             destruct x3.
+             split; intros.
+             ++ destruct i1.
+                ** now simpl.
+                ** simpl.
+                   now rewrite ivector_nth_const.
+             ++ assert (0 < S n) by lia.
+                specialize (H4 0 H5).
+                now simpl in H4.
+        * 
+
         admit.
       + simpl; intros.
         apply H.
