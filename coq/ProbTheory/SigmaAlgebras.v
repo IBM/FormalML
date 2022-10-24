@@ -1391,8 +1391,8 @@ Qed.
              ++ assert (0 < S n) by lia.
                 specialize (H4 0 H5).
                 now simpl in H4.
-        * 
-
+        * clear H2 H3 x0 x1 H0 x H.
+          simpl in H1.
         admit.
       + simpl; intros.
         apply H.
