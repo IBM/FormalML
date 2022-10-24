@@ -1316,11 +1316,75 @@ Qed.
   Definition ivector_cons {n} {T} (x : T) (v : ivector T n) : ivector T (S n) :=
     (x, v).
 
-  Lemma generated_rectangle_proj {T} {n} (s : SigmaAlgebra T) (i : ivector (SigmaAlgebra T) n) (e : pre_event (ivector T n)) :
-    sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma (ivector_cons s i)))) (fun '(_, x₂) => e x₂) <->
+  Program Instance sa_elem_cons {U T} (u:U) (s: SigmaAlgebra T) : SigmaAlgebra (U * T)
+    := {|
+      sa_sigma (e:pre_event (U*T)) := sa_sigma s (fun (t:T) => e (u, t))
+    |}.
+  Next Obligation.
+    now apply sa_countable_union.
+  Qed.
+  Next Obligation.
+    now apply sa_complement.
+  Qed.
+  Next Obligation.
+    now apply sa_all. 
+  Qed.
+  
+  Lemma generated_rectangle_proj {T} {inh : inhabited T} {n} (s : SigmaAlgebra T) (i : ivector (SigmaAlgebra T) n) (e : pre_event (ivector T n)) :
+    sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma (n:=S n) (s, i)))) (fun '(_, x₂) => e x₂) <->
     sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma i))) e.
   Proof.
-    Admitted.
+    split; simpl; intros HH sa saInc.
+    - destruct inh.
+      specialize (HH (sa_elem_cons X sa)).
+      eapply sa_proper; try eapply HH.
+      + now intros ?.
+      + clear HH.
+        intros ? [?[??]].
+        apply saInc.
+        destruct x.
+        red.
+        exists i0.
+        split.
+        * intros.
+          specialize (H (S i1) (Lt.lt_n_S _ _ pf)).
+          simpl in H.
+          now rewrite lt_S_n_S in H.
+        * split; intros HH.
+          -- rewrite (H0 (X,x)) in HH; intros.
+             specialize (HH (S i1) (Lt.lt_n_S _ _ pf)); simpl in HH.
+             now rewrite lt_S_n_S in HH.
+          -- apply H0.
+             intros [|?]?.
+             ++ simpl.
+                specialize (H 0%nat); simpl in H.
+                admit.
+             ++ simpl.
+                apply HH.
+    - specialize (HH (ivector_tl_sa sa)).
+      eapply sa_proper; try eapply HH.
+      + now intros [??]; simpl.
+      + clear HH.
+        intros ? [?[??]].
+        apply saInc.
+        red.
+        exists (pre_Ω, x).
+        split.
+        * intros.
+          destruct i0; simpl.
+          -- apply sa_all.
+          --  apply H.
+        * split; intros HH.
+          -- rewrite (H0 (ivector_tl x0)) in HH.
+             intros [|?]?; simpl.
+             ++ now red.
+             ++ destruct x0.
+                apply HH.
+          -- apply H0; intros.
+             destruct x0.
+             specialize (HH (S i0) (Lt.lt_n_S _ _ pf)); simpl in *.
+             now rewrite lt_S_n_S in HH.
+  Admitted.
 
   Lemma ivector_rectangles_generate_sa {n} {T} 
         (sav:ivector (SigmaAlgebra T) n) : 
