@@ -1316,6 +1316,12 @@ Qed.
   Definition ivector_cons {n} {T} (x : T) (v : ivector T n) : ivector T (S n) :=
     (x, v).
 
+  Lemma generated_rectangle_proj {T} {n} (s : SigmaAlgebra T) (i : ivector (SigmaAlgebra T) n) (e : pre_event (ivector T n)) :
+    sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma (ivector_cons s i)))) (fun '(_, x₂) => e x₂) <->
+    sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma i))) e.
+  Proof.
+    Admitted.
+
   Lemma ivector_rectangles_generate_sa {n} {T} 
         (sav:ivector (SigmaAlgebra T) n) : 
     sa_equiv 
@@ -1393,12 +1399,7 @@ Qed.
                 now simpl in H4.
         * clear H2 H3 x0 x1 H0 x H.
           simpl in H1.
-          assert (sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma (ivector_cons s i)))) (fun '(_, x₂) => x2 x₂) <->
-                  sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma i))) x2).
-          {
-            admit.
-          }
-          rewrite H.
+          rewrite (generated_rectangle_proj s i x2).
           apply IHn.
           apply H1.
       + simpl; intros.
@@ -1441,7 +1442,7 @@ Qed.
              destruct i2.
              ++ now simpl.
              ++ apply H5.
-      Admitted.
+   Qed.
 
 End ivector.
 
