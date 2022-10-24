@@ -1393,7 +1393,14 @@ Qed.
                 now simpl in H4.
         * clear H2 H3 x0 x1 H0 x H.
           simpl in H1.
-        admit.
+          assert (sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma (ivector_cons s i)))) (fun '(_, x₂) => x2 x₂) <->
+                  sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma i))) x2).
+          {
+            admit.
+          }
+          rewrite H.
+          apply IHn.
+          apply H1.
       + simpl; intros.
         apply H.
         intros ??.
