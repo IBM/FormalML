@@ -462,7 +462,7 @@ Qed.
 Definition product_sa_event {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (a:event sa1) (b:event sa2)
   := exist _ _ (product_sa_sa a b).
 
-
+  
 
 (* dependent product *)
 Definition pre_event_set_dep_product {T₁:Type} {T₂:T₁->Type} (s₁ : pre_event T₁ -> Prop) (s₂ : forall x, pre_event (T₂ x) -> Prop) : pre_event (sigT T₂) -> Prop
@@ -544,12 +544,76 @@ Proof.
   firstorder congruence.
 Qed.
 
+Lemma closure_pairs_snd {T₁ T₂} (sa1:SigmaAlgebra T₁) (sa2:SigmaAlgebra T₂) (e:pre_event T₂) :
+  forall (ee : pre_event (T₁ * T₂)) ,
+    sa_sigma (closure_sigma_algebra (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2))) ee ->
+    sa_sigma sa2 (pre_event_push_forward snd ee).
+Proof.
+  assert (forall ee,
+             (exists xx, ee xx) ->
+             (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2)) ee ->
+             sa_sigma sa2
+                      (pre_event_push_forward snd ee)).
+  {
+    intros.
+    destruct H.
+    destruct H0 as [? [? [? [? ?]]]].
+    rewrite H2.
+    unfold pre_event_push_forward.
+    revert H1.
+    apply sa_proper.
+    intros ?.
+    split; intros.
+    - destruct H1 as [? [? ?]].
+      destruct x3.
+      destruct H3.
+      simpl in H1.
+      now rewrite H1 in H4.
+    - destruct x.
+      exists (t, x2).
+      simpl.
+      now apply H2 in H.
+  }
+  intros.
+  
+  Admitted.
+
+Lemma generated_pairs_snd {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (e:pre_event T₂) (inh : inhabited T₁) :
+  sa_sigma sa2 e  <->
+  sa_sigma (closure_sigma_algebra (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2))) 
+           (fun p => e (snd p)).
+Proof.
+  generalize (closure_pairs_snd sa1 sa2 e); intros.
+  split; intros.
+  - apply psc_refl.
+    unfold pre_event_set_product.
+    exists pre_Ω.
+    exists e.
+    split; [apply sa_all |].
+    split; trivial.
+    intros ?.
+    destruct x.
+    simpl.
+    now unfold pre_Ω.
+  - specialize (H _ H0).
+    revert H.
+    apply sa_proper.
+    intros ?.
+    unfold pre_event_push_forward.
+    split; intros.
+    + destruct inh.
+      exists (X, x).
+      now simpl.
+    + destruct H as [? [? ?]].
+      now rewrite H in H1.
+ Qed.
+
+
 Definition pullback_sa_sigma {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : pre_event X -> Prop
   := fun (xe:pre_event X) =>
        exists ye:pre_event Y,
          sa_sigma sa ye /\
          forall a, xe a <-> ye (f a).
-
 
 Program Instance pullback_sa {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : SigmaAlgebra X
   := {|
@@ -1330,7 +1394,7 @@ Qed.
     now apply sa_all. 
   Qed.
 
-  Lemma generated_rectangle_proj {T} {inh : inhabited T} {n} (s : SigmaAlgebra T) (i : ivector (SigmaAlgebra T) n) (e : pre_event (ivector T n)) :
+  Lemma generated_rectangle_proj {T} {n} (inh : inhabited T) (s : SigmaAlgebra T) (i : ivector (SigmaAlgebra T) n) (e : pre_event (ivector T n)) :
     sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma (n:=S n) (s, i)))) (fun '(_, x₂) => e x₂) <->
     sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma i))) e.
   Proof.
@@ -1421,6 +1485,7 @@ Qed.
   Admitted.
 
   Lemma ivector_rectangles_generate_sa {n} {T} 
+        (inh: inhabited T)
         (sav:ivector (SigmaAlgebra T) n) : 
     sa_equiv 
       (ivector_sa sav)
@@ -1497,7 +1562,7 @@ Qed.
                 now simpl in H4.
         * clear H2 H3 x0 x1 H0 x H.
           simpl in H1.
-          rewrite (generated_rectangle_proj s i x2).
+          rewrite (generated_rectangle_proj inh s i x2).
           apply IHn.
           apply H1.
       + simpl; intros.
