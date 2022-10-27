@@ -1231,14 +1231,35 @@ Lemma pair_snd_product {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) 
 Proof.
   apply sa_equiv_subs.
   split; intros.
-  Admitted.
+Admitted.
 
-Lemma pair_snd_union_pullback {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
+Lemma pair_snd_union_pullback_comm {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
+  sa_equiv (pair_snd_sa (union_sa (pullback_sa sa1 fst) (pullback_sa sa2 snd)))
+           (union_sa (pair_snd_sa (pullback_sa sa1 fst))
+                     (pair_snd_sa (T1 := X) (pullback_sa sa2 snd))).
+Proof.
+  Admitted.
+  
+Lemma union_trivial {X} (sa : SigmaAlgebra X) :
+  sa_equiv sa (union_sa (trivial_sa X) sa).
+Proof.
+  apply sa_equiv_subs.
+  split.
+  - apply union_sa_sub_r.
+  - apply union_sa_sub_both.
+    + apply trivial_sa_sub.
+    + easy.
+  Qed.
+
+Lemma pair_snd_union_pullback {X Y:Type} (inh : inhabited X) (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
   sa_equiv (pair_snd_sa (union_sa (pullback_sa sa1 fst) (pullback_sa sa2 snd)))
            sa2.
 Proof.
-  Admitted.
-
+  rewrite pair_snd_union_pullback_comm.
+  rewrite pair_snd_pullback_fst; trivial.
+  rewrite pair_snd_pullback; trivial.
+  now rewrite <- union_trivial.
+Qed.
 
 Definition countable_union_sa {T : Type} (sas:nat->SigmaAlgebra T) :=
   generated_sa (pre_union_of_collection (fun n => (sa_sigma (sas n)))).
