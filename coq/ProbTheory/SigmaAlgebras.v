@@ -544,11 +544,53 @@ Proof.
   firstorder congruence.
 Qed.
 
-Lemma closure_pairs_snd {T₁ T₂} (sa1:SigmaAlgebra T₁) (sa2:SigmaAlgebra T₂) (e:pre_event T₂) :
+(*
+Lemma closure_pairs_snd {T₁ T₂} (sa1:SigmaAlgebra T₁) (sa2:SigmaAlgebra T₂) :
+  sa_equiv
+    sa2
+    (pair_snd_sa (closure_sigma_algebra (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2)))).
+Proof.
+  intros ?.
+  split; intros.
+  - 
+  - admit.
+*)
+
+
+(*
+Lemma closure_pairs_snd {T₁ T₂} (sa1:SigmaAlgebra T₁) (sa2:SigmaAlgebra T₂) (e:pre_event T₂) 
+      (inh1 : inhabited T₁) (inh2 : inhabited T₂):
   forall (ee : pre_event (T₁ * T₂)) ,
+    (exists xx, ee xx) ->
     sa_sigma (closure_sigma_algebra (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2))) ee ->
     sa_sigma sa2 (pre_event_push_forward snd ee).
 Proof.
+  intros.
+  revert H.
+  unfold pre_event_push_forward.
+  induction H0; intros.
+  + destruct H.
+    assert (sa_sigma sa2 pre_Ω) by apply sa_all.
+    revert H0.
+    apply sa_proper.
+    intros ?.
+    split; intros.
+    * now unfold  pre_Ω.
+    * destruct inh1.
+      exists (X, x0).
+      simpl; split; trivial.
+  + admit.
+  + admit.
+  + destruct H.
+    
+    unfold pre_event_complement in *.
+    cut
+      
+destruct H0 as [? [? ?]].
+      
+    
+    {
+      apply sa_all.
   assert (forall ee,
              (exists xx, ee xx) ->
              (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2)) ee ->
@@ -577,7 +619,9 @@ Proof.
   intros.
   
   Admitted.
+*)
 
+(*
 Lemma generated_pairs_snd {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (e:pre_event T₂) (inh : inhabited T₁) :
   sa_sigma sa2 e  <->
   sa_sigma (closure_sigma_algebra (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2))) 
@@ -607,7 +651,7 @@ Proof.
     + destruct H as [? [? ?]].
       now rewrite H in H1.
  Qed.
-
+*)
 
 Definition pullback_sa_sigma {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : pre_event X -> Prop
   := fun (xe:pre_event X) =>
@@ -650,6 +694,87 @@ Next Obligation.
   - unfold pre_Ω.
     tauto.
 Qed.
+
+  
+Program Instance pair_fst_sa {T1 T2:Type} (sa:SigmaAlgebra (T1 * T2))
+        : SigmaAlgebra T1
+  := {|
+  sa_sigma := fun (ye:pre_event T1) =>
+                sa_sigma sa (fun v => ye (fst v))
+    |}.
+Next Obligation.
+  now apply sa_countable_union.
+Qed.
+Next Obligation.
+  now apply sa_complement.
+Qed.
+Next Obligation.
+  apply sa_all.
+Qed.
+
+Program Instance pair_snd_sa {T1 T2:Type} (sa:SigmaAlgebra (T1 * T2))
+        : SigmaAlgebra T2
+  := {|
+  sa_sigma := fun (ye:pre_event T2) =>
+                sa_sigma sa (fun v => ye (snd v))
+    |}.
+Next Obligation.
+  now apply sa_countable_union.
+Qed.
+Next Obligation.
+  now apply sa_complement.
+Qed.
+Next Obligation.
+  apply sa_all.
+Qed.
+
+Lemma pair_fst_pullback {X Y:Type} (sa1 : SigmaAlgebra X) (inh : inhabited Y) :
+  sa_equiv (pair_fst_sa (T2 := Y) (pullback_sa sa1 fst))
+         sa1.
+Proof.
+  intros ?.
+  split; intros.
+  - simpl in H.
+    unfold pullback_sa_sigma in H.
+    destruct H as [? [? ?]].
+    assert (pre_event_equiv x x0).
+    {
+      intros ?.
+      destruct inh.
+      specialize (H0 (x1, X0)).
+      now simpl in H0.
+    }
+    now rewrite H1.
+  - simpl.
+    unfold pullback_sa_sigma.
+    exists x.
+    split; trivial.
+    now intros.
+  Qed.
+
+Lemma pair_snd_pullback {X Y:Type} (sa2 : SigmaAlgebra Y) (inh : inhabited X) :
+  sa_equiv (pair_snd_sa (T1 := X) (pullback_sa sa2 snd))
+         sa2.
+Proof.
+  intros ?.
+  split; intros.
+  - simpl in H.
+    unfold pullback_sa_sigma in H.
+    destruct H as [? [? ?]].
+    assert (pre_event_equiv x x0).
+    {
+      intros ?.
+      destruct inh.
+      specialize (H0 (X0, x1)).
+      now simpl in H0.
+    }
+    now rewrite H1.
+  - simpl.
+    unfold pullback_sa_sigma.
+    exists x.
+    split; trivial.
+    now intros.
+  Qed.
 
 Instance pullback_sa_sigma_proper {X Y:Type} :
   Proper (equiv ==> (pointwise_relation X equiv) ==> equiv)
@@ -1030,6 +1155,40 @@ Proof.
   apply HH.
   intros ? [?|?]; auto.
 Qed.  
+
+Lemma product_pullback {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
+  sa_equiv (product_sa sa1 sa2) (union_sa (pullback_sa sa1 fst) (pullback_sa sa2 snd)).
+Proof.
+  intros ?.
+  Admitted.
+
+Lemma pair_snd_product {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
+  sa_equiv (pair_snd_sa  (product_sa sa1 sa2))
+           sa2.
+Proof.
+  Admitted.
+
+Lemma pair_snd_pullback_fst {X Y:Type} (sa1 : SigmaAlgebra X) :
+  sa_equiv (pair_snd_sa (pullback_sa sa1 fst))
+           (trivial_sa Y).
+Proof.
+  intros ?.
+  simpl.
+  unfold pullback_sa_sigma.
+  split; intros.
+  - destruct H as [? [? ?]].
+Admitted.    
+
+(*
+Lemma pair_snd_union_pullback {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
+  sa_equiv (pair_snd_sa (union_sa (pullback_sa sa1 fst) (pullback_sa sa2 snd)))
+           sa2.
+Proof.
+  intros ?.
+  split; intros.
+  - 
+*)
+
 
 Definition countable_union_sa {T : Type} (sas:nat->SigmaAlgebra T) :=
   generated_sa (pre_union_of_collection (fun n => (sa_sigma (sas n)))).
