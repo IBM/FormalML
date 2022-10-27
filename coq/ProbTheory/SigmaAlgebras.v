@@ -1161,8 +1161,7 @@ Lemma product_union_pullback {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgeb
 Proof.
   apply sa_equiv_subs.
   split.
-  - unfold product_sa.
-    apply generated_sa_sub_sub.
+  - apply generated_sa_sub_sub.
     intros ??.
     destruct H as [? [? [? [? ?]]]].
     rewrite H1.
@@ -1178,71 +1177,67 @@ Proof.
     rewrite H2.
     apply sa_inter.
     + apply union_sa_sub_l.
-      simpl.
-      unfold pullback_sa_sigma.
       exists x0.
       split; trivial.
       intros.
-      destruct a.
-      now simpl.
+      now destruct a.
     + apply union_sa_sub_r.
-      simpl.
-      unfold pullback_sa_sigma.
       exists x1.
       split; trivial.
       intros.
-      destruct a.
-      now simpl.
+      now destruct a.
   - apply union_sa_sub_both.
     + intros ??.
       destruct H as [? [? ?]].
-      generalize (product_sa_sa (sa1 := sa1) (sa2 := sa2) (exist _ _ H) Ω).
+      generalize (product_sa_sa (exist _ _ H) Ω).
       apply sa_proper.
       intros ?.
       destruct x1.
-      rewrite H0.
-      unfold Ω, pre_Ω.
-      now simpl.
+      now rewrite H0.
     + intros ??.
       destruct H as [? [? ?]].
-      generalize (product_sa_sa (sa1 := sa1) (sa2 := sa2) Ω (exist _ _ H)).
+      generalize (product_sa_sa (sa1 := sa1) Ω (exist _ _ H)).
       apply sa_proper.
       intros ?.
       destruct x1.
-      rewrite H0.
-      unfold Ω, pre_Ω.
-      now simpl.
+      now rewrite H0.
   Qed.
+
+Lemma pair_snd_pullback_fst {X Y:Type} (sa1 : SigmaAlgebra X) (inh1 : inhabited X) :
+  sa_equiv (pair_snd_sa (pullback_sa sa1 fst)) (trivial_sa Y).
+Proof.
+  apply sa_equiv_subs.
+  split; intros.
+  - destruct (classic (sa_sub (pair_snd_sa (pullback_sa sa1 fst)) (trivial_sa Y))); try easy.
+    assert (exists (e : pre_event Y),
+               exists (y1 : Y), exists (y2 : Y),
+               sa_sigma (pair_snd_sa (pullback_sa sa1 fst)) e /\
+               (e y1) /\ ~(e y2)).
+    {
+      admit.
+    }
+    destruct H0 as [? [? [? [[? [? ?]] [? ?]]]]].
+    destruct inh1.
+    generalize (H1 (X0, x0)); intros.
+    generalize (H1 (X0, x1)); intros.
+    rewrite <- H5 in H4.
+    tauto.
+  - apply trivial_sa_sub.
+  Admitted.
 
 Lemma pair_snd_product {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
   sa_equiv (pair_snd_sa  (product_sa sa1 sa2))
            sa2.
 Proof.
-  intros ?.
+  apply sa_equiv_subs.
   split; intros.
-  - simpl in H.
   Admitted.
 
-Lemma pair_snd_pullback_fst {X Y:Type} (sa1 : SigmaAlgebra X) :
-  sa_equiv (pair_snd_sa (pullback_sa sa1 fst))
-           (trivial_sa Y).
-Proof.
-  intros ?.
-  simpl.
-  unfold pullback_sa_sigma.
-  split; intros.
-  - destruct H as [? [? ?]].
-Admitted.    
-
-(*
 Lemma pair_snd_union_pullback {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
   sa_equiv (pair_snd_sa (union_sa (pullback_sa sa1 fst) (pullback_sa sa2 snd)))
            sa2.
 Proof.
-  intros ?.
-  split; intros.
-  - 
-*)
+  Admitted.
 
 
 Definition countable_union_sa {T : Type} (sas:nat->SigmaAlgebra T) :=
