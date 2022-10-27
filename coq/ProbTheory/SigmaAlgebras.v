@@ -752,30 +752,6 @@ Proof.
     now intros.
   Qed.
 
-Lemma pair_snd_pullback {X Y:Type} (sa2 : SigmaAlgebra Y) (inh : inhabited X) :
-  sa_equiv (pair_snd_sa (T1 := X) (pullback_sa sa2 snd))
-         sa2.
-Proof.
-  intros ?.
-  split; intros.
-  - simpl in H.
-    unfold pullback_sa_sigma in H.
-    destruct H as [? [? ?]].
-    assert (pre_event_equiv x x0).
-    {
-      intros ?.
-      destruct inh.
-      specialize (H0 (X0, x1)).
-      now simpl in H0.
-    }
-    now rewrite H1.
-  - simpl.
-    unfold pullback_sa_sigma.
-    exists x.
-    split; trivial.
-    now intros.
-  Qed.
-
 Instance pullback_sa_sigma_proper {X Y:Type} :
   Proper (equiv ==> (pointwise_relation X equiv) ==> equiv)
          (@pullback_sa_sigma X Y).
@@ -1203,6 +1179,30 @@ Proof.
       now rewrite H0.
   Qed.
 
+Lemma pair_snd_pullback {X Y:Type} (sa2 : SigmaAlgebra Y) (inh : inhabited X) :
+  sa_equiv (pair_snd_sa (T1 := X) (pullback_sa sa2 snd))
+         sa2.
+Proof.
+  intros ?.
+  split; intros.
+  - simpl in H.
+    unfold pullback_sa_sigma in H.
+    destruct H as [? [? ?]].
+    assert (pre_event_equiv x x0).
+    {
+      intros ?.
+      destruct inh.
+      specialize (H0 (X0, x1)).
+      now simpl in H0.
+    }
+    now rewrite H1.
+  - simpl.
+    unfold pullback_sa_sigma.
+    exists x.
+    split; trivial.
+    now intros.
+  Qed.
+
 Lemma pair_snd_pullback_fst {X Y:Type} (sa1 : SigmaAlgebra X) (inh1 : inhabited X) :
   sa_equiv (pair_snd_sa (pullback_sa sa1 fst)) (trivial_sa Y).
 Proof.
@@ -1258,13 +1258,6 @@ Proof.
   split; intros.
 Admitted.
 
-Lemma pair_snd_union_pullback_comm {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
-  sa_equiv (pair_snd_sa (union_sa (pullback_sa sa1 fst) (pullback_sa sa2 snd)))
-           (union_sa (pair_snd_sa (pullback_sa sa1 fst))
-                     (pair_snd_sa (T1 := X) (pullback_sa sa2 snd))).
-Proof.
-  Admitted.
-  
 Lemma union_trivial {X} (sa : SigmaAlgebra X) :
   sa_equiv sa (union_sa (trivial_sa X) sa).
 Proof.
@@ -1276,15 +1269,61 @@ Proof.
     + easy.
   Qed.
 
+Lemma pair_snd_closure_union_pullback {X Y:Type} (inh : inhabited X) (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
+      sa_sub
+      (pair_snd_sa
+         (closure_sigma_algebra
+            (pre_event_union (sa_sigma (pullback_sa sa1 fst))
+                             (sa_sigma (pullback_sa sa2 snd))))) sa2.
+Proof.
+  intros ??.
+  unfold closure_sigma_algebra in H.
+  simpl in H.
+  dependent induction H.
+  - assert (pre_event_equiv x0 pre_Ω).
+    {
+      intros ?.
+      unfold pre_Ω in x.
+      destruct inh.
+      admit.
+   }
+    rewrite H.
+    apply sa_all.
+  - unfold pre_event_union in H.
+    destruct H.
+    + generalize (pair_snd_pullback_fst sa1 inh (Y := Y)); intros.
+      specialize (H0 x).
+      unfold pair_snd_sa in H0; simpl in H0.
+      apply H0 in H.
+      destruct H; rewrite H.
+      * apply sa_none.
+      * apply sa_all.
+    + generalize (pair_snd_pullback sa2 inh); intros.
+      specialize (H0 x).
+      unfold pair_snd_sa in H0; simpl in H0.
+      now apply H0 in H.
+  - admit.
+  - specialize (IHprob_space_closure Y sa2).
+    unfold pre_event_complement in x.
+    Admitted.
+
 Lemma pair_snd_union_pullback {X Y:Type} (inh : inhabited X) (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
   sa_equiv (pair_snd_sa (union_sa (pullback_sa sa1 fst) (pullback_sa sa2 snd)))
            sa2.
 Proof.
-  rewrite pair_snd_union_pullback_comm.
-  rewrite pair_snd_pullback_fst; trivial.
-  rewrite pair_snd_pullback; trivial.
-  now rewrite <- union_trivial.
-Qed.
+  apply sa_equiv_subs.
+  split; intros.
+  - unfold union_sa.
+    admit.
+  - intros ?.
+    simpl; intros.
+    apply H0.
+    unfold pre_event_union, pullback_sa_sigma.
+    right.
+    exists x.
+    split; trivial.
+    now intros.
+Admitted.
 
 Definition countable_union_sa {T : Type} (sas:nat->SigmaAlgebra T) :=
   generated_sa (pre_union_of_collection (fun n => (sa_sigma (sas n)))).
