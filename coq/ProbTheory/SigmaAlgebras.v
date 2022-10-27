@@ -1210,12 +1210,37 @@ Proof.
   split; intros.
   - destruct (classic (sa_sub (pair_snd_sa (pullback_sa sa1 fst)) (trivial_sa Y))); try easy.
     assert (exists (e : pre_event Y),
-               exists (y1 : Y), exists (y2 : Y),
+             exists (y1 : Y), exists (y2 : Y),
                sa_sigma (pair_snd_sa (pullback_sa sa1 fst)) e /\
-               (e y1) /\ ~(e y2)).
+                 (e y1) /\ ~(e y2)).
     {
-      admit.
-    }
+      apply not_all_ex_not in H.
+      destruct H as [e HH].
+      exists e.
+      apply imply_to_and in HH.
+      destruct HH as [HH1 HH2].
+      apply not_or_and in HH2.
+      destruct HH2 as [HH2 HH3].
+      assert (exists y1, e y1).
+      {
+        apply NNPP; intros HH.
+        elim HH2.
+        intros y.
+        generalize (not_ex_all_not _ _ HH y); firstorder.
+      }
+      assert (exists y2, ~ e y2).
+      {
+        apply NNPP; intros HH.
+        elim HH3.
+        intros y.
+        generalize (not_ex_all_not _ _ HH y); intros HH'.
+        apply NNPP in HH'.
+        firstorder.
+      }
+      destruct H as [y1 ?].
+      destruct H0 as [y2 ?].
+      eauto.
+    } 
     destruct H0 as [? [? [? [[? [? ?]] [? ?]]]]].
     destruct inh1.
     generalize (H1 (X0, x0)); intros.
@@ -1223,7 +1248,7 @@ Proof.
     rewrite <- H5 in H4.
     tauto.
   - apply trivial_sa_sub.
-  Admitted.
+Qed.
 
 Lemma pair_snd_product {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
   sa_equiv (pair_snd_sa  (product_sa sa1 sa2))
