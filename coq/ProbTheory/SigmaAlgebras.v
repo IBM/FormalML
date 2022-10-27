@@ -1156,16 +1156,71 @@ Proof.
   intros ? [?|?]; auto.
 Qed.  
 
-Lemma product_pullback {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
+Lemma product_union_pullback {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
   sa_equiv (product_sa sa1 sa2) (union_sa (pullback_sa sa1 fst) (pullback_sa sa2 snd)).
 Proof.
-  intros ?.
-  Admitted.
+  apply sa_equiv_subs.
+  split.
+  - unfold product_sa.
+    apply generated_sa_sub_sub.
+    intros ??.
+    destruct H as [? [? [? [? ?]]]].
+    rewrite H1.
+    assert (pre_event_equiv
+              (fun '(x₁, x₂) => x0 x₁ /\ x1 x₂)
+              (pre_event_inter (fun '(x₁, x₂) => x0 x₁)
+                               (fun '(x₁, x₂) => x1 x₂))).
+    {
+      intros ?.
+      destruct x2.
+      now unfold pre_event_inter.
+    }
+    rewrite H2.
+    apply sa_inter.
+    + apply union_sa_sub_l.
+      simpl.
+      unfold pullback_sa_sigma.
+      exists x0.
+      split; trivial.
+      intros.
+      destruct a.
+      now simpl.
+    + apply union_sa_sub_r.
+      simpl.
+      unfold pullback_sa_sigma.
+      exists x1.
+      split; trivial.
+      intros.
+      destruct a.
+      now simpl.
+  - apply union_sa_sub_both.
+    + intros ??.
+      destruct H as [? [? ?]].
+      generalize (product_sa_sa (sa1 := sa1) (sa2 := sa2) (exist _ _ H) Ω).
+      apply sa_proper.
+      intros ?.
+      destruct x1.
+      rewrite H0.
+      unfold Ω, pre_Ω.
+      now simpl.
+    + intros ??.
+      destruct H as [? [? ?]].
+      generalize (product_sa_sa (sa1 := sa1) (sa2 := sa2) Ω (exist _ _ H)).
+      apply sa_proper.
+      intros ?.
+      destruct x1.
+      rewrite H0.
+      unfold Ω, pre_Ω.
+      now simpl.
+  Qed.
 
 Lemma pair_snd_product {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
   sa_equiv (pair_snd_sa  (product_sa sa1 sa2))
            sa2.
 Proof.
+  intros ?.
+  split; intros.
+  - simpl in H.
   Admitted.
 
 Lemma pair_snd_pullback_fst {X Y:Type} (sa1 : SigmaAlgebra X) :
