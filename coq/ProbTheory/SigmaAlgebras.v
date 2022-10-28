@@ -1501,7 +1501,7 @@ Qed.
   Definition ivector_cons {n} {T} (x : T) (v : ivector T n) : ivector T (S n) :=
     (x, v).
   
-  Lemma generated_rectangle_proj {T} {n} (inh : inhabited T) (s : SigmaAlgebra T) (i : ivector (SigmaAlgebra T) n) (e : pre_event (ivector T n)) :
+  Lemma generated_rectangle_proj {T} {n} (s : SigmaAlgebra T) (i : ivector (SigmaAlgebra T) n) (e : pre_event (ivector T n)) :
     sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma i))) e ->
     sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma (n:=S n) (s, i)))) (fun '(_, x₂) => e x₂).
   Proof.
@@ -1532,7 +1532,6 @@ Qed.
   Qed.
 
   Lemma ivector_rectangles_generate_sa {n} {T} 
-        (inh: inhabited T)
         (sav:ivector (SigmaAlgebra T) n) : 
     sa_equiv 
       (ivector_sa sav)
@@ -1609,7 +1608,7 @@ Qed.
                 now simpl in H4.
         * clear H2 H3 x0 x1 H0 x H.
           simpl in H1.
-          apply (generated_rectangle_proj inh s i x2).
+          apply (generated_rectangle_proj s i x2).
           apply IHn.
           apply H1.
       + simpl; intros.
