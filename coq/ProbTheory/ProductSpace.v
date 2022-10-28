@@ -745,7 +745,7 @@ Section ps_product.
     intros.
     unfold independent_events.
     generalize product_sa_product; intros.
-    assert (ps_P (rv_preimage fst A0) = ps_P A0).
+    assert (ps_P  (rv_preimage (dom := product_sa A B) fst A0) = ps_P A0).
     {
       specialize (H A0 Ω).
       rewrite ps_one, Rmult_1_r in H.
