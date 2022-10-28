@@ -2357,6 +2357,21 @@ Section ps_sequence_product.
      apply sa_all.
    Qed.
 
+   Lemma ivector_sa_rev_sa_pullback {T} {n : nat} (σ:SigmaAlgebra (ivector T n)):
+     sa_equiv (ivector_rev_sa σ) (pullback_sa σ ivector_rev).
+   Proof.
+     intros ?; simpl.
+     unfold pullback_sa_sigma.
+     split.
+     - intros HH.
+       eexists; split; [apply HH |]; simpl; intros.
+       now rewrite ivector_rev_involutive.
+     - intros [? [??]].
+       eapply sa_proper; try apply H.
+       intros ?.
+       rewrite H0.
+       now rewrite ivector_rev_involutive.
+   Qed.
 
    Lemma ivector_sa_rev {T} {σ:SigmaAlgebra T} {n : nat} 
       (e : pre_event (ivector T n))
