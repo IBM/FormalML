@@ -642,6 +642,77 @@ Proof.
     now intros.
   Qed.
 
+Lemma pair_snd_pullback {X Y:Type} (sa2 : SigmaAlgebra Y) (inh : inhabited X) :
+  sa_equiv (pair_snd_sa (T1 := X) (pullback_sa sa2 snd))
+         sa2.
+Proof.
+  intros ?.
+  split; intros.
+  - simpl in H.
+    unfold pullback_sa_sigma in H.
+    destruct H as [? [? ?]].
+    assert (pre_event_equiv x x0).
+    {
+      intros ?.
+      destruct inh.
+      specialize (H0 (X0, x1)).
+      now simpl in H0.
+    }
+    now rewrite H1.
+  - simpl.
+    unfold pullback_sa_sigma.
+    exists x.
+    split; trivial.
+    now intros.
+  Qed.
+
+Lemma pair_snd_pullback_fst {X Y:Type} (sa1 : SigmaAlgebra X) (inh1 : inhabited X) :
+  sa_equiv (pair_snd_sa (pullback_sa sa1 fst)) (trivial_sa Y).
+Proof.
+  apply sa_equiv_subs.
+  split; intros.
+  - destruct (classic (sa_sub (pair_snd_sa (pullback_sa sa1 fst)) (trivial_sa Y))); try easy.
+    assert (exists (e : pre_event Y),
+             exists (y1 : Y), exists (y2 : Y),
+               sa_sigma (pair_snd_sa (pullback_sa sa1 fst)) e /\
+                 (e y1) /\ ~(e y2)).
+    {
+      apply not_all_ex_not in H.
+      destruct H as [e HH].
+      exists e.
+      apply imply_to_and in HH.
+      destruct HH as [HH1 HH2].
+      apply not_or_and in HH2.
+      destruct HH2 as [HH2 HH3].
+      assert (exists y1, e y1).
+      {
+        apply NNPP; intros HH.
+        elim HH2.
+        intros y.
+        generalize (not_ex_all_not _ _ HH y); firstorder.
+      }
+      assert (exists y2, ~ e y2).
+      {
+        apply NNPP; intros HH.
+        elim HH3.
+        intros y.
+        generalize (not_ex_all_not _ _ HH y); intros HH'.
+        apply NNPP in HH'.
+        firstorder.
+      }
+      destruct H as [y1 ?].
+      destruct H0 as [y2 ?].
+      eauto.
+    } 
+    destruct H0 as [? [? [? [[? [? ?]] [? ?]]]]].
+    destruct inh1.
+    generalize (H1 (X0, x0)); intros.
+    generalize (H1 (X0, x1)); intros.
+    rewrite <- H5 in H4.
+    tauto.
+  - apply trivial_sa_sub.
+Qed.
+
 Instance pullback_sa_sigma_proper {X Y:Type} :
   Proper (equiv ==> (pointwise_relation X equiv) ==> equiv)
          (@pullback_sa_sigma X Y).
@@ -1069,76 +1140,7 @@ Proof.
       now rewrite H0.
 Qed.
 
-Lemma pair_snd_pullback {X Y:Type} (sa2 : SigmaAlgebra Y) (inh : inhabited X) :
-  sa_equiv (pair_snd_sa (T1 := X) (pullback_sa sa2 snd))
-         sa2.
-Proof.
-  intros ?.
-  split; intros.
-  - simpl in H.
-    unfold pullback_sa_sigma in H.
-    destruct H as [? [? ?]].
-    assert (pre_event_equiv x x0).
-    {
-      intros ?.
-      destruct inh.
-      specialize (H0 (X0, x1)).
-      now simpl in H0.
-    }
-    now rewrite H1.
-  - simpl.
-    unfold pullback_sa_sigma.
-    exists x.
-    split; trivial.
-    now intros.
-  Qed.
 
-Lemma pair_snd_pullback_fst {X Y:Type} (sa1 : SigmaAlgebra X) (inh1 : inhabited X) :
-  sa_equiv (pair_snd_sa (pullback_sa sa1 fst)) (trivial_sa Y).
-Proof.
-  apply sa_equiv_subs.
-  split; intros.
-  - destruct (classic (sa_sub (pair_snd_sa (pullback_sa sa1 fst)) (trivial_sa Y))); try easy.
-    assert (exists (e : pre_event Y),
-             exists (y1 : Y), exists (y2 : Y),
-               sa_sigma (pair_snd_sa (pullback_sa sa1 fst)) e /\
-                 (e y1) /\ ~(e y2)).
-    {
-      apply not_all_ex_not in H.
-      destruct H as [e HH].
-      exists e.
-      apply imply_to_and in HH.
-      destruct HH as [HH1 HH2].
-      apply not_or_and in HH2.
-      destruct HH2 as [HH2 HH3].
-      assert (exists y1, e y1).
-      {
-        apply NNPP; intros HH.
-        elim HH2.
-        intros y.
-        generalize (not_ex_all_not _ _ HH y); firstorder.
-      }
-      assert (exists y2, ~ e y2).
-      {
-        apply NNPP; intros HH.
-        elim HH3.
-        intros y.
-        generalize (not_ex_all_not _ _ HH y); intros HH'.
-        apply NNPP in HH'.
-        firstorder.
-      }
-      destruct H as [y1 ?].
-      destruct H0 as [y2 ?].
-      eauto.
-    } 
-    destruct H0 as [? [? [? [[? [? ?]] [? ?]]]]].
-    destruct inh1.
-    generalize (H1 (X0, x0)); intros.
-    generalize (H1 (X0, x1)); intros.
-    rewrite <- H5 in H4.
-    tauto.
-  - apply trivial_sa_sub.
-Qed.
 
 Lemma union_trivial {X} (sa : SigmaAlgebra X) :
   sa_equiv sa (union_sa (trivial_sa X) sa).

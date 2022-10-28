@@ -2357,14 +2357,27 @@ Section ps_sequence_product.
      apply sa_all.
    Qed.
 
+
    Lemma ivector_sa_rev {T} {σ:SigmaAlgebra T} {n : nat} 
       (e : pre_event (ivector T n))
       (sae : sa_sigma (ivector_sa (ivector_const n σ)) e) :
    sa_sigma (ivector_sa (ivector_const n σ)) (fun v => e (ivector_rev v)).
    Proof.
+     generalize (ivector_rectangles_generate_sa (ivector_const n σ)); intros.
+     rewrite (H (fun v : ivector T n => e (ivector_rev v))).
+     rewrite (H e) in sae.
+     clear H.
      induction n.
-     - admit.
-     - 
+     - assert (pre_event_equiv  (fun v : ivector T 0 => e (ivector_rev v)) e).
+       {
+         intros ?.
+         simpl.
+         now destruct x.
+       }
+       now rewrite H.
+     - rewrite ivector_map_const.
+       rewrite ivector_map_const in sae.
+       rewrite ivector_map_const in IHn.
     Admitted.
 
   Lemma ps_ivector_rev {T} {σ:SigmaAlgebra T} {n : nat}

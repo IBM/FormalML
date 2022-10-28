@@ -1109,6 +1109,16 @@ Section ivector.
            fun '(hd,tl) => (f hd, ivector_map f tl)
        end.
 
+  Lemma ivector_map_const {n} {A B} (f : A -> B) (a : A) :
+    ivector_map f (ivector_const n a) = ivector_const n (f a).
+  Proof.
+    induction n.
+    - now simpl.
+    - simpl.
+      f_equal.
+      apply IHn.
+  Qed.
+
   Fixpoint ivector_zip {A B} {n} : ivector A n -> ivector B n -> ivector (A*B) n
     := match n with
        | 0%nat => fun _ _ => tt
