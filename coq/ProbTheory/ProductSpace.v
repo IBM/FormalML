@@ -2373,27 +2373,50 @@ Section ps_sequence_product.
        now rewrite ivector_rev_involutive.
    Qed.
 
+   Lemma pullback_ivector_sa_rev {T} {n : nat} (sav: ivector (SigmaAlgebra T) n):
+     sa_equiv (pullback_sa (ivector_sa sav) ivector_rev)
+              (ivector_sa (ivector_rev sav)).
+   Proof.
+     Admitted.
+
+   Lemma ivector_add_to_end_const {n} {T} (x : T):
+     ivector_add_to_end x (ivector_const n x) = (x, ivector_const n x).
+   Proof.
+     induction n.
+     - now simpl.
+     - simpl.
+       now rewrite IHn.
+   Qed.
+   
+   Lemma ivector_rev_const {n} {T} (x : T):
+     ivector_rev (ivector_const n x) = ivector_const n x.
+   Proof.
+     induction n.
+     - now simpl.
+     - simpl.
+       rewrite IHn.
+       now rewrite ivector_add_to_end_const.
+   Qed.
+
    Lemma ivector_sa_rev {T} {σ:SigmaAlgebra T} {n : nat} 
       (e : pre_event (ivector T n))
       (sae : sa_sigma (ivector_sa (ivector_const n σ)) e) :
    sa_sigma (ivector_sa (ivector_const n σ)) (fun v => e (ivector_rev v)).
    Proof.
-     generalize (ivector_rectangles_generate_sa (ivector_const n σ)); intros.
-     rewrite (H (fun v : ivector T n => e (ivector_rev v))).
-     rewrite (H e) in sae.
-     clear H.
-     induction n.
-     - assert (pre_event_equiv  (fun v : ivector T 0 => e (ivector_rev v)) e).
-       {
-         intros ?.
-         simpl.
-         now destruct x.
-       }
-       now rewrite H.
-     - rewrite ivector_map_const.
-       rewrite ivector_map_const in sae.
-       rewrite ivector_map_const in IHn.
-    Admitted.
+     assert (sa_sigma (pullback_sa (ivector_sa (ivector_const n σ)) ivector_rev) 
+                      (fun v => e (ivector_rev v))).
+     {
+       simpl.
+       unfold pullback_sa_sigma.
+       exists e.
+       split; trivial.
+       now intros.
+     }
+     generalize (pullback_ivector_sa_rev (ivector_const n σ)); intros.
+     specialize (H0 (fun v : ivector T n => e (ivector_rev v))).
+     rewrite H0 in H.
+     now rewrite ivector_rev_const in H.
+  Qed.
 
   Lemma ps_ivector_rev {T} {σ:SigmaAlgebra T} {n : nat}
         (ivecps : ivector (ProbSpace σ) n)
