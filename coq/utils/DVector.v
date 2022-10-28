@@ -1502,6 +1502,19 @@ Qed.
       (ivector_rev (ivector_add_to_end t (ivector_rev i))) by reflexivity.
     now rewrite ivector_rev_add_to_end, IHn.
   Qed.
+
+  Lemma ivector_const_add_to_end {T} n (a:T) :
+    ivector_add_to_end a (ivector_const n a) = (a, ivector_const n a).
+  Proof.
+    induction n; simpl; trivial.
+    now rewrite IHn.
+  Qed.
+    
+  Lemma ivector_rev_const {T} n (a:T) : ivector_rev (ivector_const n a) = ivector_const n a.
+  Proof.
+    induction n; simpl; trivial.
+    now rewrite IHn, ivector_const_add_to_end.
+  Qed.
   
 End ivector.
 Section Sequence.
