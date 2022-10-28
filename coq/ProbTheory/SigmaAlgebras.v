@@ -544,115 +544,6 @@ Proof.
   firstorder congruence.
 Qed.
 
-(*
-Lemma closure_pairs_snd {T₁ T₂} (sa1:SigmaAlgebra T₁) (sa2:SigmaAlgebra T₂) :
-  sa_equiv
-    sa2
-    (pair_snd_sa (closure_sigma_algebra (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2)))).
-Proof.
-  intros ?.
-  split; intros.
-  - 
-  - admit.
-*)
-
-
-(*
-Lemma closure_pairs_snd {T₁ T₂} (sa1:SigmaAlgebra T₁) (sa2:SigmaAlgebra T₂) (e:pre_event T₂) 
-      (inh1 : inhabited T₁) (inh2 : inhabited T₂):
-  forall (ee : pre_event (T₁ * T₂)) ,
-    (exists xx, ee xx) ->
-    sa_sigma (closure_sigma_algebra (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2))) ee ->
-    sa_sigma sa2 (pre_event_push_forward snd ee).
-Proof.
-  intros.
-  revert H.
-  unfold pre_event_push_forward.
-  induction H0; intros.
-  + destruct H.
-    assert (sa_sigma sa2 pre_Ω) by apply sa_all.
-    revert H0.
-    apply sa_proper.
-    intros ?.
-    split; intros.
-    * now unfold  pre_Ω.
-    * destruct inh1.
-      exists (X, x0).
-      simpl; split; trivial.
-  + admit.
-  + admit.
-  + destruct H.
-    
-    unfold pre_event_complement in *.
-    cut
-      
-destruct H0 as [? [? ?]].
-      
-    
-    {
-      apply sa_all.
-  assert (forall ee,
-             (exists xx, ee xx) ->
-             (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2)) ee ->
-             sa_sigma sa2
-                      (pre_event_push_forward snd ee)).
-  {
-    intros.
-    destruct H.
-    destruct H0 as [? [? [? [? ?]]]].
-    rewrite H2.
-    unfold pre_event_push_forward.
-    revert H1.
-    apply sa_proper.
-    intros ?.
-    split; intros.
-    - destruct H1 as [? [? ?]].
-      destruct x3.
-      destruct H3.
-      simpl in H1.
-      now rewrite H1 in H4.
-    - destruct x.
-      exists (t, x2).
-      simpl.
-      now apply H2 in H.
-  }
-  intros.
-  
-  Admitted.
-*)
-
-(*
-Lemma generated_pairs_snd {T₁ T₂} {sa1:SigmaAlgebra T₁} {sa2:SigmaAlgebra T₂} (e:pre_event T₂) (inh : inhabited T₁) :
-  sa_sigma sa2 e  <->
-  sa_sigma (closure_sigma_algebra (pre_event_set_product (sa_sigma sa1) (sa_sigma sa2))) 
-           (fun p => e (snd p)).
-Proof.
-  generalize (closure_pairs_snd sa1 sa2 e); intros.
-  split; intros.
-  - apply psc_refl.
-    unfold pre_event_set_product.
-    exists pre_Ω.
-    exists e.
-    split; [apply sa_all |].
-    split; trivial.
-    intros ?.
-    destruct x.
-    simpl.
-    now unfold pre_Ω.
-  - specialize (H _ H0).
-    revert H.
-    apply sa_proper.
-    intros ?.
-    unfold pre_event_push_forward.
-    split; intros.
-    + destruct inh.
-      exists (X, x).
-      now simpl.
-    + destruct H as [? [? ?]].
-      now rewrite H in H1.
- Qed.
-*)
-
 Definition pullback_sa_sigma {X Y:Type} (sa:SigmaAlgebra Y) (f:X->Y) : pre_event X -> Prop
   := fun (xe:pre_event X) =>
        exists ye:pre_event Y,
@@ -694,7 +585,6 @@ Next Obligation.
   - unfold pre_Ω.
     tauto.
 Qed.
-
   
 Program Instance pair_fst_sa {T1 T2:Type} (sa:SigmaAlgebra (T1 * T2))
         : SigmaAlgebra T1
@@ -1177,7 +1067,7 @@ Proof.
       intros ?.
       destruct x1.
       now rewrite H0.
-  Qed.
+Qed.
 
 Lemma pair_snd_pullback {X Y:Type} (sa2 : SigmaAlgebra Y) (inh : inhabited X) :
   sa_equiv (pair_snd_sa (T1 := X) (pullback_sa sa2 snd))
@@ -1250,14 +1140,6 @@ Proof.
   - apply trivial_sa_sub.
 Qed.
 
-Lemma pair_snd_product {X Y:Type} (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
-  sa_equiv (pair_snd_sa  (product_sa sa1 sa2))
-           sa2.
-Proof.
-  apply sa_equiv_subs.
-  split; intros.
-Admitted.
-
 Lemma union_trivial {X} (sa : SigmaAlgebra X) :
   sa_equiv sa (union_sa (trivial_sa X) sa).
 Proof.
@@ -1268,62 +1150,6 @@ Proof.
     + apply trivial_sa_sub.
     + easy.
   Qed.
-
-Lemma pair_snd_closure_union_pullback {X Y:Type} (inh : inhabited X) (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
-      sa_sub
-      (pair_snd_sa
-         (closure_sigma_algebra
-            (pre_event_union (sa_sigma (pullback_sa sa1 fst))
-                             (sa_sigma (pullback_sa sa2 snd))))) sa2.
-Proof.
-  intros ??.
-  unfold closure_sigma_algebra in H.
-  simpl in H.
-  dependent induction H.
-  - assert (pre_event_equiv x0 pre_Ω).
-    {
-      intros ?.
-      unfold pre_Ω in x.
-      destruct inh.
-      admit.
-   }
-    rewrite H.
-    apply sa_all.
-  - unfold pre_event_union in H.
-    destruct H.
-    + generalize (pair_snd_pullback_fst sa1 inh (Y := Y)); intros.
-      specialize (H0 x).
-      unfold pair_snd_sa in H0; simpl in H0.
-      apply H0 in H.
-      destruct H; rewrite H.
-      * apply sa_none.
-      * apply sa_all.
-    + generalize (pair_snd_pullback sa2 inh); intros.
-      specialize (H0 x).
-      unfold pair_snd_sa in H0; simpl in H0.
-      now apply H0 in H.
-  - admit.
-  - specialize (IHprob_space_closure Y sa2).
-    unfold pre_event_complement in x.
-    Admitted.
-
-Lemma pair_snd_union_pullback {X Y:Type} (inh : inhabited X) (sa1 : SigmaAlgebra X) (sa2 : SigmaAlgebra Y) :
-  sa_equiv (pair_snd_sa (union_sa (pullback_sa sa1 fst) (pullback_sa sa2 snd)))
-           sa2.
-Proof.
-  apply sa_equiv_subs.
-  split; intros.
-  - unfold union_sa.
-    admit.
-  - intros ?.
-    simpl; intros.
-    apply H0.
-    unfold pre_event_union, pullback_sa_sigma.
-    right.
-    exists x.
-    split; trivial.
-    now intros.
-Admitted.
 
 Definition countable_union_sa {T : Type} (sas:nat->SigmaAlgebra T) :=
   generated_sa (pre_union_of_collection (fun n => (sa_sigma (sas n)))).
@@ -1603,6 +1429,23 @@ Section ivector.
     reflexivity.
   Qed.
 
+Program Instance ivector_hd_sa {T:Type} {n:nat} (sa:SigmaAlgebra (ivector T (S n)))
+        : SigmaAlgebra T
+  := {|
+  sa_sigma := fun (ye:pre_event T) =>
+                sa_sigma sa 
+                         (fun (v : (ivector T (S n))) => ye (ivector_hd v))
+    |}.
+Next Obligation.
+  now apply sa_countable_union.
+Qed.
+Next Obligation.
+  now apply sa_complement.
+Qed.
+Next Obligation.
+  apply sa_all.
+Qed.
+
 Program Instance ivector_tl_sa {T:Type} {n:nat} (sa:SigmaAlgebra (ivector T (S n)))
         : SigmaAlgebra (ivector T n)
   := {|
@@ -1620,22 +1463,6 @@ Next Obligation.
   apply sa_all.
 Qed.
 
-Program Instance ivector_hd_sa {T:Type} {n:nat} (sa:SigmaAlgebra (ivector T (S n)))
-        : SigmaAlgebra T
-  := {|
-  sa_sigma := fun (ye:pre_event T) =>
-                sa_sigma sa 
-                         (fun (v : (ivector T (S n))) => ye (ivector_hd v))
-    |}.
-Next Obligation.
-  now apply sa_countable_union.
-Qed.
-Next Obligation.
-  now apply sa_complement.
-Qed.
-Next Obligation.
-  apply sa_all.
-Qed.
 
   Definition pre_event_set_ivector_product {T} {n} (v:ivector ((pre_event T)->Prop) n) : pre_event (ivector T n) -> Prop
     := fun (e:pre_event (ivector T n)) =>
@@ -1673,86 +1500,12 @@ Qed.
   
   Definition ivector_cons {n} {T} (x : T) (v : ivector T n) : ivector T (S n) :=
     (x, v).
-
-  Program Instance sa_elem_cons {U T} (u:U) (s: SigmaAlgebra T) : SigmaAlgebra (U * T)
-    := {|
-      sa_sigma (e:pre_event (U*T)) := sa_sigma s (fun (t:T) => e (u, t))
-    |}.
-  Next Obligation.
-    now apply sa_countable_union.
-  Qed.
-  Next Obligation.
-    now apply sa_complement.
-  Qed.
-  Next Obligation.
-    now apply sa_all. 
-  Qed.
-
+  
   Lemma generated_rectangle_proj {T} {n} (inh : inhabited T) (s : SigmaAlgebra T) (i : ivector (SigmaAlgebra T) n) (e : pre_event (ivector T n)) :
-    sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma (n:=S n) (s, i)))) (fun '(_, x₂) => e x₂) <->
-    sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma i))) e.
+    sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma i))) e ->
+    sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma (n:=S n) (s, i)))) (fun '(_, x₂) => e x₂).
   Proof.
-    split; simpl; intros HH sa saInc.
-    - specialize (HH (pullback_sa sa ivector_tl)).
-      simpl in HH.
-      cut_to HH.
-      + destruct HH as [?[??]].
-        eapply sa_proper; try apply H.
-        intros ?.
-        destruct inh.
-        specialize (H0 (X,x0)).
-        now simpl in H0.
-      + clear HH e.
-        intros ? [?[??]].
-        simpl.
-        red.
-        red in saInc.
-        destruct x.
-        pose (pe:=(fun x : ivector T n =>
-                     forall (i : nat) (pf : i < n), ivector_nth i pf i0 (ivector_nth i pf x))).
-        specialize (saInc pe).
-        exists pe.
-        split.
-        * apply saInc.
-          admit.
-        * intros [??]; simpl.
-          subst pe.
-          rewrite (H0 (t, i1)).
-          split; intros HH; intros.
-          -- specialize (HH (S i2) (Lt.lt_n_S _ _ pf)); simpl in HH.
-             now rewrite lt_S_n_S in HH.
-          -- destruct i2.
-             ++ simpl.
-(*    - destruct inh.
-      
-      specialize (HH (sa_elem_cons X sa)).
-      eapply sa_proper; try eapply HH.
-      + now intros ?.
-      + clear HH.
-        intros ? [?[??]].
-        apply saInc.
-        destruct x.
-        red.
-        exists i0.
-        split.
-        * intros.
-          specialize (H (S i1) (Lt.lt_n_S _ _ pf)).
-          simpl in H.
-          now rewrite lt_S_n_S in H.
-        * split; intros HH.
-          -- rewrite (H0 (X,x)) in HH; intros.
-             specialize (HH (S i1) (Lt.lt_n_S _ _ pf)); simpl in HH.
-             now rewrite lt_S_n_S in HH.
-          -- apply H0.
-             intros [|?]?.
-             ++ simpl.
-                specialize (H 0%nat); simpl in H.
-                admit.
-             ++ simpl.
-                apply HH.
- *)
-                admit.
-      ++ admit.
+    simpl; intros HH sa saInc.
     - specialize (HH (ivector_tl_sa sa)).
       eapply sa_proper; try eapply HH.
       + now intros [??]; simpl.
@@ -1776,7 +1529,7 @@ Qed.
              destruct x0.
              specialize (HH (S i0) (Lt.lt_n_S _ _ pf)); simpl in *.
              now rewrite lt_S_n_S in HH.
-  Admitted.
+  Qed.
 
   Lemma ivector_rectangles_generate_sa {n} {T} 
         (inh: inhabited T)
@@ -1856,7 +1609,7 @@ Qed.
                 now simpl in H4.
         * clear H2 H3 x0 x1 H0 x H.
           simpl in H1.
-          rewrite (generated_rectangle_proj inh s i x2).
+          apply (generated_rectangle_proj inh s i x2).
           apply IHn.
           apply H1.
       + simpl; intros.
