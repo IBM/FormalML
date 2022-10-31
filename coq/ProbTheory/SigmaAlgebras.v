@@ -1203,28 +1203,30 @@ Proof.
   Qed.
 
 Lemma union_pullback_sub_conv {A B : Type} (sa1 sa2 : SigmaAlgebra B) 
-      (f : A -> B) (g : B -> A): 
-  pointwise_relation _ eq (compose f g) id ->
-  pointwise_relation _ eq (compose g f) id ->  
+      (f : A -> B) :
+  (exists (g : B -> A),
+      (pointwise_relation _ eq (compose f g) id) /\
+      (pointwise_relation _ eq (compose g f) id)) ->
   sa_sub (pullback_sa (union_sa sa1 sa2) f)
          (union_sa (pullback_sa sa1 f) (pullback_sa sa2 f)).
 Proof.
+  intros.
+  destruct H as [g [? ?]].
   generalize (union_pullback_sub (pullback_sa sa1 f) (pullback_sa sa2 f) g); intros.
-  rewrite <- pullback_sa_compose_equiv in H.
-  rewrite <- pullback_sa_compose_equiv in H.
-  rewrite H0 in H.
-  rewrite pullback_sa_id in H.
-  rewrite pullback_sa_id in H.  
-  generalize (pullback_sa_sub _ _ f H); intros.
+  do 2 rewrite <- pullback_sa_compose_equiv in H1.
+  rewrite H in H1.
+  do 2 rewrite pullback_sa_id in H1.
+  generalize (pullback_sa_sub _ _ f H1); intros.
   rewrite <- pullback_sa_compose_equiv in H2.
-  rewrite H1 in H2.
+  rewrite H0 in H2.
   now rewrite pullback_sa_id in H2.
 Qed.
 
 Lemma union_pullback_comm {A B : Type} (sa1 sa2 : SigmaAlgebra B)
-      (f : A -> B) (g : B -> A): 
-  pointwise_relation _ eq (compose f g) id ->
-  pointwise_relation _ eq (compose g f) id ->  
+      (f : A -> B) :
+  (exists (g : B -> A),
+      (pointwise_relation _ eq (compose f g) id) /\
+      (pointwise_relation _ eq (compose g f) id)) ->
   sa_equiv (union_sa (pullback_sa sa1 f) (pullback_sa sa2 f))
            (pullback_sa (union_sa sa1 sa2) f).
 Proof.
@@ -1232,18 +1234,16 @@ Proof.
   apply sa_equiv_subs.
   split; intros.
   - apply union_pullback_sub.
-  - now apply union_pullback_sub_conv with (g0 := g).
+  - now apply union_pullback_sub_conv.
 Qed.
 
 Lemma product_flip {A B:Type} (sa1 : SigmaAlgebra A) (sa2 : SigmaAlgebra B) :
   sa_equiv (product_sa sa1 sa2)
            (pullback_sa (product_sa sa2 sa1) (fun '(a,b) => (b,a))).
 Proof.
-  rewrite product_union_pullback.
-  rewrite product_union_pullback.
-  rewrite <- union_pullback_comm with (g := (fun '(b,a) => (a,b))).
-  - rewrite <- pullback_sa_compose_equiv.
-    rewrite <- pullback_sa_compose_equiv.    
+  do 2 rewrite product_union_pullback.
+  rewrite <- union_pullback_comm.
+  - do 2 rewrite <- pullback_sa_compose_equiv.
     assert (pointwise_relation _ eq (@compose (prod A B) (prod B A) B fst (fun '(a, b) => (b, a))) snd).
     {
       now intros [??].
@@ -1254,8 +1254,10 @@ Proof.
     }
     rewrite H, H0.
     now rewrite union_sa_comm.
-  - now intros [??].
-  - now intros [??].
+  - exists (fun '(b,a) => (a,b)).
+    split.
+    + now intros [??].
+    + now intros [??].
   Qed.
 
 Lemma union_trivial {X} (sa : SigmaAlgebra X) :
