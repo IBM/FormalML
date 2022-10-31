@@ -1191,24 +1191,7 @@ Proof.
      now unfold id.
   Qed.
 
-Lemma union_pullback_sub_conv {T : Type} (sa1 sa2 : SigmaAlgebra T) (f : T -> T) : 
-  compose f f = id ->
-  sa_sub (pullback_sa (union_sa sa1 sa2) f)
-         (union_sa (pullback_sa sa1 f) (pullback_sa sa2 f)).
-Proof.
-  generalize (union_pullback_sub (pullback_sa sa1 f) (pullback_sa sa2 f) f); intros.
-  rewrite <- pullback_sa_compose_equiv in H.
-  rewrite <- pullback_sa_compose_equiv in H.
-  rewrite H0 in H.
-  rewrite pullback_sa_id in H.
-  rewrite pullback_sa_id in H.  
-  generalize (pullback_sa_sub _ _ f H); intros.
-  rewrite <- pullback_sa_compose_equiv in H1.
-  rewrite H0 in H1.
-  now rewrite pullback_sa_id in H1.
-Qed.
-
-Lemma union_pullback_sub_conv_alt {A B : Type} (sa1 sa2 : SigmaAlgebra B) 
+Lemma union_pullback_sub_conv {A B : Type} (sa1 sa2 : SigmaAlgebra B) 
       (f : A -> B) (g : B -> A): 
   compose f g = id ->
   compose g f = id ->  
@@ -1227,19 +1210,7 @@ Proof.
   now rewrite pullback_sa_id in H2.
 Qed.
 
-Lemma union_pullback_comm {T : Type} (sa1 sa2 : SigmaAlgebra T) (f : T -> T) : 
-  compose f f = id ->
-  sa_equiv (union_sa (pullback_sa sa1 f) (pullback_sa sa2 f))
-           (pullback_sa (union_sa sa1 sa2) f).
-Proof.
-  intros.
-  apply sa_equiv_subs.
-  split; intros.
-  - apply union_pullback_sub.
-  - now apply union_pullback_sub_conv.
-Qed.
-         
-Lemma union_pullback_comm_alt {A B : Type} (sa1 sa2 : SigmaAlgebra B)
+Lemma union_pullback_comm {A B : Type} (sa1 sa2 : SigmaAlgebra B)
       (f : A -> B) (g : B -> A): 
   compose f g = id ->
   compose g f = id ->  
@@ -1250,47 +1221,16 @@ Proof.
   apply sa_equiv_subs.
   split; intros.
   - apply union_pullback_sub.
-  - now apply union_pullback_sub_conv_alt with (g0 := g).
+  - now apply union_pullback_sub_conv with (g0 := g).
 Qed.
 
-Lemma product_flip  {T:Type} (sa1 sa2 : SigmaAlgebra T) :
+Lemma product_flip {A B:Type} (sa1 : SigmaAlgebra A) (sa2 : SigmaAlgebra B) :
   sa_equiv (product_sa sa1 sa2)
            (pullback_sa (product_sa sa2 sa1) (fun '(a,b) => (b,a))).
 Proof.
   rewrite product_union_pullback.
   rewrite product_union_pullback.
-  rewrite <- union_pullback_comm.
-  - rewrite <- pullback_sa_compose_equiv.
-    rewrite <- pullback_sa_compose_equiv.    
-    assert (@compose (prod T T) (prod T T) T fst (fun '(a, b) => (b, a)) = snd).
-    {
-      apply functional_extensionality.
-      intros.
-      destruct x.
-      now unfold fst, snd, compose.
-    }
-    assert (@compose (prod T T) (prod T T) T snd (fun '(a, b) => (b, a)) = fst).
-    {
-      apply functional_extensionality.
-      intros.
-      destruct x.
-      now unfold fst, snd, compose.
-    }
-    rewrite H, H0.
-    now rewrite union_sa_comm.
-  - apply functional_extensionality.
-    intros.
-    destruct x.
-    now unfold id, compose.
-  Qed.
-
-Lemma product_flip_alt {A B:Type} (sa1 : SigmaAlgebra A) (sa2 : SigmaAlgebra B) :
-  sa_equiv (product_sa sa1 sa2)
-           (pullback_sa (product_sa sa2 sa1) (fun '(a,b) => (b,a))).
-Proof.
-  rewrite product_union_pullback.
-  rewrite product_union_pullback.
-  rewrite <- union_pullback_comm_alt with (g := (fun '(b,a) => (a,b))).
+  rewrite <- union_pullback_comm with (g := (fun '(b,a) => (a,b))).
   - rewrite <- pullback_sa_compose_equiv.
     rewrite <- pullback_sa_compose_equiv.    
     assert (@compose (prod A B) (prod B A) B fst (fun '(a, b) => (b, a)) = snd).
