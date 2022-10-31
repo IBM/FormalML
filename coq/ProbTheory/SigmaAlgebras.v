@@ -1170,6 +1170,17 @@ Proof.
    now apply H.
  Qed.
 
+ Instance pullback_sa_sub_proper {A B : Type} : Proper (sa_sub ==> pointwise_relation _ eq ==> sa_sub) (@pullback_sa A B).
+ Proof.
+   intros ???????[?[??]].
+   unfold pullback_sa, pullback_sa_sigma in *; simpl in *.
+   exists x2.
+   split.
+   - now apply H.
+   - intros a.
+     now rewrite <- H0.
+ Qed.
+
  Lemma pullback_sa_id {T : Type} (sa : SigmaAlgebra T) :
    sa_equiv (pullback_sa sa id) sa.
  Proof.
@@ -1193,8 +1204,8 @@ Proof.
 
 Lemma union_pullback_sub_conv {A B : Type} (sa1 sa2 : SigmaAlgebra B) 
       (f : A -> B) (g : B -> A): 
-  compose f g = id ->
-  compose g f = id ->  
+  pointwise_relation _ eq (compose f g) id ->
+  pointwise_relation _ eq (compose g f) id ->  
   sa_sub (pullback_sa (union_sa sa1 sa2) f)
          (union_sa (pullback_sa sa1 f) (pullback_sa sa2 f)).
 Proof.
@@ -1212,8 +1223,8 @@ Qed.
 
 Lemma union_pullback_comm {A B : Type} (sa1 sa2 : SigmaAlgebra B)
       (f : A -> B) (g : B -> A): 
-  compose f g = id ->
-  compose g f = id ->  
+  pointwise_relation _ eq (compose f g) id ->
+  pointwise_relation _ eq (compose g f) id ->  
   sa_equiv (union_sa (pullback_sa sa1 f) (pullback_sa sa2 f))
            (pullback_sa (union_sa sa1 sa2) f).
 Proof.
@@ -1233,30 +1244,18 @@ Proof.
   rewrite <- union_pullback_comm with (g := (fun '(b,a) => (a,b))).
   - rewrite <- pullback_sa_compose_equiv.
     rewrite <- pullback_sa_compose_equiv.    
-    assert (@compose (prod A B) (prod B A) B fst (fun '(a, b) => (b, a)) = snd).
+    assert (pointwise_relation _ eq (@compose (prod A B) (prod B A) B fst (fun '(a, b) => (b, a))) snd).
     {
-      apply functional_extensionality.
-      intros.
-      destruct x.
-      now unfold fst, snd, compose.
+      now intros [??].
     }
-    assert (@compose (prod A B) (prod B A) A snd (fun '(a, b) => (b, a)) = fst).
+    assert (pointwise_relation _ eq (@compose (prod A B) (prod B A) A snd (fun '(a, b) => (b, a))) fst).
     {
-      apply functional_extensionality.
-      intros.
-      destruct x.
-      now unfold fst, snd, compose.
+      now intros [??].
     }
     rewrite H, H0.
     now rewrite union_sa_comm.
-  - apply functional_extensionality.
-    intros.
-    destruct x.
-    now unfold id, compose.
-  - apply functional_extensionality.
-    intros.
-    destruct x.
-    now unfold id, compose.
+  - now intros [??].
+  - now intros [??].
   Qed.
 
 Lemma union_trivial {X} (sa : SigmaAlgebra X) :
