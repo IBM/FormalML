@@ -1781,6 +1781,11 @@ Lemma ivector_nth_create
       (f:(forall m, m < len -> T)%nat) :
   ivector_nth i pf2 (ivector_create len f) = f i pf2.
 Proof.
+  revert i pf2.
+  induction len; simpl; intros; try lia.
+  match_destr.
+  - now rewrite (digit_pf_irrel _ _ _ pf2).
+  - 
   Admitted.
 
   Lemma ivector_rectangles_union_nth {n} {T} 
@@ -1831,32 +1836,24 @@ Proof.
          * intros.
            rewrite ivector_nth_create, ivector_nth_map.
            match_destr.
-           -- assert  (ivector_nth i pf sav =
-                       ivector_nth n0 l sav).
-              {
-                admit.
-              }
-              now rewrite H1.
+           -- destruct e.
+              now rewrite (digit_pf_irrel _ _ pf l).           
            -- apply sa_all.
         * intros ?.
           split; intros.
           -- rewrite ivector_nth_create.
              rewrite H0 in H1.
              match_destr.
-             ++ assert  (ivector_nth i pf x1 =
-                       ivector_nth n0 l x1).
-              {
-                admit.
-              }
-              now rewrite H2.
+             ++ destruct e.
+                now rewrite (digit_pf_irrel _ _ pf l).                           
              ++ now unfold pre_Ω.
           -- rewrite (H0 x1).
              specialize (H1 n0 l).
              rewrite ivector_nth_create in H1.
              match_destr_in H1.
-             admit.       
+             now destruct c.
        + now apply trivial_sa_sub.
-   Admitted.     
+   Qed.
 
 End ivector.
 
