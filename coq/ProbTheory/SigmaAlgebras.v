@@ -1772,6 +1772,91 @@ Qed.
              ++ now simpl.
              ++ apply H5.
    Qed.
+  
+Lemma ivector_nth_create
+      {T : Type}
+      (len : nat)
+      (i : nat)
+      (pf2: i < len)
+      (f:(forall m, m < len -> T)%nat) :
+  ivector_nth i pf2 (ivector_create len f) = f i pf2.
+Proof.
+  Admitted.
+
+  Lemma ivector_rectangles_union_nth {n} {T} 
+        (sav:ivector (SigmaAlgebra T) n) : 
+    sa_equiv 
+      (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma sav)))
+      (countable_union_sa
+         (fun (i : nat) =>
+            match Compare_dec.lt_dec i n with
+            | left pf => 
+              pullback_sa (ivector_nth i pf sav)
+                          (fun (v : ivector T n) => ivector_nth i pf v)
+            | right _ => (trivial_sa (ivector T n))
+            end )).
+   Proof.
+     apply sa_equiv_subs.
+     split.
+     - apply generated_sa_sub_sub.
+       intros ??.
+       destruct H as [? [? ?]].
+       rewrite H0.
+       apply sa_pre_bounded_inter.
+       intros.
+       simpl.
+       intros.
+       apply H1.
+       exists n0.
+       match_destr; try lia.
+       simpl.
+       unfold pullback_sa_sigma.
+       exists (ivector_nth _ pf x0).
+       specialize (H n0 pf).
+       rewrite ivector_nth_map in H.
+       split.
+       + now rewrite (digit_pf_irrel _ _ l pf).
+       + intros.
+         now rewrite (digit_pf_irrel _ _ l pf).
+     - apply countable_union_sa_sub_all.
+       intros.
+       intros ??.
+       match_destr_in H.
+       + simpl in H.
+         destruct H as [? [??]].
+         apply generated_sa_sub.
+         red.
+         exists (ivector_create n (fun i pf => if i == n0 then x0 else pre_Ω)).
+         split.
+         * intros.
+           rewrite ivector_nth_create, ivector_nth_map.
+           match_destr.
+           -- assert  (ivector_nth i pf sav =
+                       ivector_nth n0 l sav).
+              {
+                admit.
+              }
+              now rewrite H1.
+           -- apply sa_all.
+        * intros ?.
+          split; intros.
+          -- rewrite ivector_nth_create.
+             rewrite H0 in H1.
+             match_destr.
+             ++ assert  (ivector_nth i pf x1 =
+                       ivector_nth n0 l x1).
+              {
+                admit.
+              }
+              now rewrite H2.
+             ++ now unfold pre_Ω.
+          -- rewrite (H0 x1).
+             specialize (H1 n0 l).
+             rewrite ivector_nth_create in H1.
+             match_destr_in H1.
+             admit.       
+       + now apply trivial_sa_sub.
+   Admitted.     
 
 End ivector.
 
