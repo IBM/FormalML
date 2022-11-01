@@ -1170,7 +1170,7 @@ Proof.
    now apply H.
  Qed.
 
- Instance pullback_sa_sub_proper {A B : Type} : Proper (sa_sub ==> pointwise_relation _ eq ==> sa_sub) (@pullback_sa A B).
+ Local Instance pullback_sa_sub_proper {A B : Type} : Proper (sa_sub ==> pointwise_relation _ eq ==> sa_sub) (@pullback_sa A B).
  Proof.
    intros ???????[?[??]].
    unfold pullback_sa, pullback_sa_sigma in *; simpl in *.
