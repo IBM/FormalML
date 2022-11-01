@@ -1773,20 +1773,21 @@ Qed.
              ++ apply H5.
    Qed.
   
-Lemma ivector_nth_create
-      {T : Type}
-      (len : nat)
-      (i : nat)
-      (pf2: i < len)
-      (f:(forall m, m < len -> T)%nat) :
-  ivector_nth i pf2 (ivector_create len f) = f i pf2.
-Proof.
-  revert i pf2.
-  induction len; simpl; intros; try lia.
-  match_destr.
-  - now rewrite (digit_pf_irrel _ _ _ pf2).
-  - 
-  Admitted.
+  Lemma ivector_nth_create
+    {T : Type}
+    (len : nat)
+    (i : nat)
+    (pf2: i < len)
+    (f:(forall m, m < len -> T)%nat) :
+    ivector_nth i pf2 (ivector_create len f) = f i pf2.
+  Proof.
+    revert i pf2.
+    induction len; simpl; intros; try lia.
+    match_destr.
+    - now rewrite (digit_pf_irrel _ _ _ pf2).
+    - rewrite IHlen.
+      f_equal; apply digit_pf_irrel.
+  Qed.
 
   Lemma ivector_rectangles_union_nth {n} {T} 
         (sav:ivector (SigmaAlgebra T) n) : 
