@@ -1210,8 +1210,7 @@ Lemma union_pullback_sub_conv {A B : Type} (sa1 sa2 : SigmaAlgebra B)
   sa_sub (pullback_sa (union_sa sa1 sa2) f)
          (union_sa (pullback_sa sa1 f) (pullback_sa sa2 f)).
 Proof.
-  intros.
-  destruct H as [g [? ?]].
+  intros [g [? ?]].
   generalize (union_pullback_sub (pullback_sa sa1 f) (pullback_sa sa2 f) g); intros.
   do 2 rewrite <- pullback_sa_compose_equiv in H1.
   rewrite H in H1.
@@ -1831,7 +1830,6 @@ Qed.
        + simpl in H.
          destruct H as [? [??]].
          apply generated_sa_sub.
-         red.
          exists (ivector_create n (fun i pf => if i == n0 then x0 else pre_Ω)).
          split.
          * intros.
@@ -1873,7 +1871,79 @@ Qed.
     apply ivector_rectangles_union_nth.
   Qed.
 
-  
+  Lemma countable_union_pullback_sub {A B} 
+        (sas: nat -> SigmaAlgebra B) (f : A -> B) :
+    sa_sub 
+        (countable_union_sa (fun (i : nat) => pullback_sa (sas i) f))
+        (pullback_sa (countable_union_sa sas) f).
+   Proof.
+     apply countable_union_sa_sub_all.
+     intros ???.
+     destruct H as [? [? ?]].
+     exists x0.
+     split; trivial.
+     now apply (countable_union_sa_sub sas n).
+   Qed.
+
+   Lemma countable_union_pullback_sub_conv {A B : Type} 
+         (sas : nat -> SigmaAlgebra B) 
+         (f : A -> B) :
+  (exists (g : B -> A),
+      (pointwise_relation _ eq (compose f g) id) /\
+      (pointwise_relation _ eq (compose g f) id)) ->
+  sa_sub (pullback_sa (countable_union_sa sas) f)
+         (countable_union_sa (fun (i : nat) => pullback_sa (sas i) f)).
+   Proof.
+     intros [g [? ?]].
+     generalize (countable_union_pullback_sub
+                   (fun n => pullback_sa (sas n) f) g); intros.
+     assert (sa_equiv
+               (countable_union_sa (fun i : nat => pullback_sa (pullback_sa (sas i) f) g))
+               (countable_union_sa sas)).
+     {
+       intros ?.
+       apply countable_union_sa_proper.
+       intros ?.
+       rewrite <- pullback_sa_compose_equiv.
+       rewrite H.
+       now rewrite pullback_sa_id.
+     }
+     rewrite H2 in H1.
+     generalize (pullback_sa_sub _ _ f H1); intros.
+     rewrite <- pullback_sa_compose_equiv in H3.
+     rewrite H0 in H3.
+     now rewrite pullback_sa_id in H3.
+   Qed.
+
+   Lemma countable_union_pullback_comm {A B : Type}
+         (sas : nat -> SigmaAlgebra B) 
+         (f : A -> B) :
+  (exists (g : B -> A),
+      (pointwise_relation _ eq (compose f g) id) /\
+      (pointwise_relation _ eq (compose g f) id)) ->
+    sa_equiv
+        (countable_union_sa (fun (i : nat) => pullback_sa (sas i) f))
+        (pullback_sa (countable_union_sa sas) f).
+Proof.
+  intros.
+  apply sa_equiv_subs.
+  split; intros.
+  - apply countable_union_pullback_sub.
+  - now apply countable_union_pullback_sub_conv.
+Qed.
+
+(*
+Lemma ivector_sa_transform {n} {A B : Type}
+      (sav:ivector (SigmaAlgebra B) n) 
+      (f : {n} {T} (ivector T n) -> (ivector T n)) 
+      (g : {n} {T} (ivector T n) -> (ivector T n)) :
+  ((pointwise_relation _ eq (compose f g) id) /\
+   (pointwise_relation _ eq (compose g f) id)) ->
+  sa_equiv
+    (ivector_sa sav)
+    (pullback_sa (ivector_sa (ivector_map g sav)) f).
+*)         
+
 End ivector.
 
 Section infalg.
