@@ -1855,6 +1855,24 @@ Proof.
        + now apply trivial_sa_sub.
    Qed.
 
+   Lemma ivector_sa_countable_union_nth  {n} {T} 
+         (sav:ivector (SigmaAlgebra T) n) :
+      sa_equiv 
+        (ivector_sa sav)
+        (countable_union_sa
+           (fun (i : nat) =>
+              match Compare_dec.lt_dec i n with
+              | left pf => 
+                pullback_sa (ivector_nth i pf sav)
+                            (fun (v : ivector T n) => ivector_nth i pf v)
+              | right _ => (trivial_sa (ivector T n))
+              end )).
+  Proof.
+    rewrite ivector_rectangles_generate_sa.
+    apply ivector_rectangles_union_nth.
+  Qed.
+
+  
 End ivector.
 
 Section infalg.
