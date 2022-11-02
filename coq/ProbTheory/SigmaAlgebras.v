@@ -1242,17 +1242,11 @@ Lemma product_flip {A B:Type} (sa1 : SigmaAlgebra A) (sa2 : SigmaAlgebra B) :
 Proof.
   do 2 rewrite product_union_pullback.
   rewrite <- union_pullback_comm.
-  - do 2 rewrite <- pullback_sa_compose_equiv.
-    assert (pointwise_relation _ eq (@compose (prod A B) (prod B A) B fst (fun '(a, b) => (b, a))) snd).
-    {
+  - rewrite union_sa_comm.
+    apply union_sa_proper;
+      rewrite <- pullback_sa_compose_equiv;
+      apply pullback_sa_proper; try easy;
       now intros [??].
-    }
-    assert (pointwise_relation _ eq (@compose (prod A B) (prod B A) A snd (fun '(a, b) => (b, a))) fst).
-    {
-      now intros [??].
-    }
-    rewrite H, H0.
-    now rewrite union_sa_comm.
   - exists (fun '(b,a) => (a,b)).
     split.
     + now intros [??].
@@ -1932,17 +1926,73 @@ Proof.
   - now apply countable_union_pullback_sub_conv.
 Qed.
 
-(*
-Lemma ivector_sa_transform {n} {A B : Type}
-      (sav:ivector (SigmaAlgebra B) n) 
-      (f : {n} {T} (ivector T n) -> (ivector T n)) 
-      (g : {n} {T} (ivector T n) -> (ivector T n)) :
-  ((pointwise_relation _ eq (compose f g) id) /\
-   (pointwise_relation _ eq (compose g f) id)) ->
+Lemma countable_union_permute_ind {T : Type}
+      (sas : nat -> SigmaAlgebra T)
+      (f : nat -> nat) :
+  (exists (g : nat -> nat),
+      (pointwise_relation _ eq (compose f g) id) /\
+      (pointwise_relation _ eq (compose g f) id)) ->
   sa_equiv
-    (ivector_sa sav)
-    (pullback_sa (ivector_sa (ivector_map g sav)) f).
-*)         
+    (countable_union_sa sas)
+    (countable_union_sa (fun n => sas (f n))).
+Proof.
+  intros ??.
+  simpl.
+  destruct H as [g [? ?]].
+  split; intros.
+  - apply H1.
+    intros ??.
+    apply H2.
+    destruct H3.
+    exists (g x0).
+    specialize (H x0).
+    unfold compose, id in H.
+    now rewrite H.
+  - apply H1.
+    intros ??.
+    apply H2.
+    destruct H3.
+    now exists (f x0).
+ Qed.
+
+Lemma pullback_ivector_sa_rev {T} {n : nat} (sav: ivector (SigmaAlgebra T) n) :
+  sa_equiv (ivector_sa sav)
+           (pullback_sa (ivector_sa (ivector_rev sav)) ivector_rev).
+Proof.
+    do 2 rewrite ivector_sa_countable_union_nth.
+    rewrite <- countable_union_pullback_comm.
+    - apply countable_union_sa_proper.
+      intros ??.
+      split; intros.
+      + match_destr.
+        * rewrite <- (nested_pullback_sa_equiv (ivector_nth a l (ivector_rev sav)) (@ivector_rev n T)  (fun v : ivector T n => ivector_nth a l v) x).
+          admit.
+        * simpl.
+          unfold pullback_sa_sigma.
+          destruct H.
+          -- exists pre_event_none; split.
+             ++ apply sa_none.
+             ++ intros.
+                now rewrite (H a0).
+          -- exists pre_Ω; split.
+             ++ apply sa_all.
+             ++ intros.
+                now rewrite (H a0).
+       + match_destr.
+         * rewrite <- (nested_pullback_sa_equiv (ivector_nth a l (ivector_rev sav)) (@ivector_rev n T)  (fun v : ivector T n => ivector_nth a l v) x) in H.
+           admit.
+         * destruct H as [? [[?|?] ?]].
+           -- left.
+              intros ?.
+              now rewrite H0, (H (ivector_rev x1)).
+           -- right.
+              intros ?.
+              now rewrite H0, (H (ivector_rev x1)).
+    - exists ivector_rev.
+      unfold compose, id.
+      split; intros ?;
+        now rewrite ivector_rev_involutive.
+    Admitted.
 
 End ivector.
 
