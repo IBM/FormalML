@@ -1968,7 +1968,7 @@ Lemma ivector_nth_rev {T} {n} (v : ivector T n) :
 Proof.
   induction n; intros.
   - now simpl.
-  - 
+  - simpl.
 Admitted.
 
 
@@ -2052,6 +2052,15 @@ Proof.
       split; intros ?;
         now rewrite ivector_rev_involutive.
   Qed.
+
+   Lemma pullback_ivector_sa_rev_alt {T} {n : nat} (sav: ivector (SigmaAlgebra T) n):
+     sa_equiv (pullback_sa (ivector_sa sav) ivector_rev)
+              (ivector_sa (ivector_rev sav)).
+   Proof.
+     generalize (pullback_ivector_sa_rev (ivector_rev sav)); intros.
+     symmetry in H.
+     now rewrite ivector_rev_involutive in H.
+   Qed.
 
 End ivector.
 

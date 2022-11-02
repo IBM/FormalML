@@ -2373,12 +2373,6 @@ Section ps_sequence_product.
        now rewrite ivector_rev_involutive.
    Qed.
 
-   Lemma pullback_ivector_sa_rev {T} {n : nat} (sav: ivector (SigmaAlgebra T) n):
-     sa_equiv (pullback_sa (ivector_sa sav) ivector_rev)
-              (ivector_sa (ivector_rev sav)).
-   Proof.
-     Admitted.
-
    Lemma ivector_add_to_end_const {n} {T} (x : T):
      ivector_add_to_end x (ivector_const n x) = (x, ivector_const n x).
    Proof.
@@ -2412,7 +2406,7 @@ Section ps_sequence_product.
        split; trivial.
        now intros.
      }
-     generalize (pullback_ivector_sa_rev (ivector_const n σ)); intros.
+     generalize (pullback_ivector_sa_rev_alt (ivector_const n σ)); intros.
      specialize (H0 (fun v : ivector T n => e (ivector_rev v))).
      rewrite H0 in H.
      now rewrite ivector_rev_const in H.
