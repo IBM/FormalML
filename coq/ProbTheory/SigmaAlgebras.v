@@ -1953,7 +1953,23 @@ Proof.
     apply H2.
     destruct H3.
     now exists (f x0).
- Qed.
+Qed.
+
+Lemma ivector_rev_ind {i} {n} :
+  i < n -> (n - S i) < n.
+Proof.
+  lia.
+Qed.
+
+Lemma ivector_nth_rev {T} {n} (v : ivector T n) :
+  forall i pf,
+    ivector_nth i pf (ivector_rev v) = 
+    ivector_nth _ (ivector_rev_ind pf) v.
+Proof.
+  induction n; intros.
+  - now simpl.
+  - 
+Admitted.
 
 Lemma pullback_ivector_sa_rev {T} {n : nat} (sav: ivector (SigmaAlgebra T) n) :
   sa_equiv (ivector_sa sav)
@@ -1966,6 +1982,7 @@ Proof.
       split; intros.
       + match_destr.
         * rewrite <- (nested_pullback_sa_equiv (ivector_nth a l (ivector_rev sav)) (@ivector_rev n T)  (fun v : ivector T n => ivector_nth a l v) x).
+          rewrite ivector_nth_rev.
           admit.
         * simpl.
           unfold pullback_sa_sigma.
@@ -1980,6 +1997,7 @@ Proof.
                 now rewrite (H a0).
        + match_destr.
          * rewrite <- (nested_pullback_sa_equiv (ivector_nth a l (ivector_rev sav)) (@ivector_rev n T)  (fun v : ivector T n => ivector_nth a l v) x) in H.
+           rewrite ivector_nth_rev in H.
            admit.
          * destruct H as [? [[?|?] ?]].
            -- left.
