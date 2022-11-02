@@ -1971,46 +1971,87 @@ Proof.
   - 
 Admitted.
 
+
 Lemma pullback_ivector_sa_rev {T} {n : nat} (sav: ivector (SigmaAlgebra T) n) :
   sa_equiv (ivector_sa sav)
            (pullback_sa (ivector_sa (ivector_rev sav)) ivector_rev).
 Proof.
     do 2 rewrite ivector_sa_countable_union_nth.
     rewrite <- countable_union_pullback_comm.
-    - apply countable_union_sa_proper.
-      intros ??.
-      split; intros.
-      + match_destr.
-        * rewrite <- (nested_pullback_sa_equiv (ivector_nth a l (ivector_rev sav)) (@ivector_rev n T)  (fun v : ivector T n => ivector_nth a l v) x).
-          rewrite ivector_nth_rev.
-          admit.
-        * simpl.
-          unfold pullback_sa_sigma.
-          destruct H.
-          -- exists pre_event_none; split.
-             ++ apply sa_none.
+    - pose (f := fun (i : nat) =>
+                   match Compare_dec.lt_dec i n with
+                   | left _ => n - S i
+                   | in_right => i
+                   end).
+      rewrite (countable_union_permute_ind
+                     (fun i : nat =>
+                        match Compare_dec.lt_dec i n with
+                        | left pf => pullback_sa (ivector_nth i pf sav) (fun v : ivector T n => ivector_nth i pf v)
+                        | in_right => trivial_sa (ivector T n)
+                        end)
+                     f).
+      + apply countable_union_sa_proper.
+        intros ??.
+        split; intros.
+        unfold f in H.
+        * match_destr.
+          -- rewrite <- (nested_pullback_sa_equiv (ivector_nth a l (ivector_rev sav)) (@ivector_rev n T)  (fun v : ivector T n => ivector_nth a l v) x).
+             match_destr_in H; try lia.
+             rewrite ivector_nth_rev.
+             destruct H as [? [? ?]].
+             simpl; red.
+             exists x0.
+             split.
+             ++ now rewrite (digit_pf_irrel _ _  (ivector_rev_ind l) l0).       
              ++ intros.
-                now rewrite (H a0).
-          -- exists pre_Ω; split.
-             ++ apply sa_all.
+                rewrite (H0 a0).
+                rewrite ivector_nth_rev.
+                now rewrite (digit_pf_irrel _ _  (ivector_rev_ind l) l0).
+          -- match_destr_in H; try lia.
+             destruct H.
+             ++ simpl; red.
+                exists pre_event_none; split.
+                ** apply sa_none.
+                ** intros.
+                   now rewrite (H a0).
+             ++ simpl; red.
+                exists pre_Ω; split.
+                ** apply sa_all.
+                ** intros.
+                   now rewrite (H a0).
+        * unfold f.
+          match_destr_in H.
+          -- match_destr; try lia.
+             rewrite <- (nested_pullback_sa_equiv (ivector_nth a l (ivector_rev sav)) (@ivector_rev n T)  (fun v : ivector T n => ivector_nth a l v) x) in H.
+             rewrite ivector_nth_rev in H.
+             destruct H as [? [? ?]].
+             simpl; red.
+             exists x0.
+             split.
+             ++ now rewrite (digit_pf_irrel _ _  (ivector_rev_ind l) l0) in H.
              ++ intros.
-                now rewrite (H a0).
-       + match_destr.
-         * rewrite <- (nested_pullback_sa_equiv (ivector_nth a l (ivector_rev sav)) (@ivector_rev n T)  (fun v : ivector T n => ivector_nth a l v) x) in H.
-           rewrite ivector_nth_rev in H.
-           admit.
-         * destruct H as [? [[?|?] ?]].
-           -- left.
-              intros ?.
-              now rewrite H0, (H (ivector_rev x1)).
-           -- right.
-              intros ?.
-              now rewrite H0, (H (ivector_rev x1)).
+                rewrite (H0 a0).
+                rewrite ivector_nth_rev.
+                now rewrite (digit_pf_irrel _ _  (ivector_rev_ind l) l0).
+          -- destruct H as [? [? ?]].
+             match_destr; try lia.
+             destruct H.
+             ++ left.
+                intros ?.
+                now rewrite H0, (H (ivector_rev x1)).
+             ++ right.
+                intros ?.
+                now rewrite H0, (H (ivector_rev x1)).
+      + exists f.
+        split;
+          intros ?;
+          unfold f, compose, id;
+          match_destr; match_destr; try lia.
     - exists ivector_rev.
       unfold compose, id.
       split; intros ?;
         now rewrite ivector_rev_involutive.
-    Admitted.
+  Qed.
 
 End ivector.
 
