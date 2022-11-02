@@ -1262,6 +1262,8 @@ Section ivector.
   Definition ivector_tl {A} {n} (vec : ivector A (S n)) : ivector A n :=
     (fun '(hd, tl) => tl) vec.
   
+  Definition ivector_cons {n} {T} (x : T) (v : ivector T n) : ivector T (S n) :=
+    (x, v).
 
   Lemma ivector_hd_take {T} {n idx} pf (ivec : ivector T (S n)) :
     ivector_hd (ivector_take (S n) (S idx) pf ivec) = ivector_hd ivec.
@@ -1514,6 +1516,67 @@ Qed.
   Proof.
     induction n; simpl; trivial.
     now rewrite IHn, ivector_const_add_to_end.
+  Qed.
+  Lemma ivector_rev_ind {i} {n} :
+  i < n -> (n - S i) < n.
+Proof.
+  lia.
+Qed.
+
+Lemma ivector_nth_add_to_end1  {T} {n} i pf t (v : ivector T n) (pf2:i < n):
+  ivector_nth i pf (ivector_add_to_end t v) = ivector_nth i pf2 v.
+Proof.
+  revert i pf pf2.
+  induction n; simpl; intros; [lia |].
+  destruct i; destruct v; trivial.
+  apply IHn.
+Qed.
+
+Lemma ivector_nth_add_to_end2  {T} {n} pf t (v : ivector T n):
+  ivector_nth n pf (ivector_add_to_end t v) = t.
+Proof.
+  induction n; simpl; trivial.
+  destruct v.
+  apply IHn.
+Qed.
+
+Lemma ivector_nth_rev {T} {n} (v : ivector T n) :
+  forall i pf,
+    ivector_nth i pf (ivector_rev v) = 
+    ivector_nth (n - S i) (ivector_rev_ind pf) v.
+Proof.
+  induction n; intros.
+  - now simpl.
+  - destruct v; simpl ivector_rev.
+    destruct (i == n); unfold equiv, complement in *.
+    + subst.
+      rewrite ivector_nth_add_to_end2.
+      assert (eqq:(S n - S n = 0)%nat) by lia.
+      generalize (ivector_rev_ind pf).
+      now rewrite eqq.
+    + assert (pf2:(i < n)%nat) by lia.
+      rewrite (ivector_nth_add_to_end1 _ _ _ _ pf2).
+      rewrite IHn.
+      assert (eqq:S n - S i = S (n - S i)) by lia.
+      generalize (ivector_rev_ind pf).
+      rewrite eqq; simpl; intros.
+      now apply ivector_nth_ext.
+Qed.    
+
+  Lemma ivector_nth_create
+    {T : Type}
+    (len : nat)
+    (i : nat)
+    (pf2: i < len)
+    (f:(forall m, m < len -> T)%nat) :
+    ivector_nth i pf2 (ivector_create len f) = f i pf2.
+  Proof.
+    revert i pf2.
+    induction len; simpl; intros; try lia.
+    match_destr.
+    - now rewrite (digit_pf_irrel _ _ _ pf2).
+    - rewrite IHlen.
+      f_equal; apply digit_pf_irrel.
   Qed.
   
 End ivector.
