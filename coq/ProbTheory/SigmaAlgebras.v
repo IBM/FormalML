@@ -1961,16 +1961,45 @@ Proof.
   lia.
 Qed.
 
+Lemma ivector_nth_add_to_end1  {T} {n} i pf t (v : ivector T n) (pf2:i < n):
+  ivector_nth i pf (ivector_add_to_end t v) = ivector_nth i pf2 v.
+Proof.
+  revert i pf pf2.
+  induction n; simpl; intros; [lia |].
+  destruct i; destruct v; trivial.
+  apply IHn.
+Qed.
+
+Lemma ivector_nth_add_to_end2  {T} {n} pf t (v : ivector T n):
+  ivector_nth n pf (ivector_add_to_end t v) = t.
+Proof.
+  induction n; simpl; trivial.
+  destruct v.
+  apply IHn.
+Qed.
+
 Lemma ivector_nth_rev {T} {n} (v : ivector T n) :
   forall i pf,
     ivector_nth i pf (ivector_rev v) = 
-    ivector_nth _ (ivector_rev_ind pf) v.
+    ivector_nth (n - S i) (ivector_rev_ind pf) v.
 Proof.
   induction n; intros.
   - now simpl.
-  - simpl.
-Admitted.
-
+  - destruct v; simpl ivector_rev.
+    destruct (i == n); unfold equiv, complement in *.
+    + subst.
+      rewrite ivector_nth_add_to_end2.
+      assert (eqq:(S n - S n = 0)%nat) by lia.
+      generalize (ivector_rev_ind pf).
+      now rewrite eqq.
+    + assert (pf2:(i < n)%nat) by lia.
+      rewrite (ivector_nth_add_to_end1 _ _ _ _ pf2).
+      rewrite IHn.
+      assert (eqq:S n - S i = S (n - S i)) by lia.
+      generalize (ivector_rev_ind pf).
+      rewrite eqq; simpl; intros.
+      now apply ivector_nth_ext.
+Qed.    
 
 Lemma pullback_ivector_sa_rev {T} {n : nat} (sav: ivector (SigmaAlgebra T) n) :
   sa_equiv (ivector_sa sav)
