@@ -17,7 +17,7 @@ Require Import utils.Utils.
 Require Import List.
 Require Import PushNeg.
 Require Import Reals.
-Require Import Coquelicot.Rbar.
+Require Import Coquelicot.Coquelicot.
 
 Require Import Martingale.
 
@@ -3194,6 +3194,197 @@ Section mct.
       lra.
     Qed.
 
+  
+
   End mart_conv_sup.
+
+  Lemma sum_f_R0'_rv (X : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (X n)} :
+    forall n,
+      RandomVariable dom borel_sa
+                     (fun omega : Ts => sum_f_R0' (fun k : nat => X k omega) n).
+  Proof.
+    intros.
+    induction n.
+    - simpl.
+      apply rvconst.
+    - eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _) _ (rvplus (fun omega : Ts => sum_f_R0' (fun k : nat => X k omega) n) (X n))).
+      + intros ?.
+        rv_unfold.
+        now simpl.
+      + now apply rvplus_rv.
+  Qed.
+
+  Lemma IsFiniteExpectation_sum_f_R0' (X : nat -> Ts -> R)
+        {rv : forall n, RandomVariable dom borel_sa (X n)} 
+        {isfe : forall n, IsFiniteExpectation prts (X n)} :
+    forall n,
+      IsFiniteExpectation prts
+                          (fun omega : Ts => sum_f_R0' (fun k : nat => X k omega) n).
+  Proof.
+    intros.
+    induction n.
+    - simpl.
+      apply IsFiniteExpectation_const.
+    - apply (IsFiniteExpectation_proper _ (rvplus (fun omega : Ts => sum_f_R0' (fun k : nat => X k omega) n) (X n))).
+      + intros ?.
+        rv_unfold.
+        now simpl.
+      + apply IsFiniteExpectation_plus; trivial.
+        now apply sum_f_R0'_rv.
+  Qed.
+
+  Lemma is_adapted_sum_f_R0' (X : nat -> Ts -> R)
+        (sas : nat -> SigmaAlgebra Ts)
+        {adaptX:IsAdapted borel_sa X sas}                                          
+        {filt:IsFiltration sas}
+        {sub:IsSubAlgebras dom sas} :
+    IsAdapted borel_sa
+              (fun (n : nat) (omega : Ts) => sum_f_R0' (fun k : nat => X k omega) n) sas.
+  Proof.
+    unfold IsAdapted in *.
+    intros.
+    induction n.
+    - simpl.
+      apply rvconst.
+    - eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _) _ (rvplus (fun omega : Ts => sum_f_R0' (fun k : nat => X k omega) n) (X n))).
+      + intros ?.
+        rv_unfold.
+        now simpl.
+      + apply (RandomVariable_sa_sub (filt n)).
+        now apply rvplus_rv.
+  Qed.
+
+  Lemma sup_martingale_convergence_3 (Y X Z : nat -> Ts -> R)
+        (sas : nat -> SigmaAlgebra Ts)
+        {rvY:forall n, RandomVariable dom borel_sa (Y n)}
+        {rvX:forall n, RandomVariable dom borel_sa (X n)}
+        {rvZ:forall n, RandomVariable dom borel_sa (Z n)}        
+        {nnY:forall n, NonnegativeFunction (Y n)}
+        {nnX:forall n, NonnegativeFunction (X n)}
+        {nnZ:forall n, NonnegativeFunction (Z n)}        
+        {filt:IsFiltration sas}
+        {sub:IsSubAlgebras dom sas}
+        {adaptY:IsAdapted borel_sa Y sas}
+        {adaptX:IsAdapted borel_sa X sas}
+        {adaptZ:IsAdapted borel_sa Z sas} 
+        {isfeY:forall n, IsFiniteExpectation prts (Y n)} 
+        {isfeX:forall n, IsFiniteExpectation prts (X n)} 
+        {isfeZ:forall n, IsFiniteExpectation prts (Z n)} :      
+    (forall n omega,
+        (FiniteConditionalExpectation prts (sub n) (Y (S n)) omega) <=
+        (Y n omega) - (X n omega) + (Z n omega)) ->
+    (forall omega, ex_series (fun n => Z n omega)) ->
+    RandomVariable dom Rbar_borel_sa (Rbar_rvlim Y) /\
+     Rbar_NonnegativeFunction (Rbar_rvlim Y) /\
+       Rbar_IsFiniteExpectation prts (Rbar_rvlim Y) /\
+          (forall omega, ex_series (fun n => X n omega)) /\
+              almost prts (fun omega => is_Elim_seq (fun n => Y n omega) (Rbar_rvlim Y omega)).
+    Proof.
+      intros.
+      pose (RR := fun n =>
+                   (rvminus
+                      (rvplus (Y n) 
+                              (fun omega => sum_f_R0' (fun k => X k omega) n))
+                      (fun omega => sum_f_R0' (fun k => Z k omega) n))).
+      assert (adaptRR : IsAdapted borel_sa RR sas).
+      {
+        apply is_adapted_minus.
+        - apply is_adapted_plus; trivial.
+          now apply is_adapted_sum_f_R0'.
+        - now apply is_adapted_sum_f_R0'.
+      }
+      assert (isfeRR :forall n : nat, IsFiniteExpectation prts (RR n)).
+      {
+        intros.
+        apply IsFiniteExpectation_minus.
+        - apply rvplus_rv; trivial.
+          now apply sum_f_R0'_rv.
+        - now apply sum_f_R0'_rv.
+        - apply IsFiniteExpectation_plus; trivial.
+          + now apply sum_f_R0'_rv.
+          + now apply IsFiniteExpectation_sum_f_R0'.
+        - now apply IsFiniteExpectation_sum_f_R0'.
+      }
+      assert (rvRR :forall n : nat,  RandomVariable dom borel_sa (RR n)).
+      {
+        intros.
+        apply rvminus_rv.
+        - apply rvplus_rv; trivial.
+          now apply sum_f_R0'_rv.
+        - now apply sum_f_R0'_rv.
+      }
+      assert (martR:IsMartingale prts Rge RR sas).
+      {
+        unfold IsMartingale.
+        intros.
+        assert (rv_eq
+                  (rvminus (RR (S n)) (RR n))
+                  (rvplus
+                     (rvminus (Y (S n)) (Y n))
+                     (rvminus (X n) (Z n)))).
+        {
+          intros ?.
+          rv_unfold.
+          unfold RR.
+          simpl.
+          lra.
+        }
+        eapply (FiniteConditionalExpectation_ext prts (sub n)) in H1.
+        generalize (FiniteCondexp_minus prts (sub n) (RR (S n)) (RR n)); intros.
+        generalize (FiniteCondexp_plus prts (sub n)
+                                        (rvminus (Y (S n)) (Y n)) 
+                                        (rvminus (X n) (Z n))); intros.
+        generalize (FiniteCondexp_minus prts (sub n) (Y (S n)) (Y n)); intros.
+        generalize (FiniteCondexp_minus prts (sub n) (X n) (Z n)); intros.
+        assert
+        (almostR2 (prob_space_sa_sub prts (sub n)) eq
+                  (rvminus 
+                     (FiniteConditionalExpectation prts (sub n) (RR (S n))) 
+                     (RR n))
+                  (rvplus
+                     (rvminus (FiniteConditionalExpectation prts (sub n) (Y (S n))) 
+                              (Y n))
+                     (rvminus (X n) (Z n)))).
+        {
+          revert H5; apply almost_impl.
+          revert H4; apply almost_impl.
+          revert H3; apply almost_impl.
+          revert H2; apply almost_impl.
+          apply all_almost.
+          unfold impl.
+          intros.
+          generalize (FiniteCondexp_id prts (sub n) (RR n) (rv2 := adaptRR n)); intros.
+          generalize (FiniteCondexp_id prts (sub n) (X n) (rv2 := adaptX n)); intros.
+          generalize (FiniteCondexp_id prts (sub n) (Y n) (rv2 := adaptY n)); intros.
+          generalize (FiniteCondexp_id prts (sub n) (Z n) (rv2 := adaptZ n)); intros.
+          unfold rvminus at 2 in H5.
+          unfold rvplus, rvopp, rvscale in H5.
+          rewrite H9 in H5.
+          
+          admit.
+        }  
+        assert (almostR2 prts eq
+                         (rvminus 
+                            (FiniteConditionalExpectation prts (sub n) (RR (S n))) 
+                            (RR n))
+                         (FiniteConditionalExpectation prts (sub n)
+                                                       (rvminus (RR (S n))
+                                                                (RR n)))).
+        {
+          admit.
+        }
+        unfold RR.
+        generalize FiniteCondexp_minus; intros.
+        admit.
+      }
+      repeat split.
+      - apply Rbar_rvlim_rv.
+        intros.
+        now apply borel_Rbar_borel.
+      - apply Rbar_rvlim_nnf.
+        intros.
+        now apply positive_Rbar_positive.
+      - Admitted.
 
 End mct.
