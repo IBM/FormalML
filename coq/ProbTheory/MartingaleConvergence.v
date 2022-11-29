@@ -3354,16 +3354,23 @@ Section mct.
           apply all_almost.
           unfold impl.
           intros.
-          generalize (FiniteCondexp_id prts (sub n) (RR n) (rv2 := adaptRR n)); intros.
-          generalize (FiniteCondexp_id prts (sub n) (X n) (rv2 := adaptX n)); intros.
-          generalize (FiniteCondexp_id prts (sub n) (Y n) (rv2 := adaptY n)); intros.
-          generalize (FiniteCondexp_id prts (sub n) (Z n) (rv2 := adaptZ n)); intros.
-          unfold rvminus at 2 in H5.
-          unfold rvplus, rvopp, rvscale in H5.
-          rewrite H9 in H5.
-          
-          admit.
-        }  
+          generalize (FiniteCondexp_id prts (sub n) (RR n) (rv2 := adaptRR n) x); intros.
+          generalize (FiniteCondexp_id prts (sub n) (X n) (rv2 := adaptX n) x); intros.
+          generalize (FiniteCondexp_id prts (sub n) (Y n) (rv2 := adaptY n) x); intros.
+          generalize (FiniteCondexp_id prts (sub n) (Z n) (rv2 := adaptZ n) x); intros.
+          unfold rvminus, rvplus, rvopp, rvscale, rv_eq in *.
+          rewrite H9 in H5; clear H9.
+          rewrite H8 in H4; clear H8.
+          rewrite H7 in H5; clear H7.
+          rewrite H6 in H2; clear H6.
+          rewrite <- H2; clear H2.
+          rewrite H1; clear H1.
+          rewrite <- H4.
+          rewrite <- H5.
+          apply H3.
+        } 
+
+        (* apply almostR2_prob_space_sa_sub_lift in H6. *)
         assert (almostR2 prts eq
                          (rvminus 
                             (FiniteConditionalExpectation prts (sub n) (RR (S n))) 
