@@ -3227,7 +3227,7 @@ Section mct.
        apply H0.
     Qed.
 
-     Theorem sup_martingale_convergence_bounded (B:R) :
+     Theorem sup_martingale_convergence_bounded_exp (B:R) :
       (forall n,  Rbar_le (NonnegExpectation (neg_fun_part (M n))) B) ->
       RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
         Rbar_IsFiniteExpectation prts (Rbar_rvlim M) /\
@@ -3240,6 +3240,40 @@ Section mct.
          apply (sup_martingale_convergence x H0).
        - intros.
          apply NonnegExpectation_pos.
+     Qed.
+
+     Theorem sup_martingale_convergence_bounded (B:R) :
+       inhabited Ts ->
+       (forall n, rv_le (neg_fun_part (M n)) (const B)) ->
+       RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
+       Rbar_IsFiniteExpectation prts (Rbar_rvlim M) /\
+       almost prts (fun omega => is_Elim_seq (fun n => M n omega) (Rbar_rvlim M omega)).
+       Proof.
+         intros.
+         apply (sup_martingale_convergence_bounded_exp B).
+         intros.
+         apply NonnegExpectation_le_val; trivial.
+         intros.
+         apply H0.
+     Qed.
+
+     Theorem sup_martingale_convergence_bounded_nneg (B:nonnegreal) :
+       (forall n, rv_le (neg_fun_part (M n)) (const B)) ->
+       RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
+       Rbar_IsFiniteExpectation prts (Rbar_rvlim M) /\
+       almost prts (fun omega => is_Elim_seq (fun n => M n omega) (Rbar_rvlim M omega)).
+       Proof.
+         intros.
+         apply (sup_martingale_convergence_bounded_exp B).
+         intros.
+         assert (NonnegativeFunction (fun _ : Ts => B)).
+         {
+           intros ?.
+           apply cond_nonneg.
+         }
+         replace (Finite B) with (NonnegExpectation (fun _ : Ts => B)).
+         apply NonnegExpectation_le; trivial.
+         apply (NonnegExpectation_const B (cond_nonneg B)).
      Qed.
 
   End mart_conv_sup.
@@ -3299,6 +3333,28 @@ Section mct.
         now simpl.
       + apply (RandomVariable_sa_sub (filt n)).
         now apply rvplus_rv.
+  Qed.
+
+  Lemma is_adapted_sum_f_R0 (X : nat -> Ts -> R)
+        (sas : nat -> SigmaAlgebra Ts)
+        {adaptX:IsAdapted borel_sa X sas}                                          
+        {filt:IsFiltration sas}
+        {sub:IsSubAlgebras dom sas} :
+    IsAdapted borel_sa
+              (fun (n : nat) (omega : Ts) => sum_f_R0 (fun k : nat => X k omega) n) sas.
+  Proof.
+    unfold IsAdapted in *.
+    intros.
+    induction n.
+    - simpl.
+      apply adaptX.
+    - eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _) _ (rvplus (fun omega : Ts => sum_f_R0 (fun k : nat => X k omega) n) (X (S n)))).
+      + intros ?.
+        rv_unfold.
+        now simpl.
+      + apply rvplus_rv.
+        * now apply (RandomVariable_sa_sub (filt n)).
+        * apply adaptX.
   Qed.
 
 
@@ -3540,12 +3596,13 @@ Section mct.
       }
       generalize (sup_martingale_convergence SS sas); intros.
 
-      pose (Zsum t := Z t).
+      pose (Zsum t omega := sum_f_R0 (fun k => Z k omega) t).
       pose (tau a := hitting_time Zsum (event_gt _ id a)).
       assert (tau_stopped_stopped : forall a, IsStoppingTime (hitting_time Zsum (event_gt borel_sa id a)) sas).
       {
         intros.
-        now apply hitting_time_is_stop.
+        apply hitting_time_is_stop; trivial.
+        now apply is_adapted_sum_f_R0.
       } 
 
       assert (tau_stopped_mart: forall a, IsMartingale prts Rge (process_stopped_at RR (tau a)) sas).
@@ -3553,8 +3610,37 @@ Section mct.
         intros.
         now apply process_stopped_at_super_martingale.
       }
-      
 
+      assert (RR_bound_Zsum : forall t,
+                 rv_le
+                   (neg_fun_part (RR t))
+                   (fun omega => sum_f_R0' (fun k => Z k omega) t)).
+      {
+        intros.
+        apply neg_part_le.
+        - apply rvplus_nnf; trivial.
+          unfold NonnegativeFunction; intros.
+          apply sum_f_R0'_le.
+          intros.
+          apply nnX.
+        - unfold NonnegativeFunction; intros.
+          apply sum_f_R0'_le.
+          intros.
+          apply nnZ.
+      }
+
+      assert (tau_stopped_bound: forall a t,
+                 rv_le
+                   (neg_fun_part (process_stopped_at RR (tau a) t))
+                   (const a)).
+      {
+        intros.
+        unfold process_stopped_at, const.
+        unfold tau, hitting_time.
+        
+        admit.
+      }
+                 
       repeat split.
       - apply Rbar_rvlim_rv.
         intros.
@@ -3562,6 +3648,8 @@ Section mct.
       - apply Rbar_rvlim_nnf.
         intros.
         now apply positive_Rbar_positive.
-      - Admitted.
+      - admit.
+      - 
+Admitted.
 
 End mct.
