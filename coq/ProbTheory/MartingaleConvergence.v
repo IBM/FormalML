@@ -3193,8 +3193,54 @@ Section mct.
       specialize (H n a).
       lra.
     Qed.
+      
+    Lemma bounded_ELimSup (X : nat -> Rbar) (B1 B2 : R) :
+      (forall n, Rbar_le B1 (X n)) ->
+      (forall n, Rbar_le (X n) B2) ->      
+      exists (K:R), is_ELimSup_seq X K.
+    Proof.
+      intros.
+      generalize (ex_ELimSup_seq X); intros.
+      generalize (ELimSup_le X (const B2)); intros.
+      cut_to H2.
+      - unfold const in H2.
+        rewrite ELimSup_seq_const in H2.
+        destruct H1.
+        generalize (is_ELimSup_seq_unique X x i); intros.
+        rewrite H1 in H2.
+        destruct x.
+        + now exists r.
+        + now simpl in H2.
+        + generalize (ELimSup_le (const B1) X); intros.
+          cut_to H3.
+          * unfold const in H3.
+            rewrite ELimSup_seq_const in H3.
+            rewrite H1 in H3.
+            now simpl in H3.
+          * exists (0%nat).
+            intros.
+            unfold const.
+            apply H.
+     - exists 0%nat.
+       intros.
+       unfold const.
+       apply H0.
+    Qed.
 
-  
+     Theorem sup_martingale_convergence_bounded (B:R) :
+      (forall n,  Rbar_le (NonnegExpectation (neg_fun_part (M n))) B) ->
+      RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
+        Rbar_IsFiniteExpectation prts (Rbar_rvlim M) /\
+        almost prts (fun omega => is_Elim_seq (fun n => M n omega) (Rbar_rvlim M omega)).
+     Proof.
+       intros.
+       generalize (bounded_ELimSup (fun n => NonnegExpectation (neg_fun_part (M n))) 0 B); intros.
+       cut_to H0; trivial.
+       - destruct H0.
+         apply (sup_martingale_convergence x H0).
+       - intros.
+         apply NonnegExpectation_pos.
+     Qed.
 
   End mart_conv_sup.
 
@@ -3331,12 +3377,6 @@ Section mct.
           lra.
         }
         eapply (FiniteConditionalExpectation_ext prts (sub n)) in H1.
-        generalize (FiniteCondexp_minus prts (sub n) (RR (S n)) (RR n)); intros.
-        generalize (FiniteCondexp_plus prts (sub n)
-                                        (rvminus (Y (S n)) (Y n)) 
-                                        (rvminus (X n) (Z n))); intros.
-        generalize (FiniteCondexp_minus prts (sub n) (Y (S n)) (Y n)); intros.
-        generalize (FiniteCondexp_minus prts (sub n) (X n) (Z n)); intros.
         assert
         (almostR2 (prob_space_sa_sub prts (sub n)) eq
                   (rvminus 
@@ -3347,6 +3387,13 @@ Section mct.
                               (Y n))
                      (rvminus (X n) (Z n)))).
         {
+          generalize (FiniteCondexp_minus prts (sub n) (RR (S n)) (RR n)); intros.
+          generalize (FiniteCondexp_plus prts (sub n)
+                                         (rvminus (Y (S n)) (Y n)) 
+                                         (rvminus (X n) (Z n))); intros.
+          generalize (FiniteCondexp_minus prts (sub n) (Y (S n)) (Y n)); intros.
+          generalize (FiniteCondexp_minus prts (sub n) (X n) (Z n)); intros.
+
           revert H5; apply almost_impl.
           revert H4; apply almost_impl.
           revert H3; apply almost_impl.
@@ -3368,23 +3415,126 @@ Section mct.
           rewrite <- H4.
           rewrite <- H5.
           apply H3.
-        } 
-
-        (* apply almostR2_prob_space_sa_sub_lift in H6. *)
-        assert (almostR2 prts eq
-                         (rvminus 
-                            (FiniteConditionalExpectation prts (sub n) (RR (S n))) 
-                            (RR n))
-                         (FiniteConditionalExpectation prts (sub n)
-                                                       (rvminus (RR (S n))
-                                                                (RR n)))).
-        {
-          admit.
         }
-        unfold RR.
-        generalize FiniteCondexp_minus; intros.
-        admit.
+        apply almostR2_prob_space_sa_sub_lift in H2.
+        assert (rv_le 
+                  (rvplus
+                     (rvminus (FiniteConditionalExpectation prts (sub n) (Y (S n))) (Y n))
+                     (rvminus (X n) (Z n)))
+                  (const 0)).
+        {
+          intros ?.
+          rv_unfold.
+          specialize (H n a).
+          lra.
+        }
+        revert H2.
+        apply almost_impl, all_almost.
+        rv_unfold.
+        unfold impl; intros.
+        specialize (H3 x).
+        simpl in H3.
+        lra.
       }
+      
+      pose (SS := fun n =>
+                   (rvminus
+                      (Y n) 
+                      (fun omega => sum_f_R0' (fun k => Z k omega) n))).
+      assert (adaptSS : IsAdapted borel_sa SS sas).
+      {
+        apply is_adapted_minus; trivial.
+        now apply is_adapted_sum_f_R0'.
+      }
+      assert (isfeSS :forall n : nat, IsFiniteExpectation prts (SS n)).
+      {
+        intros.
+        apply IsFiniteExpectation_minus; trivial.
+        - now apply sum_f_R0'_rv.
+        - now apply IsFiniteExpectation_sum_f_R0'.
+      }
+      assert (rvSS :forall n : nat,  RandomVariable dom borel_sa (SS n)).
+      {
+        intros.
+        apply rvminus_rv; trivial.
+        now apply sum_f_R0'_rv.
+      }
+      assert (martS:IsMartingale prts Rge SS sas).
+      {
+        unfold IsMartingale.
+        intros.
+        assert (rv_eq
+                  (rvminus (SS (S n)) (SS n))
+                  (rvminus
+                     (rvminus (Y (S n)) (Y n)) (Z n))).
+        {
+          intros ?.
+          rv_unfold.
+          unfold SS.
+          simpl.
+          lra.
+        }
+        eapply (FiniteConditionalExpectation_ext prts (sub n)) in H1.
+        assert
+        (almostR2 (prob_space_sa_sub prts (sub n)) eq
+                  (rvminus 
+                     (FiniteConditionalExpectation prts (sub n) (SS (S n))) 
+                     (SS n))
+                  (rvplus
+                     (rvminus (FiniteConditionalExpectation prts (sub n) (Y (S n))) 
+                              (Y n))
+                     (rvopp (Z n)))).
+        {
+          generalize (FiniteCondexp_minus prts (sub n) (SS (S n)) (SS n)); intros.
+          generalize (FiniteCondexp_plus prts (sub n)
+                                         (rvminus (Y (S n)) (Y n)) 
+                                         (rvopp (Z n))); intros.
+          generalize (FiniteCondexp_minus prts (sub n) (Y (S n)) (Y n)); intros.
+          generalize (FiniteCondexp_opp prts (sub n) (Z n)); intros.
+          revert H5; apply almost_impl.
+          revert H4; apply almost_impl.
+          revert H3; apply almost_impl.
+          revert H2; apply almost_impl.
+          apply all_almost.
+          unfold impl.
+          intros.
+          generalize (FiniteCondexp_id prts (sub n) (SS n) (rv2 := adaptSS n) x); intros.
+          generalize (FiniteCondexp_id prts (sub n) (Y n) (rv2 := adaptY n) x); intros.
+          generalize (FiniteCondexp_id prts (sub n) (Z n) (rv2 := adaptZ n) x); intros.
+          unfold rvminus, rvplus, rvopp, rvscale, rv_eq in *.
+          rewrite H8 in H5; clear H8.
+          rewrite H7 in H4; clear H7.
+          rewrite H6 in H2; clear H6.
+          rewrite <- H2; clear H2.
+          rewrite H1; clear H1.
+          rewrite <- H4.
+          rewrite <- H5.
+          apply H3.
+        }
+        apply almostR2_prob_space_sa_sub_lift in H2.
+        assert (rv_le 
+                  (rvplus
+                     (rvminus (FiniteConditionalExpectation prts (sub n) (Y (S n))) (Y n))
+                     (rvopp (Z n)))
+                  (const 0)).
+        {
+          intros ?.
+          rv_unfold.
+          specialize (H n a).
+          specialize (nnX n a).
+          lra.
+        }
+        revert H2.
+        apply almost_impl, all_almost.
+        rv_unfold.
+        unfold impl; intros.
+        specialize (H3 x).
+        simpl in H3.
+        lra.
+      }
+      generalize (sup_martingale_convergence SS sas); intros.
+      
+
       repeat split.
       - apply Rbar_rvlim_rv.
         intros.
