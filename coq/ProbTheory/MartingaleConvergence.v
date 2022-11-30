@@ -19,7 +19,7 @@ Require Import PushNeg.
 Require Import Reals.
 Require Import Coquelicot.Coquelicot.
 
-Require Import Martingale.
+Require Import Martingale MartingaleStopped.
 
 Set Bullet Behavior "Strict Subproofs". 
 
@@ -3301,6 +3301,12 @@ Section mct.
         now apply rvplus_rv.
   Qed.
 
+
+  (*
+    Definition stopped_at_first_bigger (a:R) (Z:nat->Ts->R) : Ts -> option nat
+    := hitting_time Z (event_gt _ id a).
+   *)  
+
   Lemma sup_martingale_convergence_3 (Y X Z : nat -> Ts -> R)
         (sas : nat -> SigmaAlgebra Ts)
         {rvY:forall n, RandomVariable dom borel_sa (Y n)}
@@ -3533,6 +3539,20 @@ Section mct.
         lra.
       }
       generalize (sup_martingale_convergence SS sas); intros.
+
+      pose (Zsum t := Z t).
+      pose (tau a := hitting_time Zsum (event_gt _ id a)).
+      assert (tau_stopped_stopped : forall a, IsStoppingTime (hitting_time Zsum (event_gt borel_sa id a)) sas).
+      {
+        intros.
+        now apply hitting_time_is_stop.
+      } 
+
+      assert (tau_stopped_mart: forall a, IsMartingale prts Rge (process_stopped_at RR (tau a)) sas).
+      {
+        intros.
+        now apply process_stopped_at_super_martingale.
+      }
       
 
       repeat split.
