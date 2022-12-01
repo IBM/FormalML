@@ -3629,18 +3629,34 @@ Section mct.
           apply nnZ.
       }
 
-      assert (tau_stopped_bound: forall a t,
+      assert (tau_stopped_bound: forall a (pf:0 <= a) t,
                  rv_le
                    (neg_fun_part (process_stopped_at RR (tau a) t))
                    (const a)).
       {
         intros.
-        unfold process_stopped_at, const.
-        unfold tau, hitting_time.
-        
-        admit.
-      }
-                 
+        intros ω.
+        simpl.
+        unfold process_stopped_at, const, lift1_min.
+        match_option.
+        - generalize (classic_min_of_some_first _ _ eqq); intros gta.
+          unfold event_gt, id, Zsum in gta; simpl in gta.
+          specialize (RR_bound_Zsum (Init.Nat.min t n) ω); simpl in RR_bound_Zsum |- *.
+          rewrite RR_bound_Zsum.
+          case_eq (Init.Nat.min t n); trivial; intros.
+          rewrite <- sum_f_R0_sum_f_R0'.
+          apply Rnot_gt_le.
+          apply gta.
+          lia.
+        - generalize (classic_min_of_none _ eqq); intros ngta.
+          unfold event_gt, id, Zsum in ngta; simpl in ngta.
+          specialize (RR_bound_Zsum t ω); simpl in RR_bound_Zsum |- *.
+          rewrite RR_bound_Zsum.
+          destruct t; trivial.
+          rewrite <- sum_f_R0_sum_f_R0'.
+          specialize (ngta t).
+          lra.
+      } 
       repeat split.
       - apply Rbar_rvlim_rv.
         intros.
