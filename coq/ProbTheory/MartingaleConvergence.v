@@ -3137,7 +3137,7 @@ Section mct.
       is_ELimSup_seq (fun n => NonnegExpectation (neg_fun_part (M n))) K ->
       RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
         Rbar_IsFiniteExpectation prts (Rbar_rvlim M) /\
-          almost prts (fun omega => is_Elim_seq (fun n => M n omega) (Rbar_rvlim M omega)).
+          almost prts (fun ω => is_Elim_seq (fun n => M n ω) (Rbar_rvlim M ω)).
     Proof.
       intros.
       apply is_sub_martingale_neg in mart.
@@ -3180,7 +3180,7 @@ Section mct.
       (forall n, NonnegativeFunction (M n)) ->
       RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
         Rbar_IsFiniteExpectation prts (Rbar_rvlim M) /\
-          almost prts (fun omega => is_Elim_seq (fun n => M n omega) (Rbar_rvlim M omega)).
+          almost prts (fun ω => is_Elim_seq (fun n => M n ω) (Rbar_rvlim M ω)).
     Proof.
       intros.
       apply (sup_martingale_convergence 0).
@@ -3232,7 +3232,7 @@ Section mct.
       (forall n,  Rbar_le (NonnegExpectation (neg_fun_part (M n))) B) ->
       RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
         Rbar_IsFiniteExpectation prts (Rbar_rvlim M) /\
-        almost prts (fun omega => is_Elim_seq (fun n => M n omega) (Rbar_rvlim M omega)).
+        almost prts (fun ω => is_Elim_seq (fun n => M n ω) (Rbar_rvlim M ω)).
      Proof.
        intros.
        generalize (bounded_ELimSup (fun n => NonnegExpectation (neg_fun_part (M n))) 0 B); intros.
@@ -3247,7 +3247,7 @@ Section mct.
        (forall n, rv_le (neg_fun_part (M n)) (const B)) ->
        RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
        Rbar_IsFiniteExpectation prts (Rbar_rvlim M) /\
-       almost prts (fun omega => is_Elim_seq (fun n => M n omega) (Rbar_rvlim M omega)).
+       almost prts (fun ω => is_Elim_seq (fun n => M n ω) (Rbar_rvlim M ω)).
        Proof.
          intros.
          apply (sup_martingale_convergence_bounded_exp B).
@@ -3264,7 +3264,7 @@ Section mct.
 
      Theorem sup_martingale_convergence_bounded_finite (B:nonnegreal) :
        (forall n, rv_le (neg_fun_part (M n)) (const B)) ->
-       almost prts (fun omega => ex_finite_Elim_seq (fun n => M n omega)).
+       almost prts (fun ω => ex_finite_Elim_seq (fun n => M n ω)).
      Proof.
        intros.
        destruct (sup_martingale_convergence_bounded B H) as [? [? ?]].
@@ -3287,13 +3287,13 @@ Section mct.
         {rv : forall n, RandomVariable dom borel_sa (X n)} :
     forall n,
       RandomVariable dom borel_sa
-                     (fun omega : Ts => sum_f_R0' (fun k : nat => X k omega) n).
+                     (fun ω : Ts => sum_f_R0' (fun k : nat => X k ω) n).
   Proof.
     intros.
     induction n.
     - simpl.
       apply rvconst.
-    - eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _) _ (rvplus (fun omega : Ts => sum_f_R0' (fun k : nat => X k omega) n) (X n))).
+    - eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _) _ (rvplus (fun ω => sum_f_R0' (fun k : nat => X k ω) n) (X n))).
       + intros ?.
         rv_unfold.
         now simpl.
@@ -3305,13 +3305,13 @@ Section mct.
         {isfe : forall n, IsFiniteExpectation prts (X n)} :
     forall n,
       IsFiniteExpectation prts
-                          (fun omega : Ts => sum_f_R0' (fun k : nat => X k omega) n).
+                          (fun ω : Ts => sum_f_R0' (fun k : nat => X k ω) n).
   Proof.
     intros.
     induction n.
     - simpl.
       apply IsFiniteExpectation_const.
-    - apply (IsFiniteExpectation_proper _ (rvplus (fun omega : Ts => sum_f_R0' (fun k : nat => X k omega) n) (X n))).
+    - apply (IsFiniteExpectation_proper _ (rvplus (fun ω : Ts => sum_f_R0' (fun k : nat => X k ω) n) (X n))).
       + intros ?.
         rv_unfold.
         now simpl.
@@ -3325,14 +3325,14 @@ Section mct.
         {filt:IsFiltration sas}
         {sub:IsSubAlgebras dom sas} :
     IsAdapted borel_sa
-              (fun (n : nat) (omega : Ts) => sum_f_R0' (fun k : nat => X k omega) n) sas.
+              (fun (n : nat) (ω : Ts) => sum_f_R0' (fun k : nat => X k ω) n) sas.
   Proof.
     unfold IsAdapted in *.
     intros.
     induction n.
     - simpl.
       apply rvconst.
-    - eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _) _ (rvplus (fun omega : Ts => sum_f_R0' (fun k : nat => X k omega) n) (X n))).
+    - eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _) _ (rvplus (fun ω => sum_f_R0' (fun k : nat => X k ω) n) (X n))).
       + intros ?.
         rv_unfold.
         now simpl.
@@ -3346,14 +3346,14 @@ Section mct.
         {filt:IsFiltration sas}
         {sub:IsSubAlgebras dom sas} :
     IsAdapted borel_sa
-              (fun (n : nat) (omega : Ts) => sum_f_R0 (fun k : nat => X k omega) n) sas.
+              (fun (n : nat) (ω : Ts) => sum_f_R0 (fun k : nat => X k ω) n) sas.
   Proof.
     unfold IsAdapted in *.
     intros.
     induction n.
     - simpl.
       apply adaptX.
-    - eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _) _ (rvplus (fun omega : Ts => sum_f_R0 (fun k : nat => X k omega) n) (X (S n)))).
+    - eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _) _ (rvplus (fun ω => sum_f_R0 (fun k : nat => X k ω) n) (X (S n)))).
       + intros ?.
         rv_unfold.
         now simpl.
@@ -3441,8 +3441,8 @@ Section mct.
       pose (RR := fun n =>
                    (rvminus
                       (rvplus (Y n) 
-                              (fun omega => sum_f_R0' (fun k => X k omega) n))
-                      (fun omega => sum_f_R0' (fun k => Z k omega) n))).
+                              (fun ω => sum_f_R0' (fun k => X k ω) n))
+                      (fun ω => sum_f_R0' (fun k => Z k ω) n))).
       assert (adaptRR : IsAdapted borel_sa RR sas).
       {
         apply is_adapted_minus.
@@ -3651,8 +3651,7 @@ Section mct.
         intros.
         unfold process_stopped_at, const, lift1_min.
         match_option.
-        unfold tau in eqq.
-        unfold hitting_time in eqq.
+        unfold tau, hitting_time, classic_min_of in eqq.
         assert (forall k, Zsum k x <= INR (Z.to_nat (up x0))).
         {
           intros.
@@ -3683,10 +3682,8 @@ Section mct.
             specialize (nnZ (S n1) x).
             lra.
         }
-        unfold classic_min_of in eqq.
         match_destr_in eqq.
-        destruct s.
-        destruct a.
+        destruct s as [? [? ?]].
         simpl in e.
         unfold id in e.
         specialize (H1 x1).
