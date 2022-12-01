@@ -3227,6 +3227,7 @@ Section mct.
        apply H0.
     Qed.
 
+
      Theorem sup_martingale_convergence_bounded_exp (B:R) :
       (forall n,  Rbar_le (NonnegExpectation (neg_fun_part (M n))) B) ->
       RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
@@ -3242,22 +3243,7 @@ Section mct.
          apply NonnegExpectation_pos.
      Qed.
 
-     Theorem sup_martingale_convergence_bounded (B:R) :
-       inhabited Ts ->
-       (forall n, rv_le (neg_fun_part (M n)) (const B)) ->
-       RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
-       Rbar_IsFiniteExpectation prts (Rbar_rvlim M) /\
-       almost prts (fun omega => is_Elim_seq (fun n => M n omega) (Rbar_rvlim M omega)).
-       Proof.
-         intros.
-         apply (sup_martingale_convergence_bounded_exp B).
-         intros.
-         apply NonnegExpectation_le_val; trivial.
-         intros.
-         apply H0.
-     Qed.
-
-     Theorem sup_martingale_convergence_bounded_nneg (B:nonnegreal) :
+     Theorem sup_martingale_convergence_bounded (B:nonnegreal) :
        (forall n, rv_le (neg_fun_part (M n)) (const B)) ->
        RandomVariable dom Rbar_borel_sa (Rbar_rvlim M) /\
        Rbar_IsFiniteExpectation prts (Rbar_rvlim M) /\
@@ -3275,6 +3261,25 @@ Section mct.
          apply NonnegExpectation_le; trivial.
          apply (NonnegExpectation_const B (cond_nonneg B)).
      Qed.
+
+     Theorem sup_martingale_convergence_bounded_finite (B:nonnegreal) :
+       (forall n, rv_le (neg_fun_part (M n)) (const B)) ->
+       almost prts (fun omega => ex_finite_Elim_seq (fun n => M n omega)).
+     Proof.
+       intros.
+       destruct (sup_martingale_convergence_bounded B H) as [? [? ?]].
+       apply finexp_almost_finite in H1; trivial.
+       revert H2.
+       apply almost_impl.
+       revert H1.
+       apply almost_impl, all_almost.
+       unfold impl; intros.
+       split.
+       - eapply is_Elim_seq_ex_Elim_seq.
+         apply H2.
+       - apply is_Elim_seq_unique in H2.
+         now rewrite H2.
+    Qed.
 
   End mart_conv_sup.
 
@@ -3357,11 +3362,57 @@ Section mct.
         * apply adaptX.
   Qed.
 
+  Lemma ex_finite_lim_seq_plus_incr (X Y : nat -> R) :
+    (forall n, 0 <= X n) ->
+    (forall n : nat, Y n <= Y (S n)) ->
+    ex_finite_lim_seq (fun n => X n + Y n) ->
+    ex_finite_lim_seq Y.
+  Proof.
+    intros.
+    destruct H1.
+    apply ex_finite_lim_seq_incr with (M := x); trivial.
+    intros.
+    apply is_lim_seq_unique in H1.
+    assert (Rbar_le (Lim_seq Y) (Lim_seq (fun n => X n + Y n))).
+    {
+      apply Lim_seq_le_loc.
+      exists 0%nat.
+      intros.
+      specialize (H n0).
+      lra.
+    }
+    rewrite H1 in H2.
+    generalize (Lim_seq_increasing_le _ H0); intros.
+    assert (Rbar_le (Y n) x).
+    {
+      eapply Rbar_le_trans.
+      apply H3.
+      easy.
+    }
+    now simpl in H4.
+ Qed.
 
-  (*
-    Definition stopped_at_first_bigger (a:R) (Z:nat->Ts->R) : Ts -> option nat
-    := hitting_time Z (event_gt _ id a).
-   *)  
+  Lemma ex_finite_lim_seq_plus_alt (X Y : nat -> R) :
+    ex_finite_lim_seq (fun n => X n + Y n) ->
+    ex_finite_lim_seq Y ->
+    ex_finite_lim_seq X.
+  Proof.
+    intros.
+    destruct H.
+    destruct H0.
+    unfold ex_finite_lim_seq.
+    exists (x - x0).
+    apply is_lim_seq_ext with (u := (fun n => (X n + Y n) - Y n)); try (intros; lra).
+    now apply is_lim_seq_minus'.
+  Qed.
+
+  Lemma ex_finite_lim_seq_incr_1 (f : nat -> R) :
+    ex_finite_lim_seq f <-> ex_finite_lim_seq (fun n : nat => f (S n)).
+  Proof.
+    generalize (ex_finite_lim_seq_incr_n f 1%nat); intros.
+    rewrite H.
+    now simpl.
+  Qed.  
 
   Lemma sup_martingale_convergence_3 (Y X Z : nat -> Ts -> R)
         (sas : nat -> SigmaAlgebra Ts)
@@ -3379,15 +3430,12 @@ Section mct.
         {isfeY:forall n, IsFiniteExpectation prts (Y n)} 
         {isfeX:forall n, IsFiniteExpectation prts (X n)} 
         {isfeZ:forall n, IsFiniteExpectation prts (Z n)} :      
-    (forall n omega,
-        (FiniteConditionalExpectation prts (sub n) (Y (S n)) omega) <=
-        (Y n omega) - (X n omega) + (Z n omega)) ->
-    (forall omega, ex_series (fun n => Z n omega)) ->
-    RandomVariable dom Rbar_borel_sa (Rbar_rvlim Y) /\
-     Rbar_NonnegativeFunction (Rbar_rvlim Y) /\
-       Rbar_IsFiniteExpectation prts (Rbar_rvlim Y) /\
-          (forall omega, ex_series (fun n => X n omega)) /\
-              almost prts (fun omega => is_Elim_seq (fun n => Y n omega) (Rbar_rvlim Y omega)).
+    (forall n ω,
+        (FiniteConditionalExpectation prts (sub n) (Y (S n)) ω) <=
+        (Y n ω) - (X n ω) + (Z n ω)) ->
+    (almost prts (fun ω => ex_series (fun n => Z n ω))) ->
+    almost prts (fun ω => ex_series (fun n => X n ω)) /\
+    almost prts (fun ω => ex_finite_lim_seq (fun n => Y n ω)).
     Proof.
       intros.
       pose (RR := fun n =>
@@ -3499,104 +3547,8 @@ Section mct.
         lra.
       }
       
-      pose (SS := fun n =>
-                   (rvminus
-                      (Y n) 
-                      (fun omega => sum_f_R0' (fun k => Z k omega) n))).
-      assert (adaptSS : IsAdapted borel_sa SS sas).
-      {
-        apply is_adapted_minus; trivial.
-        now apply is_adapted_sum_f_R0'.
-      }
-      assert (isfeSS :forall n : nat, IsFiniteExpectation prts (SS n)).
-      {
-        intros.
-        apply IsFiniteExpectation_minus; trivial.
-        - now apply sum_f_R0'_rv.
-        - now apply IsFiniteExpectation_sum_f_R0'.
-      }
-      assert (rvSS :forall n : nat,  RandomVariable dom borel_sa (SS n)).
-      {
-        intros.
-        apply rvminus_rv; trivial.
-        now apply sum_f_R0'_rv.
-      }
-      assert (martS:IsMartingale prts Rge SS sas).
-      {
-        unfold IsMartingale.
-        intros.
-        assert (rv_eq
-                  (rvminus (SS (S n)) (SS n))
-                  (rvminus
-                     (rvminus (Y (S n)) (Y n)) (Z n))).
-        {
-          intros ?.
-          rv_unfold.
-          unfold SS.
-          simpl.
-          lra.
-        }
-        eapply (FiniteConditionalExpectation_ext prts (sub n)) in H1.
-        assert
-        (almostR2 (prob_space_sa_sub prts (sub n)) eq
-                  (rvminus 
-                     (FiniteConditionalExpectation prts (sub n) (SS (S n))) 
-                     (SS n))
-                  (rvplus
-                     (rvminus (FiniteConditionalExpectation prts (sub n) (Y (S n))) 
-                              (Y n))
-                     (rvopp (Z n)))).
-        {
-          generalize (FiniteCondexp_minus prts (sub n) (SS (S n)) (SS n)); intros.
-          generalize (FiniteCondexp_plus prts (sub n)
-                                         (rvminus (Y (S n)) (Y n)) 
-                                         (rvopp (Z n))); intros.
-          generalize (FiniteCondexp_minus prts (sub n) (Y (S n)) (Y n)); intros.
-          generalize (FiniteCondexp_opp prts (sub n) (Z n)); intros.
-          revert H5; apply almost_impl.
-          revert H4; apply almost_impl.
-          revert H3; apply almost_impl.
-          revert H2; apply almost_impl.
-          apply all_almost.
-          unfold impl.
-          intros.
-          generalize (FiniteCondexp_id prts (sub n) (SS n) (rv2 := adaptSS n) x); intros.
-          generalize (FiniteCondexp_id prts (sub n) (Y n) (rv2 := adaptY n) x); intros.
-          generalize (FiniteCondexp_id prts (sub n) (Z n) (rv2 := adaptZ n) x); intros.
-          unfold rvminus, rvplus, rvopp, rvscale, rv_eq in *.
-          rewrite H8 in H5; clear H8.
-          rewrite H7 in H4; clear H7.
-          rewrite H6 in H2; clear H6.
-          rewrite <- H2; clear H2.
-          rewrite H1; clear H1.
-          rewrite <- H4.
-          rewrite <- H5.
-          apply H3.
-        }
-        apply almostR2_prob_space_sa_sub_lift in H2.
-        assert (rv_le 
-                  (rvplus
-                     (rvminus (FiniteConditionalExpectation prts (sub n) (Y (S n))) (Y n))
-                     (rvopp (Z n)))
-                  (const 0)).
-        {
-          intros ?.
-          rv_unfold.
-          specialize (H n a).
-          specialize (nnX n a).
-          lra.
-        }
-        revert H2.
-        apply almost_impl, all_almost.
-        rv_unfold.
-        unfold impl; intros.
-        specialize (H3 x).
-        simpl in H3.
-        lra.
-      }
-      generalize (sup_martingale_convergence SS sas); intros.
 
-      pose (Zsum t omega := sum_f_R0 (fun k => Z k omega) t).
+      pose (Zsum t ω := sum_f_R0 (fun k => Z k ω) t).
       pose (tau a := hitting_time Zsum (event_gt _ id a)).
       assert (tau_stopped_stopped : forall a, IsStoppingTime (hitting_time Zsum (event_gt borel_sa id a)) sas).
       {
@@ -3614,7 +3566,7 @@ Section mct.
       assert (RR_bound_Zsum : forall t,
                  rv_le
                    (neg_fun_part (RR t))
-                   (fun omega => sum_f_R0' (fun k => Z k omega) t)).
+                   (fun ω => sum_f_R0' (fun k => Z k ω) t)).
       {
         intros.
         apply neg_part_le.
@@ -3656,16 +3608,158 @@ Section mct.
           rewrite <- sum_f_R0_sum_f_R0'.
           specialize (ngta t).
           lra.
-      } 
-      repeat split.
-      - apply Rbar_rvlim_rv.
+      }
+      assert (tau_stopped_converge: forall a (pf:0 <= a),
+                 let M := (process_stopped_at RR (tau a)) in 
+                 almost prts (fun ω => ex_finite_Elim_seq (fun n => M n ω))).
+      {
         intros.
-        now apply borel_Rbar_borel.
-      - apply Rbar_rvlim_nnf.
+        apply (sup_martingale_convergence_bounded_finite
+                 (process_stopped_at RR (tau a)) sas (mknonnegreal _ pf)).
+        now apply tau_stopped_bound.
+      }
+      assert (tau_stopped_converge_Z :
+                almost prts 
+                       (fun ω => forall (a:nat),
+                            let M := (process_stopped_at RR (tau (INR a))) in
+                            ex_finite_lim_seq (fun n => M n ω))).
+      {
+        apply almost_forall.
+        intros a.
+        generalize (tau_stopped_converge (INR a) (pos_INR a)).
+        apply almost_impl, all_almost.
+        unfold impl; intros.
+        rewrite ex_finite_Elim_seq_correct in H1.
+        destruct H1.
+        rewrite ex_finite_lim_seq_correct.
+        apply ex_Elim_seq_fin in H1.
+        now rewrite Elim_seq_fin in H2.
+      }
+      assert (RR_converge :
+                almost prts (fun ω => ex_finite_lim_seq (fun n => RR n ω))).
+      {
+        revert tau_stopped_converge_Z.
+        apply almost_impl.
+        revert H0.
+        apply almost_impl, all_almost.
+        unfold impl; intros.
+        apply ex_finite_lim_series in H0.
+        destruct H0.
+        specialize (H1 (Z.to_nat (up x0))).
+        revert H1.
+        apply ex_finite_lim_seq_ext.
         intros.
-        now apply positive_Rbar_positive.
-      - admit.
-      - 
-Admitted.
+        unfold process_stopped_at, const, lift1_min.
+        match_option.
+        unfold tau in eqq.
+        unfold hitting_time in eqq.
+        assert (forall k, Zsum k x <= INR (Z.to_nat (up x0))).
+        {
+          intros.
+          unfold Zsum.
+          generalize (is_lim_seq_incr_compare _ _ H0); intros.
+          rewrite <- sum_n_Reals.
+          cut_to H1.
+          - eapply Rle_trans.
+            apply H1.
+            rewrite INR_up_pos.
+            + generalize (archimed x0); intros.
+              lra.
+            + apply is_lim_seq_unique in H0.
+              assert (Rbar_le 0 x0).
+              {
+                rewrite <- H0.
+                apply Lim_seq_pos.
+                intros.
+                apply sum_n_nneg.
+                intros.
+                apply nnZ.
+             }
+              simpl in H2.
+              lra.
+          - intros.
+            rewrite sum_Sn.
+            unfold plus; simpl.
+            specialize (nnZ (S n1) x).
+            lra.
+        }
+        unfold classic_min_of in eqq.
+        match_destr_in eqq.
+        destruct s.
+        destruct a.
+        simpl in e.
+        unfold id in e.
+        specialize (H1 x1).
+        lra.
+      }
+      assert (Y_Xsum_converge:
+                almost prts 
+                       (fun ω => ex_finite_lim_seq
+                                   (fun n => (Y n ω) + (sum_f_R0' (fun k => X k ω) n)))).
+      {
+        revert RR_converge.
+        apply almost_impl.
+        revert H0.
+        apply almost_impl, all_almost.
+        unfold impl; intros.
+        unfold RR in H1.
+        apply ex_finite_lim_series in H0.
+        rewrite ex_finite_lim_seq_incr_1 in H1.
+        rewrite ex_finite_lim_seq_incr_1.
+        destruct H0.
+        destruct H1.
+        unfold ex_finite_lim_seq.
+        exists (x1 + x0).
+        apply is_lim_seq_ext with
+            (u := fun n =>
+                    (rvminus
+                       (rvplus (Y (S n))
+                               (fun ω => sum_f_R0' (fun k : nat => X k ω) (S n)))
+                       (fun ω => sum_f_R0' (fun k : nat => Z k ω) (S n)) x)
+                      + (sum_n (fun k => Z k x) n)).
+        - intros.
+          rv_unfold.
+          rewrite sum_n_Reals.
+          rewrite <- sum_f_R0_sum_f_R0'.
+          rewrite <- sum_f_R0_sum_f_R0'.
+          lra.
+        - now apply is_lim_seq_plus'.
+      }
+      assert (almost prts (fun ω : Ts => ex_series (fun n : nat => X n ω))).
+      {
+        revert Y_Xsum_converge.
+        apply almost_impl, all_almost.
+        unfold impl; intros.
+        rewrite <- ex_finite_lim_series.
+        apply ex_finite_lim_seq_incr_1 in H1.
+        apply ex_finite_lim_seq_ext with (f := fun n => sum_f_R0' (fun k : nat => X k x) (S n)).
+        - intros.
+          rewrite sum_n_Reals.
+          now rewrite sum_f_R0_sum_f_R0'.
+        - apply ex_finite_lim_seq_plus_incr in H1; trivial.
+          + intros.
+            apply nnY.
+          + intros.
+            replace (S n) with (n+1)%nat by lia.
+            simpl.
+            specialize (nnX (n + 1)%nat x).
+            lra.
+     }
+     split; trivial.
+     revert H1.
+     apply almost_impl.
+     revert Y_Xsum_converge.
+     apply almost_impl, all_almost.
+     unfold impl; intros.
+     apply ex_finite_lim_series in H2.
+     apply (ex_finite_lim_seq_plus_alt _ _ H1).
+     apply ex_finite_lim_seq_incr_1.
+     revert H2.
+     apply ex_finite_lim_seq_ext.
+     intros.
+     rewrite sum_n_Reals.
+     now rewrite sum_f_R0_sum_f_R0'.
+  Qed.
+
 
 End mct.
