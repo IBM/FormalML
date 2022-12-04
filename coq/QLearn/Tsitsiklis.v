@@ -116,12 +116,12 @@ Lemma lemma1 (α w B W : nat -> Ts -> R) (W0 C : R)
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
   (almostR2 prts Rle (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) (const C)) ->
   (forall n ω, W (S n) ω = (1 - α n ω) * (W n ω) + (α n ω) * (w n ω)) ->
-  (almost prts (fun ω => exists (b:R), forall n, B n ω <= b)) ->
+  (almost prts (fun ω => exists (b:nonnegreal), forall n, B n ω <= b)) ->
   almost prts (fun ω => is_lim_seq (fun n => W n ω) 0).
 Proof.
   intros.
   unfold IsAdapted in adaptB.
-  assert (forall j t,
+  assert (rvB: forall j t,
              (j <= t)%nat ->
              RandomVariable (F t) borel_sa (B j)).
   {
@@ -132,10 +132,13 @@ Proof.
     }
     now apply (RandomVariable_sa_sub H8).
   }
-(*  pose (tau_coll k t j :=
-          if le_dec j t then event_lt (F t) (B j) (INR k) else Ω). *)
+
   pose (tau_coll k t j :=
-          if le_dec j t then event_lt (F t) (B t) (INR k) else Ω).
+          match (le_dec j t) with
+          | left pf =>  event_lt (rv := rvB j t pf) (F t) (B j) (INR k)
+          | _ =>  Ω
+          end).
+  
   pose (tau_int k t := inter_of_collection (tau_coll k t)).
 
   pose (IB k t := EventIndicator (classic_dec (tau_int k t))).
@@ -184,13 +187,13 @@ Proof.
     }
     generalize (Condexp_factor_out prts (filt_sub t) 
                                    (rvsqr (w t)) (IB k t)); intros.
-    apply almostR2_prob_space_sa_sub_lift in H10.
-    revert H10.
+    apply almostR2_prob_space_sa_sub_lift in H9.
+    revert H9.
     apply almost_impl.
     revert H0.
     apply almost_impl, all_almost.
     unfold impl; intros.
-    rewrite H10.
+    rewrite H9.
     unfold IB, tau_int, Rbar_rvmult, tau_coll, EventIndicator.
     match_destr.
     - rewrite Rbar_mult_1_l.
@@ -222,7 +225,22 @@ Proof.
     unfold IB, tau_int, tau_coll, EventIndicator.
     match_destr.
     red in n.
-    
+    cut_to n; try easy.
+    simpl.
+    intros.
+    match_destr.
+    - simpl.
+      eapply Rle_lt_trans.
+      apply H6.
+      rewrite INR_up_pos.
+      + apply (archimed x0).
+      + generalize (cond_nonneg x0).
+        lra.
+    - simpl.
+      now red.
+  }
+  
+      
   Admitted.
 
 
