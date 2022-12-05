@@ -2094,7 +2094,7 @@ Qed.
 *)      
 
 
-  Lemma is_conditional_expectation_factor_out_frf_nneg
+  Lemma is_conditional_expectation_factor_out_frf_nneg_aux
         (f g:Ts->R) (ce:Ts->Rbar)
         {frfg : FiniteRangeFunction g}
         {nnf : NonnegativeFunction f}
@@ -2104,17 +2104,12 @@ Qed.
         {rvg : RandomVariable dom2 borel_sa g}
         {rvce : RandomVariable dom2 Rbar_borel_sa ce}
         {rvgf: RandomVariable dom borel_sa (rvmult g f)}
-        {rvgce: RandomVariable dom2 Rbar_borel_sa (Rbar_rvmult g ce)} :
-(*    IsFiniteExpectation prts f -> *)
+        {rvgce: RandomVariable dom2 Rbar_borel_sa (Rbar_rvmult g ce)}
+        (frfpos : (forall (c : R), In c frf_vals -> 0 <= c)) :
     is_conditional_expectation dom2 f ce ->
     is_conditional_expectation dom2 (rvmult g f) (Rbar_rvmult g ce).
   Proof.
     intros (* isfe *) isce.
-    assert (frfpos : (forall (c : R), In c frf_vals -> 0 < c)).
-    {
-      
-      admit.
-    }
     intros P decP saP.
     erewrite Expectation_pos_pofrf.
     erewrite Rbar_Expectation_pos_pofrf.
@@ -2196,7 +2191,6 @@ Qed.
           simpl.
           apply Rmult_le_pos.
           * rewrite nodup_In in H0.
-            left.
             now apply frfpos.
           * apply EventIndicator_pos.
       - rewrite <- list_Rbar_sum_map_finite.
@@ -2237,7 +2231,6 @@ Qed.
       apply Rmult_le_pos; [| apply EventIndicator_pos].
       apply Rmult_le_pos; [| apply nnf].
       apply Rmult_le_pos; [| apply EventIndicator_pos].
-      left.
       apply frfpos.
       eapply nodup_In; eauto.
     }
@@ -2250,7 +2243,6 @@ Qed.
       apply Rbar_mult_nneg_compat; [| apply EventIndicator_pos].
       apply Rbar_mult_nneg_compat; [| apply nnce].
       apply Rmult_le_pos; [| apply EventIndicator_pos].
-      left.
       apply frfpos.
       eapply nodup_In; eauto.
     }
@@ -2310,48 +2302,65 @@ Qed.
     }
 
     rewrite (Rbar_NonnegExpectation_re eqq3Rbar).
-    
-    assert (apos: 0 < a).
-    {
-      apply frfpos.
-      eapply nodup_In; eauto.
-    } 
 
-    generalize (NonnegExpectation_scale (mkposreal _ apos)); intros.
-    simpl in H1.
-    erewrite (NonnegExpectation_pf_irrel _ (rvscale_nnf (mkposreal _ apos) _ _)).
-    rewrite H1.
-    generalize (Rbar_NonnegExpectation_scale' _ (mkposreal _ apos)); intros.
-    simpl in H2.
-    erewrite H2.
-    f_equal.
-    red in isce.
-    assert (Expectation (rvmult f (EventIndicator (classic_dec (pre_event_inter (fun omega0 : Ts => g omega0 = a) P)))) =
-            Rbar_Expectation
-              (Rbar_rvmult ce (fun x : Ts => EventIndicator (classic_dec (pre_event_inter (fun omega0 : Ts => g omega0 = a) P)) x))).
-    {
-      apply isce.
-      apply sa_inter; trivial.
-      apply sa_le_pt.
-      apply rv_measurable.
-      now apply RandomVariable_sa_sub.
-    }
-    
-    erewrite Expectation_pos_pofrf in H3.
-    erewrite Rbar_Expectation_pos_pofrf in H3.
-    invcs H3.
-    apply H5.
-
-    - apply Rbar_rvmult_rv.
-      + now apply RandomVariable_sa_sub.
-      + apply Real_Rbar_rv.
-        apply EventIndicator_pre_rv.
-        apply sa_inter.
-        * apply sa_le_pt.
+    - destruct (Rlt_dec 0 a) as [apos | aneg].
+      + {
+        generalize (NonnegExpectation_scale (mkposreal _ apos)); intros.
+        simpl in H1.
+        erewrite (NonnegExpectation_pf_irrel _ (rvscale_nnf (mkposreal _ apos) _ _)).
+        rewrite H1.
+        generalize (Rbar_NonnegExpectation_scale' _ (mkposreal _ apos)); intros.
+        simpl in H2.
+        erewrite H2.
+        f_equal.
+        red in isce.
+        assert (Expectation (rvmult f (EventIndicator (classic_dec (pre_event_inter (fun omega0 : Ts => g omega0 = a) P)))) =
+                  Rbar_Expectation
+                    (Rbar_rvmult ce (fun x : Ts => EventIndicator (classic_dec (pre_event_inter (fun omega0 : Ts => g omega0 = a) P)) x))).
+        {
+          apply isce.
+          apply sa_inter; trivial.
+          apply sa_le_pt.
           apply rv_measurable.
           now apply RandomVariable_sa_sub.
-        * now apply sub.
-    - now left.
+        }
+        
+        erewrite Expectation_pos_pofrf in H3.
+        erewrite Rbar_Expectation_pos_pofrf in H3.
+        invcs H3.
+        apply H5.
+
+        - apply Rbar_rvmult_rv.
+          + now apply RandomVariable_sa_sub.
+          + apply Real_Rbar_rv.
+            apply EventIndicator_pre_rv.
+            apply sa_inter.
+            * apply sa_le_pt.
+              apply rv_measurable.
+              now apply RandomVariable_sa_sub.
+            * now apply sub.
+        - now left.
+      }
+      + assert (a = 0).
+        {
+          assert (0 <= a).
+          {
+            apply frfpos.
+            eapply nodup_In; eauto.
+          }
+          lra.
+        }
+        subst.
+        rewrite (NonnegExpectation_ext _ (@nnfconst Ts 0 (reflexivity _))).
+        * rewrite NonnegExpectation_const.
+          rewrite (Rbar_NonnegExpectation_ext _ nnf_0).
+          -- erewrite <- (Rbar_NonnegExpectation_const 0).
+             apply Rbar_NonnegExpectation_pf_irrel.
+          -- intros ?;
+               unfold Rbar_rvmult, const.
+             apply Rbar_mult_0_l.
+        * intros ?; rv_unfold.
+          lra.
     - intros.
       apply Rbar_rvmult_rv.
       + apply Rbar_rvmult_rv.
@@ -2368,7 +2377,53 @@ Qed.
         now apply sub.
     - intros.
       typeclasses eauto.
-  Admitted.
+      Unshelve.
+      reflexivity.
+  Qed.
+
+  Program Definition frf_nneg_nneg (f : Ts -> R) 
+    {frf : FiniteRangeFunction f}
+    {nneg: NonnegativeFunction f} : FiniteRangeFunction f
+    := {|
+      frf_vals := filter (fun x => if Rle_dec 0 x then true else false) frf_vals
+    |}.
+  Next Obligation.
+    apply filter_In.
+    split.
+    - apply frf_vals_complete.
+    - match_destr.
+      elim n.
+      now specialize (nneg x).
+  Qed.
+
+  Lemma frf_nneg_nneg_nneg (f : Ts -> R) 
+    {frf : FiniteRangeFunction f}
+    {nneg: NonnegativeFunction f} :
+    forall x, In x (@frf_vals _ _ _ (frf_nneg_nneg f)) -> 0 <= x.
+  Proof.
+    simpl; intros.
+    apply filter_In in H.
+    destruct H.
+    match_destr_in H0.
+  Qed.
+
+  Lemma is_conditional_expectation_factor_out_frf_nneg
+        (f g:Ts->R) (ce:Ts->Rbar)
+        {frfg : FiniteRangeFunction g}
+        {nnf : NonnegativeFunction f}
+        {nng : NonnegativeFunction g}        
+        {nnce : Rbar_NonnegativeFunction ce}        
+        {rvf : RandomVariable dom borel_sa f}
+        {rvg : RandomVariable dom2 borel_sa g}
+        {rvce : RandomVariable dom2 Rbar_borel_sa ce}
+        {rvgf: RandomVariable dom borel_sa (rvmult g f)}
+        {rvgce: RandomVariable dom2 Rbar_borel_sa (Rbar_rvmult g ce)} :
+    is_conditional_expectation dom2 f ce ->
+    is_conditional_expectation dom2 (rvmult g f) (Rbar_rvmult g ce).
+  Proof.
+    apply (is_conditional_expectation_factor_out_frf_nneg_aux _ _ _ (frfg := frf_nneg_nneg g)).
+    apply frf_nneg_nneg_nneg.
+  Qed.
 
   Lemma frf_min (f : Ts -> R) 
     {frf : FiniteRangeFunction f} :
