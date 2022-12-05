@@ -1841,6 +1841,556 @@ Qed.
       apply EventIndicator_pre_rv; trivial.
   Qed.
 
+
+    Lemma NonnegExpectation_sum'
+        (rv_X1 rv_X2 : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2}
+        {nnf1:NonnegativeFunction rv_X1}
+        {nnf2:NonnegativeFunction rv_X2} 
+        {nnf3:NonnegativeFunction (rvplus rv_X1 rv_X2)} :
+    NonnegExpectation (rvplus rv_X1 rv_X2) =
+    Rbar_plus (NonnegExpectation rv_X1) (NonnegExpectation rv_X2).
+   Proof.
+     now rewrite <- NonnegExpectation_sum.
+   Qed.
+
+   Instance list_sum_map_nn f (l : list R)
+        {nnf:forall c, In c l -> NonnegativeFunction (f c)} :
+    NonnegativeFunction
+      (fun omega : Ts => RealAdd.list_sum (map (fun c : R => f c omega) l)).
+   Proof.
+     induction l; intros ?; simpl.
+     - lra.
+     - apply Rplus_le_le_0_compat.
+       + apply nnf.
+         simpl; tauto.
+       + apply IHl.
+         intros.
+         apply nnf.
+         simpl; tauto.
+   Qed.
+
+   Lemma NonnegExpectation_list_sum_in f (l : list R)
+        {rv:forall c, RandomVariable dom borel_sa (f c)}
+        {nnf:forall c, In c l -> NonnegativeFunction (f c)} :
+
+    NonnegExpectation
+            (fun omega => RealAdd.list_sum
+                          (map (fun c => (f c omega))
+                               l)) =
+    (list_Rbar_sum
+       (map_onto l (fun c pf  =>
+                      (NonnegExpectation (f c) (pofrf := nnf c pf))))).
+  Proof.
+    induction l; simpl; intros.
+    - eapply NonnegExpectation_const.
+    - generalize (NonnegExpectation_sum' (f a)); unfold rvplus; intros HH.
+      erewrite HH; trivial.
+      + f_equal.
+        erewrite IHl; trivial.
+      + now apply list_sum_rv.
+        Unshelve.
+        * lra.
+        * intros.
+          apply nnf.
+          simpl; tauto.
+   Qed.
+
+  Lemma Rbar_NonnegExpectation_plus'
+        (rv_X1 rv_X2 : Ts -> Rbar)
+        {rv1 : RandomVariable dom Rbar_borel_sa rv_X1}
+        {rv2 : RandomVariable dom Rbar_borel_sa rv_X2}
+        {nnf1:Rbar_NonnegativeFunction rv_X1}
+        {nnf2:Rbar_NonnegativeFunction rv_X2} 
+        {nnf3:Rbar_NonnegativeFunction (Rbar_rvplus rv_X1 rv_X2)} :         
+    Rbar_NonnegExpectation (Rbar_rvplus rv_X1 rv_X2) =
+    Rbar_plus (Rbar_NonnegExpectation rv_X1) (Rbar_NonnegExpectation rv_X2).
+  Proof.
+    now rewrite <- Rbar_NonnegExpectation_plus.
+  Qed.
+
+(*
+   Instance list_Rbar_sum_nn f (l : list R)
+        {nnf:forall c, In c l -> Rbar_NonnegativeFunction (f c)} :
+     Rbar_NonnegativeFunction
+      (fun omega : Ts => list_Rbar_sum (map (fun c : R => f c omega) l)).
+   Proof.
+     induction l; intros ?.
+     - simpl; lra.
+   Admitted.
+(*
+     - apply Rplus_le_le_0_compat.
+       + apply nnf.
+         simpl; tauto.
+       + apply IHl.
+         intros.
+         apply nnf.
+         simpl; tauto.
+   Qed.
+ *)
+
+*)
+
+(*
+  Lemma Rbar_NonnegExpectation_list_sum_in f (l : list R) 
+        {rv:forall c, RandomVariable dom Rbar_borel_sa (f c)}
+        {nnf:forall c, In c l -> Rbar_NonnegativeFunction (f c)} :
+
+    Rbar_NonnegExpectation
+            (fun omega => list_Rbar_sum
+                          (map
+                             (fun c : R =>
+                                (f c omega))
+                             l)) =
+    (list_Rbar_sum
+       (map_onto l 
+          (fun c pf =>
+             Rbar_NonnegExpectation (f c) (pofrf := nnf c pf)))).
+  Proof.
+    induction l; simpl.
+    - eapply Rbar_NonnegExpectation_const.
+    - generalize (Rbar_NonnegExpectation_plus' (f a)); unfold Rbar_rvplus; intros HH.
+      erewrite HH; trivial.
+      + f_equal.
+        now rewrite <- IHl.
+      + now apply list_Rbar_sum_rv.
+        Unshelve.
+        lra.
+  Qed.
+*)
+
+  Lemma NonnegFunction_list_sum f l
+    (nnf:forall c, In c l -> NonnegativeFunction (f c)) :
+    NonnegativeFunction (fun omega : Ts => RealAdd.list_sum (map (fun c : R => f c omega) l)).
+  Proof.
+    induction l; simpl.
+    - intros _; lra.
+    - apply rvplus_nnf.
+      + now apply nnf; left.
+      + apply IHl; intros.
+        now apply nnf; right.
+  Qed.      
+
+    
+  Lemma NonnegExpectation_list_sum f (l : list R) 
+        {rv:forall c, RandomVariable dom borel_sa (f c)}
+        {nnf:forall (c : R), In c l -> NonnegativeFunction (f c)} 
+        {nnsum :NonnegativeFunction
+                  (fun omega : Ts => RealAdd.list_sum (map (fun c : R => f c omega) l))} :
+
+    NonnegExpectation
+            (fun omega => RealAdd.list_sum
+                          (map
+                             (fun c : R =>
+                                (f c omega))
+                             l)) =
+    (list_Rbar_sum
+       (map_onto
+          l
+          (fun c pf =>
+             NonnegExpectation (f c) (pofrf:=nnf c pf)))).
+  Proof.
+    induction l; simpl.
+    - apply (NonnegExpectation_const _ (reflexivity _)).
+    - assert (nnf1 : NonnegativeFunction (f a)) by (now apply nnf; left).
+      assert (nnf2 : forall c, In c l -> NonnegativeFunction (f c)) by (now intros; apply nnf; right).
+      assert (nnf3: NonnegativeFunction (fun omega : Ts => RealAdd.list_sum (map (fun c : R => f c omega) l))).
+      {
+        now apply NonnegFunction_list_sum.
+      } 
+      
+      generalize (NonnegExpectation_sum' (f a)); unfold rvplus; intros HH.
+      erewrite HH; trivial.
+      + f_equal.
+        now erewrite IHl.
+      + now apply list_sum_rv.
+  Qed.
+
+   Instance list_Rbar_sum_rv {T} f l
+           {rv:forall c, RandomVariable dom Rbar_borel_sa (f c)}
+    : RandomVariable dom Rbar_borel_sa
+                     (fun omega : Ts => list_Rbar_sum (map (fun c : T => f c omega) l)).
+  Proof.
+    induction l; simpl.
+    - apply rvconst.
+    - generalize @Rbar_rvplus_rv; unfold rvplus; intros HH.
+      apply HH; trivial.
+  Qed.
+
+  Lemma Rbar_NonnegFunction_list_Rbar_sum f l
+    (nnf:forall c, In c l -> Rbar_NonnegativeFunction (f c)) :
+    Rbar_NonnegativeFunction (fun omega : Ts => list_Rbar_sum (map (fun c : R => f c omega) l)).
+  Proof.
+    induction l; simpl.
+Admitted.
+(*
+    - intros _; lra.
+    - apply rvplus_nnf.
+      + now apply nnf; left.
+      + apply IHl; intros.
+        now apply nnf; right.
+  Qed.      
+*)
+
+  Lemma Rbar_NonnegExpectation_list_sum_in f (l : list R) 
+        {rv:forall c, RandomVariable dom Rbar_borel_sa (f c)}
+        {nnf:forall c, In c l -> Rbar_NonnegativeFunction (f c)} 
+        {nnsum :Rbar_NonnegativeFunction
+                  (fun omega : Ts => list_Rbar_sum (map (fun c : R => f c omega) l))} :
+
+
+    Rbar_NonnegExpectation
+            (fun omega => list_Rbar_sum
+                          (map
+                             (fun c : R =>
+                                (f c omega))
+                             l)) =
+    (list_Rbar_sum
+       (map_onto l 
+          (fun c pf =>
+             Rbar_NonnegExpectation (f c) (pofrf := nnf c pf)))).
+  Proof.
+    induction l; simpl.
+    - eapply Rbar_NonnegExpectation_const.
+    - 
+      + 
+      assert (nnf1 : Rbar_NonnegativeFunction (f a)) by (now apply nnf; left).
+      assert (nnf2 : forall c, In c l -> Rbar_NonnegativeFunction (f c)) by (now intros; apply nnf; right).
+      assert (nnf3: Rbar_NonnegativeFunction (fun omega : Ts => list_Rbar_sum (map (fun c : R => f c omega) l))).
+      {
+        now apply Rbar_NonnegFunction_list_Rbar_sum.
+      } 
+      f_equal.        
+      generalize (Rbar_NonnegExpectation_plus' (f a)); unfold Rbar_rvplus; intros HH.
+      erewrite HH; trivial.
+      now erewrite <- IHl.
+      now apply list_Rbar_sum_rv.
+      Unshelve.
+      lra.
+  Qed.
+
+  Global Instance Rbar_NonnegativeFunction_proper : Proper (rv_eq (Ts := Ts) ==> iff) Rbar_NonnegativeFunction.
+    Proof.
+      unfold Rbar_NonnegativeFunction, rv_eq, pointwise_relation.
+      intros x y eqq.
+      split; intros lle z.
+      - rewrite <- eqq; auto.
+      - rewrite eqq; auto.
+    Qed.
+
+  Lemma Rbar_NonnegExpectation_re
+        {rv_X1 rv_X2 : Ts -> Rbar}
+        (eqq:rv_eq rv_X1 rv_X2)
+        {nnf1:Rbar_NonnegativeFunction rv_X1} :
+    Rbar_NonnegExpectation rv_X1 = Rbar_NonnegExpectation rv_X2 (pofrf:=((proj1 (Rbar_NonnegativeFunction_proper _ _ eqq)) nnf1)).
+  Proof.
+    now apply Rbar_NonnegExpectation_ext.
+  Qed.
+
+  Lemma list_Rbar_sum_nneg (l : list Rbar) :
+    (forall (c : Rbar), In c l -> Rbar_le 0 c) ->
+    Rbar_le 0 (list_Rbar_sum l).
+  Proof.
+    intros lpos.
+    induction l.
+    - simpl; lra.
+    - replace  (list_Rbar_sum (a :: l)) with (Rbar_plus a (list_Rbar_sum l)).
+      + replace (Finite 0) with (Rbar_plus 0 0).
+        * apply Rbar_plus_le_compat.
+          -- apply lpos.
+             simpl; tauto.
+          -- apply IHl.
+             intros.
+             apply lpos.
+             simpl; tauto.
+        *  now rewrite Rbar_plus_0_r.
+      + now simpl.
+  Qed.
+
+  Lemma list_Rbar_sum_const_mul (l : list Rbar) :
+    (forall (c : Rbar), In c l -> Rbar_le 0 c) ->
+    forall r, 
+      list_Rbar_sum (map (fun x => Rbar_mult r x) l)  =
+              Rbar_mult r (list_Rbar_sum l).
+  Proof.
+    intros lpos r.
+    induction l.
+    - simpl.
+      now rewrite Rbar_mult_0_r.
+    - simpl. rewrite IHl.
+      + rewrite Rbar_mult_plus_distr_l; trivial.
+        * apply lpos.
+          simpl; tauto.
+        * apply list_Rbar_sum_nneg.
+          intros.
+          apply lpos.
+          now apply in_cons.
+      + intros.
+        apply lpos.
+        now apply in_cons.
+ Qed.
+
+  Lemma is_conditional_expectation_factor_out_frf_nneg
+        (f g:Ts->R) (ce:Ts->Rbar)
+        {frfg : FiniteRangeFunction g}
+        {nnf : NonnegativeFunction f}
+        {nng : NonnegativeFunction g}        
+        {nnce : Rbar_NonnegativeFunction ce}        
+        {rvf : RandomVariable dom borel_sa f}
+        {rvg : RandomVariable dom2 borel_sa g}
+        {rvce : RandomVariable dom2 Rbar_borel_sa ce}
+        {rvgf: RandomVariable dom borel_sa (rvmult g f)}
+        {rvgce: RandomVariable dom2 Rbar_borel_sa (Rbar_rvmult g ce)} :
+(*    IsFiniteExpectation prts f -> *)
+    (forall (c : R), In c frf_vals -> 0 < c) ->
+    is_conditional_expectation dom2 f ce ->
+    is_conditional_expectation dom2 (rvmult g f) (Rbar_rvmult g ce).
+  Proof.
+    intros (* isfe *) frfpos isce.
+    intros P decP saP.
+    erewrite Expectation_pos_pofrf.
+    erewrite Rbar_Expectation_pos_pofrf.
+
+    f_equal.
+    
+    assert (eqq1:forall f, rv_eq
+              (rvmult (rvmult g f) (EventIndicator decP))
+              (rvmult (rvmult (frf_indicator g) f) (EventIndicator decP))).
+    {
+      intros.
+      apply rvmult_proper; try reflexivity.
+      apply rvmult_proper; try reflexivity.
+      apply (frf_indicator_sum g).
+    }
+    rewrite (NonnegExpectation_re (eqq1 f)).
+    assert (eqq1Rbar :
+              rv_eq
+                (Rbar_rvmult (Rbar_rvmult (fun x : Ts => g x) ce)
+                             (fun x : Ts => EventIndicator decP x))
+                (Rbar_rvmult (Rbar_rvmult (frf_indicator g) ce)
+                             (fun x : Ts => EventIndicator decP x))).
+    {
+      intros ?.
+      unfold Rbar_rvmult.
+      f_equal.
+      f_equal.
+      now rewrite (frf_indicator_sum g).
+    }      
+    
+    rewrite (Rbar_NonnegExpectation_re eqq1Rbar).
+    
+    assert (eqq2: forall f, 
+              rv_eq
+                (rvmult (rvmult (frf_indicator g) f) (EventIndicator decP))
+                (fun omega : Ts =>
+                   RealAdd.list_sum
+                     (map (fun c : R => (scale_val_indicator g c omega) * (f omega) * EventIndicator decP omega)
+                          (nodup Req_EM_T frf_vals)))).
+    {
+      intros ??.
+      unfold rvmult, frf_indicator.
+      rewrite Rmult_assoc.
+      rewrite Rmult_comm.
+      rewrite <- list_sum_const_mul.
+      f_equal.
+      apply map_ext; intros.
+      lra.
+    }
+    rewrite (NonnegExpectation_re (eqq2 f)).
+    assert (eqq2Rbar: 
+              rv_eq
+                (Rbar_rvmult (Rbar_rvmult (frf_indicator g) ce) (EventIndicator decP))
+                (fun omega : Ts =>
+                   list_Rbar_sum
+                     (map (fun c : R => (Rbar_mult (Rbar_mult (scale_val_indicator g c omega) (ce omega)) (EventIndicator decP omega)))
+                          (nodup Req_EM_T frf_vals)))).
+    {
+      intros ?.
+      unfold Rbar_rvmult, frf_indicator.
+      rewrite <- Rbar_mult_assoc.
+      rewrite Rbar_mult_comm.
+      replace  (Finite (RealAdd.list_sum (map (fun c : R => scale_val_indicator g c a) (nodup Req_EM_T frf_vals)))) with
+          (list_Rbar_sum (map (fun c : R => Finite (scale_val_indicator g c a)) (nodup Req_EM_T frf_vals))).
+      - rewrite <- list_Rbar_sum_const_mul.
+        f_equal.
+        + (* apply map_ext; intros. *)
+          admit.
+        + intros.
+          rewrite in_map_iff in H.
+          destruct H as [? [? ?]].
+          unfold scale_val_indicator, val_indicator in H.
+          rewrite <- H.
+          unfold rvscale.
+          simpl.
+          apply Rmult_le_pos.
+          * rewrite nodup_In in H0.
+            left.
+            now apply frfpos.
+          * apply EventIndicator_pos.
+      - admit.
+    }
+
+    rewrite (Rbar_NonnegExpectation_re eqq2Rbar).
+
+    assert (rvff:forall ff, RandomVariable dom borel_sa ff ->
+                       forall c, RandomVariable dom borel_sa
+                                                (fun omega : Ts =>
+                                                   scale_val_indicator g c omega * ff omega * EventIndicator decP omega)).
+    {
+      intros.
+      apply rvmult_rv.
+      - apply rvmult_rv; trivial.
+        apply scale_val_indicator_rv.
+        now apply RandomVariable_sa_sub.
+      - apply EventIndicator_pre_rv.
+        now apply sub.
+    } 
+    
+    assert (RandomVariable dom borel_sa (fun x : Ts => ce x)).
+    {
+      apply Rbar_real_rv.
+      now apply RandomVariable_sa_sub.
+    }
+
+    generalize (rvff f); intros rvfff.
+    cut_to rvfff; trivial.
+
+
+    assert (nnf3: forall c : R,
+               In c (nodup Req_EM_T frf_vals) ->
+               NonnegativeFunction (fun omega : Ts => scale_val_indicator g c omega * f omega * EventIndicator decP omega)).
+    {
+      
+      admit.
+    }
+
+    assert (forall c : R,
+               In c (nodup Req_EM_T frf_vals) ->
+               Rbar_NonnegativeFunction (fun omega : Ts => scale_val_indicator g c omega * ce omega * EventIndicator decP omega)).
+    {
+      
+      admit.
+    }
+
+   
+    erewrite  NonnegExpectation_list_sum.
+    erewrite Rbar_NonnegExpectation_list_sum_in.    
+
+    f_equal.
+    f_equal.
+
+    apply functional_extensionality_dep.
+    intros a.
+    apply functional_extensionality.
+    intros pf.
+    
+    unfold scale_val_indicator.
+
+    assert (eqq3: forall ff,
+               rv_eq (fun omega : Ts =>
+                        rvscale a (val_indicator g a) omega * ff omega * EventIndicator decP omega)
+                     (rvscale a (rvmult ff (EventIndicator (classic_dec (pre_event_inter
+                                                                           (fun omega0 : Ts => g omega0 = a) P)))))).
+    {
+      intros ??.
+      unfold val_indicator, pre_event_inter.
+      rv_unfold.
+      repeat rewrite Rmult_assoc.
+      f_equal.
+      rewrite Rmult_comm.
+      rewrite Rmult_assoc.
+      f_equal.
+      repeat match_destr; intuition lra.
+    }
+
+    rewrite (NonnegExpectation_re (eqq3 f)).
+
+    assert (eqq3Rbar: 
+              rv_eq (fun omega : Ts =>
+                         Rbar_mult (Rbar_mult (rvscale a (val_indicator g a) omega) (ce omega))
+                                   (EventIndicator decP omega))
+                    (Rbar_rvmult (const a) (Rbar_rvmult ce (EventIndicator (classic_dec (pre_event_inter
+                                                                                           (fun omega0 : Ts => g omega0 = a) P)))))).
+    {
+      intros ?.
+      unfold val_indicator, pre_event_inter, Rbar_rvmult, const.
+      rv_unfold.
+      case_eq (ce a0); intros.
+      - simpl.
+        repeat rewrite Rmult_assoc.
+        apply Rbar_finite_eq.
+        f_equal.
+        rewrite Rmult_comm.
+        rewrite Rmult_assoc.
+        f_equal.
+        repeat match_destr; intuition lra.
+      - repeat match_destr; try easy; try rewrite Rmult_1_r; try rewrite Rmult_0_r; try rewrite Rbar_mult_1_r; try rewrite Rbar_mult_1_r; try rewrite Rbar_mult_0_r; try rewrite Rbar_mult_0_r; try rewrite Rbar_mult_0_r; try easy; try tauto.
+        now rewrite Rbar_mult_0_l.
+      - specialize (nnce a0).
+        rewrite H1 in nnce.
+        now simpl in nnce.
+    }
+
+    rewrite (Rbar_NonnegExpectation_re eqq3Rbar).
+    
+    assert (apos: 0 < a) by admit.
+
+    generalize (NonnegExpectation_scale (mkposreal _ apos)); intros.
+    simpl in H1.
+    erewrite (NonnegExpectation_pf_irrel _ (rvscale_nnf (mkposreal _ apos) _ _)).
+    rewrite H1.
+    generalize (Rbar_NonnegExpectation_scale' _ (mkposreal _ apos)); intros.
+    simpl in H2.
+    erewrite H2.
+    f_equal.
+    red in isce.
+    assert (Expectation (rvmult f (EventIndicator (classic_dec (pre_event_inter (fun omega0 : Ts => g omega0 = a) P)))) =
+            Rbar_Expectation
+              (Rbar_rvmult ce (fun x : Ts => EventIndicator (classic_dec (pre_event_inter (fun omega0 : Ts => g omega0 = a) P)) x))).
+    {
+      apply isce.
+      apply sa_inter; trivial.
+      apply sa_le_pt.
+      apply rv_measurable.
+      now apply RandomVariable_sa_sub.
+    }
+    
+    erewrite Expectation_pos_pofrf in H3.
+    erewrite Rbar_Expectation_pos_pofrf in H3.
+    invcs H3.
+    apply H5.
+
+    - apply Rbar_rvmult_rv.
+      + now apply RandomVariable_sa_sub.
+      + apply Real_Rbar_rv.
+        apply EventIndicator_pre_rv.
+        apply sa_inter.
+        * apply sa_le_pt.
+          apply rv_measurable.
+          now apply RandomVariable_sa_sub.
+        * now apply sub.
+    - now left.
+    - intros.
+      apply Rbar_rvmult_rv.
+      + apply Rbar_rvmult_rv.
+        * apply Real_Rbar_rv.
+          unfold scale_val_indicator.
+          apply rvscale_rv.
+          apply EventIndicator_pre_rv.
+          apply sa_le_pt.
+          apply rv_measurable.
+          now apply RandomVariable_sa_sub.
+        * now apply RandomVariable_sa_sub.
+      + apply Real_Rbar_rv.
+        apply EventIndicator_pre_rv.        
+        now apply sub.
+   - admit.
+     Unshelve.
+     
+            
+    Admitted.
+
   Lemma frf_min (f : Ts -> R) 
     {frf : FiniteRangeFunction f} :
     forall x, RList.MinRlist frf_vals  <= f x.
@@ -1920,11 +2470,11 @@ Qed.
           {rvg : RandomVariable dom2 borel_sa g}
           {rvce : RandomVariable dom2 borel_sa ce}
           {rvgf: RandomVariable dom borel_sa (rvmult f g)} :
-    IsFiniteExpectation prts f ->
+(*    IsFiniteExpectation prts f -> *)
     is_conditional_expectation dom2 f ce ->
     is_conditional_expectation dom2 (rvmult f g) (Rbar_rvmult g ce).
   Proof.
-    intros isfef iscondf.
+    intros (* isfef *) iscondf.
     unfold is_conditional_expectation.
     intros.
     generalize (simple_approx_lim_seq g nnegg); intros.
@@ -1959,7 +2509,9 @@ Qed.
                     (EventIndicator dec))).
     {
       intros.
-      generalize (is_conditional_expectation_factor_out_frf f (simple_approx g n) ce _ iscondf) ; intros.
+      assert (nng : NonnegativeFunction (simple_approx (fun x : Ts => g x) n)) by 
+          apply simple_approx_pofrf.
+      generalize (is_conditional_expectation_factor_out_frf_nneg f (simple_approx g n) ce iscondf) ; intros.
       rewrite <- (H3 P dec H).
       apply Expectation_ext; intros ?.
       rv_unfold; lra.
@@ -2493,7 +3045,7 @@ Qed.
       - apply H6.
     }
     generalize (IsFiniteExpectation_abs f H); intros.
-    generalize (is_conditional_expectation_factor_out_nneg_both (rvabs f) g ace H6); intros.
+    generalize (is_conditional_expectation_factor_out_nneg_both (rvabs f) g ace (* H6 *)); intros.
     generalize (IsFiniteExpectation_abs (rvmult f g) H0); intros.
     assert (rv_eq
               (rvabs (rvmult f g))
