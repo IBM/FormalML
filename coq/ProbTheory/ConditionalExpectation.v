@@ -2023,15 +2023,13 @@ Qed.
     Rbar_NonnegativeFunction (fun omega : Ts => list_Rbar_sum (map (fun c : R => f c omega) l)).
   Proof.
     induction l; simpl.
-Admitted.
-(*
-    - intros _; lra.
-    - apply rvplus_nnf.
+    - intros _.
+      apply Rbar_le_refl.
+    - apply pos_Rbar_plus.
       + now apply nnf; left.
       + apply IHl; intros.
         now apply nnf; right.
-  Qed.      
-*)
+  Qed.
 
   Lemma Rbar_NonnegExpectation_list_sum_in f (l : list R) 
         {rv:forall c, RandomVariable dom Rbar_borel_sa (f c)}
@@ -2129,7 +2127,14 @@ Admitted.
       + intros.
         apply lpos.
         now apply in_cons.
- Qed.
+  Qed.
+
+  Lemma list_Rbar_sum_map_finite l :
+    list_Rbar_sum (map Finite l) = Finite (RealAdd.list_sum l).
+  Proof.
+    induction l; simpl; trivial.
+    now rewrite IHl.
+  Qed.
 
   Lemma is_conditional_expectation_factor_out_frf_nneg
         (f g:Ts->R) (ce:Ts->Rbar)
@@ -2214,7 +2219,8 @@ Admitted.
           (list_Rbar_sum (map (fun c : R => Finite (scale_val_indicator g c a)) (nodup Req_EM_T frf_vals))).
       - rewrite <- list_Rbar_sum_const_mul.
         f_equal.
-        + (* apply map_ext; intros. *)
+        + rewrite map_map.
+          apply map_ext; intros.
           admit.
         + intros.
           rewrite in_map_iff in H.
@@ -2228,7 +2234,8 @@ Admitted.
             left.
             now apply frfpos.
           * apply EventIndicator_pos.
-      - admit.
+      - rewrite <- list_Rbar_sum_map_finite.
+        now rewrite map_map.
     }
 
     rewrite (Rbar_NonnegExpectation_re eqq2Rbar).
@@ -2261,16 +2268,26 @@ Admitted.
                In c (nodup Req_EM_T frf_vals) ->
                NonnegativeFunction (fun omega : Ts => scale_val_indicator g c omega * f omega * EventIndicator decP omega)).
     {
-      
-      admit.
+      intros ???.
+      apply Rmult_le_pos; [| apply EventIndicator_pos].
+      apply Rmult_le_pos; [| apply nnf].
+      apply Rmult_le_pos; [| apply EventIndicator_pos].
+      left.
+      apply frfpos.
+      eapply nodup_In; eauto.
     }
 
     assert (forall c : R,
                In c (nodup Req_EM_T frf_vals) ->
-               Rbar_NonnegativeFunction (fun omega : Ts => scale_val_indicator g c omega * ce omega * EventIndicator decP omega)).
+               Rbar_NonnegativeFunction (fun omega : Ts => Rbar_mult (Rbar_mult (scale_val_indicator g c omega) (ce omega)) (EventIndicator decP omega))).
     {
-      
-      admit.
+      intros ???.
+      apply Rbar_mult_nneg_compat; [| apply EventIndicator_pos].
+      apply Rbar_mult_nneg_compat; [| apply nnce].
+      apply Rmult_le_pos; [| apply EventIndicator_pos].
+      left.
+      apply frfpos.
+      eapply nodup_In; eauto.
     }
 
    
@@ -2278,12 +2295,7 @@ Admitted.
     erewrite Rbar_NonnegExpectation_list_sum_in.    
 
     f_equal.
-    f_equal.
-
-    apply functional_extensionality_dep.
-    intros a.
-    apply functional_extensionality.
-    intros pf.
+    apply map_onto_ext; intros a pf.
     
     unfold scale_val_indicator.
 
@@ -2334,7 +2346,11 @@ Admitted.
 
     rewrite (Rbar_NonnegExpectation_re eqq3Rbar).
     
-    assert (apos: 0 < a) by admit.
+    assert (apos: 0 < a).
+    {
+      apply frfpos.
+      eapply nodup_In; eauto.
+    } 
 
     generalize (NonnegExpectation_scale (mkposreal _ apos)); intros.
     simpl in H1.
@@ -2385,11 +2401,9 @@ Admitted.
       + apply Real_Rbar_rv.
         apply EventIndicator_pre_rv.        
         now apply sub.
-   - admit.
-     Unshelve.
-     
-            
-    Admitted.
+    - admit.
+      
+  Admitted.
 
   Lemma frf_min (f : Ts -> R) 
     {frf : FiniteRangeFunction f} :

@@ -2115,10 +2115,10 @@ Program Fixpoint map_onto {A B} (l:list A) (f:forall a, In a l -> B) : list B
      end.
 Next Obligation.
   simpl; auto.
-Qed.
+Defined.
 Next Obligation.
   simpl; auto.
-Qed.
+Defined.
 
 Lemma map_onto_length  {A B} (l:list A) (f:forall a, In a l -> B) :
   length (map_onto l f) = length l.
@@ -2126,6 +2126,17 @@ Proof.
   induction l; simpl; congruence.
 Qed.
 
+Lemma map_onto_ext  {A B} (l:list A) (f g:forall a, In a l -> B) :
+  (forall x pf, f x pf = g x pf) ->
+  map_onto l f = map_onto l g.
+Proof.
+  intros eqq.
+  induction l; simpl; trivial.
+  f_equal.
+  - apply eqq.
+  - apply IHl; intros.
+    apply eqq.
+Qed.
 
 Lemma filter_map_swap {A B} (P:B->bool) (f:A->B) (l:list A) :
   filter P (map f l) = map f (filter (fun x => P (f x)) l).
