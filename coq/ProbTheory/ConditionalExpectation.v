@@ -1910,56 +1910,6 @@ Qed.
     now rewrite <- Rbar_NonnegExpectation_plus.
   Qed.
 
-(*
-   Instance list_Rbar_sum_nn f (l : list R)
-        {nnf:forall c, In c l -> Rbar_NonnegativeFunction (f c)} :
-     Rbar_NonnegativeFunction
-      (fun omega : Ts => list_Rbar_sum (map (fun c : R => f c omega) l)).
-   Proof.
-     induction l; intros ?.
-     - simpl; lra.
-   Admitted.
-(*
-     - apply Rplus_le_le_0_compat.
-       + apply nnf.
-         simpl; tauto.
-       + apply IHl.
-         intros.
-         apply nnf.
-         simpl; tauto.
-   Qed.
- *)
-
-*)
-
-(*
-  Lemma Rbar_NonnegExpectation_list_sum_in f (l : list R) 
-        {rv:forall c, RandomVariable dom Rbar_borel_sa (f c)}
-        {nnf:forall c, In c l -> Rbar_NonnegativeFunction (f c)} :
-
-    Rbar_NonnegExpectation
-            (fun omega => list_Rbar_sum
-                          (map
-                             (fun c : R =>
-                                (f c omega))
-                             l)) =
-    (list_Rbar_sum
-       (map_onto l 
-          (fun c pf =>
-             Rbar_NonnegExpectation (f c) (pofrf := nnf c pf)))).
-  Proof.
-    induction l; simpl.
-    - eapply Rbar_NonnegExpectation_const.
-    - generalize (Rbar_NonnegExpectation_plus' (f a)); unfold Rbar_rvplus; intros HH.
-      erewrite HH; trivial.
-      + f_equal.
-        now rewrite <- IHl.
-      + now apply list_Rbar_sum_rv.
-        Unshelve.
-        lra.
-  Qed.
-*)
-
   Lemma NonnegFunction_list_sum f l
     (nnf:forall c, In c l -> NonnegativeFunction (f c)) :
     NonnegativeFunction (fun omega : Ts => RealAdd.list_sum (map (fun c : R => f c omega) l)).
@@ -2136,6 +2086,14 @@ Qed.
     now rewrite IHl.
   Qed.
 
+(*
+  Lemma frf_fun_pos_frf_vals (g : Ts -> R) 
+        {frfg : FiniteRangeFunction g}
+        {nng : NonnegativeFunction g} :
+    exists (h : Ts -> R),
+*)      
+
+
   Lemma is_conditional_expectation_factor_out_frf_nneg
         (f g:Ts->R) (ce:Ts->Rbar)
         {frfg : FiniteRangeFunction g}
@@ -2148,11 +2106,15 @@ Qed.
         {rvgf: RandomVariable dom borel_sa (rvmult g f)}
         {rvgce: RandomVariable dom2 Rbar_borel_sa (Rbar_rvmult g ce)} :
 (*    IsFiniteExpectation prts f -> *)
-    (forall (c : R), In c frf_vals -> 0 < c) ->
     is_conditional_expectation dom2 f ce ->
     is_conditional_expectation dom2 (rvmult g f) (Rbar_rvmult g ce).
   Proof.
-    intros (* isfe *) frfpos isce.
+    intros (* isfe *) isce.
+    assert (frfpos : (forall (c : R), In c frf_vals -> 0 < c)).
+    {
+      
+      admit.
+    }
     intros P decP saP.
     erewrite Expectation_pos_pofrf.
     erewrite Rbar_Expectation_pos_pofrf.
@@ -2221,7 +2183,10 @@ Qed.
         f_equal.
         + rewrite map_map.
           apply map_ext; intros.
-          admit.
+          rewrite (Rbar_mult_comm _ (ce a)).
+          rewrite <- Rbar_mult_assoc.
+          rewrite (Rbar_mult_comm (EventIndicator decP a) _).
+          now rewrite Rbar_mult_assoc.
         + intros.
           rewrite in_map_iff in H.
           destruct H as [? [? ?]].
@@ -2401,8 +2366,8 @@ Qed.
       + apply Real_Rbar_rv.
         apply EventIndicator_pre_rv.        
         now apply sub.
-    - admit.
-      
+    - intros.
+      typeclasses eauto.
   Admitted.
 
   Lemma frf_min (f : Ts -> R) 
