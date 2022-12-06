@@ -6113,3 +6113,14 @@ Proof.
   - now apply P_Rmin.
 Qed.
     
+Lemma Rbar_le_pos_compat_r (a b c : Rbar)  :
+    Rbar_le 0 c ->
+    Rbar_le a b ->
+    Rbar_le (Rbar_mult a c) (Rbar_mult b c).
+Proof.
+  intros.
+  unfold Rbar_mult, Rbar_mult'.
+  destruct a; destruct b; destruct c; simpl in *; rbar_prover; simpl.
+  - now apply Rmult_le_compat_r.
+  - lra.
+Qed.  
