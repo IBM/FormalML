@@ -42,6 +42,30 @@ Proof.
   now apply H1.
 Qed.
 
+Lemma almost_isfe_condexp_sqr_bounded (dom2 : SigmaAlgebra Ts) (sub2: sa_sub dom2 dom) (B : R) 
+      (w : Ts -> R)
+      {rv : RandomVariable dom borel_sa w} :
+  (almostR2 prts Rbar_le
+    (ConditionalExpectation _ sub2 (rvsqr w))
+    (const (Rsqr B))) ->
+  IsFiniteExpectation prts (rvsqr w).
+Proof.
+  intros.
+  assert (Rbar_IsFiniteExpectation prts (ConditionalExpectation _ sub2 (rvsqr w))).
+  {
+    apply Rbar_IsFiniteExpectation_nnf_bounded_almost with (g := const (Rsqr B)); trivial.
+    - apply RandomVariable_sa_sub; trivial.
+      apply Condexp_rv.
+    - typeclasses eauto.
+    - apply Condexp_nneg.
+      typeclasses eauto.
+    - apply Rbar_IsFiniteExpectation_const.
+  }
+  generalize (Condexp_cond_exp_nneg prts sub2 (rvsqr w)); intros.
+  apply is_conditional_expectation_FiniteExpectation in H1.
+  now apply H1.
+Qed.
+
 Lemma isfe_rsqr (w : Ts -> R) 
       {rv : RandomVariable dom borel_sa w} :
   IsFiniteExpectation prts (rvsqr w) ->
@@ -881,7 +905,7 @@ Lemma Dvoretzky_converge_W  (W BB: nat -> Ts -> R) (alpha : nat -> Ts -> R)
                (const 0)) ->
   (exists (C: R),
       (forall n,
-          Rbar_rv_le
+          almostR2 (prob_space_sa_sub prts (filt_sub n)) Rbar_le
             (ConditionalExpectation prts (filt_sub n) (rvsqr (BB n)))
             (const (Rsqr C)))) ->
    almost prts (fun omega : Ts => is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
@@ -914,7 +938,9 @@ Proof.
     intros.
     destruct condexpBB2 as [C ?].
     specialize (H n).
-    now apply isfe_condexp_sqr_bounded in H.
+    eapply almost_isfe_condexp_sqr_bounded with (sub2 := filt_sub n).
+    apply almost_prob_space_sa_sub_lift with (sub := filt_sub n) in H.
+    apply H.
   }
 
   assert (isfeBB : forall n, IsFiniteExpectation prts (BB n)).
@@ -1051,41 +1077,48 @@ Proof.
                         (Rbar_rvmult (rvsqr (alpha n)) (const (Rsqr C)))).
                                      
       {
+        specialize (H2 n).
+        revert H2.
+        apply almost_impl.
         generalize (NonNegCondexp_factor_out prts (filt_sub n) (rvsqr (BB n)) (rvsqr (alpha n))).
-          apply almost_impl, all_almost.
-          unfold impl; intros.
-          rewrite <- Condexp_nneg_simpl in H4.
-          rewrite H4.
-          unfold Rbar_rvmult, const.
-          apply Rbar_le_pos_compat_l.
-          - apply nnfsqr.
-          - rewrite <- Condexp_nneg_simpl.
-            apply H2.
+        apply almost_impl, all_almost.
+        unfold impl; intros.
+        rewrite <- Condexp_nneg_simpl in H2.
+        rewrite H2.
+        unfold Rbar_rvmult, const.
+        apply Rbar_le_pos_compat_l.
+        - apply nnfsqr.
+        - rewrite <- Condexp_nneg_simpl.
+          apply H4.
       }
       assert (almostR2 (prob_space_sa_sub prts (filt_sub n)) Rbar_le
                         (ConditionalExpectation prts (filt_sub n) (rvsqr (rvmult (BB n) (alpha n))))
                         (Rbar_rvmult (rvsqr (alpha n)) (const (Rsqr C)))).
                                      
       {
+
         generalize (NonNegCondexp_factor_out prts (filt_sub n) (rvsqr (BB n)) (rvsqr (alpha n))).
-          apply almost_impl, all_almost.
-          unfold impl; intros.
-          assert (rv_eq (rvsqr (rvmult (BB n) (alpha n)))
-                        (rvmult (rvsqr (BB n)) (rvsqr (alpha n)))).
-          {
-            intros ?.
-            rv_unfold.
-            unfold Rsqr.
-            lra.
-          }
-          rewrite (ConditionalExpectation_ext prts (filt_sub n) _ _ H6).
-          rewrite <- Condexp_nneg_simpl in H5.
-          rewrite H5.
-          unfold Rbar_rvmult, const.
-          apply Rbar_le_pos_compat_l.
-          - apply nnfsqr.
-          - rewrite <- Condexp_nneg_simpl.
-            apply H2.
+        apply almost_impl.
+        specialize (H2 n).
+        revert H2.
+        apply almost_impl, all_almost.
+        unfold impl; intros.
+        assert (rv_eq (rvsqr (rvmult (BB n) (alpha n)))
+                      (rvmult (rvsqr (BB n)) (rvsqr (alpha n)))).
+        {
+          intros ?.
+          rv_unfold.
+          unfold Rsqr.
+          lra.
+        }
+        rewrite (ConditionalExpectation_ext prts (filt_sub n) _ _ H6).
+        rewrite <- Condexp_nneg_simpl in H5.
+        rewrite H5.
+        unfold Rbar_rvmult, const.
+        apply Rbar_le_pos_compat_l.
+        - apply nnfsqr.
+        - rewrite <- Condexp_nneg_simpl.
+          apply H2.
       }
       assert (IsFiniteExpectation prts
                     (FiniteConditionalExpectation prts (filt_sub n) 
