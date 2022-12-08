@@ -2412,22 +2412,6 @@ Section ps_sequence_product.
      now rewrite ivector_rev_const in H.
   Qed.
 
-  Lemma ps_ivector_rev {T} {σ:SigmaAlgebra T} {n : nat}
-        (ivecps : ivector (ProbSpace σ) n)
-        (e : pre_event (ivector T n))
-        (sae: sa_sigma (ivector_sa (ivector_const n σ)) e) :
-    ps_P (ProbSpace := ivector_ps ivecps) (exist _ _ sae) =
-    ps_P (ProbSpace := ivector_ps (ivector_rev ivecps))
-         (exist _ _ (ivector_sa_rev e sae)).
-  Proof.
-    induction n.
-    - simpl.
-      match_destr;
-        match_destr;
-        destruct e0; firstorder.
-    - 
-  Admitted.
-
   Lemma ps_cylinder_shift {T} {σ:SigmaAlgebra T}
         (n m : nat) (e : pre_event (ivector T n))
         (sae: sa_sigma (ivector_sa (ivector_const n σ)) e)
