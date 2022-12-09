@@ -385,6 +385,7 @@ Proof.
       apply EventIndicator_rv with (dom := F t).
   }
 (*  assert (isfef: forall t, IsFiniteExpectation prts (rvsqr (w t))) by admit. *)
+(*
   assert (isfefg : forall k t, IsFiniteExpectation prts
              (rvmult (rvsqr (w t)) (IB k t))).
   {
@@ -403,9 +404,9 @@ Proof.
         rewrite Rmult_0_r.
         apply Rle_0_sqr.
   }
-
+*)
   assert (forall k t,
-             almostR2 prts Rle
+             almostR2 prts Rbar_le
                       (ConditionalExpectation 
                          prts (filt_sub t) 
                          (rvmult (rvsqr (w t)) (IB k t)))
@@ -420,15 +421,29 @@ Proof.
       generalize (@EventIndicator_rv Ts (F t) (tau_int k t)); intros.
       apply EventIndicator_rv with (dom := F t).
     }
-    generalize (Condexp_factor_out prts (filt_sub t) 
-                                   (rvsqr (w t)) (IB k t)); intros.
-    apply almostR2_prob_space_sa_sub_lift in H13.
-    revert H13.
+    generalize (Condexp_nneg_simpl prts (filt_sub t) (rvmult (rvsqr (w t)) (IB k t))); intros.
+    (*
+                                   ((@NonNegMult Ts (IB k t) (@rvsqr Ts (w t))
+                (@EventIndicator_pos Ts (@event_pre Ts (F t) (tau_int k t))
+                   (@classic_dec Ts (@event_pre Ts (F t) (tau_int k t)))) (@nnfsqr Ts (w t))) x)); intros.
+    *)
+    generalize (NonNegCondexp_factor_out prts (filt_sub t) 
+                                         (rvsqr (w t)) (IB k t)); intros.
+    apply almostR2_prob_space_sa_sub_lift in H14.
+    revert H14.
     apply almost_impl.
     revert H0.
     apply almost_impl, all_almost.
     unfold impl; intros.
     rewrite H13.
+    
+    eapply Rbar_le_trans; [apply refl_refl; rewrite <- H14; apply NonNegCondexp_proper |].
+    erewrite NonNegCondexp_proper; rewrite H14.
+    Search NonNegCondexp.
+
+    erewrite NonNegCondexp_pf_irrel; rewrite H14.
+
+    erewrite H14.
     unfold IB, tau_int, Rbar_rvmult, tau_coll, EventIndicator.
     match_destr.
     - rewrite Rbar_mult_1_l.
