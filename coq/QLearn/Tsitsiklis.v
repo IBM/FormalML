@@ -312,15 +312,15 @@ Lemma lemma1_bounded_alpha_beta (α β w W : nat -> Ts -> R) (Ca Cb B : R)
       {adapta : IsAdapted borel_sa α F} 
       {adaptb : IsAdapted borel_sa β F} :    
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (w n)) (const 0)) ->
-  (forall (n:nat), almostR2 prts Rle (ConditionalExpectation _ (filt_sub n) (rvsqr (w n))) (const B)) ->  
+  (forall (n:nat), almostR2 prts Rbar_le (ConditionalExpectation _ (filt_sub n) (rvsqr (w n))) (const B)) ->  
   (forall (n:nat), almostR2 prts Rle (const 0) (α n)) ->
   (forall (n:nat), almostR2 prts Rle (const 0) (β n)) ->  
   (forall (n:nat), almostR2 prts Rle (α n) (const 1)) ->
   (forall (n:nat), almostR2 prts Rle (β n) (const 1)) ->  
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => β k ω)) p_infty)) ->  
-  (almostR2 prts Rle (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) (const Ca)) ->
-  (almostR2 prts Rle (fun ω => Lim_seq (sum_n (fun k => rvsqr (β k) ω))) (const Cb)) ->
+  (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) (const Ca)) ->
+  (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (β k) ω))) (const Cb)) ->
   (forall n ω, W (S n) ω = (1 - α n ω) * (W n ω) + (β n ω) * (w n ω)) ->
   almost prts (fun ω => is_lim_seq (fun n => W n ω) 0).
 Proof.
@@ -339,15 +339,15 @@ Lemma lemma1_alpha_beta (α β w B W : nat -> Ts -> R) (W0 Ca Cb : R)
       {isfew2 : forall n, IsFiniteExpectation prts (rvsqr (w n))}
       {isfew : forall n, IsFiniteExpectation prts (w n)} :
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (w n)) (const 0)) ->
-  (forall (n:nat), almostR2 prts Rle (ConditionalExpectation _ (filt_sub n) (rvsqr (w n))) (B n)) ->  
+  (forall (n:nat), almostR2 prts Rbar_le (ConditionalExpectation _ (filt_sub n) (rvsqr (w n))) (B n)) ->  
   (forall (n:nat), almostR2 prts Rle (const 0) (α n)) ->
   (forall (n:nat), almostR2 prts Rle (const 0) (β n)) ->  
   (forall (n:nat), almostR2 prts Rle (α n) (const 1)) ->
   (forall (n:nat), almostR2 prts Rle (β n) (const 1)) ->  
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => β k ω)) p_infty)) ->  
-  (almostR2 prts Rle (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) (const Ca)) ->
-  (almostR2 prts Rle (fun ω => Lim_seq (sum_n (fun k => rvsqr (β k) ω))) (const Cb)) ->
+  (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) (const Ca)) ->
+  (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (β k) ω))) (const Cb)) ->
   (forall n ω, W (S n) ω = (1 - α n ω) * (W n ω) + (β n ω) * (w n ω)) ->
   (almost prts (fun ω => exists (b:R), forall n, B n ω <= b)) ->
   almost prts (fun ω => is_lim_seq (fun n => W n ω) 0). 
@@ -384,27 +384,6 @@ Proof.
     - apply (RandomVariable_sa_sub (filt_sub t)).
       apply EventIndicator_rv with (dom := F t).
   }
-(*  assert (isfef: forall t, IsFiniteExpectation prts (rvsqr (w t))) by admit. *)
-(*
-  assert (isfefg : forall k t, IsFiniteExpectation prts
-             (rvmult (rvsqr (w t)) (IB k t))).
-  {
-      intros.
-      apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := (rvsqr (w t))); trivial.
-      - apply IsFiniteExpectation_const.
-      - intros ?.
-        unfold const, rvmult, rvsqr, IB.
-        apply Rmult_le_pos.
-        + apply Rle_0_sqr.
-        + apply EventIndicator_pos.
-      - intros ?.
-        rv_unfold.
-        unfold IB, EventIndicator.
-        match_destr; try lra.
-        rewrite Rmult_0_r.
-        apply Rle_0_sqr.
-  }
-*)
   assert (forall k t,
              almostR2 prts Rbar_le
                       (ConditionalExpectation 
@@ -422,11 +401,6 @@ Proof.
       apply EventIndicator_rv with (dom := F t).
     }
     generalize (Condexp_nneg_simpl prts (filt_sub t) (rvmult (rvsqr (w t)) (IB k t))); intros.
-    (*
-                                   ((@NonNegMult Ts (IB k t) (@rvsqr Ts (w t))
-                (@EventIndicator_pos Ts (@event_pre Ts (F t) (tau_int k t))
-                   (@classic_dec Ts (@event_pre Ts (F t) (tau_int k t)))) (@nnfsqr Ts (w t))) x)); intros.
-    *)
     generalize (NonNegCondexp_factor_out prts (filt_sub t) 
                                          (rvsqr (w t)) (IB k t)); intros.
     apply almostR2_prob_space_sa_sub_lift in H14.
@@ -436,31 +410,35 @@ Proof.
     apply almost_impl, all_almost.
     unfold impl; intros.
     rewrite H13.
-    
-    eapply Rbar_le_trans; [apply refl_refl; rewrite <- H14; apply NonNegCondexp_proper |].
-    erewrite NonNegCondexp_proper; rewrite H14.
-    Search NonNegCondexp.
-
-    erewrite NonNegCondexp_pf_irrel; rewrite H14.
-
-    erewrite H14.
-    unfold IB, tau_int, Rbar_rvmult, tau_coll, EventIndicator.
-    match_destr.
-    - rewrite Rbar_mult_1_l.
-      simpl in e.
-      specialize (e t).
-      unfold proj1_sig in e.
-      destruct (le_dec t t); try lia.
-      simpl in e.
-      red in H0.
-      specialize (H0 t).
-      unfold const.
-      eapply Rle_trans.
-      apply H0.
-      now left.
-    - rewrite Rbar_mult_0_l.
-      unfold const.
-      apply pos_INR.
+    replace
+       (@NonNegCondexp Ts dom prts (F t) (filt_sub t) (@rvmult Ts (@rvsqr Ts (w t)) (IB k t)) (H11 k t)
+       (@indicator_prod_pos Ts (@rvsqr Ts (w t)) (@nnfsqr Ts (w t)) (@event_pre Ts (F t) (tau_int k t))
+                            (@classic_dec Ts (@event_pre Ts (F t) (tau_int k t)))) x) with
+         (@NonNegCondexp Ts dom prts (F t) (filt_sub t) (@rvmult Ts (@rvsqr Ts (w t)) (IB k t)) (H11 k t)
+             (@NonNegMult Ts (IB k t) (@rvsqr Ts (w t))
+                (@EventIndicator_pos Ts (@event_pre Ts (F t) (tau_int k t))
+                                     (@classic_dec Ts (@event_pre Ts (F t) (tau_int k t)))) (@nnfsqr Ts (w t))) x).
+    - rewrite H14.
+      unfold IB, tau_int, Rbar_rvmult, tau_coll, EventIndicator.
+      match_case; intros.
+      generalize (e t); intros.
+      match_destr_in H16.
+      unfold event_lt in H16.
+      simpl in H16.
+      + specialize (H0 t).
+        simpl in H0.
+        rewrite Condexp_nneg_simpl with (nnf := (nnfsqr (w t)))  in H0.
+        rewrite Rbar_mult_1_l.
+        unfold const.
+        eapply Rbar_le_trans.
+        apply H0.
+        simpl; lra.
+      + lia.
+      + rewrite Rbar_mult_0_l.
+        unfold const.
+        apply pos_INR.
+    - apply NonNegCondexp_ext.
+      reflexivity.
   }
 
   assert (almost prts (fun ω => exists k, forall t,
@@ -562,16 +540,32 @@ Proof.
   assert (isfewk2: forall k n : nat, IsFiniteExpectation prts (rvsqr (wk k n) )).
   {
     intros.
-    specialize (isfefg k n).
-    revert isfefg.
-    apply IsFiniteExpectation_proper.
-    intros ?.
-    rv_unfold.
-    unfold wk.
-    rewrite Rsqr_mult.
-    f_equal.
-    unfold IB, Rsqr.
-    match_destr; lra.
+    generalize almost_isfe_condexp_sqr_bounded; intros.
+    assert (RandomVariable dom borel_sa (wk k n)).
+    {
+      apply rvmult_rv; trivial.
+      apply (RandomVariable_sa_sub (filt_sub n)).
+      apply EventIndicator_rv with (dom := F n).
+    }
+    apply (almost_isfe_condexp_sqr_bounded _ (filt_sub n) (sqrt (INR k))) with (rv := H20).
+    specialize (H12 k n).
+    revert H12.
+    apply almost_impl, all_almost.
+    unfold impl; intros.
+    unfold const.
+    unfold const in H12.
+    replace (Rsqr (sqrt (INR k))) with (INR k).
+    - rewrite ConditionalExpectation_ext with (f2 := (rvmult (rvsqr (w n)) (IB k n)))
+                                              (rv2 := H11 k n); trivial.
+      intros ?.
+      rv_unfold.
+      unfold wk.
+      rewrite Rsqr_mult.
+      f_equal.
+      unfold Rsqr, IB.
+      match_destr; lra.
+    - rewrite Rsqr_sqrt; trivial.
+      apply pos_INR.
   }
 
   assert (isfewk : forall k n, IsFiniteExpectation prts (wk k  n)).
