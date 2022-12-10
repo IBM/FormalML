@@ -633,7 +633,7 @@ Proof.
         }
         now simpl in H7.
     }
-    apply (@Series.ex_series_le R_AbsRing R_CompleteNormedModule ) with 
+    apply (@ex_series_le R_AbsRing R_CompleteNormedModule ) with 
         (b := fun n => C^2 * FiniteExpectation prts (rvsqr (β n))).
     + intros.
       unfold norm; simpl.
@@ -643,7 +643,7 @@ Proof.
         apply H3.
         unfold pow; lra.
       * apply Rle_ge, (FiniteExpectation_sq_nneg prts (rvmult (w n) (β n)) (svy2b n)).
-    + apply (@Series.ex_series_scal R_AbsRing).
+    + apply (@ex_series_scal R_AbsRing).      
       rewrite <- ex_finite_lim_series.
       rewrite ex_finite_lim_seq_correct.
       split.
@@ -688,10 +688,10 @@ Proof.
                unfold rvsum.
                left.
                generalize (Lim_seq_increasing_le
-                             (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n0 : nat => rvsqr (β n0) x))); intros.
+                             (sum_n  (fun n0 : nat => rvsqr (β n0) x))); intros.
                  cut_to H8.
                  --- specialize (H8 n).
-                     generalize (Rbar.Rbar_le_lt_trans _ _ _ H8 H7); intros.
+                     generalize (Rbar_le_lt_trans _ _ _ H8 H7); intros.
                      simpl in H9; lra.
                  --- intros.
                      apply sum_n_pos_incr; try lia.                     
@@ -717,7 +717,7 @@ Proof.
                unfold Rbar_rvlim.
                rewrite Elim_seq_fin.
                unfold const, rvsum.
-               now apply Rbar.Rbar_lt_le.
+               now apply Rbar_lt_le.
              - apply Rbar_IsFiniteExpectation_const.
            }
            specialize (H6 isfefn isfe).
@@ -747,10 +747,10 @@ Proof.
               simpl.
               unfold rvsum.
               rewrite Rabs_right.
-              ** generalize (Lim_seq_increasing_le (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n0 : nat => rvsqr (β n0) x))); intros.
+              ** generalize (Lim_seq_increasing_le (sum_n (fun n0 : nat => rvsqr (β n0) x))); intros.
                  cut_to H8.
                  --- specialize (H8 n).
-                     generalize (Rbar.Rbar_le_lt_trans _ _ _ H8 H7); intros.
+                     generalize (Rbar_le_lt_trans _ _ _ H8 H7); intros.
                      simpl in H9; lra.
                  --- intros.
                      apply sum_n_pos_incr; try lia.                     
@@ -1962,9 +1962,9 @@ Lemma Dvoretzky_converge_W  (W w: nat -> Ts -> R) (alpha : nat -> Ts -> R)
             (ConditionalExpectation prts (filt_sub n) (rvsqr (w n)))
             (const (Rsqr C)))) ->
    almost prts (fun omega : Ts => is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
-                                                     Rbar.p_infty)  ->
+                                                     p_infty)  ->
    (exists (A2 : R),
-       almost prts (fun omega => Rbar.Rbar_lt (Lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => rvsqr (alpha n) omega))) (Rbar.Finite A2))) ->
+       almost prts (fun omega => Rbar_lt (Lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => rvsqr (alpha n) omega))) (Rbar.Finite A2))) ->
 (*   (exists (sigma : R), forall n, rv_le (rvsqr (w n)) (const (Rsqr sigma))) -> *)
   rv_eq (W 0%nat) (const 0) ->
   (forall n, rv_eq (W (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (W n)) (rvmult (w n) (alpha n)))) ->
