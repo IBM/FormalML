@@ -20,7 +20,6 @@ Require Import List.
 Require Import NumberIso.
 Require Import PushNeg.
 
-
 Set Bullet Behavior "Strict Subproofs". 
 
 Section is_cond_exp.
@@ -7529,3 +7528,23 @@ Section condexp.
   Qed.
 
 End condexp.
+
+Ltac rewrite_condexp H
+  := match type of H with
+     | @NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?nnf1 ?x = _ =>
+         match goal with
+           [|- context [@NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?g ?rv2 ?nnf2 ?x]] =>
+             rewrite <- (fun pf => @NonNegCondexp_ext
+                                 Ts dom prts dom2 sub f g rv1 rv2 nnf1 nnf2 pf x); [rewrite H | try reflexivity]
+         end
+     end.
+
+Ltac rewrite_condexp_in H H2
+  := match type of H with
+     | @NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?nnf1 ?x = _ =>
+         match type of H2 with
+           context [@NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?g ?rv2 ?nnf2 ?x] =>
+             rewrite <- (fun pf => @NonNegCondexp_ext
+                                 Ts dom prts dom2 sub f g rv1 rv2 nnf1 nnf2 pf x) in H2; [rewrite H in H2| try reflexivity]
+         end
+     end.

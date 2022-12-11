@@ -908,7 +908,6 @@ Proof.
     lra.
   Admitted.
 
-
 Lemma lemma1_alpha_beta (α β w B W : nat -> Ts -> R) (W0 Ca Cb : R)
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
@@ -992,35 +991,26 @@ Proof.
     apply almost_impl, all_almost.
     unfold impl; intros.
     rewrite H13.
-    replace
-       (@NonNegCondexp Ts dom prts (F t) (filt_sub t) (@rvmult Ts (@rvsqr Ts (w t)) (IB k t)) (H11 k t)
-       (@indicator_prod_pos Ts (@rvsqr Ts (w t)) (@nnfsqr Ts (w t)) (@event_pre Ts (F t) (tau_int k t))
-                            (@classic_dec Ts (@event_pre Ts (F t) (tau_int k t)))) x) with
-         (@NonNegCondexp Ts dom prts (F t) (filt_sub t) (@rvmult Ts (@rvsqr Ts (w t)) (IB k t)) (H11 k t)
-             (@NonNegMult Ts (IB k t) (@rvsqr Ts (w t))
-                (@EventIndicator_pos Ts (@event_pre Ts (F t) (tau_int k t))
-                                     (@classic_dec Ts (@event_pre Ts (F t) (tau_int k t)))) (@nnfsqr Ts (w t))) x).
-    - rewrite H14.
-      unfold IB, tau_int, Rbar_rvmult, tau_coll, EventIndicator.
-      match_case; intros.
-      generalize (e t); intros.
-      match_destr_in H16.
-      unfold event_lt in H16.
-      simpl in H16.
-      + specialize (H0 t).
-        simpl in H0.
-        rewrite Condexp_nneg_simpl with (nnf := (nnfsqr (w t)))  in H0.
-        rewrite Rbar_mult_1_l.
-        unfold const.
-        eapply Rbar_le_trans.
-        apply H0.
-        simpl; lra.
-      + lia.
-      + rewrite Rbar_mult_0_l.
-        unfold const.
-        apply pos_INR.
-    - apply NonNegCondexp_ext.
-      reflexivity.
+
+    rewrite_condexp H14.
+    unfold IB, tau_int, Rbar_rvmult, tau_coll, EventIndicator.
+    match_destr.
+    generalize (e t); intros.
+    match_destr_in H15.
+    unfold event_lt in H15.
+    simpl in H15.
+    - specialize (H0 t).
+      simpl in H0.
+      rewrite Condexp_nneg_simpl with (nnf := (nnfsqr (w t)))  in H0.
+      rewrite Rbar_mult_1_l.
+      unfold const.
+      eapply Rbar_le_trans.
+      apply H0.
+      simpl; lra.
+    - lia.
+    - rewrite Rbar_mult_0_l.
+      unfold const.
+      apply pos_INR.
   }
 
   assert (almost prts (fun ω => exists k, forall t,
