@@ -798,9 +798,11 @@ Lemma lemma1_bounded_alpha_beta (α β w W : nat -> Ts -> R) (Ca Cb B : R)
       {adaptb : IsAdapted borel_sa β F} :    
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (w n)) (const 0)) ->
   (forall (n:nat), almostR2 prts Rbar_le (ConditionalExpectation _ (filt_sub n) (rvsqr (w n))) (const (Rsqr B))) ->  
-  (forall (n:nat), almostR2 prts Rle (const 0) (α n)) ->
+(*  (forall (n:nat), almostR2 prts Rle (const 0) (α n)) -> *)
+  (forall n x, 0 <= α n x) ->
   (forall (n:nat), almostR2 prts Rle (const 0) (β n)) ->  
-  (forall (n:nat), almostR2 prts Rle (α n) (const 1)) ->
+(*  (forall (n:nat), almostR2 prts Rle (α n) (const 1)) -> *)
+  (forall n x, 0 <= 1 - α n x )  ->
   (forall (n:nat), almostR2 prts Rle (β n) (const 1)) ->  
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => β k ω)) p_infty)) ->  
@@ -843,8 +845,6 @@ Proof.
     now apply (RandomVariable_sa_sub (filt_sub n)).
   - intros.
     now apply (RandomVariable_sa_sub (filt_sub n)).
-  - admit.
-  - admit.
   - exists B.
     apply H0.
   - exists (Ca + 1).
@@ -867,7 +867,7 @@ Proof.
     specialize (H9 n a).
     rv_unfold.
     lra.
-  Admitted.
+ Qed.
 
 Lemma lemma1_alpha_beta (α β w B W : nat -> Ts -> R) (W0 Ca Cb : R)
       {F : nat -> SigmaAlgebra Ts}
@@ -882,9 +882,11 @@ Lemma lemma1_alpha_beta (α β w B W : nat -> Ts -> R) (W0 Ca Cb : R)
       (is_cond : forall n, is_conditional_expectation prts (F n) (w n) (ConditionalExpectation prts (filt_sub n) (w n))) :
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (w n)) (const 0)) ->
   (forall (n:nat), almostR2 prts Rbar_le (ConditionalExpectation _ (filt_sub n) (rvsqr (w n))) (B n)) ->  
-  (forall (n:nat), almostR2 prts Rle (const 0) (α n)) ->
+(*  (forall (n:nat), almostR2 prts Rle (const 0) (α n)) -> *)
+  (forall n x, 0 <= α n x) ->
   (forall (n:nat), almostR2 prts Rle (const 0) (β n)) ->  
-  (forall (n:nat), almostR2 prts Rle (α n) (const 1)) ->
+(*  (forall (n:nat), almostR2 prts Rle (α n) (const 1)) -> *)
+  (forall n x, 0 <= 1 - α n x )  ->
   (forall (n:nat), almostR2 prts Rle (β n) (const 1)) ->  
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => β k ω)) p_infty)) ->  
