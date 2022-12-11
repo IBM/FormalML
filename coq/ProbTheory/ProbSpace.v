@@ -1391,3 +1391,19 @@ Section iso.
   Qed.
 
 End iso.
+
+Lemma ProbSpace_Ω_nempty {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) : ~ event_equiv Ω ∅.
+Proof.
+  intros HH.
+  generalize ps_one.
+  rewrite HH.
+  rewrite ps_none.
+  lra.
+Qed.
+
+Lemma ProbSpace_inhabited {T:Type} {S:SigmaAlgebra T} (ps:ProbSpace S) : inhabited T.
+Proof.
+  destruct (classic_event_none_or_has Ω).
+  - destruct H; eauto.
+  - apply ProbSpace_Ω_nempty in H; tauto.
+Qed.
