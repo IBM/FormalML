@@ -3109,7 +3109,7 @@ Lemma Dvoretzky_converge_Y (C : R) (Y : nat -> Ts -> R) (alpha : nat -> Ts -> R)
       {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
       {adaptY : IsAdapted borel_sa Y F} (adapt_alpha : IsAdapted borel_sa alpha F) 
       (alpha_pos:forall n x, 0 <= alpha n x) 
-      (alpha_one:forall n x, 0 < 1 - alpha n x ) :
+      (alpha_one:forall n x, 0 <= 1 - alpha n x ) :
    almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
                                                      Rbar.p_infty)  ->
   rv_eq (Y 0%nat) (const C) ->
@@ -3256,7 +3256,7 @@ Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R)
 
       {rvalpha : forall n, RandomVariable dom borel_sa (alpha n)}      
       (alpha_pos:forall n x, 0 <= alpha n x) 
-      (alpha_one:forall n x, 0 < 1 - alpha n x ) :
+      (alpha_one:forall n x, 0 <= 1 - alpha n x ) :
   (forall n,
       almost (prob_space_sa_sub prts (filt_sub n))
              (fun x : Ts =>
@@ -3437,15 +3437,16 @@ Proof.
       lra.
     + match_destr; try lra.
     + match_destr_in n0; try lra.
-      assert (0 < (1 + -1 * alpha n omega)).
+      assert (0 <= (1 + -1 * alpha n omega)).
       {
         specialize (alpha_one n omega).
         lra.
       }
       apply Rlt_gt in r0.
-      generalize (Rmult_lt_gt_compat_neg_l _ _ _ r0 H2); intros.
-      rewrite Rmult_0_r in H3.
-      rewrite Rmult_comm in H3.
+      assert (Z n omega <= 0) by lra.
+      generalize (Rmult_le_ge_compat_neg_l _ _ _ H3 H2); intros.
+      rewrite Rmult_0_r in H4.
+      rewrite Rmult_comm in H4.
       lra.
   - destruct sigma_BB as [sigma ?].
     assert (forall n,
@@ -4622,7 +4623,7 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
           {rv2 : forall n, RandomVariable dom (const cod n) (X n)} 
           {rvalpha : forall n, RandomVariable dom borel_sa (alpha n)}      
           (alpha_pos:forall n x, 0 <= alpha n x) 
-          (alpha_one:forall n x, 0 < 1 - alpha n x ) :
+          (alpha_one:forall n x, 0 <= 1 - alpha n x ) :
       (forall n, independent_sas prts (filt_sub n)
                                  (pullback_rv_sub dom cod (X (S n)) (rvX (S n)))) ->
       (forall n, FiniteExpectation prts (BB ∘ X n) = 0) ->
@@ -4845,7 +4846,7 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
           {rv_alpha : forall n : nat, RandomVariable dom borel_sa (alpha n)}
           {isfe : forall n, IsFiniteExpectation prts (BB ∘ X n)} 
           (alpha_pos:forall n x, 0 <= alpha n x) 
-          (alpha_one:forall n x, 0 < 1 - alpha n x ) :
+          (alpha_one:forall n x, 0 <= 1 - alpha n x ) :
      almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
                                                      Rbar.p_infty)  ->
       gamma + eps < 1 ->
