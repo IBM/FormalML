@@ -862,16 +862,15 @@ Section Expectation_sec.
         (rv_X : Ts -> R)
         {nnf : NonnegativeFunction rv_X}
         (val : R) :
-    inhabited Ts ->
     (forall (omega : Ts), (rv_X omega) <= val) ->
     Rbar_le (NonnegExpectation rv_X) val.
   Proof.
     intros.
     destruct (Rle_dec 0 val).
     - now apply NonnegExpectation_le_val_nneg.
-    - destruct H.
+    - destruct (ProbSpace_inhabited Prts).
       generalize (nnf X); intros.
-      specialize (H0 X).
+      specialize (H X).
       lra.
    Qed.     
 
