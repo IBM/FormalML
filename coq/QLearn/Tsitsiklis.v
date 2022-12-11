@@ -325,6 +325,101 @@ Proof.
   
   Admitted.
 
+  Lemma isfe_sqr_X_almost_01 (a : Ts -> R) 
+        {rv : RandomVariable dom borel_sa a} 
+        (apos: almostR2 prts Rle (const 0) a)
+        (aone: almostR2 prts Rle a (const 1)):
+    IsFiniteExpectation prts (rvsqr a).
+  Proof.
+    apply IsFiniteExpectation_abs_bound_almost with (g := const 1).
+    - typeclasses eauto.
+    - typeclasses eauto.
+    - revert aone.
+      apply almost_impl.
+      revert apos.
+      apply almost_impl, all_almost.
+      rv_unfold; unfold const.
+      unfold impl; intros.
+      rewrite <- Rabs_sqr.
+      rewrite <- (Rmult_1_r 1).
+      unfold Rsqr.
+      now apply Rmult_le_compat.
+    - apply IsFiniteExpectation_const.
+  Qed.
+
+  Lemma isfe_X_almost_01 (a : Ts -> R) 
+        {rv : RandomVariable dom borel_sa a} 
+        (apos: almostR2 prts Rle (const 0) a)
+        (aone: almostR2 prts Rle a (const 1)):
+    IsFiniteExpectation prts a.
+  Proof.
+    apply IsFiniteExpectation_abs_bound_almost with (g := const 1); trivial.
+    - typeclasses eauto.
+    - revert aone.
+      apply almost_impl.
+      revert apos.
+      apply almost_impl, all_almost.
+      rv_unfold; unfold const.
+      unfold impl; intros.
+      rewrite Rabs_right; trivial.
+      lra.
+    - apply IsFiniteExpectation_const.
+  Qed.
+
+  Lemma isfe_rvmult_almost_01 (b w : Ts -> R) 
+        {rvb : RandomVariable dom borel_sa b}
+        {rvw : RandomVariable dom borel_sa w}         
+        (bpos: almostR2 prts Rle (const 0) b)
+        (bone: almostR2 prts Rle b (const 1)):
+    IsFiniteExpectation prts w ->
+    IsFiniteExpectation prts (rvmult w b).
+  Proof.
+    intros.
+    apply IsFiniteExpectation_abs_bound_almost with (g := rvabs w); trivial.
+    - typeclasses eauto.
+    - typeclasses eauto.
+    - revert bone.
+      apply almost_impl.
+      revert bpos.
+      apply almost_impl, all_almost.
+      rv_unfold; unfold const.
+      unfold impl; intros.
+      rewrite Rabs_mult.
+      rewrite <- Rmult_1_r.
+      apply Rmult_le_compat_l.
+      + apply Rabs_pos.
+      + rewrite Rabs_right; lra.
+    - now apply RandomVariableFinite.IsFiniteExpectation_abs.
+  Qed.
+
+  Lemma isfe_rvsqr_rvmult_almost_01 (b w : Ts -> R) 
+        {rvb : RandomVariable dom borel_sa b}
+        {rvw : RandomVariable dom borel_sa w}         
+        (bpos: almostR2 prts Rle (const 0) b)
+        (bone: almostR2 prts Rle b (const 1)):
+    IsFiniteExpectation prts (rvsqr w) ->
+    IsFiniteExpectation prts (rvsqr (rvmult w b)).
+  Proof.
+    intros.
+    apply IsFiniteExpectation_abs_bound_almost with (g := rvsqr w); trivial.
+    - typeclasses eauto.
+    - typeclasses eauto.
+    - revert bone.
+      apply almost_impl.
+      revert bpos.
+      apply almost_impl, all_almost.
+      rv_unfold; unfold const.
+      unfold impl; intros.
+      rewrite <- Rabs_sqr.
+      rewrite Rsqr_mult.
+      rewrite <- Rmult_1_r.
+      apply Rmult_le_compat_l.
+      + apply Rle_0_sqr.
+      + rewrite <- Rmult_1_r.
+        unfold Rsqr.
+        apply Rmult_le_compat; trivial.
+  Qed.
+
 Lemma Dvoretzky_converge_W_alpha_beta  (W w α β: nat -> Ts -> R) 
       {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
       {adaptZ : IsAdapted borel_sa W F} (adapt_alpha : IsAdapted borel_sa α F)
@@ -334,9 +429,9 @@ Lemma Dvoretzky_converge_W_alpha_beta  (W w α β: nat -> Ts -> R)
       {rvalpha : forall n, RandomVariable dom borel_sa (α n)}
       {rvbeta : forall n, RandomVariable dom borel_sa (β n)}            
       (alpha_pos:forall n x, 0 <= α n x)
-      (alpha_one:forall n x, 0 <= 1 - α n x ) 
-      (beta_pos:forall n x, 0 <= β n x)
-      (beta_one:forall n x, 0 <= 1 - β n x ) :
+      (alpha_one:forall n x, 0 <= 1 - α n x )  
+      (bpos: forall (n:nat), almostR2 prts Rle (const 0) (β n)) 
+      (bone: forall (n:nat), almostR2 prts Rle (β n) (const 1)) :
   (forall n,
       almostR2 prts eq
                (ConditionalExpectation prts (filt_sub n) (w n))
@@ -353,41 +448,15 @@ Lemma Dvoretzky_converge_W_alpha_beta  (W w α β: nat -> Ts -> R)
 
    (exists (A3 : R),
        almost prts (fun ω => Rbar_lt (Lim_seq (sum_n (fun n : nat => rvsqr (β n) ω))) (Rbar.Finite A3))) ->
-
-(*   (exists (sigma : R), forall n, rv_le (rvsqr (w n)) (const (Rsqr sigma))) -> *)
-(*  rv_eq (W 0%nat) (const 0) ->  *)
   (forall n, rv_eq (W (S n)) (rvplus (rvmult (rvminus (const 1) (α n)) (W n)) (rvmult (w n) (β n)))) ->
   almost _ (fun ω => is_lim_seq (fun n => W n ω) (Rbar.Finite 0)).
 Proof.
   intros condexpw condexpw2 alpha_inf beta_inf alpha_sqr beta_sqr (* W0 *) Wrel.
 
-  assert (svy1: forall n : nat, IsFiniteExpectation prts (rvsqr (α n))).
-  {
-    intros.
-    apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const 1).
-    - apply IsFiniteExpectation_const.
-    - apply IsFiniteExpectation_const.
-    - intro z; rv_unfold.
-      apply Rle_0_sqr.
-    - intro z; rv_unfold.
-      unfold Rsqr.
-      replace (1) with (1 * 1) by lra.
-      specialize (alpha_one n z).
-      apply Rmult_le_compat; trivial; try lra.
-  }
   assert (svy1b: forall n : nat, IsFiniteExpectation prts (rvsqr (β n))).
   {
     intros.
-    apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const 1).
-    - apply IsFiniteExpectation_const.
-    - apply IsFiniteExpectation_const.
-    - intro z; rv_unfold.
-      apply Rle_0_sqr.
-    - intro z; rv_unfold.
-      unfold Rsqr.
-      replace (1) with (1 * 1) by lra.
-      specialize (beta_one n z).
-      apply Rmult_le_compat; trivial; try lra.
+    now apply isfe_sqr_X_almost_01.
   }
 
   assert (isfew2: forall n : nat, IsFiniteExpectation prts (rvsqr (w n) )).
@@ -408,76 +477,14 @@ Proof.
   assert (isfemult : forall n, IsFiniteExpectation prts (rvmult (w n) (β n))).
   {
     intros.
-    apply IsFiniteExpectation_bounded with (rv_X1 := rvmin (w n) (const 0))
-                                           (rv_X3 := rvmax (w n) (const 0)); trivial.
-    - apply IsFiniteExpectation_min; trivial.
-      + apply rvconst.
-      + apply IsFiniteExpectation_const.
-    - apply IsFiniteExpectation_max; trivial.
-      + apply rvconst.
-      + apply IsFiniteExpectation_const.
-    - intros ?.
-      rv_unfold.
-      specialize (beta_pos n a).
-      specialize (beta_one n a).
-      unfold Rmin.
-      match_destr.
-      + rewrite <- (Rmult_1_r (w n a)) at 1.
-        apply Rmult_le_compat_neg_l; lra.
-      + apply Rmult_le_pos; lra.
-    - intros ?.
-      rv_unfold.
-      specialize (beta_pos n a).
-      specialize (beta_one n a).
-      unfold Rmax.
-      match_destr.
-      + apply Rmult_le_0_r; lra.
-      + rewrite <- (Rmult_1_r (w n a)) at 2.
-        apply Rmult_le_compat_l; lra.
+    now apply isfe_rvmult_almost_01.
   }
-  
-  assert (svy2 : forall n : nat, IsFiniteExpectation prts (rvsqr (rvmult (w n) (α n)))).
-  {
-    intros.
-    apply IsFiniteExpectation_bounded with (rv_X1 := (const 0))
-                                           (rv_X3 := (rvsqr (w n))); trivial.
-    - apply IsFiniteExpectation_const.
-    - intros ?.
-      rv_unfold.
-      apply Rle_0_sqr.
-    - intros ?.
-      rv_unfold.
-      apply Rsqr_le_abs_1.
-      rewrite <- (Rmult_1_r (Rabs (w n a))).
-      rewrite Rabs_mult.
-      specialize (alpha_one n a).
-      specialize (alpha_pos n a).
-      apply Rmult_le_compat_l.
-      + apply Rabs_pos.
-      + rewrite Rabs_right; lra.
-  }
-    
+
   assert (svy2b : forall n : nat, IsFiniteExpectation prts (rvsqr (rvmult (w n) (β n)))).
   {
     intros.
-    apply IsFiniteExpectation_bounded with (rv_X1 := (const 0))
-                                           (rv_X3 := (rvsqr (w n))); trivial.
-    - apply IsFiniteExpectation_const.
-    - intros ?.
-
-      rv_unfold.
-      apply Rle_0_sqr.
-    - intros ?.
-      rv_unfold.
-      apply Rsqr_le_abs_1.
-      rewrite <- (Rmult_1_r (Rabs (w n a))).
-      rewrite Rabs_mult.
-      specialize (beta_one n a).
-      specialize (beta_pos n a).
-      apply Rmult_le_compat_l.
-      + apply Rabs_pos.
-      + rewrite Rabs_right; lra.
-  }
+    now apply isfe_rvsqr_rvmult_almost_01.
+ }
 
   assert (forall (n:nat) (x:Ts), 0 <= (fun n x => 0) n x).
   {
@@ -780,50 +787,6 @@ Proof.
   - trivial.
  Qed.
 
-
-Lemma Dvoretzky_converge_W_almost_alpha_beta  (W w α β: nat -> Ts -> R) 
-      {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
-      {adaptZ : IsAdapted borel_sa W F} (adapt_alpha : IsAdapted borel_sa α F)
-      (adapt_beta : IsAdapted borel_sa β F) 
-      {rvw : forall n, RandomVariable dom borel_sa (w n)}
-
-      {rvalpha : forall n, RandomVariable dom borel_sa (α n)}
-      {rvbeta : forall n, RandomVariable dom borel_sa (β n)}            
-      (apos: forall (n:nat), almostR2 prts Rle (const 0) (α n))
-      (bpos: forall (n:nat), almostR2 prts Rle (const 0) (β n)) 
-      (aone: forall (n:nat), almostR2 prts Rle (α n) (const 1))
-      (bone: forall (n:nat), almostR2 prts Rle (β n) (const 1)) :
-(*
-      (alpha_pos:forall n x, 0 <= alpha n x)
-      (alpha_one:forall n x, 0 <= 1 - alpha n x ) 
-      (beta_pos:forall n x, 0 <= beta n x)
-      (beta_one:forall n x, 0 <= 1 - beta n x ) :
-*)
-  (forall n,
-      almostR2 prts eq
-               (ConditionalExpectation prts (filt_sub n) (w n))
-               (const 0)) ->
-  (exists (C: R),
-      (forall n,
-          almostR2 prts Rbar_le
-            (ConditionalExpectation prts (filt_sub n) (rvsqr (w n)))
-            (const (Rsqr C)))) ->
-   almost prts (fun ω : Ts => is_lim_seq (sum_n(fun n : nat => α n ω)) p_infty)  ->
-   almost prts (fun ω : Ts => is_lim_seq (sum_n (fun n : nat => β n ω)) p_infty)  ->
-   (exists (A2 : R),
-       almost prts (fun ω => Rbar_lt (Lim_seq (sum_n (fun n : nat => rvsqr (α n) ω))) (Rbar.Finite A2))) ->
-
-   (exists (A3 : R),
-       almost prts (fun ω => Rbar_lt (Lim_seq (sum_n (fun n : nat => rvsqr (β n) ω))) (Rbar.Finite A3))) ->
-
-(*   (exists (sigma : R), forall n, rv_le (rvsqr (w n)) (const (Rsqr sigma))) -> *)
-(*  rv_eq (W 0%nat) (const 0) ->  *)
-  (forall n, rv_eq (W (S n)) (rvplus (rvmult (rvminus (const 1) (α n)) (W n)) (rvmult (w n) (β n)))) ->
-  almost _ (fun ω => is_lim_seq (fun n => W n ω) (Rbar.Finite 0)).
- Proof.
-   intros.
-   Admitted.
-
 Lemma lemma1_bounded_alpha_beta (α β w W : nat -> Ts -> R) (Ca Cb B : R) 
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
@@ -880,8 +843,6 @@ Proof.
     now apply (RandomVariable_sa_sub (filt_sub n)).
   - intros.
     now apply (RandomVariable_sa_sub (filt_sub n)).
-  - admit.
-  - admit.
   - admit.
   - admit.
   - exists B.
