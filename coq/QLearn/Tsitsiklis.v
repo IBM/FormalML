@@ -869,7 +869,7 @@ Proof.
     lra.
  Qed.
 
-Lemma lemma1_alpha_beta (α β w B W : nat -> Ts -> R) (W0 Ca Cb : R)
+Lemma lemma1_alpha_beta (α β w B W : nat -> Ts -> R) (Ca Cb : R)
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
       (filt_sub : forall n, sa_sub (F n) dom)
@@ -1179,7 +1179,40 @@ Proof.
   now apply is_lim_seq_ext.
 Qed.
 
-Lemma lemma1_alpha_beta_shift (α β w B W : nat -> Ts -> R) (W0 Ca Cb : R)
+Lemma lemma1_alpha_alpha (α w B W : nat -> Ts -> R) (Ca : R)
+      {F : nat -> SigmaAlgebra Ts}
+      (isfilt : IsFiltration F)
+      (filt_sub : forall n, sa_sub (F n) dom)
+      {rv : forall n, RandomVariable dom borel_sa (w n)}
+      {rvW0 : RandomVariable (F 0%nat) borel_sa (W 0%nat)}
+      {adaptB : IsAdapted borel_sa B F}
+      {adaptw : IsAdapted borel_sa w (fun n => F (S n))}
+      {adapta : IsAdapted borel_sa α F} 
+      (is_cond : forall n, is_conditional_expectation prts (F n) (w n) (ConditionalExpectation prts (filt_sub n) (w n))) :
+  (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (w n)) (const 0)) ->
+  (forall (n:nat), almostR2 prts Rbar_le (ConditionalExpectation _ (filt_sub n) (rvsqr (w n))) (B n)) ->  
+  (forall n x, 0 <= α n x) ->
+  (forall n x, 0 <= 1 - α n x )  ->
+  (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
+  (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) (const Ca)) ->
+  (forall n ω, W (S n) ω = (1 - α n ω) * (W n ω) + (α n ω) * (w n ω)) ->
+  (almost prts (fun ω => exists (b:R), forall n, B n ω <= Rsqr b)) ->
+  almost prts (fun ω => is_lim_seq (fun n => W n ω) 0).
+Proof.
+  intros.
+  apply (lemma1_alpha_beta α α w B W Ca Ca isfilt filt_sub); trivial.
+  - intros.
+    apply all_almost.
+    now intros.
+  - intros.
+    apply all_almost.
+    unfold const.
+    intros.
+    specialize (H2 n x).
+    lra.
+ Qed.
+
+Lemma lemma1_alpha_beta_shift (α β w B W : nat -> Ts -> R) (Ca Cb : R)
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
       (filt_sub : forall n, sa_sub (F n) dom)
