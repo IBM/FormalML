@@ -500,9 +500,15 @@ Proof.
     intros.
     typeclasses eauto.
   }
+  assert (HH: forall n : nat, almostR2 prts Rle (const 0) (const 0)).
+  {
+    intros.
+    apply all_almost.
+    intros; unfold const; lra.
+  }
   generalize (Dvoretzky_DS_extended_alt_almost W (fun n => rvmult (w n) (β n)) 
                                         (fun n => rvmult (rvminus (const 1) (α n)) (W n))
-             isfilt filt_sub H H apos H0 Wrel); intros.
+             isfilt filt_sub H HH apos H0 Wrel); intros.
   apply H1.
   - intros.
     assert (RandomVariable (F n) borel_sa (β n)) by apply adapt_beta.

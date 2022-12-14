@@ -947,3 +947,75 @@ Ltac rv_unfold := unfold
                   rvscale,
                   rvplus,
                   rvmult in *.
+
+Ltac rv_unfold'_in_star := unfold
+                    const,
+                  id,
+                  compose,
+                  EventIndicator,
+                  rvsqr,
+                  rvpow,
+                  rvpower,
+                  rvsign,
+                  rvabs,
+                  rvmax, 
+                  rvmin,
+                  rvchoice,
+                  bvmin_choice,
+                  bvmax_choice,
+                  pos_fun_part,
+                  neg_fun_part,
+                  rvopp,
+                  rvscale,
+                  rvplus,
+                  rvmult in *; repeat rewrite rvminus_unfold in *.
+
+Tactic Notation "rv_unfold'" "in" "*" := rv_unfold'_in_star.
+
+Ltac rv_unfold'_goal := unfold
+                    const,
+                  id,
+                  compose,
+                  EventIndicator,
+                  rvsqr,
+                  rvpow,
+                  rvpower,
+                  rvsign,
+                  rvabs,
+                  rvmax, 
+                  rvmin,
+                  rvchoice,
+                  bvmin_choice,
+                  bvmax_choice,
+                  pos_fun_part,
+                  neg_fun_part,
+                  rvopp,
+                  rvscale,
+                  rvplus,
+                  rvmult; repeat rewrite rvminus_unfold.
+
+Tactic Notation "rv_unfold'" := rv_unfold'_goal.
+
+Ltac rv_unfold'_in_hyp H := unfold
+                    const,
+                  id,
+                  compose,
+                  EventIndicator,
+                  rvsqr,
+                  rvpow,
+                  rvpower,
+                  rvsign,
+                  rvabs,
+                  rvmax, 
+                  rvmin,
+                  rvchoice,
+                  bvmin_choice,
+                  bvmax_choice,
+                  pos_fun_part,
+                  neg_fun_part,
+                  rvopp,
+                  rvscale,
+                  rvplus,
+                  rvmult in H; repeat rewrite rvminus_unfold in H.
+
+Tactic Notation "rv_unfold'" "in" hyp(H) := rv_unfold'_in_hyp H.

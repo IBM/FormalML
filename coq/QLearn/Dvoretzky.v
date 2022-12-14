@@ -18,78 +18,6 @@ Set Bullet Behavior "Strict Subproofs".
 
 Require Import LM.hilbert Classical IndefiniteDescription.
 
-Ltac rv_unfold'_in_star := unfold
-                    const,
-                  id,
-                  compose,
-                  EventIndicator,
-                  rvsqr,
-                  rvpow,
-                  rvpower,
-                  rvsign,
-                  rvabs,
-                  rvmax, 
-                  rvmin,
-                  rvchoice,
-                  bvmin_choice,
-                  bvmax_choice,
-                  pos_fun_part,
-                  neg_fun_part,
-                  rvopp,
-                  rvscale,
-                  rvplus,
-                  rvmult in *; repeat rewrite rvminus_unfold in *.
-
-Tactic Notation "rv_unfold'" "in" "*" := rv_unfold'_in_star.
-
-Ltac rv_unfold'_goal := unfold
-                    const,
-                  id,
-                  compose,
-                  EventIndicator,
-                  rvsqr,
-                  rvpow,
-                  rvpower,
-                  rvsign,
-                  rvabs,
-                  rvmax, 
-                  rvmin,
-                  rvchoice,
-                  bvmin_choice,
-                  bvmax_choice,
-                  pos_fun_part,
-                  neg_fun_part,
-                  rvopp,
-                  rvscale,
-                  rvplus,
-                  rvmult; repeat rewrite rvminus_unfold.
-
-Tactic Notation "rv_unfold'" := rv_unfold'_goal.
-
-Ltac rv_unfold'_in_hyp H := unfold
-                    const,
-                  id,
-                  compose,
-                  EventIndicator,
-                  rvsqr,
-                  rvpow,
-                  rvpower,
-                  rvsign,
-                  rvabs,
-                  rvmax, 
-                  rvmin,
-                  rvchoice,
-                  bvmin_choice,
-                  bvmax_choice,
-                  pos_fun_part,
-                  neg_fun_part,
-                  rvopp,
-                  rvscale,
-                  rvplus,
-                  rvmult in H; repeat rewrite rvminus_unfold in H.
-
-Tactic Notation "rv_unfold'" "in" hyp(H) := rv_unfold'_in_hyp H.
-
 Section Dvoretzky.
   
  Context 
@@ -1617,9 +1545,9 @@ Section Derman_Sacks.
         {adaptT : IsAdapted borel_sa T F}       
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
-        (hpos2 : forall n x, 0 <= beta n x )
+        (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
         (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n)) 
-(*        (hpos3 : forall n x, 0 <=  gamma n x)         *)
+
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
         {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
    (forall (n:nat), rv_eq (X (S n)) (rvplus (T n) (Y n))) ->
@@ -1738,6 +1666,8 @@ Section Derman_Sacks.
    revert H3; apply almost_impl.
    revert H4; apply almost_impl.
    revert H5; apply almost_impl.
+   apply almost_forall in hpos2.
+   revert hpos2; apply almost_impl.
    apply almost_forall in hpos3.
    revert hpos3; apply almost_impl.
    apply all_almost; unfold impl; intros.
@@ -1755,15 +1685,15 @@ Section Derman_Sacks.
        apply is_lim_seq_scal_l.
        unfold A.
        apply is_lim_seq_max; trivial.
-   - apply is_lim_seq_spec in H9.
+   - apply is_lim_seq_spec in H10.
      apply is_lim_seq_spec.
      unfold is_lim_seq' in *; intros.
-     specialize (H9 eps).
-     destruct H9. 
+     specialize (H10 eps).
+     destruct H10. 
      exists x0; intros.
-     specialize (H9 n H10).
+     specialize (H10 n H11).
      rewrite Rminus_0_r.
-     now rewrite Rminus_0_r, Rabs_Rabsolu in H9.
+     now rewrite Rminus_0_r, Rabs_Rabsolu in H10.
  Qed.
 
  Theorem Dvoretzky_DS_extended
@@ -1791,12 +1721,17 @@ Section Derman_Sacks.
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
+   assert (hpos2' : forall n, almostR2 prts Rle (const 0) (beta n)).
+   {
+     intros.
+     now apply all_almost.
+   }
    assert (hpos3' : forall n, almostR2 prts Rle (const 0) (gamma n)).
    {
      intros.
      now apply all_almost.
    }
-   apply (Dvoretzky_DS_extended_almost X Y T isfilt filt_sub hpos1 hpos2 hpos3' rvy); trivial.
+   apply (Dvoretzky_DS_extended_almost X Y T isfilt filt_sub hpos1 hpos2' hpos3' rvy); trivial.
    intros; apply all_almost; intros.
    now rv_unfold' in *.
  Qed.
@@ -1873,7 +1808,8 @@ Section Derman_Sacks.
         {adaptT : IsAdapted borel_sa T F}       
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
-        (hpos2 : forall n x, 0 <= beta n x )
+(*        (hpos2 : forall n x, 0 <= beta n x ) *)
+        (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
 (*        (hpos3 : forall n x, 0 <= gamma n x) *)
         (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n)) 
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
@@ -1960,12 +1896,17 @@ Proof.
   almost _ (fun omega => is_lim_seq (fun n => X n omega) theta).
  Proof.
    intros.
+   assert (hpos2' : forall n, almostR2 prts Rle (const 0) (beta n)).
+   {
+     intros.
+     now apply all_almost.
+   }
    assert (hpos3' : forall n, almostR2 prts Rle (const 0) (gamma n)).
    {
      intros.
      now apply all_almost.
    }
-   apply (Dvoretzky_DS_extended_theta_almost theta X Y T isfilt filt_sub hpos1 hpos2 hpos3' rvy); trivial.
+   apply (Dvoretzky_DS_extended_theta_almost theta X Y T isfilt filt_sub hpos1 hpos2' hpos3' rvy); trivial.
    intros.
    apply all_almost.
    intros.
@@ -2104,7 +2045,8 @@ Theorem Dvoretzky_DS_scale_prop
         (T : nat -> Ts -> R)
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n omega , 0 <= alpha n omega)
-        (hpos2 : forall n omega, 0 <= beta n omega)
+(*        (hpos2 : forall n omega, 0 <= beta n omega) *)
+        (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
 (*        (hpos3 : forall n omega, 0 <= gamma n omega)  *)
         (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n)) :
 
@@ -2169,11 +2111,13 @@ Theorem Dvoretzky_DS_scale_prop
        now apply ex_series_lim_0.
    - apply H4.
    - intros.
+     specialize (hpos2 n).
+     revert hpos2; apply almost_impl.
      specialize (hpos3 n).
      revert hpos3; apply almost_impl.
      specialize (H n).
      revert H; apply almost_impl.
-     apply all_almost; intros omega ??.
+     apply all_almost; intros omega ???.
      unfold const in H5.
      eapply Rle_trans.
      apply H.
@@ -2194,8 +2138,7 @@ Theorem Dvoretzky_DS_scale_prop
          apply Rle_trans with (r2 := ((1 + beta n omega) * rho n omega)); try apply Rmax_r.
          apply Rle_trans with (r2 :=  (1 + beta n omega) * Rabs (X n omega)).
          -- apply Rmult_le_compat_r; try apply Rabs_pos; lra.
-         -- apply Rmult_le_compat_l; try lra.
-            specialize (hpos2 n omega); lra.
+         -- apply Rmult_le_compat_l; lra.
   Qed.
 
  Let DS_X (X0:Ts->R) (T Y:nat->Ts->R) (n:nat) :=
@@ -2215,7 +2158,8 @@ Theorem Dvoretzky_DS_scale_prop
            {adaptT : IsAdapted borel_sa T F}       
            {alpha beta gamma : nat -> Ts -> R}
            (hpos1 : forall n x, 0 <= alpha n x)
-           (hpos2 : forall n x, 0 <= beta n x )
+(*           (hpos2 : forall n x, 0 <= beta n x ) *)
+           (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
 (*           (hpos3 : forall n x, 0 <= gamma n x) *)
            (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n)) 
            (rvy : forall n, RandomVariable dom borel_sa (Y n))
@@ -2254,7 +2198,8 @@ Theorem Dvoretzky_DS_scale_prop
         {adaptT : IsAdapted borel_sa (fun n ts => T n ((vector_create 0 (S n) (fun m _ _ => X m ts))) ts) F}
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
-        (hpos2 : forall n x, 0 <= beta n x )
+(*        (hpos2 : forall n x, 0 <= beta n x ) *)
+        (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n))
 (*        (hpos3 : forall n x, 0 <= gamma n x) *)
         (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n))
 
@@ -2299,7 +2244,8 @@ Theorem Dvoretzky_DS_scale_prop
         {adaptT : IsAdapted borel_sa (fun n ts => T n (X n ts) ts) F}
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
-        (hpos2 : forall n x, 0 <= beta n x )
+(*        (hpos2 : forall n x, 0 <= beta n x ) *)
+        (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n))
 (*        (hpos3 : forall n x, 0 <= gamma n x)  *)
         (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n))
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
@@ -2349,7 +2295,8 @@ Theorem Dvoretzky_DS_scale_prop
         {rvT: IsAdapted borel_sa T (fun n => product_sa borel_sa (F n))}
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
-        (hpos2 : forall n x, 0 <= beta n x )
+(*        (hpos2 : forall n x, 0 <= beta n x ) *)
+        (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n))
 (*        (hpos3 : forall n x, 0 <= gamma n x) *)
         (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n))
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
@@ -2422,7 +2369,8 @@ Theorem Dvoretzky_DS_scale_prop
         {adaptT : IsAdapted borel_sa (DS_Tn X0 T Y) F}
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
-        (hpos2 : forall n x, 0 <= beta n x )
+(*        (hpos2 : forall n x, 0 <= beta n x ) *)
+        (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n))
 (*        (hpos3 : forall n x, 0 <= gamma n x) *)
         (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n))
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
@@ -2644,7 +2592,8 @@ Theorem Dvoretzky_DS_scale_prop
         {adaptT : IsAdapted borel_sa T F}
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
-        (hpos2 : forall n x, 0 <= beta n x )
+(*        (hpos2 : forall n x, 0 <= beta n x ) *)
+        (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
 (*        (hpos3 : forall n x, 0 <= gamma n x) *)
         (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n)) 
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
@@ -2698,12 +2647,17 @@ Theorem Dvoretzky_DS_scale_prop
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
+   assert (hpos2': forall n, almostR2 prts Rle (const 0) (beta n)).
+   {
+     intros.
+     now apply all_almost.
+   }
    assert (hpos3': forall n, almostR2 prts Rle (const 0) (gamma n)).
    {
      intros.
      now apply all_almost.
    }
-   apply (Dvoretzky_DS_extended_alt_almost X Y T isfilt filt_sub hpos1 hpos2 hpos3' rvy); trivial.
+   apply (Dvoretzky_DS_extended_alt_almost X Y T isfilt filt_sub hpos1 hpos2' hpos3' rvy); trivial.
    intros; apply all_almost; intros.
    specialize (H1 n x).
    now rv_unfold'.
@@ -2719,7 +2673,8 @@ Theorem Dvoretzky_DS_scale_prop
         {adaptT : IsAdapted borel_sa T F}
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
-        (hpos2 : forall n x, 0 <= beta n x )
+(*        (hpos2 : forall n x, 0 <= beta n x ) *)
+        (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
 (*        (hpos3 : forall n x, 0 <= gamma n x) *)
         (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n)) 
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
@@ -2762,7 +2717,8 @@ Theorem Dvoretzky_DS_scale_prop
              {adaptT : IsAdapted borel_sa (DS_Tn X0 T Y) F}
              {alpha beta gamma : nat -> Ts -> R}
              (hpos1 : forall n x, 0 <= alpha n x)
-             (hpos2 : forall n x, 0 <= beta n x )
+(*             (hpos2 : forall n x, 0 <= beta n x ) *)
+             (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
 (*             (hpos3 : forall n x, 0 <= gamma n x) *)
              (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n)) 
              (rvy : forall n, RandomVariable dom borel_sa (Y n))
