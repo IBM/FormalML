@@ -18,7 +18,7 @@ Set Bullet Behavior "Strict Subproofs".
 
 Require Import LM.hilbert Classical IndefiniteDescription.
 
-Ltac rv_unfold' := unfold
+Ltac rv_unfold'_in_star := unfold
                     const,
                   id,
                   compose,
@@ -39,6 +39,56 @@ Ltac rv_unfold' := unfold
                   rvscale,
                   rvplus,
                   rvmult in *; repeat rewrite rvminus_unfold in *.
+
+Tactic Notation "rv_unfold'" "in" "*" := rv_unfold'_in_star.
+
+Ltac rv_unfold'_goal := unfold
+                    const,
+                  id,
+                  compose,
+                  EventIndicator,
+                  rvsqr,
+                  rvpow,
+                  rvpower,
+                  rvsign,
+                  rvabs,
+                  rvmax, 
+                  rvmin,
+                  rvchoice,
+                  bvmin_choice,
+                  bvmax_choice,
+                  pos_fun_part,
+                  neg_fun_part,
+                  rvopp,
+                  rvscale,
+                  rvplus,
+                  rvmult; repeat rewrite rvminus_unfold.
+
+Tactic Notation "rv_unfold'" := rv_unfold'_goal.
+
+Ltac rv_unfold'_in_hyp H := unfold
+                    const,
+                  id,
+                  compose,
+                  EventIndicator,
+                  rvsqr,
+                  rvpow,
+                  rvpower,
+                  rvsign,
+                  rvabs,
+                  rvmax, 
+                  rvmin,
+                  rvchoice,
+                  bvmin_choice,
+                  bvmax_choice,
+                  pos_fun_part,
+                  neg_fun_part,
+                  rvopp,
+                  rvscale,
+                  rvplus,
+                  rvmult in H; repeat rewrite rvminus_unfold in H.
+
+Tactic Notation "rv_unfold'" "in" hyp(H) := rv_unfold'_in_hyp H.
 
 Section Dvoretzky.
   
@@ -1748,7 +1798,7 @@ Section Derman_Sacks.
    }
    apply (Dvoretzky_DS_extended_almost X Y T isfilt filt_sub hpos1 hpos2 hpos3' rvy); trivial.
    intros; apply all_almost; intros.
-   now rv_unfold'.
+   now rv_unfold' in *.
  Qed.
 
  Theorem Dvoretzky_DS_theta (theta : R)
