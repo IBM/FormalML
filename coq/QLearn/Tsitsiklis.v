@@ -428,8 +428,12 @@ Lemma Dvoretzky_converge_W_alpha_beta  (W w α β: nat -> Ts -> R)
 
       {rvalpha : forall n, RandomVariable dom borel_sa (α n)}
       {rvbeta : forall n, RandomVariable dom borel_sa (β n)}            
+(*
       (alpha_pos:forall n x, 0 <= α n x)
       (alpha_one:forall n x, 0 <= 1 - α n x )  
+*)
+      (apos: forall (n:nat), almostR2 prts Rle (const 0) (α n)) 
+      (aone: forall (n:nat), almostR2 prts Rle (α n) (const 1)) 
       (bpos: forall (n:nat), almostR2 prts Rle (const 0) (β n)) 
       (bone: forall (n:nat), almostR2 prts Rle (β n) (const 1)) :
   (forall n,
@@ -496,9 +500,9 @@ Proof.
     intros.
     typeclasses eauto.
   }
-  generalize (Dvoretzky_DS_extended_alt W (fun n => rvmult (w n) (β n)) 
+  generalize (Dvoretzky_DS_extended_alt_almost W (fun n => rvmult (w n) (β n)) 
                                         (fun n => rvmult (rvminus (const 1) (α n)) (W n))
-             isfilt filt_sub H H alpha_pos H0 Wrel); intros.
+             isfilt filt_sub H H apos H0 Wrel); intros.
   apply H1.
   - intros.
     assert (RandomVariable (F n) borel_sa (β n)) by apply adapt_beta.
@@ -520,32 +524,38 @@ Proof.
       now intro z.
     + unfold const.
       now rewrite Rbar_mult_0_r.
-  - intros ??.
+  - intros.
+    specialize (apos n).
+    revert apos.
+    apply almost_impl.
+    specialize (aone n).
+    revert aone.
+    apply almost_impl.
+    apply all_almost; unfold impl; intros omega ??.
     rv_unfold.
+    rewrite Rplus_0_r.
     unfold Rabs, Rmax.
     match_destr; match_destr.
     + match_destr; try lra.
     + match_destr_in n0; try lra.
       assert (0 <= (1 + -1 * α n omega)).
       {
-        specialize (alpha_one n omega).
         lra.
       }
       apply Rge_le in r0.
-      generalize (Rmult_le_pos _ _ H2 r0).
+      generalize (Rmult_le_pos _ _ H4 r0).
       lra.
     + match_destr; try lra.
     + match_destr_in n0; try lra.
       assert (0 <= (1 + -1 * α n omega)).
       {
-        specialize (alpha_one n omega).
         lra.
       }
       apply Rlt_gt in r0.
       assert (W n omega <= 0) by lra.
-      generalize (Rmult_le_ge_compat_neg_l _ _ _ H3 H2); intros.
-      rewrite Rmult_0_r in H4.
-      rewrite Rmult_comm in H4.
+      generalize (Rmult_le_ge_compat_neg_l _ _ _ H5 H4); intros.
+      rewrite Rmult_0_r in H6.
+      rewrite Rmult_comm in H6.
       lra.
   - destruct condexpw2 as [C ?].
     assert (forall n,
@@ -798,11 +808,11 @@ Lemma lemma1_bounded_alpha_beta (α β w W : nat -> Ts -> R) (Ca Cb B : R)
       {adaptb : IsAdapted borel_sa β F} :    
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (w n)) (const 0)) ->
   (forall (n:nat), almostR2 prts Rbar_le (ConditionalExpectation _ (filt_sub n) (rvsqr (w n))) (const (Rsqr B))) ->  
-(*  (forall (n:nat), almostR2 prts Rle (const 0) (α n)) -> *)
-  (forall n x, 0 <= α n x) ->
+  (forall (n:nat), almostR2 prts Rle (const 0) (α n)) -> 
+(*  (forall n x, 0 <= α n x) -> *)
   (forall (n:nat), almostR2 prts Rle (const 0) (β n)) ->  
-(*  (forall (n:nat), almostR2 prts Rle (α n) (const 1)) -> *)
-  (forall n x, 0 <= 1 - α n x )  ->
+  (forall (n:nat), almostR2 prts Rle (α n) (const 1)) -> 
+(*  (forall n x, 0 <= 1 - α n x )  -> *)
   (forall (n:nat), almostR2 prts Rle (β n) (const 1)) ->  
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => β k ω)) p_infty)) ->  
@@ -882,11 +892,11 @@ Lemma lemma1_alpha_beta (α β w B W : nat -> Ts -> R) (Ca Cb : R)
       (is_cond : forall n, is_conditional_expectation prts (F n) (w n) (ConditionalExpectation prts (filt_sub n) (w n))) :
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (w n)) (const 0)) ->
   (forall (n:nat), almostR2 prts Rbar_le (ConditionalExpectation _ (filt_sub n) (rvsqr (w n))) (B n)) ->  
-(*  (forall (n:nat), almostR2 prts Rle (const 0) (α n)) -> *)
-  (forall n x, 0 <= α n x) ->
+  (forall (n:nat), almostR2 prts Rle (const 0) (α n)) -> 
+(*  (forall n x, 0 <= α n x) -> *)
   (forall (n:nat), almostR2 prts Rle (const 0) (β n)) ->  
-(*  (forall (n:nat), almostR2 prts Rle (α n) (const 1)) -> *)
-  (forall n x, 0 <= 1 - α n x )  ->
+  (forall (n:nat), almostR2 prts Rle (α n) (const 1)) -> 
+(*  (forall n x, 0 <= 1 - α n x )  -> *)
   (forall (n:nat), almostR2 prts Rle (β n) (const 1)) ->  
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => β k ω)) p_infty)) ->  
@@ -1204,6 +1214,17 @@ Proof.
   - intros.
     apply all_almost.
     now intros.
+  - intros.
+    apply all_almost.
+    unfold const.
+    intros.
+    apply H1.
+  - intros.
+    apply all_almost.
+    unfold const.
+    intros.
+    specialize (H2 n x).
+    lra.
   - intros.
     apply all_almost.
     unfold const.
