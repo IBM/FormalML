@@ -389,6 +389,21 @@ Section almostR2_part.
     eapply prop; eauto.
   Qed.
 
+    (* classically true *)
+  Lemma almost_independent_impl (P:Prop) (Q:Ts->Prop) :
+    (P -> almost prts Q) <-> almost prts (fun ts => P -> Q ts).
+  Proof.
+    split.
+    - intros PQ.
+      destruct (classic P).
+      + generalize (PQ H).
+        apply almost_impl; apply all_almost; intros ???; trivial.
+      + apply all_almost; intros ??; tauto.
+    - intros HH ?.
+      revert HH.
+      apply almost_impl; apply all_almost; intros ??; auto.
+  Qed.
+
   Lemma almost_map_split {B} {f:Ts->B} {P:B->Prop} :
     almost prts (fun x => P (f x)) ->
     exists f', almostR2 prts eq f f' /\
