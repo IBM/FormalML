@@ -2244,7 +2244,7 @@ Theorem Dvoretzky_DS_scale_prop
    ; reflexivity.
  Qed.
  
- Corollary Dvoretzky_DS_extended_vector
+ Corollary Dvoretzky_DS_extended_vector_almost
         (X Y : nat -> Ts -> R)
         (T : forall (n:nat), vector R (S n) -> Ts -> R)
         {F : nat -> SigmaAlgebra Ts}
@@ -2255,13 +2255,25 @@ Theorem Dvoretzky_DS_scale_prop
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
         (hpos2 : forall n x, 0 <= beta n x )
-        (hpos3 : forall n x, 0 <= gamma n x)
+(*        (hpos3 : forall n x, 0 <= gamma n x) *)
+        (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n))
+
          (rvy : forall n, RandomVariable dom borel_sa (Y n))
         {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
    (forall (n:nat), rv_eq (X (S n)) (rvplus (fun ts => T n (vector_create 0 (S n) (fun m _ _ => X m ts)) ts) (Y n))) ->
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
+(*
   (forall n v omega, (rvabs (T n v) omega) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs (X n) omega) - gamma n omega)) ->
+*)
+  (forall n, almostR2 prts Rle (rvabs 
+                                  (fun ts => T n (vector_create 0 (S n) (fun m _ _ => X m ts)) ts ))
+                      (rvmax (alpha n) 
+                             (rvminus
+                                (rvmult 
+                                   (rvplus (const 1) (beta n))
+                                   (rvabs (X n))) 
+                                 (gamma n)))) ->
   ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
   almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
   almost prts (fun omega => ex_finite_lim_seq (sum_n (fun n => beta n omega))) ->
@@ -2269,14 +2281,13 @@ Theorem Dvoretzky_DS_scale_prop
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
-   eapply (Dvoretzky_DS_extended
+   eapply (Dvoretzky_DS_extended_almost
             X Y
             (fun n ts => T n (vector_create 0 (S n) (fun m _ _ => X m ts)) ts)
             isfilt filt_sub
             hpos1 hpos2 hpos3
           ); trivial.
-   intros; apply H1.
- Qed.
+  Qed.
 
  Corollary Dvoretzky_DS_extended1
         (X Y : nat -> Ts -> R)
@@ -2289,13 +2300,23 @@ Theorem Dvoretzky_DS_scale_prop
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
         (hpos2 : forall n x, 0 <= beta n x )
-        (hpos3 : forall n x, 0 <= gamma n x) 
+(*        (hpos3 : forall n x, 0 <= gamma n x)  *)
+        (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n))
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
         {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
    (forall (n:nat), rv_eq (X (S n)) (rvplus (fun ts => T n (X n ts) ts) (Y n))) ->
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
-  (forall n v omega, (rvabs (T n v) omega) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs (X n) omega) - gamma n omega)) ->
+(*  (forall n v omega, (rvabs (T n v) omega) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs (X n) omega) - gamma n omega)) -> *)
+ (forall n, almostR2 prts Rle (rvabs 
+                                  (fun ts => T n (X n ts) ts) )
+                      (rvmax (alpha n) 
+                             (rvminus
+                                (rvmult 
+                                   (rvplus (const 1) (beta n))
+                                   (rvabs (X n)))
+                                 (gamma n)))) ->
+
   ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
   almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
   almost prts (fun omega => ex_finite_lim_seq (sum_n (fun n => beta n omega))) ->
@@ -2303,13 +2324,12 @@ Theorem Dvoretzky_DS_scale_prop
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
-   eapply (Dvoretzky_DS_extended
+   eapply (Dvoretzky_DS_extended_almost
             X Y
             (fun n ts => T n (X n ts) ts)
             isfilt filt_sub
             hpos1 hpos2 hpos3
           ); trivial.
-   - intros; apply H1.
  Qed.
  
  Fixpoint DS_X1 (X0:Ts->R) (T:nat->(R*Ts)->R) (Y:nat->Ts->R) (n:nat) : Ts -> R :=
@@ -2330,12 +2350,23 @@ Theorem Dvoretzky_DS_scale_prop
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
         (hpos2 : forall n x, 0 <= beta n x )
-        (hpos3 : forall n x, 0 <= gamma n x)
+(*        (hpos3 : forall n x, 0 <= gamma n x) *)
+        (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n))
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
         {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
-  (forall n omega, (Rabs (T n (DS_X1 X0 T Y n omega, omega))) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_X1 X0 T Y n)) omega) - gamma n omega)) ->
+  (forall n, almostR2 prts Rle (rvabs 
+                                  (fun ts => T n ((DS_X1 X0 T Y n ts), ts) ))
+                      (rvmax (alpha n) 
+                             (rvminus
+                                (rvmult 
+                                   (rvplus (const 1) (beta n))
+                                   (rvabs (DS_X1 X0 T Y n)))
+                                 (gamma n)))) ->
+
+(*  (forall n omega, (Rabs (T n (DS_X1 X0 T Y n omega, omega))) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_X1 X0 T Y n)) omega) - gamma n omega)) ->
+*)
   ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
   almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
   almost prts (fun omega => ex_finite_lim_seq (sum_n (fun n => beta n omega))) ->
@@ -2343,7 +2374,7 @@ Theorem Dvoretzky_DS_scale_prop
   almost _ (fun omega => is_lim_seq (fun n => (DS_X1 X0 T Y n omega)) 0).
  Proof.
    intros.
-   eapply (Dvoretzky_DS_extended
+   eapply (Dvoretzky_DS_extended_almost
                  (DS_X1 X0 T Y) Y
                  (fun n ts => T n ((DS_X1 X0 T Y n ts),ts))
                  isfilt filt_sub
@@ -2392,12 +2423,21 @@ Theorem Dvoretzky_DS_scale_prop
         {alpha beta gamma : nat -> Ts -> R}
         (hpos1 : forall n x, 0 <= alpha n x)
         (hpos2 : forall n x, 0 <= beta n x )
-        (hpos3 : forall n x, 0 <= gamma n x)
+(*        (hpos3 : forall n x, 0 <= gamma n x) *)
+        (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n))
         (rvy : forall n, RandomVariable dom borel_sa (Y n))
         {svy2 : forall n, IsFiniteExpectation prts (rvsqr (Y n))} :
   (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (Y n))
                      (fun x : Ts => const 0 x)) ->
-  (forall n omega, (Rabs (DS_Tn X0 T Y n omega)) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_Xn X0 T Y n)) omega) - gamma n omega)) ->
+(*  (forall n omega, (Rabs (DS_Tn X0 T Y n omega)) <= Rmax (alpha n omega) ((1+beta n omega)*(rvabs ((DS_Xn X0 T Y n)) omega) - gamma n omega)) ->
+*)
+  (forall n, almostR2 prts Rle (rvabs (DS_Tn X0 T Y n))
+                      (rvmax (alpha n) 
+                             (rvminus
+                                (rvmult 
+                                   (rvplus (const 1) (beta n))
+                                   (rvabs (DS_Xn X0 T Y n)))
+                                 (gamma n)))) ->
   ex_finite_lim_seq (sum_n (fun n => FiniteExpectation _ (rvsqr (Y n)))) ->
   almost prts (fun omega => is_lim_seq (fun n => alpha n omega) 0) ->
   almost prts (fun omega => ex_finite_lim_seq (sum_n (fun n => beta n omega))) ->
@@ -2405,7 +2445,7 @@ Theorem Dvoretzky_DS_scale_prop
   almost _ (fun omega => is_lim_seq (fun n => (DS_Xn X0 T Y n omega)) 0).
  Proof.
    intros.
-   eapply (Dvoretzky_DS_extended
+   eapply (Dvoretzky_DS_extended_almost
                  (DS_Xn X0 T Y) Y
                  (DS_Tn X0 T Y)
                  isfilt filt_sub
