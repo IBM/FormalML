@@ -1360,7 +1360,19 @@ Proof.
       simpl in H2.
       unfold const in H2.
       lra.
- }
+  }
+
+
+  cut (almost prts (fun ω : Ts => exists N, forall m : nat, (N <= m)%nat -> is_lim_seq (fun n : nat => W (n+m)%nat ω) 0)).
+  { admit. }
+
+  
+
+
+  generalize (almost_and _ H9 H10); intros HH.
+  
+
+  
 Admitted.  
                                                
 

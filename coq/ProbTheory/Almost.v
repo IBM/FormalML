@@ -131,6 +131,65 @@ Section almost.
       apply H0.
   Qed.
 
+  Lemma forall_almost {Pn:nat -> pre_event Ts} :
+    almost (pre_inter_of_collection Pn) ->
+    (forall n, almost (Pn n)).
+  Proof.
+    intros [p [pone ?]] n.
+    exists p; split; trivial.
+    intros x px.
+    now apply H.
+  Qed.
+
+  Lemma almost_forall_iff (Pn:nat -> pre_event Ts) :
+    (forall n, almost (Pn n)) <->
+      almost (pre_inter_of_collection Pn).
+  Proof.
+    split.
+    - apply almost_forall.
+    - apply forall_almost.
+  Qed.
+
+  Lemma almost_exists {Pn:nat -> pre_event Ts} (n : Ts -> nat) :
+    almost (fun ω => Pn (n ω) ω) ->
+    almost (fun ω => exists n : nat, Pn n ω).
+  Proof.
+    intros [p [pone ?]].
+    exists p; eauto.
+  Qed.
+
+  (* this is classically true, with choice *)
+  Lemma exists_almost {Pn:nat -> pre_event Ts} :
+    almost (fun ω => exists n : nat, Pn n ω) ->
+    (exists (n : Ts -> nat), almost (fun ω => Pn (n ω) ω)).
+  Proof.
+    intros [p [pone ?]].
+    assert (HH:forall x : Ts, exists n : nat, p x ->  Pn n x).
+    {
+      intros ts.
+      destruct (classic (p ts)).
+      - destruct (H _ H0).
+        exists x; trivial.
+      - exists 0%nat.
+        tauto.
+    }
+    apply choice in HH.
+    destruct HH as [f ?].
+    exists f.
+    exists p.
+    split; trivial.
+  Qed.    
+
+  Lemma almost_exists_iff {Pn:nat -> pre_event Ts} :
+    (exists (n : Ts -> nat), almost (fun ω => Pn (n ω) ω)) <->
+    almost (fun ω => exists n : nat, Pn n ω).
+  Proof.
+    split.
+    - intros [??].
+      eapply almost_exists; eauto.
+    - apply exists_almost.
+  Qed.
+
   Lemma almost_forallQ (Pn:Q->pre_event Ts) :
       (forall n : Q, almost (Pn n)) -> almost (fun ts => forall n, Pn n ts).
     Proof.
