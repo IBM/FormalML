@@ -1152,15 +1152,13 @@ Section Derman_Sacks.
 
  Lemma DS_Dvor_11_12_Y_fun (a : nat -> Ts -> R) {Y : nat -> Ts -> R}
        (isfe : forall n, IsFiniteExpectation prts (rvsqr (Y n)))
-       (rvy : forall n, RandomVariable _ borel_sa (Y n))
-   :
-     (forall n omega, 0 <= a n omega) ->
+       (rvy : forall n, RandomVariable _ borel_sa (Y n))   :
      ex_series (fun n => FiniteExpectation prts (rvsqr (Y n))) ->
      exists α : nat-> R,
        is_lim_seq (fun n => α n) 0 /\
        almost _ (fun omega =>  exists N:nat, forall n, (N <= n)%nat -> rvabs (Y n) omega <= Rmax (α n) (a n omega)).
  Proof.
-   intros Ha1 HY.
+   intros (* Ha1 *) HY.
    generalize (no_worst_converge_div (fun n => FiniteExpectation prts (rvsqr (Y n)))); intros.
    assert (forall n, 0 <= FiniteExpectation prts (rvsqr (Y n))).
    {
@@ -1544,7 +1542,7 @@ Section Derman_Sacks.
         {adaptX : IsAdapted borel_sa X F}
         {adaptT : IsAdapted borel_sa T F}       
         {alpha beta gamma : nat -> Ts -> R}
-        (hpos1 : forall n x, 0 <= alpha n x)
+        (hpos1 : forall n, almostR2 prts Rle (const 0) (alpha n))
         (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
         (hpos3 : forall n, almostR2 prts Rle (const 0) (gamma n)) 
 
@@ -1595,7 +1593,6 @@ Section Derman_Sacks.
        + now rewrite rvsqr_abs.
        + apply nnfabs.
    } 
-
    destruct (DS_Dvor_11_12_Y_fun alpha svy2) as [α [α0 [E [HE Hα]]]]; trivial.
 
    pose (Z := fun n => rvmult (Y n) (rvsign (T n))).
@@ -1666,6 +1663,8 @@ Section Derman_Sacks.
    revert H3; apply almost_impl.
    revert H4; apply almost_impl.
    revert H5; apply almost_impl.
+   apply almost_forall in hpos1.
+   revert hpos1; apply almost_impl.
    apply almost_forall in hpos2.
    revert hpos2; apply almost_impl.
    apply almost_forall in hpos3.
@@ -1678,22 +1677,22 @@ Section Derman_Sacks.
      + intros; unfold A.
        apply Rmult_le_pos; try lra.
        apply Rle_trans with (r2 := alpha n x).
-       * apply hpos1.
+       * apply H5.
        * apply Rmax_r.
      + intros; apply Rabs_pos.
      + replace (Finite 0) with (Rbar_mult 2 0) by apply Rbar_mult_0_r.
        apply is_lim_seq_scal_l.
        unfold A.
        apply is_lim_seq_max; trivial.
-   - apply is_lim_seq_spec in H10.
+   - apply is_lim_seq_spec in H11.
      apply is_lim_seq_spec.
      unfold is_lim_seq' in *; intros.
-     specialize (H10 eps).
-     destruct H10. 
+     specialize (H11 eps).
+     destruct H11. 
      exists x0; intros.
-     specialize (H10 n H11).
+     specialize (H11 n H12).
      rewrite Rminus_0_r.
-     now rewrite Rminus_0_r, Rabs_Rabsolu in H10.
+     now rewrite Rminus_0_r, Rabs_Rabsolu in H11.
  Qed.
 
  Theorem Dvoretzky_DS_extended
@@ -1721,6 +1720,11 @@ Section Derman_Sacks.
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
+   assert (hpos1' : forall n, almostR2 prts Rle (const 0) (alpha n)).
+   {
+     intros.
+     now apply all_almost.
+   }
    assert (hpos2' : forall n, almostR2 prts Rle (const 0) (beta n)).
    {
      intros.
@@ -1731,7 +1735,7 @@ Section Derman_Sacks.
      intros.
      now apply all_almost.
    }
-   apply (Dvoretzky_DS_extended_almost X Y T isfilt filt_sub hpos1 hpos2' hpos3' rvy); trivial.
+   apply (Dvoretzky_DS_extended_almost X Y T isfilt filt_sub hpos1' hpos2' hpos3' rvy); trivial.
    intros; apply all_almost; intros.
    now rv_unfold' in *.
  Qed.
@@ -1807,7 +1811,8 @@ Section Derman_Sacks.
         {adaptX : IsAdapted borel_sa X F}
         {adaptT : IsAdapted borel_sa T F}       
         {alpha beta gamma : nat -> Ts -> R}
-        (hpos1 : forall n x, 0 <= alpha n x)
+(*        (hpos1 : forall n x, 0 <= alpha n x) *)
+        (hpos1 : forall n, almostR2 prts Rle (const 0) (alpha n)) 
 (*        (hpos2 : forall n x, 0 <= beta n x ) *)
         (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
 (*        (hpos3 : forall n x, 0 <= gamma n x) *)
@@ -1896,6 +1901,11 @@ Proof.
   almost _ (fun omega => is_lim_seq (fun n => X n omega) theta).
  Proof.
    intros.
+   assert (hpos1' : forall n, almostR2 prts Rle (const 0) (alpha n)).
+   {
+     intros.
+     now apply all_almost.
+   }
    assert (hpos2' : forall n, almostR2 prts Rle (const 0) (beta n)).
    {
      intros.
@@ -1906,7 +1916,7 @@ Proof.
      intros.
      now apply all_almost.
    }
-   apply (Dvoretzky_DS_extended_theta_almost theta X Y T isfilt filt_sub hpos1 hpos2' hpos3' rvy); trivial.
+   apply (Dvoretzky_DS_extended_theta_almost theta X Y T isfilt filt_sub hpos1' hpos2' hpos3' rvy); trivial.
    intros.
    apply all_almost.
    intros.
@@ -2044,7 +2054,8 @@ Theorem Dvoretzky_DS_scale_prop
         (X : nat -> Ts -> R)
         (T : nat -> Ts -> R)
         {alpha beta gamma : nat -> Ts -> R}
-        (hpos1 : forall n omega , 0 <= alpha n omega)
+(*        (hpos1 : forall n omega , 0 <= alpha n omega) *)
+        (hpos1 : forall n, almostR2 prts Rle (const 0) (alpha n)) 
 (*        (hpos2 : forall n omega, 0 <= beta n omega) *)
         (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
 (*        (hpos3 : forall n omega, 0 <= gamma n omega)  *)
@@ -2064,7 +2075,7 @@ Theorem Dvoretzky_DS_scale_prop
   almost _ (fun omega =>  ex_series (fun n => beta n omega)) ->
   almost _ (fun omega => is_lim_seq (sum_n (fun n => gamma n omega)) p_infty) ->
   exists (alpha2 gamma2 : nat -> Ts -> R),
-    (forall n omega, 0 <= alpha2 n omega) /\
+    (forall n, almostR2 prts Rle (const 0) (alpha2 n)) /\
     (forall n, almostR2 prts Rle (const 0) (gamma2 n)) /\
     almost _ (fun omega => is_lim_seq (fun n => alpha2 n omega) 0) /\
     almost _ (fun omega => is_lim_seq (sum_n (fun n => gamma2 n omega)) p_infty) /\
@@ -2084,8 +2095,11 @@ Theorem Dvoretzky_DS_scale_prop
    split; try split; try split; try split.
    - intros.
      unfold alpha2.
+     specialize (hpos1 n).
+     revert hpos1; apply almost_impl; unfold const, impl.
+     apply all_almost; intros.
      eapply Rle_trans.
-     apply (hpos1 n).
+     apply H5.
      apply Rmax_l.
    - intros.
      specialize (hpos3 n).
@@ -2111,14 +2125,16 @@ Theorem Dvoretzky_DS_scale_prop
        now apply ex_series_lim_0.
    - apply H4.
    - intros.
+     specialize (hpos1 n).
+     revert hpos1; apply almost_impl.
      specialize (hpos2 n).
      revert hpos2; apply almost_impl.
      specialize (hpos3 n).
      revert hpos3; apply almost_impl.
      specialize (H n).
      revert H; apply almost_impl.
-     apply all_almost; intros omega ???.
-     unfold const in H5.
+     apply all_almost; intros omega ????.
+     unfold const in *.
      eapply Rle_trans.
      apply H.
      unfold alpha2, gamma2.
@@ -2157,7 +2173,8 @@ Theorem Dvoretzky_DS_scale_prop
            {adaptX : IsAdapted borel_sa (DS_X X0 T Y) F}
            {adaptT : IsAdapted borel_sa T F}       
            {alpha beta gamma : nat -> Ts -> R}
-           (hpos1 : forall n x, 0 <= alpha n x)
+(*           (hpos1 : forall n x, 0 <= alpha n x) *)
+           (hpos1 : forall n, almostR2 prts Rle (const 0) (alpha n)) 
 (*           (hpos2 : forall n x, 0 <= beta n x ) *)
            (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
 (*           (hpos3 : forall n x, 0 <= gamma n x) *)
@@ -2197,7 +2214,8 @@ Theorem Dvoretzky_DS_scale_prop
         {adaptX : IsAdapted borel_sa X F}
         {adaptT : IsAdapted borel_sa (fun n ts => T n ((vector_create 0 (S n) (fun m _ _ => X m ts))) ts) F}
         {alpha beta gamma : nat -> Ts -> R}
-        (hpos1 : forall n x, 0 <= alpha n x)
+(*        (hpos1 : forall n x, 0 <= alpha n x) *)
+        (hpos1 : forall n, almostR2 prts Rle (const 0) (alpha n))
 (*        (hpos2 : forall n x, 0 <= beta n x ) *)
         (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n))
 (*        (hpos3 : forall n x, 0 <= gamma n x) *)
@@ -2243,7 +2261,8 @@ Theorem Dvoretzky_DS_scale_prop
         {adaptX : IsAdapted borel_sa X F}
         {adaptT : IsAdapted borel_sa (fun n ts => T n (X n ts) ts) F}
         {alpha beta gamma : nat -> Ts -> R}
-        (hpos1 : forall n x, 0 <= alpha n x)
+(*        (hpos1 : forall n x, 0 <= alpha n x) *)
+        (hpos1 : forall n, almostR2 prts Rle (const 0) (alpha n))
 (*        (hpos2 : forall n x, 0 <= beta n x ) *)
         (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n))
 (*        (hpos3 : forall n x, 0 <= gamma n x)  *)
@@ -2294,7 +2313,8 @@ Theorem Dvoretzky_DS_scale_prop
         {adaptX : IsAdapted borel_sa (DS_X1 X0 T Y) F}
         {rvT: IsAdapted borel_sa T (fun n => product_sa borel_sa (F n))}
         {alpha beta gamma : nat -> Ts -> R}
-        (hpos1 : forall n x, 0 <= alpha n x)
+(*        (hpos1 : forall n x, 0 <= alpha n x) *)
+        (hpos1 : forall n, almostR2 prts Rle (const 0) (alpha n))
 (*        (hpos2 : forall n x, 0 <= beta n x ) *)
         (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n))
 (*        (hpos3 : forall n x, 0 <= gamma n x) *)
@@ -2368,7 +2388,8 @@ Theorem Dvoretzky_DS_scale_prop
         {adaptX : IsAdapted borel_sa (DS_Xn X0 T Y) F}
         {adaptT : IsAdapted borel_sa (DS_Tn X0 T Y) F}
         {alpha beta gamma : nat -> Ts -> R}
-        (hpos1 : forall n x, 0 <= alpha n x)
+(*        (hpos1 : forall n x, 0 <= alpha n x) *)
+        (hpos1 : forall n, almostR2 prts Rle (const 0) (alpha n))
 (*        (hpos2 : forall n x, 0 <= beta n x ) *)
         (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n))
 (*        (hpos3 : forall n x, 0 <= gamma n x) *)
@@ -2591,7 +2612,8 @@ Theorem Dvoretzky_DS_scale_prop
         {adaptX : IsAdapted borel_sa X F}
         {adaptT : IsAdapted borel_sa T F}
         {alpha beta gamma : nat -> Ts -> R}
-        (hpos1 : forall n x, 0 <= alpha n x)
+(*        (hpos1 : forall n x, 0 <= alpha n x) *)
+        (hpos1 : forall n, almostR2 prts Rle (const 0) (alpha n)) 
 (*        (hpos2 : forall n x, 0 <= beta n x ) *)
         (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
 (*        (hpos3 : forall n x, 0 <= gamma n x) *)
@@ -2647,6 +2669,11 @@ Theorem Dvoretzky_DS_scale_prop
   almost _ (fun omega => is_lim_seq (fun n => X n omega) 0).
  Proof.
    intros.
+   assert (hpos1': forall n, almostR2 prts Rle (const 0) (alpha n)).
+   {
+     intros.
+     now apply all_almost.
+   }
    assert (hpos2': forall n, almostR2 prts Rle (const 0) (beta n)).
    {
      intros.
@@ -2657,7 +2684,7 @@ Theorem Dvoretzky_DS_scale_prop
      intros.
      now apply all_almost.
    }
-   apply (Dvoretzky_DS_extended_alt_almost X Y T isfilt filt_sub hpos1 hpos2' hpos3' rvy); trivial.
+   apply (Dvoretzky_DS_extended_alt_almost X Y T isfilt filt_sub hpos1' hpos2' hpos3' rvy); trivial.
    intros; apply all_almost; intros.
    specialize (H1 n x).
    now rv_unfold'.
@@ -2672,7 +2699,8 @@ Theorem Dvoretzky_DS_scale_prop
         {adaptX : IsAdapted borel_sa X F}
         {adaptT : IsAdapted borel_sa T F}
         {alpha beta gamma : nat -> Ts -> R}
-        (hpos1 : forall n x, 0 <= alpha n x)
+(*        (hpos1 : forall n x, 0 <= alpha n x) *)
+        (hpos1 : forall n, almostR2 prts Rle (const 0) (alpha n)) 
 (*        (hpos2 : forall n x, 0 <= beta n x ) *)
         (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
 (*        (hpos3 : forall n x, 0 <= gamma n x) *)
@@ -2716,7 +2744,8 @@ Theorem Dvoretzky_DS_scale_prop
              {adaptX : IsAdapted borel_sa (DS_Xn X0 T Y) F}
              {adaptT : IsAdapted borel_sa (DS_Tn X0 T Y) F}
              {alpha beta gamma : nat -> Ts -> R}
-             (hpos1 : forall n x, 0 <= alpha n x)
+(*             (hpos1 : forall n x, 0 <= alpha n x) *)
+             (hpos1 : forall n, almostR2 prts Rle (const 0) (alpha n)) 
 (*             (hpos2 : forall n x, 0 <= beta n x ) *)
              (hpos2 : forall n, almostR2 prts Rle (const 0) (beta n)) 
 (*             (hpos3 : forall n x, 0 <= gamma n x) *)
