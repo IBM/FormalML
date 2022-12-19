@@ -16,7 +16,7 @@ Require Import Martingale MartingaleStopped.
 
 Set Bullet Behavior "Strict Subproofs".
 
-Context {Ts : Type} (β γ : R) (w α : Ts -> nat -> R) 
+Context {Ts : Type} (β γ : R) (* (w α : Ts -> nat -> R)  *)
         {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
 
 Lemma isfe_condexp_sqr_bounded (dom2 : SigmaAlgebra Ts) (sub2: sa_sub dom2 dom) (B : R) 
@@ -123,15 +123,6 @@ Lemma condexp_sqr_bounded (dom2 : SigmaAlgebra Ts) (sub2: sa_sub dom2 dom) (B : 
         apply Rle_0_sqr.
   Qed.
 
-(*
- Definition process_swap (Y Z : nat -> Ts -> R) (T:Ts -> option nat) (n:nat) (x : Ts) : R
-   := match (T x) with
-      | None => Y n x
-      | Some b =>
-        if (lt_dec n b)%nat then Y n x else Z n x
-      end.
- *)
-  
 Lemma lemma1_bounded (α w W : nat -> Ts -> R) (C B : R) 
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
@@ -1495,15 +1486,16 @@ Proof.
   apply H13.
 Qed.
   
-Lemma lemma2_part1 (W : Ts -> nat -> nat -> R) (ω : Ts) :
-  (forall t0, W ω 0%nat t0 = 0) ->
+Lemma lemma2_part1 (W : nat -> nat -> Ts -> R) (ω : Ts) 
+      (α w : nat -> Ts -> R) :
+  (forall t0, W 0%nat t0 ω = 0) ->
   (forall t0 t,
-      W ω (S t) t0 =
-      (1 - α ω (t + t0)%nat) * (W ω t t0) +
-      (α ω (t + t0)%nat) * (w ω (t + t0)%nat)) ->
+      W (S t) t0 ω =
+      (1 - α (t + t0)%nat ω) * (W t t0 ω) +
+      (α (t + t0)%nat ω) * (w (t + t0)%nat ω)) ->
   forall t0 t,
-    W ω ((S t) + t0)%nat 0%nat = (prod_f_R0 (fun k => 1 - α ω (k + t0)%nat)
-                                                t) * (W ω t0 0%nat)  + (W ω (S t) t0).
+    W ((S t) + t0)%nat 0%nat ω = (prod_f_R0 (fun k => 1 - α (k + t0)%nat ω)
+                                                t) * (W t0 0%nat ω)  + (W (S t) t0 ω).
   Proof.
     intros.
     revert t0.
@@ -1533,25 +1525,26 @@ Lemma lemma2_part1 (W : Ts -> nat -> nat -> R) (ω : Ts) :
         apply Hf.
    Qed.
 
-Lemma lemma2_part2 (W : Ts -> nat -> nat -> R) (ω : Ts) :
-  (forall t0, W ω 0%nat t0 = 0) ->
-  (forall t, 0 <= α ω t <= 1) ->
+Lemma lemma2_part2 (W :  nat -> nat -> Ts -> R) (ω : Ts) 
+      (α w : nat -> Ts -> R) :
+  (forall t0, W 0%nat t0 ω = 0) ->
+  (forall t, 0 <= α t ω <= 1) ->
   (forall t0 t,
-      W ω (S t) t0 =
-      (1 - α ω (t + t0)%nat) * (W ω t t0) +
-      (α ω (t + t0)%nat) * (w ω (t + t0)%nat)) ->
+      W (S t) t0 ω =
+      (1 - α (t + t0)%nat ω) * (W t t0 ω) +
+      (α (t + t0)%nat ω) * (w (t + t0)%nat ω)) ->
   forall t0 t,
-    Rabs (W ω t t0) <= Rabs (W ω (t + t0)%nat 0%nat) +
-                           Rabs (W ω t0 0%nat).
+    Rabs (W t t0 ω) <= Rabs (W (t + t0)%nat 0%nat ω) +
+                           Rabs (W t0 0%nat ω).
 Proof.
   intros.
   destruct t.
   - rewrite H, Rabs_R0.
     apply Rplus_le_le_0_compat; apply Rabs_pos.
-  - generalize (lemma2_part1 W ω H H1 t0 t); intros.
-    assert (W ω (S t) t0 =
-            W ω (S t + t0)%nat 0%nat -
-            prod_f_R0 (fun k : nat => 1 - α ω (k + t0)) t * W ω t0 0%nat).
+  - generalize (lemma2_part1 W ω α w H H1 t0 t); intros.
+    assert (W (S t) t0 ω =
+            W (S t + t0)%nat 0%nat ω -
+            prod_f_R0 (fun k : nat => 1 - α (k + t0)%nat ω) t * W t0 0%nat ω).
     {
       rewrite H2.
       lra.
@@ -1578,22 +1571,23 @@ Proof.
            lra.
   Qed.
 
-Lemma lemma2 (W : Ts -> nat -> nat -> R) (ω : Ts) :
-  (forall t0, W ω 0%nat t0 = 0) ->
-  (forall t , 0 <= α ω t <= 1) ->
+Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts) 
+      (α w : nat -> Ts -> R) :
+  (forall t0, W 0%nat t0 ω = 0) ->
+  (forall t , 0 <= α t ω <= 1) ->
   (forall t0 t,
-      W ω (S t) t0 =
-      (1 - α ω (t + t0)%nat) * (W ω t t0) +
-      (α ω (t + t0)%nat) * (w ω (t + t0)%nat)) ->
-  is_lim_seq (fun n => W ω n 0%nat) 0 ->
+      W (S t) t0 ω =
+      (1 - α (t + t0)%nat ω) * (W t t0 ω) +
+      (α (t + t0)%nat ω) * (w (t + t0)%nat ω)) ->
+  is_lim_seq (fun n => W n 0%nat ω) 0 ->
   forall (delta : posreal),
   exists (T : nat),
   forall t0 t,
     (t0 >= T)%nat ->
-    Rabs (W ω t t0) <= delta.
+    Rabs (W t t0 ω) <= delta.
  Proof.
    intros.
-   generalize (lemma2_part2 W ω H H0 H1 ); intros.
+   generalize (lemma2_part2 W ω α w H H0 H1 ); intros.
    apply is_lim_seq_spec in H2.
    assert (0 < delta/2).
    {
@@ -1624,26 +1618,27 @@ Lemma lemma2 (W : Ts -> nat -> nat -> R) (ω : Ts) :
        lia.
  Qed.
 
- Lemma lemma8_part1 (x Y W : Ts -> nat -> R) (D : posreal) (ω : Ts) :
-   (Y ω 0%nat = D) ->
-   (W ω 0%nat = 0) ->   
-   (forall t, 0 <= α ω t <= 1) ->
+ Lemma lemma8_part1 (x Y W : nat -> Ts -> R) (D : posreal) (ω : Ts) 
+      (α w : nat -> Ts -> R) :
+   (Y 0%nat ω = D) ->
+   (W 0%nat ω = 0) ->   
+   (forall t, 0 <= α t ω <= 1) ->
    (forall t,
-       W ω (S t) =
-       (1 - α ω t) * (W ω t) +
-       (α ω t) * (w ω t)) ->
+       W (S t) ω =
+       (1 - α t ω) * (W t ω) +
+       (α t ω) * (w t ω)) ->
    (forall t,
-       Y ω (S t) =
-       (1 - α ω t) * (Y ω t) +
-       (α ω t) * β * D) ->
+       Y (S t) ω =
+       (1 - α t ω) * (Y t ω) +
+       (α t ω) * β * D) ->
    (forall t,
-     x ω (S t) <= 
-     (1 - α ω t) * (x ω t) + 
-     (α ω t) * (β * D + w ω t)) ->
+     x (S t) ω <= 
+     (1 - α t ω) * (x t ω) + 
+     (α t ω) * (β * D + w t ω)) ->
    (forall t,
-       Rabs (x ω t) <= D) ->
+       Rabs (x t ω) <= D) ->
    forall t,
-     x ω t <= (Y ω t) + (W ω t).
+     x t ω <= (Y t ω) + (W t ω).
  Proof.
    intros.
    induction t; intros.
@@ -1655,8 +1650,8 @@ Lemma lemma2 (W : Ts -> nat -> nat -> R) (ω : Ts) :
    - rewrite H2, H3.
      eapply Rle_trans.
      apply H4.
-     apply Rmult_le_compat_l with (r := 1 - α ω t) in IHt.
-     apply Rplus_le_compat_r with (r := α ω t * (β * D + w ω t)) in IHt.
+     apply Rmult_le_compat_l with (r := 1 - α t ω) in IHt.
+     apply Rplus_le_compat_r with (r := α t ω * (β * D + w t ω)) in IHt.
      + eapply Rle_trans.
        * apply IHt.
        * lra.
@@ -1664,33 +1659,34 @@ Lemma lemma2 (W : Ts -> nat -> nat -> R) (ω : Ts) :
        lra.
   Qed.
      
- Lemma lemma8_almost_part1  (x Y W : Ts -> nat  -> R) (D : posreal) :
-   (forall ω, Y ω 0%nat = D) ->
-   (forall ω, W ω 0%nat = 0) ->   
-   (forall ω t, 0 <= α ω t <= 1) ->
-   (forall ω t,
-       W ω (S t) =
-       (1 - α ω t) * (W ω t) +
-       (α ω t) * (w ω t)) ->
-   (forall ω t,
-       Y ω (S t) =
-       (1 - α ω t) * (Y ω t) +
-       (α ω t) * β * D) ->
+ Lemma lemma8_almost_part1  (x Y W : nat -> Ts -> R) (D : posreal) 
+      (α w : nat -> Ts -> R) :
+   (forall ω, Y 0%nat ω = D) ->
+   (forall ω, W 0%nat ω = 0) ->   
+   (forall t ω, 0 <= α t ω <= 1) ->
+   (forall t ω,
+       W (S t) ω =
+       (1 - α t ω) * (W t ω) +
+       (α t ω) * (w t ω)) ->
+   (forall t ω,
+       Y (S t) ω =
+       (1 - α t ω) * (Y t ω) +
+       (α t ω) * β * D) ->
    (almost prts
            (fun ω =>
               forall t,
-                 Rabs (x ω t) <=  D)) ->
+                 Rabs (x t ω) <=  D)) ->
 
    (almost prts
            (fun ω =>
               forall t,
-                 (x ω (S t)) <=
-                 ((1 - α ω t) * (x ω t) + 
-                  (α ω t) * (β * D + w ω t)))) ->
+                 (x (S t) ω) <=
+                 ((1 - α t ω) * (x t ω) + 
+                  (α t ω) * (β * D + w t ω)))) ->
    almost prts
           (fun ω =>
              forall t,
-               (x ω t) <= (Y ω t) + (W ω t)).
+               (x t ω) <= (Y t ω) + (W t ω)).
  Proof.
    intros.
    revert H5.
@@ -1700,29 +1696,30 @@ Lemma lemma2 (W : Ts -> nat -> nat -> R) (ω : Ts) :
    apply all_almost.
    unfold impl.
    intros.
-   apply (lemma8_part1 x Y W D x0); trivial.
+   apply (lemma8_part1 x Y W D x0 α w); trivial.
  Qed.
 
- Lemma lemma8_part2 (x Y W : Ts -> nat -> R) (D : posreal) (ω : Ts):
-   (Y ω 0%nat = D) ->
-   (W ω 0%nat = 0) ->   
-   (forall t, 0 <= α ω t <= 1) ->
+ Lemma lemma8_part2 (x Y W : nat -> Ts -> R) (D : posreal) (ω : Ts)
+      (α w : nat -> Ts -> R) :
+   (Y 0%nat ω = D) ->
+   (W 0%nat ω = 0) ->   
+   (forall t, 0 <= α t ω <= 1) ->
    (forall t,
-       W ω (S t) =
-       (1 - α ω t) * (W ω t) +
-       (α ω t) * (w ω t)) ->
+       W (S t) ω =
+       (1 - α t ω) * (W t ω) +
+       (α t ω) * (w t ω)) ->
    (forall t,
-       Y ω (S t) =
-       (1 - α ω t) * (Y ω t) +
-       (α ω t) * β * D) ->
+       Y (S t) ω =
+       (1 - α t ω) * (Y t ω) +
+       (α t ω) * β * D) ->
    (forall t,
-       Rabs (x ω t) <= D) ->
+       Rabs (x t ω) <= D) ->
    (forall t,
-      x ω (S t) >= 
-       (1 - α ω t) * (x ω t) + 
-       (α ω t) * (-β * D + w ω t)) ->
+      x (S t) ω >= 
+       (1 - α t ω) * (x t ω) + 
+       (α t ω) * (-β * D + w t ω)) ->
    forall t,
-      (- Y ω t) + (W ω t) <= x ω t.
+      (- Y t ω) + (W t ω) <= x t ω.
  Proof.
    intros.
    induction t; intros.
@@ -1737,8 +1734,8 @@ Lemma lemma2 (W : Ts -> nat -> nat -> R) (ω : Ts) :
      apply Rge_le.
      apply H5.
      Unshelve.
-     apply Rmult_le_compat_l with (r := 1 - α ω t) in IHt.
-     apply Rplus_le_compat_r with (r := α ω t * (-β * D + w ω t)) in IHt.
+     apply Rmult_le_compat_l with (r := 1 - α t ω) in IHt.
+     apply Rplus_le_compat_r with (r := α t ω * (-β * D + w t ω)) in IHt.
      + eapply Rle_trans.
        shelve.
        apply IHt.
@@ -1748,33 +1745,33 @@ Lemma lemma2 (W : Ts -> nat -> nat -> R) (ω : Ts) :
        lra.
   Qed.
      
- Lemma lemma8_almost_part2  (x Y W : Ts -> nat  -> R) (D : posreal) :
-   (forall ω, Y ω 0%nat = D) ->
-   (forall ω, W ω 0%nat = 0) ->   
-   (forall ω t, 0 <= α ω t <= 1) ->
-   (forall ω t,
-       W ω (S t) =
-       (1 - α ω t) * (W ω t) +
-       (α ω t) * (w ω t)) ->
-   (forall ω t,
-       Y ω (S t) =
-       (1 - α ω t) * (Y ω t) +
-       (α ω t) * β * D) ->
+ Lemma lemma8_almost_part2  (x Y W : nat -> Ts -> R) (D : posreal) 
+      (α w : nat -> Ts -> R) :
+   (forall ω, Y 0%nat ω = D) ->
+   (forall ω, W 0%nat ω = 0) ->   
+   (forall t ω, 0 <= α t ω <= 1) ->
+   (forall t ω,
+       W (S t) ω =
+       (1 - α t ω) * (W t ω) +
+       (α t ω) * (w t ω)) ->
+   (forall t ω,
+       Y (S t) ω =
+       (1 - α t ω) * (Y t ω) +
+       (α t ω) * β * D) ->
    (almost prts
            (fun ω =>
               forall t,
-                 Rabs (x ω t) <=  D)) ->
-
+                 Rabs (x t ω) <=  D)) ->
    (almost prts
            (fun ω =>
               forall t,
-                x ω (S t) >= 
-                (1 - α ω t) * (x ω t) + 
-                (α ω t) * (-β * D + w ω t))) ->
+                x (S t) ω >= 
+                (1 - α t ω) * (x t ω) + 
+                (α t ω) * (-β * D + w t ω))) ->
    almost prts
           (fun ω =>
              forall t,
-               (- Y ω t) + (W ω t) <= x ω t).
+               (- Y t ω) + (W t ω) <= x t ω).
  Proof.
    intros.
    revert H5.
@@ -1784,69 +1781,71 @@ Lemma lemma2 (W : Ts -> nat -> nat -> R) (ω : Ts) :
    apply all_almost.
    unfold impl.
    intros.
-   apply (lemma8_part2 x Y W D x0); trivial.
+   apply (lemma8_part2 x Y W D x0 α w); trivial.
  Qed.
 
- Lemma lemm8_abs  (x Y W : Ts -> nat -> R) (D : posreal) (ω : Ts) :
-   (Y ω 0%nat = D) ->
-   (W ω 0%nat = 0) ->   
-   (forall t, 0 <= α ω t <= 1) ->
+ Lemma lemm8_abs  (x Y W : nat -> Ts -> R) (D : posreal) (ω : Ts) 
+      (α w : nat -> Ts -> R) :
+   (Y 0%nat ω = D) ->
+   (W 0%nat ω = 0) ->   
+   (forall t, 0 <= α t ω <= 1) ->
    (forall t,
-       W ω (S t) =
-       (1 - α ω t) * (W ω t) +
-       (α ω t) * (w ω t)) ->
+       W (S t) ω =
+       (1 - α t ω) * (W t ω) +
+       (α t ω) * (w t ω)) ->
    (forall t,
-       Y ω (S t) =
-       (1 - α ω t) * (Y ω t) +
-       (α ω t) * β * D) ->
+       Y (S t) ω =
+       (1 - α t ω) * (Y t ω) +
+       (α t ω) * β * D) ->
    (forall t,
-     x ω (S t) <= 
-     (1 - α ω t) * (x ω t) + 
-     (α ω t) * (β * D + w ω t)) ->
+     x (S t) ω <= 
+     (1 - α t ω) * (x t ω) + 
+     (α t ω) * (β * D + w t ω)) ->
    (forall t,
-     x ω (S t) >= 
-     (1 - α ω t) * (x ω t) + 
-     (α ω t) * (-β * D + w ω t)) ->
+     x (S t) ω >= 
+     (1 - α t ω) * (x t ω) + 
+     (α t ω) * (-β * D + w t ω)) ->
    (forall t,
-       Rabs (x ω t) <= D) ->
+       Rabs (x t ω) <= D) ->
    forall t,
-     Rabs (x ω t) <= Rabs (W ω t) + (Y ω t).
+     Rabs (x t ω) <= Rabs (W t ω) + (Y t ω).
  Proof.
    intros.
-   assert (Rabs (x ω t - W ω t) <=  Y ω t).
+   assert (Rabs (x t ω - W t ω) <=  Y t ω).
    {
      apply Rabs_le_between.
      split.
-     - apply Rplus_le_reg_r with (r := (W ω t)).
+     - apply Rplus_le_reg_r with (r := (W t ω)).
        ring_simplify.
-       now apply lemma8_part2 with (D := D).
-     - apply Rplus_le_reg_r with (r := (W ω t)).
+       now apply lemma8_part2 with (D := D) (α := α) (w := w).
+     - apply Rplus_le_reg_r with (r := (W t ω)).
        ring_simplify.
        rewrite Rplus_comm.
-       now apply lemma8_part1 with (D := D).
+       now apply lemma8_part1 with (D := D) (α := α) (w := w).
    }
-   apply Rplus_le_reg_r with (r := - Rabs (W ω t)).
+   apply Rplus_le_reg_r with (r := - Rabs (W t ω)).
    ring_simplify.
-   apply Rle_trans with (r2 := Rabs (x ω t - W ω t) ); trivial.
+   apply Rle_trans with (r2 := Rabs (x t ω - W t ω) ); trivial.
    apply Rabs_triang_inv.
   Qed.
 
- Lemma lemm8_abs_part2  (x Y W : Ts -> nat -> R) (eps D : posreal) (ω : Ts) :
-   (forall t, 0 <= α ω t <= 1) ->
-   (W ω 0%nat = 0) ->
+ Lemma lemm8_abs_part2  (x Y W : nat -> Ts -> R) (eps D : posreal) (ω : Ts)
+      (α w : nat -> Ts -> R) :
+   (forall t, 0 <= α t ω <= 1) ->
+   (W 0%nat ω = 0) ->
    (forall t,
-       W ω (S t) =
-       (1 - α ω t) * (W ω t) +
-       (α ω (t)%nat) * (w ω (t)%nat)) ->
+       W (S t) ω =
+       (1 - α t ω) * (W t ω) +
+       (α t ω) * (w t ω)) ->
    (forall t,
-       Rabs (x ω t) <= Rabs (W ω t) + (Y ω t)) ->
-   is_lim_seq (Y ω) (β * D) ->
-   is_lim_seq (W ω) 0 ->   
+       Rabs (x t ω) <= Rabs (W t ω) + (Y t ω)) ->
+   is_lim_seq (fun t => Y t ω) (β * D) ->
+   is_lim_seq (fun t => W t ω) 0 ->   
    (exists (T : nat),
        forall t,
          (t >= T)%nat ->
-         Rabs (W ω t) <= β * eps * D) ->
-   Rbar_le (LimSup_seq (fun t => Rabs (x ω t))) (β * (1 + eps) * D).
+         Rabs (W t ω) <= β * eps * D) ->
+   Rbar_le (LimSup_seq (fun t => Rabs (x t ω))) (β * (1 + eps) * D).
  Proof.
    intros.
    eapply Rbar_le_trans.
@@ -1855,14 +1854,14 @@ Lemma lemma2 (W : Ts -> nat -> nat -> R) (ω : Ts) :
      intros.
      apply H2.
    - eapply Rbar_le_trans.
-     + apply LimSup_le with (v := fun t => β * eps * D + (Y ω t)).
+     + apply LimSup_le with (v := fun t => β * eps * D + (Y t ω)).
        destruct H5.
        exists x0.
        intros.
        apply Rplus_le_compat_r.
        apply H5.
        lia.
-     + assert (is_LimSup_seq  (fun t : nat => β * eps * D + Y ω t) (β * eps * D + β * D)).
+     + assert (is_LimSup_seq  (fun t : nat => β * eps * D + Y t ω) (β * eps * D + β * D)).
        {
          apply is_lim_LimSup_seq.
          apply is_lim_seq_plus with (l1 := β * eps * D) (l2 := β * D); trivial.
@@ -1877,16 +1876,17 @@ Lemma lemma2 (W : Ts -> nat -> nat -> R) (ω : Ts) :
        lra.
  Qed.
 
- Lemma Y_prod (Y : Ts -> nat -> R) (D β : nonnegreal) :
+ Lemma Y_prod (Y : nat -> Ts -> R) (D β : nonnegreal) 
+      (α : nat -> Ts -> R) :
    β < 1 ->
-   (forall ω, Y ω 0%nat = D) ->
-   (forall ω t, 0 <= α ω t <= 1) ->
-   (forall ω t,
-       Y ω (S t) =
-       (1 - α ω t) * (Y ω t) +
-       (α ω t) * β * D) ->
-   forall ω t,
-     Y ω (S t) = prod_f_R0 (fun k => 1 - α ω k) t * ((1 - β) * D) + β * D.
+   (forall ω, Y 0%nat ω = D) ->
+   (forall t ω, 0 <= α t ω <= 1) ->
+   (forall t ω,
+       Y (S t) ω =
+       (1 - α t ω) * (Y t ω) +
+       (α t ω) * β * D) ->
+   forall t ω,
+     Y (S t) ω = prod_f_R0 (fun k => 1 - α k ω) t * ((1 - β) * D) + β * D.
   Proof.
     intros.
     induction t.
@@ -2011,23 +2011,24 @@ Lemma lemma2 (W : Ts -> nat -> nat -> R) (ω : Ts) :
         now apply exp_increasing.
    Qed.
 
-  Lemma Y_lim (Y : Ts -> nat -> R) (D β : nonnegreal) :
+  Lemma Y_lim (Y : nat -> Ts -> R) (D β : nonnegreal) 
+      (α : nat -> Ts -> R) :
     β < 1 ->
-    (forall ω, Y ω 0%nat = D) ->
-    (forall ω t, 0 <= α ω t <= 1) ->
-    (forall ω, is_lim_seq (sum_n (α ω)) p_infty) ->
-    (forall ω t,
-        Y ω (S t) =
-        (1 - α ω t) * (Y ω t) +
-        (α ω t) * β * D) ->
+    (forall ω, Y 0%nat ω = D) ->
+    (forall t ω, 0 <= α t ω <= 1) ->
+    (forall ω, is_lim_seq (sum_n (fun t => α t ω)) p_infty) ->
+    (forall t ω,
+        Y (S t) ω =
+        (1 - α t ω) * (Y t ω) +
+        (α t ω) * β * D) ->
     forall ω,
-      is_lim_seq (Y ω) (β * D).
+      is_lim_seq (fun t => Y t ω) (β * D).
   Proof.
     intros.
     apply is_lim_seq_incr_1.
-    apply is_lim_seq_ext with (u := fun t =>  prod_f_R0 (fun k : nat => 1 - α ω k) t * ((1 - β) * D) + β * D).
+    apply is_lim_seq_ext with (u := fun t =>  prod_f_R0 (fun k : nat => 1 - α k ω) t * ((1 - β) * D) + β * D).
     - intros.
-      rewrite Y_prod with (D := D) (β := β); trivial; lra.
+      rewrite Y_prod with (D := D) (β := β) (α := α); trivial; lra.
     - apply is_lim_seq_plus with (l1 := 0) (l2 := β * D).
       + apply is_lim_seq_mult with (l1 := 0) (l2 := (1 - β) * D).
         * apply sum_inf_prod_0; trivial.
@@ -2206,43 +2207,43 @@ Lemma lemma2 (W : Ts -> nat -> nat -> R) (ω : Ts) :
    apply rvmaxabs_pos.
  Admitted.
 
-  Lemma W_lim (W w : Ts -> nat -> R) 
+  Lemma W_lim (W w α : nat -> Ts -> R) 
         {F : nat -> SigmaAlgebra Ts} 
         (isfilt : IsFiltration F) 
         (filt_sub : forall n, sa_sub (F n) dom)
-        {adaptZ : IsAdapted borel_sa (fun n ω => W ω n) F}
-        (adapt_alpha : IsAdapted borel_sa (fun n ω => α ω n) F) 
-        {rvBB : forall n, RandomVariable dom borel_sa (fun ω => w ω n)}
-        {rvalpha : forall n, RandomVariable dom borel_sa (fun ω => α ω n)}  :
+        {adaptZ : IsAdapted borel_sa W F}
+        (adapt_alpha : IsAdapted borel_sa α F) 
+        {rvBB : forall n, RandomVariable dom borel_sa (w n)}
+        {rvalpha : forall n, RandomVariable dom borel_sa (α n)}  :
     β < 1 ->
     (forall n : nat,
         almost (prob_space_sa_sub prts (filt_sub n))
           (fun x : Ts =>
-           ConditionalExpectation prts (filt_sub n) (fun ω : Ts => w ω n) x =
+           ConditionalExpectation prts (filt_sub n) (w n) x =
            const 0 x)) ->
-   (forall ω, W ω 0%nat = 0) ->   
-   (forall ω t, 0 <= α ω t <= 1) ->
-   (forall ω t,
-       W ω (S t) =
-       (1 - α ω t) * (W ω t) +
-       (α ω t) * (w ω t)) ->
-   almost prts (fun ω => is_lim_seq (sum_n (α ω)) p_infty) ->
+   (forall ω, W 0%nat ω = 0) ->   
+   (forall t ω, 0 <= α t ω <= 1) ->
+   (forall t ω,
+       W (S t) ω =
+       (1 - α t ω) * (W t ω) +
+       (α t ω) * (w t ω)) ->
+   almost prts (fun ω => is_lim_seq (sum_n (fun t => α t ω)) p_infty) ->
    (exists C : R,
      almost prts
             (fun ω : Ts =>
-               Rbar_lt (Lim_seq (sum_n (fun n : nat => Rsqr (α ω n))))
+               Rbar_lt (Lim_seq (sum_n (fun n : nat => Rsqr (α n ω))))
                        C)) ->
-   almost prts (fun ω => is_lim_seq (W ω) 0).
+   almost prts (fun ω => is_lim_seq (fun t => W t ω) 0).
   Proof.
     intros.
-    generalize (Dvoretzky_converge_Z prts (fun n ω => W ω n) (fun n ω => w ω n)
-                                     (fun n ω => α ω n) isfilt filt_sub
+    generalize (Dvoretzky_converge_Z prts W w α
+                                     isfilt filt_sub
                                      adapt_alpha); intros.
     apply H6; trivial.
     - intros.
-      specialize (H2 x n); lra.
+      specialize (H2 n x); lra.
     - intros.
-      specialize (H2 x n); lra.
+      specialize (H2 n x); lra.
     - admit.
     - intros ??.
       rewrite H3.
