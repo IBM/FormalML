@@ -2231,15 +2231,9 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        destruct n.
        + assert (Rvector_max_abs (X t x0) = 0).
          {
+           apply Rvector_max_abs_zero.
            generalize (vector0_0 (X t x0)); intros.
-           rewrite H16.
-           destruct vector0.
-           unfold Rvector_max_abs, Rvector_abs.
-           unfold vector_fold_left, proj1_sig.
-           match_destr.
-           apply length_zero_iff_nil in e0.
-           rewrite e0.
-           now simpl.
+           now rewrite vector0_0.
          }
          rewrite H16.
          clear H11 H12 H15.
