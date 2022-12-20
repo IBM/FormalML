@@ -2144,10 +2144,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
      - exists 0%nat.
        intros.
        apply H4.
-     - 
-       destruct IHk as [N ?].
-       
-       
+     - destruct IHk as [N ?].
        assert (forall i pf,
                   exists N0,
                     forall t : nat, (t >= N0)%nat ->
@@ -2202,9 +2199,43 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        destruct H12.
        exists (list_max (proj1_sig x)).
        intros.
-       
-       admit.
-   }
+       assert (forall i pf,
+                  (vector_nth i pf x <= list_max (` x)))%nat.
+       {
+         admit.
+       }
+       unfold almostR2.
+       assert (almost prts (fun x0 =>
+                             forall i pf,
+                               (rvabs (vecrvnth i pf (X t)) x0) <=
+                               (D (S k) x0))).
+       {
+         apply almost_bounded_forall.
+         intros.
+         - apply le_dec.
+         - intros.
+           assert (rv_eq
+                     (rvabs (vecrvnth i pf2 (X t)))
+                     (rvabs (vecrvnth i pf1 (X t)))).
+           {
+             intros ?.
+             unfold rvabs, vecrvnth.
+             f_equal.
+             apply vector_nth_ext.
+           }
+           now rewrite H16.
+         - intros.
+           apply H12.
+           specialize (H14 n0 pf); lia.
+       }
+       revert H15.
+       apply almost_impl, all_almost; intros ??.
+       unfold rvmaxabs.
+       unfold rvabs, vecrvnth in H15.
+       destruct n.
+       + admit.
+       + now rewrite Rvector_max_abs_nth_Rabs_le.
+     }
        
    assert (almost prts
              (fun ω =>
