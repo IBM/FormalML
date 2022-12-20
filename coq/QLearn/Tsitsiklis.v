@@ -1876,24 +1876,32 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        lra.
  Qed.
 
- Lemma Y_prod (Y : nat -> Ts -> R) (D β : nonnegreal) 
+ Lemma Y_prod (Y : nat -> Ts -> R) (D : Ts -> R) (β : R) 
       (α : nat -> Ts -> R) :
    β < 1 ->
-   (forall ω, Y 0%nat ω = D) ->
+   (rv_eq (Y 0%nat) D) ->
    (forall t ω, 0 <= α t ω <= 1) ->
-   (forall t ω,
-       Y (S t) ω =
-       (1 - α t ω) * (Y t ω) +
-       (α t ω) * β * D) ->
+   (forall t,
+       rv_eq (Y (S t))
+             (rvplus 
+                (rvmult (rvminus (const 1) (α t)) (Y t))
+                (rvmult (α t) (rvscale β D)))) ->
    forall t ω,
-     Y (S t) ω = prod_f_R0 (fun k => 1 - α k ω) t * ((1 - β) * D) + β * D.
+     Y (S t) ω = prod_f_R0 (fun k => 1 - α k ω) t * ((1 - β) * D ω) + β * D ω.
   Proof.
     intros.
     induction t.
-    - rewrite H2, H0.
+    - specialize (H2 0%nat ω).
+      rewrite H2.
+      specialize (H0 ω).
+      rv_unfold'.
+      rewrite H0.
       simpl.
       lra.
-    - rewrite H2, IHt.
+    - specialize (H2 (S t) ω).
+      rewrite H2.
+      rv_unfold'.
+      rewrite IHt.
       simpl.
       lra.
   Qed.
@@ -2011,26 +2019,27 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         now apply exp_increasing.
    Qed.
 
-  Lemma Y_lim (Y : nat -> Ts -> R) (D β : nonnegreal) 
+  Lemma Y_lim (Y : nat -> Ts -> R) (β : R) (D : Ts -> R)
       (α : nat -> Ts -> R) :
     β < 1 ->
-    (forall ω, Y 0%nat ω = D) ->
+    (rv_eq (Y 0%nat) D) ->
     (forall t ω, 0 <= α t ω <= 1) ->
     (forall ω, is_lim_seq (sum_n (fun t => α t ω)) p_infty) ->
-    (forall t ω,
-        Y (S t) ω =
-        (1 - α t ω) * (Y t ω) +
-        (α t ω) * β * D) ->
+    (forall t,
+        rv_eq (Y (S t))
+              (rvplus 
+                 (rvmult (rvminus (const 1) (α t)) (Y t))
+                 (rvmult (α t) (rvscale β D)))) ->
     forall ω,
-      is_lim_seq (fun t => Y t ω) (β * D).
+      is_lim_seq (fun t => Y t ω) (β * D ω).
   Proof.
     intros.
     apply is_lim_seq_incr_1.
-    apply is_lim_seq_ext with (u := fun t =>  prod_f_R0 (fun k : nat => 1 - α k ω) t * ((1 - β) * D) + β * D).
+    apply is_lim_seq_ext with (u := fun t =>  prod_f_R0 (fun k : nat => 1 - α k ω) t * ((1 - β) * D ω) + β * D ω).
     - intros.
       rewrite Y_prod with (D := D) (β := β) (α := α); trivial; lra.
-    - apply is_lim_seq_plus with (l1 := 0) (l2 := β * D).
-      + apply is_lim_seq_mult with (l1 := 0) (l2 := (1 - β) * D).
+    - apply is_lim_seq_plus with (l1 := 0) (l2 := β * D ω).
+      + apply is_lim_seq_mult with (l1 := 0) (l2 := (1 - β) * D ω).
         * apply sum_inf_prod_0; trivial.
         * apply is_lim_seq_const.
         * red.
@@ -2054,7 +2063,10 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}:
     (forall k ω i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
-    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
+(*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
+*)
+    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+
     (exists (C : R),
         forall i pf,
           almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Rbar.Finite C))) ->
@@ -2132,35 +2144,68 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
      - exists 0%nat.
        intros.
        apply H4.
-     - pose (W := fix W t' :=
+     - 
+       destruct IHk as [N ?].
+       
+       
+       assert (forall i pf,
+                  exists N0,
+                    forall t : nat, (t >= N0)%nat ->
+                                    almostR2 prts Rle 
+                                             (rvabs (vecrvnth i pf (X t))) (D (S k))).
+       {
+         intros.
+
+         pose (X1 := fun t => vecrvnth i pf (X t)).
+         pose (α1 := fun t => vecrvnth i pf (α t)).
+         pose (W := fix W t' :=
                     match t' with
-                    | 0%nat => vecrvconst n 0
+                    | 0%nat => const 0
                     | (S t) => 
-                      vecrvplus 
-                        (vecrvmult 
-                           (vecrvminus (vecrvconst n 1)
-                                       (α t))
+                      rvplus 
+                        (rvmult 
+                           (rvminus (const 1) (α1 t))
                            (W t))
-                        (vecrvmult (α t) (w t))
+                        (rvmult (α1 t) (vecrvnth i pf (w t)))
                     end).
        pose (Y := fix Y t' :=
                     match t' with
-                    | 0%nat => fun ω => vector_const (D k ω) n
+                    | 0%nat => (D k)
                     | (S t) =>
-                      vecrvplus 
-                        (vecrvmult 
-                           (vecrvminus (vecrvconst n 1)
-                                       (α t))
+                      rvplus 
+                        (rvmult 
+                           (rvminus (const 1) (α1 t))
                            (Y t))
-                        (vecrvmult (α t) 
-                                   (fun ω => vector_const (β * (D k ω)) n))
+                        (rvmult (α1 t) (rvscale β (D k)))
                     end).
-       destruct IHk as [N ?].
-       
-       generalize lemm8_abs; intros.
+       assert (almost prts
+                      (fun ω => is_lim_seq (fun n => W n ω) 0)).
+       {
+         admit.
+       }
+       generalize  (Y_lim Y β (D k) α1); intros.
+       cut_to H13; cycle 1; try lra; try easy.
+       - intros.
+         now unfold α1, vecrvnth.
+       - intros.
+         now unfold α1, vecrvnth.
+       - admit.
+(*
+         generalize lemm8_abs; intros.
+         generalize lemm8_abs_part2; intros.
+         generalize lemma8_almost_part1; intros.
+         generalize lemma8_almost_part2; intros.
+*)
+       }
 
+       apply bounded_nat_ex_choice_vector in H12.
+       destruct H12.
+       exists (list_max (proj1_sig x)).
+       intros.
+       
        admit.
    }
+       
    assert (almost prts
              (fun ω =>
                 forall (k : nat),
