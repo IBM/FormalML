@@ -2204,12 +2204,10 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                   (vector_nth i pf x <= list_max (` x)))%nat.
        {
          intros.
-         generalize (list_max_upper (` x)); intros.
-         unfold vector_nth, proj1_sig; simpl.
-         match_destr.
-         
-
-         admit.
+         generalize (vector_nth_In x _ pf); intros HH.
+         generalize (list_max_upper (` x)); intros HH2.
+         rewrite Forall_forall in HH2.
+         now apply HH2.
        }
        unfold almostR2.
        assert (almost prts (fun x0 =>
