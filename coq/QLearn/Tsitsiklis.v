@@ -2055,11 +2055,12 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
 
   Theorem Tsitsiklis3 {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
         (XF : vector R n -> vector R n)
-        {F : nat -> SigmaAlgebra Ts} 
+        {F : nat -> SigmaAlgebra Ts}
         (isfilt : IsFiltration F) 
         (filt_sub : forall k, sa_sub (F k) dom) 
         (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
         {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
+        {nnegD0 : NonnegativeFunction D0}
         (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}:
     (forall k ω i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
@@ -2202,6 +2203,12 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        assert (forall i pf,
                   (vector_nth i pf x <= list_max (` x)))%nat.
        {
+         intros.
+         generalize (list_max_upper (` x)); intros.
+         unfold vector_nth, proj1_sig; simpl.
+         match_destr.
+         
+
          admit.
        }
        unfold almostR2.
@@ -2233,7 +2240,30 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        unfold rvmaxabs.
        unfold rvabs, vecrvnth in H15.
        destruct n.
-       + admit.
+       + assert (Rvector_max_abs (X t x0) = 0).
+         {
+           generalize (vector0_0 (X t x0)); intros.
+           rewrite H16.
+           destruct vector0.
+           unfold Rvector_max_abs, Rvector_abs.
+           unfold vector_fold_left, proj1_sig.
+           match_destr.
+           apply length_zero_iff_nil in e0.
+           rewrite e0.
+           now simpl.
+         }
+         rewrite H16.
+         clear H11 H12 H15.
+         induction k.
+         * unfold D.
+           unfold rvscale.
+           apply Rmult_le_pos; trivial.
+           apply Rmult_le_pos; lra.
+         * simpl.
+           simpl in IHk.
+           unfold rvscale; unfold rvscale in IHk.
+           apply Rmult_le_pos; trivial.
+           apply Rmult_le_pos; lra.
        + now rewrite Rvector_max_abs_nth_Rabs_le.
      }
        
