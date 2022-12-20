@@ -2219,16 +2219,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
          intros.
          - apply le_dec.
          - intros.
-           assert (rv_eq
-                     (rvabs (vecrvnth i pf2 (X t)))
-                     (rvabs (vecrvnth i pf1 (X t)))).
-           {
-             intros ?.
-             unfold rvabs, vecrvnth.
-             f_equal.
-             apply vector_nth_ext.
-           }
-           now rewrite H16.
+           now rewrite (digit_pf_irrel _ _ pf2 pf1).
          - intros.
            apply H12.
            specialize (H14 n0 pf); lia.
