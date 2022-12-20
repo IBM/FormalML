@@ -1819,3 +1819,34 @@ Section Sequence.
    Qed.
 
 End Sequence.
+
+Lemma bounded_nat_ex_choice_ivector {A:Type} {n:nat} (P:forall i, (i < n)%nat -> A -> Prop) :
+  (forall i pf1 pf2 x, P i pf1 x <-> P i pf2 x) ->
+  (forall (i : nat) (pf : (i < n)%nat), exists y, P i pf y) ->
+  exists (l:ivector A n),
+  forall (i : nat) (pf : (i < n)%nat),
+    P i pf (ivector_nth i pf l).
+Proof.
+  intros pf_irrel HH.
+  induction n.
+  - exists tt.
+    intros; lia.
+  - specialize (IHn (fun i pf a => P i (Nat.lt_lt_succ_r _ _ pf) a)).
+    destruct IHn as [l Pl].
+    + intros.
+      apply pf_irrel.
+    + intros; apply HH.
+    + destruct (HH _ (Nat.lt_succ_diag_r n)) as [a Pa].
+      exists (ivector_add_to_end a l).
+      intros.
+      destruct (Nat.eq_dec i n).
+      ** subst.
+         rewrite ivector_nth_add_to_end2.
+         eapply pf_irrel; eauto.
+      ** assert (pf':i < n) by lia.
+         rewrite ivector_nth_add_to_end1 with (pf2:=pf').
+         eapply pf_irrel; eauto.
+Qed.
+
+
+                
