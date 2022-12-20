@@ -1821,20 +1821,17 @@ Section Sequence.
 End Sequence.
 
 Lemma bounded_nat_ex_choice_ivector {A:Type} {n:nat} (P:forall i, (i < n)%nat -> A -> Prop) :
-  (forall i pf1 pf2 x, P i pf1 x <-> P i pf2 x) ->
   (forall (i : nat) (pf : (i < n)%nat), exists y, P i pf y) ->
   exists (l:ivector A n),
   forall (i : nat) (pf : (i < n)%nat),
     P i pf (ivector_nth i pf l).
 Proof.
-  intros pf_irrel HH.
+  intros HH.
   induction n.
   - exists tt.
     intros; lia.
   - specialize (IHn (fun i pf a => P i (Nat.lt_lt_succ_r _ _ pf) a)).
     destruct IHn as [l Pl].
-    + intros.
-      apply pf_irrel.
     + intros; apply HH.
     + destruct (HH _ (Nat.lt_succ_diag_r n)) as [a Pa].
       exists (ivector_add_to_end a l).
@@ -1842,27 +1839,25 @@ Proof.
       destruct (Nat.eq_dec i n).
       ** subst.
          rewrite ivector_nth_add_to_end2.
-         eapply pf_irrel; eauto.
+         rewrite (digit_pf_irrel _ _ _ pf) in Pa; eauto.
       ** assert (pf':i < n) by lia.
          rewrite ivector_nth_add_to_end1 with (pf2:=pf').
-         eapply pf_irrel; eauto.
+         specialize (Pl i pf').
+         rewrite (digit_pf_irrel _ _ _ pf) in Pl; eauto.
 Qed.
 
 Lemma bounded_nat_ex_choice_vector {A:Type} {n:nat} (P:forall i, (i < n)%nat -> A -> Prop) :
-  (forall i pf1 pf2 x, P i pf1 x <-> P i pf2 x) ->
   (forall (i : nat) (pf : (i < n)%nat), exists y, P i pf y) ->
   exists (l:vector A n),
   forall (i : nat) (pf : (i < n)%nat),
     P i pf (vector_nth i pf l).
 Proof.
-  intros pf_irrel HH.
+  intros HH.
   induction n.
   - exists vector0.
     intros; lia.
   - specialize (IHn (fun i pf a => P i (Nat.lt_lt_succ_r _ _ pf) a)).
     destruct IHn as [l Pl].
-    + intros.
-      apply pf_irrel.
     + intros; apply HH.
     + destruct (HH _ (Nat.lt_succ_diag_r n)) as [a Pa].
       exists (vector_add_to_end a l).
@@ -1870,9 +1865,10 @@ Proof.
       destruct (Nat.eq_dec i n).
       ** subst.
          rewrite vector_nth_add_to_end_suffix.
-         eapply pf_irrel; eauto.
+         rewrite (digit_pf_irrel _ _ _ pf) in Pa; eauto.
       ** assert (pf':i < n) by lia.
          rewrite vector_nth_add_to_end_prefix with (pf2:=pf').
-         eapply pf_irrel; eauto.
+         specialize (Pl i pf').
+         rewrite (digit_pf_irrel _ _ _ pf) in Pl; eauto.
 Qed.
 
