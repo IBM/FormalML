@@ -1848,5 +1848,31 @@ Proof.
          eapply pf_irrel; eauto.
 Qed.
 
+Lemma bounded_nat_ex_choice_vector {A:Type} {n:nat} (P:forall i, (i < n)%nat -> A -> Prop) :
+  (forall i pf1 pf2 x, P i pf1 x <-> P i pf2 x) ->
+  (forall (i : nat) (pf : (i < n)%nat), exists y, P i pf y) ->
+  exists (l:vector A n),
+  forall (i : nat) (pf : (i < n)%nat),
+    P i pf (vector_nth i pf l).
+Proof.
+  intros pf_irrel HH.
+  induction n.
+  - exists vector0.
+    intros; lia.
+  - specialize (IHn (fun i pf a => P i (Nat.lt_lt_succ_r _ _ pf) a)).
+    destruct IHn as [l Pl].
+    + intros.
+      apply pf_irrel.
+    + intros; apply HH.
+    + destruct (HH _ (Nat.lt_succ_diag_r n)) as [a Pa].
+      exists (vector_add_to_end a l).
+      intros.
+      destruct (Nat.eq_dec i n).
+      ** subst.
+         rewrite vector_nth_add_to_end_suffix.
+         eapply pf_irrel; eauto.
+      ** assert (pf':i < n) by lia.
+         rewrite vector_nth_add_to_end_prefix with (pf2:=pf').
+         eapply pf_irrel; eauto.
+Qed.
 
-                
