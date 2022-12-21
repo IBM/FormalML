@@ -1618,6 +1618,30 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        lia.
  Qed.
 
+ Lemma lemma2_almost (W : nat -> nat -> Ts -> R) 
+      (α w : nat -> Ts -> R) :
+  (forall t0 ω, W 0%nat t0 ω = 0) ->
+  (forall t ω, 0 <= α t ω <= 1) ->
+  (forall t0 t ω,
+      W (S t) t0 ω =
+      (1 - α (t + t0)%nat ω) * (W t t0 ω) +
+      (α (t + t0)%nat ω) * (w (t + t0)%nat ω)) ->
+  almost prts (fun ω => is_lim_seq (fun n => W n 0%nat ω) 0) ->
+  forall (delta : posreal),
+  exists (T : Ts -> nat),
+    almost prts (fun ω =>
+                   forall t0 t,
+                   (t0 >= T ω)%nat ->
+                   (rvabs (W t t0) ω) <= delta).
+ Proof.
+   intros.
+   apply (@exists_almost Ts dom prts (fun (T : nat) =>
+                     (fun ω : Ts => forall t0 t : nat, (t0 >= T)%nat -> rvabs (W t t0) ω <= delta))).
+   revert H2.
+   apply almost_impl, all_almost; intros ??.
+   now apply lemma2 with (α := α) (w := w).
+ Qed.
+
  Lemma lemma8_part1 (x Y W : nat -> Ts -> R) (D : posreal) (ω : Ts) 
       (α w : nat -> Ts -> R) :
    (Y 0%nat ω = D) ->
@@ -2135,27 +2159,32 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        apply Rmult_le_pos; lra.
    }
    assert (forall (k : nat),
-              exists (N : nat),
-                forall (t : nat),
-                  (t >= N)%nat ->
-                  almostR2 prts Rle (rvmaxabs (X t))
-                           (D k)).
+              exists (N : Ts -> nat),
+                almost prts
+                       (fun ω =>
+                          forall (t : nat),
+                            (t >= N ω)%nat ->
+                            (rvmaxabs (X t) ω) <= (D k ω))).
    {
      induction k.
-     - exists 0%nat.
-       intros.
+     - exists (const 0%nat).
+       apply almost_forall in H4.
+       revert H4.
+       apply almost_impl, all_almost; intros ????.
        apply H4.
      - destruct IHk as [N ?].
        assert (forall i pf,
-                  exists N0,
-                    forall t : nat, (t >= N0)%nat ->
-                                    almostR2 prts Rle 
-                                             (rvabs (vecrvnth i pf (X t))) (D (S k))).
+                  exists (N0 : Ts -> nat),
+                    almost prts (fun ω =>
+                                   forall t : nat, 
+                                     (t >= N0 ω)%nat ->
+                                     (rvabs (vecrvnth i pf (X t)) ω) <= (D (S k) ω))).
        {
          intros.
 
          pose (X1 := fun t => vecrvnth i pf (X t)).
          pose (α1 := fun t => vecrvnth i pf (α t)).
+         pose (w1 := fun t => vecrvnth i pf (w t)).
          pose (W := fix W t' :=
                     match t' with
                     | 0%nat => const 0
@@ -2164,7 +2193,17 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                         (rvmult 
                            (rvminus (const 1) (α1 t))
                            (W t))
-                        (rvmult (α1 t) (vecrvnth i pf (w t)))
+                        (rvmult (α1 t) (w1 t))
+                    end).
+         pose (WW := fix WW t' t0 :=
+                    match t' with
+                    | 0%nat => const 0
+                    | (S t) => 
+                      rvplus 
+                        (rvmult 
+                           (rvminus (const 1) (α1 (t + t0)%nat))
+                           (WW t t0))
+                        (rvmult (α1 (t + t0)%nat) (w1 (t + t0)%nat))
                     end).
        pose (Y := fix Y t' :=
                     match t' with
@@ -2181,13 +2220,34 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        {
          admit.
        }
-       generalize  (Y_lim Y β (D k) α1); intros.
-       cut_to H13; cycle 1; try lra; try easy.
-       - intros.
-         now unfold α1, vecrvnth.
-       - intros.
-         now unfold α1, vecrvnth.
-       - admit.
+       assert (almost prts
+                      (fun ω => is_lim_seq (fun n => WW n 0%nat ω) 0)).
+       {
+         revert H12.
+         apply almost_impl, all_almost; unfold impl; intros ?.
+         apply is_lim_seq_ext.
+         induction n0.
+         - now simpl.
+         - simpl.
+           rv_unfold'.
+           rewrite IHn0.
+           now replace (n0 + 0)%nat with n0 by lia.
+       }
+       generalize (lemma2_almost WW α1 w1); intros.
+       cut_to H14; cycle 1; try easy.
+         - unfold α1.
+           intros.
+           apply H.
+         - intros.
+           simpl.
+           now rv_unfold'.
+         - generalize  (Y_lim Y β (D k) α1); intros.
+           cut_to H15; cycle 1; try lra; try easy.
+           + intros.
+             now unfold α1, vecrvnth.
+           + intros.
+             now unfold α1, vecrvnth.
+           + admit.
 (*
          generalize lemm8_abs; intros.
          generalize lemm8_abs_part2; intros.
@@ -2198,20 +2258,24 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
 
        apply bounded_nat_ex_choice_vector in H12.
        destruct H12.
-       exists (list_max (proj1_sig x)).
+       exists (fun ω => list_max (map (fun z => z ω) (proj1_sig x))).
        intros.
-       assert (forall i pf,
-                  (vector_nth i pf x <= list_max (` x)))%nat.
+       assert (forall i pf ω,
+                  (vector_nth i pf x ω <= 
+                   list_max (map (fun z => z ω) (` x)))%nat).
        {
          intros.
          generalize (vector_nth_In x _ pf); intros HH.
-         generalize (list_max_upper (` x)); intros HH2.
+         generalize (list_max_upper (map (fun z => z ω) (` x))); intros HH2.
          rewrite Forall_forall in HH2.
-         now apply HH2.
+         apply HH2.
+         apply in_map_iff.
+         now exists (vector_nth i pf x).
        }
-       unfold almostR2.
+       
        assert (almost prts (fun x0 =>
-                             forall i pf,
+                             forall i pf t,
+                               (t >= vector_nth i pf x x0)%nat ->
                                (rvabs (vecrvnth i pf (X t)) x0) <=
                                (D (S k) x0))).
        {
@@ -2219,24 +2283,25 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
          intros.
          - apply le_dec.
          - intros.
-           now rewrite (digit_pf_irrel _ _ pf2 pf1).
+           rewrite (digit_pf_irrel _ _ pf2 pf1).
+           apply H14.
+           now rewrite (digit_pf_irrel _ _ pf2 pf1) in H15.
          - intros.
            apply H12.
-           specialize (H14 n0 pf); lia.
        }
-       revert H15.
-       apply almost_impl, all_almost; intros ??.
+       revert H14.
+       apply almost_impl, all_almost; intros ????.
        unfold rvmaxabs.
        unfold rvabs, vecrvnth in H15.
        destruct n.
        + assert (Rvector_max_abs (X t x0) = 0).
          {
            apply Rvector_max_abs_zero.
-           generalize (vector0_0 (X t x0)); intros.
-           now rewrite vector0_0.
+           rewrite vector0_0.
+           apply (vector0_0 (X t x0)).
          }
          rewrite H16.
-         clear H11 H12 H15.
+         clear H11 H12 H13 H14 H15.
          induction k.
          * unfold D.
            unfold rvscale.
@@ -2247,29 +2312,28 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
            unfold rvscale; unfold rvscale in IHk.
            apply Rmult_le_pos; trivial.
            apply Rmult_le_pos; lra.
-       + now rewrite Rvector_max_abs_nth_Rabs_le.
+       + rewrite Rvector_max_abs_nth_Rabs_le.
+         intros.
+         apply H14.
+         specialize (H13 i pf x0).
+         lia.
      }
        
    assert (almost prts
              (fun ω =>
                 forall (k : nat),
-                exists (N : nat),
+                exists (N : Ts -> nat),
                 forall (t : nat),
-                  (t >= N)%nat ->
+                  (t >= N ω)%nat ->
                   (rvmaxabs (X t) ω) <= (D k ω))).
    {
      apply almost_forall.
      intros.
      specialize (H11 n0).
      destruct H11.
-     apply (almost_exists prts (const x)).
-     unfold const.
-     apply almost_bounded_forall.
-     - intros.
-       apply le_dec.
-     - now intros.
-     - intros.
-       now apply H11.
+     revert H11.
+     apply almost_impl, all_almost; intros ??.
+     now exists x.
    }
    revert H12.
    apply almost_impl.
@@ -2282,7 +2346,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
    destruct H10.
    specialize (H12 x0).
    destruct H12.
-   exists (x1).
+   exists (x1 x).
    intros.
    specialize (H12 n0).
    cut_to H12; try lia.
