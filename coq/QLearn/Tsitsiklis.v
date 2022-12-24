@@ -1627,16 +1627,16 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       (1 - α (t + t0)%nat ω) * (W t t0 ω) +
       (α (t + t0)%nat ω) * (w (t + t0)%nat ω)) ->
   almost prts (fun ω => is_lim_seq (fun n => W n 0%nat ω) 0) ->
-  forall (delta : posreal),
+  forall (delta : Ts -> posreal),
   exists (T : Ts -> nat),
     almost prts (fun ω =>
                    forall t0 t,
                    (t0 >= T ω)%nat ->
-                   (rvabs (W t t0) ω) <= delta).
+                   (rvabs (W t t0) ω) <= delta ω).
  Proof.
    intros.
    apply (@exists_almost Ts dom prts (fun (T : nat) =>
-                     (fun ω : Ts => forall t0 t : nat, (t0 >= T)%nat -> rvabs (W t t0) ω <= delta))).
+                     (fun ω : Ts => forall t0 t : nat, (t0 >= T)%nat -> rvabs (W t t0) ω <= delta ω))).
    revert H2.
    apply almost_impl, all_almost; intros ??.
    now apply lemma2 with (α := α) (w := w).
@@ -1681,7 +1681,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        * lra.
      + specialize (H1 t).
        lra.
-  Qed.
+ Qed.
      
  Lemma lemma8_almost_part1  (x Y W : nat -> Ts -> R) (D : posreal) 
       (α w : nat -> Ts -> R) :
@@ -1808,7 +1808,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
    apply (lemma8_part2 x Y W D x0 α w); trivial.
  Qed.
 
- Lemma lemm8_abs  (x Y W : nat -> Ts -> R) (D : posreal) (ω : Ts) 
+ Lemma lemma8_abs  (x Y W : nat -> Ts -> R) (ω : Ts) (D : posreal) 
       (α w : nat -> Ts -> R) :
    (Y 0%nat ω = D) ->
    (W 0%nat ω = 0) ->   
@@ -1853,8 +1853,8 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
    apply Rabs_triang_inv.
   Qed.
 
- Lemma lemm8_abs_part2  (x Y W : nat -> Ts -> R) (eps D : posreal) (ω : Ts)
-      (α w : nat -> Ts -> R) :
+ Lemma lemma8_abs_part2  (x Y W : nat -> Ts -> R) 
+      (α w : nat -> Ts -> R) (ω : Ts) (eps D : posreal) :
    (forall t, 0 <= α t ω <= 1) ->
    (W 0%nat ω = 0) ->
    (forall t,
@@ -1898,6 +1898,169 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        rewrite H6.
        simpl.
        lra.
+ Qed.
+
+   Lemma LimSup_lt_nneg (f : nat -> R) (B : R) :
+    (forall n, 0 <= f n) ->
+    Rbar_lt (LimSup_seq f) B ->
+    exists (N : nat),
+    forall (n : nat), 
+      (N <= n)%nat ->
+      f n <= B.
+  Proof.
+    intros.
+    unfold LimSup_seq, proj1_sig in H0.
+    match_destr_in H0.
+    unfold is_LimSup_seq in i.
+    match_destr_in i.
+    - simpl in H0.
+      assert (0 < (B - r)/2) by lra.
+      specialize (i (mkposreal _ H1)).
+      destruct i.
+      destruct H3.
+      exists x.
+      intros.
+      specialize (H3 n H4).
+      simpl in H3.
+      lra.
+    - now simpl in H0.
+    - specialize (i (-1)).
+      destruct i.
+      specialize (H1 x).
+      specialize (H x).
+      cut_to H1; try lia; try lra.
+ Qed.
+
+  Lemma lemma8_abs_combined  (x Y W : nat -> Ts -> R) 
+        (α w : nat -> Ts -> R) (ω : Ts) (eps D : posreal) :
+    (0 < β) ->
+    (Y 0%nat ω = D) ->
+    (W 0%nat ω = 0) ->   
+   (forall t, 0 <= α t ω <= 1) ->
+   (forall t,
+       W (S t) ω =
+       (1 - α t ω) * (W t ω) +
+       (α t ω) * (w t ω)) ->
+   (forall t,
+       Y (S t) ω =
+       (1 - α t ω) * (Y t ω) +
+       (α t ω) * β * D) ->
+   (forall t,
+     x (S t) ω <= 
+     (1 - α t ω) * (x t ω) + 
+     (α t ω) * (β * D + w t ω)) ->
+   (forall t,
+     x (S t) ω >= 
+     (1 - α t ω) * (x t ω) + 
+     (α t ω) * (-β * D + w t ω)) ->
+   (forall t,
+       Rabs (x t ω) <= D) ->
+   is_lim_seq (fun t => Y t ω) (β * D) ->
+   is_lim_seq (fun t => W t ω) 0 ->   
+   (exists (T : nat),
+       forall t,
+         (t >= T)%nat ->
+         Rabs (W t ω) <= β * eps * D) ->
+   exists (N : nat),
+   forall (t : nat), 
+     (N <= t)%nat ->
+     Rabs (x t ω) <=  (β * (1 + 2 * eps) * D).
+  Proof.
+    intros.
+    apply LimSup_lt_nneg.
+    - intros.
+      apply Rabs_pos.
+    - apply Rbar_le_lt_trans with (y:= β * (1 + eps) * D).
+      + apply lemma8_abs_part2 with (Y := Y) (W :=W) (α := α) (w := w); trivial.
+        intros.
+        apply lemma8_abs with (D := D) (α := α) (w := w); trivial.
+      + simpl.
+        apply Rmult_lt_compat_r; [apply cond_pos |].
+        apply Rmult_lt_compat_l; trivial.
+        generalize (cond_pos eps); intros.
+        lra.
+   Qed.
+
+  Lemma lemma8_abs_combined_almost  (x Y W : nat -> Ts -> R) 
+        (α w : nat -> Ts -> R) (eps : posreal) (D : Ts -> posreal) :
+    (0 < β) ->
+    (forall ω, Y 0%nat ω = D ω) ->
+    (forall ω, W 0%nat ω = 0) ->   
+    (forall t ω, 0 <= α t ω <= 1) ->
+    (forall t ω,
+       W (S t) ω =
+       (1 - α t ω) * (W t ω) +
+       (α t ω) * (w t ω)) ->
+   (forall t ω,
+       Y (S t) ω =
+       (1 - α t ω) * (Y t ω) +
+       (α t ω) * β * D ω) ->
+   (forall t ω,
+     x (S t) ω <= 
+     (1 - α t ω) * (x t ω) + 
+     (α t ω) * (β * D ω + w t ω)) ->
+   (forall t ω,
+     x (S t) ω >= 
+     (1 - α t ω) * (x t ω) + 
+     (α t ω) * (-β * D ω + w t ω)) ->
+   (forall t ω,
+       Rabs (x t ω) <= D ω) ->
+   (forall ω, is_lim_seq (fun t => Y t ω) (β * D ω)) ->
+   (almost prts (fun ω => is_lim_seq (fun t => W t ω) 0)) ->
+   almost prts (fun ω =>
+               exists (T : nat),
+                 forall t,
+                   (t >= T)%nat ->
+                   Rabs (W t ω) <= β * eps * D ω) ->
+   exists (N : Ts -> nat),
+     almost prts (fun ω =>
+                    forall (t : nat), 
+                      (N ω <= t)%nat ->
+                      (rvabs (x t) ω) <= (rvscale (β * (1 + 2 * eps)) D ω)).
+ Proof.
+   intros.
+   assert (almost prts (fun ω =>
+                           exists N : nat,
+                             forall t : nat,
+                               (N <= t)%nat ->
+                               (rvabs (x t) ω) <=
+                               (rvscale (β * (1 + 2 * eps)) (fun x0 : Ts => D x0) ω))).
+   {
+     revert H9; apply almost_impl.
+     revert H10;apply almost_impl, all_almost; intros ???.
+     apply lemma8_abs_combined with  (Y := Y) (W := W) (α := α) (w := w); trivial.
+   }
+   now apply exists_almost in H11.
+ Qed.
+    
+ Lemma lemma8_abs_part2_almost  (x Y W : nat -> Ts -> R) 
+      (α w : nat -> Ts -> R) (eps : posreal) (D : Ts -> posreal) :
+   (forall t ω, 0 <= α t ω <= 1) ->
+   (forall ω, W 0%nat ω = 0) ->
+   (forall t ω,
+       W (S t) ω =
+       (1 - α t ω) * (W t ω) +
+       (α t ω) * (w t ω)) ->
+   (forall t ω,
+       Rabs (x t ω) <= Rabs (W t ω) + (Y t ω)) ->
+   (forall ω, is_lim_seq (fun t => Y t ω) (β * (D ω))) ->
+   almost prts (fun ω => is_lim_seq (fun t => W t ω) 0) ->   
+   (exists (T : Ts -> nat),
+       (almost prts
+               (fun ω =>
+                  forall t,
+                    (t >= T ω)%nat ->
+                    Rabs (W t ω) <= β * eps * D ω))) ->
+   almost prts (fun ω => 
+                  Rbar_le (LimSup_seq (fun t => Rabs (x t ω))) (β * (1 + eps) * D ω)).
+ Proof.
+   intros.
+   destruct H5.
+   revert H4; apply almost_impl.
+   revert H5; apply almost_impl.
+   apply all_almost; intros ???.
+   apply lemma8_abs_part2 with (Y := Y) (W := W) (α := α) (w := w); try easy.
+   now exists (x0 x1).
  Qed.
 
  Lemma Y_prod (Y : nat -> Ts -> R) (D : Ts -> R) (β : R) 
@@ -2084,7 +2247,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         (filt_sub : forall k, sa_sub (F k) dom) 
         (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
         {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
-        {nnegD0 : NonnegativeFunction D0}
+        {posD0 : forall ω, 0 < D0 ω}
         (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}:
     (forall k ω i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
@@ -2106,15 +2269,13 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                                          (fun j ω => rvsqr (rvmaxabs (X j)) ω)
                                          k)))) ->
     (forall k, almostR2 prts Rle (rvmaxabs (X k)) D0) ->
-    (exists (β : R), 
-        (0 < β < 1) /\
-        forall x, Rvector_max_abs (XF x) <= β * Rvector_max_abs x) ->
+    0 < β < 1 ->
+    (forall x, Rvector_max_abs (XF x) <= β * Rvector_max_abs x) ->
     (forall k, rv_eq (X (S k)) 
                      (vecrvplus (X k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF (X k ω)) (X k) ) (w k))))) ->
     almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
  Proof.
    intros.
-   destruct H5 as [β [??]].
    pose (eps := (1/β-1)/3).
    assert (0 < eps).
    {
@@ -2137,6 +2298,16 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                 | 0%nat => D0
                 | S k' => rvscale ((1 + 2 * eps) * β) (D k')
                 end).
+   assert (Dpos : forall k ω, 0 < D k ω).
+   {
+     intros.
+     induction k.
+     - simpl; apply posD0.
+     - simpl.
+       unfold rvscale.
+       apply Rmult_lt_0_compat; try lra.
+       apply Rmult_lt_0_compat; try lra.
+   }       
    assert (forall ω, is_lim_seq (fun k => D k ω) 0).
    {
      intros.
@@ -2163,7 +2334,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                 almost prts
                        (fun ω =>
                           forall (t : nat),
-                            (t >= N ω)%nat ->
+                            (N ω <= t)%nat ->
                             (rvmaxabs (X t) ω) <= (D k ω))).
    {
      induction k.
@@ -2177,7 +2348,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                   exists (N0 : Ts -> nat),
                     almost prts (fun ω =>
                                    forall t : nat, 
-                                     (t >= N0 ω)%nat ->
+                                     (N0 ω <= t)%nat ->
                                      (rvabs (vecrvnth i pf (X t)) ω) <= (D (S k) ω))).
        {
          intros.
@@ -2205,16 +2376,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                            (WW t t0))
                         (rvmult (α1 (t + t0)%nat) (w1 (t + t0)%nat))
                     end).
-       pose (Y := fix Y t' :=
-                    match t' with
-                    | 0%nat => (D k)
-                    | (S t) =>
-                      rvplus 
-                        (rvmult 
-                           (rvminus (const 1) (α1 t))
-                           (Y t))
-                        (rvmult (α1 t) (rvscale β (D k)))
-                    end).
        assert (almost prts
                       (fun ω => is_lim_seq (fun n => W n ω) 0)).
        {
@@ -2241,19 +2402,76 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
          - intros.
            simpl.
            now rv_unfold'.
-         - generalize  (Y_lim Y β (D k) α1); intros.
-           cut_to H15; cycle 1; try lra; try easy.
-           + intros.
-             now unfold α1, vecrvnth.
-           + intros.
-             now unfold α1, vecrvnth.
+         - assert (forall ω, 0 < β * eps * (D k ω)).
+           {
+             intros.
+             apply Rmult_lt_0_compat; try easy.
+             apply Rmult_lt_0_compat; lra.
+           }
+           specialize (H14 (fun ω => mkposreal _ (H15 ω))).
+           destruct H14 as [N2 ?].
+           pose (tauk := fun ω => max (N ω) (N2 ω)) .
+           pose (αtau := fun t ω => α1 (t + tauk ω)%nat ω).
+
+           pose (Y := fix Y t' :=
+                    match t' with
+                    | 0%nat => (D k)
+                    | (S t) =>
+                      rvplus 
+                        (rvmult 
+                           (rvminus (const 1) (αtau t))
+                           (Y t))
+                        (rvmult (αtau t) (rvscale β (D k)))
+                    end).
+           pose (Xtau := fun t ω => X1 (t + tauk ω)%nat ω).
+           pose (wtau := fun t ω => w1 (t + tauk ω)%nat ω).
+           pose (Wtau := fun t ω => WW t (tauk ω) ω).
+           generalize (lemma8_abs_combined_almost Xtau Y Wtau αtau wtau); intros.
+           simpl.
+           specialize (H16 (mkposreal _ H8) (fun ω => mkposreal _ (Dpos k ω))).
+           cut_to H16; try easy. cut_to H16.
+           + destruct H16.
+             exists (fun ω => ((tauk ω) + (x ω))%nat).
+             revert H16.
+             apply almost_impl, all_almost; intros ????.
+             unfold Xtau, tauk, X1 in H16.
+             specialize (H16 (t - tauk x0)%nat).
+             cut_to H16; try lia.
+             rv_unfold'_in_hyp H16.
+             simpl in H16.
+             rv_unfold.
+             unfold tauk in H16.
+             unfold tauk in H17.
+             replace (t - Init.Nat.max (N x0) (N2 x0) + Init.Nat.max (N x0) (N2 x0))%nat with (t) in H16 by lia.
+             lra.
            + admit.
-(*
-         generalize lemm8_abs; intros.
-         generalize lemm8_abs_part2; intros.
-         generalize lemma8_almost_part1; intros.
-         generalize lemma8_almost_part2; intros.
-*)
+           + intros.
+             apply H.
+           + intros.
+             unfold Wtau, αtau, wtau.
+             simpl.
+             now rv_unfold'.
+           + intros.
+             simpl.
+             rv_unfold'.
+             lra.
+           + intros.
+             unfold Xtau, X1, vecrvnth.
+             simpl.
+             rewrite H7.
+             admit.
+           + admit.
+           + admit.
+           + apply Y_lim with (α := αtau); try easy.
+             * intros.
+               apply H.
+             * intros.
+               apply (seq_sum_shift (fun t => α1 t ω)).
+               apply H0.
+           + unfold Wtau.
+             revert H13.
+             apply almost_impl, all_almost; intros ??.
+             admit.
        }
 
        apply bounded_nat_ex_choice_vector in H12.
@@ -2307,6 +2525,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
            unfold rvscale.
            apply Rmult_le_pos; trivial.
            apply Rmult_le_pos; lra.
+           now left.
          * simpl.
            simpl in IHk.
            unfold rvscale; unfold rvscale in IHk.
