@@ -1864,7 +1864,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
    (forall t,
        Rabs (x t ω) <= Rabs (W t ω) + (Y t ω)) ->
    is_lim_seq (fun t => Y t ω) (β * D) ->
-   is_lim_seq (fun t => W t ω) 0 ->   
    (exists (T : nat),
        forall t,
          (t >= T)%nat ->
@@ -1879,11 +1878,11 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
      apply H2.
    - eapply Rbar_le_trans.
      + apply LimSup_le with (v := fun t => β * eps * D + (Y t ω)).
-       destruct H5.
+       destruct H4.
        exists x0.
        intros.
        apply Rplus_le_compat_r.
-       apply H5.
+       apply H4.
        lia.
      + assert (is_LimSup_seq  (fun t : nat => β * eps * D + Y t ω) (β * eps * D + β * D)).
        {
@@ -1894,8 +1893,8 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
            simpl.
            f_equal.
        }
-       apply is_LimSup_seq_unique in H6.
-       rewrite H6.
+       apply is_LimSup_seq_unique in H5.
+       rewrite H5.
        simpl.
        lra.
  Qed.
@@ -1956,7 +1955,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
    (forall t,
        Rabs (x t ω) <= D) ->
    is_lim_seq (fun t => Y t ω) (β * D) ->
-   is_lim_seq (fun t => W t ω) 0 ->   
    (exists (T : nat),
        forall t,
          (t >= T)%nat ->
@@ -2006,7 +2004,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
    (forall t ω,
        Rabs (x t ω) <= D ω) ->
    (forall ω, is_lim_seq (fun t => Y t ω) (β * D ω)) ->
-   (almost prts (fun ω => is_lim_seq (fun t => W t ω) 0)) ->
    almost prts (fun ω =>
                exists (T : nat),
                  forall t,
@@ -2026,11 +2023,10 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                                (rvabs (x t) ω) <=
                                (rvscale (β * (1 + 2 * eps)) (fun x0 : Ts => D x0) ω))).
    {
-     revert H9; apply almost_impl.
-     revert H10;apply almost_impl, all_almost; intros ???.
+     revert H9;apply almost_impl, all_almost; intros ??.
      apply lemma8_abs_combined with  (Y := Y) (W := W) (α := α) (w := w); trivial.
    }
-   now apply exists_almost in H11.
+   now apply exists_almost in H10.
  Qed.
     
  Lemma lemma8_abs_part2_almost  (x Y W : nat -> Ts -> R) 
@@ -2408,6 +2404,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
              apply Rmult_lt_0_compat; try easy.
              apply Rmult_lt_0_compat; lra.
            }
+           generalize H14; intros H14'.
            specialize (H14 (fun ω => mkposreal _ (H15 ω))).
            destruct H14 as [N2 ?].
            pose (tauk := fun ω => max (N ω) (N2 ω)) .
@@ -2429,7 +2426,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
            generalize (lemma8_abs_combined_almost Xtau Y Wtau αtau wtau); intros.
            simpl.
            specialize (H16 (mkposreal _ H8) (fun ω => mkposreal _ (Dpos k ω))).
-           cut_to H16; try easy. cut_to H16.
+           cut_to H16; try easy. 
            + destruct H16.
              exists (fun ω => ((tauk ω) + (x ω))%nat).
              revert H16.
@@ -2444,7 +2441,18 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
              unfold tauk in H17.
              replace (t - Init.Nat.max (N x0) (N2 x0) + Init.Nat.max (N x0) (N2 x0))%nat with (t) in H16 by lia.
              lra.
-           + admit.
+(*
+           + revert H14.
+             simpl.
+             apply almost_impl, all_almost; intros ??.
+             unfold Wtau.
+             exists (0%nat).
+             intros.
+             specialize (H14 (tauk x)  t).
+             apply H14.
+             unfold tauk.
+             lia.
+*)
            + intros.
              apply H.
            + intros.
@@ -2458,7 +2466,14 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
            + intros.
              unfold Xtau, X1, vecrvnth.
              simpl.
+             specialize (H7 (t + tauk ω)%nat).
+             clear H16.
              rewrite H7.
+             unfold vecrvmult, vecrvopp, vecrvscale, vecrvplus.
+             repeat rewrite Rvector_nth_plus.
+             rewrite Rvector_nth_mult.
+             repeat rewrite Rvector_nth_plus.
+             unfold wtau, αtau, α1, w1.
              admit.
            + admit.
            + admit.
@@ -2468,11 +2483,16 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
              * intros.
                apply (seq_sum_shift (fun t => α1 t ω)).
                apply H0.
-           + unfold Wtau.
-             revert H13.
+           + revert H14.
              apply almost_impl, all_almost; intros ??.
-             admit.
-       }
+             exists (N2 x).
+             intros.
+             unfold Wtau.
+             specialize (H14 (tauk x) t).
+             apply H14.
+             unfold tauk.
+             lia.
+      }               
 
        apply bounded_nat_ex_choice_vector in H12.
        destruct H12.
