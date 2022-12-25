@@ -1989,20 +1989,22 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        W (S t) ω =
        (1 - α t ω) * (W t ω) +
        (α t ω) * (w t ω)) ->
-   (forall t ω,
-       Y (S t) ω =
-       (1 - α t ω) * (Y t ω) +
-       (α t ω) * β * D ω) ->
-   (forall t ω,
-     x (S t) ω <= 
-     (1 - α t ω) * (x t ω) + 
-     (α t ω) * (β * D ω + w t ω)) ->
-   (forall t ω,
-     x (S t) ω >= 
-     (1 - α t ω) * (x t ω) + 
-     (α t ω) * (-β * D ω + w t ω)) ->
+    (forall t ω,
+        Y (S t) ω =
+        (1 - α t ω) * (Y t ω) +
+        (α t ω) * β * D ω) ->
+    (forall t,
+        almost prts (fun ω =>
+                       x (S t) ω <= 
+                       (1 - α t ω) * (x t ω) + 
+                       (α t ω) * (β * D ω + w t ω))) ->
+   (forall t,
+       almost prts (fun ω =>
+                      x (S t) ω >= 
+                      (1 - α t ω) * (x t ω) + 
+                      (α t ω) * (-β * D ω + w t ω))) ->
    (almost prts (fun ω => forall t,
-       Rabs (x t ω) <= D ω)) ->
+                     Rabs (x t ω) <= D ω)) ->
    (forall ω, is_lim_seq (fun t => Y t ω) (β * D ω)) ->
    almost prts (fun ω =>
                exists (T : nat),
@@ -2024,7 +2026,11 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                                (rvscale (β * (1 + 2 * eps)) (fun x0 : Ts => D x0) ω))).
    {
      revert H7; apply almost_impl.
-     revert H9;apply almost_impl, all_almost; intros ???.
+     apply almost_forall in H5.
+     apply almost_forall in H6.
+     revert H5; apply almost_impl.
+     revert H6; apply almost_impl.     
+     revert H9;apply almost_impl, all_almost; intros ?????.
      apply lemma8_abs_combined with  (Y := Y) (W := W) (α := α) (w := w); trivial.
    }
    now apply exists_almost in H10.
@@ -2456,12 +2462,14 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
              now rv_unfold'.
            + intros.
              simpl.
-             rv_unfold'.
+             rv_unfold.
              lra.
            + intros.
              clear H16 H13 H14 Wtau WW Y.
+             revert H11.
+             apply almost_impl, all_almost; intros ??.
              unfold Xtau, X1, vecrvnth, αtau, α1, wtau, w1.
-             replace (S t + tauk ω)%nat with (S (t + tauk ω)) by lia.
+             replace (S t + tauk x)%nat with (S (t + tauk x)) by lia.
              rewrite H7.
              unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vecrvmult.
              rewrite Rvector_nth_plus, Rvector_nth_mult.
@@ -2472,10 +2480,10 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
              apply Rplus_le_compat_l.
              rewrite Rmult_assoc.
              apply Rmult_le_compat_l.
-             specialize (H (t + tauk ω)%nat ω i pf).
+             specialize (H (t + tauk x)%nat x i pf).
              apply H.
              simpl.
-             specialize (H6 (X (t + tauk ω)%nat ω)).
+             specialize (H6 (X (t + tauk x)%nat x)).
              eapply Rle_trans.
              apply Rle_abs.
              eapply Rle_trans.
@@ -2483,11 +2491,14 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
              eapply Rle_trans.
              apply H6.
              apply Rmult_le_compat_l; try lra.
-             admit.
+             apply H11.
+             unfold tauk; lia.
            + intros.
              clear H16 H13 H14 Wtau WW Y.
+             revert H11.
+             apply almost_impl, all_almost; intros ??.
              unfold Xtau, X1, vecrvnth, αtau, α1, wtau, w1.
-             replace (S t + tauk ω)%nat with (S (t + tauk ω)) by lia.
+             replace (S t + tauk x)%nat with (S (t + tauk x)) by lia.
              rewrite H7.
              unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vecrvmult.
              rewrite Rvector_nth_plus, Rvector_nth_mult.
@@ -2499,17 +2510,18 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
              rewrite Ropp_mult_distr_r.
              rewrite Rmult_assoc.
              apply Rmult_ge_compat_l.
-             specialize (H (t + tauk ω)%nat ω i pf).
+             specialize (H (t + tauk x)%nat x i pf).
              apply Rle_ge, H.
              simpl.
-             assert (Rabs (vector_nth i pf (XF (X (t + tauk ω)%nat ω))) <=  β * D k ω).
+             assert (Rabs (vector_nth i pf (XF (X (t + tauk x)%nat x))) <=  β * D k x).
              {
                eapply Rle_trans.
                apply Rvector_max_abs_nth_le.
                eapply Rle_trans.
                apply H6.
                apply Rmult_le_compat_l; try lra.
-               admit.
+               apply H11.
+               unfold tauk; lia.
              }
              rewrite Rabs_le_between in H13.
              lra.
