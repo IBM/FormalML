@@ -2001,8 +2001,8 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
      x (S t) ω >= 
      (1 - α t ω) * (x t ω) + 
      (α t ω) * (-β * D ω + w t ω)) ->
-   (forall t ω,
-       Rabs (x t ω) <= D ω) ->
+   (almost prts (fun ω => forall t,
+       Rabs (x t ω) <= D ω)) ->
    (forall ω, is_lim_seq (fun t => Y t ω) (β * D ω)) ->
    almost prts (fun ω =>
                exists (T : nat),
@@ -2023,7 +2023,8 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                                (rvabs (x t) ω) <=
                                (rvscale (β * (1 + 2 * eps)) (fun x0 : Ts => D x0) ω))).
    {
-     revert H9;apply almost_impl, all_almost; intros ??.
+     revert H7; apply almost_impl.
+     revert H9;apply almost_impl, all_almost; intros ???.
      apply lemma8_abs_combined with  (Y := Y) (W := W) (α := α) (w := w); trivial.
    }
    now apply exists_almost in H10.
@@ -2236,6 +2237,13 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         now rewrite Rplus_0_l.
  Qed.
 
+  Lemma vecrvminus_unfold {n} (x y : Ts -> vector R n) :
+    rv_eq (vecrvminus x y) (fun ω => Rvector_minus (x ω) (y ω)).
+  Proof.
+    intros ?.
+    now unfold vecrvminus, Rvector_minus, vecrvplus.
+  Qed.
+
   Theorem Tsitsiklis3 {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
         (XF : vector R n -> vector R n)
         {F : nat -> SigmaAlgebra Ts}
@@ -2404,7 +2412,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
              apply Rmult_lt_0_compat; try easy.
              apply Rmult_lt_0_compat; lra.
            }
-           generalize H14; intros H14'.
            specialize (H14 (fun ω => mkposreal _ (H15 ω))).
            destruct H14 as [N2 ?].
            pose (tauk := fun ω => max (N ω) (N2 ω)) .
@@ -2441,18 +2448,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
              unfold tauk in H17.
              replace (t - Init.Nat.max (N x0) (N2 x0) + Init.Nat.max (N x0) (N2 x0))%nat with (t) in H16 by lia.
              lra.
-(*
-           + revert H14.
-             simpl.
-             apply almost_impl, all_almost; intros ??.
-             unfold Wtau.
-             exists (0%nat).
-             intros.
-             specialize (H14 (tauk x)  t).
-             apply H14.
-             unfold tauk.
-             lia.
-*)
            + intros.
              apply H.
            + intros.
@@ -2463,20 +2458,19 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
              simpl.
              rv_unfold'.
              lra.
-           + intros.
-             unfold Xtau, X1, vecrvnth.
+           + admit.
+           + admit.
+           + revert H11.
+             apply almost_impl, all_almost; intros ???.
              simpl.
-             specialize (H7 (t + tauk ω)%nat).
-             clear H16.
-             rewrite H7.
-             unfold vecrvmult, vecrvopp, vecrvscale, vecrvplus.
-             repeat rewrite Rvector_nth_plus.
-             rewrite Rvector_nth_mult.
-             repeat rewrite Rvector_nth_plus.
-             unfold wtau, αtau, α1, w1.
-             admit.
-           + admit.
-           + admit.
+             specialize (H11 (t + tauk x)%nat).
+             unfold Xtau, X1.
+             cut_to H11; try lia.
+             eapply Rle_trans.
+             shelve.
+             apply H11.
+             unfold tauk.
+             lia.
            + apply Y_lim with (α := αtau); try easy.
              * intros.
                apply H.
@@ -2493,7 +2487,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
              unfold tauk.
              lia.
       }               
-
        apply bounded_nat_ex_choice_vector in H12.
        destruct H12.
        exists (fun ω => list_max (map (fun z => z ω) (proj1_sig x))).
