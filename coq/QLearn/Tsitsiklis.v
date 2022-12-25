@@ -2458,8 +2458,61 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
              simpl.
              rv_unfold'.
              lra.
-           + admit.
-           + admit.
+           + intros.
+             clear H16 H13 H14 Wtau WW Y.
+             unfold Xtau, X1, vecrvnth, αtau, α1, wtau, w1.
+             replace (S t + tauk ω)%nat with (S (t + tauk ω)) by lia.
+             rewrite H7.
+             unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vecrvmult.
+             rewrite Rvector_nth_plus, Rvector_nth_mult.
+             repeat rewrite Rvector_nth_plus.
+             rewrite Rvector_nth_scale.
+             ring_simplify.
+             apply Rplus_le_compat_r.
+             apply Rplus_le_compat_l.
+             rewrite Rmult_assoc.
+             apply Rmult_le_compat_l.
+             specialize (H (t + tauk ω)%nat ω i pf).
+             apply H.
+             simpl.
+             specialize (H6 (X (t + tauk ω)%nat ω)).
+             eapply Rle_trans.
+             apply Rle_abs.
+             eapply Rle_trans.
+             apply Rvector_max_abs_nth_le.
+             eapply Rle_trans.
+             apply H6.
+             apply Rmult_le_compat_l; try lra.
+             admit.
+           + intros.
+             clear H16 H13 H14 Wtau WW Y.
+             unfold Xtau, X1, vecrvnth, αtau, α1, wtau, w1.
+             replace (S t + tauk ω)%nat with (S (t + tauk ω)) by lia.
+             rewrite H7.
+             unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vecrvmult.
+             rewrite Rvector_nth_plus, Rvector_nth_mult.
+             repeat rewrite Rvector_nth_plus.
+             rewrite Rvector_nth_scale.
+             ring_simplify.
+             apply Rplus_ge_compat_r.
+             apply Rplus_ge_compat_l.
+             rewrite Ropp_mult_distr_r.
+             rewrite Rmult_assoc.
+             apply Rmult_ge_compat_l.
+             specialize (H (t + tauk ω)%nat ω i pf).
+             apply Rle_ge, H.
+             simpl.
+             assert (Rabs (vector_nth i pf (XF (X (t + tauk ω)%nat ω))) <=  β * D k ω).
+             {
+               eapply Rle_trans.
+               apply Rvector_max_abs_nth_le.
+               eapply Rle_trans.
+               apply H6.
+               apply Rmult_le_compat_l; try lra.
+               admit.
+             }
+             rewrite Rabs_le_between in H13.
+             lra.
            + revert H11.
              apply almost_impl, all_almost; intros ???.
              simpl.
