@@ -2390,7 +2390,8 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        assert (almost prts
                       (fun ω => is_lim_seq (fun n => W n ω) 0)).
        {
-         destruct H3 as [A [B ?]].
+         destruct H3 as [A [B' ?]].
+         pose (B := Rmax 0 B').
          destruct H1 as [Ca ?].
          pose (BB := fun (n:nat) => rvplus (const A) (rvscale B D0)).
          eapply lemma1_alpha_alpha with (α := α1) (w := w1) (W := W) (filt_sub := filt_sub) (B := BB) (Ca := Ca); try easy.
@@ -2443,7 +2444,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
            specialize (H1 i pf).
            revert H1.
            apply almost_impl, all_almost; intros ??.
-           admit.
+           apply H1.
          - intros.
            simpl.
            now rv_unfold'.
