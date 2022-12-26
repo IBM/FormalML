@@ -2260,7 +2260,9 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         {rvD0 : RandomVariable (F 0%nat) borel_sa D0}        
         {posD0 : forall ω, 0 < D0 ω}
         (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
-        {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}:
+        {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
+        {iscond : forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (w k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k)))} :
+
     (forall k ω i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
 (*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
 *)
@@ -2276,7 +2278,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                                    _ (filt_sub k) 
                                    (fun ω => Rsqr (vector_nth i pf (w k ω))))
                    (rvplus (const A) 
-                           (rvscale B (rvmaxlist 
+                           (rvscale (Rsqr B) (rvmaxlist 
                                          (fun j ω => rvsqr (rvmaxabs (X j)) ω)
                                          k)))) ->
     (forall k, almostR2 prts Rle (rvmaxabs (X k)) D0) ->
@@ -2390,10 +2392,9 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        assert (almost prts
                       (fun ω => is_lim_seq (fun n => W n ω) 0)).
        {
-         destruct H3 as [A [B' ?]].
-         pose (B := Rmax 0 B').
+         destruct H3 as [A [B ?]].
          destruct H1 as [Ca ?].
-         pose (BB := fun (n:nat) => rvplus (const A) (rvscale B D0)).
+         pose (BB := fun (n:nat) => rvplus (const A) (rvscale (Rsqr B) (rvsqr D0))).
          eapply lemma1_alpha_alpha with (α := α1) (w := w1) (W := W) (filt_sub := filt_sub) (B := BB) (Ca := Ca); try easy.
          - simpl.
            typeclasses eauto.
@@ -2401,6 +2402,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
            unfold BB; simpl.
            apply rvplus_rv; try typeclasses eauto.
            apply rvscale_rv.
+           apply rvsqr_rv.
            induction n0; try easy.
            now apply (RandomVariable_sa_sub (isfilt n0)).
          - unfold w1.
@@ -2411,23 +2413,42 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
            now apply vecrvnth_rv.
          - intros.
            unfold w1.
-           admit.
+           apply iscond.
          - intros.
            unfold w1.
            apply H2.
          - intros.
            unfold w1.
            specialize (H3 n0 i pf).
-           revert H3.
-           apply almost_impl, all_almost; intros ??.
+           revert H3; apply almost_impl.
+           apply almost_forall in H4.
+           revert H4; apply almost_impl.
+           apply all_almost; intros ???.
            unfold rvsqr, vecrvnth.
            eapply Rbar_le_trans.
-           apply H3.
+           apply H4.
            unfold BB.
            rv_unfold.
            simpl.
            apply Rplus_le_compat_l.
-           admit.
+           apply Rmult_le_compat_l.
+           + apply Rle_0_sqr.
+           + unfold rvmaxlist, Rmax_list_map.
+             apply Rmax_list_le_iff.
+             * apply map_not_nil.
+               simpl.
+               discriminate.
+             * intros.
+               apply in_map_iff in H12.
+               destruct H12 as [? [? ?]].
+               rewrite <- H12.
+               specialize (H3 x1).
+               simpl in H3.
+               apply Rsqr_le_abs_1.
+               generalize (rvmaxabs_pos (X x1) x); intros.
+               rewrite Rabs_right; try lra.
+               rewrite Rabs_right; trivial.
+               destruct (Rle_dec 0 (D0 x)); lra.
          - intros.
            apply H.
          - intros.
