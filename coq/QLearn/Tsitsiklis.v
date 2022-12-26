@@ -900,7 +900,7 @@ Lemma lemma1_alpha_beta (α β w B W : nat -> Ts -> R) (Ca Cb : R)
   (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) (const Ca)) ->
   (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (β k) ω))) (const Cb)) ->
   (forall n ω, W (S n) ω = (1 - α n ω) * (W n ω) + (β n ω) * (w n ω)) ->
-  (almost prts (fun ω => exists (b:R), forall n, B n ω <= Rsqr b)) ->
+  (almost prts (fun ω => exists (b:Ts ->R), forall n, B n ω <= Rabs (b ω))) ->
   almost prts (fun ω => is_lim_seq (fun n => W n ω) 0). 
 Proof.
   intros.
@@ -990,7 +990,7 @@ Proof.
     apply almost_impl, all_almost.
     unfold impl; intros.
     destruct H10.
-    pose (b := Rmax (Rsqr x0) 0).
+    pose (b := Rabs  (x0 x)).
     exists (Z.to_nat (up b)).
     intros.
     unfold IB, tau_int, tau_coll, EventIndicator.
@@ -1006,11 +1006,11 @@ Proof.
       rewrite INR_up_pos.
       + apply Rle_lt_trans with (r2 := b).
         * unfold b.
-          apply Rmax_l.
-        * apply (archimed b).
+          lra.
+        * apply archimed.
       + unfold b.
         apply Rle_ge.
-        apply Rmax_r.
+        apply Rabs_pos.
     - simpl.
       now red.
   }
@@ -1203,7 +1203,7 @@ Lemma lemma1_alpha_alpha (α w B W : nat -> Ts -> R) (Ca : R)
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
   (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) (const Ca)) ->
   (forall n ω, W (S n) ω = (1 - α n ω) * (W n ω) + (α n ω) * (w n ω)) ->
-  (almost prts (fun ω => exists (b:R), forall n, B n ω <= Rsqr b)) ->
+  (almost prts (fun ω => exists (b:Ts ->R), forall n, B n ω <= Rabs (b ω))) ->
   almost prts (fun ω => is_lim_seq (fun n => W n ω) 0).
 Proof.
   intros.
@@ -1361,7 +1361,7 @@ Lemma lemma1_alpha_beta_shift (α β w B W : nat -> Ts -> R) (Ca Cb : R)
                              (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) ->
   is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (β k) ω) n) 
                              (fun ω => Lim_seq (sum_n (fun k => rvsqr (β k) ω))) ->
- (almost prts (fun ω => exists (b:R), forall n, B n ω <= Rsqr b)) ->
+ (almost prts (fun ω => exists (b:Ts -> R), forall n, B n ω <= Rabs (b ω))) ->
   almost prts (fun ω => is_lim_seq (fun n => W n ω) 0).
 Proof.
   
@@ -2250,6 +2250,14 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     now unfold vecrvminus, Rvector_minus, vecrvplus.
   Qed.
 
+  Lemma Rabs_plus (a b : R) :
+    Rabs (Rabs a + Rabs b) = Rabs a + Rabs b.
+  Proof.
+    apply Rabs_right.
+    apply Rle_ge.
+    apply Rplus_le_le_0_compat; apply Rabs_pos.
+  Qed.
+  
   Theorem Tsitsiklis3 {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
         (XF : vector R n -> vector R n)
         {F : nat -> SigmaAlgebra Ts}
@@ -2278,7 +2286,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                                    _ (filt_sub k) 
                                    (fun ω => Rsqr (vector_nth i pf (w k ω))))
                    (rvplus (const A) 
-                           (rvscale (Rsqr B) (rvmaxlist 
+                           (rvscale (Rabs B) (rvmaxlist 
                                          (fun j ω => rvsqr (rvmaxabs (X j)) ω)
                                          k)))) ->
     (forall k, almostR2 prts Rle (rvmaxabs (X k)) D0) ->
@@ -2394,7 +2402,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        {
          destruct H3 as [A [B ?]].
          destruct H1 as [Ca ?].
-         pose (BB := fun (n:nat) => rvplus (const A) (rvscale (Rsqr B) (rvsqr D0))).
+         pose (BB := fun (n:nat) => rvplus (const A) (rvscale (Rabs B) (rvsqr D0))).
          eapply lemma1_alpha_alpha with (α := α1) (w := w1) (W := W) (filt_sub := filt_sub) (B := BB) (Ca := Ca); try easy.
          - simpl.
            typeclasses eauto.
@@ -2432,7 +2440,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
            simpl.
            apply Rplus_le_compat_l.
            apply Rmult_le_compat_l.
-           + apply Rle_0_sqr.
+           + apply Rabs_pos.
            + unfold rvmaxlist, Rmax_list_map.
              apply Rmax_list_le_iff.
              * apply map_not_nil.
@@ -2469,7 +2477,18 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
          - intros.
            simpl.
            now rv_unfold'.
-         - admit.
+         - unfold BB.
+           apply all_almost; intros.
+           exists (rvplus (rvabs (const A)) (rvscale (Rabs B) (rvsqr D0))).
+           intros.
+           rv_unfold.
+           replace (Rabs B * Rsqr (D0 x)) with (Rabs (B * Rsqr(D0 x))).
+           + rewrite Rabs_plus.
+             apply Rplus_le_compat_r.
+             apply Rle_abs.
+           + rewrite Rabs_mult.
+             f_equal.
+             now rewrite <- Rabs_sqr.
        }
        assert (almost prts
                       (fun ω => is_lim_seq (fun n => WW n 0%nat ω) 0)).
@@ -2735,7 +2754,9 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
    rewrite Rabs_right; try lra.
    apply Rle_ge.
    apply rvmaxabs_pos.
- Admitted.
+ Unshelve.
+ apply Rvector_max_abs_nth_le.
+Qed.
 
   Lemma W_lim (W w α : nat -> Ts -> R) 
         {F : nat -> SigmaAlgebra Ts} 
