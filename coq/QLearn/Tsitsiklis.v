@@ -2065,6 +2065,120 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     apply Rplus_le_le_0_compat; apply Rabs_pos.
   Qed.
   
+  Theorem Tsitsiklis1 {n} (X w α : nat -> Ts -> vector R n) 
+        (XF : vector R n -> vector R n)
+        {F : nat -> SigmaAlgebra Ts}
+        (isfilt : IsFiltration F) 
+        (filt_sub : forall k, sa_sub (F k) dom) 
+        (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
+        {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
+(*        {rvD0 : RandomVariable (F 0%nat) borel_sa D0}        
+        {posD0 : forall ω, 0 < D0 ω} *)
+        (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
+        {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
+        {iscond : forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (w k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k)))} :
+
+    (forall k ω i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
+(*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
+*)
+    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+
+    (exists (C : R),
+        forall i pf,
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Rbar.Finite C))) ->
+    (forall k i pf, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (fun ω => vector_nth i pf (w k ω))) (const 0)) ->
+    (exists (A B : R),
+        forall k i pf, 
+          almostR2 prts Rbar_le (ConditionalExpectation 
+                                   _ (filt_sub k) 
+                                   (fun ω => Rsqr (vector_nth i pf (w k ω))))
+                   (rvplus (const A) 
+                           (rvscale (Rabs B) (rvmaxlist 
+                                         (fun j ω => rvsqr (rvmaxabs (X j)) ω)
+                                         k)))) ->
+    0 <= β < 1 ->
+    (exists (D : nonnegreal),
+        forall x, Rvector_max_abs (XF x) <= β * Rvector_max_abs x + D) ->
+    (forall k, rv_eq (X (S k)) 
+                     (vecrvplus (X k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF (X k ω)) (X k) ) (w k))))) ->
+    exists (D0 : Ts -> R),  forall k, almostR2 prts Rle (rvmaxabs (X k)) D0.
+  Proof.
+    intros.
+    assert (exists γ,β < γ < 1).
+    {
+      exists (β + (1 - β)/2).
+      lra.
+    }
+    destruct H5 as [D ?].
+    destruct H7 as [γ ?].
+    assert (exists G0,
+               0 < G0 /\
+               β * G0 + D <= γ * G0).
+    {
+      exists ((D + 1) / (γ - β)).
+      split.
+      - apply Rdiv_lt_0_compat; try lra.
+        generalize (cond_nonneg D); lra.
+      - field_simplify; try lra.
+        unfold Rdiv.
+        apply Rmult_le_compat_r; try lra.
+        left.
+        apply Rinv_0_lt_compat.
+        lra.
+    }
+    destruct H8 as [G0 [? ?]].
+    assert (forall x i pf,
+               Rabs (vector_nth i pf (XF x)) <=
+               γ * Rmax (Rvector_max_abs x) G0).
+    {
+      intros.
+      eapply Rle_trans.
+      - apply Rvector_max_abs_nth_le.
+      - eapply Rle_trans.
+        apply H5.
+        unfold Rmax.
+        match_destr.
+        + apply Rle_trans with (r2 := β * G0 + D); try lra.
+          apply Rplus_le_compat_r.
+          apply Rmult_le_compat_l; try lra.
+        + assert (Rvector_max_abs x > G0) by lra.
+          pose (G1 := Rvector_max_abs x - G0).
+          replace (Rvector_max_abs x) with (G0 + G1).
+          * assert (β * G1 <= γ * G1).
+            {
+              apply Rmult_le_compat_r; try lra.
+              unfold G1; lra.
+            }
+            lra.
+          * unfold G1; lra.
+    }
+    assert (exists ε,
+               0 < ε /\
+               γ * (1 + ε) = 1).
+    {
+      exists (1/γ - 1).
+      split.
+      - field_simplify; try lra.
+        apply Rdiv_lt_0_compat; lra.
+      - field_simplify; lra.
+   }
+    destruct H11 as [ε [? ?]].
+    pose (M := fun t ω => Rmax_list_map (seq 0 (S t)) 
+                                        (fun n0 : nat => rvmaxabs (X n0) ω)).
+    pose (G := fix G t :=
+                 match t with
+                 | 0%nat => rvmax (M 0%nat) (const G0)
+                 | S t' => G t'
+                 end).
+
+    Admitted.
+            
+      
+               
+
+
+
+
   Theorem Tsitsiklis3 {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
         (XF : vector R n -> vector R n)
         {F : nat -> SigmaAlgebra Ts}
