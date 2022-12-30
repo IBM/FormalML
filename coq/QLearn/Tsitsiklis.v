@@ -2143,6 +2143,36 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     lra.
   Qed.
 
+  Definition rvinv (x : Ts -> R) := rvpower x (const (-1)).
+  
+  Definition rvinv_rv (x : Ts -> R) :
+    RandomVariable dom borel_sa x ->
+    RandomVariable dom borel_sa (rvinv x).
+  Proof.
+    intros.
+    typeclasses eauto.
+  Qed.
+
+  Lemma Rinv_powerRZ (x : R) :
+    0 < x ->
+    Rinv x = powerRZ x (-1)%Z.
+  Proof.
+    intros.
+    replace (-1)%Z with (- (1))%Z by lia.
+    rewrite powerRZ_neg; try lra.
+    now rewrite powerRZ_1.
+  Qed.
+    
+  Lemma Rinv_Rpower (x : R) :
+    0 < x ->
+    Rinv x = Rpower x (-1).
+  Proof.
+    intros.
+    generalize (powerRZ_Rpower x (-1)%Z H); intros.
+    rewrite <- H0.
+    now apply Rinv_powerRZ.
+  Qed.
+
   Theorem Tsitsiklis1 {n} (X w α : nat -> Ts -> vector R n) 
         (XF : vector R n -> vector R n)
         {F : nat -> SigmaAlgebra Ts}
@@ -2165,12 +2195,12 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     (exists (C : R),
         forall i pf,
           almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Rbar.Finite C))) ->
-    (forall k i pf, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (fun ω => vector_nth i pf (w k ω))) (const 0)) ->
+    (forall k i pf, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (vecrvnth i pf (w k))) (const 0)) ->
     (exists (A B : R),
         forall k i pf, 
           almostR2 prts Rbar_le (ConditionalExpectation 
                                    _ (filt_sub k) 
-                                   (fun ω => Rsqr (vector_nth i pf (w k ω))))
+                                   (rvsqr (vecrvnth i pf (w k))))
                    (rvplus (const A) 
                            (rvscale (Rabs B) (rvmaxlist 
                                          (fun j ω => rvsqr (rvmaxabs (X j)) ω)
@@ -2423,20 +2453,87 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         lra.
    }
 
-    pose (ww := fun t => vecrvscalerv (fun ω => / (G t ω)) (w t)).
+    pose (ww := fun t => vecrvscalerv (rvinv (G t)) (w t)).
 
+    assert (rvww :  forall (k i : nat) (pf : (i < n)%nat), RandomVariable dom borel_sa (vecrvnth i pf (ww k))).
+    {
+      intros.
+      unfold ww.
+      apply vecrvnth_rv.
+      apply Rvector_scale_rv_rv.
+      - apply rvinv_rv.
+        now apply (RandomVariable_sa_sub (filt_sub k)).
+      - admit.
+   }
 
-    
-    
+    assert (forall k i pf,
+                 almostR2 prts eq (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (ww k)))
+                          (fun x : Ts => const 0 x)).
+    {
+      intros.
+      unfold ww.
+      assert (rv_eq
+                (vecrvnth i pf (vecrvscalerv (rvinv (G k)) (w k)))
+                (rvmult (rvinv (G k)) (vecrvnth i pf (w k)))).
+      {
+        intros ?.
+        unfold vecrvnth, vecrvscalerv.
+        unfold rvmult.
+        now rewrite Rvector_nth_scale.
+      }
+      specialize (H2 k i pf).
+      revert H2.
+      apply almost_impl, all_almost; intros ??.
+      erewrite (ConditionalExpectation_ext _ (filt_sub k) _ _ H19).
+      admit.
+    }
+
+    assert (exists (K : R),
+               forall k i pf,
+                 almostR2 prts Rbar_le
+                          (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (ww k))))
+                          (const K)).
+    {
+      destruct H3 as [A [B ?]].
+      assert (exists (K : R),
+                 forall t ω,
+                   (A + B * Rsqr (M t ω))/(Rsqr (G t ω)) <= K).
+      {
+        exists ((A / Rsqr G0) + B * (Rsqr (1 + ε))).
+        intros.
+        assert (A / (Rsqr (G t ω)) <= A / Rsqr G0).
+        {
           
-
+          admit.
+        }
+        assert (0 < (Rsqr (G t ω))).
+        {
+          admit.
+        }
+        assert (0 <> (Rsqr (G t ω))).
+        {
+          admit.
+        }
+        assert ((B * Rsqr (M t ω))/(Rsqr (G t ω)) <= B * Rsqr (1 + ε)).
+        {
+          specialize (H13 t ω).
+          unfold rvscale in H13.
+          apply Rmult_le_reg_r with (r := Rsqr (G t ω)); try lra.
+          field_simplify; try lra.
+          
+          Search Rsqr.
+          admit.
+        }
+        generalize (Rplus_le_compat _ _ _ _ H20 H23); intros.
+        assert (0 <> Rsqr G0).
+        {
+          apply Rlt_not_eq.
+          admit.
+        }
+        field_simplify in H24; try lra.
+      }
     
     Admitted.
-            
-      
-               
-
-
 
 
   Theorem Tsitsiklis3 {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
