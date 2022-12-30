@@ -2064,7 +2064,85 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     apply Rle_ge.
     apply Rplus_le_le_0_compat; apply Rabs_pos.
   Qed.
-  
+
+  Lemma powerRZ_up_log_base (base val : R) :
+    base > 1 ->
+    val > 0 ->
+    {k | powerRZ base (k - 1) <= val < powerRZ base k}.
+  Proof.
+    intros.
+    pose (exp := (ln val)/(ln base)).
+    pose (k := up exp).
+    assert (val = Rpower base exp).
+    {
+      unfold exp.
+      rewrite log_power_base; lra.
+    }
+    assert (val < powerRZ base k).
+    {
+      rewrite powerRZ_Rpower; try lra.
+      rewrite H1.
+      apply Rpower_lt; try lra.
+      unfold k.
+      apply archimed.
+    }
+    assert (powerRZ base (k-1) <= val).
+    {
+      rewrite powerRZ_Rpower; try lra.
+      rewrite H1.
+      apply Rle_Rpower; try lra.
+      unfold k.
+      rewrite minus_IZR.
+      generalize (archimed exp); intros.
+      lra.
+    }
+    exists k; lra.
+  Defined.
+
+  Lemma powerRZ_up_log_base_alt (base val : R) :
+    base > 1 ->
+    val > 0 ->
+    {k | powerRZ base (k - 1) < val <= powerRZ base k}.
+  Proof.
+    intros.
+    generalize (powerRZ_up_log_base base val H H0); intros.
+    destruct H1 as [k1 ?].
+    destruct (Req_EM_T (powerRZ base (k1-1)) val).
+    - exists (k1-1)%Z.
+      split; try lra.
+      rewrite <- e.
+      rewrite powerRZ_Rpower; try lra.
+      rewrite powerRZ_Rpower; try lra.      
+      apply Rpower_lt; try lra.
+      rewrite minus_IZR.
+      lra.
+    - exists k1; lra.
+  Qed.
+
+   Definition powerRZ_ge_fun (base val : R) : R.
+  Proof.
+    generalize (powerRZ_up_log_base_alt base val); intros.
+    destruct (Rgt_dec base 1).
+    - destruct (Rgt_dec val 0).
+      + specialize (H r r0).
+        exact (powerRZ base (` H)).
+      + exact 0.
+    - exact 0.
+  Defined.
+
+  Lemma powerRZ_ge (base val : R) :
+    base > 1 ->
+    powerRZ_ge_fun base val >= val.
+  Proof.
+    intros.
+    unfold powerRZ_ge_fun.
+    match_destr; try lra.
+    match_destr; try lra.
+    unfold proj1_sig.
+    match_destr.
+    lra.
+  Qed.
+
   Theorem Tsitsiklis1 {n} (X w α : nat -> Ts -> vector R n) 
         (XF : vector R n -> vector R n)
         {F : nat -> SigmaAlgebra Ts}
@@ -2075,6 +2153,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
 (*        {rvD0 : RandomVariable (F 0%nat) borel_sa D0}        
         {posD0 : forall ω, 0 < D0 ω} *)
         (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
+        {rvXF : RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) XF}
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
         {iscond : forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (w k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k)))} :
 
@@ -2168,9 +2247,190 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     pose (G := fix G t :=
                  match t with
                  | 0%nat => rvmax (M 0%nat) (const G0)
-                 | S t' => G t'
+                 | S t' => rvchoice
+                             (fun ω =>
+                                if Rle_dec (M t ω) ((1+ε)*(G t' ω)) then true else false)
+                             (G t')
+                             (rvscale G0 (fun ω => powerRZ_ge_fun (1 + ε) ((M t ω)/G0)))
                  end).
+    assert (forall t, rv_le (M t) (rvscale (1 + ε) (G t))).
+    {
+      intros ??.
+      destruct t.
+      - simpl.
+        unfold rvscale, rvmax, const.
+        apply Rle_trans with (r2 := 1 * Rmax (M 0%nat a) G0).
+        + rewrite Rmult_1_l.
+          apply Rmax_l.
+        + apply Rmult_le_compat_r.
+          * apply Rle_trans with (r2 := G0); try lra.
+            apply Rmax_r.
+          * lra.
+      - simpl.
+        unfold rvscale, rvchoice.
+        match_case; intros.
+        + match_destr_in H13.
+        + apply Rle_trans with (r2 := (1 + ε) * (M (S t) a)).
+          * rewrite <- (Rmult_1_l (M (S t) a)) at 1.
+            apply Rmult_le_compat_r; try lra.
+            unfold M.
+            apply Rmax_list_map_seq_ge; try lia.
+            exists (0%nat).
+            split; try lia.
+            apply rvmaxabs_pos.
+          * generalize (powerRZ_ge (1 + ε)  (M (S t) a / G0)); intros.
+            cut_to H14; try lra.
+            apply Rmult_le_compat_l; try lra.
+            apply Rge_le in H14.
+            apply Rmult_le_compat_l with (r := G0) in H14; try lra.
+            field_simplify in H14; try lra.
+    }
+    assert (forall t ω,
+               (G t ω < G (S t) ω) ->
+               (M (S t) ω <= G (S t) ω)).
+    {
+      intros ???.
+      simpl in H14; simpl.
+      unfold rvmax, const, rvchoice, rvscale in H14.
+      unfold rvmax, const, rvchoice, rvscale.
+      match_destr_in H14; try lra.      
+      generalize (powerRZ_ge (1 + ε)  (M (S t) ω / G0)); intros.
+      cut_to H15; try lra.
+      apply Rge_le in H15.
+      apply Rmult_le_compat_l with (r := G0) in H15; try lra.        
+      field_simplify in H15; try lra.
+   }
+    assert (adaptX : IsAdapted (Rvector_borel_sa n) X F).
+    {
+      intros ?.
+      induction n0.
+      - easy.
+      - assert (RandomVariable (F (S n0)) (Rvector_borel_sa n)
+                               (vecrvplus (X n0) (vecrvmult (α n0) (vecrvplus (vecrvminus (fun ω : Ts => XF (X n0 ω)) (X n0)) (w n0))))).
+        {
+          apply Rvector_plus_rv.
+          - now apply (RandomVariable_sa_sub (isfilt n0)).
+          - apply Rvector_mult_rv.
+            + now apply (RandomVariable_sa_sub (isfilt n0)).
+            + apply Rvector_plus_rv; try easy.
+              apply Rvector_minus_rv.
+              * apply (compose_rv (dom2 := Rvector_borel_sa n)); try easy.
+                now apply (RandomVariable_sa_sub (isfilt n0)).
+              * now apply (RandomVariable_sa_sub (isfilt n0)).
+        }
+        revert H15.
+        apply RandomVariable_proper; try easy.
+    }
 
+    assert (adaptM : IsAdapted borel_sa M F).
+    {
+      intros ?.
+      unfold M.
+      induction n0.
+      - unfold Rmax_list_map; simpl.
+        now apply Rvector_max_abs_rv.
+      - unfold Rmax_list_map.
+        assert (rv_eq
+                   (fun ω : Ts => Max_{ seq 0 (S (S n0))}(fun n1 : nat => rvmaxabs (X n1) ω))
+                   (fun ω : Ts => Rmax (Max_{ seq 0 (S n0)}(fun n1 : nat => rvmaxabs (X n1) ω))
+                                       (rvmaxabs (X (S n0)) ω))).
+        {
+          intros ?.
+          rewrite Rmax_list_Sn; try lia.
+          now replace (0 + S n0)%nat with (S n0) by lia.
+        }
+        assert (RandomVariable (F (S n0)) borel_sa
+                   (fun ω : Ts => Rmax (Max_{ seq 0 (S n0)}(fun n1 : nat => rvmaxabs (X n1) ω))
+                                       (rvmaxabs (X (S n0)) ω))).
+        {
+          apply rvmax_rv.
+          - now apply (RandomVariable_sa_sub (isfilt n0)).
+          - now apply Rvector_max_abs_rv.
+        }
+        revert H16.
+        apply RandomVariable_proper; try easy.
+    }
+
+    assert (adaptG : IsAdapted borel_sa G F).
+    {
+      intros ?.
+      induction n0.
+      - simpl.
+        typeclasses eauto.
+      - simpl.
+        admit.
+    }
+    
+    assert (forall t ω, 0 <= M t ω).
+    {
+      intros.
+      unfold M.
+      apply Rmax_list_map_seq_ge; try lia.
+      exists (0%nat).
+      split; try lia.
+      apply rvmaxabs_pos.
+    }
+
+    assert (forall t ω, 0 <= G t ω).
+    {
+      intros.
+      induction t.
+      - simpl.
+        unfold rvmax, const.
+        apply Rle_trans with (r2 :=  G0); try lra.
+        apply Rmax_r.
+      - simpl.
+        unfold rvchoice, rvscale.
+        match_destr.
+        generalize (powerRZ_ge (1 + ε)  (M (S t) ω / G0)); intros.
+        cut_to H16; try lra.
+        apply Rge_le in H16.
+        apply Rmult_le_compat_l with (r := G0) in H16; try lra.
+        field_simplify in H16; try lra.
+        specialize (H15 (S t) ω).
+        lra.
+    }
+
+    assert (forall t, rv_le (G t) (G (S t))).
+    {
+      intros ??.
+      simpl.
+      unfold rvchoice, rvscale.
+      match_case; intros; try lra.
+      match_destr_in H17.
+      assert (M (S t) a > (1 + ε) * G t a) by lra.
+      generalize (powerRZ_ge (1 + ε)  (M (S t) a / G0)); intros.
+      cut_to H19; try lra.
+      apply Rge_le in H19.
+      apply Rmult_le_compat_l with (r := G0) in H19; try lra.
+      field_simplify in H19; try lra.
+      apply Rle_trans with (r2 := (M (S t) a)); try lra.
+      apply Rle_trans with (r2 := (1 + ε) * G t a); try lra.
+      rewrite <- Rmult_1_l at 1.
+      apply Rmult_le_compat_r; try lra.
+      apply H16.
+    }
+
+    assert (forall t ω, 0 < G t ω).
+    {
+      intros.
+      induction t.
+      - simpl.
+        unfold rvmax, const.
+        apply Rlt_le_trans with (r2 := G0); try lra.
+        apply Rmax_r.
+      - specialize (H17 t ω).
+        lra.
+   }
+
+    pose (ww := fun t => vecrvscalerv (fun ω => / (G t ω)) (w t)).
+
+
+    
+    
+          
+
+    
     Admitted.
             
       
