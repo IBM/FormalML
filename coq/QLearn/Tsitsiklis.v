@@ -2184,6 +2184,142 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     now apply Rinv_powerRZ.
   Qed.
 
+  Lemma lemma3_part1 (W : nat -> nat -> Ts -> R) (ω : Ts) (ε G0 :R)
+        (t0 : nat) (α x ww G M : nat -> Ts -> R) :
+    (W 0%nat t0 ω = 0) ->
+    M t0 ω <= G t0 ω ->
+    (forall t, Rabs (x t ω) <= M t ω) ->
+    (forall t, 0 <= α t ω <= 1) ->
+    (forall t,
+        W (S t) t0 ω =
+        (1 - α (t + t0)%nat ω) * (W t t0 ω) +
+        (α (t + t0)%nat ω) * (ww (t + t0)%nat ω)) ->
+(*    (forall t, Rabs (W t t0 ω) <= ε) -> *)
+    (forall t,
+        x (S t) ω <= 
+        (1 - α t ω) * (x t ω) + 
+        (α t ω) * (1 + ww t ω) * (G t0 ω)) ->
+    forall t,
+      x (t + t0)%nat ω <= (1 + W t t0 ω) * (G t0 ω).
+  Proof.
+    intros.
+    induction t.
+    - simpl.
+      rewrite H.
+      rewrite Rplus_0_r, Rmult_1_l.
+      apply Rle_trans with (r2 := Rabs (x t0 ω)).
+      + apply Rle_abs.
+      + eapply Rle_trans.
+        apply H1.
+        easy.
+    - replace (S t + t0)%nat with (S (t + t0)) by lia.
+      eapply Rle_trans.
+      apply H4.
+      specialize (H2 (t + t0)%nat).
+      apply Rmult_le_compat_l with (r := (1 - α (t + t0)%nat ω)) in IHt; try lra.
+      apply Rplus_le_compat_r with (r :=  α (t + t0)%nat ω * (1 + ww (t + t0)%nat ω) * G t0 ω) in IHt.
+      eapply Rle_trans.
+      apply IHt.
+      rewrite H3.
+      ring_simplify.
+      lra.
+  Qed.
+
+  Lemma lemma3_part2 (W : nat -> nat -> Ts -> R) (ω : Ts) (ε G0 :R)
+        (t0 : nat) (α x ww G M : nat -> Ts -> R) :
+    (W 0%nat t0 ω = 0) ->
+    M t0 ω <= G t0 ω ->
+    (forall t, Rabs (x t ω) <= M t ω) ->
+    (forall t, 0 <= α t ω <= 1) ->
+    (forall t,
+        W (S t) t0 ω =
+        (1 - α (t + t0)%nat ω) * (W t t0 ω) +
+        (α (t + t0)%nat ω) * (ww (t + t0)%nat ω)) ->
+(*    (forall t, Rabs (W t t0 ω) <= ε) -> *)
+    (forall t,
+        (1 - α t ω) * (x t ω) + 
+        (α t ω) * (-1 + ww t ω) * (G t0 ω) <= x (S t) ω) ->
+    forall t,
+      (-1 + W t t0 ω) * (G t0 ω) <= x (t + t0)%nat ω.
+  Proof.
+    intros.
+    induction t.
+    - simpl.
+      rewrite H.
+      rewrite Rplus_0_r.
+      specialize (H1 t0).
+      assert (Rabs (x t0 ω) <= G t0 ω) by lra.
+      rewrite Rabs_le_between in H5.
+      lra.
+    - replace (S t + t0)%nat with (S (t + t0)) by lia.
+      eapply Rle_trans.
+      shelve.
+      apply H4.
+      Unshelve.
+      specialize (H2 (t + t0)%nat).
+      apply Rmult_le_compat_l with (r := (1 - α (t + t0)%nat ω)) in IHt; try lra.
+      apply Rplus_le_compat_r with (r :=  α (t + t0)%nat ω * (-1 + ww (t + t0)%nat ω) * G t0 ω) in IHt.
+      eapply Rle_trans.
+      shelve.
+      apply IHt.
+      Unshelve.
+      rewrite H3.
+      ring_simplify.
+      lra.
+  Qed.
+
+    Lemma lemma3 (W : nat -> nat -> Ts -> R) (ω : Ts) (ε G0 :R)
+        (t0 : nat) (α x ww G M : nat -> Ts -> R) :
+    (W 0%nat t0 ω = 0) ->
+    M t0 ω <= G t0 ω ->
+    (forall t, Rabs (x t ω) <= M t ω) ->
+    (forall t, 0 <= α t ω <= 1) ->
+    (forall t,
+        W (S t) t0 ω =
+        (1 - α (t + t0)%nat ω) * (W t t0 ω) +
+        (α (t + t0)%nat ω) * (ww (t + t0)%nat ω)) ->
+    (forall t, Rabs (W t t0 ω) <= ε) -> 
+    (forall t,
+        (1 - α t ω) * (x t ω) + 
+        (α t ω) * (-1 + ww t ω) * (G t0 ω) <= x (S t) ω <=
+        (1 - α t ω) * (x t ω) + 
+        (α t ω) * (1 + ww t ω) * (G t0 ω)) ->
+    forall t,
+      Rabs(x (t + t0)%nat ω) <= (1 + ε) * (G t0 ω).
+   Proof.
+     intros.
+     assert (Gpos: 0 <= G t0 ω).
+     {
+       specialize (H1 t0).
+       generalize (Rabs_pos  (x t0 ω)); intros.
+       lra.
+     }
+     rewrite Rabs_le_between.
+     split.
+     - eapply Rle_trans with (r2 := (-1 + W t t0 ω) * (G t0 ω)).
+       shelve.
+       apply lemma3_part2 with (α := α) (ww := ww) (M := M); try easy.
+       intros.
+       specialize (H5 t1).
+       lra.
+       Unshelve.
+       specialize (H4 t).
+       rewrite Rabs_le_between in H4.       
+       ring_simplify.
+       unfold Rminus.
+       apply Rplus_le_compat_r.
+       rewrite Rmult_comm.
+       apply Rmult_le_compat_l; try lra.
+     - eapply Rle_trans with (r2 := (1 + W t t0 ω) * (G t0 ω)).
+       + apply lemma3_part1 with (α := α) (ww := ww) (M := M); try easy.
+         intros.
+         specialize (H5 t1).
+         lra.
+       + specialize (H4 t).
+         rewrite Rabs_le_between in H4.
+         apply Rmult_le_compat_r; try lra.
+   Qed.  
+
   Theorem Tsitsiklis1 {n} (X w α : nat -> Ts -> vector R n) 
         (XF : vector R n -> vector R n)
         {F : nat -> SigmaAlgebra Ts}
@@ -2191,8 +2327,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         (filt_sub : forall k, sa_sub (F k) dom) 
         (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
         {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
-(*        {rvD0 : RandomVariable (F 0%nat) borel_sa D0}        
-        {posD0 : forall ω, 0 < D0 ω} *)
         (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
         {rvXF : RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) XF}
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
@@ -2593,6 +2727,24 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       revert H21.
       apply almost_impl, all_almost; intros ??.
       unfold ww.
+      generalize (is_conditional_expectation_factor_out_nneg_both_Rbar prts (filt_sub k) (rvsqr (vecrvnth i pf (w k))) (rvsqr (rvinv (G k)))); intros.
+      specialize (H23 (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (w k))))).
+      admit.
+    }
+    (*
+    pose (WW := fix WW t' t0 :=
+                  match t' with
+                  | 0%nat => const 0
+                  | (S t) => 
+                    rvplus 
+                      (rvmult 
+                         (rvminus (const 1) (α1 (t + t0)%nat))
+                         (WW t t0))
+                      (rvmult (α1 (t + t0)%nat) (w1 (t + t0)%nat))
+                  end).
+*)
+    
+      
     Admitted.
 
 
