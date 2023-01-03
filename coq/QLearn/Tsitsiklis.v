@@ -2710,6 +2710,62 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         apply RandomVariable_proper; try easy.
     }
 
+    assert (Mnneg:forall t ω, 0 <= M t ω).
+    {
+      intros.
+      unfold M.
+      apply Rmax_list_map_seq_ge; try lia.
+      exists (0%nat).
+      split; try lia.
+      apply rvmaxabs_pos.
+    }
+
+    assert (Gnneg:forall t ω, 0 <= G t ω).
+    {
+      intros.
+      induction t.
+      - simpl.
+        unfold rvmax, const.
+        apply Rle_trans with (r2 :=  G0); try lra.
+        apply Rmax_r.
+      - simpl.
+        unfold rvchoice, rvscale.
+        match_destr.
+        generalize (powerRZ_ge_scale (1 + ε) (M (S t) ω) G0); intros.      
+        cut_to H15; try lra.
+        specialize (Mnneg (S t) ω).
+        lra.
+    }
+
+    assert (Gincr: forall t, rv_le (G t) (G (S t))).
+    {
+      intros ??.
+      simpl.
+      unfold rvchoice, rvscale.
+      match_case; intros; try lra.
+      match_destr_in H15.
+      assert (M (S t) a > (1 + ε) * G t a) by lra.
+      generalize (powerRZ_ge_scale (1 + ε) (M (S t) a) G0); intros.      
+      cut_to H17; try lra.
+      apply Rle_trans with (r2 := (M (S t) a)); try lra.
+      apply Rle_trans with (r2 := (1 + ε) * G t a); try lra.
+      rewrite <- Rmult_1_l at 1.
+      apply Rmult_le_compat_r; try lra.
+      apply Gnneg.
+    }
+
+    assert (Gpos:forall t ω, 0 < G t ω).
+    {
+      intros.
+      induction t.
+      - simpl.
+        unfold rvmax, const.
+        apply Rlt_le_trans with (r2 := G0); try lra.
+        apply Rmax_r.
+      - specialize (Gincr t ω).
+        lra.
+   }
+
     assert (adaptG : IsAdapted borel_sa G F).
     {
       intros ?.
@@ -2717,8 +2773,10 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       - simpl.
         typeclasses eauto.
       - simpl.
-        apply rvchoiceb_rv.
-        + Existing Instance FiniteRange_FiniteRangeFunction.
+        assert (rvc:RandomVariable (F (S n0)) (discrete_sa bool)
+                  (fun x : Ts => if Rle_dec (M (S n0) x) ((1 + ε) * G n0 x) then true else false)).
+        { 
+          Existing Instance FiniteRange_FiniteRangeFunction.
           apply (frf_singleton_rv _ _).
           intros [|] _; unfold pre_event_singleton, pre_event_singleton, pre_event_preimage; simpl.
           * apply sa_proper with
@@ -2749,13 +2807,23 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                apply rvminus_rv; try easy.
                apply (RandomVariable_sa_sub (isfilt n0)).
                now apply rvscale_rv.
-        + now apply (RandomVariable_sa_sub (isfilt n0)).
-        + apply rvscale_rv.
+        }
+        apply rvchoiceb_indicated_rv; trivial.
+        + apply rvmult_rv.
+          * now apply (RandomVariable_sa_sub (isfilt n0)).
+          * apply EventIndicator_pre_rv.
+            red in rvc.
+            assert (sa_sigma (discrete_sa bool) (fun x => x = true)) by apply I.
+            apply (rvc (exist _ _ H15)).
+        + unfold EventIndicator.
           assert (1 + ε > 1) by lra.
+          RandomVariable dom borel_sa (rvmult rv_X (EventIndicator dec))
+          
           assert (forall ω, M (S n0) ω / G0 > 0).
           {
             admit.
           }
+
           assert (RandomVariable (F (S n0)) borel_sa
                     (fun ω =>  powerRZ (1 + ε)
                                        (` (powerRZ_up_log_base_alt (1 + ε) (M (S n0) ω / G0) H15 (H16 ω))))).
@@ -2772,32 +2840,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
           admit.
     }
     
-    assert (forall t ω, 0 <= M t ω).
-    {
-      intros.
-      unfold M.
-      apply Rmax_list_map_seq_ge; try lia.
-      exists (0%nat).
-      split; try lia.
-      apply rvmaxabs_pos.
-    }
-
-    assert (forall t ω, 0 <= G t ω).
-    {
-      intros.
-      induction t.
-      - simpl.
-        unfold rvmax, const.
-        apply Rle_trans with (r2 :=  G0); try lra.
-        apply Rmax_r.
-      - simpl.
-        unfold rvchoice, rvscale.
-        match_destr.
-        generalize (powerRZ_ge_scale (1 + ε) (M (S t) ω) G0); intros.      
-        cut_to H16; try lra.
-        specialize (H15 (S t) ω).
-        lra.
-    }
 
     assert (forall t, rv_le (G t) (G (S t))).
     {

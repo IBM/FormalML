@@ -5040,6 +5040,80 @@ Section EventRestricted.
 
 End EventRestricted.
 
+Section rvchoice_restricted.
+
+  Context {Ts:Type}
+    (dom: SigmaAlgebra Ts).
+
+  Instance rvchoiceb_restricted_measurable rv_C (f g : Ts -> R)
+    {rvc : RandomVariable dom (discrete_sa bool) rv_C} :
+    RealMeasurable _ (event_restricted_function (exist _ (fun x => rv_C x = true) (rvc (exist _ (fun x => x = true) I))) f) ->
+    RealMeasurable _ (event_restricted_function (exist _ (fun x => rv_C x = false) (rvc (exist _ (fun x => x = false) I))) g) ->
+
+      RealMeasurable _ (rvchoice rv_C f g).
+    Proof.
+      intros frm grm ?.
+      assert (pre_event_equiv
+                (fun omega : Ts =>
+                   rvchoice rv_C 
+                            f g omega <= r)
+                (pre_event_union 
+                   (pre_event_inter 
+                      (fun omega : Ts => rv_C omega = true)
+                      (fun omega : Ts => f omega <= r))
+                   (pre_event_inter 
+                      (fun omega : Ts => rv_C omega = false)
+                      (fun omega : Ts => g omega <= r)))).
+      { 
+        intro x.
+        unfold rvchoice, pre_event_union, pre_event_inter.
+        destruct (rv_C x); intuition congruence.
+      }
+      rewrite H.
+      apply sa_union.
+      - unfold pre_event_inter.
+        specialize (frm r).
+        simpl in frm.
+        revert frm.
+        apply sa_proper.
+        intros ?; simpl.
+        split.
+        + intros [??].
+          exists (exist _ x H0); simpl.
+          split; trivial.
+        + intros [? [??]].
+          destruct x0; simpl in *.
+          subst.
+          split; trivial.
+      - unfold pre_event_inter.
+        specialize (grm r).
+        simpl in grm.
+        revert grm.
+        apply sa_proper.
+        intros ?; simpl.
+        split.
+        + intros [??].
+          exists (exist _ x H0); simpl.
+          split; trivial.
+        + intros [? [??]].
+          destruct x0; simpl in *.
+          subst.
+          split; trivial.
+    Qed.
+
+Global Instance rvchoiceb_restricted_rv
+  (rv_C : Ts -> bool)
+  (rv_X1 rv_X2 : Ts -> R)
+  {rvc : RandomVariable dom (discrete_sa bool) rv_C}
+  {rv1 : RandomVariable _ borel_sa (event_restricted_function (exist _ (fun x => rv_C x = true) (rvc (exist _ (fun x => x = true) I))) rv_X1)}
+  {rv2 : RandomVariable _ borel_sa (event_restricted_function (exist _ (fun x => rv_C x = false) (rvc (exist _ (fun x => x = false) I))) rv_X2)}  :
+  RandomVariable dom borel_sa (rvchoice rv_C rv_X1 rv_X2).
+Proof.
+  apply measurable_rv.
+  apply (rvchoiceb_restricted_measurable _ _ _)
+  ; now apply rv_measurable.
+Qed.
+
 Section real_pullback.
   
   Lemma pullback_sa_plus_sub {Ts} (x1 x2 : Ts -> R) :
