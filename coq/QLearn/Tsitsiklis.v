@@ -2857,7 +2857,10 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
           {
             intros [??]; simpl in *.
             match_destr_in e.
-            admit.
+            apply Rdiv_lt_0_compat; try lra.
+            apply Rlt_le_trans with (r2 := (1 + ε) * G n0 x); try lra.
+            apply Rmult_lt_0_compat; try lra.
+            apply Gpos.
           } 
           
           cut (RandomVariable (event_restricted_sigma
@@ -2885,36 +2888,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
           admit.
     }
     
-
-    assert (forall t, rv_le (G t) (G (S t))).
-    {
-      intros ??.
-      simpl.
-      unfold rvchoice, rvscale.
-      match_case; intros; try lra.
-      match_destr_in H15.
-      assert (M (S t) a > (1 + ε) * G t a) by lra.
-      generalize (powerRZ_ge_scale (1 + ε) (M (S t) a) G0); intros.      
-      cut_to H17; try lra.
-      apply Rle_trans with (r2 := (M (S t) a)); try lra.
-      apply Rle_trans with (r2 := (1 + ε) * G t a); try lra.
-      rewrite <- Rmult_1_l at 1.
-      apply Rmult_le_compat_r; try lra.
-      apply Gnneg.
-    }
-
-    assert (forall t ω, 0 < G t ω).
-    {
-      intros.
-      induction t.
-      - simpl.
-        unfold rvmax, const.
-        apply Rlt_le_trans with (r2 := G0); try lra.
-        apply Rmax_r.
-      - specialize (H17 t ω).
-        lra.
-   }
-
     pose (ww := fun t => vecrvscalerv (rvinv (G t)) (w t)).
 
     assert (rvww :  forall (k i : nat) (pf : (i < n)%nat), RandomVariable dom borel_sa (vecrvnth i pf (ww k))).
@@ -2954,8 +2927,8 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         admit.
       }
       generalize (Condexp_factor_out prts (filt_sub k) (vecrvnth i pf (w k)) (rvinv (G k))); intros.
-      apply almost_prob_space_sa_sub_lift in H21.
-      revert H21; apply almost_impl.
+      apply almost_prob_space_sa_sub_lift in H17.
+      revert H17; apply almost_impl.
       specialize (H2 k i pf).
       revert H2.
       apply almost_impl, all_almost; intros ???.
@@ -2970,8 +2943,8 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         rewrite Rvector_nth_scale.
         lra.
       }
-      erewrite (ConditionalExpectation_ext _ (filt_sub k) _ _ H22).
-      rewrite H21.
+      erewrite (ConditionalExpectation_ext _ (filt_sub k) _ _ H18).
+      rewrite H17.
       unfold Rbar_rvmult.
       rewrite H2.
       unfold const.
@@ -3008,7 +2981,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
           unfold Rdiv.
           apply Rmult_le_compat_l; try lra.
           apply Rle_Rinv; try lra.
-          specialize (H16 t ω).
           apply Rsqr_incr_1; try lra.
           induction t.
           - simpl.
@@ -3017,10 +2989,10 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
           - cut_to IHt.
             + eapply Rle_trans.
               apply IHt.
-              apply H17.
-            + now left.
+              apply Gincr.
             + unfold Rsqr.
               now apply Rmult_lt_0_compat.
+          - now left.
         }
         assert (0 <> (Rsqr (G t ω))).
         {
@@ -3036,40 +3008,40 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
           apply Rmult_le_compat_l; try lra.
           apply Rsqr_incr_1 in H13.
           - rewrite Rsqr_mult in H13; try lra.
-          - apply H15.
+          - apply Mnneg.
           - apply Rle_trans with (r2 := (G t ω)).
-            + apply H16.
+            + now left.
             + rewrite <- Rmult_1_l at 1.
               apply Rmult_le_compat_r; try lra.
-              apply H16.
+              now left.
         }
-        generalize (Rplus_le_compat _ _ _ _ H24 H26); intros.
+        generalize (Rplus_le_compat _ _ _ _ H20 H22); intros.
         assert (0 <> Rsqr G0).
         {
           now apply Rlt_not_eq.
         }
-        field_simplify in H27; try lra.
+        field_simplify in H23; try lra.
       }
-      destruct H22 as [K ?].
+      destruct H18 as [K ?].
       exists K.
       intros.
-      specialize (H21 k i pf).
-      revert H21.
+      specialize (H15 k i pf).
+      revert H15.
       apply almost_impl, all_almost; intros ??.
       unfold ww.
       generalize (is_conditional_expectation_factor_out_nneg_both_Rbar prts (filt_sub k) (rvsqr (vecrvnth i pf (w k))) (rvsqr (rvinv (G k)))); intros.
-      specialize (H23 (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (w k))))).
+      specialize (H19 (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (w k))))).
       admit.
     }
     destruct
     (classic
        (exists D0 : Ts -> R, forall k : nat, almostR2 prts Rle (rvmaxabs (X k)) D0)); trivial.
-    push_neg_in H21.
+    push_neg_in H17.
     assert (forall x : Ts -> R, exists x0 : nat, exists pt : Ts, Rgt (rvmaxabs (X x0) pt) (x pt)).
     {
       intros x.
-      specialize (H21 x).
-      destruct H21 as [x0 HH].
+      specialize (H17 x).
+      destruct H17 as [x0 HH].
       exists x0.
       unfold almostR2 in HH.
       unfold almost in HH.
