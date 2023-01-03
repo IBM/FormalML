@@ -5101,7 +5101,7 @@ Section rvchoice_restricted.
           split; trivial.
     Qed.
 
-Global Instance rvchoiceb_restricted_rv
+Instance rvchoiceb_restricted_rv
   (rv_C : Ts -> bool)
   (rv_X1 rv_X2 : Ts -> R)
   {rvc : RandomVariable dom (discrete_sa bool) rv_C}
@@ -5113,6 +5113,8 @@ Proof.
   apply (rvchoiceb_restricted_measurable _ _ _)
   ; now apply rv_measurable.
 Qed.
+
+End rvchoice_restricted.
 
 Section real_pullback.
   
