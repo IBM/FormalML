@@ -946,6 +946,50 @@ Section RealRandomVariables.
         now apply rv_measurable.
       Qed.        
 
+      Global Instance rvchoiceb_rv
+        (rv_C : Ts -> bool)
+        (rv_X1 rv_X2 : Ts -> R)
+        {rvc : RandomVariable dom (discrete_sa bool) rv_C}
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2}  :
+        RandomVariable dom borel_sa (rvchoice (fun x => rv_C x) rv_X1 rv_X2).
+      Proof.
+        cut (RandomVariable dom borel_sa (rvchoice
+                                            (fun x => if Req_EM_T (if (rv_C x) then 1 else 0) 0
+                                                   then false else true) rv_X1 rv_X2)).
+        {
+          apply RandomVariable_proper; try reflexivity.
+          intros ?.
+          unfold rvchoice.
+          destruct (rv_C a); destruct (Req_EM_T _ _); lra.
+        }
+        apply rvchoice_rv; trivial.
+        assert (frf_complete : forall x : Ts, In ((fun x : Ts => if rv_C x then 1 else 0) x) [0;1]).
+        {
+          intros ?; match_destr; simpl; tauto.
+        } 
+        apply (frf_singleton_rv _ (Build_FiniteRangeFunction _ _ frf_complete)).
+        intros ? [?|[?|?]]; [subst .. | tauto].
+        - unfold pre_event_singleton, pre_event_preimage.
+          assert (saf:sa_sigma (discrete_sa bool) (fun x => x = false)) by apply I.
+          generalize (rvc (exist _ _ saf)).
+          apply sa_proper.
+          intros ?; simpl.
+          match_destr; try tauto.
+          split.
+          + lra.
+          + intros; discriminate.
+        - unfold pre_event_singleton, pre_event_preimage.
+          assert (sat:sa_sigma (discrete_sa bool) (fun x => x = true)) by apply I.
+          generalize (rvc (exist _ _ sat)).
+          apply sa_proper.
+          intros ?; simpl.
+          match_destr; try tauto.
+          split.
+          + lra.
+          + intros; discriminate.
+      Qed.
+
       Global Instance rvsign_rv (X : Ts -> R)
              {rv : RandomVariable dom borel_sa X} :
         RandomVariable dom borel_sa (rvsign X).

@@ -312,6 +312,7 @@ Qed.
       destruct (finB x) as [lb Hlb]; auto.
     Qed.
 
+    
 Definition bounded_nat_finite_list n : list {x : nat | (x < n)%nat}.
 Proof.
   induction n.
@@ -600,3 +601,11 @@ Qed.
     
   End fin_ind.
 
+  Program Global Instance bool_finite : Finite bool
+    := {|
+      elms := (true::false::nil)
+    |}.
+Next Obligation.
+  destruct x; simpl; tauto.
+Qed.
+  

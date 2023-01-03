@@ -365,6 +365,15 @@ Section Finite.
     apply in_map_iff; eauto.
   Qed.
 
+  Program Instance FiniteRange_FiniteRangeFunction {fin:Finite Td}  (rv_X:Ts->Td)
+    : FiniteRangeFunction rv_X
+    := {| 
+      frf_vals := elms
+    |}.
+  Next Obligation.
+    apply finite.
+  Qed.
+
   Lemma Finite_finitsubset1 {A:Type} {decA:EqDec A eq} (x:A) (l:list A) :
     { pfs : list (In x l) | forall pf, In pf pfs} .
   Proof.
