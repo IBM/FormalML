@@ -656,7 +656,7 @@ Section vector_ops.
     simpl in rv.
     now rewrite vector_nth_fun_to_vector in rv.
   Qed.
-
+  
   Global Program Instance vecrvnth_frf {n} i pf (rv_X : Ts -> vector R n)
          {rv:FiniteRangeFunction rv_X} :
     FiniteRangeFunction (vecrvnth i pf rv_X)
@@ -753,6 +753,18 @@ Section vector_ops.
     apply RealVectorMeasurableRandomVariable; intros ??.
     apply rv_measurable.
     now apply vector_Forall.
+  Qed.
+
+  Instance rv_vecrvnth {n} (rv_X : Ts -> vector R n)
+           {rv : forall i pf, RandomVariable dom borel_sa (vecrvnth i pf rv_X)} :
+    RandomVariable dom (Rvector_borel_sa n) rv_X.
+  Proof.
+    apply (RandomVariable_vector rv_X).
+    apply Forall_vector.
+    intros.
+    simpl.
+    rewrite vector_nth_fun_to_vector.
+    apply rv.
   Qed.
   
   Global Program Instance frf_vecrvconst n c :
