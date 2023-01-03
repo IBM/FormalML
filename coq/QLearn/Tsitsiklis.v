@@ -2099,6 +2099,14 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     exists k; lra.
   Defined.
 
+  Lemma powerRZ_up_log_base_ext (base val : R) 
+    (pf1 pf1':base > 1)
+    (pf2 pf2':val > 0) :
+    ` (powerRZ_up_log_base _ _ pf1 pf2) = ` (powerRZ_up_log_base _ _ pf1' pf2').
+  Proof.
+    now simpl.
+  Qed.    
+
   Lemma powerRZ_up_log_base_alt (base val : R) :
     base > 1 ->
     val > 0 ->
@@ -2119,7 +2127,32 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     - exists k1; lra.
   Qed.
 
-   Definition powerRZ_ge_fun (base val : R) : R.
+  Lemma powerRZ_up_log_base_alt_ext (base val : R) 
+    (pf1 pf1':base > 1)
+    (pf2 pf2':val > 0) :
+    ` (powerRZ_up_log_base_alt _ _ pf1 pf2) = ` (powerRZ_up_log_base_alt _ _ pf1' pf2').
+  Proof.
+    unfold proj1_sig; repeat match_destr.
+    destruct (Z.lt_trichotomy x x0) as [? | [?|?]]; trivial.
+    - assert (x  <= x0 - 1)%Z by lia.
+      assert (powerRZ base x <= powerRZ base (x0 - 1)%Z).
+      {
+        repeat rewrite powerRZ_Rpower by lra.
+        apply Rle_Rpower; try lra.
+        now apply IZR_le.
+      }
+      lra.
+    - assert (x0  <= x - 1)%Z by lia.
+      assert (powerRZ base x0 <= powerRZ base (x - 1)%Z).
+      {
+        repeat rewrite powerRZ_Rpower by lra.
+        apply Rle_Rpower; try lra.
+        now apply IZR_le.
+      }
+      lra.
+  Qed.    
+
+  Definition powerRZ_ge_fun (base val : R) : R.
   Proof.
     generalize (powerRZ_up_log_base_alt base val); intros.
     destruct (Rgt_dec base 1).
@@ -2808,35 +2841,47 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                apply (RandomVariable_sa_sub (isfilt n0)).
                now apply rvscale_rv.
         }
-        apply rvchoiceb_indicated_rv; trivial.
-        + apply rvmult_rv.
-          * now apply (RandomVariable_sa_sub (isfilt n0)).
-          * apply EventIndicator_pre_rv.
-            red in rvc.
-            assert (sa_sigma (discrete_sa bool) (fun x => x = true)) by apply I.
-            apply (rvc (exist _ _ H15)).
-        + unfold EventIndicator.
+        apply (rvchoiceb_restricted_rv _ _ _) with (rvc0:=rvc); trivial.
+        + apply Restricted_RandomVariable.
+          now apply (RandomVariable_sa_sub (isfilt n0)).
+        + apply rvscale_rv.
           assert (1 + ε > 1) by lra.
-          RandomVariable dom borel_sa (rvmult rv_X (EventIndicator dec))
-          
-          assert (forall ω, M (S n0) ω / G0 > 0).
-          {
-            admit.
-          }
 
-          assert (RandomVariable (F (S n0)) borel_sa
-                    (fun ω =>  powerRZ (1 + ε)
-                                       (` (powerRZ_up_log_base_alt (1 + ε) (M (S n0) ω / G0) H15 (H16 ω))))).
+          assert (Hpf:forall (a' : event_restricted_domain
+              (exist (sa_sigma (F (S n0)))
+                 (fun x : Ts =>
+                  (if Rle_dec (M (S n0) x) ((1 + ε) * G n0 x) then true else false) = false)
+                 (rvc
+                    (exist (fun e : pre_event bool => sa_sigma (discrete_sa bool) e)
+                       (fun x : bool => x = false) I)))), 0 < (M (S n0) (` a') / G0)).
           {
+            intros [??]; simpl in *.
+            match_destr_in e.
             admit.
+          } 
+          
+          cut (RandomVariable (event_restricted_sigma
+       (exist (sa_sigma (F (S n0)))
+          (fun x : Ts => (if Rle_dec (M (S n0) x) ((1 + ε) * G n0 x) then true else false) = false)
+          (rvc
+             (exist (fun e : pre_event bool => sa_sigma (discrete_sa bool) e)
+                (fun x : bool => x = false) I)))) borel_sa
+                    (fun ω =>  powerRZ (1 + ε)
+                                       (` (powerRZ_up_log_base_alt (1 + ε) (M (S n0) (` ω) / G0) H15 (Hpf ω))))).
+          {
+            apply RandomVariable_proper; try easy.
+            intros ?.
+            unfold powerRZ_ge_fun.
+            match_destr; try easy.
+            match_destr; try easy.
+            - f_equal.
+              apply powerRZ_up_log_base_alt_ext.
+            - elimtype False.
+              generalize (Hpf a); intros.
+              elim n1.
+              apply Rlt_gt.
+              apply H16.
           }
-          revert H17.
-          apply RandomVariable_proper; try easy.
-          unfold powerRZ_ge_fun.
-          intros ?.
-          match_destr; try easy.
-          match_destr; try easy.
-          admit.
           admit.
     }
     
@@ -2847,15 +2892,15 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       simpl.
       unfold rvchoice, rvscale.
       match_case; intros; try lra.
-      match_destr_in H17.
+      match_destr_in H15.
       assert (M (S t) a > (1 + ε) * G t a) by lra.
       generalize (powerRZ_ge_scale (1 + ε) (M (S t) a) G0); intros.      
-      cut_to H19; try lra.
+      cut_to H17; try lra.
       apply Rle_trans with (r2 := (M (S t) a)); try lra.
       apply Rle_trans with (r2 := (1 + ε) * G t a); try lra.
       rewrite <- Rmult_1_l at 1.
       apply Rmult_le_compat_r; try lra.
-      apply H16.
+      apply Gnneg.
     }
 
     assert (forall t ω, 0 < G t ω).
