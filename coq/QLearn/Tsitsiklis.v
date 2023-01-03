@@ -2717,7 +2717,14 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       - simpl.
         typeclasses eauto.
       - simpl.
-        admit.
+        apply rvchoiceb_rv.
+        + Existing Instance FiniteRange_FiniteRangeFunction.
+          apply (frf_singleton_rv _ _).
+          intros [|] _; unfold pre_event_singleton, pre_event_singleton, pre_event_preimage; simpl.
+          * admit.
+          * admit.
+        + admit.
+        + admit.
     }
     
     assert (forall t ω, 0 <= M t ω).
@@ -2786,7 +2793,8 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       apply Rvector_scale_rv_rv.
       - apply rvinv_rv.
         now apply (RandomVariable_sa_sub (filt_sub k)).
-      - admit.
+      - apply rv_vecrvnth.
+        apply rvw.
    }
 
     assert (forall k i pf,
@@ -2925,9 +2933,21 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     (classic
        (exists D0 : Ts -> R, forall k : nat, almostR2 prts Rle (rvmaxabs (X k)) D0)); trivial.
     push_neg_in H21.
-    
-      
-    Admitted.
+    assert (forall x : Ts -> R, exists x0 : nat, exists pt : Ts, Rgt (rvmaxabs (X x0) pt) (x pt)).
+    {
+      intros x.
+      specialize (H21 x).
+      destruct H21 as [x0 HH].
+      exists x0.
+      unfold almostR2 in HH.
+      unfold almost in HH.
+      push_neg_in HH.
+      specialize (HH Ω ps_one).
+      destruct HH as [pt [_ HH]].
+      exists pt.
+      lra.
+    } 
+  Admitted.
 
 
   Theorem Tsitsiklis3 {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
