@@ -990,6 +990,27 @@ Section RealRandomVariables.
           + intros; discriminate.
       Qed.
 
+      Global Instance rvchoiceb_indicated_rv
+        (rv_C : Ts -> bool)
+        (rv_X1 rv_X2 : Ts -> R)
+        {rvc : RandomVariable dom (discrete_sa bool) rv_C}
+        {rv1 : RandomVariable dom borel_sa (rvmult rv_X1 (EventIndicator (fun x => rv_C x == true)))}
+        {rv2 : RandomVariable dom borel_sa (rvmult rv_X2 (EventIndicator (fun x => rv_C x == false)))}  :
+        RandomVariable dom borel_sa (rvchoice (fun x => rv_C x) rv_X1 rv_X2).
+      Proof.
+        cut (RandomVariable dom borel_sa (rvchoice
+                                            (fun x => rv_C x)
+                                            (rvmult rv_X1 (EventIndicator (fun x => rv_C x == true)))
+                                            (rvmult rv_X2 (EventIndicator (fun x => rv_C x == false))))).
+        {
+          apply RandomVariable_proper; try reflexivity.
+          intros ?.
+          unfold rvchoice, EventIndicator, rvmult, equiv_dec.
+          destruct (rv_C a); destruct (bool_eqdec _ _); try congruence; try lra.
+        }
+        apply rvchoiceb_rv; trivial.
+      Qed.
+
       Global Instance rvsign_rv (X : Ts -> R)
              {rv : RandomVariable dom borel_sa X} :
         RandomVariable dom borel_sa (rvsign X).
