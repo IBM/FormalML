@@ -2318,7 +2318,197 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        + specialize (H4 t).
          rewrite Rabs_le_between in H4.
          apply Rmult_le_compat_r; try lra.
-   Qed.  
+   Qed.
+
+   Lemma lemma3_nth {n} (X w α : nat -> Ts -> vector R n) 
+         (XF : vector R n -> vector R n) (γ G0 : R) (G : nat -> Ts -> R)
+         (ω : Ts) (ε : posreal) :
+    (forall k i pf, 0 <= vecrvnth i pf (α k) ω <= 1) ->
+    0 < G0 ->
+    0 <= γ < 1 ->
+    γ * (1 + ε) = 1 ->
+    let M := fun t => Rmax_list_map (seq 0 (S t)) 
+                                    (fun n0 : nat => rvmaxabs (X n0) ω) in
+    (forall t, (M t) <= (rvscale (1 + ε) (G t)) ω) ->
+    (forall t, (G t ω) <= (G (S t) ω)) ->
+    (forall t,
+        (G t ω < G (S t) ω) ->
+        (M (S t) <= G (S t) ω)) ->
+    G 0%nat ω = Rmax (M 0%nat) G0 ->
+    (forall x, Rvector_max_abs (XF x) <= γ * (Rmax (Rvector_max_abs x) G0)) ->
+    is_lim_seq (fun k => G k ω) p_infty ->
+    (forall k, rv_eq (X (S k)) 
+                     (vecrvplus (X k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF (X k ω)) (X k) ) (w k))))) ->
+    exists (t0 : nat),
+      (M t0) <= (G t0 ω) /\
+      forall k, (rvmaxabs (X k) ω) <= (rvscale (1 + ε) (G t0) ω).
+   Proof.
+    intros.
+    pose (ww := fun t => vecrvscalerv (rvinv (G t)) (w t)).
+    pose (WW := fix WW i pf t' t0 :=
+                  match t' with
+                  | 0%nat => const 0
+                  | (S t) => 
+                    rvplus 
+                      (rvmult 
+                         (rvminus (const 1) (vecrvnth i pf (α (t + t0)%nat)))
+                         (WW i pf t t0))
+                      (rvmult (vecrvnth i pf (α (t + t0)%nat))
+                              (vecrvnth i pf (ww (t + t0)%nat)))
+                  end).
+    assert (forall (T : nat),
+               exists (t : nat),
+                 (t >= T)%nat /\ (G t ω) < (G (S t) ω)).
+    {
+      intros.
+      apply is_lim_seq_spec in H8.
+      unfold is_lim_seq' in H8.
+      revert H8.
+      contrapose.
+      unfold eventually.
+      push_neg.
+      intros.
+      exists (G T ω).
+      intros.
+      assert (forall x, (x >= T)%nat -> G x ω = G (S x) ω).
+      {
+        intros.
+        specialize (H8 _ H10).
+        specialize (H4 x0).
+        lra.
+      }
+      assert (forall x, (x >= T)%nat -> G x ω = G T ω).
+      {
+        intros.
+        pose (h := (x0 - T)%nat).
+        replace x0 with (h + T)%nat by lia.
+        induction h.
+        - now simpl.
+        - replace (S h + T)%nat with (S (h + T)) by lia.
+          now rewrite H10 in IHh; try lia.
+      }
+      exists (max x T).
+      split; try lia.
+      specialize (H11 (max x T)).
+      rewrite H11; try lra.
+      lia.
+    }
+    assert (forall (T : nat),
+               exists (t : nat),
+                 (t >= T)%nat /\ (M t) <= (G t ω)).
+    {
+      intros.
+      destruct (H10 T) as [t [? ?]].
+      exists (S t).
+      split; try lia.
+      now apply H5.
+   }
+    assert (forall i pf,
+            exists (T : nat),
+              forall t0 t : nat,
+                (t0 >= T)%nat ->
+                Rabs (WW i pf t t0 ω) <= ε).
+    {
+      intros.
+      apply lemma2 with (α := fun k => vecrvnth i pf (α k))
+                        (w := fun k => vecrvnth i pf (ww k)); try easy.
+      - intros.
+        simpl.
+        now rv_unfold'.
+      - generalize lemma1_alpha_alpha; intros.
+        specialize (H12 (fun t ω => vector_nth i pf (α t ω))
+                        (fun t ω => vector_nth i pf (ww t ω))).
+        admit.
+    }
+    assert (forall i pf,
+               exists t0,
+               forall t,
+                 Rabs(vector_nth i pf (X (t + t0)%nat ω)) <= (1 + ε) * (G t0 ω)).
+    {
+      intros.
+      specialize (H12 i pf).
+      destruct H12 as [T ?].
+      specialize (H11 T).
+      destruct H11 as [t0 [? ?]].
+      exists t0.
+      intros.
+      generalize (lemma3 (WW i pf) ω ε G0 t0 
+                         (fun t ω => vector_nth i pf (α t ω))
+                         (fun t ω => vector_nth i pf (X t ω))
+                         (fun t ω => vector_nth i pf (ww t ω))
+                         G (fun t ω =>
+                               Rmax_list_map (seq 0 (S t)) (fun n0 : nat => rvmaxabs (X n0) ω))
+                 ); intros.
+      apply H14; try easy.
+      - intros.
+        apply Rle_trans with (r2 := rvmaxabs (X t1) ω).
+        + apply Rvector_max_abs_nth_le.
+        + apply Rmax_list_map_seq_ge; try lia.
+          exists t1.
+          split; try lia.
+          lra.
+      - intros.
+        apply H.
+      - intros.
+        simpl.
+        now rv_unfold'.
+      - intros.
+        now apply H12.
+      - intros.
+        split.
+        + admit.
+        + rewrite H9.
+          unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vecrvmult.
+          rewrite Rvector_nth_plus, Rvector_nth_mult, Rvector_nth_plus.
+          rewrite Rvector_nth_plus, Rvector_nth_scale.
+          ring_simplify.
+          do 4 rewrite Rplus_assoc.
+          apply Rplus_le_compat_l.
+          apply Rplus_le_compat_l.
+          rewrite Rmult_assoc.
+          do 2 rewrite <- Rmult_plus_distr_l.
+          apply Rmult_le_compat_l; [apply H |].
+          assert (vector_nth i pf (XF (X t1 ω)) <= G t1 ω).
+          {
+            apply Rle_trans with (r2 := Rvector_max_abs (XF (X t1 ω))).
+            eapply Rle_trans.
+            apply Rle_abs.
+            apply Rvector_max_abs_nth_le.
+            eapply Rle_trans.
+            apply H7.
+            unfold Rmax.
+            match_destr.
+            - apply Rle_trans with (r2 := 1 * G0).
+              + apply Rmult_le_compat_r; try lra.
+              + rewrite Rmult_1_l.
+                apply Rle_trans with (r2 := G 0%nat ω).
+                * rewrite H6.
+                  apply Rmax_r.
+                * clear r.
+                  induction t1; try lra.
+                  eapply Rle_trans.
+                  apply IHt1.
+                  apply H4.
+            - apply Rle_trans with (r2 := γ * M t1).
+              + apply Rmult_le_compat_l; try lra.
+                unfold M.
+                apply Rmax_list_map_seq_ge; try lia.
+                exists t1.
+                split; try lia.
+                unfold rvmaxabs; lra.
+              + eapply Rle_trans with (r2 := γ * (1 + ε) * (G t1 ω)).
+                rewrite Rmult_assoc.
+                apply Rmult_le_compat_l; try lra.
+                apply H3.
+                rewrite H2; lra.
+          }
+          apply Rle_trans with (r2 := (G t1 ω) + vector_nth i pf (w t1 ω)); try lra.
+          unfold ww, vecrvscalerv.
+          rewrite Rvector_nth_scale.
+          
+
+    Admitted.
+    
 
   Theorem Tsitsiklis1 {n} (X w α : nat -> Ts -> vector R n) 
         (XF : vector R n -> vector R n)
@@ -2731,18 +2921,10 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       specialize (H23 (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (w k))))).
       admit.
     }
-    (*
-    pose (WW := fix WW t' t0 :=
-                  match t' with
-                  | 0%nat => const 0
-                  | (S t) => 
-                    rvplus 
-                      (rvmult 
-                         (rvminus (const 1) (α1 (t + t0)%nat))
-                         (WW t t0))
-                      (rvmult (α1 (t + t0)%nat) (w1 (t + t0)%nat))
-                  end).
-*)
+    destruct
+    (classic
+       (exists D0 : Ts -> R, forall k : nat, almostR2 prts Rle (rvmaxabs (X k)) D0)); trivial.
+    push_neg_in H21.
     
       
     Admitted.
