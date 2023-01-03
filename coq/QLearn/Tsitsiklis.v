@@ -2721,10 +2721,55 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         + Existing Instance FiniteRange_FiniteRangeFunction.
           apply (frf_singleton_rv _ _).
           intros [|] _; unfold pre_event_singleton, pre_event_singleton, pre_event_preimage; simpl.
-          * admit.
-          * admit.
-        + admit.
-        + admit.
+          * apply sa_proper with
+                (x := (fun ω => (rvminus (M (S n0)) 
+                                         (rvscale (1 + ε) (G n0)) ω) <= 0)). 
+            -- intros ?.
+               rv_unfold'.
+               match_destr.
+               ++ assert (M (S n0) x - (1 + ε) * G n0 x <= 0) by lra.
+                  try easy.
+               ++ assert (~(M (S n0) x - (1 + ε) * G n0 x <= 0)) by lra.
+                  try easy.
+            -- apply sa_le_le_rv.
+               apply rvminus_rv; try easy.
+               apply (RandomVariable_sa_sub (isfilt n0)).
+               now apply rvscale_rv.
+          * apply sa_proper with
+                (x := (fun ω => (rvminus (M (S n0)) 
+                                         (rvscale (1 + ε) (G n0)) ω) > 0)). 
+            -- intros ?.
+               rv_unfold'.
+               match_destr.
+               ++ assert (~ (M (S n0) x - (1 + ε) * G n0 x > 0)) by lra.
+                  try easy.
+               ++ assert ((M (S n0) x - (1 + ε) * G n0 x > 0)) by lra.
+                  try easy.
+            -- apply sa_le_gt_rv.
+               apply rvminus_rv; try easy.
+               apply (RandomVariable_sa_sub (isfilt n0)).
+               now apply rvscale_rv.
+        + now apply (RandomVariable_sa_sub (isfilt n0)).
+        + apply rvscale_rv.
+          assert (1 + ε > 1) by lra.
+          assert (forall ω, M (S n0) ω / G0 > 0).
+          {
+            admit.
+          }
+          assert (RandomVariable (F (S n0)) borel_sa
+                    (fun ω =>  powerRZ (1 + ε)
+                                       (` (powerRZ_up_log_base_alt (1 + ε) (M (S n0) ω / G0) H15 (H16 ω))))).
+          {
+            admit.
+          }
+          revert H17.
+          apply RandomVariable_proper; try easy.
+          unfold powerRZ_ge_fun.
+          intros ?.
+          match_destr; try easy.
+          match_destr; try easy.
+          admit.
+          admit.
     }
     
     assert (forall t ω, 0 <= M t ω).
