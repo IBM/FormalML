@@ -2152,6 +2152,28 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       lra.
   Qed.    
 
+  Lemma powerRZ_up_log_increasing (base val1 val2 : R)
+        (pfb: base > 1)
+        (pf1: val1 > 0)
+        (pf2: val2 > 0) :
+    val1 >= val2 ->
+    (proj1_sig (powerRZ_up_log_base _ _ pfb pf1) >=
+     proj1_sig (powerRZ_up_log_base _ _ pfb pf2))%Z.
+  Proof.
+    intros.
+    Admitted.
+
+  Lemma powerRZ_up_log_alt_increasing  (base val1 val2 : R)
+        (pfb: base > 1)
+        (pf1: val1 > 0)
+        (pf2: val2 > 0) :
+    val1 >= val2 ->
+    (proj1_sig (powerRZ_up_log_base _ _ pfb pf1) >=
+     proj1_sig (powerRZ_up_log_base _ _ pfb pf2))%Z.
+  Proof.
+    intros.
+    Admitted.
+
   Definition powerRZ_ge_fun (base val : R) : R.
   Proof.
     generalize (powerRZ_up_log_base_alt base val); intros.
@@ -2162,6 +2184,54 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       + exact 0.
     - exact 0.
   Defined.
+
+  Lemma powerRZ_ge_fun_increasing (base val1 val2 : R) :
+    val1 >= val2 ->
+    powerRZ_ge_fun base val1 >= powerRZ_ge_fun base val2.
+  Proof.
+    intros.
+    Admitted.
+
+  Lemma increasing_Rbar_measurable (f : Rbar -> Rbar) :
+    (forall u v, Rbar_le u v -> Rbar_le (f u) (f v)) ->
+    (RbarMeasurable (dom := Rbar_borel_sa) f).
+  Proof.
+    intros ??.
+    assert (forall (z1 z2 : Rbar),
+               Rbar_le z1 z2 ->
+               Rbar_le (f z2) r ->
+               Rbar_le (f z1) r).
+    {
+      intros.
+      eapply Rbar_le_trans.
+      now apply (H z1 z2).
+      apply H1.
+    }
+    assert (exists (z : Rbar),
+               (pre_event_equiv
+                  (fun omega : Rbar => Rbar_le (f omega) r)
+                  (fun omega : Rbar => Rbar_le omega z)) \/
+               (pre_event_equiv
+                  (fun omega : Rbar => Rbar_le (f omega) r)
+                  (fun omega : Rbar => Rbar_lt omega z))
+               ).
+    {
+      exists (Rbar_lub (fun w => Rbar_le (f w) r)).
+      unfold Rbar_lub, proj1_sig, pre_event_equiv.
+      match_destr.
+      destruct r0.
+      unfold Rbar_is_upper_bound in *.
+      destruct (Rbar_le_lt_dec (f x) r).
+      - left.
+        
+        admit.
+      - right.
+        admit.
+    }
+    destruct H0 as [z ?].
+    apply sa_proper with (x := (fun omega : Rbar => Rbar_le omega z)); try easy.
+    Admitted.
+    
 
   Lemma powerRZ_ge (base val : R) :
     base > 1 ->
@@ -3043,14 +3113,15 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       specialize (H17 x).
       destruct H17 as [x0 HH].
       exists x0.
-      unfold almostR2 in HH.
-      unfold almost in HH.
+      unfold almostR2,almost in HH.
       push_neg_in HH.
       specialize (HH Ω ps_one).
       destruct HH as [pt [_ HH]].
       exists pt.
       lra.
-    } 
+    }
+    assert (exists (pt : Ts),
+               
   Admitted.
 
 
