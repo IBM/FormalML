@@ -2152,26 +2152,54 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       lra.
   Qed.    
 
+  Lemma up_le (val1 val2 : R) :
+    val1 <= val2 ->
+    (up val1 <= up val2)%Z.
+  Proof.
+    intros.
+    destruct (archimed val1).
+    destruct (archimed val2).
+    assert (val1 < IZR (up val1) <= val1 + 1) by lra.
+    assert (val2 < IZR (up val2) <= val2 + 1) by lra.    
+    generalize (tech_up val1); intros.
+    generalize (up_tech val1); intros.
+    Admitted.
+    
+
   Lemma powerRZ_up_log_increasing (base val1 val2 : R)
         (pfb: base > 1)
         (pf1: val1 > 0)
         (pf2: val2 > 0) :
-    val1 >= val2 ->
-    (proj1_sig (powerRZ_up_log_base _ _ pfb pf1) >=
+    val1 <= val2 ->
+    (proj1_sig (powerRZ_up_log_base _ _ pfb pf1) <=
      proj1_sig (powerRZ_up_log_base _ _ pfb pf2))%Z.
   Proof.
     intros.
-    Admitted.
+    simpl.
+    apply up_le.
+    unfold Rdiv.
+    apply Rmult_le_compat_r.
+    - left.
+      apply Rinv_0_lt_compat.
+      rewrite <- ln_1.
+      apply ln_increasing; lra.
+    - apply ln_le; lra.
+  Qed.
 
   Lemma powerRZ_up_log_alt_increasing  (base val1 val2 : R)
         (pfb: base > 1)
         (pf1: val1 > 0)
         (pf2: val2 > 0) :
-    val1 >= val2 ->
-    (proj1_sig (powerRZ_up_log_base _ _ pfb pf1) >=
-     proj1_sig (powerRZ_up_log_base _ _ pfb pf2))%Z.
+    val1 <= val2 ->
+    (proj1_sig (powerRZ_up_log_base_alt _ _ pfb pf1) <=
+     proj1_sig (powerRZ_up_log_base_alt _ _ pfb pf2))%Z.
   Proof.
     intros.
+    
+    simpl.
+    unfold proj1_sig.
+    match_destr; match_destr.
+    
     Admitted.
 
   Definition powerRZ_ge_fun (base val : R) : R.
@@ -2184,13 +2212,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       + exact 0.
     - exact 0.
   Defined.
-
-  Lemma powerRZ_ge_fun_increasing (base val1 val2 : R) :
-    val1 >= val2 ->
-    powerRZ_ge_fun base val1 >= powerRZ_ge_fun base val2.
-  Proof.
-    intros.
-    Admitted.
 
   Instance increasing_Rbar_measurable (f : Rbar -> Rbar) :
     (forall u v, Rbar_le u v -> Rbar_le (f u) (f v)) ->
@@ -2302,6 +2323,41 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     intros.
     apply Rbar_measurable_rv.
     now apply decreasing_Rbar_measurable.
+  Qed.
+
+  Instance increasing_measurable (f : R -> R) :
+    (forall u v, u <= v -> (f u) <= (f v)) ->
+    RealMeasurable borel_sa f.
+   Admitted.
+
+  Instance increasing_rv (f : R -> R) :
+    (forall u v, u <= v -> (f u) <= (f v)) ->
+    RandomVariable borel_sa borel_sa f.
+  Proof.
+    intros.
+    apply measurable_rv.
+    now apply increasing_measurable.
+  Qed.
+
+  Lemma powerRZ_ge_fun_rv (base : R) :
+    RandomVariable borel_sa borel_sa (fun v => powerRZ_ge_fun base v).
+  Proof.
+    apply increasing_rv.
+    intros.
+    unfold powerRZ_ge_fun.
+    match_destr; try lra.
+    match_destr.
+    - match_destr.
+      + rewrite powerRZ_Rpower; try lra.
+        rewrite powerRZ_Rpower; try lra.
+        apply Rle_Rpower; try lra.
+        apply IZR_le.
+        now apply powerRZ_up_log_alt_increasing.
+      + assert (v <= 0) by lra.
+        generalize (Rlt_le_trans 0 u v); intros.
+        cut_to H1; try lra.
+    - match_destr; try lra.
+      apply powerRZ_le; try lra.
   Qed.
 
   Lemma powerRZ_ge (base val : R) :
@@ -3026,6 +3082,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
               apply Rlt_gt.
               apply H16.
           }
+          
           admit.
     }
     
@@ -3191,7 +3248,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       exists pt.
       lra.
     }
-    assert (exists (pt : Ts),
                
   Admitted.
 
