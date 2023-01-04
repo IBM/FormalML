@@ -2207,7 +2207,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       now apply (H z1 z2).
       apply H1.
     }
-    assert (exists (z : Rbar),
+    assert (eq1:exists (z : Rbar),
                (pre_event_equiv
                   (fun omega : Rbar => Rbar_le (f omega) r)
                   (fun omega : Rbar => Rbar_le omega z)) \/
@@ -2219,18 +2219,31 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       exists (Rbar_lub (fun w => Rbar_le (f w) r)).
       unfold Rbar_lub, proj1_sig, pre_event_equiv.
       match_destr.
+      rename x into lub.
       destruct r0.
       unfold Rbar_is_upper_bound in *.
-      destruct (Rbar_le_lt_dec (f x) r).
-      - left.
-        
-        admit.
-      - right.
-        admit.
-    }
-    destruct H0 as [z ?].
-    apply sa_proper with (x := (fun omega : Rbar => Rbar_le omega z)); try easy.
-    Admitted.
+      destruct (Rbar_le_lt_dec (f lub) r).
+      - left; intros ω.
+        split; try apply H1.
+        intros ωlex.
+        eapply H0; eauto.
+      - right; intros ω.
+        split.
+        + intros xxler.
+          generalize (Rbar_le_lt_trans _ _ _ xxler r0); intros trans1.
+          apply Rbar_not_le_lt; intros le1.
+          generalize (H _ _ le1).
+          now apply Rbar_lt_not_le.
+        + intros lt1.
+          assert (exists ω2, ω <= ω2 /\ f ω2 <= r) by admit.
+          admit.
+    } 
+    destruct eq1 as [z [eq1|eq1]]; rewrite eq1.
+    - apply sa_le_Rbar_le_rv.
+      apply id_rv.
+    - apply sa_le_Rbar_lt_rv.
+      apply id_rv.
+  Admitted.
     
 
   Lemma powerRZ_ge (base val : R) :
