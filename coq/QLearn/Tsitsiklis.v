@@ -2283,10 +2283,9 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
           eapply H0; eauto.
     } 
     destruct eq1 as [z [eq1|eq1]]; rewrite eq1.
-    - apply sa_le_Rbar_le_rv.
-      apply id_rv.
-    - apply sa_le_Rbar_lt_rv.
-      apply id_rv.
+    - apply rv_Rbar_measurable, id_rv.
+    - apply Rbar_sa_le_lt.
+      apply rv_Rbar_measurable, id_rv.
   Qed.
 
   Instance decreasing_Rbar_measurable (f : Rbar -> Rbar) :
