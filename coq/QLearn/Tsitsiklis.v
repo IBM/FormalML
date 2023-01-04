@@ -2192,7 +2192,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     intros.
     Admitted.
 
-  Lemma increasing_Rbar_measurable (f : Rbar -> Rbar) :
+  Instance increasing_Rbar_measurable (f : Rbar -> Rbar) :
     (forall u v, Rbar_le u v -> Rbar_le (f u) (f v)) ->
     (RbarMeasurable (dom := Rbar_borel_sa) f).
   Proof.
@@ -2222,6 +2222,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       rename x into lub.
       destruct r0.
       unfold Rbar_is_upper_bound in *.
+      
       destruct (Rbar_le_lt_dec (f lub) r).
       - left; intros ω.
         split; try apply H1.
@@ -2235,16 +2236,73 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
           generalize (H _ _ le1).
           now apply Rbar_lt_not_le.
         + intros lt1.
-          assert (exists ω2, ω <= ω2 /\ f ω2 <= r) by admit.
-          admit.
+          assert (exists ω2, Rbar_le ω ω2 /\ Rbar_le (f ω2) r).
+          {
+            (* If it is not in the set, then it must be an upper bound (due to monotonicity),
+               which contradicts
+               the assumption that it is less than the least upper bound
+             *)
+            apply NNPP.
+            intros HH.
+            push_neg_in HH.
+            specialize (H2 ω).
+            cut_to H2.
+            - generalize (Rbar_le_lt_trans _ _ _ H2 lt1).
+              destruct lub; simpl; try tauto; lra.
+            - clear H2.
+              intros y yle.
+              specialize (HH y).
+              apply Rbar_not_lt_le.
+              intros lt2.
+              cut_to HH.
+              + congruence.
+              + now apply Rbar_lt_le.
+          }             
+          destruct H3 as [ω2 [le1 le2]].
+          eapply H0; eauto.
     } 
     destruct eq1 as [z [eq1|eq1]]; rewrite eq1.
     - apply sa_le_Rbar_le_rv.
       apply id_rv.
     - apply sa_le_Rbar_lt_rv.
       apply id_rv.
-  Admitted.
-    
+  Qed.
+
+  Instance decreasing_Rbar_measurable (f : Rbar -> Rbar) :
+    (forall u v, Rbar_le u v -> Rbar_le (f v) (f u)) ->
+    (RbarMeasurable (dom := Rbar_borel_sa) f).
+  Proof.
+    intros.
+    cut (RbarMeasurable (dom := Rbar_borel_sa) (Rbar_rvopp (Rbar_rvopp f))).
+    {
+      apply RbarMeasurable_proper.
+      intros ?; unfold Rbar_rvopp.
+      now rewrite Rbar_opp_involutive.
+    }
+    apply Rbar_rvopp_measurable.
+    apply increasing_Rbar_measurable; intros.
+    unfold Rbar_rvopp.
+    apply Rbar_opp_le.
+    now apply H.
+  Qed.
+
+  Instance increasing_Rbar_rv (f : Rbar -> Rbar) :
+    (forall u v, Rbar_le u v -> Rbar_le (f u) (f v)) ->
+    RandomVariable Rbar_borel_sa Rbar_borel_sa f.
+  Proof.
+    intros.
+    apply Rbar_measurable_rv.
+    now apply increasing_Rbar_measurable.
+  Qed.
+
+  Instance decreasing_Rbar_rv (f : Rbar -> Rbar) :
+    (forall u v, Rbar_le u v -> Rbar_le (f v) (f u)) ->
+    RandomVariable Rbar_borel_sa Rbar_borel_sa f.
+  Proof.
+    intros.
+    apply Rbar_measurable_rv.
+    now apply decreasing_Rbar_measurable.
+  Qed.
 
   Lemma powerRZ_ge (base val : R) :
     base > 1 ->
