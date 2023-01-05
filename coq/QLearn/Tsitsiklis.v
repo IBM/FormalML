@@ -2204,8 +2204,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
      proj1_sig (powerRZ_up_log_base_alt _ _ pfb pf2))%Z.
   Proof.
     intros.
-    
-    simpl.
     unfold proj1_sig.
     match_destr; match_destr.
     
