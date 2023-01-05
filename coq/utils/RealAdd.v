@@ -6137,3 +6137,42 @@ Proof.
   - lra.
 Qed.
 
+
+Lemma up_le (val1 val2 : R) :
+  val1 <= val2 ->
+  (up val1 <= up val2)%Z.
+Proof.
+  intros.
+  assert (IZR (up val1) <= IZR (up val2)).
+  {
+    destruct (Rgt_dec (val2-val1) 1).      
+    - generalize (zsep1 val1 val2 r); intros.
+      destruct (archimed val2); lra.
+    - destruct (Rle_dec (IZR (up val1)) val2).
+      + destruct (archimed val2); lra.
+      + assert (val2 < IZR (up val1)) by lra.
+        assert (up val1 = up val2).
+        {
+          apply (tech_up val2 (up val1) H0).
+          destruct (archimed val1); lra.
+        }
+        rewrite H1; lra.
+  }
+  now apply le_IZR.
+Qed.
+
+Global Instance up_le_proper : Proper (Rle ==> Z.le) up.
+Proof.
+  intros ???.
+  now apply up_le.
+Qed.
+
+Lemma lt_up (val1 val2 : R) :
+  (up val1 < up val2)%Z ->
+  val1 < val2.
+Proof.
+  intros.
+  apply Rnot_le_lt; intros le1.
+  generalize (up_le _ _ le1).
+  lia.
+Qed.
