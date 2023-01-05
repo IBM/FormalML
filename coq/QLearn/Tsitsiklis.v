@@ -2161,20 +2161,16 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     {
       destruct (Rgt_dec (val2-val1) 1).      
       - generalize (zsep1 val1 val2 r); intros.
-        destruct (archimed val2).
-        lra.
-      - assert (val2 <= val1+1) by lra.
-        destruct (Rle_dec (IZR (up val1)) val2).
+        destruct (archimed val2); lra.
+      - destruct (Rle_dec (IZR (up val1)) val2).
         + destruct (archimed val2); lra.
         + assert (val2 < IZR (up val1)) by lra.
           assert (up val1 = up val2).
           {
-            generalize (tech_up val2 (up val1) H1); intros.        
-            destruct (archimed val1).
-            apply H2; lra.
+            apply (tech_up val2 (up val1) H0).
+            destruct (archimed val1); lra.
           }
-          rewrite H2.
-          lra.
+          rewrite H1; lra.
     }
     now apply le_IZR.
   Qed.    
