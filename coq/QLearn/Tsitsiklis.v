@@ -2311,8 +2311,93 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
   Instance increasing_measurable (f : R -> R) :
     (forall u v, u <= v -> (f u) <= (f v)) ->
     RealMeasurable borel_sa f.
-   Admitted.
-
+  Proof.
+    intros ??.
+    assert (forall (z1 z2 : R),
+               z1 <= z2 ->
+               (f z2) <= r ->
+               (f z1) <= r).
+    {
+      intros.
+      eapply Rle_trans.
+      now apply (H z1 z2).
+      apply H1.
+    }
+    destruct (Rbar_ex_lub  (fun w : Rbar => match w with
+                                         | Finite w => f w <= r
+                                         | _ => False
+                                         end)) as [lub islub].
+    unfold Rbar_is_lub, Rbar_is_upper_bound in islub; simpl in islub.
+    destruct islub as [isub islub].
+    destruct lub as [lub | |].
+    - (* Finite limit *)
+      destruct (Rle_lt_dec (f lub) r).
+      + (* limit is in the set *)
+        apply (sa_proper _ (fun omega : R => omega <= lub)).
+        * intros ω.
+          split.
+          -- intros ?.
+             eapply H0; eauto.
+          -- intros ?.
+             now specialize (isub ω H1); simpl in *.
+        * apply sa_le_le_rv.
+          apply id_rv.
+      + (* limit is not in the set *)
+        apply (sa_proper _ (fun omega : R => omega < lub)).
+        * intros ω.
+          split.
+          -- intros le1.
+             assert (exists ω2, ω <= ω2 /\ f ω2 <= r).
+          {
+            (* If it is not in the set, then it must be an upper bound (due to monotonicity),
+               which contradicts
+               the assumption that it is less than the least upper bound
+             *)
+            apply NNPP.
+            intros HH.
+            push_neg_in HH.
+            specialize (islub ω).
+            cut_to islub.
+            - simpl in islub; lra.
+            - clear islub.
+              intros [y | |] yle; try tauto.
+              simpl.
+              specialize (HH y).
+              lra.
+          }             
+          destruct H1 as [ω2 [le2 le3]].
+          eapply H0; eauto.
+          -- intros xxler.
+             generalize (Rle_lt_trans _ _ _ xxler r0); intros trans1.
+             apply Rnot_le_lt; intros le1.
+             generalize (H _ _ le1).
+             now apply Rlt_not_le.
+        * apply sa_le_lt_rv.
+          apply id_rv.
+    - (* Limit is p_infty *)
+      apply (sa_proper _ pre_Ω).
+      + intros ?.
+        unfold pre_Ω.
+        split; [intros _ | tauto].
+        apply Rnot_lt_le; intros lt1.
+        specialize (islub x).
+        simpl in islub.
+        apply islub.
+        intros z le2.
+        destruct z; simpl in *; trivial.
+        apply Rnot_lt_le; intros lt3.
+        generalize (H x r0); lra.
+      + apply sa_all.
+    - (* Limit is m_infty *)
+      apply (sa_proper _ pre_event_none).
+      + intros ?; unfold pre_event_none.
+        split; [tauto |].
+        intros le1.
+        specialize (isub x le1).
+        simpl in isub; tauto.
+      + apply sa_none.
+  Qed.          
+    
   Instance increasing_rv (f : R -> R) :
     (forall u v, u <= v -> (f u) <= (f v)) ->
     RandomVariable borel_sa borel_sa f.
@@ -2321,6 +2406,33 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     apply measurable_rv.
     now apply increasing_measurable.
   Qed.
+
+  Instance decreasing_measurable (f : R -> R) :
+    (forall u v, u <= v -> (f v) <= (f u)) ->
+    RealMeasurable borel_sa f.
+  Proof.
+    intros.
+    cut (RealMeasurable borel_sa (rvopp (rvopp f))).
+    {
+      apply RealMeasurable_proper.
+      intros ?; unfold rvopp, rvscale; lra.
+    }
+    apply Ropp_measurable.
+    apply increasing_measurable; intros.
+    unfold rvopp, rvscale. 
+    specialize (H _ _ H0).
+    lra.
+  Qed.
+
+  Instance decreasing_rv (f : R -> R) :
+    (forall u v, u <= v -> (f v) <= (f u)) ->
+    RandomVariable borel_sa borel_sa f.
+  Proof.
+    intros.
+    apply measurable_rv.
+    now apply decreasing_measurable.
+  Qed.
+
 
   Lemma powerRZ_ge_fun_rv (base : R) :
     RandomVariable borel_sa borel_sa (fun v => powerRZ_ge_fun base v).
