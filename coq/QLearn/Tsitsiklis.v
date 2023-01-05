@@ -2172,7 +2172,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     - apply ln_le; lra.
   Qed.
 
-  Lemma powerRZ_up_log_alt_increasing  (base val1 val2 : R)
+  Lemma powerRZ_up_log_alt_increasing (base val1 val2 : R)
         (pfb: base > 1)
         (pf1: val1 > 0)
         (pf2: val2 > 0) :
@@ -2183,8 +2183,17 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     intros.
     unfold proj1_sig.
     match_destr; match_destr.
-    
-    Admitted.
+    destruct (Z_le_gt_dec x x0); trivial.
+    elimtype False.
+    assert (x0 <= x - 1)%Z by lia.
+    assert (powerRZ base x0 <= powerRZ base (x-1)%Z).
+    {
+      repeat rewrite powerRZ_Rpower by lra.
+      apply Rle_Rpower; [lra |].
+      now apply IZR_le.
+    }
+    lra.
+  Qed.    
 
   Definition powerRZ_ge_fun (base val : R) : R.
   Proof.
