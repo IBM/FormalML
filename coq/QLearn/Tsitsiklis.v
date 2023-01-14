@@ -2282,6 +2282,101 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     now apply Rinv_powerRZ.
   Qed.
 
+  Lemma lemma3_pre  (W : nat -> nat -> Ts -> R) (ω : Ts) (ε : posreal)
+        (α x ww G M : nat -> Ts -> R) :
+    (forall t0, W 0%nat t0 ω = 0) ->
+    (forall t, 0 <= α t ω <= 1) ->
+    is_lim_seq (fun k => M k ω) p_infty ->
+    (forall t0 t,
+        W (S t) t0 ω =
+        (1 - α (t + t0)%nat ω) * (W t t0 ω) +
+        (α (t + t0)%nat ω) * (ww (t + t0)%nat ω)) ->
+    is_lim_seq (fun n : nat => W n 0%nat ω) 0 ->
+    (forall t, (M t ω) <= (rvscale (1 + ε) (G t)) ω) ->
+    (forall t, (G t ω) <= (G (S t) ω)) ->
+    (forall t,
+        (G t ω < G (S t) ω) ->
+        (M (S t) ω <= G (S t) ω)) ->
+    exists (t0 : nat),
+      M t0 ω <= G t0 ω /\
+      forall t,
+        Rabs (W t t0 ω) <= ε.
+  Proof.
+    intros.
+    assert (is_lim_seq (fun k => G k ω) p_infty).
+    {
+      assert (is_lim_seq (fun k => (rvscale (1 + ε) (G k)) ω) p_infty).
+      {
+        apply is_lim_seq_le_p_loc with (u := (fun k => M k ω)); trivial.
+        exists 0%nat.
+        intros.
+        apply H4.
+      }
+      generalize (is_lim_seq_scal_l (fun k : nat => rvscale (1 + ε) (G k) ω)
+                                    (/ (1 + ε)) _ H7); intros.
+      replace (Rbar_mult (/ (1 + ε)) p_infty) with p_infty in H8.
+      - revert H8.
+        apply is_lim_seq_ext.
+        intros.
+        unfold rvscale.
+        rewrite <- Rmult_assoc.
+        rewrite Rinv_l; try lra.
+        generalize (cond_pos ε); lra.
+      - rewrite Rbar_mult_comm.
+        symmetry; apply Rbar_mult_p_infty_pos.
+        apply Rinv_0_lt_compat.
+        generalize (cond_pos ε); lra.        
+    }
+    clear H1.
+    generalize (lemma2 W ω α ww H H0 H2); intros.
+    cut_to H1; trivial.
+    specialize (H1 ε).
+    destruct H1.
+    assert (exists t0, (t0 >= x0)%nat /\ M t0 ω <= G t0 ω).
+    {
+      assert (exists t0, (t0 >= x0)%nat /\ G t0 ω  < G (S t0) ω).
+      {
+        rewrite is_lim_seq_incr_n with (N := S x0) in H7.
+        apply is_lim_seq_spec in H7.
+        unfold is_lim_seq' in H7.
+        specialize (H7 (G x0 ω)).
+        destruct H7.
+        revert H7.
+        contrapose.
+        intros.
+        push_neg.
+        push_neg_in H7.
+        assert (forall x, (x >= x0)%nat -> G x ω = G x0 ω).
+        {
+          intros.
+          pose (h := (x2 - x0)%nat).
+          replace x2 with (h + x0)%nat by lia.
+          induction h.
+          - now simpl.
+          - rewrite <- IHh.
+            replace (S h + x0)%nat with (S (h + x0)) by lia.
+            specialize (H7 (h + x0)%nat).
+            cut_to H7; try lia.
+            specialize (H5 (h + x0)%nat).
+            lra.
+        }
+        specialize (H8 (x1 + S x0)%nat).
+        exists x1.
+        split; try lia.
+        cut_to H8; try lia; try lra.
+      }
+      destruct H8 as [? [? ?]].
+      exists (S x1).
+      split; try lia.
+      now apply H6.
+    }
+    destruct H8 as [? [? ?]].
+    exists x1.
+    split; trivial.
+    intros.
+    now apply H1.
+  Qed.
+
   Lemma lemma3_part1 (W : nat -> nat -> Ts -> R) (ω : Ts) (ε G0 :R)
         (t0 : nat) (α x ww G M : nat -> Ts -> R) :
     (W 0%nat t0 ω = 0) ->
