@@ -3005,12 +3005,92 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       exists K.
       intros.
       specialize (H15 k i pf).
-      revert H15.
-      apply almost_impl, all_almost; intros ??.
       unfold ww.
       generalize (is_conditional_expectation_factor_out_nneg_both_Rbar prts (filt_sub k) (rvsqr (vecrvnth i pf (w k))) (rvsqr (rvinv (G k)))); intros.
       specialize (H19 (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (w k))))).
-      admit.
+      assert (RandomVariable dom borel_sa (rvsqr (rvinv (G k)))).
+      {
+        apply rvsqr_rv, rvinv_rv.
+        now apply (RandomVariable_sa_sub (filt_sub k)).
+      }
+      generalize (NonNegCondexp_cond_exp prts (filt_sub k) (rvmult (rvsqr (vecrvnth i pf (w k))) (rvsqr (rvinv (G k))))); intros.
+      assert (Rbar_NonnegativeFunction (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (w k)))) ).
+      {
+        apply Condexp_nneg.
+        typeclasses eauto.
+      }
+      assert (RandomVariable (F k) borel_sa (rvsqr (rvinv (G k)))).
+      {
+        now apply rvsqr_rv, rvinv_rv.
+      }
+      specialize (H19 _ _ _ _ _ _ _ ).
+      assert (rvgce : RandomVariable (F k) Rbar_borel_sa
+                                      (Rbar_rvmult (fun x : Ts => rvsqr (rvinv (G k)) x)
+                        (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (w k)))))).
+      {
+        apply Rbar_rvmult_rv.
+        - apply Real_Rbar_rv.
+          typeclasses eauto.
+        - apply Condexp_rv.
+      }
+      specialize (H19 _).
+      cut_to H19.
+      - revert H15; apply almost_impl.
+        generalize (is_conditional_expectation_nneg_unique prts (filt_sub k) _ _ _ H19 H21); intros.
+        apply almost_prob_space_sa_sub_lift in H15. 
+        revert H15; apply almost_impl.
+        specialize (H17 k i pf).
+        revert H17; apply almost_impl.
+        apply all_almost; intros ????.
+        erewrite Condexp_nneg_simpl.
+        assert (rv_eq
+                  (rvsqr (vecrvnth i pf (vecrvscalerv (rvinv (G k)) (w k))))
+                  (rvmult (rvsqr (vecrvnth i pf (w k))) (rvsqr (rvinv (G k))))).
+        {
+          intros ?.
+          rv_unfold.
+          unfold vecrvscalerv, vecrvnth.
+          rewrite Rvector_nth_scale.
+          rewrite Rsqr_mult.
+          now apply Rmult_comm.
+        }
+        erewrite (NonNegCondexp_ext prts (filt_sub k) _ _ H25).
+        rewrite <- H17.
+        assert  (rvmaxlist (fun (j : nat) (ω : Ts) => rvsqr (rvmaxabs (X j)) ω) k x <= Rsqr (M k x)).
+        {
+          unfold M, rvmaxlist, rvsqr.
+          unfold Rmax_list_map.
+          apply Rmax_list_le_iff.
+          - apply map_not_nil, seq_not_nil; lia.
+          - intros.
+            apply in_map_iff in H26.
+            destruct H26 as [? [? ?]].
+            rewrite <- H26.
+            apply Rsqr_le_abs_1.
+            rewrite Rabs_pos_eq.
+            + rewrite Rabs_pos_eq.
+              apply (Rmax_spec_map (seq 0 (S k)) (fun n0 : nat => rvmaxabs (X n0) x) x1 H27).
+              apply Rmax_list_ge with (x := rvmaxabs (X x1) x).
+              * apply in_map_iff.
+                exists x1; split; trivial.
+              * apply rvmaxabs_pos.
+            + apply rvmaxabs_pos.
+        }
+        assert (Rbar_le (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (w k))) x)
+                        (rvplus (const A) (rvscale (Rabs B) (rvsqr (M k))) x)).
+        {
+           eapply Rbar_le_trans.
+           apply H15.
+           rv_unfold.
+           simpl.
+           apply Rplus_le_compat_l.
+           apply Rmult_le_compat_l.
+           - apply Rabs_pos.
+           - apply H26.
+        }
+        unfold Rbar_rvmult, const.
+        admit.
+      - admit.
     }
     destruct
     (classic
