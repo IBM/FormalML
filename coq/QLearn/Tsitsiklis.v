@@ -2518,7 +2518,18 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
      apply H1.
    Qed.
     
-
+   Lemma rvinv_Rinv (x : Ts -> R) (ω : Ts) :
+     0 < x ω ->
+     rvinv x ω = / (x ω).
+   Proof.
+     unfold rvinv, rvpower, const.
+     intros.
+     replace (-1) with (Ropp 1) by lra.
+     rewrite power_Ropp; trivial.
+     f_equal.
+     rewrite power_1; lra.
+   Qed.
+     
   Theorem Tsitsiklis1 {n} (X w α : nat -> Ts -> vector R n) 
         (XF : vector R n -> vector R n)
         {F : nat -> SigmaAlgebra Ts}
@@ -3089,7 +3100,33 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
            - apply H26.
         }
         unfold Rbar_rvmult, const.
-        admit.
+        assert (0 < rvsqr (rvinv (G k)) x).
+        {
+          unfold rvsqr.
+          apply Rsqr_pos_lt.
+          apply Rgt_not_eq.
+          unfold rvinv, rvpower, const.
+          apply power_pos.
+          apply Gpos.
+        }
+        rewrite Rbar_mult_comm.
+        rewrite Rbar_mult_pos_le with (z := mkposreal _ H28) in H27.
+        simpl in H27.
+        rewrite Rbar_mult_mult_pos in H27.
+        eapply Rbar_le_trans.
+        apply H27.
+        rv_unfold.
+        simpl.
+        rewrite Rabs_pos_eq; try lra.
+        specialize (H18 k x).
+        unfold Rdiv in H18.
+        replace (Rsqr (rvinv (G k) x)) with (/ Rsqr (G k x)); trivial.
+        assert (G k x <> 0).
+        {
+          apply Rgt_not_eq, Gpos.
+        }
+        rewrite rvinv_Rinv; trivial.
+        rewrite Rsqr_inv; trivial.
       - admit.
     }
     destruct
