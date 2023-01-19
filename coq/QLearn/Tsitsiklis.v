@@ -3096,7 +3096,8 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         }
         rewrite rvinv_Rinv; trivial.
         rewrite Rsqr_inv; trivial.
-      - admit.
+      - apply Condexp_cond_exp_nneg.
+        typeclasses eauto.
     }
     destruct
     (classic
