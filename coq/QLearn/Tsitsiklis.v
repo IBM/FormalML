@@ -2879,7 +2879,21 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       }
       assert (isfef : IsFiniteExpectation prts (vecrvnth i pf (w k))).
       {
-        admit.
+        specialize (H2 k i pf).
+        specialize (iscond k i pf).
+        generalize (@is_conditional_expectation_Expectation Ts dom prts (F k) (vecrvnth i pf (w k))); intros.
+        specialize (H17 _ _ _ iscond).
+        assert (RandomVariable dom Rbar_borel_sa
+                               (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k)))).
+        {
+          apply (RandomVariable_sa_sub (filt_sub k)).
+          apply Condexp_rv.
+        }
+        generalize (Rbar_Expectation_almostR2_proper prts (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k))) (fun x : Ts => const 0 x) H2); intros.
+        rewrite H19 in H17.
+        rewrite Rbar_Expectation_const in H17.
+        unfold IsFiniteExpectation.
+        now rewrite H17.
       }
       assert (isfefg: IsFiniteExpectation prts (rvmult (vecrvnth i pf (w k)) (rvinv (G k)))).
       {
