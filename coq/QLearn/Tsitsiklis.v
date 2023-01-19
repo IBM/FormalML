@@ -3115,9 +3115,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       exists pt.
       lra.
     }
-    destruct (classic
-                (exists D0 : Ts -> R, forall k : nat, almostR2 prts Rle (rvmaxabs (X k)) D0)); trivial.
-    push_neg_in H19.
+    
                
   Admitted.
 
