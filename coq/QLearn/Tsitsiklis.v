@@ -2577,13 +2577,13 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     destruct H5 as [D ?].
     destruct H7 as [γ ?].
     assert (exists G0,
-               0 < G0 /\
+               1 < G0 /\
                β * G0 + D <= γ * G0).
     {
       exists ((D + 1) / (γ - β)).
       split.
-      - apply Rdiv_lt_0_compat; try lra.
-        generalize (cond_nonneg D); lra.
+      - generalize (cond_nonneg D); intros.
+        rewrite <- Rlt_div_r; lra.
       - field_simplify; try lra.
         unfold Rdiv.
         apply Rmult_le_compat_r; try lra.
@@ -2785,7 +2785,17 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       - specialize (Gincr t ω).
         lra.
    }
-
+    assert (Gpos1:forall t ω, 1 < G t ω).
+    {
+      intros.
+      induction t.
+      - simpl.
+        unfold rvmax, const.
+        apply Rlt_le_trans with (r2 := G0); try lra.
+        apply Rmax_r.
+      - specialize (Gincr t ω).
+        lra.
+   }
     assert (adaptG : IsAdapted borel_sa G F).
     {
       intros ?.
@@ -2877,7 +2887,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         - apply rvinv_rv.
           now apply (RandomVariable_sa_sub (filt_sub k)).          
       }
-      assert (isfef : IsFiniteExpectation prts (vecrvnth i pf (w k))).
+      assert (expw0 : Expectation (vecrvnth i pf (w k)) = Some (Finite 0)).
       {
         specialize (H2 k i pf).
         specialize (iscond k i pf).
@@ -2891,13 +2901,76 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         }
         generalize (Rbar_Expectation_almostR2_proper prts (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k))) (fun x : Ts => const 0 x) H2); intros.
         rewrite H19 in H17.
-        rewrite Rbar_Expectation_const in H17.
+        now rewrite Rbar_Expectation_const in H17.
+      }
+                
+      assert (isfef : IsFiniteExpectation prts (vecrvnth i pf (w k))).
+      {
         unfold IsFiniteExpectation.
-        now rewrite H17.
+        now rewrite expw0.
       }
       assert (isfefg: IsFiniteExpectation prts (rvmult (vecrvnth i pf (w k)) (rvinv (G k)))).
       {
-        admit.
+        destruct (IsFiniteExpectation_parts prts _ isfef).
+        assert (forall t ω, 0 < rvinv (G t) ω < 1).
+        {
+          intros.
+          specialize (Gpos1 t ω).
+          rewrite rvinv_Rinv; try lra.
+          split.
+          - apply Rinv_0_lt_compat; lra.
+          - replace 1 with (/ 1) by lra.
+            apply Rinv_lt_contravar; lra.
+        }
+        apply IsFiniteExpectation_from_parts.
+        - apply IsFiniteExpectation_bounded with
+              (rv_X1 := const 0) (rv_X3 := pos_fun_part (vecrvnth i pf (w k))); trivial.
+          + apply IsFiniteExpectation_const.
+          + apply positive_part_nnf.
+          + assert (rv_eq  (fun x : Ts => nonneg (pos_fun_part (rvmult (vecrvnth i pf (w k)) (rvinv (G k))) x))
+                           (rvmult (fun x : Ts => nonneg (pos_fun_part (vecrvnth i pf (w k)) x))
+                                   (rvinv (G k)))).
+            {
+              intros ?.
+              unfold rvmult.
+              unfold pos_fun_part.
+              simpl.
+              rewrite Rmax_mult.
+              - now rewrite Rmult_0_l.
+              - specialize (H19 k a); lra.
+            }
+            rewrite H20.
+            intros ?.
+            unfold rvmult.
+            rewrite <- Rmult_1_r.
+            apply Rmult_le_compat_l.
+            * apply positive_part_nnf.
+            * specialize (H19 k a); lra.
+      - apply IsFiniteExpectation_bounded with
+              (rv_X1 := const 0) (rv_X3 := neg_fun_part (vecrvnth i pf (w k))); trivial.
+        + apply IsFiniteExpectation_const.
+        + apply negative_part_nnf.
+        + assert (rv_eq  (fun x : Ts => nonneg (neg_fun_part (rvmult (vecrvnth i pf (w k)) (rvinv (G k))) x))
+                           (rvmult (fun x : Ts => nonneg (neg_fun_part (vecrvnth i pf (w k)) x))
+                                   (rvinv (G k)))).
+            {
+              intros ?.
+              unfold rvmult.
+              unfold neg_fun_part.
+              simpl.
+              rewrite Rmax_mult.
+              - rewrite Rmult_0_l.
+                f_equal.
+                lra.
+              - specialize (H19 k a); lra.
+            }
+            rewrite H20.
+            intros ?.
+            unfold rvmult.
+            rewrite <- Rmult_1_r.
+            apply Rmult_le_compat_l.
+            * apply negative_part_nnf.
+            * specialize (H19 k a); lra.
       }
       generalize (Condexp_factor_out prts (filt_sub k) (vecrvnth i pf (w k)) (rvinv (G k))); intros.
       apply almost_prob_space_sa_sub_lift in H17.
