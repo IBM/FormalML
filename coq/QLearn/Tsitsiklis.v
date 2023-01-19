@@ -2828,54 +2828,23 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                apply (RandomVariable_sa_sub (isfilt n0)).
                now apply rvscale_rv.
         }
-        apply (rvchoiceb_restricted_rv _ _ _) with (rvc0:=rvc); trivial.
-        + apply Restricted_RandomVariable.
-          now apply (RandomVariable_sa_sub (isfilt n0)).
+        apply rvchoiceb_rv; try easy.
+        + now apply (RandomVariable_sa_sub (isfilt n0)).
         + apply rvscale_rv.
-          assert (1 + ε > 1) by lra.
-
-          assert (Hpf:forall (a' : event_restricted_domain
-              (exist (sa_sigma (F (S n0)))
-                 (fun x : Ts =>
-                  (if Rle_dec (M (S n0) x) ((1 + ε) * G n0 x) then true else false) = false)
-                 (rvc
-                    (exist (fun e : pre_event bool => sa_sigma (discrete_sa bool) e)
-                       (fun x : bool => x = false) I)))), 0 < (M (S n0) (` a') / G0)).
-          {
-            intros [??]; simpl in *.
-            match_destr_in e.
-            apply Rdiv_lt_0_compat; try lra.
-            apply Rlt_le_trans with (r2 := (1 + ε) * G n0 x); try lra.
-            apply Rmult_lt_0_compat; try lra.
-            apply Gpos.
-          } 
-          
-          cut (RandomVariable (event_restricted_sigma
-       (exist (sa_sigma (F (S n0)))
-          (fun x : Ts => (if Rle_dec (M (S n0) x) ((1 + ε) * G n0 x) then true else false) = false)
-          (rvc
-             (exist (fun e : pre_event bool => sa_sigma (discrete_sa bool) e)
-                (fun x : bool => x = false) I)))) borel_sa
-                    (fun ω =>  powerRZ (1 + ε)
-                                       (` (powerRZ_up_log_base_alt (1 + ε) (M (S n0) (` ω) / G0) H15 (Hpf ω))))).
-          {
+          apply (@compose_rv Ts R R (F (S n0)) borel_sa borel_sa
+                             (fun ω => M (S n0) ω / G0)
+                             (fun z => powerRZ_ge_fun (1 + ε) z)).
+          * assert (RandomVariable (F (S n0)) borel_sa
+                                   (rvscale (/ G0) (M (S n0)))).
+            {
+              apply rvscale_rv.
+              apply adaptM.
+            }
+            revert H15.
             apply RandomVariable_proper; try easy.
             intros ?.
-            unfold powerRZ_ge_fun.
-            match_destr; try easy.
-            match_destr; try easy.
-            - f_equal.
-              apply powerRZ_up_log_base_alt_ext.
-            - elimtype False.
-              generalize (Hpf a); intros.
-              elim n1.
-              apply Rlt_gt.
-              apply H16.
-          }
-          
-        
-          
-          admit.
+            unfold rvscale; lra.
+          * apply powerRZ_ge_fun_rv.
     }
     
     pose (ww := fun t => vecrvscalerv (rvinv (G t)) (w t)).
@@ -3146,6 +3115,9 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       exists pt.
       lra.
     }
+    destruct (classic
+                (exists D0 : Ts -> R, forall k : nat, almostR2 prts Rle (rvmaxabs (X k)) D0)); trivial.
+    push_neg_in H19.
                
   Admitted.
 
