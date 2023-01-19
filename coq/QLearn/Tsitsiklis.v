@@ -3019,7 +3019,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         assert (0 < Rsqr G0).
         {
           unfold Rsqr.
-          now apply Rmult_lt_0_compat.
+          apply Rmult_lt_0_compat; lra.
         }
 
         assert (A / (Rsqr (G t ω)) <= A / Rsqr G0).
