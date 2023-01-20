@@ -1442,7 +1442,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                    (rvabs (W t t0) ω) <= delta ω).
  Proof.
    intros.
-   apply (@exists_almost Ts dom prts (fun (T : nat) =>
+   apply (@exists_almost Ts dom prts _ (fun (T : nat) =>
                      (fun ω : Ts => forall t0 t : nat, (t0 >= T)%nat -> rvabs (W t t0) ω <= delta ω))).
    revert H2.
    apply almost_impl, all_almost; intros ??.
@@ -3395,8 +3395,10 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     assert (exists D0 : Ts -> R,
                forall k, almostR2 prts Rle (M k) D0).
     {
-      destruct H23 as [? [? ?]].
-      admit.
+      apply exists_almost in H23.
+      destruct H23 as [??].
+      exists x.
+      now apply forall_almost.
     }
     destruct H24.
     exists x.
