@@ -2498,12 +2498,12 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         W i pf (S t) t0 ω =
         (1 - vecrvnth i pf (α (t + t0)%nat) ω) * (W i pf t t0 ω) +
         (vecrvnth i pf (α (t + t0)%nat) ω) * (vecrvnth i pf (ww (t + t0)%nat) ω)) ->
+    (forall ω i pf t0, W i pf 0%nat t0 ω = 0) ->
     almost prts
           (fun ω : Ts =>
            is_lim_seq (fun k : nat => M k ω) p_infty ->
            exists t0 : nat,
              M t0 ω <= G t0 ω /\
-             (forall ω i pf, W i pf 0%nat t0 ω = 0) /\
              (forall t i pf,
                  (1 - vecrvnth i pf (α t) ω) * (vecrvnth i pf (x t) ω) + 
                  (vecrvnth i pf (α t) ω) * ((-G t ω) + (vecrvnth i pf (ww t) ω) * (G t0 ω)) <= 
@@ -2517,10 +2517,10 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
            exists t0, forall t, G (t + t0)%nat ω = G t0 ω).
    Proof.
      intros.
-     revert H5.
+     revert H6.
      apply almost_impl, all_almost; intros ???.
-     specialize (H5 H6).
-     destruct H5 as [t0 [? [? [??]]]].
+     specialize (H6 H7).
+     destruct H6 as [t0 [? [? ?]]].
      assert (forall t (i: nat) (pf : (i < S n)%nat), G (t + t0)%nat x0 = G t0 x0).
      {
        intros.
