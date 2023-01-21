@@ -3436,8 +3436,41 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         rewrite rvinv_Rinv; trivial.
         rewrite <- Rinv_r_sym; try lra.
         now rewrite Rvector_scale1.
-      - intros.
-        admit.
+      - intros ????.
+        eapply Rle_trans.
+        apply H10.
+        assert (Rvector_max_abs (X k a) <= (1 + ε) * G k a).
+        {
+          apply Rle_trans with (r2 := M k a).
+          - unfold M.
+            unfold Rmax_list_map, rvmaxabs.
+            apply Rmax_spec.
+            apply in_map_iff.
+            exists k.
+            split; trivial.
+            apply in_seq.
+            lia.
+          - apply H13.
+        }
+        replace (G k a) with (γ * ((1 + ε) * G k a)).
+        + apply Rmult_le_compat_l; try lra.
+          apply Rle_Rmax.
+          split; trivial.
+          apply Rle_trans with (r2 := G k a).
+          * clear H22.
+            induction k.
+            -- simpl.
+               unfold rvmax, const.
+               apply Rmax_r.
+            -- eapply Rle_trans.
+               apply IHk.
+               apply Gincr.
+          * rewrite <- Rmult_1_l at 1.
+            apply Rmult_le_compat_r; try lra.
+            left; apply Gpos.
+        + rewrite <- Rmult_assoc.
+          rewrite H12.
+          lra.
       - revert H20.
         apply almost_impl, all_almost; intros ???.
         generalize (lemma3_pre0 x (mkposreal _ H11) G M H22); intros.
