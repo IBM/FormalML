@@ -2365,7 +2365,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
 
   Lemma lemma3_pre1 {n} (W : forall (i : nat),  (i < (S n))%nat -> nat -> nat -> Ts -> R)
         (ω : Ts) (ε : posreal)
-        (α ww G M : nat -> Ts -> vector R (S n)) :
+        (α ww : nat -> Ts -> vector R (S n)) :
     (forall i pf t0, W i pf 0%nat t0 ω = 0) ->
     
     (forall i pf t, 0 <= vecrvnth i pf (α t) ω <= 1) ->
@@ -3438,9 +3438,33 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         now rewrite Rvector_scale1.
       - intros.
         admit.
-      - generalize lemma3_pre0; intros.
-        generalize (lemma3_pre1 WW); intros.
-        admit.
+      - revert H20.
+        apply almost_impl, all_almost; intros ???.
+        generalize (lemma3_pre0 x (mkposreal _ H11) G M H22); intros.
+        cut_to H23; try easy.
+        + generalize (lemma3_pre1 WW x (mkposreal _ H11) α ww ); intros.
+          cut_to H24; try easy.
+          * destruct H24.
+            specialize (H23 x0).
+            destruct H23 as [? [? ?]].
+            exists x1.
+            split; trivial.
+            intros.
+            specialize (H24 i pf x1 t H23).
+            apply H24.
+          * intros.
+            apply H.
+          * intros.
+            simpl.
+            rv_unfold.
+            lra.
+        + intros.
+          simpl.
+          apply H13.
+        + intros.
+          apply Gincr.
+        + intros.
+          now apply H14.
     }
     assert (almost prts (fun ω =>
                            is_lim_seq (fun k : nat => M k ω) p_infty ->
