@@ -2401,7 +2401,8 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     Admitted.
 
   Lemma lemma3 {n} (W : forall (i : nat),  (i < (S n))%nat -> nat -> nat -> Ts -> R) (ω : Ts) (ε G0 :R)
-        (t0 : nat) (α x ww : nat -> Ts -> vector R (S n)) (M G : nat -> Ts -> R) :
+        (t0 : nat) (α x ww : nat -> Ts -> vector R (S n)) (M G : nat -> Ts -> R) 
+        (XF : vector R (S n) -> vector R (S n)) :
     (forall i pf, W i pf 0%nat t0 ω = 0) ->
     M t0 ω <= G t0 ω ->
     (forall t, M (S t) ω <= (1 + ε) * G t ω -> G (S t) ω = G t ω) ->
@@ -2413,18 +2414,24 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         W i pf (S t) t0 ω =
         (1 - vecrvnth i pf (α (t + t0)%nat) ω) * (W i pf t t0 ω) +
         (vecrvnth i pf (α (t + t0)%nat) ω) * (vecrvnth i pf (ww (t + t0)%nat) ω)) ->
+    (forall k, rv_eq (x (S k)) 
+                     (vecrvplus (x k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF (x k ω)) (x k) ) (vecrvscalerv (G k) (ww k)))))) ->
+    (forall k i pf, rv_le (rvabs (vecrvnth i pf (fun ω => XF (x k ω)))) (G k)) ->
+(*
     (forall t i pf,
         (1 - vecrvnth i pf (α t) ω) * (vecrvnth i pf (x t) ω) + 
         (vecrvnth i pf (α t) ω) * ((-G t ω) + (vecrvnth i pf (ww t) ω) * (G t0 ω)) <= 
         vecrvnth i pf (x (S t)) ω <= 
         (1 - vecrvnth i pf (α t) ω) * (vecrvnth i pf (x t) ω) + 
         (vecrvnth i pf (α t) ω) * (G t ω + (vecrvnth i pf (ww t) ω) * (G t0 ω))) ->
+*)
+
     (forall t i pf, Rabs (W i pf t t0 ω) <= ε) -> 
     forall t i pf,
       (-1 + (W i pf t t0 ω)) * (G t0 ω) <= vecrvnth i pf (x (t + t0)%nat) ω <= (1 + (W i pf t t0 ω)) * (G t0 ω) /\
       G (t + t0)%nat ω = G t0 ω.
   Proof.
-    intros W0 MleGt0 MGprop MGprop2 Mxprop Mprop alphaprop Wprop xbounds Weps.
+    intros W0 MleGt0 MGprop MGprop2 Mxprop Mprop alphaprop Wprop xdef XFle (* xbounds *) Weps.
     induction t.
     - intros; simpl; split; trivial.
       rewrite W0.
@@ -2439,13 +2446,51 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         * apply Rle_abs.
         * now eapply Rle_trans.
     - replace (S t + t0)%nat with (S (t + t0)) by lia.
+      assert (xbounds1 : (forall t i pf,
+        (1 - vecrvnth i pf (α t) ω) * (vecrvnth i pf (x t) ω) + 
+        (vecrvnth i pf (α t) ω) * ((-G t ω) + (vecrvnth i pf (ww t) ω) * (G t ω)) <= 
+        vecrvnth i pf (x (S t)) ω <= 
+        (1 - vecrvnth i pf (α t) ω) * (vecrvnth i pf (x t) ω) + 
+        (vecrvnth i pf (α t) ω) * (G t ω + (vecrvnth i pf (ww t) ω) * (G t ω)))).
+      {
+        intros.
+        unfold vecrvnth.
+        rewrite xdef.
+        specialize (XFle t1 i pf ω).
+        unfold rvabs in XFle.
+        rewrite Rabs_le_between in XFle.
+        unfold vecrvminus, vecrvplus, vecrvmult, vecrvopp, vecrvscalerv, vecrvscale.
+        rewrite Rvector_nth_plus, Rvector_nth_mult.
+        rewrite Rvector_nth_plus, Rvector_nth_plus, Rvector_nth_scale.
+        rewrite Rvector_nth_scale.
+        split.
+        - ring_simplify.
+          unfold Rminus.
+          do 4 rewrite Rplus_assoc.
+          do 2 apply Rplus_le_compat_l.
+          apply Rplus_le_compat_r.
+          rewrite Ropp_mult_distr_r.
+          apply Rmult_le_compat_l.
+          + apply alphaprop.
+          + apply XFle.
+        - ring_simplify.
+          unfold Rminus.
+          do 4 rewrite Rplus_assoc.
+          do 2 apply Rplus_le_compat_l.
+          rewrite Rplus_comm.
+          apply Rplus_le_compat_l.
+          apply Rmult_le_compat_l.
+          + apply alphaprop.
+          + apply XFle.
+      }
+                
       assert (forall i pf, (-1 + (W i pf(S t) t0 ω)) * G t0 ω <= vecrvnth i pf (x (S (t + t0))) ω <= (1 + (W i pf (S t) t0 ω)) * G t0 ω).
       {
         intros.
         split.
         - eapply Rle_trans.
           shelve.
-          apply xbounds.
+          apply xbounds1.
           Unshelve.
           specialize (alphaprop (t + t0)%nat i pf).
           destruct (IHt i pf).
@@ -2454,13 +2499,14 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
           apply Rplus_le_compat_r with (r :=  vecrvnth i pf (α (t + t0)%nat) ω * (-G (t + t0)%nat ω + vecrvnth i pf (ww (t + t0)%nat) ω * G t0 ω)) in H.
           eapply Rle_trans.
           shelve.
+          rewrite H0 at 2.
           apply H.
           Unshelve.
           rewrite Wprop, H0.
           ring_simplify.
           lra.
         - eapply Rle_trans.
-          apply xbounds.
+          apply xbounds1.
           specialize (alphaprop (t + t0)%nat i pf).
           destruct (IHt i pf).
           destruct H.
@@ -2473,6 +2519,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
           ring_simplify.
           lra.
       }
+      intros.
       split;trivial.
       assert (forall i pf,
                  Rabs (vecrvnth i pf (x (S (t + t0))) ω) <= (G t0 ω) * (1 + ε)).
@@ -2507,10 +2554,11 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       apply Rvector_max_abs_nth_Rabs_le.
       intros.
       apply H0.
-  Qed.
+   Qed.
 
    Lemma lemma3_almost {n} (W : forall (i : nat),  (i < (S n))%nat -> nat -> nat -> Ts -> R) (ε G0 :R)
-         (α x ww : nat -> Ts -> vector R (S n)) (M G : nat -> Ts -> R) :
+         (α x ww : nat -> Ts -> vector R (S n)) (M G : nat -> Ts -> R) 
+        (XF : vector R (S n) -> vector R (S n)) :
 (*    (forall ω, M t0 ω <= G t0 ω) -> *)
     (forall ω t, M (S t) ω <= (1 + ε) * G t ω -> G (S t) ω = G t ω) ->
     (forall ω t, M t ω <= (1 + ε) * G t ω) ->
@@ -2522,17 +2570,14 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         (1 - vecrvnth i pf (α (t + t0)%nat) ω) * (W i pf t t0 ω) +
         (vecrvnth i pf (α (t + t0)%nat) ω) * (vecrvnth i pf (ww (t + t0)%nat) ω)) ->
     (forall ω i pf t0, W i pf 0%nat t0 ω = 0) ->
+    (forall k, rv_eq (x (S k)) 
+                     (vecrvplus (x k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF (x k ω)) (x k) ) (vecrvscalerv (G k) (ww k)))))) ->
+    (forall k i pf, rv_le (rvabs (vecrvnth i pf (fun ω => XF (x k ω)))) (G k)) ->
     almost prts
           (fun ω : Ts =>
            is_lim_seq (fun k : nat => M k ω) p_infty ->
            exists t0 : nat,
              M t0 ω <= G t0 ω /\
-             (forall t i pf,
-                 (1 - vecrvnth i pf (α t) ω) * (vecrvnth i pf (x t) ω) + 
-                 (vecrvnth i pf (α t) ω) * ((-G t ω) + (vecrvnth i pf (ww t) ω) * (G t0 ω)) <= 
-                 vecrvnth i pf (x (S t)) ω <= 
-                 (1 - vecrvnth i pf (α t) ω) * (vecrvnth i pf (x t) ω) + 
-                 (vecrvnth i pf (α t) ω) * (G t ω + (vecrvnth i pf (ww t) ω) * (G t0 ω))) /\
              (forall (t i : nat) (pf : (i < (S n))%nat), Rabs (W i pf t t0 ω) <= ε)) ->
 (*    (almost prts (fun ω => forall t i pf, Rabs (W i pf t t0 ω) <= ε)) ->  *)
     almost prts (fun ω => 
@@ -2540,23 +2585,23 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
            exists t0, forall t, G (t + t0)%nat ω = G t0 ω).
    Proof.
      intros.
-     revert H6.
+     revert H8.
      apply almost_impl, all_almost; intros ???.
-     specialize (H6 H7).
-     destruct H6 as [t0 [? [? ?]]].
+     specialize (H8 H9).
+     destruct H8 as [t0 [? ?]].
      assert (forall t (i: nat) (pf : (i < S n)%nat), G (t + t0)%nat x0 = G t0 x0).
      {
        intros.
-       generalize (lemma3 W x0 ε G0 t0 α x ww M G); intros.
-       cut_to H10; try easy.
-       - now specialize (H10 t i pf).
+       generalize (lemma3 W x0 ε G0 t0 α x ww M G XF); intros.
+       cut_to H11; try easy.
+       - now specialize (H11 t i pf).
        - apply H.
      }
      intros.
      assert (0 < S n)%nat by lia.
      exists t0.
      intros.
-     now specialize (H10 t _ H11).
+     now specialize (H11 t _ H12).
    Qed.
     
    Lemma rvinv_Rinv (x : Ts -> R) (ω : Ts) :
@@ -2571,15 +2616,15 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
      rewrite power_1; lra.
    Qed.
      
-  Theorem Tsitsiklis1 {n} (X w α : nat -> Ts -> vector R n) 
-        (XF : vector R n -> vector R n)
+  Theorem Tsitsiklis1 {n} (X w α : nat -> Ts -> vector R (S n)) 
+        (XF : vector R (S n) -> vector R (S n))
         {F : nat -> SigmaAlgebra Ts}
         (isfilt : IsFiltration F) 
         (filt_sub : forall k, sa_sub (F k) dom) 
-        (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
-        {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
-        (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
-        {rvXF : RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) XF}
+        (adapt_alpha : IsAdapted (Rvector_borel_sa (S n)) α F)
+        {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S n)) (X 0%nat)}
+        (adapt_w : IsAdapted  (Rvector_borel_sa (S n)) w (fun k => F (S k)))
+        {rvXF : RandomVariable (Rvector_borel_sa (S n)) (Rvector_borel_sa (S n)) XF}
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
         {iscond : forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (w k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k)))} :
 
@@ -2720,12 +2765,12 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       match_destr_in H14; try lra.
       apply powerRZ_ge_scale; try lra.
    }
-    assert (adaptX : IsAdapted (Rvector_borel_sa n) X F).
+    assert (adaptX : IsAdapted (Rvector_borel_sa (S n)) X F).
     {
       intros ?.
       induction n0.
       - easy.
-      - assert (RandomVariable (F (S n0)) (Rvector_borel_sa n)
+      - assert (RandomVariable (F (S n0)) (Rvector_borel_sa (S n))
                                (vecrvplus (X n0) (vecrvmult (α n0) (vecrvplus (vecrvminus (fun ω : Ts => XF (X n0 ω)) (X n0)) (w n0))))).
         {
           apply Rvector_plus_rv.
@@ -2734,7 +2779,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
             + now apply (RandomVariable_sa_sub (isfilt n0)).
             + apply Rvector_plus_rv; try easy.
               apply Rvector_minus_rv.
-              * apply (compose_rv (dom2 := Rvector_borel_sa n)); try easy.
+              * apply (compose_rv (dom2 := Rvector_borel_sa (S n))); try easy.
                 now apply (RandomVariable_sa_sub (isfilt n0)).
               * now apply (RandomVariable_sa_sub (isfilt n0)).
         }
@@ -2900,7 +2945,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     
     pose (ww := fun t => vecrvscalerv (rvinv (G t)) (w t)).
 
-    assert (rvww :  forall (k i : nat) (pf : (i < n)%nat), RandomVariable dom borel_sa (vecrvnth i pf (ww k))).
+    assert (rvww :  forall (k i : nat) (pf : (i < (S n))%nat), RandomVariable dom borel_sa (vecrvnth i pf (ww k))).
     {
       intros.
       unfold ww.
@@ -3342,9 +3387,50 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                            is_lim_seq (fun k : nat => M k ω) p_infty ->
                            exists t0 : nat, 
                              forall t,
-                               rv_eq (G t0) (G (t + t0)%nat))).
+                               (G t0 ω = G (t + t0)%nat ω))).
     {
-      admit.
+      generalize (lemma3_almost WW ε G0 α X ww M G XF); intros.
+      cut_to H21; try easy.
+      - revert H21.
+        apply almost_impl, all_almost; intros ???.
+        destruct (H21 H22).
+        exists x0.
+        intros.
+        symmetry.
+        apply H23.
+      - admit.
+      - intros.
+        apply H13.
+      - intros.
+        unfold M.
+        admit.
+      - intros.
+        unfold M.
+        apply Rle_trans with (r2 := rvmaxabs (X t) ω).
+        + admit.
+        + admit.
+      - intros.
+        apply H.
+      - intros.
+        simpl.
+        rv_unfold.
+        lra.
+      - intros.
+        rewrite H6.
+        intros ?.
+        unfold ww, vecrvscalerv.
+        unfold vecrvminus, vecrvplus, vecrvmult, vecrvopp, vecrvscale.
+        do 3 f_equal.
+        rewrite Rvector_scale_scale.
+        specialize (Gpos k a).
+        rewrite rvinv_Rinv; trivial.
+        rewrite <- Rinv_r_sym; try lra.
+        now rewrite Rvector_scale1.
+      - intros.
+        admit.
+      - generalize lemma3_pre0; intros.
+        generalize (lemma3_pre1 WW); intros.
+        admit.
     }
     assert (almost prts (fun ω =>
                            is_lim_seq (fun k : nat => M k ω) p_infty ->
