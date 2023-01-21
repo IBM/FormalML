@@ -3398,7 +3398,11 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         intros.
         symmetry.
         apply H23.
-      - admit.
+      - intros.
+        simpl.
+        unfold rvchoice.
+        match_case; intros.
+        now match_destr_in H23.
       - intros.
         apply H13.
       - intros.
@@ -3407,8 +3411,14 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       - intros.
         unfold M.
         apply Rle_trans with (r2 := rvmaxabs (X t) ω).
-        + admit.
-        + admit.
+        + apply Rvector_max_abs_nth_le.
+        + unfold Rmax_list_map.
+          apply Rmax_spec.
+          apply in_map_iff.
+          exists t.
+          split; trivial.
+          apply in_seq.
+          lia.
       - intros.
         apply H.
       - intros.
