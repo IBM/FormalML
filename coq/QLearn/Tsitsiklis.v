@@ -3407,7 +3407,9 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         apply H13.
       - intros.
         unfold M.
-        admit.
+        unfold Rmax_list_map.
+        rewrite Rmax_list_Sn; try lia.
+        now simpl.
       - intros.
         unfold M.
         apply Rle_trans with (r2 := rvmaxabs (X t) ω).
@@ -3594,7 +3596,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     split; trivial.
     apply in_seq.
     lia.
-  Admitted.
+  Qed.
 
 
   Theorem Tsitsiklis3 {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
