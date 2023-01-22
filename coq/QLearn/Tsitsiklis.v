@@ -2397,8 +2397,37 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       exists x.
       intros.
       now apply H3.
-   }
-    Admitted.
+    }
+    assert (forall (i : nat) (pf : (i < S n)%nat),
+               exists T : nat, forall t0: nat, (t0 >= T)%nat ->
+                                               forall t, Rabs (W i pf t t0 ω) <= ε).
+    {
+      intros.
+      destruct (H3 i pf).
+      exists x.
+      intros.
+      now apply H4.
+    }
+    generalize (bounded_nat_ex_choice_vector 
+                  (A := nat) (n := S n)
+                  (fun i pf N =>
+                     forall t0, (t0>=N)%nat -> 
+                                forall t,
+                                  Rabs (W i pf t t0 ω) <= ε)); intros.
+    cut_to H5.
+    - destruct H5.
+      exists (list_max (proj1_sig x)).
+      intros.
+      apply H5.
+      apply list_max_le in H6.
+      rewrite Forall_forall in H6.
+      specialize (H6 (vector_nth i pf x)).
+      apply H6.
+      admit.
+    - intros.
+      apply H4.
+   Admitted.
+
 
   Lemma lemma3 {n} (W : forall (i : nat),  (i < (S n))%nat -> nat -> nat -> Ts -> R) (ω : Ts) (ε G0 :R)
         (t0 : nat) (α x ww : nat -> Ts -> vector R (S n)) (M G : nat -> Ts -> R) 
