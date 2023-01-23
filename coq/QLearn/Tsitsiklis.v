@@ -2423,11 +2423,10 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       rewrite Forall_forall in H6.
       specialize (H6 (vector_nth i pf x)).
       apply H6.
-      admit.
+      apply vector_nth_In.
     - intros.
       apply H4.
-   Admitted.
-
+   Qed.
 
   Lemma lemma3 {n} (W : forall (i : nat),  (i < (S n))%nat -> nat -> nat -> Ts -> R) (ω : Ts) (ε G0 :R)
         (t0 : nat) (α x ww : nat -> Ts -> vector R (S n)) (M G : nat -> Ts -> R) 
