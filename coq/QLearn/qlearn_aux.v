@@ -522,19 +522,60 @@ Qed.
         now rewrite Rbar_NonnegExpectation_sum with (Xlim_pos := H).
    Qed.
 
-    Context {T:Type} {countableT:Countable T} {n:nat}.
-
-    Instance countableVec : Countable (vector T n).
+    Lemma Injective_iso {A A' B} (f:A->B) {iso:Isomorphism A A'} :
+      FinFun.Injective f -> FinFun.Injective (fun a' => f (iso_b a')).
     Proof.
-      Admitted.
+      intros inj a1 a2 eqq.
+      apply inj in eqq.
+      apply (f_equal (iso_f (Isomorphism := iso))) in eqq.
+      now repeat rewrite iso_f_b in eqq.
+    Qed.
 
-    Definition vec_pmf (p0 : ProbSpace (discrete_sa T)) : (vector T n) -> R :=
+    Program Instance countable_iso {A B} {count:Countable A} {iso:Isomorphism A B} : Countable B
+      := {| countable_index b := countable_index (iso_b b) |}.
+    Next Obligation.
+      apply Injective_iso.
+      apply countable_index_inj.
+    Qed.      
+
+    Context {T:Type} {countableT:Countable T}.
+
+    Instance countable_ivector {n:nat} : Countable (ivector T n).
+    Proof.
+      induction n; simpl.
+      - apply unit_countable.
+      - apply prod_countable; trivial.
+    Qed.
+    
+    Instance countable_vector {n:nat} : Countable (vector T n).
+    Proof.
+      apply (@countable_iso (ivector T n)).
+      - apply countable_ivector.
+      - apply Isomorphism_symm.
+        apply vec_to_ivec_encoder.
+    Qed.
+
+    Definition vec_pmf {n} (p0 : ProbSpace (discrete_sa T)) : (vector T n) -> R :=
       fun v =>
         vector_fold_left Rmult (vector_map ps_P (vector_map discrete_singleton v)) 1.
-      
-    Lemma vec_pmf_pos (p0 : ProbSpace (discrete_sa T)):
+
+    Definition ivec_pmf {n} (p0 : ProbSpace (discrete_sa T)) : (ivector T n) -> R :=
+      fun v =>
+        ivector_fold_left Rmult (ivector_map ps_P (ivector_map discrete_singleton v)) 1.
+
+    Lemma vec_to_ivec_pmf {n} (p0 : ProbSpace (discrete_sa T)) (v:vector T n) :
+      vec_pmf p0 v = ivec_pmf p0 (iso_f (Isomorphism := vec_to_ivec_encoder) v).
+    Proof.
+      unfold vec_pmf, ivec_pmf, vector_fold_left.
+      destruct v as [x e]; simpl.
+      destruct e; simpl.
+      generalize 1 as c.
+      induction x; simpl in *; trivial.
+    Qed.      
+    
+    Lemma vec_pmf_pos {n} (p0 : ProbSpace (discrete_sa T)):
       forall v,
-        0 <= vec_pmf p0 v.
+        0 <= vec_pmf (n:=n) p0 v.
     Proof.
       intros.
       unfold vec_pmf, vector_fold_left, vector_map.
@@ -570,12 +611,12 @@ Qed.
       apply ps_pos.
     Qed.
 
-    Lemma vec_pmf_sum1 (p0 : ProbSpace (discrete_sa T)):
-      countable_sum (vec_pmf p0) 1.
+    Lemma vec_pmf_sum1 {n} (p0 : ProbSpace (discrete_sa T)):
+      countable_sum (vec_pmf (n:=n) p0) 1.
     Proof.
       Admitted.
 
-    Program Definition vectorPMF (p0 : ProbSpace (discrete_sa T)) : prob_mass_fun (vector T n) := {| pmf_pmf := vec_pmf p0 |}.
+    Program Definition vectorPMF {n} (p0 : ProbSpace (discrete_sa T)) : prob_mass_fun (vector T n) := {| pmf_pmf := vec_pmf p0 |}.
     Next Obligation.
       apply vec_pmf_pos.
     Qed.
@@ -583,7 +624,7 @@ Qed.
       apply vec_pmf_sum1.
     Qed.
 
-    Global Instance vector_discrete_ps (p0 : ProbSpace (discrete_sa T)): ProbSpace (discrete_sa (vector T n)) := discrete_ps (vectorPMF p0).
+    Global Instance vector_discrete_ps {n} (p0 : ProbSpace (discrete_sa T)): ProbSpace (discrete_sa (vector T n)) := discrete_ps (vectorPMF p0).
     
     
 End qlearn_aux.      
