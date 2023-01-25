@@ -567,10 +567,9 @@ Qed.
       vec_pmf p0 v = ivec_pmf p0 (iso_f (Isomorphism := vec_to_ivec_encoder) v).
     Proof.
       unfold vec_pmf, ivec_pmf, vector_fold_left.
-      destruct v as [x e]; simpl.
-      destruct e; simpl.
-      generalize 1 as c.
-      induction x; simpl in *; trivial.
+      destruct v as [x []].
+      generalize 1.
+      now induction x; simpl in *.
     Qed.      
     
     Lemma vec_pmf_pos {n} (p0 : ProbSpace (discrete_sa T)):
