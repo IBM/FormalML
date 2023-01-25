@@ -3603,7 +3603,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     lia.
   Qed.
 
-  Theorem Tsitsiklis3 {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
+  Theorem Tsitsiklis3_beta_pos {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
         (XF : vector R n -> vector R n)
         {F : nat -> SigmaAlgebra Ts}
         (isfilt : IsFiltration F) 
@@ -4318,7 +4318,7 @@ Qed.
  Qed.
 
 
-  Theorem Tsitsiklis3_beta_gen {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
+  Theorem Tsitsiklis3 {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
         (XF : vector R n -> vector R n)
         {F : nat -> SigmaAlgebra Ts}
         (isfilt : IsFiltration F) 
@@ -4358,7 +4358,7 @@ Qed.
   Proof.
     intros.
     destruct (Rlt_dec 0 β).
-    - now apply Tsitsiklis3 with (w0 := w) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
+    - now apply Tsitsiklis3_beta_pos with (w0 := w) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
     - assert (β = 0) by lra.
       now apply Tsitsiklis3_beta_0 with (w0 := w) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
    Qed.
