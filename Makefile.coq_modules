@@ -111,10 +111,11 @@ QLEARN = \
 	qlearn_aux \
 	qlearn \
 	qlearn_redux \
-    infprod \
+	infprod \
 	sumtest \
    	slln \
-	vecslln
+	vecslln \
+	Tsitsiklis
 
 
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \

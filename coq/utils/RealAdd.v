@@ -6176,3 +6176,194 @@ Proof.
   generalize (up_le _ _ le1).
   lia.
 Qed.
+
+Section prod_f_R0.
+
+Lemma prod_f_R0_Sn f n :
+  prod_f_R0 f (S n) = prod_f_R0 f n * (f (S n)).
+Proof.
+  now simpl.
+Qed.
+
+    Lemma prod_f_R0_succ (f : nat -> R) {k : nat} (hk : (0 < k)%nat):
+      prod_f_R0 f k = f 0%nat * prod_f_R0 (fun n => f (S n)) (pred k).
+    Proof.
+      generalize (prod_SO_split f k 0 hk); intros.
+      rewrite H. simpl.
+      f_equal. f_equal.
+      lia.
+    Qed.
+
+    Lemma prod_f_R0_pred (f : nat -> R) {k : nat} (hk : (0 < k)%nat):
+      prod_f_R0 f k = prod_f_R0 f (pred k)*(f k).
+    Proof.
+      generalize (prod_SO_split f k (pred k)); intros.
+      rewrite H; try lia.
+      f_equal.
+      replace (k - pred k - 1)%nat with 0%nat by lia.
+      simpl. f_equal.  lia.
+    Qed.
+
+    (* Product of a list of real numbers. Move this to RealAdd.v *)
+    Fixpoint list_product (l : list R) : R :=
+      match l with
+      | nil => 1
+      | cons x xs => x*list_product xs
+      end.
+
+    Lemma list_product_pos (l : list R) :
+      List.Forall (fun r => 0 < r) l -> 0 < list_product l.
+    Proof.
+      intros H.
+      induction l; simpl; try lra.
+      invcs H; try intuition.
+      apply Rmult_lt_0_compat; assumption.
+    Qed.
+
+    Lemma log_list_product (l : list R) :
+      List.Forall (fun r => 0 < r) l ->
+      ln (list_product l) = list_sum (map (fun x => ln x) l).
+    Proof.
+      intros H.
+      induction l.
+      + simpl.
+        apply ln_1.
+      + simpl. invcs H.
+        specialize (IHl H3).
+        rewrite ln_mult; try assumption.
+        - now f_equal.
+        - now apply list_product_pos.
+    Qed.
+
+    (* Lemma 4.*)
+    Lemma product_sum_helper (l : list R):
+      List.Forall (fun r => 0 <= r <= 1) l -> 1 - list_sum l <=
+                                        list_product (List.map (fun x => 1 - x) l).
+    Proof.
+      revert l.
+      induction l.
+      * simpl ; lra.
+      * simpl. intros Hl.
+        eapply Rle_trans with ((1-list_sum l)*(1-a)).
+        ++ ring_simplify.
+           apply Rplus_le_compat_r.
+           do 2 rewrite Rle_minus_r.
+           ring_simplify.
+           inversion Hl ; subst.
+           specialize (IHl H2). destruct H1.
+           apply Rmult_le_pos ; trivial.
+           apply list_sum_pos_pos'; trivial.
+           generalize (List.Forall_and_inv _ _ H2); intros.
+           destruct H1; trivial.
+        ++ inversion Hl; subst.
+           specialize (IHl H2).
+           rewrite Rmult_comm.
+           apply Rmult_le_compat_l ; trivial.
+           lra.
+    Qed.
+
+    Lemma list_product_prod_f_R0 (l : list R) :
+      list_product l =
+      prod_f_R0 (fun n => nth n l 1) (length l).
+    Proof.
+      induction l; try now simpl.
+      simpl.
+      destruct (lt_dec 0 (length l)).
+      + rewrite prod_f_R0_succ; try assumption.
+        rewrite IHl. rewrite Rmult_assoc.
+        f_equal. rewrite prod_f_R0_pred; try assumption.
+        reflexivity.
+      + assert (length l = 0%nat) by lia.
+        rewrite length_zero_iff_nil in H.
+        rewrite H. now simpl.
+    Qed.
+
+    Lemma list_product_prod_f_R0_map (f : R -> R) (l : list R) :
+      list_product (map f l) =
+      prod_f_R0 (fun n => nth n (map f l) 1) (length l).
+    Proof.
+      rewrite list_product_prod_f_R0.
+      now rewrite map_length.
+    Qed.
+
+    Lemma prod_f_R0_ne_zero {f : nat -> R} :
+      (forall n, f n <> 0) -> (forall k, prod_f_R0 f k <> 0).
+    Proof.
+      intros Hf k.
+      induction k; simpl; try auto.
+    Qed.
+
+    Lemma prod_f_R0_pos {f : nat -> R} :
+      (forall n, 0 < f n) -> (forall k, 0 < prod_f_R0 f k).
+    Proof.
+      intros Hf k.
+      induction k; simpl; try auto.
+      apply Rmult_lt_0_compat; auto.
+    Qed.
+
+    Lemma prod_f_R0_nonneg {f : nat -> R} :
+      (forall n, 0 <= f n) -> (forall k, 0 <= prod_f_R0 f k).
+    Proof.
+      intros Hf k.
+      induction k; simpl; try auto.
+      apply Rmult_le_pos; auto.
+    Qed.
+
+    Lemma prod_f_R0_inv {f : nat -> R} :
+      (forall n, f n <> 0) ->
+      forall k, prod_f_R0 (fun n => / (f n)) k = /(prod_f_R0 f k).
+    Proof.
+      intros Hf k.
+      induction k; simpl; try lra.
+      rewrite IHk.
+      field_simplify; [reflexivity|
+      (split; try apply prod_f_R0_ne_zero; try auto)|
+      (split; try apply prod_f_R0_ne_zero; try auto)].
+    Qed.
+
+    Lemma prod_f_R0_n (f : nat -> R) (n : nat) :
+      f n = 0 ->
+      prod_f_R0 f n = 0.
+    Proof.
+      intros.
+      destruct (Nat.eq_dec n 0).
+      - subst.
+        now simpl.
+      - replace (n) with (S (n-1)) by lia.
+        rewrite prod_f_R0_Sn.
+        replace (S (n - 1)) with n by lia.
+        rewrite H.
+        apply Rmult_0_r.
+      Qed.
+
+    Lemma prod_f_R0_n1_n2 (f : nat -> R) (n1 n2 : nat) :
+      (n1 <= n2)%nat ->
+      f n1 = 0 ->
+      prod_f_R0 f n2 = 0.
+    Proof.
+      intros.
+      destruct (lt_dec n1 n2).
+      - rewrite prod_SO_split with (k := n1) (n := n2); trivial.
+        rewrite prod_f_R0_n; trivial.
+        apply Rmult_0_l.
+      - assert (n1 = n2) by lia.
+        rewrite H1 in H0.
+        now apply prod_f_R0_n.
+    Qed.
+
+   Lemma prod_f_R0_le_1 {f : nat -> R} :
+     (forall n, 0 <= f n <= 1) ->
+     forall k, prod_f_R0 f k <= 1.
+    Proof.
+      intros Hf k.
+      induction k; simpl.
+      - apply Hf.
+      - replace 1 with (1 * 1) by lra.
+        apply Rmult_le_compat; trivial; try apply Hf.
+        apply prod_f_R0_nonneg.
+        intros.
+        apply Hf.
+   Qed.
+
+
+End prod_f_R0.

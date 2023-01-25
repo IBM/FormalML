@@ -11,7 +11,7 @@ Require Import RandomVariableL2.
 Require Import ConditionalExpectation VectorConditionalExpectation.
 Require Import IndefiniteDescription ClassicalDescription.
 Require Import RelationClasses.
-Require Import qlearn qlearn_redux Dvoretzky infprod.
+Require Import Dvoretzky infprod.
 Require Import Martingale MartingaleStopped.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -1318,20 +1318,6 @@ Lemma lemma2_part1 (W : nat -> nat -> Ts -> R) (ω : Ts)
       simpl; lra.
   Qed.
 
-   Lemma prod_f_R0_le_1 {f : nat -> R} :
-     (forall n, 0 <= f n <= 1) ->
-     forall k, prod_f_R0 f k <= 1.
-    Proof.
-      intros Hf k.
-      induction k; simpl.
-      - apply Hf.
-      - replace 1 with (1 * 1) by lra.
-        apply Rmult_le_compat; trivial; try apply Hf.
-        apply prod_f_R0_nonneg.
-        intros.
-        apply Hf.
-   Qed.
-
 Lemma lemma2_part2 (W :  nat -> nat -> Ts -> R) (ω : Ts) 
       (α w : nat -> Ts -> R) :
   (forall t0, W 0%nat t0 ω = 0) ->
@@ -1913,7 +1899,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     apply is_lim_seq_ext with (v :=  (prod_f_R0 (fun k : nat => 1 - a k))) in H1; trivial.
     intros.
     induction n.
-    - unfold part_prod, part_prod_n, g_alpha.
+    - unfold part_prod, part_prod_n.
       simpl; lra.
     - simpl.
       unfold part_prod.
@@ -2445,15 +2431,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     (forall k, rv_eq (x (S k)) 
                      (vecrvplus (x k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF (x k ω)) (x k) ) (vecrvscalerv (G k) (ww k)))))) ->
     (forall k i pf, rv_le (rvabs (vecrvnth i pf (fun ω => XF (x k ω)))) (G k)) ->
-(*
-    (forall t i pf,
-        (1 - vecrvnth i pf (α t) ω) * (vecrvnth i pf (x t) ω) + 
-        (vecrvnth i pf (α t) ω) * ((-G t ω) + (vecrvnth i pf (ww t) ω) * (G t0 ω)) <= 
-        vecrvnth i pf (x (S t)) ω <= 
-        (1 - vecrvnth i pf (α t) ω) * (vecrvnth i pf (x t) ω) + 
-        (vecrvnth i pf (α t) ω) * (G t ω + (vecrvnth i pf (ww t) ω) * (G t0 ω))) ->
-*)
-
     (forall t i pf, Rabs (W i pf t t0 ω) <= ε) -> 
     forall t i pf,
       (-1 + (W i pf t t0 ω)) * (G t0 ω) <= vecrvnth i pf (x (t + t0)%nat) ω <= (1 + (W i pf t t0 ω)) * (G t0 ω) /\
@@ -3625,7 +3602,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     apply in_seq.
     lia.
   Qed.
-
 
   Theorem Tsitsiklis3 {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
         (XF : vector R n -> vector R n)

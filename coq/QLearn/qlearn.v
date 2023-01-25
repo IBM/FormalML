@@ -449,12 +449,6 @@ End rv_expressible.
       reflexivity.
     Qed.
 
-    Lemma prod_f_R0_Sn f n :
-      prod_f_R0 f (S n) = prod_f_R0 f n * (f (S n)).
-    Proof.
-      now simpl.
-    Qed.
-
     Lemma gamma_alpha_pos gamma :
       0 <= gamma < 1 ->
       (forall n, 0 <= α n <= 1) ->
@@ -571,173 +565,6 @@ End rv_expressible.
         now apply is_lim_seq_scal_l.
         apply Rbar_mult_0_r.
     Qed.
-
-    (* Product of a list of real numbers. Move this to RealAdd.v *)
-    Fixpoint list_product (l : list R) : R :=
-      match l with
-      | nil => 1
-      | cons x xs => x*list_product xs
-      end.
-
-    Lemma list_product_pos (l : list R) :
-      List.Forall (fun r => 0 < r) l -> 0 < list_product l.
-    Proof.
-      intros H.
-      induction l; simpl; try lra.
-      invcs H; try intuition.
-      apply Rmult_lt_0_compat; assumption.
-    Qed.
-
-    Lemma log_list_product (l : list R) :
-      List.Forall (fun r => 0 < r) l ->
-      ln (list_product l) = list_sum (map (fun x => ln x) l).
-    Proof.
-      intros H.
-      induction l.
-      + simpl.
-        apply ln_1.
-      + simpl. invcs H.
-        specialize (IHl H3).
-        rewrite ln_mult; try assumption.
-        - now f_equal.
-        - now apply list_product_pos.
-    Qed.
-
-    (* Lemma 4.*)
-    Lemma product_sum_helper (l : list R):
-      List.Forall (fun r => 0 <= r <= 1) l -> 1 - list_sum l <=
-                                        list_product (List.map (fun x => 1 - x) l).
-    Proof.
-      revert l.
-      induction l.
-      * simpl ; lra.
-      * simpl. intros Hl.
-        eapply Rle_trans with ((1-list_sum l)*(1-a)).
-        ++ ring_simplify.
-           apply Rplus_le_compat_r.
-           do 2 rewrite Rle_minus_r.
-           ring_simplify.
-           inversion Hl ; subst.
-           specialize (IHl H2). destruct H1.
-           apply Rmult_le_pos ; trivial.
-           apply list_sum_pos_pos'; trivial.
-           generalize (List.Forall_and_inv _ _ H2); intros.
-           destruct H1; trivial.
-        ++ inversion Hl; subst.
-           specialize (IHl H2).
-           rewrite Rmult_comm.
-           apply Rmult_le_compat_l ; trivial.
-           lra.
-    Qed.
-
-    Lemma prod_f_R0_succ (f : nat -> R) {k : nat} (hk : (0 < k)%nat):
-      prod_f_R0 f k = f 0%nat * prod_f_R0 (fun n => f (S n)) (pred k).
-    Proof.
-      generalize (prod_SO_split f k 0 hk); intros.
-      rewrite H. simpl.
-      f_equal. f_equal.
-      lia.
-    Qed.
-
-    Lemma prod_f_R0_pred (f : nat -> R) {k : nat} (hk : (0 < k)%nat):
-      prod_f_R0 f k = prod_f_R0 f (pred k)*(f k).
-    Proof.
-      generalize (prod_SO_split f k (pred k)); intros.
-      rewrite H; try lia.
-      f_equal.
-      replace (k - pred k - 1)%nat with 0%nat by lia.
-      simpl. f_equal.  lia.
-    Qed.
-
-    Lemma list_product_prod_f_R0 (l : list R) :
-      list_product l =
-      prod_f_R0 (fun n => nth n l 1) (length l).
-    Proof.
-      induction l; try now simpl.
-      simpl.
-      destruct (lt_dec 0 (length l)).
-      + rewrite prod_f_R0_succ; try assumption.
-        rewrite IHl. rewrite Rmult_assoc.
-        f_equal. rewrite prod_f_R0_pred; try assumption.
-        reflexivity.
-      + assert (length l = 0%nat) by lia.
-        rewrite length_zero_iff_nil in H.
-        rewrite H. now simpl.
-    Qed.
-
-    Lemma list_product_prod_f_R0_map (f : R -> R) (l : list R) :
-      list_product (map f l) =
-      prod_f_R0 (fun n => nth n (map f l) 1) (length l).
-    Proof.
-      rewrite list_product_prod_f_R0.
-      now rewrite map_length.
-    Qed.
-
-    Lemma prod_f_R0_ne_zero {f : nat -> R} :
-      (forall n, f n <> 0) -> (forall k, prod_f_R0 f k <> 0).
-    Proof.
-      intros Hf k.
-      induction k; simpl; try auto.
-    Qed.
-
-    Lemma prod_f_R0_pos {f : nat -> R} :
-      (forall n, 0 < f n) -> (forall k, 0 < prod_f_R0 f k).
-    Proof.
-      intros Hf k.
-      induction k; simpl; try auto.
-      apply Rmult_lt_0_compat; auto.
-    Qed.
-
-    Lemma prod_f_R0_nonneg {f : nat -> R} :
-      (forall n, 0 <= f n) -> (forall k, 0 <= prod_f_R0 f k).
-    Proof.
-      intros Hf k.
-      induction k; simpl; try auto.
-      apply Rmult_le_pos; auto.
-    Qed.
-
-    Lemma prod_f_R0_inv {f : nat -> R} :
-      (forall n, f n <> 0) ->
-      forall k, prod_f_R0 (fun n => / (f n)) k = /(prod_f_R0 f k).
-    Proof.
-      intros Hf k.
-      induction k; simpl; try lra.
-      rewrite IHk.
-      field_simplify; [reflexivity|
-      (split; try apply prod_f_R0_ne_zero; try auto)|
-      (split; try apply prod_f_R0_ne_zero; try auto)].
-    Qed.
-
-    Lemma prod_f_R0_n (f : nat -> R) (n : nat) :
-      f n = 0 ->
-      prod_f_R0 f n = 0.
-    Proof.
-      intros.
-      destruct (Nat.eq_dec n 0).
-      - subst.
-        now simpl.
-      - replace (n) with (S (n-1)) by lia.
-        rewrite prod_f_R0_Sn.
-        replace (S (n - 1)) with n by lia.
-        rewrite H.
-        apply Rmult_0_r.
-      Qed.
-
-    Lemma prod_f_R0_n1_n2 (f : nat -> R) (n1 n2 : nat) :
-      (n1 <= n2)%nat ->
-      f n1 = 0 ->
-      prod_f_R0 f n2 = 0.
-    Proof.
-      intros.
-      destruct (lt_dec n1 n2).
-      - rewrite prod_SO_split with (k := n1) (n := n2); trivial.
-        rewrite prod_f_R0_n; trivial.
-        apply Rmult_0_l.
-      - assert (n1 = n2) by lia.
-        rewrite H1 in H0.
-        now apply prod_f_R0_n.
-    Qed.
-
 
   End qlearn.
 
@@ -4057,15 +3884,6 @@ End rv_expressible.
       - now apply equiv_ge_rvmaxabs_inter_rvabs_aux.
     Qed.
 
-    Instance rvmaxabs_pos {n}
-             (X : Ts -> vector R n) :
-      NonnegativeFunction (rvmaxabs X).
-    Proof.
-      unfold NonnegativeFunction, rvmaxabs.
-      intros.
-      apply Rvector_max_abs_nonneg.
-    Qed.
-
     Lemma conv_l2_vector_prob_max_abs {n:nat}
         (eps : posreal)
           {prts: ProbSpace dom}                              
@@ -4197,40 +4015,6 @@ End rv_expressible.
       r - r/2 = r/2.
     Proof.
       lra.
-    Qed.
-
-    Lemma seq_sum_shift (α : nat -> R) (nk:nat):
-      is_lim_seq (sum_n α) p_infty ->
-      is_lim_seq (sum_n (fun n0 => α (n0 + nk)%nat)) p_infty.
-    Proof.
-      intros.
-      destruct (Nat.eq_dec nk 0).
-      - subst.
-        eapply (is_lim_seq_ext _ _ _ _ H).
-        Unshelve.
-        intros.
-        apply sum_n_ext.
-        intros.
-        f_equal; lia.
-     -  apply is_lim_seq_incr_n with (N := nk) in H.
-        assert (0 < nk)%nat by lia.
-        apply is_lim_seq_ext 
-              with (v := (fun n => ((sum_n α (nk-1)%nat) + 
-                                    (sum_n (fun n1 : nat => α (n1 + nk)%nat) n))%R ))
-                   in H.
-        + eapply is_lim_seq_minus with (v := fun _ => sum_n α (nk-1)) in H.
-          * eapply is_lim_seq_ext in H.
-            -- apply H.
-            -- intros; lra.
-          * apply is_lim_seq_const.
-          * unfold is_Rbar_minus, is_Rbar_plus.
-            now simpl.
-        + intros.
-          unfold sum_n.
-          rewrite sum_split with (m := (nk-1)%nat); try lia.
-          apply Rplus_eq_compat_l.
-          replace (S (nk - 1)) with (nk) by lia.
-          apply sum_n_m_shift.
     Qed.
 
   End qlearn4.
@@ -4883,20 +4667,6 @@ End rv_expressible.
       apply Rvector_max_abs_nonneg.
     Qed.
 
-    Lemma Rvector_max_abs_nth_Rabs_le {n} (v : vector R (S n)) (c:R) :
-      Rvector_max_abs v <= c <->
-      forall (i : nat) (pf : (i < S n)%nat),
-        Rabs (vector_nth i pf v) <= c.
-    Proof.
-      split; intros.
-      - eapply Rle_trans.
-        apply Rvector_max_abs_nth_le.
-        apply H.
-      - destruct (Rvector_max_abs_nth_in v) as [? [? ?]].
-        rewrite H0.
-        apply H.
-    Qed.
-    
 
   Lemma inter_coll_le_sup_pos {prts: ProbSpace dom} (f : nat -> Ts -> R) (eps:R)
           {rv : forall n, RandomVariable dom borel_sa (f n)} 

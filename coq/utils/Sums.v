@@ -2495,6 +2495,7 @@ Section tails.
    - apply is_lim_seq_sum_shift_inf1.
  Qed.
 
+
   Lemma no_best_diverge (gamma : nat -> R) :
    (forall n, 0 <= gamma n) ->
    is_lim_seq (sum_n gamma) p_infty ->

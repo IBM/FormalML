@@ -1006,6 +1006,15 @@ Lemma FiniteRangeFunction_vector {n} (f:Ts -> forall i (pf : (i < n)%nat)) :
     now apply in_map.
   Qed.
 
+  Global Instance rvmaxabs_pos {n}
+           (X : Ts -> vector R n) :
+    NonnegativeFunction (rvmaxabs X).
+  Proof.
+    unfold NonnegativeFunction, rvmaxabs.
+    intros.
+    apply Rvector_max_abs_nonneg.
+  Qed.
+
 End vector_ops.
 
 Lemma Rvector_borel_singleton {n} (c:vector R n) :

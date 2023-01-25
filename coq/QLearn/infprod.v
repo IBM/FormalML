@@ -461,6 +461,42 @@ Proof.
   apply sum_split; lia.
 Qed.
 
+
+    Lemma seq_sum_shift (α : nat -> R) (nk:nat):
+      is_lim_seq (sum_n α) p_infty ->
+      is_lim_seq (sum_n (fun n0 => α (n0 + nk)%nat)) p_infty.
+    Proof.
+      intros.
+      destruct (Nat.eq_dec nk 0).
+      - subst.
+        eapply (is_lim_seq_ext _ _ _ _ H).
+        Unshelve.
+        intros.
+        apply sum_n_ext.
+        intros.
+        f_equal; lia.
+     -  apply is_lim_seq_incr_n with (N := nk) in H.
+        assert (0 < nk)%nat by lia.
+        apply is_lim_seq_ext 
+              with (v := (fun n => ((sum_n α (nk-1)%nat) + 
+                                    (sum_n (fun n1 : nat => α (n1 + nk)%nat) n))%R ))
+                   in H.
+        + eapply is_lim_seq_minus with (v := fun _ => sum_n α (nk-1)) in H.
+          * eapply is_lim_seq_ext in H.
+            -- apply H.
+            -- intros; lra.
+          * apply is_lim_seq_const.
+          * unfold is_Rbar_minus, is_Rbar_plus.
+            now simpl.
+        + intros.
+          unfold sum_n.
+          rewrite sum_split with (m := (nk-1)%nat); try lia.
+          apply Rplus_eq_compat_l.
+          replace (S (nk - 1)) with (nk) by lia.
+          apply sum_n_m_shift.
+    Qed.
+
+
   Lemma ex_seq_sum_shift (α : nat -> R) (nk:nat):
       ex_lim_seq (sum_n α) ->
       ex_lim_seq (sum_n (fun n0 => α (n0 + nk)%nat)).

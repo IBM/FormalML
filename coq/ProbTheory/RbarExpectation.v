@@ -2554,6 +2554,23 @@ Qed.
     now rewrite Expectation_const.
   Qed.
 
+  Lemma Rbar_IsFiniteExpectation_nnf_bounded_almost (f g : Ts -> Rbar.Rbar)
+          {rvf : RandomVariable dom Rbar_borel_sa f}
+          {rvg : RandomVariable dom Rbar_borel_sa g} :
+    Rbar_NonnegativeFunction f ->
+    almostR2 prts Rbar.Rbar_le f g ->
+    Rbar_IsFiniteExpectation g ->
+    Rbar_IsFiniteExpectation f.
+  Proof.
+    intros nnf ale isfe.
+    destruct (almostR2_Rbar_le_split_r _ _ _ ale)
+      as [g' [eqq [lee rvg']]].
+    cut_to rvg'; try typeclasses eauto.
+    apply Rbar_IsFiniteExpectation_bounded with (rv_X1 := const (Rbar.Finite 0)) (rv_X3 := g'); trivial.
+    - apply Rbar_IsFiniteExpectation_const.
+    - apply Rbar_IsFiniteExpectation_proper_almostR2 with (rv_X1 := g); trivial.
+  Qed.
+
   Lemma Rbar_finexp_almost_plus rv_X1 rv_X2
         {rv1 : RandomVariable dom Rbar_borel_sa rv_X1} 
         {rv2 : RandomVariable dom Rbar_borel_sa rv_X2} :    

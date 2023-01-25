@@ -1061,6 +1061,7 @@ Section more_lemmas.
     apply vector_nth_In.
   Qed.
 
+
   Lemma Rvector_max_abs_in {n} (v:vector R (S n)) :
     In (Rvector_max_abs v) (proj1_sig (vector_map Rabs v)).
   Proof.
@@ -1114,6 +1115,21 @@ Section more_lemmas.
   Qed.
 
   
+  Lemma Rvector_max_abs_nth_Rabs_le {n} (v : vector R (S n)) (c:R) :
+    Rvector_max_abs v <= c <->
+    forall (i : nat) (pf : (i < S n)%nat),
+      Rabs (vector_nth i pf v) <= c.
+  Proof.
+    split; intros.
+    - eapply Rle_trans.
+      apply Rvector_max_abs_nth_le.
+      apply H.
+    - destruct (Rvector_max_abs_nth_in v) as [? [? ?]].
+      rewrite H0.
+      apply H.
+  Qed.
+    
+
   Lemma Rvector_max_abs_nonneg {n} (v: vector R n) : 0 <= Rvector_max_abs v.
   Proof.
     unfold Rvector_max_abs, vector_fold_left.
