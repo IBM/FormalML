@@ -4318,3 +4318,47 @@ Qed.
  Qed.
 
 
+  Theorem Tsitsiklis3_beta_gen {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
+        (XF : vector R n -> vector R n)
+        {F : nat -> SigmaAlgebra Ts}
+        (isfilt : IsFiltration F) 
+        (filt_sub : forall k, sa_sub (F k) dom) 
+        (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
+        {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
+        {rvD0 : RandomVariable (F 0%nat) borel_sa D0}        
+        {posD0 : forall ω, 0 < D0 ω}
+        (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
+        {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
+        {iscond : forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (w k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k)))} :
+
+    (forall k ω i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
+(*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
+*)
+    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+
+    (exists (C : R),
+        forall i pf,
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Rbar.Finite C))) ->
+    (forall k i pf, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (fun ω => vector_nth i pf (w k ω))) (const 0)) ->
+    (exists (A B : R),
+        forall k i pf, 
+          almostR2 prts Rbar_le (ConditionalExpectation 
+                                   _ (filt_sub k) 
+                                   (fun ω => Rsqr (vector_nth i pf (w k ω))))
+                   (rvplus (const A) 
+                           (rvscale (Rabs B) (rvmaxlist 
+                                         (fun j ω => rvsqr (rvmaxabs (X j)) ω)
+                                         k)))) ->
+    (forall k, almostR2 prts Rle (rvmaxabs (X k)) D0) ->
+    0 <= β < 1 ->
+    (forall x, Rvector_max_abs (XF x) <= β * Rvector_max_abs x) ->
+    (forall k, rv_eq (X (S k)) 
+                     (vecrvplus (X k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF (X k ω)) (X k) ) (w k))))) ->
+    almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
+  Proof.
+    intros.
+    destruct (Rlt_dec 0 β).
+    - now apply Tsitsiklis3 with (w0 := w) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
+    - assert (β = 0) by lra.
+      now apply Tsitsiklis3_beta_0 with (w0 := w) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
+   Qed.
