@@ -3955,21 +3955,6 @@ End rv_expressible.
       now rewrite Rvector_plus_zero.
     Qed.
 
-
-    Lemma Rabs_le_both (a b : R) :
-      Rabs a <= b <-> -b <= a <= b.
-    Proof.
-      unfold Rabs.
-      destruct (Rcase_abs a); lra.
-    Qed.
-   
-    Lemma Rabs_lt_both (a b : R) :
-      Rabs a < b <-> -b < a < b.
-    Proof.
-      unfold Rabs.
-      destruct (Rcase_abs a); lra.
-    Qed.
-
     Declare Scope Rvector_scope.
     Delimit Scope Rvector_scope with Rvector.
     Bind Scope Rvector_scope with vector R.

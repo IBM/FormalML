@@ -6367,3 +6367,17 @@ Qed.
 
 
 End prod_f_R0.
+
+    Lemma Rabs_le_both (a b : R) :
+      Rabs a <= b <-> -b <= a <= b.
+    Proof.
+      unfold Rabs.
+      destruct (Rcase_abs a); lra.
+    Qed.
+   
+    Lemma Rabs_lt_both (a b : R) :
+      Rabs a < b <-> -b < a < b.
+    Proof.
+      unfold Rabs.
+      destruct (Rcase_abs a); lra.
+    Qed.

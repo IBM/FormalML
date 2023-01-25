@@ -638,7 +638,7 @@ Section MDP.
       simpl.
       specialize (H3 n sa).
       apply Rsqr_le_abs_0 in H3.
-      now apply qlearn.Rabs_le_both.
+      now apply Rabs_le_both.
     Qed.
 
    Fixpoint Y (tk:nat) (C: R) (n:nat) sa : R :=
@@ -3275,12 +3275,12 @@ Proof.
     - intro z.
       specialize (H z); simpl in H.
       apply Rsqr_le_abs_0 in H.
-      now apply qlearn.Rabs_le_both in H.
+      now apply Rabs_le_both in H.
     - intros z.
       specialize (H z); simpl in H.
       apply Rsqr_le_abs_0 in H.
       unfold const.
-      now apply qlearn.Rabs_le_both in H.
+      now apply Rabs_le_both in H.
   }
 
   assert (svy1: forall n : nat, IsFiniteExpectation prts (rvsqr (alpha n))).
