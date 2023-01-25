@@ -3668,7 +3668,7 @@ Lemma conv_pair_as_prob_inf_delta_eps (f g : nat->Ts->R) (eps : posreal)
     exists (max x x0).
     intros.
     eapply Rge_trans.
-    apply qlearn.ps_inter_bound.
+    apply ps_inter_bound.
     specialize (H0 N).
     specialize (H1 N).
     cut_to H0; try lia.
@@ -3839,7 +3839,7 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
     exists (max x x0).
     intros.
     eapply Rge_trans.
-    apply qlearn.ps_inter_bound.
+    apply ps_inter_bound.
     specialize (H0 N).
     specialize (H1 N).
     cut_to H0; try lia.
@@ -3895,7 +3895,7 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
    - cut_to IHl.
      + rewrite list_inter_cons.
        eapply Rge_trans.
-       apply qlearn.ps_inter_bound.
+       apply ps_inter_bound.
        unfold Rminus.
        do 3 rewrite Rplus_assoc.
        apply Rplus_ge_compat.
@@ -4746,7 +4746,7 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
      cut_to H8; try lia.
      replace (gamma * Ck + eps * Ck) with ((gamma + eps)* Ck) in r by lra.
      replace (- gamma * Ck - eps * Ck) with (- (gamma + eps) * Ck) in r by lra.
-     generalize (qlearn.ps_inter_bound
+     generalize (ps_inter_bound
                     (event_inter
            (qlearn.event_Rbar_ge
               (fun omega : Ts =>

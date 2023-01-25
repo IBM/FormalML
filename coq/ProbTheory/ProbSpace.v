@@ -236,6 +236,15 @@ Proof.
   lra.
 Qed.
 
+Lemma ps_inter_bound {T:Type} {σ:SigmaAlgebra T} 
+      (A B : event σ) (prts : ProbSpace σ) :
+  ps_P (event_inter A B) >= ps_P A + ps_P B - 1.
+Proof.
+  generalize (ps_union prts A B); intros.
+  assert (ps_P (event_union A B) <= 1) by apply ps_le1.
+  lra.
+Qed.
+
 (* P1.7 inclusion/exclusion identity should not be hard to prove, 
    but is somewhat painful to state so it is omitted for now.
    We state and prove the case for n=3 for fun
