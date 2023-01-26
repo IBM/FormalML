@@ -71,6 +71,21 @@ Section sums.
     apply HH; lra.
   Qed.
 
+  Lemma Rbar_mult_0_lt (a b : Rbar) :
+      Rbar_lt 0 a ->
+      Rbar_lt 0 b ->
+      Rbar_lt 0 (Rbar_mult a b).
+    Proof.
+      intros.
+      destruct a; destruct b; try now simpl in *.
+      - simpl in *.
+        now apply Rmult_lt_0_compat.
+      - simpl in H.
+        now rewrite Rbar_mult_comm, Rbar_mult_p_infty_pos.
+      - simpl in H0.
+        now rewrite Rbar_mult_p_infty_pos.
+    Qed.
+
   Lemma Rbar_le_incr0 (f : nat -> Rbar) :
     (forall n, Rbar_le (f n) (f (S n))) ->
     forall n k, (Rbar_le (f n) (f (n + k)%nat)).
@@ -2115,3 +2130,4 @@ Qed.
         intros.
         apply H0.
    Qed.        
+

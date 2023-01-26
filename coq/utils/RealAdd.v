@@ -6204,6 +6204,15 @@ Qed.
       simpl. f_equal.  lia.
     Qed.
 
+    Lemma prod_f_R0_one :
+      forall n, prod_f_R0 (fun _ => 1) n = 1.
+    Proof.
+      induction n.
+      - now simpl.
+      - rewrite prod_f_R0_Sn, IHn.
+        lra.
+    Qed.
+
     (* Product of a list of real numbers. Move this to RealAdd.v *)
     Fixpoint list_product (l : list R) : R :=
       match l with

@@ -952,22 +952,6 @@ End rv_expressible.
       now apply series_finite_sum_shift.
     Qed.
 
-    Lemma Rbar_mult_0_lt (a b : Rbar) :
-      Rbar_lt 0 a ->
-      Rbar_lt 0 b ->
-      Rbar_lt 0 (Rbar_mult a b).
-    Proof.
-      intros.
-      destruct a; destruct b; try now simpl in *.
-      - simpl in *.
-        now apply Rmult_lt_0_compat.
-      - simpl in H.
-        now rewrite Rbar_mult_comm, Rbar_mult_p_infty_pos.
-      - simpl in H0.
-        now rewrite Rbar_mult_p_infty_pos.
-    Qed.
-
-
     Lemma ex_series_prod_Rbar_lt_0 (a : nat -> R) :
       (forall n, 0 <= a n < 1) ->
       ex_series a ->
@@ -1005,15 +989,6 @@ End rv_expressible.
           red; intros.
           f_equal; f_equal; lia.
      Qed.
-
-    Lemma prod_f_R0_one :
-      forall n, prod_f_R0 (fun _ => 1) n = 1.
-    Proof.
-      induction n.
-      - now simpl.
-      - rewrite prod_f_R0_Sn, IHn.
-        lra.
-    Qed.
 
 
     Lemma finite_lim_prod (a : nat -> R) :
@@ -1895,25 +1870,12 @@ End rv_expressible.
       - now left.
     Qed.
 
-    Lemma SimpleExpectation_pos (f : Ts -> R)
-          (rx : RandomVariable dom borel_sa f)
-          (frf: FiniteRangeFunction f) :
-      (forall omega, 0 <= f omega) ->
-      0 <= SimpleExpectation f.
-    Proof.
-      intros.
-      replace (0) with (SimpleExpectation (const 0)).
-      - apply SimpleExpectation_le.
-        now unfold const.
-      - apply SimpleExpectation_const.
-    Qed.
-
     Lemma SimpleExpectation_rvinner_pos (f : Ts -> vector R I) 
           (rx : RandomVariable dom (Rvector_borel_sa I) f)
           (frf: FiniteRangeFunction f) :
       0 <= SimpleExpectation (rvinner f f).
     Proof.
-      apply SimpleExpectation_pos.
+      apply SimpleExpectation_nneg.
       intro v.
       now generalize (inner_ge_0 (f v)).
    Qed.
@@ -1923,7 +1885,7 @@ End rv_expressible.
           (frf: FiniteRangeFunction f) :
       0 <= SimpleExpectation (rvmaxabs f).
     Proof.
-      apply SimpleExpectation_pos.
+      apply SimpleExpectation_nneg.
       intro v.
       unfold const, rvmaxabs.
       unfold Rvector_max_abs.
@@ -2926,8 +2888,8 @@ End rv_expressible.
               -- left; apply HE.
             * apply Rle_ge, Rmult_le_pos.
               -- apply pow2_ge_0.
-              -- apply SimpleExpectation_pos.
-                 intros.
+              -- apply SimpleExpectation_nneg.
+                 intros ?.
                  apply rv_inner_ge_0.
           + apply ex_series_scal_r.
             rewrite ex_series_incr_n in Ha4.
@@ -3544,7 +3506,7 @@ End rv_expressible.
           {frf: FiniteRangeFunction f}       :
       0 <= SimpleExpectation (rvsqr f).
     Proof.
-      apply SimpleExpectation_pos.
+      apply SimpleExpectation_nneg.
       intro v.
       unfold const, rvsqr.
       apply Rle_0_sqr.
@@ -3644,8 +3606,8 @@ End rv_expressible.
                                     SimpleExpectation (rvinner (Xn n0) (Xn n0)));
         [ | apply is_lim_seq_const | trivial].
       intros; split.
-      - apply SimpleExpectation_pos.
-        intros.
+      - apply SimpleExpectation_nneg.
+        intros ?.
         unfold rvsqr.
         apply Rle_0_sqr.
       - apply SimpleExpectation_le.
