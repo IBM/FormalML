@@ -493,7 +493,6 @@ Proof.
         -- assert  (isfefn : forall n : nat,
                    Rbar_IsFiniteExpectation prts
                      (fun omega : Ts =>
-                      Rbar.Finite
                         (rvsum (fun n0 : nat => rvsqr (β n0)) n omega))).
            { 
              intros.
@@ -524,7 +523,6 @@ Proof.
              (isfe : Rbar_IsFiniteExpectation prts
                    (Rbar_rvlim
                       (fun (n : nat) (omega : Ts) =>
-                       Rbar.Finite
                          (rvsum (fun n0 : nat => rvsqr (β n0)) n omega)))).
            {
              apply Rbar_IsFiniteExpectation_nnf_bounded_almost with
@@ -2865,17 +2863,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       apply Gnneg.
     }
 
-    assert (Gpos:forall t ω, 0 < G t ω).
-    {
-      intros.
-      induction t.
-      - simpl.
-        unfold rvmax, const.
-        apply Rlt_le_trans with (r2 := G0); try lra.
-        apply Rmax_r.
-      - specialize (Gincr t ω).
-        lra.
-   }
     assert (Gpos1:forall t ω, 1 < G t ω).
     {
       intros.
@@ -2886,6 +2873,11 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         apply Rmax_r.
       - specialize (Gincr t ω).
         lra.
+   }
+    assert (Gpos:forall t ω, 0 < G t ω).
+    {
+      intros.
+      specialize (Gpos1 t ω);lra.
    }
     assert (adaptG : IsAdapted borel_sa G F).
     {
