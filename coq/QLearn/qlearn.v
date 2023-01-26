@@ -1729,45 +1729,6 @@ End rv_expressible.
     now rewrite H.
  Qed.
 
-
-   Lemma rv_inner_plus_l (x y z : vector R I) :
-     Rvector_inner (Rvector_plus x y) z = 
-     (Rvector_inner x z) + (Rvector_inner y z).
-   Proof.
-     apply (inner_plus_l x y z).
-   Qed.
-
-   Lemma rv_inner_plus_r (x y z : vector R I) :
-     Rvector_inner x (Rvector_plus y z) = 
-     (Rvector_inner x y) + (Rvector_inner x z).
-    Proof.
-      apply (inner_plus_r x y z).
-    Qed.
-   
-   Lemma rv_inner_scal_l (x y : vector R I) (l : R) :
-     Rvector_inner (Rvector_scale l x) y = l * Rvector_inner x y.
-   Proof.
-     apply (inner_scal_l x y l).
-   Qed.
-
-   Lemma rv_inner_scal_r (x y : vector R I) (l : R) :
-     Rvector_inner x (Rvector_scale l y) = l * Rvector_inner x y.
-   Proof.
-     apply (inner_scal_r x y l).
-   Qed.
-
-   Lemma rv_inner_sym (x y : vector R I) :
-     Rvector_inner x y = Rvector_inner y x.
-   Proof.
-     apply (inner_sym x y).
-   Qed.
-
-   Lemma rv_inner_ge_0 (x : vector R I) :
-      0 <= Rvector_inner x x.
-   Proof.
-     apply (inner_ge_0 x).
-   Qed.
-
    Existing Instance rv_fun_simple_Rvector.
 
    Definition F_alpha (a : R) (x : Ts -> vector R I) :=
@@ -1842,10 +1803,10 @@ End rv_expressible.
         simpl.
         rewrite H.
         unfold rvinner, vecrvminus, vecrvplus, vecrvopp, vecrvscale.
-        repeat rewrite (rv_inner_plus_l).
-        repeat rewrite (rv_inner_plus_r).
-        repeat rewrite (rv_inner_scal_l).
-        repeat rewrite (rv_inner_scal_r).
+        repeat rewrite rv_inner_plus_l.
+        repeat rewrite rv_inner_plus_r.
+        repeat rewrite rv_inner_scal_l.
+        repeat rewrite rv_inner_scal_r.
         ring_simplify.
         repeat rewrite Rplus_assoc.
         repeat apply Rplus_eq_compat_l.

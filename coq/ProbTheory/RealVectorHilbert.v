@@ -1324,3 +1324,47 @@ Section more_lemmas.
   Qed.
 
 End more_lemmas.
+
+Section rvinner_stuff.
+  Context {n : nat}.
+  Canonical Rvector_NormedModule := @PreHilbert_NormedModule (@Rvector_PreHilbert n).
+
+   Lemma rv_inner_plus_l (x y z : vector R n) :
+     Rvector_inner (Rvector_plus x y) z = 
+     (Rvector_inner x z) + (Rvector_inner y z).
+   Proof.
+     apply (inner_plus_l x y z).
+   Qed.
+
+    Lemma rv_inner_plus_r (x y z : vector R n) :
+     Rvector_inner x (Rvector_plus y z) = 
+     (Rvector_inner x y) + (Rvector_inner x z).
+    Proof.
+      apply (inner_plus_r x y z).
+    Qed.
+   
+   Lemma rv_inner_scal_l (x y : vector R n) (l : R) :
+     Rvector_inner (Rvector_scale l x) y = l * Rvector_inner x y.
+   Proof.
+     apply (inner_scal_l x y l).
+   Qed.
+
+   Lemma rv_inner_scal_r (x y : vector R n) (l : R) :
+     Rvector_inner x (Rvector_scale l y) = l * Rvector_inner x y.
+   Proof.
+     apply (inner_scal_r x y l).
+   Qed.
+
+   Lemma rv_inner_sym (x y : vector R n) :
+     Rvector_inner x y = Rvector_inner y x.
+   Proof.
+     apply (inner_sym x y).
+   Qed.
+
+   Lemma rv_inner_ge_0 (x : vector R n) :
+      0 <= Rvector_inner x x.
+   Proof.
+     apply (inner_ge_0 x).
+   Qed.
+
+End rvinner_stuff.
