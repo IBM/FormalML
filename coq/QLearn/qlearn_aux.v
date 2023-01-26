@@ -16,57 +16,17 @@ Section qlearn_aux.
 
 Context {Ts : Type} {dom: SigmaAlgebra Ts}.
 
-  Lemma sa_le_Rbar_gt_rv {domm}
-        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma _ (fun omega => Rbar_gt (rv_X omega) x).
-  Proof.
-    apply Rbar_sa_le_gt.
-    intros.
-    now apply rv_Rbar_measurable.
-  Qed.
-
-  Definition event_Rbar_gt {domm}
-             (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : event domm
-    := @exist (pre_event Ts) _ _ (sa_le_Rbar_gt_rv rv_X x).
-
-  Lemma sa_le_Rbar_lt_rv {domm}
-        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma _ (fun omega => Rbar_lt (rv_X omega) x).
-  Proof.
-    apply Rbar_sa_le_lt.
-    intros.
-    now apply rv_Rbar_measurable.
-  Qed.
-
-  Definition event_Rbar_lt {domm}
-             (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : event domm
-    := @exist (pre_event Ts) _ _ (sa_le_Rbar_lt_rv rv_X x).
-
-  Lemma sa_le_Rbar_le_rv {domm}
-        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma _ (fun omega => Rbar_le (rv_X omega) x).
-  Proof.
-    now apply rv_Rbar_measurable.
-  Qed.
-
-  Definition event_Rbar_le {domm}
-             (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : event domm
-    := @exist (pre_event Ts) _ _ (sa_le_Rbar_le_rv rv_X x).
-
   Lemma inter_coll_le_sup {prts: ProbSpace dom} (f : nat -> Ts -> R) (eps:R)
           {rv : forall n, RandomVariable dom borel_sa (f n)} 
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
     forall n,
       event_equiv
         (inter_of_collection (fun t : nat => event_le dom (rvabs (f (n + t)%nat)) eps))
-        (event_Rbar_le (fun x0 : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x0))) eps).
+        (event_Rbar_le (fun x0 : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x0))) (const eps)).
     Proof.
       intros n z.
       simpl.
-      unfold rvabs.
+      unfold rvabs, const, pre_event_complement.
       split; intros.
       - replace (Finite eps) with (Sup_seq (fun n => eps)).
         + apply Sup_seq_le.
@@ -94,11 +54,11 @@ Context {Ts : Type} {dom: SigmaAlgebra Ts}.
               now exists (0%nat).
     Qed.                         
 
-    Lemma event_Rbar_gt_complement (f : Ts -> Rbar) (eps:posreal)
+    Lemma event_Rbar_gt_complement (f : Ts -> Rbar) (eps:R)
           {rv : RandomVariable dom Rbar_borel_sa f} :
       event_equiv
-        (event_Rbar_gt f eps)
-        (event_complement (event_Rbar_le f eps)).
+        (event_Rbar_gt f (const eps))
+        (event_complement (event_Rbar_le f (const eps))).
     Proof.
       intros ?.
       unfold event_Rbar_gt, event_Rbar_le, event_complement, pre_event_complement, proj1_sig.
@@ -114,7 +74,7 @@ Context {Ts : Type} {dom: SigmaAlgebra Ts}.
     forall n,
       event_equiv
         (union_of_collection (fun t : nat => event_gt dom (rvabs (f (n + t)%nat)) eps))
-        (event_Rbar_gt (fun x0 : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x0))) eps).
+        (event_Rbar_gt (fun x0 : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x0))) (const (pos eps))).
     Proof.
       intros n.
       generalize (inter_coll_le_sup f eps); intros.
@@ -332,7 +292,7 @@ Qed.
           {rv : forall n, RandomVariable dom borel_sa (f n)} 
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
       (forall (eps:posreal),
-        is_lim_seq (fun n => ps_P (event_Rbar_gt (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 0) ->
+        is_lim_seq (fun n => ps_P (event_Rbar_gt (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) (const (pos eps)))) 0) ->
       almost prts (fun x => is_lim_seq (fun n => f n x) 0).
     Proof.
       intros.
@@ -345,7 +305,7 @@ Qed.
                                   (w :=  (fun n : nat =>
          ps_P
            (event_Rbar_gt (fun x : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x)))
-                          (mkposreal _ H1)))); trivial.
+                          (const (pos (mkposreal _ H1)))))); trivial.
       - intros.
         split.
         + apply ps_pos.
@@ -372,7 +332,7 @@ Qed.
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
       almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
       (forall (eps:posreal),
-        is_lim_seq (fun n => ps_P (event_Rbar_gt (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 0).
+        is_lim_seq (fun n => ps_P (event_Rbar_gt (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) (const (pos eps)))) 0).
    Proof.
      intros.
      rewrite almost_is_lim_seq_iff in H.
@@ -418,8 +378,8 @@ Qed.
           {rv : forall n, RandomVariable dom borel_sa (f n)} 
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
     forall (eps:posreal),
-      is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 1 <->
-      is_lim_seq (fun n => ps_P (event_Rbar_gt (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 0.
+      is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) (const (pos eps)))) 1 <->
+      is_lim_seq (fun n => ps_P (event_Rbar_gt (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) (const (pos eps)))) 0.
     Proof.
       intros.
       split; intros.
@@ -427,7 +387,7 @@ Qed.
          (u := (fun n : nat =>
                   1 - ps_P
                         (event_Rbar_le
-                           (fun x : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x))) eps))).
+                           (fun x : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x))) (const (pos eps))))).
         + intros.
           rewrite <- ps_complement.
           apply ps_proper.
@@ -445,7 +405,7 @@ Qed.
             (u := (fun n => 
                      1 - 
                      ps_P (event_Rbar_gt
-                             (fun x : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x))) eps))).
+                             (fun x : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x))) (const (pos eps))))).
         + intros.
           rewrite <- ps_complement.
           apply ps_proper.
@@ -465,7 +425,7 @@ Qed.
           {rv : forall n, RandomVariable dom borel_sa (f n)} 
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
       (forall (eps:posreal),
-        is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 1) ->
+        is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) (const (pos eps)))) 1) ->
       almost prts (fun x => is_lim_seq (fun n => f n x) 0).
    Proof.
      intros.
@@ -479,7 +439,7 @@ Qed.
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
       almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
       forall (eps:posreal),
-        is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 1.
+        is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) (const (pos eps)))) 1.
     Proof.
       intros.
       rewrite lim_ps_sub_1_0; trivial.

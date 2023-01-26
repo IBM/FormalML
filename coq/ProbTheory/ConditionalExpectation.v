@@ -1163,20 +1163,6 @@ Section is_cond_exp.
       rewrite eqq1; trivial.
   Qed.
 
-  Lemma sa_le_Rbar_ge_rv {domm}
-        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma _ (fun omega => Rbar_ge (rv_X omega) x).
-  Proof.
-    apply Rbar_sa_le_ge.
-    intros.
-    now apply rv_Rbar_measurable.
-  Qed.
-
-  Definition event_Rbar_ge {domm}
-             (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : event domm
-    := @exist (pre_event Ts) _ _ (sa_le_Rbar_ge_rv rv_X x).
-
   Theorem is_conditional_expectation_isfe
         f ce
         {rvf:RandomVariable dom borel_sa f} 

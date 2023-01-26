@@ -3753,15 +3753,47 @@ Section RbarRandomVariables.
          intros; apply Rbar_minus_measurable; now apply rv_Rbar_measurable.
    Qed.
 
+(* to be moved *)
+  Lemma not_Rbar_gt (x y : Rbar) :
+    ~ Rbar_gt x y <-> Rbar_le x y.
+  Proof.
+    unfold Rbar_gt.
+    split.
+    - apply Rbar_not_lt_le.
+    - apply Rbar_le_not_lt.
+  Qed.
+
+   Lemma event_Rbar_le_sa x1 x2
+        {rv1:RandomVariable dom Rbar_borel_sa x1}
+        {rv2:RandomVariable dom Rbar_borel_sa x2}
+    : sa_sigma _ (fun x => Rbar_le (x1 x) (x2 x)).
+   Proof.
+     eapply (sa_proper _ (fun x => ~ (Rbar_gt (x1 x) (x2 x)))).
+     - intros ?.
+       apply not_Rbar_gt.
+     - apply sa_complement.
+       now apply event_Rbar_gt_sa.
+   Qed.
+
    Definition event_Rbar_gt  x1 x2
              {rv1:RandomVariable dom Rbar_borel_sa x1}
              {rv2:RandomVariable dom Rbar_borel_sa x2} : event dom
      := exist _ _ (event_Rbar_gt_sa x1 x2).
 
+   Definition event_Rbar_lt  x1 x2
+             {rv1:RandomVariable dom Rbar_borel_sa x1}
+             {rv2:RandomVariable dom Rbar_borel_sa x2} : event dom
+     := exist _ (fun x : Ts => Rbar_lt (x1 x) (x2 x)) (event_Rbar_gt_sa x2 x1).
+
    Definition event_Rbar_le x1 x2
              {rv1:RandomVariable dom Rbar_borel_sa x1}
              {rv2:RandomVariable dom Rbar_borel_sa x2} : event dom
-     := event_complement (event_Rbar_gt x2 x2).
+     := exist _ (fun x : Ts => Rbar_le (x1 x) (x2 x)) (event_Rbar_le_sa x1 x2).
+
+  Definition event_Rbar_ge x1 x2
+             {rv1:RandomVariable dom Rbar_borel_sa x1}
+             {rv2:RandomVariable dom Rbar_borel_sa x2} : event dom
+     := exist _ (fun x : Ts => Rbar_ge (x1 x) (x2 x)) (event_Rbar_le_sa x2 x1).
 
   Lemma event_Rbar_gt_dec x1 x2
         {rv1:RandomVariable dom Rbar_borel_sa x1}

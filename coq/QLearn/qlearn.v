@@ -4096,71 +4096,17 @@ End rv_expressible.
    Qed.
 
 
-  Lemma sa_le_Rbar_gt_rv {domm}
-        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma _ (fun omega => Rbar_gt (rv_X omega) x).
-  Proof.
-    apply Rbar_sa_le_gt.
-    intros.
-    now apply rv_Rbar_measurable.
-  Qed.
-
-  Definition event_Rbar_gt {domm}
-             (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : event domm
-    := @exist (pre_event Ts) _ _ (sa_le_Rbar_gt_rv rv_X x).
-
-  Lemma sa_le_Rbar_ge_rv {domm}
-        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma _ (fun omega => Rbar_ge (rv_X omega) x).
-  Proof.
-    apply Rbar_sa_le_ge.
-    intros.
-    now apply rv_Rbar_measurable.
-  Qed.
-
-  Definition event_Rbar_ge {domm}
-             (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : event domm
-    := @exist (pre_event Ts) _ _ (sa_le_Rbar_ge_rv rv_X x).
-
-  Lemma sa_le_Rbar_lt_rv {domm}
-        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma _ (fun omega => Rbar_lt (rv_X omega) x).
-  Proof.
-    apply Rbar_sa_le_lt.
-    intros.
-    now apply rv_Rbar_measurable.
-  Qed.
-
-  Definition event_Rbar_lt {domm}
-             (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : event domm
-    := @exist (pre_event Ts) _ _ (sa_le_Rbar_lt_rv rv_X x).
-
-  Lemma sa_le_Rbar_le_rv {domm}
-        (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : sa_sigma _ (fun omega => Rbar_le (rv_X omega) x).
-  Proof.
-    now apply rv_Rbar_measurable.
-  Qed.
-
-  Definition event_Rbar_le {domm}
-             (rv_X : Ts -> Rbar) {rv : RandomVariable domm Rbar_borel_sa rv_X} x
-    : event domm
-    := @exist (pre_event Ts) _ _ (sa_le_Rbar_le_rv rv_X x).
-
   Lemma inter_coll_le_sup {prts: ProbSpace dom} (f : nat -> Ts -> R) (eps:R)
           {rv : forall n, RandomVariable dom borel_sa (f n)} 
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
     forall n,
       event_equiv
         (inter_of_collection (fun t : nat => event_le dom (rvabs (f (n + t)%nat)) eps))
-        (event_Rbar_le (fun x0 : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x0))) eps).
+        (event_Rbar_le (fun x0 : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x0))) (const eps)).
     Proof.
       intros n z.
       simpl.
-      unfold rvabs.
+      unfold rvabs, const.
       split; intros.
       - replace (Finite eps) with (Sup_seq (fun n => eps)).
         + apply Sup_seq_le.
@@ -4194,10 +4140,11 @@ End rv_expressible.
     forall n,
       event_equiv
         (inter_of_collection (fun t : nat => event_le dom (f (n + t)%nat) eps))
-        (event_Rbar_le (fun x0 : Ts => Sup_seq (fun m : nat => (f (n + m)%nat x0))) eps).
+        (event_Rbar_le (fun x0 : Ts => Sup_seq (fun m : nat => (f (n + m)%nat x0))) (const (Finite eps))).
     Proof.
       intros n z.
       simpl.
+      unfold const.
       split; intros.
       - replace (Finite eps) with (Sup_seq (fun n => eps)).
         + apply Sup_seq_le.
@@ -4231,12 +4178,12 @@ End rv_expressible.
     forall n,
       event_equiv
         (inter_of_collection (fun t : nat => event_ge dom (f (n + t)%nat) (eps)))
-        (event_Rbar_ge (fun x0 : Ts => Inf_seq (fun m : nat => (f (n + m)%nat x0))) (eps)).
+        (event_Rbar_ge (fun x0 : Ts => Inf_seq (fun m : nat => (f (n + m)%nat x0))) (const (Finite eps))).
     Proof.
       intros n z.
       split; intros.
       - simpl in H.
-        unfold proj1_sig, event_Rbar_ge, Rbar_ge.
+        unfold proj1_sig, event_Rbar_ge, Rbar_ge, const.
         replace (Finite eps) with (Inf_seq (fun n => eps)).        
         + apply Inf_seq_le.
           intros.
@@ -4270,8 +4217,8 @@ End rv_expressible.
     Lemma event_Rbar_gt_complement (f : Ts -> Rbar) (eps:posreal)
           {rv : RandomVariable dom Rbar_borel_sa f} :
       event_equiv
-        (event_Rbar_gt f eps)
-        (event_complement (event_Rbar_le f eps)).
+        (event_Rbar_gt f (const (pos eps)))
+        (event_complement (event_Rbar_le f (const (pos eps)))).
     Proof.
       intros ?.
       unfold event_Rbar_gt, event_Rbar_le, event_complement, pre_event_complement, proj1_sig.
@@ -4287,7 +4234,7 @@ End rv_expressible.
     forall n,
       event_equiv
         (union_of_collection (fun t : nat => event_gt dom (rvabs (f (n + t)%nat)) eps))
-        (event_Rbar_gt (fun x0 : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x0))) eps).
+        (event_Rbar_gt (fun x0 : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x0))) (const (pos eps))).
     Proof.
       intros n.
       generalize (inter_coll_le_sup f eps); intros.
@@ -4312,7 +4259,7 @@ End rv_expressible.
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
       almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
       forall (eps:posreal),
-        is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 1. 
+        is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) (const (pos eps)))) 1. 
       Proof.
         intros.
         destruct H as [? [? ?]].
@@ -4369,7 +4316,7 @@ End rv_expressible.
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => (f (n + m)%nat x)))}:
       almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
       forall (eps:posreal),
-        is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => f (n + m)%nat x)) eps)) 1. 
+        is_lim_seq (fun n => ps_P (event_Rbar_le (fun x => Sup_seq (fun m => f (n + m)%nat x)) (const (Finite eps)))) 1. 
       Proof.
         intros.
         destruct H as [? [? ?]].
@@ -4429,7 +4376,7 @@ End rv_expressible.
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Inf_seq (fun m => (f (n + m)%nat x)))}:
       almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
       forall (eps:posreal),
-        is_lim_seq (fun n => ps_P (event_Rbar_ge (fun x => Inf_seq (fun m => f (n + m)%nat x)) (-eps))) 1. 
+        is_lim_seq (fun n => ps_P (event_Rbar_ge (fun x => Inf_seq (fun m => f (n + m)%nat x)) (const (Finite (-eps))))) 1. 
       Proof.
         intros.
         destruct H as [? [? ?]].
@@ -4486,7 +4433,7 @@ End rv_expressible.
           {rv : forall n, RandomVariable dom borel_sa (f n)} 
           {rv2 : forall n, RandomVariable dom Rbar_borel_sa (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x)))}:
       (forall (eps:posreal),
-        is_lim_seq (fun n => ps_P (event_Rbar_gt (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) eps)) 0) ->
+        is_lim_seq (fun n => ps_P (event_Rbar_gt (fun x => Sup_seq (fun m => Rabs (f (n + m)%nat x))) (const (pos eps)))) 0) ->
       almost prts (fun x => is_lim_seq (fun n => f n x) 0).
     Proof.
       intros.
@@ -4499,7 +4446,7 @@ End rv_expressible.
                                   (w :=  (fun n : nat =>
          ps_P
            (event_Rbar_gt (fun x : Ts => Sup_seq (fun m : nat => Rabs (f (n + m)%nat x)))
-                          (mkposreal _ H1)))); trivial.
+                          (const (pos (mkposreal _ H1)))))); trivial.
       - intros.
         split.
         + apply ps_pos.
@@ -4520,8 +4467,6 @@ End rv_expressible.
           + apply rvconst.
           + apply rv.
     Qed.
-
-
     
     Lemma L2_convergent_x_nth_RMseq (i n:nat) (pf : (i < S n)%nat) (α : nat -> R) 
           (w : nat -> Ts -> vector R (S n)) (omega:Ts) :
@@ -4574,7 +4519,7 @@ End rv_expressible.
     forall n,
       event_equiv
         (inter_of_collection (fun t : nat => event_le dom (f (n + t)%nat) eps))
-        (event_Rbar_le (fun x0 : Ts => Sup_seq (fun m : nat => f (n + m)%nat x0)) eps).
+        (event_Rbar_le (fun x0 : Ts => Sup_seq (fun m : nat => f (n + m)%nat x0)) (const eps)).
     Proof.
       intros.
       assert (forall n, rv_eq (f n) (rvabs (f n))).
@@ -4679,7 +4624,7 @@ End rv_expressible.
                     (fun (omega : Ts) =>
                        Sup_seq (fun (n0 : nat) =>
                                   (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) omega))
-                    (C0 * (gamma + eps)^k))
+                    (const (Finite (C0 * (gamma + eps)^k))))
         >= 1 - (INR k) * (1 - P).
     Proof.
       intros Plim Clim glim geps alim aseq sumaseq exser_asq Fcont Fxstar xrel xlim wexp condexp k.
@@ -4695,7 +4640,7 @@ End rv_expressible.
                             (fun omega : Ts =>
                                Sup_seq (fun n0 : nat => rvmaxabs (vecrvminus (x (n0 + 0)%nat) 
                                                                              (const xstar)) omega)) 
-                            C0)
+                            (const (Finite C0)))
                     Ω).
         {
           intro omega.
@@ -4983,7 +4928,7 @@ End rv_expressible.
                                               (x ((x0 + x1 + nk) + n0)%nat) 
                                               (const xstar))
                                            omega)) 
-                          (C0 * (gamma + eps) ^ S k)).
+                          (const (C0 * (gamma + eps) ^ S k))).
                (* show A /\ B -> E *)
                (* ps_P (A) >= 1 - INR k *(1-P) by H9 *)
                (* B comes from H7 with prob > P for n0 >= x0*)
@@ -5111,7 +5056,7 @@ End rv_expressible.
                             (fun omega : Ts =>
                                Sup_seq (fun n0 : nat => rvmaxabs (vecrvminus (x (n0 + nk)%nat)
                                                                              (const xstar)) omega))
-                            (C0 * (gamma + eps) ^ k))).
+                            (const (Finite (C0 * (gamma + eps) ^ k))))).
                {
                  intros ?.
                  simpl.
@@ -5297,8 +5242,8 @@ End rv_expressible.
     Lemma lim_Rbar_le_complement {prts : ProbSpace dom} (f : nat -> Ts -> Rbar) (C : Rbar) (p : R) 
           { rv: forall n1, RandomVariable dom Rbar_borel_sa (f n1)} :
       0 <= p <= 1 ->
-      is_lim_seq (fun n1 => ps_P ( event_Rbar_le (f n1) C)) p ->
-      is_lim_seq (fun n1 => ps_P ( event_Rbar_gt (f n1) C)) (1-p).
+      is_lim_seq (fun n1 => ps_P ( event_Rbar_le (f n1) (const C))) p ->
+      is_lim_seq (fun n1 => ps_P ( event_Rbar_gt (f n1) (const C))) (1-p).
     Proof.
       intros.
       apply lim_ps_complement in H0; trivial.
@@ -5379,7 +5324,7 @@ End rv_expressible.
                           (fun (omega : Ts) =>
                              Sup_seq (fun (n0 : nat) =>
                                         (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) omega))
-                          eps0) >= P).
+                          (const (Finite eps0))) >= P).
       {
         intros.
         destruct (Rlt_dec eps0 C0).
@@ -5454,7 +5399,7 @@ End rv_expressible.
                           (fun (omega : Ts) =>
                              Sup_seq (fun (n0 : nat) =>
                                         (rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar))) omega))
-                          (C0 * (gamma + eps)^k)) >= 1 - (INR k) * (1 - P0)).
+                          (const (Finite (C0 * (gamma + eps)^k)))) >= 1 - (INR k) * (1 - P0)).
           {
             apply (Induction_I1_17 (mkposreal _ H14) (mkposreal _ H17) C0 α C w) with (F := F) (rw := rw) (srw := srw) (isfew := isfew); trivial.
           }
@@ -5502,6 +5447,7 @@ End rv_expressible.
           apply ps_sub.
           intros ? ?.
           simpl; simpl in H22.
+          unfold const; unfold const in H22.
           apply Rbar_le_trans with (y := (C0 * (gamma + eps) ^ k)); trivial.
           simpl; lra.
         - exists (0%nat).
@@ -5509,12 +5455,12 @@ End rv_expressible.
                      (event_Rbar_le
                         (fun omega : Ts =>
                            Sup_seq (fun n1 : nat => rvmaxabs (vecrvminus (x (n1 + 0)%nat) 
-                                                                         (const xstar)) omega)) eps0)
+                                                                         (const xstar)) omega)) (const (Finite eps0)))
                       Ω).
           {
             intros ?.
             simpl.
-            unfold pre_Ω.
+            unfold pre_Ω, const.
             split; intros; trivial.
             replace (Finite eps0) with (Sup_seq (fun n => eps0)).
             apply Sup_seq_le.
@@ -5536,7 +5482,7 @@ End rv_expressible.
                                         Sup_seq (fun n0 : nat => rvmaxabs 
                                                                    (vecrvminus (x (n0 + nk)%nat)
                                                                                (const xstar)) omega)) 
-                                     eps)) 1).
+                                     (const (Finite eps)))) 1).
       {
         intros.
         specialize (H13 eps0).
@@ -5557,12 +5503,12 @@ End rv_expressible.
                          (fun omega : Ts =>
                             Sup_seq (fun n0 : nat => rvmaxabs (vecrvminus (x (n0 + x0)%nat) 
                                                                           (const xstar)) omega))
-                         eps0) <= 
+                         (const (Finite eps0))) <= 
                     ps_P
                       (event_Rbar_le
                          (fun omega : Ts =>
                             Sup_seq (fun n1 : nat => rvmaxabs (vecrvminus (x (n1 + n0)%nat) 
-                                                                          (const xstar)) omega)) eps0)).
+                                                                          (const xstar)) omega)) (const (Finite eps0)))).
             {
               apply ps_sub.
               intros ? ?.
@@ -5574,12 +5520,13 @@ End rv_expressible.
               apply (Sup_seq_incr (fun n1 : nat => rvmaxabs (vecrvminus (x n1) (const xstar)) x1)).
               lia.
             }
+            
             lra.
           + assert (ps_P
                       (event_Rbar_le
                          (fun omega : Ts =>
                             Sup_seq (fun n1 : nat => rvmaxabs (vecrvminus (x (n1 + n0)%nat) 
-                                                                          (const xstar)) omega)) eps0) 
+                                                                          (const xstar)) omega)) (const (Finite eps0)))
                     <= 1) by  apply ps_le1.
             lra.
        - assert (eps1 > 1) by lra.
@@ -5590,13 +5537,13 @@ End rv_expressible.
          + assert (0 <= ps_P
                           (event_Rbar_le
                              (fun omega : Ts =>
-                                Sup_seq (fun n2 : nat => rvmaxabs (vecrvminus (x (n2 + n1)%nat) (const xstar)) omega)) eps0)) by apply ps_pos.
+                                Sup_seq (fun n2 : nat => rvmaxabs (vecrvminus (x (n2 + n1)%nat) (const xstar)) omega)) (const (Finite eps0)))) by apply ps_pos.
            lra.
           + assert (ps_P
                       (event_Rbar_le
                          (fun omega : Ts =>
                             Sup_seq (fun n2 : nat => rvmaxabs (vecrvminus (x (n2 + n1)%nat) 
-                                                                          (const xstar)) omega)) eps0) 
+                                                                          (const xstar)) omega)) (const (Finite eps0)))
                     <= 1) by  apply ps_le1.
             lra.
       }
@@ -5607,7 +5554,7 @@ End rv_expressible.
              (event_Rbar_gt
                 (fun omega : Ts =>
                  Sup_seq (fun n0 : nat => rvmaxabs (vecrvminus (x (n0 + nk)%nat) (const xstar)) omega))
-                eps)) 0).
+                (const (Finite (pos eps))))) 0).
       {
         intros.
         replace (0) with (1 - 1) by lra.
@@ -5628,7 +5575,7 @@ End rv_expressible.
                      (fun omega : Ts =>
                         Sup_seq (fun n0 : nat => rvmaxabs (vecrvminus (x (n0 + nk)%nat) 
                                                                       (const xstar)) omega))
-                     eps0))).
+                     (const (Finite eps0))))).
       - intros.
         apply ps_proper.
         symmetry.
