@@ -2246,6 +2246,18 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     typeclasses eauto.
   Qed.
 
+   Lemma rvinv_Rinv (x : Ts -> R) (ω : Ts) :
+     0 < x ω ->
+     rvinv x ω = / (x ω).
+   Proof.
+     unfold rvinv, rvpower, const.
+     intros.
+     replace (-1) with (Ropp 1) by lra.
+     rewrite power_Ropp; trivial.
+     f_equal.
+     rewrite power_1; lra.
+   Qed.
+     
   Lemma Rinv_powerRZ (x : R) :
     0 < x ->
     Rinv x = powerRZ x (-1)%Z.
@@ -2607,18 +2619,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
      now specialize (H11 t _ H12).
    Qed.
     
-   Lemma rvinv_Rinv (x : Ts -> R) (ω : Ts) :
-     0 < x ω ->
-     rvinv x ω = / (x ω).
-   Proof.
-     unfold rvinv, rvpower, const.
-     intros.
-     replace (-1) with (Ropp 1) by lra.
-     rewrite power_Ropp; trivial.
-     f_equal.
-     rewrite power_1; lra.
-   Qed.
-     
   Theorem Tsitsiklis1 {n} (X w α : nat -> Ts -> vector R (S n)) 
         (XF : vector R (S n) -> vector R (S n))
         {F : nat -> SigmaAlgebra Ts}
