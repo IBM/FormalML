@@ -246,12 +246,12 @@ Lemma Dvoretzky_converge_W_alpha_beta  (W w α β: nat -> Ts -> R)
    almost prts (fun ω : Ts => is_lim_seq (sum_n(fun n : nat => α n ω)) p_infty)  ->
    almost prts (fun ω : Ts => is_lim_seq (sum_n (fun n : nat => β n ω)) p_infty)  ->
    (exists (A2 : R),
-       almost prts (fun ω => Rbar_lt (Lim_seq (sum_n (fun n : nat => rvsqr (α n) ω))) (Rbar.Finite A2))) ->
+       almost prts (fun ω => Rbar_lt (Lim_seq (sum_n (fun n : nat => rvsqr (α n) ω))) (Finite A2))) ->
 
    (exists (A3 : R),
-       almost prts (fun ω => Rbar_lt (Lim_seq (sum_n (fun n : nat => rvsqr (β n) ω))) (Rbar.Finite A3))) ->
+       almost prts (fun ω => Rbar_lt (Lim_seq (sum_n (fun n : nat => rvsqr (β n) ω))) (Finite A3))) ->
   (forall n, rv_eq (W (S n)) (rvplus (rvmult (rvminus (const 1) (α n)) (W n)) (rvmult (w n) (β n)))) ->
-  almost _ (fun ω => is_lim_seq (fun n => W n ω) (Rbar.Finite 0)).
+  almost _ (fun ω => is_lim_seq (fun n => W n ω) (Finite 0)).
 Proof.
   intros condexpw condexpw2 alpha_inf beta_inf alpha_sqr beta_sqr (* W0 *) Wrel.
 
@@ -321,7 +321,7 @@ Proof.
     intros; red; intros; red; intros.
     rewrite H3.
     unfold Rbar_rvmult.
-    replace (Rbar.Finite (const 0 x)) with (Rbar_mult  (Rbar.Finite (β n x)) (Rbar.Finite  (const 0 x))).
+    replace (Finite (const 0 x)) with (Rbar_mult  (Finite (β n x)) (Finite  (const 0 x))).
     + f_equal.
       rewrite <- H4.
       apply ConditionalExpectation.ConditionalExpectation_ext.
@@ -485,10 +485,10 @@ Proof.
         destruct beta_sqr as [A2 beta_sqr].
         generalize (Dominated_convergence_almost 
                       prts 
-                      (fun n omega => Rbar.Finite (rvsum (fun n0 => rvsqr (β n0)) n omega))
-                      (Rbar_rvlim (fun n omega => Rbar.Finite (rvsum (fun n0 => rvsqr (β n0)) n omega)))
+                      (fun n omega => Finite (rvsum (fun n0 => rvsqr (β n0)) n omega))
+                      (Rbar_rvlim (fun n omega => Finite (rvsum (fun n0 => rvsqr (β n0)) n omega)))
                    ); intros.
-        specialize (H6 (const (Rbar.Finite A2))).
+        specialize (H6 (const (Finite A2))).
         cut_to H6.
         -- assert  (isfefn : forall n : nat,
                    Rbar_IsFiniteExpectation prts
@@ -497,7 +497,7 @@ Proof.
            { 
              intros.
              apply Rbar_IsFiniteExpectation_nnf_bounded_almost with
-                 (g := const (Rbar.Finite A2)).
+                 (g := const (Finite A2)).
              - typeclasses eauto.
              - typeclasses eauto.
              - typeclasses eauto.
@@ -526,7 +526,7 @@ Proof.
                          (rvsum (fun n0 : nat => rvsqr (β n0)) n omega)))).
            {
              apply Rbar_IsFiniteExpectation_nnf_bounded_almost with
-                 (g := const (Rbar.Finite A2)).
+                 (g := const (Finite A2)).
              - typeclasses eauto.
              - typeclasses eauto.
              - typeclasses eauto.
@@ -546,7 +546,7 @@ Proof.
                             Rbar_FiniteExpectation 
                               prts
                               (fun omega : Ts =>
-                                 Rbar.Finite (rvsum (fun n0 : nat => rvsqr (β n0)) n omega)))).
+                                 Finite (rvsum (fun n0 : nat => rvsqr (β n0)) n omega)))).
               ** rewrite H6.
                  now simpl.
               ** intros.
@@ -2638,7 +2638,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
 
     (exists (C : R),
         forall i pf,
-          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Rbar.Finite C))) ->
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Finite C))) ->
     (forall k i pf, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (vecrvnth i pf (w k))) (const 0)) ->
     (exists (A B : R),
         0 < A /\ 0 < B /\
@@ -3615,7 +3615,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
 
     (exists (C : R),
         forall i pf,
-          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Rbar.Finite C))) ->
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Finite C))) ->
     (forall k i pf, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (fun ω => vector_nth i pf (w k ω))) (const 0)) ->
     (exists (A B : R),
         forall k i pf, 
@@ -4115,7 +4115,7 @@ Qed.
 
     (exists (C : R),
         forall i pf,
-          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Rbar.Finite C))) ->
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Finite C))) ->
     (forall k i pf, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (fun ω => vector_nth i pf (w k ω))) (const 0)) ->
     (exists (A B : R),
         forall k i pf, 
@@ -4330,7 +4330,7 @@ Qed.
 
     (exists (C : R),
         forall i pf,
-          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Rbar.Finite C))) ->
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Finite C))) ->
     (forall k i pf, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (fun ω => vector_nth i pf (w k ω))) (const 0)) ->
     (exists (A B : R),
         forall k i pf, 
