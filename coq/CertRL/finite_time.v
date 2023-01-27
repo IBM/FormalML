@@ -1,5 +1,5 @@
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
-Require Import pmf_monad mdp Permutation fixed_point Finite LibUtils. 
+Require Import pmf_monad mdp Permutation fixed_point FiniteType LibUtils. 
 Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
 Require Import micromega.Lia.
@@ -323,7 +323,7 @@ Qed.
 
 Theorem Rmax_list_dec_rule_split n p :
   (n > 0)%nat ->
-  let l' := all_lists_upto (@elms _ (dec_rule_finite M)) n in
+  let l' := all_lists_upto (@fin_elms _ (dec_rule_finite M)) n in
   Max_{ l' } (fun '(h,t) => ltv_fin p (h::t)) =
   Max_{ map fst l' } (fun h => Max_{map snd l'} (fun t => ltv_fin p (h::t)))  
 .
@@ -333,19 +333,19 @@ Proof.
   - apply all_lists_upto_non_nil; trivial.
     destruct (dec_rule_finite M); simpl.
     generalize (nonempty_dec_rule M); intros e.
-    destruct elms; [| congruence].
-    elim (finite e).
+    destruct fin_elms; [| congruence].
+    elim (fin_finite e).
   - apply all_lists_upto_prod.
 Qed.
 
 (* Optimal value function for a time n MDP. *)
 Definition max_ltv_fin (n:nat) p :=
-  let l' := all_lists_upto (@elms _ (dec_rule_finite M)) n in
+  let l' := all_lists_upto (@fin_elms _ (dec_rule_finite M)) n in
   Max_{ l' } (fun '(h,t) => ltv_fin p (h::t)).
 
 Theorem max_ltv_corec p n:
   max_ltv_fin (S (S n)) p =
-  Max_{(@elms _ (dec_rule_finite M))}
+  Max_{(@fin_elms _ (dec_rule_finite M))}
       (fun h => expt_value p (step_expt_reward h) +
              γ * max_ltv_fin (S n) (Pmf_bind p (fun s0 => (t s0 (h s0))))).
 Proof.
@@ -359,7 +359,7 @@ Proof.
   rewrite all_lists_upto_snds.
   rewrite map_map.
   transitivity (
-  (Max_{ all_lists_upto elms (S n)}
+  (Max_{ all_lists_upto fin_elms (S n)}
    (fun '(h, tl) => expt_value p (step_expt_reward a) +
                 γ * ltv_fin (Pmf_bind p (fun s0 : state M => t s0 (a s0))) (h :: tl)))).
   - f_equal.
@@ -376,20 +376,20 @@ Proof.
                                  | pair h tl =>
                                    ltv_fin (@Pmf_bind (state M) (state M) p (fun s0 : state M => @t M s0 (a s0)))
                                            (@cons (dec_rule M) h tl)
-                                 end) (@all_lists_upto (dec_rule M) (@elms (dec_rule M) (dec_rule_finite M)) (S n)))
+                                 end) (@all_lists_upto (dec_rule M) (@fin_elms (dec_rule M) (dec_rule_finite M)) (S n)))
                   (expt_value p (step_expt_reward a))); intros HH2.
 
     case_eq ( map
             (fun a0 : dec_rule M * list (dec_rule M) =>
              γ * (let (h, tl) := a0 in ltv_fin (Pmf_bind p (fun s0 : state M => t s0 (a s0))) (h :: tl)))
-            (all_lists_upto elms (S n))); intros.
-    + generalize (all_lists_upto_non_nil (@elms _ (dec_rule_finite M)) (S n)); intros HH3.
-      destruct ((all_lists_upto (@elms _ (dec_rule_finite M)) (S n))).
+            (all_lists_upto fin_elms (S n))); intros.
+    + generalize (all_lists_upto_non_nil (@fin_elms _ (dec_rule_finite M)) (S n)); intros HH3.
+      destruct ((all_lists_upto (@fin_elms _ (dec_rule_finite M)) (S n))).
       * elim HH3; trivial.
         destruct (dec_rule_finite M); simpl.
         generalize (nonempty_dec_rule M); intros e.
-        destruct elms; [| congruence].
-        elim (finite e).
+        destruct fin_elms; [| congruence].
+        elim (fin_finite e).
         lia.
       * simpl in H; congruence.
     + rewrite H in HH2.

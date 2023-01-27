@@ -3,13 +3,12 @@ Require Import Classical.
 Require Import QArith Coq.Reals.Rbase Coq.Reals.RList.
 Require Import Coq.Reals.Rfunctions.
 Require Import Coq.Reals.Rprod Coq.Reals.ROrderedType.
-Require Import Ranalysis_reg utils.Finite.
+Require Import Ranalysis_reg.
 Require Import Coquelicot.Coquelicot.
 Require Import Lia Lra.
 Require Import Reals.Integration.
 Require Import Rtrigo_def.
 Require Import List.
-Require Finite.
 
 Require Import Program.Basics.
 Require Import Coq.Reals.Rbase.

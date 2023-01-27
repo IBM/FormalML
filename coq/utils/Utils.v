@@ -5,6 +5,7 @@ Require Export BasicUtils.
 Require Export ClassicUtils.
 Require Export Assoc.
 Require Export CoquelicotAdd.
+Require Export FiniteType.
 Require Export improper_integrals.
 Require Export Isomorphism.
 Require Export ListAdd.

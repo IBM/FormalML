@@ -5,29 +5,29 @@ Require Import LibUtils.
 Require Import Lia.
 Require Import ListAdd Vector.
 
-Class Finite (A:Type) :=
- { elms  : list A ;
-  finite : forall x:A, In x elms
+Class FiniteType (A:Type) :=
+ { fin_elms  : list A ;
+  fin_finite : forall x:A, In x fin_elms
  }.
 
-Lemma Finite_equivlist {A:Type} (fin1:Finite A) (fin2:Finite A) :
-  equivlist (@elms _ fin1) (@elms _ fin2).
+Lemma FiniteType_equivlist {A:Type} (fin1:FiniteType A) (fin2:FiniteType A) :
+  equivlist (@fin_elms _ fin1) (@fin_elms _ fin2).
 Proof.
   destruct fin1 as [??]
   ; destruct fin2 as [??].
   split; intuition.
 Qed.
 
-Program Instance Finite_iso {A B} {iso:Isomorphism A B} {fin:Finite A} : Finite B
+Program Instance FiniteType_iso {A B} {iso:Isomorphism A B} {fin:FiniteType A} : FiniteType B
   := {
-  elms:= (List.map iso_f elms)
+  fin_elms:= (List.map iso_f fin_elms)
     }.
 Next Obligation.
   apply in_map_iff.
   exists (iso_b x).
   split.
   - now rewrite iso_f_b.
-  - apply finite.
+  - apply fin_finite.
 Qed.
 
 Lemma in_dec_nd_pf_irrel {A:Type} {dec:EqDec A eq} {a:A} {l:list A} (nd:NoDup l) (pf1 pf2:In a l) :
@@ -93,11 +93,11 @@ Proof.
   apply equiv_dec.
 Qed.
 
-Program Fixpoint Finite_fun_dep_elems_aux {A:Type} {dec:EqDec A eq} {B:A->Type} (la:list A) 
+Program Fixpoint FiniteType_fun_dep_elems_aux {A:Type} {dec:EqDec A eq} {B:A->Type} (la:list A) 
         {struct la} : (forall x, In_strong x la -> list (B x)) -> list (forall a, In_strong a la -> B a)
   := match la as la' return (forall x, In_strong x la' -> list (B x)) -> list (forall a, In_strong a la' -> B a) with
      | nil => fun _ => _ :: nil
-     | a::xs => fun lb => let rest := Finite_fun_dep_elems_aux xs (fun x inx => lb x _) in
+     | a::xs => fun lb => let rest := FiniteType_fun_dep_elems_aux xs (fun x inx => lb x _) in
                      let lbx := lb a _ in
                      List.concat (List.map (fun b => List.map (fun x => _) rest) lbx)
      end.
@@ -122,16 +122,16 @@ Next Obligation.
     congruence.
 Defined.
 
-Definition Finite_fun_dep_elems
-        {A:Type} {dec:EqDec A eq} {B:A->Type} (finA:Finite A) (finB:forall a, Finite (B a))
+Definition FiniteType_fun_dep_elems
+        {A:Type} {dec:EqDec A eq} {B:A->Type} (finA:FiniteType A) (finB:forall a, FiniteType (B a))
   : list (forall a, B a)
-  := List.map (fun X a => X a (In_In_strong _ _ (finite a))) (Finite_fun_dep_elems_aux (B:=B) elms (fun a ina => elms)).
+  := List.map (fun X a => X a (In_In_strong _ _ (fin_finite a))) (FiniteType_fun_dep_elems_aux (B:=B) fin_elms (fun a ina => fin_elms)).
 
-Lemma Finite_fun_dep_elems_aux_all
+Lemma FiniteType_fun_dep_elems_aux_all
       {A:Type} {dec:EqDec A eq} {B:A->Type} (la:list A) 
       (lb:forall a, In_strong a la -> list (B a))
       (lbf:forall a pf x, In x (lb a pf))
-  : forall x:(forall a:A, In_strong a la -> B a), In x (Finite_fun_dep_elems_aux la lb).
+  : forall x:(forall a:A, In_strong a la -> B a), In x (FiniteType_fun_dep_elems_aux la lb).
 Proof.
   revert lb lbf.
   induction la; simpl; intros lb lbf x.
@@ -139,22 +139,22 @@ Proof.
     apply FunctionalExtensionality.functional_extensionality_dep; intros a.
     apply FunctionalExtensionality.functional_extensionality_dep; intros ina.
     intuition.
-  - specialize (IHla (fun (x0 : A) (inx : In_strong x0 la) => lb x0 (Finite_fun_dep_elems_aux_obligation_2 A dec a la x0 inx))).
+  - specialize (IHla (fun (x0 : A) (inx : In_strong x0 la) => lb x0 (FiniteType_fun_dep_elems_aux_obligation_2 A dec a la x0 inx))).
     cut_to IHla; [| intros; apply lbf].
     rewrite concat_In.
     refine (ex_intro _ (List.map _
-                                 (Finite_fun_dep_elems_aux la
-                                                           (fun (x0 : A) (inx : In_strong x0 la) => lb x0 (Finite_fun_dep_elems_aux_obligation_2 A dec a la x0 inx)))) _).
+                                 (FiniteType_fun_dep_elems_aux la
+                                                           (fun (x0 : A) (inx : In_strong x0 la) => lb x0 (FiniteType_fun_dep_elems_aux_obligation_2 A dec a la x0 inx)))) _).
     split.
     rewrite in_map_iff.
     eexists; split; [reflexivity | ].
-    + apply (lbf a (Finite_fun_dep_elems_aux_obligation_3 A dec a la) (x a (Finite_fun_dep_elems_aux_obligation_3 A dec a la))).
+    + apply (lbf a (FiniteType_fun_dep_elems_aux_obligation_3 A dec a la) (x a (FiniteType_fun_dep_elems_aux_obligation_3 A dec a la))).
     + apply in_map_iff.
-      exists (fun a' pfin => x a' (Finite_fun_dep_elems_aux_obligation_2 A dec a la a' pfin)).
+      exists (fun a' pfin => x a' (FiniteType_fun_dep_elems_aux_obligation_2 A dec a la a' pfin)).
       split; trivial.
       apply FunctionalExtensionality.functional_extensionality_dep; intros a'.
       apply FunctionalExtensionality.functional_extensionality_dep; intros ina'.
-      unfold Finite_fun_dep_elems_aux_obligation_4.
+      unfold FiniteType_fun_dep_elems_aux_obligation_4.
       clear.
       revert ina'.
       unfold In_strong.
@@ -168,28 +168,28 @@ Proof.
         apply in_strong_dec_pf_irrel.
 Qed.      
 
-Lemma Finite_fun_dep_elems_all
-      {A:Type} {dec:EqDec A eq} {B:A->Type} (finA:Finite A) (finB:forall a, Finite (B a))
-  : forall x:(forall a:A, B a), In x (Finite_fun_dep_elems finA finB).
+Lemma FiniteType_fun_dep_elems_all
+      {A:Type} {dec:EqDec A eq} {B:A->Type} (finA:FiniteType A) (finB:forall a, FiniteType (B a))
+  : forall x:(forall a:A, B a), In x (FiniteType_fun_dep_elems finA finB).
 Proof.
-  unfold Finite_fun_dep_elems; simpl.
+  unfold FiniteType_fun_dep_elems; simpl.
   intros.
-  generalize (Finite_fun_dep_elems_aux_all elms (B:=B) (fun a _ => elms))
+  generalize (FiniteType_fun_dep_elems_aux_all fin_elms (B:=B) (fun a _ => fin_elms))
   ; intros HH.
-  specialize (HH (fun a _ xx => (finite xx))).
+  specialize (HH (fun a _ xx => (fin_finite xx))).
   apply List.in_map_iff.
   exists (fun a _ => x a).
   split; trivial.
 Qed.
 
-Instance Finite_fun_dep {A:Type} {dec:EqDec A eq} {B:A->Type} (finA:Finite A) (finB:forall a, Finite (B a)): Finite (forall a : A, B a) :=
+Instance FiniteType_fun_dep {A:Type} {dec:EqDec A eq} {B:A->Type} (finA:FiniteType A) (finB:forall a, FiniteType (B a)): FiniteType (forall a : A, B a) :=
   {|
-  elms := Finite_fun_dep_elems finA finB
-  ; finite := Finite_fun_dep_elems_all finA finB
+  fin_elms := FiniteType_fun_dep_elems finA finB
+  ; fin_finite := FiniteType_fun_dep_elems_all finA finB
 |}.
 
-Instance Finite_fun {A:Type} {dec:EqDec A eq} {B} (finA:Finite A) (finB:Finite B): Finite (A -> B) :=
-  @Finite_fun_dep A dec (fun _ => B) finA (fun _ => finB).
+Instance FiniteType_fun {A:Type} {dec:EqDec A eq} {B} (finA:FiniteType A) (finB:FiniteType B): FiniteType (A -> B) :=
+  @FiniteType_fun_dep A dec (fun _ => B) finA (fun _ => finB).
 
 Lemma concat_length {A:Type} (l:list (list A)) : length (concat l) = fold_right plus 0 (map (@length _) l).
 Proof.
@@ -215,41 +215,41 @@ Proof.
   now rewrite IHl; simpl.
 Qed.
                                                                          
-Lemma Finite_fun_dep_size {A:Type} {dec:EqDec A eq} {B:A->Type} (finA:Finite A) (finB:forall a, Finite (B a))
-  : length (@elms _ (Finite_fun_dep finA finB)) =
-    fold_right Nat.mul 1 (List.map (fun a => length (@elms _ (finB a))) (@elms _ finA)).
+Lemma FiniteType_fun_dep_size {A:Type} {dec:EqDec A eq} {B:A->Type} (finA:FiniteType A) (finB:forall a, FiniteType (B a))
+  : length (@fin_elms _ (FiniteType_fun_dep finA finB)) =
+    fold_right Nat.mul 1 (List.map (fun a => length (@fin_elms _ (finB a))) (@fin_elms _ finA)).
 Proof.
   destruct finA.
-  unfold elms; simpl.
-  unfold Finite_fun_dep_elems.
+  unfold fin_elms; simpl.
+  unfold FiniteType_fun_dep_elems.
   rewrite map_length.
   simpl.
-  clear finite0.
-  induction elms0; simpl; trivial; intros.
+  clear fin_finite0.
+  induction fin_elms0; simpl; trivial; intros.
   rewrite concat_length.
   rewrite map_map.
   rewrite (map_ext _ (fun x : B a =>
         length
-          (Finite_fun_dep_elems_aux elms0 (fun (x0 : A) (_ : In_strong x0 elms0) => elms))))
+          (FiniteType_fun_dep_elems_aux fin_elms0 (fun (x0 : A) (_ : In_strong x0 fin_elms0) => fin_elms))))
     by (intros; now rewrite map_length).
   rewrite fold_right_add_const.
   rewrite NPeano.Nat.mul_comm.
-  now rewrite <- IHelms0.
+  now rewrite <- IHfin_elms0.
 Qed.
 
-Lemma Finite_fun_size {A:Type} {dec:EqDec A eq} {B:Type} (finA:Finite A) (finB:Finite B)
-  : length (@elms _ (Finite_fun finA finB)) = NPeano.pow (length (@elms _ finB)) (length (@elms _ finA)).
+Lemma FiniteType_fun_size {A:Type} {dec:EqDec A eq} {B:Type} (finA:FiniteType A) (finB:FiniteType B)
+  : length (@fin_elms _ (FiniteType_fun finA finB)) = NPeano.pow (length (@fin_elms _ finB)) (length (@fin_elms _ finA)).
 Proof.
-  unfold Finite_fun.
-  rewrite Finite_fun_dep_size.
+  unfold FiniteType_fun.
+  rewrite FiniteType_fun_dep_size.
   apply fold_right_mult_const.
 Qed.  
 
-Global Program Instance finite_prod {A B} (finA:Finite A) (finB:Finite B) : Finite (A*B)
-  := { elms := list_prod elms elms }.
+Global Program Instance fin_finite_prod {A B} (finA:FiniteType A) (finB:FiniteType B) : FiniteType (A*B)
+  := { fin_elms := list_prod fin_elms fin_elms }.
 Next Obligation.
   apply in_prod_iff.
-  split; apply finite.
+  split; apply fin_finite.
 Qed.
 
   Fixpoint list_dep_prod {A : Type} {B : A -> Type}(l:list A) (l': forall a:A, list (B a)) :
@@ -297,16 +297,16 @@ Qed.
         -- intuition.
     Qed.
 
-    Global Program Instance finite_dep_prod {A B} (finA : Finite A)
-       (finB : forall a:A, Finite (B a))
-      : Finite (sigT B).
+    Global Program Instance fin_finite_dep_prod {A B} (finA : FiniteType A)
+       (finB : forall a:A, FiniteType (B a))
+      : FiniteType (sigT B).
     Next Obligation.
       apply list_dep_prod.
       + destruct finA ; auto.
       + intros a. destruct (finB a); auto.
     Defined.
     Next Obligation.
-      unfold finite_dep_prod_obligation_1.
+      unfold fin_finite_dep_prod_obligation_1.
       rewrite in_dep_prod_iff.
       destruct finA as [la Hla]; split; auto.
       destruct (finB x) as [lb Hlb]; auto.
@@ -337,10 +337,10 @@ Proof.
   now apply map_ext; intros [??].
 Qed.
 
-Global Program Instance bounded_nat_finite n : Finite {x : nat | (x < n)%nat}
+Global Program Instance bounded_nat_finite n : FiniteType {x : nat | (x < n)%nat}
   := {|
   (* put them in numeric order for the convenience of users *)
-  elms := rev (bounded_nat_finite_list n) 
+  fin_elms := rev (bounded_nat_finite_list n) 
     |}.
 Next Obligation.
   apply -> in_rev.
@@ -365,7 +365,7 @@ Proof.
       exists x; lia.
 Defined.
 
-Lemma bounded_nat_finite_list_proj' n :
+Lemma bounded_nat_fin_finite_list_proj' n :
   List.map (@proj1_sig _ _) (bounded_nat_finite_list' n) = rev (seq 0 n).
 Proof.
   induction n; trivial.
@@ -529,32 +529,32 @@ Qed.
   End find_ind.
 
   Section fin_ind.
-    Context {A} {dec:EqDec A eq} (fin:Finite A).
+    Context {A} {dec:EqDec A eq} (fin:FiniteType A).
 
-    Program Instance finite_nodup : Finite A
+    Program Instance fin_finite_nodup : FiniteType A
       := {|
-        elms := nodup dec elms
+        fin_elms := nodup dec fin_elms
       |}.
     Next Obligation.
       apply nodup_In.
-      apply finite.
+      apply fin_finite.
     Qed.
 
                  
-    Definition finite_index (a:A) : nat
-      := proj1_sig (find_index_complete (finite (Finite:=finite_nodup) a)).
+    Definition fin_finite_index (a:A) : nat
+      := proj1_sig (find_index_complete (fin_finite (FiniteType:=fin_finite_nodup) a)).
 
-    Lemma finite_index_correct a :
-      nth_error (elms (Finite:=finite_nodup)) (finite_index a) = Some a.
+    Lemma fin_finite_index_correct a :
+      nth_error (fin_elms (FiniteType:=fin_finite_nodup)) (fin_finite_index a) = Some a.
     Proof.
-      unfold finite_index, proj1_sig; match_destr.
+      unfold fin_finite_index, proj1_sig; match_destr.
       now apply find_index_correct.
     Qed.
     
-    Lemma finite_index_bound a :
-      finite_index a < length (nodup dec (elms (Finite:=fin))).
+    Lemma fin_finite_index_bound a :
+      fin_finite_index a < length (nodup dec (fin_elms (FiniteType:=fin))).
     Proof.
-      unfold finite_index, proj1_sig; match_destr.
+      unfold fin_finite_index, proj1_sig; match_destr.
       now apply find_index_bound in e.
     Qed.
       
@@ -577,15 +577,15 @@ Qed.
       destruct (nth_error l n); [eauto | congruence].
     Qed.
         
-    Program Instance finite_index_iso : Isomorphism A {m:nat | (m < length (nodup dec (elms (Finite:=fin))))%nat}
+    Program Instance finite_index_iso : Isomorphism A {m:nat | (m < length (nodup dec (fin_elms (FiniteType:=fin))))%nat}
       := {|
-        iso_f a := exist _ _ (finite_index_bound a)
-      ; iso_b x := proj1_sig (nth_error_len_some (elms (Finite:=finite_nodup)) x _)
+        iso_f a := exist _ _ (fin_finite_index_bound a)
+      ; iso_b x := proj1_sig (nth_error_len_some (fin_elms (FiniteType:=fin_finite_nodup)) x _)
       |}.
     Next Obligation.
       apply bounded_index_pf_irrel.
       unfold proj1_sig; match_destr.
-      unfold finite_index, proj1_sig; match_destr.
+      unfold fin_finite_index, proj1_sig; match_destr.
       apply find_index_correct in e0.
       simpl in e0.
       eapply NoDup_nth_error; try now rewrite e, e0.
@@ -595,15 +595,15 @@ Qed.
     Qed.
     Next Obligation.
       unfold proj1_sig; match_destr.
-      rewrite finite_index_correct in e.
+      rewrite fin_finite_index_correct in e.
       congruence.
     Qed.
     
   End fin_ind.
 
-  Program Global Instance bool_finite : Finite bool
+  Program Global Instance bool_finite : FiniteType bool
     := {|
-      elms := (true::false::nil)
+      fin_elms := (true::false::nil)
     |}.
 Next Obligation.
   destruct x; simpl; tauto.

@@ -5,7 +5,7 @@ Require Export LibUtils BasicUtils ProbSpace SigmaAlgebras Independence.
 Require Classical.
 Require Import ClassicalDescription EquivDec.
 Require Import ClassicalChoice ChoiceFacts.
-
+Require Import FiniteType.
 
 Import ListNotations.
 
@@ -350,31 +350,31 @@ Section Simple.
 
 End Simple.
 
-Require Import Finite ListAdd SigmaAlgebras EquivDec Eqdep_dec.
+Require Import ListAdd SigmaAlgebras EquivDec Eqdep_dec.
 
 Section Finite.
   Context {Ts:Type}{Td:Type}.
 
-  Program Instance Finite_FiniteRangeFunction {fin:Finite Ts}  (rv_X:Ts->Td)
+  Program Instance Finite_FiniteRangeFunction {fin:FiniteType Ts}  (rv_X:Ts->Td)
     : FiniteRangeFunction rv_X
     := {| 
-      frf_vals := map rv_X elms
+      frf_vals := map rv_X fin_elms
     |}.
   Next Obligation.
-    generalize (finite x); intros.
+    generalize (fin_finite x); intros.
     apply in_map_iff; eauto.
   Qed.
 
-  Program Instance FiniteRange_FiniteRangeFunction {fin:Finite Td}  (rv_X:Ts->Td)
+  Program Instance FiniteRange_FiniteRangeFunction {fin:FiniteType Td}  (rv_X:Ts->Td)
     : FiniteRangeFunction rv_X
     := {| 
-      frf_vals := elms
+      frf_vals := fin_elms
     |}.
   Next Obligation.
-    apply finite.
+    apply fin_finite.
   Qed.
 
-  Lemma Finite_finitsubset1 {A:Type} {decA:EqDec A eq} (x:A) (l:list A) :
+  Lemma FiniteType_finitsubset1 {A:Type} {decA:EqDec A eq} (x:A) (l:list A) :
     { pfs : list (In x l) | forall pf, In pf pfs} .
   Proof.
     induction l; simpl.
@@ -399,25 +399,25 @@ Section Finite.
            apply pfs.
   Defined.
 
-  Definition Finite_finitsubset2 {A:Type} {decA:EqDec A eq} (x:A) (l:list A) :
+  Definition FiniteType_finitsubset2 {A:Type} {decA:EqDec A eq} (x:A) (l:list A) :
     list {x : A | In x l}.
   Proof.
-    destruct (Finite_finitsubset1 x l).
+    destruct (FiniteType_finitsubset1 x l).
     exact (map (fun y => exist _ x y) x0).
   Defined.
   
-  Program Instance Finite_finitesubset_dec {A:Type} {decA:EqDec A eq} (l:list A)
-    : Finite {x : A | In x l}.
+  Program Instance FiniteType_finitesubset_dec {A:Type} {decA:EqDec A eq} (l:list A)
+    : FiniteType {x : A | In x l}.
   Next Obligation.
-    exact (flat_map (fun x => Finite_finitsubset2 x l) l).
+    exact (flat_map (fun x => FiniteType_finitsubset2 x l) l).
   Defined.
   Next Obligation.
-    unfold Finite_finitesubset_dec_obligation_1.
+    unfold FiniteType_finitesubset_dec_obligation_1.
     apply in_flat_map.
     exists x.
     split; trivial.
-    unfold Finite_finitsubset2.
-    destruct (Finite_finitsubset1 x l).
+    unfold FiniteType_finitsubset2.
+    destruct (FiniteType_finitsubset1 x l).
     apply in_map.
     apply i.
   Qed.

@@ -1483,7 +1483,7 @@ End rv_expressible.
 
     (* Lemma 7. stochastic *)
 
-  Lemma bounding_7_alt {SS : Type} (hSS : Finite.Finite SS) (α : nat -> R) (gamma C : R) (f : nat -> X -> SS -> X) (init : X) :
+  Lemma bounding_7_alt {SS : Type} (hSS : FiniteType SS) (α : nat -> R) (gamma C : R) (f : nat -> X -> SS -> X) (init : X) :
       0 <= gamma < 1 -> 0 <= C ->
       (forall n, 0 <= (α n) <= 1) ->
       (forall n x, forall (s:SS), norm (f n x s) <= gamma * norm x + C) ->
@@ -2397,20 +2397,20 @@ End rv_expressible.
         split_Rabs; lra.
     Qed.
 
-  Lemma filter_finite_imp {A B} {fin:Finite.Finite B} {FF} {filterF:Filter FF} (P:B->A->Prop) : 
+  Lemma filter_finite_imp {A B} {fin:FiniteType B} {FF} {filterF:Filter FF} (P:B->A->Prop) : 
     (forall b, FF (P b)) -> FF (fun x => (forall b, P b x)).
   Proof.
     intros HH.
     destruct fin.
-    cut (FF (fun x : A => forall b : B, In b elms -> P b x)).
+    cut (FF (fun x : A => forall b : B, In b fin_elms -> P b x)).
     {
       apply filter_imp; intros; auto.
     }
-    clear finite.
-    induction elms.
+    clear fin_finite.
+    induction fin_elms.
     - eapply filter_imp; try eapply filter_true.
       simpl; intros; tauto.
-    - eapply filter_imp; [| apply filter_and; [apply (HH a) | apply IHelms]].
+    - eapply filter_imp; [| apply filter_and; [apply (HH a) | apply IHfin_elms]].
       simpl; intros.
       destruct H0; subst; firstorder.
   Qed.

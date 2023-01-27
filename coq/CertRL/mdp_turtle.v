@@ -1,6 +1,6 @@
 Require Import String.
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
-Require Import pmf_monad Permutation fixed_point Finite LibUtils. 
+Require Import pmf_monad Permutation fixed_point FiniteType LibUtils. 
 Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -48,9 +48,9 @@ Section turtle.
     - trivial.
   Defined.
   
-  Instance turtle_state_finite max_x max_y : Finite (turtle_state max_x max_y).
+  Instance turtle_state_finite max_x max_y : FiniteType (turtle_state max_x max_y).
   Proof.
-    apply finite_prod; apply bounded_nat_finite.
+    apply fin_finite_prod; apply bounded_nat_finite.
   Defined.
 
   Program Definition turtle_start_state {max_x max_y} : turtle_state (S max_x) (S max_y)
@@ -91,7 +91,7 @@ Section turtle.
     decide equality.
   Defined.
 
-  Instance turtle_action_finite : Finite turtle_action.
+  Instance turtle_action_finite : FiniteType turtle_action.
   Proof.
     exists (Up::Down::Left::Right::nil).
     destruct x; simpl; tauto.

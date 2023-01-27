@@ -1,5 +1,5 @@
 Require Import Reals Coq.Lists.List Coquelicot.Series Coquelicot.Hierarchy Coquelicot.SF_seq.
-Require Import pmf_monad Permutation fixed_point Finite LibUtils. 
+Require Import pmf_monad Permutation fixed_point LibUtils. 
 Require Import Sums Coq.Reals.ROrderedType.
 Require Import micromega.Lra.
 Require Import Coq.Logic.FunctionalExtensionality.
@@ -65,8 +65,8 @@ Record MDP := mkMDP {
  st_eqdec :> EqDec state eq;
 
  (** The state and action spaces are finite. *)
- fs :> Finite (state) ;
- fa :> forall s, Finite (act s);
+ fs :> FiniteType (state) ;
+ fa :> forall s, FiniteType (act s);
 
  (** The state space and the fibered action spaces are nonempty. *)
  ne : NonEmpty (state) ;
@@ -91,18 +91,18 @@ Global Existing Instance fs.
 *)
 Definition dec_rule (M : MDP) := forall s : M.(state), (M.(act)) s.
 
-Global Instance dec_rule_finite (M : MDP) : Finite (dec_rule M).
+Global Instance dec_rule_finite (M : MDP) : FiniteType (dec_rule M).
 Proof.
-  eapply Finite_fun_dep ; eauto.
+  eapply FiniteType_fun_dep ; eauto.
   - apply fs.
   - apply fa.
  Unshelve.
  apply st_eqdec.
 Qed.
 
-Global Instance act_finite (M : MDP) : Finite (sigT M.(act)).
+Global Instance act_finite (M : MDP) : FiniteType (sigT M.(act)).
 Proof.
-  apply finite_dep_prod.
+  apply fin_finite_dep_prod.
   + apply fs.
   + apply fa.
 Qed.
@@ -112,9 +112,9 @@ Global Instance nonempty_dec_rule (M : MDP) : NonEmpty (dec_rule M)
 
 Lemma bdd {M} :  {D | (forall s s': M.(state), forall σ : dec_rule M, Rabs (reward s (σ s) s') <= D)}.
 Proof.
-  assert (fin : Finite (M.(state)*M.(state)*dec_rule M)).
-  - apply finite_prod.
-    + apply finite_prod.
+  assert (fin : FiniteType (M.(state)*M.(state)*dec_rule M)).
+  - apply fin_finite_prod.
+    + apply fin_finite_prod.
       * apply fs.
       * apply fs.
     + apply dec_rule_finite.
@@ -258,9 +258,9 @@ Section Rfct_AbelianGroup.
     To talk about equality we use functional extensionality.
     Put this into it's own file.
   *)
-Definition Rfct (A : Type) {fin : Finite A} := A -> R.
+Definition Rfct (A : Type) {fin : FiniteType A} := A -> R.
 
-Context (A : Type) {finA : Finite A}. 
+Context (A : Type) {finA : FiniteType A}. 
                                 
 Definition Rfct_zero : Rfct A := fun x => 0. 
 
@@ -412,7 +412,7 @@ Section Rfct_ModuleSpace.
      The function type A -> R is also a module over the Real numbers.
      Here we assume A is a finite set.     
    *)
-Context (A : Type) {finA : Finite A}.
+Context (A : Type) {finA : FiniteType A}.
   
 Lemma Rfct_scal_assoc (x y : R) (u: Rfct A) :
    Rfct_scal A x (Rfct_scal A y u) = Rfct_scal A (x*y) u.
@@ -465,7 +465,7 @@ Section Rfct_UniformSpace.
    all elements of A. It exists since here we assume A is a finite set.
 *)
   
-Context (A : Type) {finA : Finite A}.
+Context (A : Type) {finA : FiniteType A}.
 
 
 Definition Rmax_norm : Rfct A -> R := let (ls,_) := finA in fun (f:Rfct A) => Max_{ls}(fun s => Rabs (f s)).
@@ -560,7 +560,7 @@ Section Rfct_NormedModule.
   (* 
      The function type A -> R is a normed module. The ball is defined using the norm.
    *)
-Context (A : Type) {finA : Finite A}.
+Context (A : Type) {finA : FiniteType A}.
 
 Canonical Rfct_NormedModuleAux :=
   NormedModuleAux.Pack R_AbsRing (Rfct A)
@@ -665,7 +665,7 @@ Section Rfct_open_closed.
      The alternative is to use filters to prove sets closed. (I don't know if this is 
      entirely intuitionistic.)
   *)
-  Context (A : Type) {finA : Finite A}.
+  Context (A : Type) {finA : FiniteType A}.
 
   (* The Max norm topology is compatible with the Euclidean topology induced from R.*)
   Lemma Rmax_ball_compat (f g : Rfct A) (eps : posreal) :
@@ -851,7 +851,7 @@ Section Rfct_open_closed.
 End Rfct_open_closed.
 
 
-Global Instance Filter_prop {A} (fin : Finite A) (F : (Rfct_UniformSpace A -> Prop) -> Prop) (ff : Filter F) :
+Global Instance Filter_prop {A} (fin : FiniteType A) (F : (Rfct_UniformSpace A -> Prop) -> Prop) (ff : Filter F) :
 Proper (pointwise_relation (Rfct_UniformSpace A) iff ==> Basics.flip Basics.impl) F.
   Proof.
     intros A' B' Ha.
@@ -865,7 +865,7 @@ Section Rfct_CompleteSpace.
 
   (* The function type A -> R is a complete uniform space.  *)
 
-  Context (A : Type) {finA : Finite A}.
+  Context (A : Type) {finA : FiniteType A}.
 
   Lemma close_lim_Rfct :
     forall F1 F2, filter_le F1 F2 -> filter_le F2 F1 -> @close (Rfct_UniformSpace A) (lim_fct F1) (lim_fct F2).
@@ -972,7 +972,7 @@ Section contraction_coinduction.
      {g | g >= f}. The operator F being monotonic also means that it preserves these
      sets. 
   *)
-  Context (A : Type) {finm : Finite A}.
+  Context (A : Type) {finm : FiniteType A}.
 
   Lemma monotone_le_preserv (F : Rfct A -> Rfct A) (f : Rfct A) :
       monotone_le A F -> (Rfct_le A (F f) f) -> (forall g, Rfct_le A g f -> Rfct_le A (F g) f).
@@ -1456,11 +1456,11 @@ Proof.
   unfold σ', greedy, bellman_op, step_expt_reward,V'.
   destruct (M s0). 
    rewrite (argmax_is_max _ (fun a =>  expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op) init))). 
-  replace ( Max_{elms} (fun a => expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op) init))) with (bellman_max_op (fixpt (bellman_max_op) init) s0).
+  replace ( Max_{fin_elms} (fun a => expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op) init))) with (bellman_max_op (fixpt (bellman_max_op) init) s0).
   - apply equal_f. apply (fixpt_is_fixpt (is_contraction_bellman_max_op) (fun _ => True)) ; trivial.
     apply closed_true.
   - unfold bellman_max_op. destruct (M s0).
-    assert (H : equivlist elms elms0) by (intros ; split ; trivial).
+    assert (H : equivlist fin_elms fin_elms0) by (intros ; split ; trivial).
     now rewrite H.
 Qed.
 

@@ -1,4 +1,4 @@
-Require Import mdp fixed_point pmf_monad Finite ListAdd Reals.
+Require Import mdp fixed_point pmf_monad FiniteType ListAdd Reals.
 Require Import Coq.Lists.List LibUtils.
 Require Import micromega.Lra. (*  qlearn. *)
 Require Import micromega.Lia. (*  qlearn. *)
@@ -199,11 +199,11 @@ Proof.
   now apply list_sum_map_ext.
 Qed.
 
-Definition Rfct_inner {A : Type} (finA : Finite A) (f g : Rfct A) : R :=
+Definition Rfct_inner {A : Type} (finA : FiniteType A) (f g : Rfct A) : R :=
   let (ls, _) := finA in fun_inner_prod f g ls.
 
 
-Lemma Rfct_expt_inner {A B : Type} (finA : Finite A)
+Lemma Rfct_expt_inner {A B : Type} (finA : FiniteType A)
       (f : B -> Rfct A) (p : Pmf B):
   let (la, _) := finA in
   expt_value p (fun b => Rfct_inner _ (f b) (f b)) =
@@ -232,7 +232,7 @@ Definition bellmanQ : Rfct(sigT M.(act)) -> M.(state) -> Rfct(sigT M.(act))
                   reward s a s' + γ*Max_{act_list s'}(fun a => W (existT _ s' a)).
 
 (* Move this to somewhere nice.*)
-Lemma expt_value_le_max {A : Type} (finA : Finite A) (p : Pmf A) (f : A -> R):
+Lemma expt_value_le_max {A : Type} (finA : FiniteType A) (p : Pmf A) (f : A -> R):
   let (la,_) := finA in
   expt_value p f <= Max_{la}(f).
 Proof.
@@ -725,14 +725,14 @@ Proof.
     generalize (nodup_In EqDecsigT lsa); intros.
     assert (Hf : forall x, In x (nodup EqDecsigT lsa)).
     {
-      intros x. rewrite H. apply finite.
+      intros x. rewrite H. apply fin_finite.
     }
     revert Hf.
     generalize (NoDup_count_occ' EqDecsigT lsa_nodup); intros.
     assert (Hnd : NoDup lsa_nodup) by (apply NoDup_nodup).
     rewrite H0 in Hnd. apply Hnd.
     unfold lsa_nodup.
-    rewrite nodup_In. apply finite.
+    rewrite nodup_In. apply fin_finite.
   + apply list_sum0_is0.
     rewrite Forall_map.
     rewrite Forall_forall; intros sa Hsa.

@@ -34,7 +34,7 @@ UTILS = BasicUtils \
 	improper_integrals \
 	Isomorphism \
 	ListAdd \
-	Finite \
+	FiniteType \
 	NumberIso \
 	PairEncoding \
 	Quotient \

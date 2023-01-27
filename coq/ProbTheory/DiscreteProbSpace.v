@@ -6,7 +6,7 @@ Require Import Reals.
 
 Require Import Lra Lia.
 Require Import List Permutation.
-Require Import FinFun Finite.
+Require Import FinFun FiniteType.
 Require Import Morphisms EquivDec.
 Require Import Equivalence.
 Require Import Classical ClassicalFacts.
@@ -963,35 +963,35 @@ Section fin.
   Qed.
 
   Program Global Instance finite_countable (A:Type) {dec:EqDec A eq}
-         {finA:Finite.Finite A} : Countable A
+         {finA:FiniteType A} : Countable A
     := {|
-    countable_index a := find_index a (Finite.elms)
+    countable_index a := find_index a (fin_elms)
       |}.
   Next Obligation.
     intros ?? eqq.
-    apply (f_equal (fun a => nth a elms x)) in eqq.
+    apply (f_equal (fun a => nth a fin_elms x)) in eqq.
     rewrite nth_find_index in eqq.
     erewrite nth_in_default in eqq.
     - now rewrite nth_find_index in eqq.
     - apply find_index_in.
-      apply Finite.finite.
+      apply fin_finite.
   Qed.
      
   Lemma finite_countable_inv { A : Type} 
-        (fsA : Finite.Finite A) (eqdec: EqDec A eq) :
+        (fsA : FiniteType A) (eqdec: EqDec A eq) :
     exists (n:nat), 
       forall m, (m>n)%nat ->
                 (@countable_inv A _ m) = None.
   Proof.
     intros.
-    exists (list_max (map countable_index (@elms _ fsA))).
+    exists (list_max (map countable_index (@fin_elms _ fsA))).
     intros.
     unfold countable_inv.
     match_destr.
     destruct e.
-    generalize (list_max_upper (map countable_index (@elms _ fsA))); intros.
+    generalize (list_max_upper (map countable_index (@fin_elms _ fsA))); intros.
     destruct (Forall_forall
-                  (fun k : nat => (k <= list_max (map countable_index (@elms _ fsA)))%nat) (map countable_index (@elms _ fsA))).
+                  (fun k : nat => (k <= list_max (map countable_index (@fin_elms _ fsA)))%nat) (map countable_index (@fin_elms _ fsA))).
     specialize (H1 H0 m).
     cut_to H1; try lia.
     apply in_map_iff.
@@ -1001,7 +1001,7 @@ Section fin.
   Qed.
                               
   Lemma finite_countable_inv_sum { A : Type} (g : A -> R)
-    (fsA : Finite.Finite A) (eqdec: EqDec A eq) :
+    (fsA : FiniteType A) (eqdec: EqDec A eq) :
     exists (n : nat),
       countable_sum g (sum_f_R0' (fun k => 
                                     match countable_inv k with
@@ -1041,12 +1041,12 @@ Section fin.
   Qed.
 
   Lemma perm_countable_inv_elms (x:nat) {A : Type} 
-        (fsA : Finite.Finite A) (eqdec: EqDec A eq) :
+        (fsA : FiniteType A) (eqdec: EqDec A eq) :
     (forall m : nat, (m >= x)%nat -> countable_inv  m = None) ->
     Permutation 
       (filter (fun x => match x with | Some _ => true | None => false end)
               (map countable_inv (seq 0 x)))
-      (map Some (nodup eqdec elms)).
+      (map Some (nodup eqdec fin_elms)).
     Proof.
         intros.
         apply NoDup_Permutation'.
@@ -1075,7 +1075,7 @@ Section fin.
             destruct so; try discriminate.
             apply in_map.
             apply nodup_In.
-            apply finite.
+            apply fin_finite.
           + apply in_map_iff in inn.
             destruct inn as [s [? inn]]; subst.
             apply filter_In.
@@ -1093,8 +1093,8 @@ Section fin.
               discriminate.
      Qed.
 
-    Lemma finite_countable_sum_1 {A} (finA : Finite.Finite A) (decA : EqDec A eq) (f : A -> nonnegreal) : 
-      list_sum (map (fun x => nonneg (f x)) (nodup decA elms)) = 1 ->
+    Lemma finite_countable_sum_1 {A} (finA : FiniteType A) (decA : EqDec A eq) (f : A -> nonnegreal) : 
+      list_sum (map (fun x => nonneg (f x)) (nodup decA fin_elms)) = 1 ->
       countable_sum f 1.
   Proof.
     intro fsum_one.
@@ -1109,7 +1109,7 @@ Section fin.
       rewrite sum_f_R0'_list_sum.
       rewrite <- fsum_one.
       rewrite list_sum_perm_eq_nzero
-        with (l2 := (map (fun s' : A => nonneg (f s')) (nodup decA elms))); trivial.
+        with (l2 := (map (fun s' : A => nonneg (f s')) (nodup decA fin_elms))); trivial.
       generalize (perm_countable_inv_elms x _ _ H0); intro perm1.
       assert (perm2:
                Permutation
@@ -1125,7 +1125,7 @@ Section fin.
                          | None => 0
                          | Some s => nonneg (f s)
                          end)
-                      (map Some (nodup decA elms)))).
+                      (map Some (nodup decA fin_elms)))).
       {
         now apply Permutation_map.
       }
@@ -1145,7 +1145,7 @@ Section fin.
                          | None => 0
                          | Some s => nonneg (f s)
                          end)
-                      (map Some (nodup decA elms))))).
+                      (map Some (nodup decA fin_elms))))).
       {
         now apply Permutation_remove.
       }
@@ -1164,16 +1164,16 @@ Section fin.
     now rewrite H1 in H.
   Qed.
 
-  Definition finite_PMF {A} {finA : Finite.Finite A} {decA : EqDec A eq}
+  Definition finite_PMF {A} {finA : FiniteType A} {decA : EqDec A eq}
           (f : A -> nonnegreal) 
-          (fsum_one : list_sum (map (fun x => nonneg (f x)) (nodup decA elms)) = 1) : prob_mass_fun A
+          (fsum_one : list_sum (map (fun x => nonneg (f x)) (nodup decA fin_elms)) = 1) : prob_mass_fun A
     := {| pmf_pmf := fun x => nonneg (f x) ;
           pmf_pmf_pos := (fun a => cond_nonneg (f a)) ;
           pmf_pmf_one := finite_countable_sum_1 finA decA f fsum_one |}.
 
-  Instance finite_discrete_ps {A} {finA : Finite.Finite A} {decA : EqDec A eq}
+  Instance finite_discrete_ps {A} {finA : FiniteType A} {decA : EqDec A eq}
           (f : A -> nonnegreal) 
-          (fsum_one : list_sum (map (fun x => nonneg (f x)) (nodup decA elms)) = 1) 
+          (fsum_one : list_sum (map (fun x => nonneg (f x)) (nodup decA fin_elms)) = 1) 
   : ProbSpace (discrete_sa A)
     := discrete_ps (finite_PMF f fsum_one).
 
@@ -1181,9 +1181,9 @@ End fin.
 
 Section countable_products.
   
-  Global Program Instance unit_finite : Finite.Finite unit
+  Global Program Instance unit_finite : FiniteType unit
     := {|
-    Finite.elms := tt::nil
+      fin_elms := tt::nil
       |}.
   Next Obligation.
     destruct x; eauto.

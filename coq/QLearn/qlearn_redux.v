@@ -1,6 +1,6 @@
 Require Import List.
 Require Coquelicot.Coquelicot.
-Require Import mdp qvalues pmf_monad Finite EquivDec Permutation Morphisms.
+Require Import mdp qvalues pmf_monad FiniteType EquivDec Permutation Morphisms.
 Require Import Reals RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia PushNeg.
@@ -31,8 +31,8 @@ Section MDP.
   { on_state : Type;
     on_act : on_state -> Type;
     on_st_eqdec : EquivDec.EqDec on_state eq;
-    on_fs : Finite on_state;
-    on_fa : forall s : on_state, Finite (on_act s);
+    on_fs : FiniteType on_state;
+    on_fa : forall s : on_state, FiniteType (on_act s);
     on_ne : mdp.NonEmpty on_state;
     on_na : forall s : on_state, mdp.NonEmpty (on_act s);
     on_t : forall s : on_state, on_act s -> ProbSpace (discrete_sa on_state);
@@ -43,8 +43,8 @@ Section MDP.
   { off_state : Type;
     off_act : off_state -> Type;
     off_st_eqdec : EquivDec.EqDec off_state eq;
-    off_fs : Finite off_state;
-    off_fa : forall s : off_state, Finite (off_act s);
+    off_fs : FiniteType off_state;
+    off_fa : forall s : off_state, FiniteType (off_act s);
     off_ne : mdp.NonEmpty off_state;
     off_na : forall s : off_state, mdp.NonEmpty (off_act s);
     off_t : (forall s : off_state, off_act s -> off_state) -> ProbSpace (discrete_sa (forall s, off_act s));
@@ -90,7 +90,7 @@ Section MDP.
     generalize (ne M); intros.
     generalize (na M X); intros.
     exists (existT _ X X0).
-    apply finite.
+    apply fin_finite.
   Qed.
 
   (* lemma 5 *)
@@ -138,7 +138,7 @@ Section MDP.
           destruct H as [? [? ?]].
           rewrite <- H.
           apply in_map.
-          apply finite.
+          apply fin_finite.
     }
     assert (step12: forall (t:nat) (sa:sigT M.(act)),
                Q (S t) sa <= (1 - alpha t sa)*
@@ -268,7 +268,7 @@ Section MDP.
             destruct H as [? [? ?]].
             rewrite <- H.
             apply in_map.
-            apply finite.
+            apply fin_finite.
     }
     assert (step12: forall (t:nat) (sa:sigT M.(act)),
                Q (S t) sa >= (1 - alpha t sa)*
@@ -353,7 +353,7 @@ Section MDP.
       rewrite Rmax_Rle.
       left.
       apply Rmax_spec_map.
-      apply finite.
+      apply fin_finite.
     - intros.
       assert (Max_{ s_act_list}(Q t) <=  Rmax (Max_{ s_act_list}(Q 0)) (max_reward / (1 - γ))).
       {
@@ -372,7 +372,7 @@ Section MDP.
       assert (Q (S t) sa <= (Max_{ s_act_list}(Q (S t)))).
       {
         apply Rmax_spec_map.
-        apply finite.
+        apply fin_finite.
       }
       eapply Rle_trans.
       apply H0.
@@ -400,7 +400,7 @@ Section MDP.
       apply Rge_trans with (r2 := Min_{ s_act_list}(Q 0)).
       + apply Rmin_spec_map.
         unfold s_act_list.
-        apply finite.
+        apply fin_finite.
       + apply Rle_ge, Rmin_l.
     - intros.
       assert (Min_{ s_act_list}(Q t) >=  Rmin (Min_{ s_act_list}(Q 0)) (min_reward / (1 - γ))).
@@ -421,7 +421,7 @@ Section MDP.
       {
         apply Rmin_spec_map.
         unfold s_act_list.
-        apply finite.
+        apply fin_finite.
       }
       eapply Rge_trans.
       apply H0.
@@ -669,7 +669,7 @@ Section MDP.
      lra.
    Qed.
 
-   Lemma Rmax_norm_spec {A : Type} (finA : Finite A) (X : Rfct A):
+   Lemma Rmax_norm_spec {A : Type} (finA : FiniteType A) (X : Rfct A):
      forall a, Rabs (X a) <= Rmax_norm _ X.
      Proof.
        intros a.
@@ -966,28 +966,28 @@ Section stuff.
   Definition fun_space := forall s:M.(state), M.(act) s -> M.(state).
   Definition sa_fun_space := sigT M.(act) -> M.(state).
 
-  Instance fun_space_finite : Finite fun_space.
+  Instance fun_space_finite : FiniteType fun_space.
   Proof.
-    apply (@Finite_fun_dep M.(state) M.(st_eqdec)).
+    apply (@FiniteType_fun_dep M.(state) M.(st_eqdec)).
     - apply M.(fs).
     - intros.
-      apply Finite_fun.
+      apply FiniteType_fun.
       + apply M.(fa).
       + apply M.(fs).
   Qed.
 
-  Instance sa_fun_space_finite : Finite sa_fun_space.
+  Instance sa_fun_space_finite : FiniteType sa_fun_space.
   Proof.
-    apply (@Finite_fun _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _  _ _); intros.
+    apply (@FiniteType_fun _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _  _ _); intros.
   Qed.
 
   (* uses functional extensionality *)
-  Local Instance eqdec_finite_fun_ext {A B} {fin:Finite A} {decA:EqDec A eq} {decB:EqDec B eq}:
+  Local Instance eqdec_finite_fun_ext {A B} {fin:FiniteType A} {decA:EqDec A eq} {decB:EqDec B eq}:
     EqDec (A -> B) eq.
   Proof.
     intros ??.
     destruct fin.
-    cut ({forall a, In a elms -> x a = y a} + {~ (forall a, In a elms -> x a = y a)}).
+    cut ({forall a, In a fin_elms -> x a = y a} + {~ (forall a, In a fin_elms -> x a = y a)}).
     {
       intros [?|?].
       - left; apply functional_extensionality; intros a.
@@ -997,11 +997,11 @@ Section stuff.
         subst.
         now apply n; intros.
     }         
-    clear finite.
-    induction elms.
+    clear fin_finite.
+    induction fin_elms.
     - left; simpl; tauto.
     - destruct (decB (x a) (y a)).
-      + destruct IHelms.
+      + destruct IHfin_elms.
         * left; simpl; intros a' [?|inn]; subst; auto.
         * right; intros HH; simpl in *; eauto.
       + right; intros HH; simpl in *.
@@ -1009,12 +1009,12 @@ Section stuff.
   Qed.
 
     (* uses functional extensionality *)
-  Local Instance eqdec_finite_fun_dep_ext {A} {B:A->Type} {fin:Finite A} {decA:EqDec A eq} {decB:forall a, EqDec (B a) eq}:
+  Local Instance eqdec_finite_fun_dep_ext {A} {B:A->Type} {fin:FiniteType A} {decA:EqDec A eq} {decB:forall a, EqDec (B a) eq}:
     EqDec (forall a, B a) eq.
   Proof.
     intros ??.
     destruct fin.
-    cut ({forall a, In a elms -> x a = y a} + {~ (forall a, In a elms -> x a = y a)}).
+    cut ({forall a, In a fin_elms -> x a = y a} + {~ (forall a, In a fin_elms -> x a = y a)}).
     {
       intros [?|?].
       - left; apply functional_extensionality_dep; intros a.
@@ -1024,11 +1024,11 @@ Section stuff.
         subst.
         now apply n; intros.
     }         
-    clear finite.
-    induction elms.
+    clear fin_finite.
+    induction fin_elms.
     - left; simpl; tauto.
     - destruct (decB _ (x a) (y a)).
-      + destruct IHelms.
+      + destruct IHfin_elms.
         * left; simpl; intros a' [?|inn]; subst; auto.
         * right; intros HH; simpl in *; eauto.
       + right; intros HH; simpl in *.
@@ -1060,7 +1060,7 @@ Section stuff.
   Context (f: forall (s:M.(state)), M.(act) s -> M.(state) -> nonnegreal)
           (fsum_one : forall (s:M.(state)) (a : M.(act) s),
               list_sum (map (fun s' => nonneg (f s a s')) 
-                            (nodup M.(st_eqdec) (@elms _ M.(fs)))) = 1).
+                            (nodup M.(st_eqdec) (@fin_elms _ M.(fs)))) = 1).
 
   Definition fun_space_pmf_pmf
              (sp:fun_space) : R
@@ -1071,16 +1071,16 @@ Section stuff.
                      fold_right Rmult 1
                                 (map
                                    (fun a => nonneg (f s a (sp s a)))
-                                   (nodup (act_eqdec s) (@elms _ (M.(fa) s))))
+                                   (nodup (act_eqdec s) (@fin_elms _ (M.(fa) s))))
                   )
-                  (nodup M.(st_eqdec) (@elms _ M.(fs)))).
+                  (nodup M.(st_eqdec) (@fin_elms _ M.(fs)))).
 
   Definition fsa (sa : sigT M.(act)) (s' : M.(state)) : nonnegreal := 
     let (s,a) := sa in f s a s'.
     
   Definition sa_fun_space_pmf_pmf (sp:sa_fun_space) : R :=
     fold_right Rmult 1 (map (fun sa => nonneg (fsa sa (sp sa)))
-                            (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms)).
+                            (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) fin_elms)).
 
   Lemma sa_fun_space_pmf_equal (sp : fun_space) :
     fun_space_pmf_pmf sp = sa_fun_space_pmf_pmf  (fun (sa : sigT M.(act)) => sp (projT1 sa) (projT2 sa)).
@@ -1091,7 +1091,7 @@ Section stuff.
 
   Lemma fsa_sum_one (sa : sigT M.(act)) :
     list_sum (map (fun s' => nonneg (fsa sa s')) 
-                  (nodup M.(st_eqdec) (@elms _ M.(fs)))) = 1.
+                  (nodup M.(st_eqdec) (@fin_elms _ M.(fs)))) = 1.
    Proof.
      unfold fsa.
      destruct sa.
@@ -1559,22 +1559,22 @@ Section stuff.
          (elmsA:list A)
          (NoDup_elmsA : NoDup elmsA)
          (nnilA : elmsA <> nil)
-         (finB:Finite B)
-         (elmsAB: Finite (A -> B))
+         (finB:FiniteType B)
+         (elmsAB: FiniteType (A -> B))
          (fab : A -> B -> R)
          (sumone:(forall (a : A),
-                     list_sum (map (fab a) (nodup decB elms)) = 1)) :
+                     list_sum (map (fab a) (nodup decB fin_elms)) = 1)) :
         list_sum (map (fun sp =>
                          (fold_right Rmult 1 (map (fun a => fab a (sp a))
                                                   elmsA)))
-                      ((nodupA (holds_on_dec decB elmsA) elms))) = 1.
+                      ((nodupA (holds_on_dec decB elmsA) fin_elms))) = 1.
   Proof.
     induction elmsA; [simpl; congruence | clear nnilA].
     destruct elmsA; [clear IHelmsA | cut_to IHelmsA; trivial]; intros.
     - simpl.
       rewrite <- (sumone a) at 1.
       apply list_sum_perm_eq.
-      transitivity (map (fab a) (map (fun sp : A -> B => (sp a)) (nodupA (holds_on_dec decB (a :: nil)) elms))).
+      transitivity (map (fab a) (map (fun sp : A -> B => (sp a)) (nodupA (holds_on_dec decB (a :: nil)) fin_elms))).
       {
         rewrite map_map. 
         apply refl_refl.
@@ -1594,10 +1594,10 @@ Section stuff.
       + apply NoDup_nodup.
       + intros b; split; intros inn.
         * apply nodup_In.
-          apply finite.
+          apply fin_finite.
         * apply in_map_iff.
           destruct elmsAB; simpl.
-          generalize (finite0 (fun _ => b)); intros inn2.
+          generalize (fin_finite0 (fun _ => b)); intros inn2.
           apply (In_nodupA (holds_on_dec decB (a :: nil))) in inn2.
           apply SetoidList.InA_alt in inn2.
           destruct inn2 as [?[??]].
@@ -1617,12 +1617,12 @@ Section stuff.
       specialize (sumone a).
       
       assert (perm1:Permutation
-                (nodupA (holds_on_dec decB (a :: elmsA)) elms)
+                (nodupA (holds_on_dec decB (a :: elmsA)) fin_elms)
                 (concat (map
                            (fun b =>
                               map 
                                 (fun f => fun x => if decA x a then b else f x)
-                                (nodupA (holds_on_dec decB elmsA) elms)) (nodup decB elms)))).
+                                (nodupA (holds_on_dec decB elmsA) fin_elms)) (nodup decB fin_elms)))).
       {
         apply NoDup_Permutation'.
         - apply NoDup_nodupA.
@@ -1633,7 +1633,7 @@ Section stuff.
             apply NoDupA_eq.
             revert anin.
             clear; intros anin.
-            induction elms; simpl; [constructor |].
+            induction fin_elms; simpl; [constructor |].
             match_case.
             intros exf.
             rewrite existsb_not_forallb in exf.
@@ -1679,7 +1679,7 @@ Section stuff.
         - intros x; split; intros inn.
           + apply in_concat.
             exists (map (fun (f0 : A -> B) (x1 : A) => if decA x1 a then (x a) else f0 x1)
-                   (nodupA (holds_on_dec decB elmsA) elms)).
+                   (nodupA (holds_on_dec decB elmsA) fin_elms)).
             split.
             * admit.
             * apply in_map_iff.
@@ -1737,7 +1737,7 @@ Section stuff.
             
             assert (inn2:SetoidList.InA (holds_on eq elmsA)
                                         x
-                                        (nodupA (holds_on_dec decB (a :: elmsA)) elms)).
+                                        (nodupA (holds_on_dec decB (a :: elmsA)) fin_elms)).
             {
               apply nodupA_In in inn.
               eapply InA_subr; try apply In_nodupA; try apply inn
@@ -1811,7 +1811,7 @@ Section stuff.
 
          (elmsA:list A)
          (nnilA : elmsA <> nil)
-         (finB:Finite B)
+         (finB:FiniteType B)
          (elmsAB: list (A -> B))
 
          (elmsABfin : forall (f:A->B), exists (g:A->B), In g elmsAB /\ holds_on eq elmsA f g)
@@ -1854,17 +1854,17 @@ Section stuff.
     - simpl in *.
 *)      
 
-  Lemma holds_on_finite {A B : Type} (R:B->B->Prop) {fin:Finite A} :
-    forall x y, holds_on R elms x y <-> forall a, R (x a) (y a).
+  Lemma holds_on_finite {A B : Type} (R:B->B->Prop) {fin:FiniteType A} :
+    forall x y, holds_on R fin_elms x y <-> forall a, R (x a) (y a).
   Proof.
     destruct fin; unfold holds_on; simpl.
     firstorder.
    Qed.
 
-  Lemma nodupA_holds_on_fin {A B : Type} {fin:Finite A}
+  Lemma nodupA_holds_on_fin {A B : Type} {fin:FiniteType A}
         (decB : EqDec B eq)
         (decAB : EqDec (A -> B) eq) l:
-    nodupA (holds_on_dec decB elms) l = nodup decAB l.
+    nodupA (holds_on_dec decB fin_elms) l = nodup decAB l.
   Proof.
     induction l; simpl; trivial.
     repeat match_case; intros.
@@ -1875,7 +1875,7 @@ Section stuff.
       cut (a = x); [congruence |].
       apply functional_extensionality; intros.
       apply e.
-      apply finite.
+      apply fin_finite.
     - rewrite existsb_not_forallb in H0.
       apply Bool.negb_false_iff in H0.
       rewrite forallb_forall in H0.
@@ -1893,29 +1893,29 @@ Section stuff.
 
          
   Lemma fun_finite_sum_one {A B : Type} 
-        (finA : Finite A)
-        (finB : Finite B)         
+        (finA : FiniteType A)
+        (finB : FiniteType B)         
         (decA : EqDec A eq)
         (decB : EqDec B eq)        
-        (finAB : Finite (A -> B))
+        (finAB : FiniteType (A -> B))
         (decAB : EqDec (A -> B) eq) 
         (fab : A -> B -> R)
     :
     inhabited A ->
     (forall (a : A),
-        list_sum (map (fab a) (nodup decB elms)) = 1) ->
+        list_sum (map (fab a) (nodup decB fin_elms)) = 1) ->
     list_sum (map (fun sp =>
                      (fold_right Rmult 1 (map (fun a => fab a (sp a))
-                                              (nodup decA elms))))
-                  (nodup decAB elms)) = 1.
+                                              (nodup decA fin_elms))))
+                  (nodup decAB fin_elms)) = 1.
   Proof.
     intros inhA sum1.
-    generalize (fun_finite_sum_one_aux decA decB decAB (nodup decA elms)) ; intros.
-    assert (nodup decA elms <> nil).
+    generalize (fun_finite_sum_one_aux decA decB decAB (nodup decA fin_elms)) ; intros.
+    assert (nodup decA fin_elms <> nil).
     {
       rewrite <- nodup_not_nil.
       destruct inhA.
-      generalize (finite X); intros.
+      generalize (fin_finite X); intros.
       destruct finA.
       unfold not; intros.
       rewrite H1 in H0.
@@ -1923,10 +1923,10 @@ Section stuff.
     }
     cut_to H; trivial.
     - specialize (H finB finAB fab sum1).
-      replace (nodup decAB elms) with
-        (nodupA (holds_on_dec decB (nodup decA elms)) elms).
+      replace (nodup decAB fin_elms) with
+        (nodupA (holds_on_dec decB (nodup decA fin_elms)) fin_elms).
       apply H.
-      apply (@nodupA_holds_on_fin A B (finite_nodup finA) decB decAB).
+      apply (@nodupA_holds_on_fin A B (fin_finite_nodup finA) decB decAB).
     - apply NoDup_nodup.
   Qed.
   
@@ -1938,18 +1938,18 @@ Section stuff.
          (elmsA:list A)
 (*         (NoDup_elmsA : NoDup elmsA) *)
          (nnilA : elmsA <> nil)
-         (finB:Finite B)
-         (elmsAB: Finite (A -> B))
+         (finB:FiniteType B)
+         (elmsAB: FiniteType (A -> B))
          (fab : A -> B -> R)
          (sumone:(forall (a : A),
-                     list_sum (map (fab a) (nodup decB elms)) = 1)) :
+                     list_sum (map (fab a) (nodup decB fin_elms)) = 1)) :
      forall (aa : A) (bb : B),
        list_sum (map (fun sp =>
                         (fold_right Rmult 1 (map (fun a => fab a (sp a))
                                                  elmsA)))
                      (filter 
                         (fun ff => if (decB (ff aa) bb) then true else false)
-                        (nodupA (holds_on_dec decB elmsA) elms))) = fab aa bb.
+                        (nodupA (holds_on_dec decB elmsA) fin_elms))) = fab aa bb.
   Proof.
     induction elmsA; [simpl; congruence | clear nnilA].
     destruct elmsA; [clear IHelmsA | cut_to IHelmsA; trivial]; intros.
@@ -2041,23 +2041,23 @@ Section stuff.
 
   
   Lemma fun_finite_sum_prob {A B : Type} 
-        (finA : Finite A)
-        (finB : Finite B)         
+        (finA : FiniteType A)
+        (finB : FiniteType B)         
         (decA : EqDec A eq)
         (decB : EqDec B eq)        
-        (finAB : Finite (A -> B))
+        (finAB : FiniteType (A -> B))
         (decAB : EqDec (A -> B) eq) 
         (fab : A -> B -> R) :
     inhabited A ->
     (forall (a : A),
-        list_sum (map (fab a) (nodup decB elms)) = 1) ->
+        list_sum (map (fab a) (nodup decB fin_elms)) = 1) ->
     forall (aa : A) (bb : B),
       list_sum (map (fun sp =>
                        (fold_right Rmult 1 (map (fun a => fab a (sp a))
-                                                (nodup decA elms))))
+                                                (nodup decA fin_elms))))
                     (filter 
                        (fun ff => if (decB (ff aa) bb) then true else false)
-                       (nodup decAB elms))) = fab aa bb.
+                       (nodup decAB fin_elms))) = fab aa bb.
    Proof.
      intros.
      
@@ -2067,7 +2067,7 @@ Section stuff.
   Lemma sa_fun_space_pmf_finite_sum_one :
     inhabited (sigT M.(act)) ->
     list_sum (map sa_fun_space_pmf_pmf 
-                  (nodup sa_fun_space_eqdec elms)) = 1.
+                  (nodup sa_fun_space_eqdec fin_elms)) = 1.
    Proof.
      generalize (fsa_sum_one); intros fsa_sum_one.
      unfold sa_fun_space_pmf_pmf.
@@ -2076,7 +2076,7 @@ Section stuff.
    Qed.
       
   Lemma fun_space_pmf_finite_sum_one :
-    list_sum (map fun_space_pmf_pmf (nodup fun_space_eqdec elms)) = 1.
+    list_sum (map fun_space_pmf_pmf (nodup fun_space_eqdec fin_elms)) = 1.
   Proof.
     unfold fun_space_pmf_pmf.
     Admitted.
@@ -2119,7 +2119,7 @@ Section stuff.
     Lemma sa_fun_space_pmf_list_fst_sum_one (inh : inhabited (sigT M.(act))):
       list_fst_sum
         (map (fun fsa => (mknonnegreal _ (sa_fun_space_pmf_pmf_nonneg fsa), fsa))
-             (nodup sa_fun_space_eqdec elms)) = 1.
+             (nodup sa_fun_space_eqdec fin_elms)) = 1.
     Proof.
       rewrite list_fst_sum_compat.
       unfold list_fst_sum'.
@@ -2135,7 +2135,7 @@ Section stuff.
     
   Definition sa_fun_space_Pmf (inh : inhabited (sigT M.(act))) : Pmf sa_fun_space :=
     mkPmf (map (fun fsa => (mknonnegreal _ (sa_fun_space_pmf_pmf_nonneg fsa), fsa))
-                 (nodup sa_fun_space_eqdec elms))
+                 (nodup sa_fun_space_eqdec fin_elms))
           (sa_fun_space_pmf_list_fst_sum_one inh).
 
   Definition sa_space_pmf_pmf (sa : sigT M.(act)) : M.(state) -> R
@@ -2163,7 +2163,7 @@ Section stuff.
       rewrite sum_f_R0'_list_sum.
       rewrite <- H1.
       rewrite list_sum_perm_eq_nzero
-        with (l2 := (map fun_space_pmf_pmf (nodup fun_space_eqdec elms))); trivial.
+        with (l2 := (map fun_space_pmf_pmf (nodup fun_space_eqdec fin_elms))); trivial.
       generalize (perm_countable_inv_elms x fun_space_finite fun_space_eqdec H0); intro perm1.
       assert (perm2:
                Permutation
@@ -2179,7 +2179,7 @@ Section stuff.
                          | None => 0
                          | Some s => fun_space_pmf_pmf s
                          end)
-                      (map Some (nodup fun_space_eqdec elms)))).
+                      (map Some (nodup fun_space_eqdec fin_elms)))).
       {
         now apply Permutation_map.
       }
@@ -2198,7 +2198,7 @@ Section stuff.
                          | None => 0
                          | Some s => fun_space_pmf_pmf s
                          end)
-                      (map Some (nodup fun_space_eqdec elms))))).
+                      (map Some (nodup fun_space_eqdec fin_elms))))).
       {
         now apply Permutation_remove.
       }
@@ -2248,7 +2248,7 @@ Section stuff.
   
 
   Definition state_act_index (sa : sigT M.(act)) : nat :=
-    (@finite_index _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _ sa).
+    (@fin_finite_index _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _ sa).
 
   Fixpoint ivector_map_length {T} {S1 S2} {l : list S1} {g : S1 -> S2} :
     (ivector T (length (map g l))) -> ivector T (length l) :=
@@ -2258,7 +2258,7 @@ Section stuff.
     end.
 
   Definition vec_sa_space_ps :=
-    ivector_ps (ivector_map_length (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms)))).
+    ivector_ps (ivector_map_length (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) fin_elms)))).
 
   Program Instance outer_frf_compose {A B C} (g1 : A -> B) (g2 : B -> C) (frf2 : FiniteRangeFunction g2) :
     FiniteRangeFunction (compose g2 g1)
@@ -2729,11 +2729,11 @@ Section stuff.
 
   Lemma ivector_nth_list_map_sa {B} (sa: sigT M.(act)) (g : sigT M.(act) -> B) pf :
     g sa = ivector_nth (state_act_index sa) pf
-                       (ivector_map_length (ivector_from_list (map g (nodup (sigT_eqdec M act_eqdec) elms)))).
+                       (ivector_map_length (ivector_from_list (map g (nodup (sigT_eqdec M act_eqdec) fin_elms)))).
   Proof.
     apply ivector_nth_list_map'.
     unfold state_act_index.
-    apply finite_index_correct.
+    apply fin_finite_index_correct.
   Qed.
 
   Lemma Expectation_sa_proj_nth (sa: sigT M.(act)) (g : (sigT M.(act)) -> M.(state) -> R) 
@@ -2741,11 +2741,11 @@ Section stuff.
           RandomVariable (discrete_sa M.(state)) borel_sa (g sa)) :
   Expectation (Prts := vec_sa_space_ps) 
               (fun stvec => g sa (ivector_nth (state_act_index sa) 
-                                              (finite_index_bound _ sa) stvec)) =
+                                              (fin_finite_index_bound _ sa) stvec)) =
   Expectation (Prts := (sa_space_ps sa)) (g sa).
 Proof.
-  generalize (Expectation_proj_nth (state_act_index sa) (finite_index_bound _ sa)
-                                   (ivector_map_length (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))))
+  generalize (Expectation_proj_nth (state_act_index sa) (fin_finite_index_bound _ sa)
+                                   (ivector_map_length (ivector_from_list (map sa_space_ps (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) fin_elms))))
                                    (g sa) ); intros.
   cut_to H; trivial.
   etransitivity; [etransitivity |]; [| apply H |].
@@ -2754,12 +2754,12 @@ Proof.
     now apply Expectation_ext.
   Qed.
 
-  Lemma Expectation_finite_discrete_ps {A} {finA:Finite A} (decA : EqDec A eq) 
+  Lemma Expectation_finite_discrete_ps {A} {finA:FiniteType A} (decA : EqDec A eq) 
         (pmf:Pmf A)
         (g : A -> R) :
     Expectation (Prts := pmf_prob.ps_pmf pmf) g =
     Some (Rbar.Finite (list_sum (map (fun a => (g a)*(pmf_prob.pmf_PMF_fun pmf a)) 
-                                     (nodup decA elms)))).
+                                     (nodup decA fin_elms)))).
   Proof.
     generalize (pmf_prob.pmf_value_Expectation pmf g); intros.
     unfold expt_value in H.
@@ -2782,15 +2782,15 @@ Proof.
     Admitted.
 
   
-  Definition finite_fun_to_ivector {A B} (finA : Finite A) (decA : EqDec A eq) (g : A -> B) :=
-    ivector_map g (ivector_from_list (nodup decA elms)).
+  Definition finite_fun_to_ivector {A B} (finA : FiniteType A) (decA : EqDec A eq) (g : A -> B) :=
+    ivector_map g (ivector_from_list (nodup decA fin_elms)).
 
-  Definition ivector_to_finite_fun {A B} (finA : Finite A) (decA : EqDec A eq) (vec : ivector B (length (nodup decA elms))) : A -> B :=
-    (fun (a : A) => ivector_nth (finite_index _ a) (finite_index_bound _ _ ) vec).
+  Definition ivector_to_finite_fun {A B} (finA : FiniteType A) (decA : EqDec A eq) (vec : ivector B (length (nodup decA fin_elms))) : A -> B :=
+    (fun (a : A) => ivector_nth (fin_finite_index _ a) (fin_finite_index_bound _ _ ) vec).
 
   Definition sa_fun_space_to_ivector (g : sa_fun_space) := finite_fun_to_ivector _ (sigT_eqdec M.(st_eqdec) act_eqdec) g.
 
-  Definition ivector_to_sa_fun_space (vec : ivector M.(state) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))) : sa_fun_space :=
+  Definition ivector_to_sa_fun_space (vec : ivector M.(state) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) fin_elms))) : sa_fun_space :=
     ivector_to_finite_fun _ _ vec.
 
 
@@ -2827,18 +2827,18 @@ Proof.
 
   Lemma find_index_S {A} (decA : EqDec A eq) (la : list A) (a x: A):
     (exists x0,
-        Finite.find_index (a :: la) x = Some (S x0)) ->
+        FiniteType.find_index (a :: la) x = Some (S x0)) ->
     In x la.
   Proof.
     induction la.
     - intros.
       destruct H.
-      unfold Finite.find_index in H.
+      unfold FiniteType.find_index in H.
       simpl in H.
       match_destr_in H.
     - intros.
       destruct H.
-      unfold Finite.find_index in *.
+      unfold FiniteType.find_index in *.
       simpl in *.
       match_destr_in H.
       destruct (decA a0 x); try tauto.
@@ -2859,10 +2859,10 @@ Proof.
    Qed.
 
   Lemma find_index_0 {A} (decA : EqDec A eq) (a x : A) (la : list A) :
-    Finite.find_index (a :: la) x = Some 0%nat ->
+    FiniteType.find_index (a :: la) x = Some 0%nat ->
     x = a.
   Proof.
-    unfold Finite.find_index.
+    unfold FiniteType.find_index.
     simpl.
     match_destr.
     intros.
@@ -2871,12 +2871,12 @@ Proof.
   Qed.
 
    Lemma find_index_S_x {A} (decA : EqDec A eq) (a x : A) (la : list A) (x0 x1 : nat) :
-     Finite.find_index (a :: la) x = Some (S x0) ->
-     Finite.find_index (la) x = Some x1 ->
+     FiniteType.find_index (a :: la) x = Some (S x0) ->
+     FiniteType.find_index (la) x = Some x1 ->
      x0 = x1.
    Proof.
      intros.
-     unfold Finite.find_index in *.
+     unfold FiniteType.find_index in *.
      simpl in H.
      match_destr_in H.
      apply find_index_aux_S in H.
@@ -2899,7 +2899,7 @@ Proof.
         (l : list A) (i : nat) (x : A) :
     NoDup l ->
     nth_error l i = Some x ->
-    Finite.find_index l x = Some i.
+    FiniteType.find_index l x = Some i.
   Proof.
     revert i x.
     induction l.
@@ -2910,21 +2910,21 @@ Proof.
       destruct HN as [HN1 HN2].
       destruct i.
       -- simpl in Hncons.
-         invcs Hncons. unfold Finite.find_index; simpl.
+         invcs Hncons. unfold FiniteType.find_index; simpl.
          match_destr; try congruence.
-      -- simpl in Hncons. unfold Finite.find_index; simpl.
+      -- simpl in Hncons. unfold FiniteType.find_index; simpl.
          match_destr; try congruence.
          ++ apply nth_error_In in Hncons.
             rewrite e in Hncons; congruence.
          ++ specialize (IHl i x HN2 Hncons).
-            unfold Finite.find_index in IHl.
+            unfold FiniteType.find_index in IHl.
             now apply find_index_aux_succ.
  Qed.
 
   Lemma find_index_ivector_nth {A} (decA : EqDec A eq) 
         (l : list A) (i : nat) (pf : (i < length l)%nat):
     NoDup l ->
-    Finite.find_index l
+    FiniteType.find_index l
         (ivector_nth i pf (ivector_from_list l)) = 
       Some i.
    Proof.
@@ -2933,16 +2933,16 @@ Proof.
      now apply find_index_correct_nodup.
    Qed.
 
-  Lemma ivector_map_nth_finite {A B} (finA : Finite A) (decA : EqDec A eq) (vec : ivector B (length (nodup decA elms))) :
+  Lemma ivector_map_nth_finite {A B} (finA : FiniteType A) (decA : EqDec A eq) (vec : ivector B (length (nodup decA fin_elms))) :
     ivector_map
       (fun a : A =>
-         ivector_nth  (finite_index finA a)
-                     (finite_index_bound finA a) vec) (ivector_from_list (nodup decA elms)) = vec.
+         ivector_nth  (fin_finite_index finA a)
+                     (fin_finite_index_bound finA a) vec) (ivector_from_list (nodup decA fin_elms)) = vec.
   Proof.
     apply ivector_nth_eq; intros.
     rewrite ivector_nth_map.
     apply ivector_nth_ext'; try reflexivity.
-    unfold finite_index.
+    unfold fin_finite_index.
     unfold proj1_sig.
     match_destr.
     simpl in e.
@@ -2951,8 +2951,8 @@ Proof.
     apply NoDup_nodup.
   Qed.
 
-  Lemma finite_fun_iso_f_b {A B} (finA : Finite A) (decA : EqDec A eq) :
-    forall (vec : ivector B (length (nodup decA elms))), 
+  Lemma finite_fun_iso_f_b {A B} (finA : FiniteType A) (decA : EqDec A eq) :
+    forall (vec : ivector B (length (nodup decA fin_elms))), 
       finite_fun_to_ivector _ _ (ivector_to_finite_fun _ _ vec) = vec.
   Proof.
     intros.
@@ -2980,7 +2980,7 @@ Proof.
          simpl.
          match_destr.
          * now rewrite e.
-         * unfold Finite.find_index in e0.
+         * unfold FiniteType.find_index in e0.
            unfold find_index_aux in e0.
            unfold equiv_dec in e0.
            generalize e0 as e0'.
@@ -3019,34 +3019,34 @@ Proof.
               apply e.
         Qed.
 
-  Lemma ivector_nth_finite_map {A B} (finA : Finite A) (decA : EqDec A eq) (g : A -> B) :
+  Lemma ivector_nth_finite_map {A B} (finA : FiniteType A) (decA : EqDec A eq) (g : A -> B) :
     forall (x : A),
-      ivector_nth (finite_index finA x) (finite_index_bound finA x)
-                  (ivector_map g (ivector_from_list (nodup decA elms))) = g x.
+      ivector_nth (fin_finite_index finA x) (fin_finite_index_bound finA x)
+                  (ivector_map g (ivector_from_list (nodup decA fin_elms))) = g x.
    Proof.
      intros.
-     generalize (ivector_nth_finite_map_aux (nodup decA elms) decA g x); intros.
-     assert (inx: In x (nodup decA elms)).
+     generalize (ivector_nth_finite_map_aux (nodup decA fin_elms) decA g x); intros.
+     assert (inx: In x (nodup decA fin_elms)).
      {
        apply nodup_In.
-       apply finite.
+       apply fin_finite.
      }
      specialize (H inx).
      cut_to H; try apply NoDup_nodup.
      simpl in H.
      rewrite <- H.
      apply ivector_nth_ext'; trivial.
-     unfold finite_index, proj1_sig.
+     unfold fin_finite_index, proj1_sig.
      clear H.
      match_destr.
      match_destr.
-     unfold finite_nodup in e.
+     unfold fin_finite_nodup in e.
      simpl in e.
      rewrite e0 in e.
      now invcs e.
    Qed.
 
-  Lemma finite_fun_iso_b_f {A B} (finA : Finite A) (decA : EqDec A eq) :
+  Lemma finite_fun_iso_b_f {A B} (finA : FiniteType A) (decA : EqDec A eq) :
     forall (g : A -> B),
       ivector_to_finite_fun _ _ (finite_fun_to_ivector _ _ g)  = g.
   Proof.
@@ -3057,16 +3057,16 @@ Proof.
     apply ivector_nth_finite_map.
   Qed.
 
-  Instance finite_fun_vec_encoder {A B} (finA : Finite A) (decA :EqDec A eq):
-    Isomorphism (A -> B) (ivector B (length (nodup decA elms)))
+  Instance finite_fun_vec_encoder {A B} (finA : FiniteType A) (decA :EqDec A eq):
+    Isomorphism (A -> B) (ivector B (length (nodup decA fin_elms)))
     := {
     iso_f := finite_fun_to_ivector finA decA;
     iso_b := ivector_to_finite_fun finA decA;
     iso_f_b := finite_fun_iso_f_b finA decA ;
     iso_b_f := finite_fun_iso_b_f finA decA }.
 
-  Instance vec_finite_fun_encoder {A B} (finA : Finite A) (decA :EqDec A eq):
-    Isomorphism  (ivector B (length (nodup decA elms))) (A -> B)
+  Instance vec_finite_fun_encoder {A B} (finA : FiniteType A) (decA :EqDec A eq):
+    Isomorphism  (ivector B (length (nodup decA fin_elms))) (A -> B)
     := {
     iso_b := finite_fun_to_ivector finA decA;
     iso_f := ivector_to_finite_fun finA decA;
@@ -3074,7 +3074,7 @@ Proof.
     iso_f_b := finite_fun_iso_b_f finA decA }.
 
   Instance vec_finite_fun_encoder_alt :
-    Isomorphism (ivector (M.(state)) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) elms))) ((sigT (M.(act))) -> M.(state)).
+    Isomorphism (ivector (M.(state)) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) fin_elms))) ((sigT (M.(act))) -> M.(state)).
   Proof.
     apply vec_finite_fun_encoder.
   Defined.
@@ -3083,7 +3083,7 @@ Proof.
     (iso_sa
        (ivector_sa
           (ivector_const
-             (length (nodup (sigT_eqdec M act_eqdec) elms))
+             (length (nodup (sigT_eqdec M act_eqdec) fin_elms))
              (discrete_sa (state M))))).
 
   Definition finite_fun_ps : ProbSpace finite_fun_sa := iso_ps vec_sa_space_ps vec_finite_fun_encoder_alt.
@@ -3876,10 +3876,10 @@ Lemma conv_pair_as_prob_inf_delta_eps_lim (f g : nat->Ts->R) (eps : posreal) (fl
   Qed.
 
   Definition finite_fun_to_list {A B : Type} 
-             (finA : Finite A)
+             (finA : FiniteType A)
              (decA : EqDec A eq)
              (f : A -> B) : list B :=
-    map f (nodup decA elms).
+    map f (nodup decA fin_elms).
   
 Lemma list_inter_prob_bound (l : list (event dom * R)) :
   (forall ep, 
@@ -3986,7 +3986,7 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
      now specialize (H x H2).
   Qed. 
      
- Lemma list_inter_prob_bound_const_fin {A : Type} (finA : Finite A) (decA : EqDec A eq)
+ Lemma list_inter_prob_bound_const_fin {A : Type} (finA : FiniteType A) (decA : EqDec A eq)
        (f : A -> event dom) (bound: R) :
    (forall (a : A),
        ps_P (f a) >= bound) ->
@@ -4002,11 +4002,11 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
     apply H.
   Qed.
 
- Lemma list_inter_prob_bound_const_fin_alt {A : Type} (finA : Finite A) (decA : EqDec A eq)
+ Lemma list_inter_prob_bound_const_fin_alt {A : Type} (finA : FiniteType A) (decA : EqDec A eq)
        (f : A -> event dom) (bound: R) :
    (forall (a : A),
        ps_P (f a) >= bound) ->
-   ps_P (list_inter (finite_fun_to_list finA decA f)) >= (INR (length (nodup decA elms))) * (bound - 1) + 1.  
+   ps_P (list_inter (finite_fun_to_list finA decA f)) >= (INR (length (nodup decA fin_elms))) * (bound - 1) + 1.  
   Proof.
     intros.
     generalize (list_inter_prob_bound_const_fin finA decA f bound H); intros.
@@ -4035,7 +4035,7 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
   Qed.
 
   Lemma conv_pair_as_prob_inf_delta_eps_lim_finA 
-        {A : Type} (finA : Finite A) (decA : EqDec A eq) (inh : inhabited A)
+        {A : Type} (finA : FiniteType A) (decA : EqDec A eq) (inh : inhabited A)
         (f : A -> nat->Ts->R ) (flim : A -> R)
         (g : A -> nat->Ts->R ) (glim : A -> R) 
         (eps : posreal)
@@ -4057,20 +4057,20 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
   Proof.
     intros limf limg.
     intros.
-    assert (INR (length (nodup decA elms)) > 0).
+    assert (INR (length (nodup decA fin_elms)) > 0).
     {
       apply lt_0_INR.
       destruct inh.
-      generalize (finite X); intros.
-      generalize (nodup_In decA elms X); intros.
+      generalize (fin_finite X); intros.
+      generalize (nodup_In decA fin_elms X); intros.
       apply H0 in H.
-      case_eq (nodup decA elms); intros.
+      case_eq (nodup decA fin_elms); intros.
       - rewrite H1 in H.
         now simpl in H.
       - simpl.
         lia.
     }
-    assert (0 < (delta/INR (length (nodup decA elms)))).
+    assert (0 < (delta/INR (length (nodup decA fin_elms)))).
     {
       apply Rdiv_lt_0_compat; trivial.
       apply cond_pos.
@@ -4081,13 +4081,13 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
     unfold finite_fun_to_list.
     intros.
     apply Rge_trans with
-        (r2 := (INR (length (nodup decA elms))) * ((1 - {| pos := delta / INR (length (nodup decA elms)); cond_pos := H0 |})-1) + 1).
+        (r2 := (INR (length (nodup decA fin_elms))) * ((1 - {| pos := delta / INR (length (nodup decA fin_elms)); cond_pos := H0 |})-1) + 1).
     - apply list_inter_prob_bound_const_fin_alt.
       intros.
       apply (proj2_sig (X a)).
       assert (proj1_sig (X a) <= Nmax)%nat.
       {
-        generalize (list_max_upper  (map (fun a0 : A => ` (X a0)) (nodup decA elms)) ); intros.        
+        generalize (list_max_upper  (map (fun a0 : A => ` (X a0)) (nodup decA fin_elms)) ); intros.        
         rewrite Forall_forall in H2.
         apply H2.
         apply in_map_iff.
@@ -4329,18 +4329,18 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
       lra.
   Qed.     
 
-  Program Instance frf_finite_dom {A B} {finA : Finite.Finite A} (f : A -> B) :
+  Program Instance frf_finite_dom {A B} {finA : FiniteType A} (f : A -> B) :
     FiniteRangeFunction f :=
-    { frf_vals := map f elms }.
+    { frf_vals := map f fin_elms }.
   Next Obligation.
     destruct finA.
     now apply in_map.
   Qed.
 
-  Program Definition Pmf_measure {A} {finA : Finite.Finite A} {decA : EqDec A eq}
+  Program Definition Pmf_measure {A} {finA : FiniteType A} {decA : EqDec A eq}
         (mu : A -> nonnegreal)
-        (mu_sum1 : list_sum (map (fun x => nonneg (mu x)) (nodup decA elms)) = 1) : Pmf A
-    := {| outcomes := map (fun a => (mu a, a)) (nodup decA elms) |}.
+        (mu_sum1 : list_sum (map (fun x => nonneg (mu x)) (nodup decA fin_elms)) = 1) : Pmf A
+    := {| outcomes := map (fun a => (mu a, a)) (nodup decA fin_elms) |}.
   Next Obligation.
     assert (R1 = 1) by lra.
     rewrite H.
@@ -4352,13 +4352,13 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
     f_equal.
   Qed.
 
-  Lemma finite_discrete_ps_expectation {A} {finA : Finite.Finite A} {decA : EqDec A eq}
+  Lemma finite_discrete_ps_expectation {A} {finA : FiniteType A} {decA : EqDec A eq}
         (mu : A -> nonnegreal)
-        (mu_sum1 : list_sum (map (fun x => nonneg (mu x)) (nodup decA elms)) = 1)
+        (mu_sum1 : list_sum (map (fun x => nonneg (mu x)) (nodup decA fin_elms)) = 1)
         (f : A -> R)
         {rv : RandomVariable (discrete_sa A) borel_sa f} :
     Expectation (Prts := pmf_prob.ps_pmf (Pmf_measure mu mu_sum1)) f =
-    Some (Rbar.Finite (list_sum (map (fun x => (f x) * (mu x)) (nodup decA elms)))).
+    Some (Rbar.Finite (list_sum (map (fun x => (f x) * (mu x)) (nodup decA fin_elms)))).
   Proof.
     rewrite (pmf_prob.pmf_value_Expectation (Pmf_measure mu mu_sum1) f).
     do 2 f_equal.
@@ -4880,16 +4880,16 @@ End converge.
 Section FiniteDomain.
   
 Context {Ts : Type}
-        {fin : Finite Ts}
+        {fin : FiniteType Ts}
         {eqdec : EqDec Ts eq}
         (prts : ProbSpace (discrete_sa Ts)) .
 
 Program Instance finite_frf (rv_X : Ts -> R) :
-  FiniteRangeFunction rv_X := { frf_vals :=  map rv_X elms }.
+  FiniteRangeFunction rv_X := { frf_vals :=  map rv_X fin_elms }.
 Next Obligation.
   destruct fin.
   apply in_map.
-  apply finite.
+  apply fin_finite.
 Qed.
 
 Instance isfe_finite_domain 
@@ -4909,7 +4909,7 @@ Lemma discrete_finite_preimage
     In v frf_vals ->
     ps_P (preimage_singleton rv_X v) =
     list_sum (map (fun a => ps_P (discrete_singleton a))
-                  (filter (fun a => if Req_EM_T (rv_X a) v then true else false) (nodup eqdec elms))).
+                  (filter (fun a => if Req_EM_T (rv_X a) v then true else false) (nodup eqdec fin_elms))).
  Proof.
    Admitted.
 
@@ -4918,7 +4918,7 @@ Lemma Expectation_finite_domain
       {rv:RandomVariable (discrete_sa Ts) borel_sa rv_X}  :
     FiniteExpectation prts rv_X =
     list_sum (map (fun a => Rmult (rv_X a) (ps_P (discrete_singleton a)))
-                  (nodup eqdec elms)).
+                  (nodup eqdec fin_elms)).
 Proof.
   generalize pmf_prob.pmf_value_FiniteExpectation; intros.
   unfold expt_value in H.
@@ -4926,7 +4926,7 @@ Proof.
   unfold SimpleExpectation.
   generalize (frf_vals_nodup_preimage_disj rv_X); intros.
   assert (Permutation (nodup Req_EM_T  (@frf_vals Ts R rv_X (finite_frf rv_X)))
-                      (nodup Req_EM_T (map rv_X elms))).
+                      (nodup Req_EM_T (map rv_X fin_elms))).
   {
     apply NoDup_Permutation.
     - apply NoDup_nodup.

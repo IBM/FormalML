@@ -4,14 +4,14 @@ Require Import Classical.
 Require Import QArith Coq.Reals.Rbase Coq.Reals.RList.
 Require Import Coq.Reals.Rfunctions.
 Require Import Coq.Reals.Rprod Coq.Reals.ROrderedType.
-Require Import Ranalysis_reg utils.Finite.
+Require Import Ranalysis_reg.
 Require Import Coquelicot.Coquelicot.
 Require Import Lia Lra.
 Require Import Reals.Integration.
 Require Import Coq.Reals.SeqProp.
 Require Import Rtrigo_def.
 Require Import List.
-Require Finite.
+Require Import FiniteType.
 Require Import Morphisms Permutation.
 Require Import EquivDec.
 Require Import PushNeg.
@@ -3673,9 +3673,9 @@ Section Rmax_list.
     assumption.
   Qed.
 
-  Lemma fin_fun_bounded {A} (finA : Finite.Finite A) (f : A -> R) : {D | forall a, f a <= D}.
+  Lemma fin_fun_bounded {A} (finA : FiniteType A) (f : A -> R) : {D | forall a, f a <= D}.
   Proof.
-    exists (Max_{@elms _ finA}(f)).
+    exists (Max_{@fin_elms _ finA}(f)).
     intro a.
     apply Rmax_spec.
     rewrite in_map_iff.
@@ -3683,15 +3683,15 @@ Section Rmax_list.
     destruct finA ; eauto.
   Qed.
 
-  Lemma fin_fun_bounded_Rabs {A} (finA : Finite.Finite A) (f : A -> R) : { D | forall a, Rabs(f a) <= D }.
+  Lemma fin_fun_bounded_Rabs {A} (finA : FiniteType A) (f : A -> R) : { D | forall a, Rabs(f a) <= D }.
   Proof.
-    exists (Max_{@elms _ finA}(fun x => Rabs (f x))).
+    exists (Max_{@fin_elms _ finA}(fun x => Rabs (f x))).
     intros a.
     apply Rmax_spec.
     rewrite in_map_iff.
     exists a.
     split; trivial.
-    apply finite.
+    apply fin_finite.
   Qed.
 
   Lemma Rmax_list_app {A} {l : list A} (a : A) (f : A -> R) (hl : [] <> l) :
