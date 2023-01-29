@@ -4447,6 +4447,11 @@ Qed.
                (Rbar_rvmult (const c)
                             (NonNegConditionalExpectation prts sub f)).
   Proof.
+    generalize (is_conditional_expectation_scale prts sub 2 f); intros.
+    specialize (H 
+               (Rbar_rvmult (const c)
+                            (NonNegConditionalExpectation prts sub f)) _).
+
     Admitted.
 
   Lemma NonNegCondexp_ale 
@@ -4461,6 +4466,7 @@ Qed.
              (NonNegConditionalExpectation prts sub f1) 
              (NonNegConditionalExpectation prts sub f2).
   Proof.
+
     Admitted.
 
   Lemma nncondexp_sqr_sum_bound_nneg (x y : Ts -> R)
