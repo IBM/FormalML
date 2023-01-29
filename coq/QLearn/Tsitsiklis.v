@@ -4401,7 +4401,112 @@ Qed.
     - now apply (is_conditional_expectation_independent_sa prts sub).
   Qed.
 
-  
+  Lemma expec_sqr_sum_bound (x y : Ts -> R)
+        {rvx : RandomVariable dom borel_sa x}
+        {rvy : RandomVariable dom borel_sa y} :
+    Rbar_le
+      (NonnegExpectation (rvsqr (rvplus x y)))
+      (Rbar_mult 2 (Rbar_plus (NonnegExpectation (rvsqr x)) 
+                              (NonnegExpectation (rvsqr y)))).
+  Proof.
+    rewrite <- NonnegExpectation_sum; try typeclasses eauto.
+    assert (0 < 2) by lra.
+    replace 2 with (pos (mkposreal _ H)); try now simpl.
+    erewrite <- NonnegExpectation_scale.
+    apply NonnegExpectation_le.
+    generalize (rvprod_bound x y); intros.
+    intros ?.
+    rv_unfold.
+    specialize (H0 a); simpl in H0.
+    rewrite Rsqr_plus.
+    simpl; lra.
+  Qed.
+
+   Lemma NonNegCondexp_plus (f1 f2 : Ts -> R) 
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2}
+        {nn1 : NonnegativeFunction f1}
+        {nn2 : NonnegativeFunction f2}   :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (NonNegConditionalExpectation prts sub (rvplus f1 f2))
+             (Rbar_rvplus (NonNegConditionalExpectation prts sub f1) 
+                          (NonNegConditionalExpectation prts sub f2)).
+  Proof.
+  Admitted.
+
+    Lemma NonNegCondexp_scale (f : Ts -> R) (c: posreal)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv1 : RandomVariable dom borel_sa f}
+        {nnf : NonnegativeFunction f} 
+        {nncf : NonnegativeFunction (rvscale c f)} :      
+      almostR2 (prob_space_sa_sub prts sub) eq
+               (NonNegConditionalExpectation prts sub (rvscale c f))
+               (Rbar_rvmult (const c)
+                            (NonNegConditionalExpectation prts sub f)).
+  Proof.
+    Admitted.
+
+  Lemma NonNegCondexp_ale 
+        {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) 
+        (f1 f2 : Ts -> R) 
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2}
+        {nn1 : NonnegativeFunction f1}
+        {nn2 : NonnegativeFunction f2} :
+    almostR2 prts Rle f1 f2 ->
+    almostR2 prts Rbar_le
+             (NonNegConditionalExpectation prts sub f1) 
+             (NonNegConditionalExpectation prts sub f2).
+  Proof.
+    Admitted.
+
+  Lemma nncondexp_sqr_sum_bound_nneg (x y : Ts -> R)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rvx : RandomVariable dom borel_sa x}
+        {rvy : RandomVariable dom borel_sa y} :
+    almostR2 prts Rbar_le
+             (NonNegConditionalExpectation prts sub (rvsqr (rvplus x y)))
+             (Rbar_rvmult (const 2)
+                          (Rbar_rvplus (NonNegConditionalExpectation prts sub (rvsqr x)) 
+                                       (NonNegConditionalExpectation prts sub (rvsqr y)))).
+  Proof.
+    intros.
+    generalize (NonNegCondexp_plus (rvsqr x) (rvsqr y) sub); intros.
+    assert (0 < 2) by lra.
+    generalize (NonNegCondexp_scale (rvplus (rvsqr x) (rvsqr y)) (mkposreal 2 H0)); intros.
+    specialize (H1 sub _ _ _).
+    generalize (NonNegCondexp_ale sub
+                                  (rvsqr (rvplus x y))
+                                  (rvscale (mkposreal 2 H0)
+                                           (rvplus (rvsqr x) 
+                                                   (rvsqr y)))); intros.
+    apply almost_prob_space_sa_sub_lift in H.
+    apply almost_prob_space_sa_sub_lift in H1.
+
+    revert H; apply almost_impl.
+    revert H1; apply almost_impl.
+    cut_to H2.
+    - revert H2; apply almost_impl.    
+      apply all_almost; intros ????.
+      unfold Rbar_rvmult.
+      rewrite <- H2.
+      simpl in H1.
+      unfold Rbar_rvmult in H1.
+      unfold const.
+      rewrite <- H1.
+      apply H.
+    - apply all_almost.
+      intros.
+      generalize (rvprod_bound x y); intros.
+      rv_unfold.
+      specialize (H x0); simpl in H.
+      rewrite Rsqr_plus.
+      simpl; lra.
+  Qed.
 
 End Stochastic_convergence.
 
@@ -4451,6 +4556,8 @@ Section MDP.
     rewrite <- H0 at 1.
     now apply bellmanQbar_alt_contraction.
   Qed.    
+
+  Locate rvprod_abs_bound.
 
 End MDP.
 
