@@ -1,5 +1,5 @@
 Require Import List.
-Require Import mdp qvalues fixed_point.
+Require Import mdp qvalues fixed_point pmf_monad.
 Require Import RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia PushNeg.
@@ -13,10 +13,13 @@ Require Import IndefiniteDescription ClassicalDescription.
 Require Import RelationClasses.
 Require Import Dvoretzky infprod.
 Require Import Martingale MartingaleStopped.
+Require qlearn_redux.
 
 Set Bullet Behavior "Strict Subproofs".
 
-Context {Ts : Type} (β γ : R) (* (w α : Ts -> nat -> R)  *)
+Section Stochastic_convergence.
+  
+Context {Ts : Type}  (* (w α : Ts -> nat -> R)  *)
         {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
 
 Lemma isfe_condexp_sqr_bounded (dom2 : SigmaAlgebra Ts) (sub2: sa_sub dom2 dom) (B : R) 
@@ -738,7 +741,7 @@ Proof.
     apply rvmult_rv.
     - typeclasses eauto.
     - apply (RandomVariable_sa_sub (filt_sub t)).
-      apply EventIndicator_rv with (dom := F t).
+      apply EventIndicator_rv.
   }
   assert (forall k t,
              almostR2 prts Rbar_le
@@ -754,7 +757,7 @@ Proof.
     {
       unfold IB.
       generalize (@EventIndicator_rv Ts (F t) (tau_int k t)); intros.
-      apply EventIndicator_rv with (dom := F t).
+      apply EventIndicator_rv.
     }
     generalize (Condexp_nneg_simpl prts (filt_sub t) (rvmult (rvsqr (w t)) (IB k t))); intros.
     generalize (NonNegCondexp_factor_out prts (filt_sub t) 
@@ -892,7 +895,7 @@ Proof.
     {
       apply rvmult_rv; trivial.
       apply (RandomVariable_sa_sub (filt_sub n)).
-      apply EventIndicator_rv with (dom := F n).
+      apply EventIndicator_rv.
     }
     apply (isfe_almost_condexp_sqr_bounded _ (filt_sub n) (sqrt (INR k))) with (rv := H20).
     specialize (H12 k n).
@@ -1433,7 +1436,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
    now apply lemma2 with (α := α) (w := w).
  Qed.
 
- Lemma lemma8_part1 (x Y W : nat -> Ts -> R) (D : posreal) (ω : Ts) 
+ Lemma lemma8_part1 (x Y W : nat -> Ts -> R) (β : R) (D : posreal) (ω : Ts) 
       (α w : nat -> Ts -> R) :
    (Y 0%nat ω = D) ->
    (W 0%nat ω = 0) ->   
@@ -1474,7 +1477,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        lra.
  Qed.
      
- Lemma lemma8_almost_part1  (x Y W : nat -> Ts -> R) (D : posreal) 
+ Lemma lemma8_almost_part1  (x Y W : nat -> Ts -> R) (β : R) (D : posreal) 
       (α w : nat -> Ts -> R) :
    (forall ω, Y 0%nat ω = D) ->
    (forall ω, W 0%nat ω = 0) ->   
@@ -1511,10 +1514,10 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
    apply all_almost.
    unfold impl.
    intros.
-   apply (lemma8_part1 x Y W D x0 α w); trivial.
+   apply lemma8_part1 with (β := β) (D := D) (α := α) (w := w); trivial.
  Qed.
 
- Lemma lemma8_part2 (x Y W : nat -> Ts -> R) (D : posreal) (ω : Ts)
+ Lemma lemma8_part2 (x Y W : nat -> Ts -> R) (β : R) (D : posreal) (ω : Ts)
       (α w : nat -> Ts -> R) :
    (Y 0%nat ω = D) ->
    (W 0%nat ω = 0) ->   
@@ -1560,7 +1563,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        lra.
   Qed.
      
- Lemma lemma8_almost_part2  (x Y W : nat -> Ts -> R) (D : posreal) 
+ Lemma lemma8_almost_part2  (x Y W : nat -> Ts -> R) (β : R) (D : posreal) 
       (α w : nat -> Ts -> R) :
    (forall ω, Y 0%nat ω = D) ->
    (forall ω, W 0%nat ω = 0) ->   
@@ -1596,10 +1599,10 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
    apply all_almost.
    unfold impl.
    intros.
-   apply (lemma8_part2 x Y W D x0 α w); trivial.
+   apply lemma8_part2 with (β := β) (D := D) (α := α) (w := w); trivial.
  Qed.
 
- Lemma lemma8_abs  (x Y W : nat -> Ts -> R) (ω : Ts) (D : posreal) 
+ Lemma lemma8_abs  (x Y W : nat -> Ts -> R) (ω : Ts) (β : R) (D : posreal) 
       (α w : nat -> Ts -> R) :
    (Y 0%nat ω = D) ->
    (W 0%nat ω = 0) ->   
@@ -1632,11 +1635,11 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
      split.
      - apply Rplus_le_reg_r with (r := (W t ω)).
        ring_simplify.
-       now apply lemma8_part2 with (D := D) (α := α) (w := w).
+       now apply lemma8_part2 with (β := β) (D := D) (α := α) (w := w).
      - apply Rplus_le_reg_r with (r := (W t ω)).
        ring_simplify.
        rewrite Rplus_comm.
-       now apply lemma8_part1 with (D := D) (α := α) (w := w).
+       now apply lemma8_part1 with (β := β) (D := D) (α := α) (w := w).
    }
    apply Rplus_le_reg_r with (r := - Rabs (W t ω)).
    ring_simplify.
@@ -1645,7 +1648,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
   Qed.
 
  Lemma lemma8_abs_part2  (x Y W : nat -> Ts -> R) 
-      (α w : nat -> Ts -> R) (ω : Ts) (eps D : posreal) :
+      (α w : nat -> Ts -> R) (ω : Ts) (β : R) (eps D : posreal) :
    (forall t, 0 <= α t ω <= 1) ->
    (W 0%nat ω = 0) ->
    (forall t,
@@ -1722,7 +1725,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
  Qed.
 
   Lemma lemma8_abs_combined  (x Y W : nat -> Ts -> R) 
-        (α w : nat -> Ts -> R) (ω : Ts) (eps D : posreal) :
+        (α w : nat -> Ts -> R) (ω : Ts) (β : R) (eps D : posreal) :
     (0 < β) ->
     (Y 0%nat ω = D) ->
     (W 0%nat ω = 0) ->   
@@ -1762,7 +1765,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     - apply Rbar_le_lt_trans with (y:= β * (1 + eps) * D).
       + apply lemma8_abs_part2 with (Y := Y) (W :=W) (α := α) (w := w); trivial.
         intros.
-        apply lemma8_abs with (D := D) (α := α) (w := w); trivial.
+        apply lemma8_abs with (β := β) (D := D) (α := α) (w := w); trivial.
       + simpl.
         apply Rmult_lt_compat_r; [apply cond_pos |].
         apply Rmult_lt_compat_l; trivial.
@@ -1771,7 +1774,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
    Qed.
 
   Lemma lemma8_abs_combined_almost  (x Y W : nat -> Ts -> R) 
-        (α w : nat -> Ts -> R) (eps : posreal) (D : Ts -> posreal) :
+        (α w : nat -> Ts -> R) (eps : posreal) (β : R) (D : Ts -> posreal) :
     (0 < β) ->
     (forall ω, Y 0%nat ω = D ω) ->
     (forall ω, W 0%nat ω = 0) ->   
@@ -1828,7 +1831,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
  Qed.
     
  Lemma lemma8_abs_part2_almost  (x Y W : nat -> Ts -> R) 
-      (α w : nat -> Ts -> R) (eps : posreal) (D : Ts -> posreal) :
+      (α w : nat -> Ts -> R) (eps : posreal) (β : R) (D : Ts -> posreal) :
    (forall t ω, 0 <= α t ω <= 1) ->
    (forall ω, W 0%nat ω = 0) ->
    (forall t ω,
@@ -2619,7 +2622,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
      now specialize (H11 t _ H12).
    Qed.
     
-  Theorem Tsitsiklis1 {n} (X w α : nat -> Ts -> vector R (S n)) 
+  Theorem Tsitsiklis1 {n} (β : R) (X w α : nat -> Ts -> vector R (S n)) 
         (XF : vector R (S n) -> vector R (S n))
         {F : nat -> SigmaAlgebra Ts}
         (isfilt : IsFiltration F) 
@@ -3595,7 +3598,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     lia.
   Qed.
 
-  Theorem Tsitsiklis3_beta_pos {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
+  Theorem Tsitsiklis3_beta_pos {n} (X w α : nat -> Ts -> vector R n) (β : R) (D0 : Ts -> R) 
         (XF : vector R n -> vector R n)
         {F : nat -> SigmaAlgebra Ts}
         (isfilt : IsFiltration F) 
@@ -3874,7 +3877,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
            pose (Wtau := fun t ω => WW t (tauk ω) ω).
            generalize (lemma8_abs_combined_almost Xtau Y Wtau αtau wtau); intros.
            simpl.
-           specialize (H16 (mkposreal _ H8) (fun ω => mkposreal _ (Dpos k ω))).
+           specialize (H16 (mkposreal _ H8) β (fun ω => mkposreal _ (Dpos k ω))).
            cut_to H16; try easy. 
            + destruct H16.
              exists (fun ω => ((tauk ω) + (x ω))%nat).
@@ -4095,7 +4098,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
  apply Rvector_max_abs_nth_le.
 Qed.
 
-  Theorem Tsitsiklis3_beta_0 {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
+  Theorem Tsitsiklis3_beta_0 {n} (X w α : nat -> Ts -> vector R n) (β : R) (D0 : Ts -> R) 
         (XF : vector R n -> vector R n)
         {F : nat -> SigmaAlgebra Ts}
         (isfilt : IsFiltration F) 
@@ -4310,7 +4313,7 @@ Qed.
  Qed.
 
 
-  Theorem Tsitsiklis3 {n} (X w α : nat -> Ts -> vector R n) (D0 : Ts -> R) 
+  Theorem Tsitsiklis3 {n} (X w α : nat -> Ts -> vector R n) (β : R) (D0 : Ts -> R) 
         (XF : vector R n -> vector R n)
         {F : nat -> SigmaAlgebra Ts}
         (isfilt : IsFiltration F) 
@@ -4350,7 +4353,105 @@ Qed.
   Proof.
     intros.
     destruct (Rlt_dec 0 β).
-    - now apply Tsitsiklis3_beta_pos with (w0 := w) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
+    - now apply Tsitsiklis3_beta_pos with (w0 := w) (β0 := β) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
     - assert (β = 0) by lra.
-      now apply Tsitsiklis3_beta_0 with (w0 := w) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
+      now apply Tsitsiklis3_beta_0 with (w0 := w) (β0 := β) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
    Qed.
+
+  Lemma is_condexp_diff_ce_zero {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        (f : Ts -> R)
+        (ce : Ts -> R)
+        {rvf : RandomVariable dom borel_sa f}
+        {isfe:IsFiniteExpectation prts f} 
+        {isfce:IsFiniteExpectation prts ce} 
+        {rvce : RandomVariable dom borel_sa ce}
+        {rvce2 : RandomVariable dom2 Rbar_borel_sa ce}  :
+      is_conditional_expectation prts dom2 f ce ->
+      is_conditional_expectation prts dom2 (rvminus f ce) (const 0).
+  Proof.
+    intros.
+    generalize (is_conditional_expectation_minus prts sub f ce ce ce H); intros.
+    cut_to H0.
+    - revert H0.
+      apply is_conditional_expectation_proper; try easy.
+      apply all_almost; intros.
+      unfold Rbar_rvminus, Rbar_rvopp, Rbar_rvplus, const.
+      simpl.
+      apply Rbar_finite_eq.
+      lra.
+    - eapply (is_conditional_expectation_id (dom2 := dom2) prts ce).
+      Unshelve.
+      now apply (Rbar_real_rv ce); intros.
+  Qed.
+    
+  Lemma is_condexp_diff_indep_zero {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        (f : Ts -> R)
+        {rv : RandomVariable dom borel_sa f}
+        {isfe:IsFiniteExpectation prts f} :
+    independent_sas prts (pullback_rv_sub _ _ _ rv) sub ->
+    is_conditional_expectation prts dom2 
+                               (rvminus f (const (FiniteExpectation prts f)))
+                               (const 0).
+  Proof.
+    intros.
+    eapply is_condexp_diff_ce_zero; try easy.
+    - apply IsFiniteExpectation_const.
+    - now apply (is_conditional_expectation_independent_sa prts sub).
+  Qed.
+
+  
+
+End Stochastic_convergence.
+
+Section MDP.
+
+  Context {M : MDP}  (γ : R).
+  Arguments t {_}.
+
+  
+  Definition Ts := {x : state M & act M x} .
+  Definition Td := Rfct Ts.
+
+  Definition bellmanQbar_alt (ec : Rfct (sigT M.(act))) : Rfct (sigT M.(act)) -> Rfct (sigT M.(act))
+  := fun W => fun (sa : sigT M.(act))  => let (s,a) := sa in
+                  ec sa +
+                  γ*expt_value (t s a)(fun s' => Max_{act_list s'}(fun a => W (existT _ s' a) ) ).
+
+  Lemma bellmanQbar_alt_contraction (ec : Rfct (sigT M.(act))) :
+    0 <= γ < 1 ->
+    forall (X1 X2 : Rfct(sigT M.(act))),
+      Hierarchy.norm (Hierarchy.minus (bellmanQbar_alt ec X1) (bellmanQbar_alt ec X2)) <=
+      γ * Hierarchy.norm (Hierarchy.minus X1 X2).
+  Proof.
+    intros.
+    assert (minus (bellmanQbar_alt ec X1) (bellmanQbar_alt ec X2)=
+            (minus (bellmanQbar γ X1) (bellmanQbar γ X2))).
+    {
+      unfold bellmanQbar_alt, bellmanQbar, minus, plus, opp; simpl.
+      unfold Rfct_plus, Rfct_opp, opp; simpl.
+      apply Rfct_eq_ext; intros.
+      destruct x.
+      lra.
+    }
+    rewrite H0.
+    now apply qlearn_redux.bellmanQbar_contraction.
+  Qed.
+
+  Lemma bellmanQbar_alt_contraction_fixed (ec : Rfct (sigT M.(act))) 
+                (Xstar : Rfct (sigT M.(act))) :
+    0 <= γ < 1 ->
+    bellmanQbar_alt ec Xstar = Xstar ->
+    forall (X : Rfct(sigT M.(act))),
+      Hierarchy.norm (Hierarchy.minus (bellmanQbar_alt ec X) Xstar) <=
+      γ * Hierarchy.norm (Hierarchy.minus X Xstar).
+  Proof.
+    intros.
+    rewrite <- H0 at 1.
+    now apply bellmanQbar_alt_contraction.
+  Qed.    
+
+End MDP.
+
+    
