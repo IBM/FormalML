@@ -5071,6 +5071,35 @@ Section cond_exp2.
     ; apply proof_irrelevance.
   Qed.
 
+  Lemma NonNegCondexp_scale (c:nonnegreal) (f : Ts -> R) 
+    {rv : RandomVariable dom borel_sa f}
+    {nnf : NonnegativeFunction f}
+    {nnfc : NonnegativeFunction (rvscale c f)}  
+    :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (NonNegCondexp (rvscale c f))
+             (Rbar_rvmult (const (Finite c)) (NonNegCondexp f)).
+  Proof.
+    assert (
+     rvce2 : RandomVariable dom2 Rbar_borel_sa
+                            (Rbar_rvmult (fun x : Ts => const c x) (NonNegCondexp f))).
+    {
+      apply Rbar_rvmult_rv; typeclasses eauto.
+    }
+    apply (@is_conditional_expectation_nneg_unique _ _ prts _ sub (rvscale c f)
+                                                   (NonNegCondexp (rvscale c f))
+                (Rbar_rvmult (const c) (NonNegCondexp f)) _ _ _).
+    - typeclasses eauto.
+    - apply NonNegCondexp_nneg. 
+    - apply Rbar_rvmult_nnf.
+      + now destruct c; intros ?; simpl.
+      + apply NonNegCondexp_nneg. 
+    - apply NonNegCondexp_cond_exp.
+    - apply (is_conditional_expectation_scale _ sub c f _)
+      ; intros.
+      apply NonNegCondexp_cond_exp.
+  Qed.
+
   Definition ConditionalExpectation (f : Ts -> R) 
              {rv : RandomVariable dom borel_sa f} : Ts -> Rbar :=
     Rbar_rvminus (NonNegCondexp (pos_fun_part f))
@@ -5420,6 +5449,26 @@ Section cond_exp2.
       apply Condexp_cond_exp; typeclasses eauto.
   Qed.
 
+   Lemma Condexp_scale_nneg (c:nonnegreal) (f : Ts -> R) 
+    {rv : RandomVariable dom borel_sa f}
+    {nnf : NonnegativeFunction f}
+    :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (ConditionalExpectation (rvscale c f))
+             (Rbar_rvmult (const (Finite c)) (ConditionalExpectation f)).
+   Proof.
+     assert (NonnegativeFunction (rvscale c f)).
+     {
+       intros x.
+       apply Rmult_le_pos; trivial.
+       apply cond_nonneg.
+     }                   
+     generalize (NonNegCondexp_scale c f).
+     apply almost_impl; apply all_almost; intros ??.
+     unfold Rbar_rvmult.
+     now rewrite (Condexp_nneg_simpl f), (Condexp_nneg_simpl (rvscale c f)).
+   Qed.
+  
   Lemma Condexp_opp (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f}
