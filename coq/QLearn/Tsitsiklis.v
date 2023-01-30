@@ -4422,6 +4422,7 @@ Qed.
     simpl; lra.
   Qed.
 
+
    Lemma NonNegCondexp_plus (f1 f2 : Ts -> R) 
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
@@ -4430,9 +4431,9 @@ Qed.
         {nn1 : NonnegativeFunction f1}
         {nn2 : NonnegativeFunction f2}   :
     almostR2 (prob_space_sa_sub prts sub) eq
-             (NonNegConditionalExpectation prts sub (rvplus f1 f2))
-             (Rbar_rvplus (NonNegConditionalExpectation prts sub f1) 
-                          (NonNegConditionalExpectation prts sub f2)).
+             (NonNegCondexp prts sub (rvplus f1 f2))
+             (Rbar_rvplus (NonNegCondexp prts sub f1) 
+                          (NonNegCondexp prts sub f2)).
   Proof.
   Admitted.
 
@@ -4443,14 +4444,14 @@ Qed.
         {nnf : NonnegativeFunction f} 
         {nncf : NonnegativeFunction (rvscale c f)} :      
       almostR2 (prob_space_sa_sub prts sub) eq
-               (NonNegConditionalExpectation prts sub (rvscale c f))
+               (NonNegCondexp prts sub (rvscale c f))
                (Rbar_rvmult (const c)
-                            (NonNegConditionalExpectation prts sub f)).
+                            (NonNegCondexp prts sub f)).
   Proof.
     generalize (is_conditional_expectation_scale prts sub 2 f); intros.
     specialize (H 
                (Rbar_rvmult (const c)
-                            (NonNegConditionalExpectation prts sub f)) _).
+                            (NonNegCondexp prts sub f)) _).
 
     Admitted.
 
@@ -4463,8 +4464,8 @@ Qed.
         {nn2 : NonnegativeFunction f2} :
     almostR2 prts Rle f1 f2 ->
     almostR2 prts Rbar_le
-             (NonNegConditionalExpectation prts sub f1) 
-             (NonNegConditionalExpectation prts sub f2).
+             (NonNegCondexp prts sub f1) 
+             (NonNegCondexp prts sub f2).
   Proof.
 
     Admitted.
@@ -4475,10 +4476,10 @@ Qed.
         {rvx : RandomVariable dom borel_sa x}
         {rvy : RandomVariable dom borel_sa y} :
     almostR2 prts Rbar_le
-             (NonNegConditionalExpectation prts sub (rvsqr (rvplus x y)))
+             (NonNegCondexp prts sub (rvsqr (rvplus x y)))
              (Rbar_rvmult (const 2)
-                          (Rbar_rvplus (NonNegConditionalExpectation prts sub (rvsqr x)) 
-                                       (NonNegConditionalExpectation prts sub (rvsqr y)))).
+                          (Rbar_rvplus (NonNegCondexp prts sub (rvsqr x)) 
+                                       (NonNegCondexp prts sub (rvsqr y)))).
   Proof.
     intros.
     generalize (NonNegCondexp_plus (rvsqr x) (rvsqr y) sub); intros.
@@ -4513,6 +4514,135 @@ Qed.
       rewrite Rsqr_plus.
       simpl; lra.
   Qed.
+
+  Lemma conditional_variance_bound1 (x : Ts -> R) (c : R) 
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa x}
+        {isfe : IsFiniteExpectation prts x}
+        {isfe0 : IsFiniteExpectation prts (rvsqr x)} :
+    almostR2 prts Rle (rvsqr x) (const c²) ->
+    almostR2 prts Rle (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
+                               (rvsqr (FiniteConditionalExpectation prts sub x)))
+          (const c²).
+  Proof.
+    intros.
+    generalize (FiniteCondexp_ale 
+                  prts sub (rvsqr x) (const c²)); intros.
+    cut_to H0; try easy.
+    apply almost_prob_space_sa_sub_lift in H0.
+    revert H0; apply almost_impl.
+    revert H; apply almost_impl.
+    apply all_almost; intros ???.
+    rewrite FiniteCondexp_const in H0.
+    rv_unfold.
+    eapply Rle_trans.
+    shelve.
+    apply H0.
+    Unshelve.
+    assert (0 <=  (FiniteConditionalExpectation prts sub x x0)²).
+    {
+      apply Rle_0_sqr.
+    }
+    lra.
+  Qed.
+
+  Lemma conditional_variance_bound (x : Ts -> R) (c : R) 
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa x}
+        {isfe : IsFiniteExpectation prts x}
+        {isfe2 : IsFiniteExpectation prts (rvsqr x)}        
+        {rv2 : RandomVariable 
+                 dom borel_sa
+                 (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))}
+        {isfe0 : IsFiniteExpectation 
+                   prts
+                   (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))} :
+    almostR2 prts Rle (rvsqr x) (const c²) ->
+    almostR2 prts Rle (FiniteConditionalExpectation prts sub (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))))
+          (const c²).
+  Proof.
+    intros.
+    assert (almostR2 prts eq
+                     (FiniteConditionalExpectation 
+                        prts sub
+                        (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))) 
+                     (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
+                              
+                              (rvsqr (FiniteConditionalExpectation prts sub x)))).
+    {
+      assert (IsFiniteExpectation 
+                prts
+                (rvplus (rvsqr x)
+                        (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation prts sub x) x))
+                                (rvsqr (FiniteConditionalExpectation prts sub x))))).
+      {
+        admit.
+      }
+(*
+      assert (almostR2 (prob_space_sa_sub prts sub) eq
+                       (FiniteConditionalExpectation 
+                          prts sub
+                          (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))))
+                       (FiniteConditionalExpectation 
+                          prts sub
+                          (rvplus (rvsqr x)
+                                  (rvplus
+                                     (rvscale (- 2)
+                                      (rvmult (FiniteConditionalExpectation prts sub x) x))
+                                     (rvsqr (FiniteConditionalExpectation prts sub x)))))).
+      {
+        apply FiniteCondexp_proper.
+        apply all_almost; intros ?.
+        rv_unfold.
+        unfold Rsqr.
+        lra.
+      }
+      generalize (FiniteCondexp_plus 
+                    prts sub (rvsqr x)
+                    (rvplus (rvscale (-2 * FiniteExpectation prts x) x)
+                             (const (FiniteExpectation prts x)²)) ); intros.
+      generalize (FiniteCondexp_plus prts sub 
+                                     (rvscale (-2 * FiniteExpectation prts x) x)
+                                     (const (FiniteExpectation prts x)²)); intros.
+      generalize (FiniteCondexp_scale prts sub (-2 * FiniteExpectation prts x) x); intros.
+      apply almost_prob_space_sa_sub_lift in H0.
+      apply almost_prob_space_sa_sub_lift in H1.
+      apply almost_prob_space_sa_sub_lift in H2.
+      apply almost_prob_space_sa_sub_lift in H3.                  
+      revert H3; apply almost_impl.
+      revert H2; apply almost_impl.
+      revert H1; apply almost_impl.
+      revert H0; apply almost_impl.
+      apply all_almost; intros ?????.
+      rewrite H0.
+      rewrite H1.
+      rv_unfold.
+      rewrite H2.
+      rewrite H3.
+      f_equal.
+      
+      
+      rewrite H3.
+      rv_unfold.
+      rewrite H2.
+      f_equal.
+      Search FiniteConditionalExpectation.
+      
+      
+      
+      
+      admit.
+    }
+    generalize (conditional_variance_bound1 x c sub H); intros.
+    revert H1; apply almost_impl.
+    revert H0; apply almost_impl.
+    apply all_almost; intros ???.
+    rewrite H0.
+    apply H1.
+*)
+  Admitted.
 
 End Stochastic_convergence.
 
@@ -4562,8 +4692,6 @@ Section MDP.
     rewrite <- H0 at 1.
     now apply bellmanQbar_alt_contraction.
   Qed.    
-
-  Locate rvprod_abs_bound.
 
 End MDP.
 

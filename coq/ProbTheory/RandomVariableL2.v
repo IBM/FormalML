@@ -141,6 +141,25 @@ Section L2.
     ring.
   Qed.
 
+  Lemma variance_bound (x : Ts -> R) (c : R) 
+        {rv : RandomVariable dom borel_sa x}
+        {isl2 : IsLp prts 2 x} :
+    rv_le (rvsqr x) (const c²) ->
+    FiniteExpectation prts (rvsqr (rvminus x (const (FiniteExpectation prts x)))) <=  c².
+  Proof.
+    intros.
+    rewrite variance_l2.
+    apply Rle_trans with (r2 := FiniteExpectation prts (rvsqr x)).
+    - assert (0 <= (FiniteExpectation prts x)²).
+      {
+        apply Rle_0_sqr.
+      }
+      lra.
+    - replace (c²) with (FiniteExpectation prts (const c²)).
+      + now apply FiniteExpectation_le.
+      + apply FiniteExpectation_const.
+   Qed.
+
   Lemma isfe_sqr_seq (X : nat -> Ts -> R)
            (rv : forall n, RandomVariable dom borel_sa (X n)) :
     (forall n, IsFiniteExpectation prts (rvsqr (X n))) ->
