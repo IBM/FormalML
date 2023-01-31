@@ -4595,22 +4595,65 @@ Qed.
                 (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))) 
              (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
                       (rvsqr (FiniteConditionalExpectation prts sub x))).
-    Proof.
-      assert (IsFiniteExpectation 
-                prts
-                (rvplus (rvsqr x)
-                        (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation prts sub x) x))
-                                (rvsqr (FiniteConditionalExpectation prts sub x))))).
+  Proof.
+      assert (rv3: RandomVariable dom2 borel_sa (FiniteConditionalExpectation prts sub x)).
       {
-        admit.
+        apply FiniteCondexp_rv.
       }
-      assert (RandomVariable 
+      assert (rv4: RandomVariable dom borel_sa (FiniteConditionalExpectation prts sub x)).
+      {
+        apply FiniteCondexp_rv'.
+      }
+      assert (rv5: RandomVariable dom borel_sa (rvsqr (FiniteConditionalExpectation prts sub x))).
+      {
+        typeclasses eauto.
+      }
+      assert (rv6: RandomVariable dom borel_sa (rvmult (FiniteConditionalExpectation prts sub x) x)).
+      {
+        typeclasses eauto.
+      }
+      assert (rv7: RandomVariable dom borel_sa
+                             (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation prts sub x) x))
+                                     (rvsqr (FiniteConditionalExpectation prts sub x)))).
+      {
+        typeclasses eauto.
+      }
+      assert (rv8: RandomVariable 
                 dom borel_sa
                 (rvplus (rvsqr x)
                         (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation prts sub x) x))
                                 (rvsqr (FiniteConditionalExpectation prts sub x))))).
       {
+        typeclasses eauto.
+      }
+
+     assert (isfe3: IsFiniteExpectation prts (FiniteConditionalExpectation prts sub x)).
+      {
+        apply FiniteCondexp_isfe.
+      }
+      
+      assert (isfe4: IsFiniteExpectation prts  (rvmult (FiniteConditionalExpectation prts sub x) x)).
+      {
         admit.
+      }
+      assert (isfe5: IsFiniteExpectation prts (rvsqr (FiniteConditionalExpectation prts sub x))).
+      {
+        admit.
+      }
+      assert (isfe6: IsFiniteExpectation prts
+                                  (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation prts sub x) x))
+                                          (rvsqr (FiniteConditionalExpectation prts sub x)))).
+      {
+        apply IsFiniteExpectation_plus; try typeclasses eauto.
+      }
+
+      assert (isfe7: IsFiniteExpectation 
+                prts
+                (rvplus (rvsqr x)
+                        (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation prts sub x) x))
+                                (rvsqr (FiniteConditionalExpectation prts sub x))))).
+      {
+        apply IsFiniteExpectation_plus; try typeclasses eauto.
       }
       assert (almostR2 (prob_space_sa_sub prts sub) eq
                        (FiniteConditionalExpectation 
@@ -4630,34 +4673,6 @@ Qed.
         unfold Rsqr.
         lra.
       }
-      assert (RandomVariable dom borel_sa (rvsqr (FiniteConditionalExpectation prts sub x))).
-      {
-        admit.
-      }
-      assert (RandomVariable dom borel_sa (rvmult (FiniteConditionalExpectation prts sub x) x)).
-      {
-        admit.
-      }
-      assert (RandomVariable dom borel_sa
-                             (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation prts sub x) x))
-                                     (rvsqr (FiniteConditionalExpectation prts sub x)))).
-      {
-        admit.
-      }
-      assert (IsFiniteExpectation prts  (rvmult (FiniteConditionalExpectation prts sub x) x)).
-      {
-        admit.
-      }
-      assert (IsFiniteExpectation prts (rvsqr (FiniteConditionalExpectation prts sub x))).
-      {
-        admit.
-      }
-      assert (IsFiniteExpectation prts
-                                  (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation prts sub x) x))
-                                          (rvsqr (FiniteConditionalExpectation prts sub x)))).
-      {
-        admit.
-      }
       generalize (FiniteCondexp_plus 
                     prts sub (rvsqr x)
                     (rvplus (rvscale (-2)
@@ -4673,40 +4688,29 @@ Qed.
                     prts sub (-2)
                     (rvmult (FiniteConditionalExpectation prts sub x) x)); intros.
       generalize (FiniteCondexp_factor_out_l prts sub x (FiniteConditionalExpectation prts sub x)); intros.
-      assert (RandomVariable dom2 borel_sa (FiniteConditionalExpectation prts sub x)).
-      {
-        apply FiniteCondexp_rv.
-      }
-      assert (RandomVariable dom borel_sa (FiniteConditionalExpectation prts sub x)).
-      {
-        apply FiniteCondexp_rv'.
-      }
-      assert (IsFiniteExpectation prts (FiniteConditionalExpectation prts sub x)).
-      {
-        apply FiniteCondexp_isfe.
-      }
-      generalize (FiniteCondexp_id prts sub (FiniteConditionalExpectation prts sub x)); intros.
+
+      apply almost_prob_space_sa_sub_lift in H.
+      apply almost_prob_space_sa_sub_lift in H0.
       apply almost_prob_space_sa_sub_lift in H1.
-      apply almost_prob_space_sa_sub_lift in H8.
-      apply almost_prob_space_sa_sub_lift in H9.
-      apply almost_prob_space_sa_sub_lift in H10.
-      apply almost_prob_space_sa_sub_lift in H11.            
-      revert H11; apply almost_impl.
-      revert H10; apply almost_impl.
-      revert H9; apply almost_impl.
-      revert H8; apply almost_impl.      
+      apply almost_prob_space_sa_sub_lift in H2.
+      apply almost_prob_space_sa_sub_lift in H3.            
+      revert H3; apply almost_impl.
+      revert H2; apply almost_impl.
       revert H1; apply almost_impl.
+      revert H0; apply almost_impl.      
+      revert H; apply almost_impl.
       apply all_almost; intros ??????.
-      rewrite H1.
-      rewrite_condexp_pf_irrel H8.
+      rewrite H.
+      rewrite_condexp_pf_irrel H0.
       unfold rvplus at 1.
-      rewrite_condexp_pf_irrel H9.
+      rewrite_condexp_pf_irrel H1.
       unfold rvplus at 1.
-      rewrite H10.
+      rewrite H2.
       unfold rvscale.
-      rewrite H11.
+      rewrite H3.
       rv_unfold.
       unfold Rsqr.
+
       rewrite (FiniteCondexp_id _ _ (fun omega : Ts =>
                                        FiniteConditionalExpectation prts sub x omega * FiniteConditionalExpectation prts sub x omega)).
       lra.
