@@ -4581,14 +4581,18 @@ Qed.
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa x}
-        {isfe : IsFiniteExpectation prts x}
+        {isfe1 : IsFiniteExpectation prts x}
         {isfe2 : IsFiniteExpectation prts (rvsqr x)}        
         {rv2 : RandomVariable 
                  dom borel_sa
-                 (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))}
-        {isfe0 : IsFiniteExpectation 
+                 (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))} 
+        {isfe3 : IsFiniteExpectation 
                    prts
-                   (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))} :
+                   (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))}
+        {isfe4 : IsFiniteExpectation
+                   prts
+                   (rvsqr (FiniteConditionalExpectation prts sub x))}
+        {isfe5 : IsFiniteExpectation prts  (rvmult (FiniteConditionalExpectation prts sub x) x)}  :
     almostR2 prts eq
              (FiniteConditionalExpectation 
                 prts sub
@@ -4627,27 +4631,19 @@ Qed.
         typeclasses eauto.
       }
 
-     assert (isfe3: IsFiniteExpectation prts (FiniteConditionalExpectation prts sub x)).
+     assert (isfe6: IsFiniteExpectation prts (FiniteConditionalExpectation prts sub x)).
       {
         apply FiniteCondexp_isfe.
       }
       
-      assert (isfe4: IsFiniteExpectation prts  (rvmult (FiniteConditionalExpectation prts sub x) x)).
-      {
-        admit.
-      }
-      assert (isfe5: IsFiniteExpectation prts (rvsqr (FiniteConditionalExpectation prts sub x))).
-      {
-        admit.
-      }
-      assert (isfe6: IsFiniteExpectation prts
+      assert (isfe7: IsFiniteExpectation prts
                                   (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation prts sub x) x))
                                           (rvsqr (FiniteConditionalExpectation prts sub x)))).
       {
         apply IsFiniteExpectation_plus; try typeclasses eauto.
       }
 
-      assert (isfe7: IsFiniteExpectation 
+      assert (isfe8: IsFiniteExpectation 
                 prts
                 (rvplus (rvsqr x)
                         (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation prts sub x) x))
@@ -4714,7 +4710,7 @@ Qed.
       rewrite (FiniteCondexp_id _ _ (fun omega : Ts =>
                                        FiniteConditionalExpectation prts sub x omega * FiniteConditionalExpectation prts sub x omega)).
       lra.
-  Admitted.
+  Qed.
 
   Lemma conditional_variance_bound (x : Ts -> R) (c : R) 
         {dom2 : SigmaAlgebra Ts}
@@ -4727,7 +4723,11 @@ Qed.
                  (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))}
         {isfe0 : IsFiniteExpectation 
                    prts
-                   (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))} :
+                   (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))}
+        {isfe4 : IsFiniteExpectation prts
+            (rvsqr (FiniteConditionalExpectation prts sub x))}
+        {isfe5 : IsFiniteExpectation prts
+            (rvmult (FiniteConditionalExpectation prts sub x) x)}    :
     almostR2 prts Rle (rvsqr x) (const c²) ->
     almostR2 prts Rle (FiniteConditionalExpectation prts sub (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))))
           (const c²).
