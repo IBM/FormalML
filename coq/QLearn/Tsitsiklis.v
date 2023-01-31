@@ -4457,21 +4457,6 @@ Qed.
     
    Admitted.
 
-
-   Lemma NonNegCondexp_plus (f1 f2 : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rv1 : RandomVariable dom borel_sa f1}
-        {rv2 : RandomVariable dom borel_sa f2}
-        {nn1 : NonnegativeFunction f1}
-        {nn2 : NonnegativeFunction f2}   :
-    almostR2 (prob_space_sa_sub prts sub) eq
-             (NonNegCondexp prts sub (rvplus f1 f2))
-             (Rbar_rvplus (NonNegCondexp prts sub f1) 
-                          (NonNegCondexp prts sub f2)).
-  Proof.
-  Admitted.
-
   Lemma NonNegCondexp_ale 
         {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) 
         (f1 f2 : Ts -> R) 
@@ -4499,7 +4484,7 @@ Qed.
                                        (NonNegCondexp prts sub (rvsqr y)))).
   Proof.
     intros.
-    generalize (NonNegCondexp_plus (rvsqr x) (rvsqr y) sub); intros.
+    generalize (NonNegCondexp_plus prts sub (rvsqr x) (rvsqr y)); intros.
     assert (0 <= 2) by lra.
     assert (nnegsc: NonnegativeFunction (rvscale (mknonnegreal 2 H0) (rvplus (rvsqr x) (rvsqr y)))).
     {
