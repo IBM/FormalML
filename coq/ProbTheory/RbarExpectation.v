@@ -60,7 +60,7 @@ Section RbarExpectation.
   Qed.
 
   Lemma Rbar_NonnegExpectation_pf_irrel 
-        {rv_X: Ts -> R}
+        {rv_X: Ts -> Rbar}
         (nnf1 nnf2:Rbar_NonnegativeFunction rv_X) :
     Rbar_NonnegExpectation rv_X (pofrf:=nnf1) = Rbar_NonnegExpectation rv_X (pofrf:=nnf2).
   Proof.
@@ -3441,7 +3441,7 @@ Qed.
         unfold const.
         simpl.
         apply bounded2.
-      - erewrite (Rbar_NonnegExpectation_pf_irrel _ (nnfconst _ _)).
+      - erewrite (Rbar_NonnegExpectation_pf_irrel (rv_X:=const c) _ (nnfconst c cpos)).
         rewrite Rbar_NonnegExpectation_const.
         now trivial.
     } 
@@ -3477,7 +3477,6 @@ Qed.
     Unshelve.
     - intros ?; simpl.
       now unfold const.
-    - trivial.
   Qed.
 
   Lemma Rbar_FiniteExpectation_ext rv_X1 rv_X2
