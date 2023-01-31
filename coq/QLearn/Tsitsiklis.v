@@ -4707,7 +4707,9 @@ Qed.
       rewrite H11.
       rv_unfold.
       unfold Rsqr.
-      ring_simplify.
+      rewrite (FiniteCondexp_id _ _ (fun omega : Ts =>
+                                       FiniteConditionalExpectation prts sub x omega * FiniteConditionalExpectation prts sub x omega)).
+      lra.
   Admitted.
 
   Lemma conditional_variance_bound (x : Ts -> R) (c : R) 
