@@ -4437,6 +4437,14 @@ Qed.
    unfold SimpleExpectation.
    Admitted.
 
+ Program Global Instance fin_image_frf {A B} {fin:FiniteType B} (f:A->B) : FiniteRangeFunction f
+   := {|
+     frf_vals := fin_elms
+   |}.
+ Next Obligation.
+   apply fin_finite.
+ Qed.
+ 
   Lemma SimpleExpectation_compose_Finite_type {Td} (f1 : Ts -> Td) (f2 : Td -> R)
         {dec : EquivDec.EqDec Td eq}
         {fin : FiniteType Td}
@@ -4449,11 +4457,7 @@ Qed.
     list_sum (map (fun (v : Td) => (f2 v) * (ps_P (preimage_singleton f1 v)))
                   (fin_elms (FiniteType := fin_finite_nodup _))).
   Proof.
-    assert (FiniteRangeFunction f1).
-    {
-      admit.
-    }
-    rewrite SimpleExpectation_compose with (dec0 := dec) (has_pre0 := has_pre) (frf1 := X) (rv3 := rv1).
+    rewrite (SimpleExpectation_compose _ _).
     
    Admitted.
 
@@ -4550,6 +4554,28 @@ Qed.
     }
     lra.
   Qed.
+
+  Ltac rewrite_condexp_pf_irrel H
+  := match type of H with
+     | @NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?nnf1 ?x = _ =>
+         match goal with
+           [|- context [@NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?g ?rv2 ?nnf2 ?x]] =>
+             rewrite <- (fun pf => @NonNegCondexp_ext
+                                 Ts dom prts dom2 sub f g rv1 rv2 nnf1 nnf2 pf x); [rewrite H | reflexivity]
+         end
+     | @ConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?x = _ =>
+         match goal with
+           [|- context [@ConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?g ?rv2 ?x]] =>
+             rewrite <- (fun pf => @ConditionalExpectation_ext
+                                 Ts dom prts dom2 sub f g rv1 rv2 pf x); [rewrite H | reflexivity]
+         end
+     | @FiniteConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?nnf1 ?x = _ =>
+         match goal with
+           [|- context [@FiniteConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv2 ?nnf2 ?x]] =>
+             rewrite <- (fun pf => @FiniteConditionalExpectation_ext
+                                 Ts dom prts dom2 sub f f rv1 rv2 nnf1 nnf2 pf x); [rewrite H | reflexivity]
+         end
+     end.
 
   Lemma conditional_variance_alt (x : Ts -> R)
         {dom2 : SigmaAlgebra Ts}
@@ -4672,7 +4698,16 @@ Qed.
       revert H1; apply almost_impl.
       apply all_almost; intros ??????.
       rewrite H1.
-      (* rewrite H8 *)
+      rewrite_condexp_pf_irrel H8.
+      unfold rvplus at 1.
+      rewrite_condexp_pf_irrel H9.
+      unfold rvplus at 1.
+      rewrite H10.
+      unfold rvscale.
+      rewrite H11.
+      rv_unfold.
+      unfold Rsqr.
+      ring_simplify.
   Admitted.
 
   Lemma conditional_variance_bound (x : Ts -> R) (c : R) 
