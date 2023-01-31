@@ -196,6 +196,7 @@ Section Simple.
     now apply in_map.
   Qed.
 
+ 
   Definition frfconst c : FiniteRangeFunction (const c)
     := frf_crv (const c).
 
@@ -349,6 +350,15 @@ Section Simple.
   Qed.
 
 End Simple.
+
+ Global Program Instance frf_fun2 {Ts Td1 Td2} (rv_X : Ts -> Td1) (f : Td1 -> Td2)
+         (frf:FiniteRangeFunction rv_X) : 
+    FiniteRangeFunction (fun v => f (rv_X v)) :=
+    {frf_vals := map f frf_vals}.
+  Next Obligation.
+    destruct frf.
+    now apply in_map.
+  Qed.
 
 Require Import ListAdd SigmaAlgebras EquivDec Eqdep_dec.
 

@@ -1744,7 +1744,6 @@ Section RealRandomVariables.
       typeclasses eauto.
     Qed.
 
-
     Global Instance rvscale_nnf (phival : posreal)
            (rv_X : Ts -> R) 
            (pofrf : NonnegativeFunction rv_X) :
@@ -1754,6 +1753,17 @@ Section RealRandomVariables.
       unfold rvscale.
       apply Rmult_le_pos; trivial.
       left; apply cond_pos.
+    Qed.
+    
+    Global Instance rvscale_nnf' (phival : nonnegreal)
+           (rv_X : Ts -> R) 
+           (pofrf : NonnegativeFunction rv_X) :
+      NonnegativeFunction (rvscale phival rv_X).
+    Proof.
+      intro x.
+      unfold rvscale.
+      apply Rmult_le_pos; trivial.
+      apply cond_nonneg.
     Qed.
 
     Global Instance nnfabs
