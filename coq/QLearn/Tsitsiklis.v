@@ -4619,6 +4619,10 @@ Qed.
         unfold Rsqr.
         lra.
       }
+      assert (RandomVariable dom borel_sa (rvsqr (FiniteConditionalExpectation prts sub x))).
+      {
+        admit.
+      }
       assert (RandomVariable dom borel_sa (rvmult (FiniteConditionalExpectation prts sub x) x)).
       {
         admit.
@@ -4633,6 +4637,10 @@ Qed.
       {
         admit.
       }
+      assert (IsFiniteExpectation prts (rvsqr (FiniteConditionalExpectation prts sub x))).
+      {
+        admit.
+      }
       assert (IsFiniteExpectation prts
                                   (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation prts sub x) x))
                                           (rvsqr (FiniteConditionalExpectation prts sub x)))).
@@ -4644,18 +4652,42 @@ Qed.
                     (rvplus (rvscale (-2)
                              (rvmult (FiniteConditionalExpectation prts sub x) x))
                             (rvsqr (FiniteConditionalExpectation prts sub x))) ); intros.
+      generalize (FiniteCondexp_plus 
+                    prts sub 
+                    (rvscale (-2)
+                             (rvmult (FiniteConditionalExpectation prts sub x) x))
+                    (rvsqr (FiniteConditionalExpectation prts sub x))) ; intros.
+
       generalize (FiniteCondexp_scale 
                     prts sub (-2)
                     (rvmult (FiniteConditionalExpectation prts sub x) x)); intros.
+      generalize (FiniteCondexp_factor_out_l prts sub x (FiniteConditionalExpectation prts sub x)); intros.
+      assert (RandomVariable dom2 borel_sa (FiniteConditionalExpectation prts sub x)).
+      {
+        apply FiniteCondexp_rv.
+      }
+      assert (RandomVariable dom borel_sa (FiniteConditionalExpectation prts sub x)).
+      {
+        apply FiniteCondexp_rv'.
+      }
+      assert (IsFiniteExpectation prts (FiniteConditionalExpectation prts sub x)).
+      {
+        apply FiniteCondexp_isfe.
+      }
+      generalize (FiniteCondexp_id prts sub (FiniteConditionalExpectation prts sub x)); intros.
       apply almost_prob_space_sa_sub_lift in H1.
-      apply almost_prob_space_sa_sub_lift in H6.
-      apply almost_prob_space_sa_sub_lift in H7.
-      revert H7; apply almost_impl.
-      revert H6; apply almost_impl.
+      apply almost_prob_space_sa_sub_lift in H8.
+      apply almost_prob_space_sa_sub_lift in H9.
+      apply almost_prob_space_sa_sub_lift in H10.
+      apply almost_prob_space_sa_sub_lift in H11.            
+      revert H11; apply almost_impl.
+      revert H10; apply almost_impl.
+      revert H9; apply almost_impl.
+      revert H8; apply almost_impl.      
       revert H1; apply almost_impl.
-      apply all_almost; intros ????.
+      apply all_almost; intros ??????.
       rewrite H1.
-      admit.
+      (* rewrite H8 *)
   Admitted.
 
   Lemma conditional_variance_bound (x : Ts -> R) (c : R) 
