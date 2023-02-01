@@ -6390,3 +6390,25 @@ End prod_f_R0.
       unfold Rabs.
       destruct (Rcase_abs a); lra.
     Qed.
+
+
+Lemma list_sum_all_but_zero {A} 
+        (f : A -> R) (c : A) (l : list A):
+  NoDup l ->
+  In c l ->
+    (forall r, r <> c -> f r = 0) ->
+    list_sum (map f l) = f c.
+Proof.
+  induction l; simpl; intros; [tauto |].
+  invcs H.
+  destruct H0.
+  - subst.
+    rewrite list_sum0_is0; [lra |].
+    apply Forall_forall; intros.
+    apply in_map_iff in H.
+    destruct H as [? [??]]; subst.
+    apply H1; congruence.
+  - rewrite IHl; trivial.
+    rewrite (H1 a); [lra |].
+    congruence.
+Qed.

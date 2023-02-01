@@ -17,6 +17,40 @@ Require qlearn_redux.
 
 Set Bullet Behavior "Strict Subproofs".
 
+Lemma list_sum_all_but_zero_nd {A} 
+        (f : A -> R) (c : A) (l : list A):
+  NoDup l ->
+  In c l ->
+    (forall r, r <> c -> f r = 0) ->
+    list_sum (map f l) = f c.
+Proof.
+  induction l; simpl; intros; [tauto |].
+  invcs H.
+  destruct H0.
+  - subst.
+    rewrite list_sum0_is0; [lra |].
+    apply Forall_forall; intros.
+    apply in_map_iff in H.
+    destruct H as [? [??]]; subst.
+    apply H1; congruence.
+  - rewrite IHl; trivial.
+    rewrite (H1 a); [lra |].
+    congruence.
+Qed.
+
+Lemma list_sum_all_but_zero {A} 
+        {dec : EquivDec.EqDec A eq}
+        (f : A -> R) (c : A) (l : list A):
+    In c l ->
+    (forall r, r <> c -> f r = 0) ->
+    list_sum (map f (nodup dec l)) = f c.
+Proof.
+  
+  induction l; simpl; intros; [tauto |].
+  destruct H.
+  - subst.
+Qed.
+  
 Section Stochastic_convergence.
   
 Context {Ts : Type}  (* (w α : Ts -> nat -> R)  *)
