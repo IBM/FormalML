@@ -4575,9 +4575,8 @@ Qed.
     list_sum (map (fun (v : Td) => (f2 v) * (ps_P (preimage_singleton f1 v)))
                   (fin_elms (FiniteType := fin_finite_nodup _))).
   Proof.
-    rewrite (SimpleExpectation_compose _ _).
-    
-   Admitted.
+    now rewrite (SimpleExpectation_compose _ _).
+  Qed.
 
   Lemma NonNegCondexp_ale 
         {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) 
