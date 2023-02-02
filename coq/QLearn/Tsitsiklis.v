@@ -16,7 +16,7 @@ Require Import Martingale MartingaleStopped.
 Require qlearn_redux.
 
 Set Bullet Behavior "Strict Subproofs".
-  
+
 Section Stochastic_convergence.
   
 Context {Ts : Type}  (* (w α : Ts -> nat -> R)  *)
@@ -4434,8 +4434,126 @@ Qed.
     list_sum (map (fun (v : Td) => (f2 v) * (ps_P (preimage_singleton f1 v)))
                  (nodup dec (frf_vals (FiniteRangeFunction := frf1)))).
  Proof.
-   unfold SimpleExpectation.
-   Admitted.
+   rewrite (expectation_indicator_sum (fun v : Ts => f2 (f1 v)) 
+                                      (induced_sigma_generators' frf1) 
+                                      (induced_gen_ispart' frf1)).
+   unfold induced_sigma_generators'.
+   rewrite map_map.
+
+   f_equal.
+   apply map_ext_in.
+   intros.
+   unfold SimpleExpectation, SimpleExpectation.induced_sigma_generators'_obligation_1.
+   destruct (classic (exists (x : Ts), f1 x = a)).
+   - rewrite list_sum_all_but_zero with (c := f2 a); try easy.
+    + {
+       simpl.
+       destruct (Req_EM_T (f2 a) 0).
+     - rewrite e.
+       lra.
+     - f_equal.
+       apply ps_proper.
+       intros ?.
+       simpl.
+       unfold pre_event_preimage.
+       unfold SimpleExpectation.induced_sigma_generators'_obligation_1.
+       unfold pre_event_singleton.
+       rv_unfold.
+       match_destr; unfold  Equivalence.equiv, complement in *.
+       + subst.
+         split;trivial.
+         intros _.
+         lra.
+       + split; try tauto.
+         lra.
+     }
+   + apply NoDup_nodup.
+   + destruct frf1; destruct frf2.
+     apply nodup_In.
+     apply in_map_iff.
+     simpl.
+     destruct H0.
+     rewrite <- H0.
+     exists ((f2 (f1 x)), 1).
+     simpl.
+     split; try lra.
+     simpl.
+     apply in_prod_iff.
+     simpl.
+     split; try easy; try tauto.
+   + {
+     intros.
+     simpl.
+     destruct (Req_EM_T r 0).
+     - rewrite e.
+       lra.
+     - apply Rmult_eq_0_compat_l.
+       unfold SimpleExpectation.induced_sigma_generators'_obligation_1.
+       assert (rv_eq
+                 (rvmult (fun v0 : Ts => f2 (f1 v0))
+                         (EventIndicator (fun x : Ts => dec (f1 x) a)))
+                 (rvscale (f2 a)
+                          (EventIndicator (fun x : Ts => dec (f1 x) a)))).
+       {
+         intros ?.
+         rv_unfold.
+         match_destr; try lra.
+         unfold  Equivalence.equiv in e.
+         now rewrite e.
+       }         
+       generalize (ps_none prts); intros.
+       replace R0 with 0 in H3 by lra.
+       rewrite <- H3.
+       apply ps_proper.
+       intros ?; simpl.
+       unfold pre_event_preimage, pre_event_singleton, pre_event_none.
+       rewrite H2.
+       rv_unfold.
+       match_destr; lra.
+     }
+   - assert (event_equiv (preimage_singleton f1 a) 
+                         event_none).
+     {
+       intros ?.
+       simpl.
+       unfold pre_event_preimage, pre_event_singleton, pre_event_none.
+       rewrite not_exists in H0.
+       specialize (H0 x).
+       tauto.
+     }
+     generalize (ps_none prts); intros none.
+     replace R0 with 0 in none by lra.
+     assert (ps_P (preimage_singleton f1 a) = 0).
+     {
+       rewrite <- none.
+       now apply ps_proper.
+     }
+     rewrite H2.
+     rewrite Rmult_0_r.
+     simpl.
+     apply list_sum0_is0, Forall_forall.
+     intros.
+     apply in_map_iff in H3.
+     destruct H3 as [? [? ?]].
+     destruct (Req_EM_T x0 0).
+     + rewrite e in H3.
+       lra.
+     + rewrite <- H3.
+       apply Rmult_eq_0_compat.
+       right.
+       rewrite <- none.
+       apply ps_proper.
+       intros ?.
+       simpl.
+       unfold pre_event_preimage, pre_event_singleton, pre_event_none.
+       rv_unfold.
+       match_destr.
+       red in e.
+       * rewrite not_exists in H0.
+         now specialize (H0 x1).
+       * rewrite Rmult_0_r.
+         lra.
+   Qed.
 
  Program Global Instance fin_image_frf {A B} {fin:FiniteType B} (f:A->B) : FiniteRangeFunction f
    := {|
@@ -4581,7 +4699,7 @@ Qed.
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa x}
-        {isfe1 : IsFiniteExpectation prts x}
+        {isfe1 : IsFiniteExpectation prts x} 
         {isfe2 : IsFiniteExpectation prts (rvsqr x)}        
         {rv2 : RandomVariable 
                  dom borel_sa

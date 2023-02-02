@@ -2070,6 +2070,22 @@ Section SimpleConditionalExpectation.
     apply Req_EM_T.
   Defined.
 
+  Program Definition induced_sigma_generators' {Td}
+          {dec : EqDec Td eq}
+          {dom2 : SigmaAlgebra Td}
+          {has_pre: HasPreimageSingleton dom2}
+          {rv_X : Ts -> Td}
+          {rv:RandomVariable dom dom2 rv_X}
+          (frf : FiniteRangeFunction rv_X)
+    : list (@dec_sa_event Ts dom)
+    :=
+      map (fun c => Build_dec_sa_event
+                      (preimage_singleton rv_X c) _)
+          (nodup dec frf_vals).
+  Next Obligation.
+    intros ?.
+    apply dec.
+  Defined.
   
   Lemma induced_gen_ispart
         {rv_X : Ts -> R}
@@ -2079,6 +2095,38 @@ Section SimpleConditionalExpectation.
   Proof. 
     unfold is_partition_list.
     unfold induced_sigma_generators, event_preimage, event_singleton.
+    rewrite map_map; simpl.
+    split.
+    - apply event_disjoint_preimage_disj.
+      apply NoDup_nodup.
+    - destruct frf.
+      unfold RandomVariable.frf_vals.
+      unfold event_equiv; intros.
+      unfold list_union.
+      split.
+      + intros.
+        now unfold Ω, pre_Ω; simpl.
+      + intros.
+        eexists.
+        split.
+        * rewrite in_map_iff.
+          exists (rv_X x).
+          split; try easy.
+          now rewrite nodup_In.
+        * now simpl.
+  Qed.
+
+  Lemma induced_gen_ispart' {Td}
+          {dec : EqDec Td eq}
+          {dom2 : SigmaAlgebra Td}
+          {has_pre: HasPreimageSingleton dom2}
+          {rv_X : Ts -> Td}
+          {rv:RandomVariable dom dom2 rv_X}
+          (frf : FiniteRangeFunction rv_X) :
+    is_partition_list (map dsa_event (induced_sigma_generators' frf)).
+  Proof. 
+    unfold is_partition_list.
+    unfold induced_sigma_generators', event_preimage, event_singleton.
     rewrite map_map; simpl.
     split.
     - apply event_disjoint_preimage_disj.
