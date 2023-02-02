@@ -3605,7 +3605,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         (filt_sub : forall k, sa_sub (F k) dom) 
         (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
         {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
-        {rvD0 : RandomVariable (F 0%nat) borel_sa D0}        
+        {rvD0 : RandomVariable (F 0%nat) borel_sa D0}         
         {posD0 : forall ω, 0 < D0 ω}
         (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
@@ -4356,8 +4356,79 @@ Qed.
     - now apply Tsitsiklis3_beta_pos with (w0 := w) (β0 := β) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
     - assert (β = 0) by lra.
       now apply Tsitsiklis3_beta_0 with (w0 := w) (β0 := β) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
-   Qed.
+  Qed.
 
+    Theorem Tsitsiklis_1_3 {n} (β : R) (X w α : nat -> Ts -> vector R (S n)) 
+        (XF : vector R (S n) -> vector R (S n))
+        {F : nat -> SigmaAlgebra Ts}
+        (isfilt : IsFiltration F) 
+        (filt_sub : forall k, sa_sub (F k) dom) 
+        (adapt_alpha : IsAdapted (Rvector_borel_sa (S n)) α F)
+        {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S n)) (X 0%nat)}
+        (adapt_w : IsAdapted  (Rvector_borel_sa (S n)) w (fun k => F (S k)))
+        {rvXF : RandomVariable (Rvector_borel_sa (S n)) (Rvector_borel_sa (S n)) XF}
+        {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
+        {iscond : forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (w k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k)))} :
+
+    (forall k ω i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
+(*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
+*)
+    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+
+    (exists (C : R),
+        forall i pf,
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Finite C))) ->
+    (forall k i pf, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (vecrvnth i pf (w k))) (const 0)) ->
+    (exists (A B : R),
+        0 < A /\ 0 < B /\
+        forall k i pf, 
+          almostR2 prts Rbar_le (ConditionalExpectation 
+                                   _ (filt_sub k) 
+                                   (rvsqr (vecrvnth i pf (w k))))
+                   (rvplus (const A) 
+                           (rvscale (Rabs B) (rvmaxlist 
+                                         (fun j ω => rvsqr (rvmaxabs (X j)) ω)
+                                         k)))) ->
+    0 <= β < 1 ->
+    (forall x, Rvector_max_abs (XF x) <= β * Rvector_max_abs x) ->
+    (forall k, rv_eq (X (S k)) 
+                     (vecrvplus (X k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF (X k ω)) (X k) ) (w k))))) ->
+    almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
+  Proof.
+    intros.
+    generalize (Tsitsiklis1 β X w α XF isfilt filt_sub 
+                            adapt_alpha); intros Tsit1.
+    specialize (Tsit1 adapt_w _ _ iscond H H0 H1 H2 H3 H4).
+    assert (exists D : nonnegreal,
+          forall x : vector R (S n),
+          Rvector_max_abs (XF x) <= β * Rvector_max_abs x + D).
+    {
+      assert (0 <= 0) by lra.
+      exists (mknonnegreal 0 H7).
+      intros.
+      simpl.
+      now rewrite Rplus_0_r.
+    }
+    specialize (Tsit1 H7 H6).
+    destruct Tsit1 as [D0 Tsit1].
+    generalize (Tsitsiklis3 X w α β D0 XF isfilt filt_sub); intros Tsit3.
+    specialize (Tsit3 adapt_alpha _).
+    assert (RandomVariable (F 0%nat) borel_sa D0).
+    {
+      admit.
+    }
+    specialize (Tsit3 _).
+    assert  (forall ω : Ts, 0 < D0 ω).
+    {
+      admit.
+    }
+    specialize (Tsit3 H9 _ _ iscond H H0 H1 H2).
+    apply Tsit3; try easy.
+    destruct H3 as [A [B [? [? ?]]]].
+    exists A; exists B; easy.
+
+   Admitted.
+      
   Lemma is_condexp_diff_ce_zero {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
         (f : Ts -> R)
@@ -4906,7 +4977,39 @@ Section MDP.
     intros.
     rewrite <- H0 at 1.
     now apply bellmanQbar_alt_contraction.
-  Qed.    
+  Qed.
+
+  Lemma max_sqr_bound (ec : Rfct (sigT M.(act))) :
+    forall (s : state M),
+      Max_{act_list s} (fun a => Rsqr (ec (existT _ s a))) <= Rmax_sq_norm _ ec.
+   Proof.
+     intros.
+     unfold Rmax_sq_norm.
+     match_destr.
+     apply Rmax_list_incl.
+     - rewrite map_not_nil.
+       apply act_list_not_nil.
+     - intros ??.
+       apply in_map_iff in H.
+       destruct H as [? [? ?]].
+       subst.
+       apply in_map_iff.
+       exists (existT _ s x).
+       split; trivial.
+   Qed.
+
+  Lemma min_sqr_bound (ec : Rfct (sigT M.(act))) :
+    forall (s : state M),
+      Rmin_list (List.map (fun a => Rsqr (ec (existT _ s a))) (act_list s)) <=
+                 Rmax_sq_norm _ ec.
+   Proof.
+     intros.
+     eapply Rle_trans with
+         (r2 := Max_{act_list s} (fun a => Rsqr (ec (existT _ s a)))).
+     - apply Rge_le.
+       apply qlearn_redux.Rmax_list_map_ge_Rmin.
+     - apply max_sqr_bound.
+   Qed.
 
 End MDP.
 

@@ -44,7 +44,6 @@ End extra.
 Class NonEmpty (A : Type) :=
   ex : A.
 
-
 Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50).
 
 Section MDPs.
@@ -469,6 +468,8 @@ Context (A : Type) {finA : FiniteType A}.
 
 
 Definition Rmax_norm : Rfct A -> R := let (ls,_) := finA in fun (f:Rfct A) => Max_{ls}(fun s => Rabs (f s)).
+
+Definition Rmax_sq_norm : Rfct A -> R := let (ls,_) := finA in fun (f:Rfct A) => Max_{ls}(fun s => Rsqr (f s)).
 
 Definition Rmax_ball :=  fun (f: Rfct A) eps g => Rmax_norm (fun s => minus (g s) (f s)) < eps.
 
