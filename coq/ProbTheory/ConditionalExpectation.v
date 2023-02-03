@@ -500,7 +500,39 @@ Section is_cond_exp.
     ; eapply is_conditional_expectation_nneg_le; eauto.
   Qed.
 
-  Lemma is_conditional_expectation_almostfinite_le
+  Corollary is_conditional_expectation_anneg_unique
+    (f : Ts->R)
+    (ce1 ce2 : Ts -> Rbar)
+    {rvf : RandomVariable dom borel_sa f}
+    {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
+    {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
+    (nnf : almost prts (fun x => 0 <= f x))
+    (nnf1 : almost (prob_space_sa_sub prts sub) (fun x => Rbar_le 0 (ce1 x)))
+    (nnf2 : almost (prob_space_sa_sub prts sub) (fun x => Rbar_le 0 (ce2 x)))
+    : is_conditional_expectation dom2 f ce1 ->
+      is_conditional_expectation dom2 f ce2 ->
+      almostR2 (prob_space_sa_sub prts sub) eq ce1 ce2.
+  Proof.
+    intros.
+    destruct (almost_map_R_split _ nnf) as [?[?[??]]].
+    destruct (almost_map_Rbar_split _ nnf1) as [?[?[??]]].
+    destruct (almost_map_Rbar_split _ nnf2) as [?[?[??]]].
+    
+    cut_to H3; trivial.
+    cut_to H6; trivial.
+    cut_to H9; trivial.
+    
+    rewrite H4, H7.
+    eapply is_conditional_expectation_nneg_unique; eauto.
+    - generalize H.
+      apply is_conditional_expectation_proper; trivial.
+      eapply almost_prob_space_sa_sub_lift; eauto.
+    - generalize H0.
+      apply is_conditional_expectation_proper; trivial.
+      eapply almost_prob_space_sa_sub_lift; eauto.
+  Qed.
+
+    Lemma is_conditional_expectation_almostfinite_le
         (f : Ts->R)
         (ce1 ce2 : Ts -> Rbar)
         {rvf : RandomVariable dom borel_sa f}
