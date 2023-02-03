@@ -4712,6 +4712,29 @@ Qed.
     apply H0.
   Qed.
 
+ Lemma is_conditional_expectation_ale_nneg
+        {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) 
+        (f1 : Ts -> R)
+        (f2 : Ts -> R)
+        (ce1 : Ts -> Rbar)
+        (ce2 : Ts -> Rbar)
+        {rvf1 : RandomVariable dom borel_sa f1}
+        {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
+        {nnf1:NonnegativeFunction f1}
+        {rvf2 : RandomVariable dom borel_sa f2}
+        {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
+        {nnf2:NonnegativeFunction f2}
+    :
+      almostR2 prts Rle f1 f2 ->
+      is_conditional_expectation prts dom2 f1 ce1 ->
+      is_conditional_expectation prts dom2 f2 ce2 ->
+      almostR2 (prob_space_sa_sub prts sub) Rbar_le ce1 ce2.
+  Proof.
+    intros.
+    generalize (NonNegConditionalExpectation_ale sub f1 f2 H); intros.
+    generalize (is_conditional_expectation_anneg_unique prts sub); intros.
+    Admitted.
+
   Lemma NonNegCondexp_ale 
         {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) 
         (f1 f2 : Ts -> R) 
@@ -5048,6 +5071,47 @@ Qed.
                                        FiniteConditionalExpectation prts sub x omega * FiniteConditionalExpectation prts sub x omega)).
       lra.
   Qed.
+
+  Instance conditional_variance_L2_alt_rv (x : Ts -> R)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa x}
+        {isl2: IsLp prts 2 x} :
+     RandomVariable 
+       dom borel_sa
+       (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))).
+   Proof.
+     now generalize (isfe_L2_variance x sub rv); intros.
+   Qed.
+
+  Instance conditional_variance_L2_alt_isfe (x : Ts -> R)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa x}
+        {isl2: IsLp prts 2 x} :
+    IsFiniteExpectation 
+      prts
+      (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))).
+   Proof.
+     now generalize (isfe_L2_variance x sub rv); intros.
+   Qed.    
+
+           
+   Lemma conditional_variance_L2_alt (x : Ts -> R)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa x}
+        {isl2: IsLp prts 2 x} :
+    almostR2 prts eq
+             (FiniteConditionalExpectation 
+                prts sub
+                (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))) 
+             (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
+                      (rvsqr (FiniteConditionalExpectation prts sub x))).
+     Proof.
+       generalize (isfe_L2_variance x sub rv); intros.
+       apply conditional_variance_alt; try easy.
+     Qed.       
 
   Lemma conditional_variance_bound (x : Ts -> R) (c : R) 
         {dom2 : SigmaAlgebra Ts}
