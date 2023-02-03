@@ -4765,6 +4765,92 @@ Qed.
          end
      end.
 
+  Lemma isfe_L2_variance (x : Ts -> R) 
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        (rv : RandomVariable dom borel_sa x) 
+        {isl2: IsLp prts 2 x} :
+    IsFiniteExpectation prts x /\
+    IsFiniteExpectation prts (rvsqr x) /\
+    RandomVariable 
+      dom borel_sa
+      (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))) /\
+    IsFiniteExpectation 
+      prts
+      (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))) /\
+    IsFiniteExpectation
+      prts
+      (rvsqr (FiniteConditionalExpectation prts sub x)) /\
+    IsFiniteExpectation prts  (rvmult (FiniteConditionalExpectation prts sub x) x).
+  Proof.
+    generalize (conditional_expectation_L2fun_L2 prts sub x); intros.
+    assert (almostR2 (prob_space_sa_sub prts sub) eq 
+                     (conditional_expectation_L2fun prts sub x)
+                     (FiniteConditionalExpectation prts sub x)).
+    {
+      generalize (conditional_expectation_L2fun_eq3 prts sub x); intros.
+      generalize (FiniteCondexp_is_cond_exp prts sub x); intros.
+      generalize (is_conditional_expectation_unique prts sub x _ _ H0 H1); intros.
+      revert H2.
+      apply almost_impl, all_almost; intros ??.
+      now apply Rbar_finite_eq in H2.
+   }
+    apply almostR2_prob_space_sa_sub_lift in H0.
+    assert (RandomVariable dom borel_sa (FiniteConditionalExpectation prts sub x)).
+    {
+      apply FiniteCondexp_rv'.
+    }
+    repeat split.
+    - typeclasses eauto.
+    - typeclasses eauto.
+    - typeclasses eauto.
+    - assert (IsFiniteExpectation 
+                prts
+                (rvsqr (rvminus x (conditional_expectation_L2fun prts sub x)))).
+      {
+        assert (IsLp prts 2 (rvminus x (conditional_expectation_L2fun prts sub x))).
+        {
+          assert (0 <= 2) by lra.
+          apply (IsLp_minus prts (mknonnegreal 2 H2)); try easy.
+          apply RandomVariable_sa_sub; trivial.
+          apply conditional_expectation_L2fun_rv.
+        }
+        typeclasses eauto.
+      }
+      eapply (IsFiniteExpectation_proper_almostR2 
+               prts
+               (rvsqr (rvminus x (conditional_expectation_L2fun prts sub x)))
+               (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))).
+      revert H0.
+      apply almost_impl, all_almost; intros ??.
+      rv_unfold.
+      now rewrite H0.
+    - assert (IsFiniteExpectation prts (rvsqr (conditional_expectation_L2fun prts sub x))).
+      {
+        typeclasses eauto.
+      }
+      eapply (IsFiniteExpectation_proper_almostR2
+               prts
+               (rvsqr (conditional_expectation_L2fun prts sub x))
+               (rvsqr (FiniteConditionalExpectation prts sub x))).
+      revert H0.
+      apply almost_impl, all_almost; intros ??.
+      rv_unfold.
+      now rewrite H0.
+    - assert (IsFiniteExpectation prts (rvmult (conditional_expectation_L2fun prts sub x) x)).
+      {
+        typeclasses eauto.
+      }
+      eapply (IsFiniteExpectation_proper_almostR2
+                    prts
+                    (rvmult (conditional_expectation_L2fun prts sub x) x)
+                    (rvmult (FiniteConditionalExpectation prts sub x) x)).
+      revert H0.
+      apply almost_impl, all_almost; intros ??.
+      rv_unfold.
+      now rewrite H0.
+  Qed.
+
   Lemma conditional_variance_alt (x : Ts -> R)
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
