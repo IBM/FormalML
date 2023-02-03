@@ -27,6 +27,7 @@ Import ListNotations.
 
 Local Open Scope R.
 
+
 Global Instance EqDecR : EqDec R eq := Req_EM_T.
 
 Global Instance Rle_pre : PreOrder Rle.
@@ -2869,6 +2870,10 @@ Section lim_seq_sup_seq.
 
 End lim_seq_sup_seq.
 
+Declare Scope rmax_scope.
+Local Open Scope rmax_scope.
+Delimit Scope rmax_scope with rmax.
+
 Section Rmax_list.
 
   (*
@@ -3293,12 +3298,8 @@ Section Rmax_list.
   Definition Rmax_list_map {A} (l : list A) (f : A -> R) := Rmax_list (List.map f l).
   Definition Rmin_list_map {A} (l : list A) (f : A -> R) := Rmin_list (List.map f l).  
 
-  Declare Scope rmax_scope.
   Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50) : rmax_scope.
   Notation "Min_{ l } ( f )" := (Rmin_list (List.map f l)) (at level 50) : rmax_scope.  
-
-  Open Scope rmax_scope.
-  Delimit Scope rmax_scope with rmax.
 
   (* This is very important. *)
   Lemma Rmax_list_map_exist {A} (f : A -> R) (l : list A) :
@@ -3906,6 +3907,9 @@ Section Rmax_list.
  
 
 End Rmax_list.
+
+Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50) : rmax_scope.
+Notation "Min_{ l } ( f )" := (Rmin_list (List.map f l)) (at level 50) : rmax_scope.  
 
 (* Lemmas about limits of sequences/series. *)
 Lemma seq_iota_seq m n : seq.iota m n = seq m n.

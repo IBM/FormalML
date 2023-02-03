@@ -44,7 +44,7 @@ End extra.
 Class NonEmpty (A : Type) :=
   ex : A.
 
-Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50).
+Open Scope rmax_scope.
 
 Section MDPs.
 
