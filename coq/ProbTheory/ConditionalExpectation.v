@@ -4878,7 +4878,50 @@ Section cond_exp2.
     {nnf : NonnegativeFunction f} :
     almostR2 (prob_space_sa_sub prts sub) eq (NonNegConditionalExpectation f) (fun x => Finite (f x)).
   Proof.
-  Admitted.
+    unfold NonNegConditionalExpectation.
+    assert (forall n,
+               RandomVariable dom2 borel_sa (rvmin f (const (INR n))) ).
+    {
+      intros.
+      apply rvmin_rv; trivial.
+      apply rvconst.
+    }
+    generalize (fun n => conditional_expectation_L2fun_eq3 prts sub
+                                                           (rvmin f (const (INR n)))); intros.
+    generalize (fun n => is_conditional_expectation_id prts (rvmin f (const (INR n)))); intros.
+    assert (forall n,
+               almostR2 (prob_space_sa_sub prts sub) eq
+                        (conditional_expectation_L2fun prts sub (rvmin f (const (INR n))))
+                        (rvmin f (const (INR n)))).
+    {
+      intros.
+      generalize (is_conditional_expectation_unique 
+                    prts sub
+                    (rvmin f (const (INR n)))
+                    (fun x : Ts =>
+                       conditional_expectation_L2fun prts sub 
+                                                     (rvmin f (const (INR n))) x)
+                    (fun x : Ts => rvmin f (const (INR n)) x)
+                    (H0 n)
+                    (H1 n)
+                 ); intros.
+      revert H2.
+      apply almost_impl, all_almost; intros ??.
+      now apply Rbar_finite_eq in H2.
+    }
+    apply almost_forall in H2.
+    revert H2.
+    apply almost_impl, all_almost; intros ??.
+    unfold pre_inter_of_collection in H2.
+    unfold Rbar_rvlim.
+    rewrite ELim_seq_ext with
+        (v := fun n => rvmin f (const (INR n)) x).
+    - generalize (rvlim_rvmin f); intros HH.
+      apply HH.
+    - intros.
+      specialize (H2 n).
+      now apply Rbar_finite_eq in H2.
+  Qed.
 
   Lemma NonNegCondexp_is_Rbar_condexp_almost0  (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
