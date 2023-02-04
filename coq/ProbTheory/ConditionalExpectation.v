@@ -5916,8 +5916,11 @@ Section cond_exp2.
     {
       apply Rbar_rvmult_rv; typeclasses eauto.
     }
-    apply (is_conditional_expectation_nneg_unique prts sub (rvmult f g) _ _).
-
+    eapply (is_conditional_expectation_nneg_unique prts sub (rvmult f g)).
+    - typeclasses eauto.
+    - typeclasses eauto.
+    - apply Rbar_rvmult_nnf; trivial.
+      apply NonNegCondexp_nneg.
     - apply NonNegCondexp_cond_exp; typeclasses eauto.
     - apply (is_conditional_expectation_factor_out_nneg_both_Rbar _ sub f g
                                                                   (NonNegCondexp f)).
