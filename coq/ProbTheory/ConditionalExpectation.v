@@ -5287,7 +5287,6 @@ Section cond_exp2.
 
   Lemma NonNegCondexp_almost_base (f : Ts -> R)
         {rv : RandomVariable dom borel_sa f}
-        {rv2 : RandomVariable dom2 borel_sa f}
         {nnf : NonnegativeFunction f} :
     (almostR2 (prob_space_sa_sub prts sub) eq (NonNegCondexp f) (NonNegConditionalExpectation f)).
   Proof.
@@ -6304,6 +6303,91 @@ Section cond_exp2.
       now apply Condexp_cond_exp.
   Qed.
   
+
+  Local Existing Instance IsLp_min_const_nat.
+
+  Lemma conditional_expectation_L2fun_ale (f1 f2 : Ts -> R) 
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2}
+        {isl2_1 : IsLp prts 2 f1}
+        {isl2_2 : IsLp prts 2 f2} :    
+    almostR2 prts Rle f1 f2 ->
+    almostR2 (prob_space_sa_sub prts sub) Rle
+             (conditional_expectation_L2fun prts sub f1)
+             (conditional_expectation_L2fun prts sub f2).
+  Proof.
+    intros eqq1.
+    generalize (Condexp_ale f1 f2 eqq1).
+    generalize (Condexp_L2 f1); intros.
+    generalize (Condexp_L2 f2); intros.    
+    revert H1; apply almost_impl.
+    revert H0; apply almost_impl.
+    revert H; apply almost_impl.
+    apply all_almost; intros ????.
+    rewrite H in H0.
+    rewrite H1 in H0.
+    now simpl in H0.
+  Qed.
+
+  Lemma NonNegConditionalExpectation_ale 
+        (f1 f2 : Ts -> R) 
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2}
+        {nn1 : NonnegativeFunction f1}
+        {nn2 : NonnegativeFunction f2} :
+    almostR2 prts Rle f1 f2 ->
+    almostR2 (prob_space_sa_sub prts sub) Rbar_le
+             (NonNegConditionalExpectation f1) 
+             (NonNegConditionalExpectation f2).
+  Proof.
+    intros.
+    assert (almost (prob_space_sa_sub prts sub)
+                   (fun x => 
+                      forall n,
+                        conditional_expectation_L2fun prts sub (rvmin f1 (const (INR n))) x
+                        <= conditional_expectation_L2fun prts sub (rvmin f2 (const (INR n))) x)).
+    {
+      apply almost_forall.
+      intros.
+      apply conditional_expectation_L2fun_ale.
+      revert H.
+      apply almost_impl, all_almost; intros ??.
+      rv_unfold.
+      now apply Rle_min_compat_r.
+    }
+    unfold NonNegConditionalExpectation.
+    revert H0.
+    apply almost_impl, all_almost; intros ??.
+    unfold Rbar_rvlim.
+    apply ELim_seq_le.
+    intros.
+    simpl.
+    apply H0.
+  Qed.
+
+  Lemma NonNegCondexp_ale 
+        (f1 f2 : Ts -> R) 
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2}
+        {nn1 : NonnegativeFunction f1}
+        {nn2 : NonnegativeFunction f2} :
+    almostR2 prts Rle f1 f2 ->
+    almostR2 (prob_space_sa_sub prts sub) Rbar_le
+             (NonNegCondexp f1) 
+             (NonNegCondexp f2).
+  Proof.
+    intros.
+    generalize (NonNegConditionalExpectation_ale f1 f2 H); intros.
+    generalize (NonNegCondexp_almost_base f1); intros.
+    generalize (NonNegCondexp_almost_base f2); intros.
+    revert H2; apply almost_impl.
+    revert H1; apply almost_impl.
+    revert H0; apply almost_impl.
+    apply all_almost; intros ????.
+    rewrite H1, H2.
+    apply H0.
+  Qed.
+
 End cond_exp2.
 
 Section cond_exp_props.
@@ -6364,6 +6448,7 @@ Section cond_exp_props.
       now apply Condexp_cond_exp.
     - now apply Condexp_cond_exp.
   Qed.
+
 
 End cond_exp_props.
 

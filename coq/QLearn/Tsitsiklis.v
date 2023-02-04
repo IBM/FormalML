@@ -4649,107 +4649,6 @@ Qed.
     now rewrite (SimpleExpectation_compose _ _).
   Qed.
 
-  Local Existing Instance IsLp_min_const_nat.
-
-  Lemma conditional_expectation_L2fun_ale (f1 f2 : Ts -> R) 
-        {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) 
-        {rv1 : RandomVariable dom borel_sa f1}
-        {rv2 : RandomVariable dom borel_sa f2}
-        {isl2_1 : IsLp prts 2 f1}
-        {isl2_2 : IsLp prts 2 f2} :    
-    almostR2 prts Rle f1 f2 ->
-    almostR2 (prob_space_sa_sub prts sub) Rle
-             (conditional_expectation_L2fun prts sub f1)
-             (conditional_expectation_L2fun prts sub f2).
-  Proof.
-    intros eqq1.
-    generalize (Condexp_ale prts sub f1 f2 eqq1).
-    generalize (Condexp_L2 prts sub f1); intros.
-    generalize (Condexp_L2 prts sub f2); intros.    
-    revert H1; apply almost_impl.
-    revert H0; apply almost_impl.
-    revert H; apply almost_impl.
-    apply all_almost; intros ????.
-    rewrite H in H0.
-    rewrite H1 in H0.
-    now simpl in H0.
-  Qed.
-
-  Lemma NonNegConditionalExpectation_ale 
-        {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) 
-        (f1 f2 : Ts -> R) 
-        {rv1 : RandomVariable dom borel_sa f1}
-        {rv2 : RandomVariable dom borel_sa f2}
-        {nn1 : NonnegativeFunction f1}
-        {nn2 : NonnegativeFunction f2} :
-    almostR2 prts Rle f1 f2 ->
-    almostR2 (prob_space_sa_sub prts sub) Rbar_le
-             (NonNegConditionalExpectation prts sub f1) 
-             (NonNegConditionalExpectation prts sub f2).
-  Proof.
-    intros.
-    assert (almost (prob_space_sa_sub prts sub)
-                   (fun x => 
-                      forall n,
-                        conditional_expectation_L2fun prts sub (rvmin f1 (const (INR n))) x
-                        <= conditional_expectation_L2fun prts sub (rvmin f2 (const (INR n))) x)).
-    {
-      apply almost_forall.
-      intros.
-      apply conditional_expectation_L2fun_ale.
-      revert H.
-      apply almost_impl, all_almost; intros ??.
-      rv_unfold.
-      now apply Rle_min_compat_r.
-    }
-    unfold NonNegConditionalExpectation.
-    revert H0.
-    apply almost_impl, all_almost; intros ??.
-    unfold Rbar_rvlim.
-    apply ELim_seq_le.
-    intros.
-    simpl.
-    apply H0.
-  Qed.
-
- Lemma is_conditional_expectation_ale_nneg
-        {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) 
-        (f1 : Ts -> R)
-        (f2 : Ts -> R)
-        (ce1 : Ts -> Rbar)
-        (ce2 : Ts -> Rbar)
-        {rvf1 : RandomVariable dom borel_sa f1}
-        {rvce1 : RandomVariable dom2 Rbar_borel_sa ce1}
-        {nnf1:NonnegativeFunction f1}
-        {rvf2 : RandomVariable dom borel_sa f2}
-        {rvce2 : RandomVariable dom2 Rbar_borel_sa ce2}
-        {nnf2:NonnegativeFunction f2}
-    :
-      almostR2 prts Rle f1 f2 ->
-      is_conditional_expectation prts dom2 f1 ce1 ->
-      is_conditional_expectation prts dom2 f2 ce2 ->
-      almostR2 (prob_space_sa_sub prts sub) Rbar_le ce1 ce2.
-  Proof.
-    intros.
-    generalize (NonNegConditionalExpectation_ale sub f1 f2 H); intros.
-    generalize (is_conditional_expectation_anneg_unique prts sub); intros.
-    Admitted.
-
-  Lemma NonNegCondexp_ale 
-        {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) 
-        (f1 f2 : Ts -> R) 
-        {rv1 : RandomVariable dom borel_sa f1}
-        {rv2 : RandomVariable dom borel_sa f2}
-        {nn1 : NonnegativeFunction f1}
-        {nn2 : NonnegativeFunction f2} :
-    almostR2 prts Rle f1 f2 ->
-    almostR2 (prob_space_sa_sub prts sub) Rbar_le
-             (NonNegCondexp prts sub f1) 
-             (NonNegCondexp prts sub f2).
-  Proof.
-
-    Admitted.
-
   Lemma nncondexp_sqr_sum_bound_nneg (x y : Ts -> R)
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
@@ -4769,7 +4668,7 @@ Qed.
       typeclasses eauto.
     }
     generalize (NonNegCondexp_scale prts sub (mknonnegreal 2 H0) (rvplus (rvsqr x) (rvsqr y))); intros.
-    generalize (NonNegCondexp_ale sub
+    generalize (NonNegCondexp_ale prts sub
                                   (rvsqr (rvplus x y))
                                   (rvscale (mknonnegreal 2 H0)
                                            (rvplus (rvsqr x) 
