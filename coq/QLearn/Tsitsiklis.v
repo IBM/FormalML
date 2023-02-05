@@ -3615,6 +3615,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         (filt_sub : forall k, sa_sub (F k) dom) 
         (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
         {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
+        {XF_rv : RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) XF}
         {posD0 : forall ω, 0 < D0 ω}
         (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
@@ -3781,7 +3782,8 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
              * now apply (RandomVariable_sa_sub (isfilt n1)).
              * apply Rvector_plus_rv; trivial.
                apply Rvector_minus_rv.
-               ++ admit.
+               ++ apply (RandomVariable_sa_sub (isfilt n1)).
+                  now apply (compose_rv (dom2 := Rvector_borel_sa n)).
                ++ now apply (RandomVariable_sa_sub (isfilt n1)).
          - unfold w1.
            intros ?.
@@ -4132,7 +4134,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
    apply rvmaxabs_pos.
  Unshelve.
  apply Rvector_max_abs_nth_le.
-Admitted.
+Qed.
 
   Theorem Tsitsiklis3_beta_0 {n} (X w α : nat -> Ts -> vector R n) (β : R) (D0 : Ts -> R) 
         (XF : vector R n -> vector R n)
@@ -4144,6 +4146,7 @@ Admitted.
 (*
         {rvD0 : RandomVariable (F 0%nat) borel_sa D0}        
 *)
+        {XF_rv : RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) XF}
         {posD0 : forall ω, 0 < D0 ω}
         (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
@@ -4225,7 +4228,8 @@ Admitted.
           * now apply (RandomVariable_sa_sub (isfilt n1)).
           * apply Rvector_plus_rv; trivial.
             apply Rvector_minus_rv.
-            ++ admit.
+            ++ apply (RandomVariable_sa_sub (isfilt n1)).
+               now apply (compose_rv (dom2 := Rvector_borel_sa n)).
             ++ now apply (RandomVariable_sa_sub (isfilt n1)).
       - unfold w1.
         intros ?.
@@ -4375,8 +4379,7 @@ Admitted.
       apply is_lim_seq_ext.
       intros.
       apply vector_nth_ext.
-  Admitted.
-
+  Qed.
 
   Theorem Tsitsiklis3 {n} (X w α : nat -> Ts -> vector R n) (β : R) (D0 : Ts -> R) 
         (XF : vector R n -> vector R n)
@@ -4388,6 +4391,7 @@ Admitted.
 (*
         {rvD0 : RandomVariable (F 0%nat) borel_sa D0}        
 *)
+        {XF_rv : RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) XF}
         {posD0 : forall ω, 0 < D0 ω}
         (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
@@ -4480,7 +4484,7 @@ Admitted.
     destruct Tsit1 as [D0 Tsit1].
     pose (D0' := rvplus (const 1) (rvabs D0)).
     generalize (Tsitsiklis3 X w α β D0' XF isfilt filt_sub); intros Tsit3.
-    specialize (Tsit3 adapt_alpha _).
+    specialize (Tsit3 adapt_alpha _ _).
     assert  (forall ω : Ts, 0 < D0' ω).
     {
       unfold D0'.
