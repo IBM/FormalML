@@ -4478,24 +4478,39 @@ Admitted.
     }
     specialize (Tsit1 H7 H6).
     destruct Tsit1 as [D0 Tsit1].
-    generalize (Tsitsiklis3 X w α β D0 XF isfilt filt_sub); intros Tsit3.
+    pose (D0' := rvplus (const 1) (rvabs D0)).
+    generalize (Tsitsiklis3 X w α β D0' XF isfilt filt_sub); intros Tsit3.
     specialize (Tsit3 adapt_alpha _).
-    assert  (forall ω : Ts, 0 < D0 ω).
+    assert  (forall ω : Ts, 0 < D0' ω).
     {
-      admit.
+      unfold D0'.
+      intros.
+      rv_unfold.
+      generalize (Rabs_pos (D0 ω)); intros.
+      lra.
     }
     specialize (Tsit3 H8 _ _ iscond H H0 H1 H2).
     apply Tsit3; try easy.
-    destruct H3 as [A [B [? [? ?]]]].
-    exists A; exists B.
-    intros.
-    specialize (H10 k i pf).
-    revert H10.
-    apply almost_impl, all_almost; intros ??.
-    rewrite Rabs_right; try lra.
-    rewrite Rabs_right; try lra.
-    apply H10.
-   Admitted.
+    - destruct H3 as [A [B [? [? ?]]]].
+      exists A; exists B.
+      intros.
+      specialize (H10 k i pf).
+      revert H10.
+      apply almost_impl, all_almost; intros ??.
+      rewrite Rabs_right; try lra.
+      rewrite Rabs_right; try lra.
+      apply H10.
+    - intros.
+      specialize (Tsit1 k).
+      revert Tsit1.
+      apply almost_impl, all_almost; intros ??.
+      eapply Rle_trans.
+      + apply H9.
+      + unfold D0'.
+        rv_unfold.
+        generalize (Rle_abs (D0 x)); intros.
+        lra.
+  Qed.
       
   Lemma is_condexp_diff_ce_zero {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
