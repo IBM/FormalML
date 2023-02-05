@@ -3615,7 +3615,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         (filt_sub : forall k, sa_sub (F k) dom) 
         (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
         {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
-        {XF_rv : RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) XF}
+        {rvXF : RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) XF}
         {posD0 : forall ω, 0 < D0 ω}
         (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
@@ -4143,10 +4143,7 @@ Qed.
         (filt_sub : forall k, sa_sub (F k) dom) 
         (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
         {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
-(*
-        {rvD0 : RandomVariable (F 0%nat) borel_sa D0}        
-*)
-        {XF_rv : RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) XF}
+        {rvXF : RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) XF}
         {posD0 : forall ω, 0 < D0 ω}
         (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
