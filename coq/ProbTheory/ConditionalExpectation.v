@@ -4756,12 +4756,17 @@ Section cond_exp2.
   Local Existing Instance IsLp_min_const_nat.
   Local Existing Instance conditional_expectation_L2fun_rv.
 
-  Definition NonNegConditionalExpectation (f : Ts -> R) 
+  (* This definition is not the one that is actually used:
+     instead, we use NonNegCondexp, defined below, which has nicer properties.
+     However, this definition is simpler, and is almost equal to the nicer definition,
+     so is useful for showing certain properties directly (e.g. ale).
+   *)
+  Definition NonNegCondexp_direct (f : Ts -> R)
              {rv : RandomVariable dom borel_sa f}
              {nnf : NonnegativeFunction f} : Ts -> Rbar :=
     Rbar_rvlim (fun n => LpRRV_rv_X _ (conditional_expectation_L2fun prts sub (rvmin f (const (INR n))))).
 
-  Lemma NonNegCondexp_almost_increasing (f : Ts -> R) 
+  Lemma NonNegCondexp_direct_almost_increasing (f : Ts -> R) 
           {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
     almost (prob_space_sa_sub prts sub)
@@ -4780,7 +4785,7 @@ Section cond_exp2.
     lia.
   Qed.
 
-  Lemma NonNegCondexp_almost_increasing_prts (f : Ts -> R) 
+  Lemma NonNegCondexp_direct_almost_increasing_prts (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
     almost prts
@@ -4790,7 +4795,7 @@ Section cond_exp2.
                 <= conditional_expectation_L2fun prts sub (rvmin f (const (INR (S n)))) x).
   Proof.
     apply almost_prob_space_sa_sub_lift with (sub0 := sub).
-    apply NonNegCondexp_almost_increasing.
+    apply NonNegCondexp_direct_almost_increasing.
   Qed.
 
   Lemma almost_Rbar_rvlim_condexp_incr_indicator_rv (f : Ts -> R) 
@@ -4815,12 +4820,12 @@ Section cond_exp2.
     - typeclasses eauto.
   Qed.
 
-  Lemma NonNegCondexp_almost_nonneg (f : Ts -> R) 
+  Lemma NonNegCondexp_direct_almost_nonneg (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
-    almostR2 (prob_space_sa_sub prts sub) Rbar_le (const 0) (NonNegConditionalExpectation f).
+    almostR2 (prob_space_sa_sub prts sub) Rbar_le (const 0) (NonNegCondexp_direct f).
   Proof.
-    unfold NonNegConditionalExpectation.
+    unfold NonNegCondexp_direct.
     assert (almost (prob_space_sa_sub prts sub)
                    (fun x => forall n,
                         0 <= (conditional_expectation_L2fun prts sub (rvmin f (const (INR n)))) x)).
@@ -4845,13 +4850,13 @@ Section cond_exp2.
     apply H0.
   Qed.
 
-  Lemma NonNegCondexp_almost_nonneg_prts (f : Ts -> R) 
+  Lemma NonNegCondexp_direct_almost_nonneg_prts (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
-    almostR2 prts Rbar_le (const 0) (NonNegConditionalExpectation f).
+    almostR2 prts Rbar_le (const 0) (NonNegCondexp_direct f).
   Proof.
     apply almost_prob_space_sa_sub_lift with (sub0 := sub).
-    apply NonNegCondexp_almost_nonneg.
+    apply NonNegCondexp_direct_almost_nonneg.
   Qed.
 
   Lemma rvlim_rvmin_indicator (f : Ts -> R) (P:pre_event Ts) (dec:dec_pre_event P) :
@@ -4872,13 +4877,13 @@ Section cond_exp2.
     now simpl.
   Qed.
 
-  Lemma NonNegConditionalExpectation_id (f : Ts -> R) 
+  Lemma NonNegCondexp_direct_id (f : Ts -> R) 
     {rv : RandomVariable dom borel_sa f}
     {rv2 : RandomVariable dom2 borel_sa f}
     {nnf : NonnegativeFunction f} :
-    almostR2 (prob_space_sa_sub prts sub) eq (NonNegConditionalExpectation f) (fun x => Finite (f x)).
+    almostR2 (prob_space_sa_sub prts sub) eq (NonNegCondexp_direct f) (fun x => Finite (f x)).
   Proof.
-    unfold NonNegConditionalExpectation.
+    unfold NonNegCondexp_direct.
     assert (forall n,
                RandomVariable dom2 borel_sa (rvmin f (const (INR n))) ).
     {
@@ -5160,7 +5165,7 @@ Section cond_exp2.
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
     exists g : Ts -> Rbar,
-      (almostR2 (prob_space_sa_sub prts sub) eq g (NonNegConditionalExpectation f))
+      (almostR2 (prob_space_sa_sub prts sub) eq g (NonNegCondexp_direct f))
       /\ Rbar_NonnegativeFunction g
       /\ exists (g_rv : RandomVariable dom2 Rbar_borel_sa g),
           is_conditional_expectation prts dom2 f g.
@@ -5189,7 +5194,7 @@ Section cond_exp2.
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
     { g : Ts -> Rbar |
-      (almostR2 (prob_space_sa_sub prts sub) eq g (NonNegConditionalExpectation f)) /\
+      (almostR2 (prob_space_sa_sub prts sub) eq g (NonNegCondexp_direct f)) /\
       Rbar_NonnegativeFunction g /\
       (RandomVariable dom2 borel_sa f -> g = (fun x => Finite (f x)))
       /\ (IsFiniteExpectation prts f -> exists gr, g = fun x => Finite (gr x))
@@ -5201,7 +5206,7 @@ Section cond_exp2.
     - exists (fun x => Finite (f x)).
       repeat split; eauto 2.
       + symmetry.
-        now apply NonNegConditionalExpectation_id.
+        now apply NonNegCondexp_direct_id.
       + eexists.
         apply is_conditional_expectation_id.
     - destruct (NonNegCondexp' f) as [ce [? [? [??]]]].
@@ -5233,7 +5238,7 @@ Section cond_exp2.
   Qed.
 
   (* This is the definition of Nonnegative Conditional Expectation that we want to use.
-     Unlike the NonNegConditionalExpectation definition above, it ensures that certain
+     Unlike the NonNegCondexp_direct definition above, it ensures that certain
      basic properties hold everywhere, instead of almost.
    *)
   Definition NonNegCondexp  (f : Ts -> R) 
@@ -5285,10 +5290,10 @@ Section cond_exp2.
     destruct a as [?[?[?[?[??]]]]]; eauto.
   Qed.
 
-  Lemma NonNegCondexp_almost_base (f : Ts -> R)
+  Lemma NonNegCondexp_almost_direct (f : Ts -> R)
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
-    (almostR2 (prob_space_sa_sub prts sub) eq (NonNegCondexp f) (NonNegConditionalExpectation f)).
+    (almostR2 (prob_space_sa_sub prts sub) eq (NonNegCondexp f) (NonNegCondexp_direct f)).
   Proof.
     unfold NonNegCondexp.
     unfold is_conditional_expectation; intros.
@@ -5335,6 +5340,18 @@ Section cond_exp2.
     subst.
     f_equal
     ; apply proof_irrelevance.
+  Qed.
+
+  Lemma NonNegCondexp_direct_cond_exp (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {nnf : NonnegativeFunction f} :
+    is_conditional_expectation prts dom2 f (NonNegCondexp_direct f).
+  Proof.
+    generalize (NonNegCondexp_cond_exp f).
+    apply is_conditional_expectation_proper; trivial.
+    - reflexivity.
+    - apply (almost_prob_space_sa_sub_lift _ sub).
+      apply NonNegCondexp_almost_direct.
   Qed.
 
   Lemma NonNegCondexp_scale (c:nonnegreal) (f : Ts -> R) 
@@ -6329,7 +6346,7 @@ Section cond_exp2.
     now simpl in H0.
   Qed.
 
-  Lemma NonNegConditionalExpectation_ale 
+  Lemma NonNegCondexp_direct_ale 
         (f1 f2 : Ts -> R) 
         {rv1 : RandomVariable dom borel_sa f1}
         {rv2 : RandomVariable dom borel_sa f2}
@@ -6337,8 +6354,8 @@ Section cond_exp2.
         {nn2 : NonnegativeFunction f2} :
     almostR2 prts Rle f1 f2 ->
     almostR2 (prob_space_sa_sub prts sub) Rbar_le
-             (NonNegConditionalExpectation f1) 
-             (NonNegConditionalExpectation f2).
+             (NonNegCondexp_direct f1) 
+             (NonNegCondexp_direct f2).
   Proof.
     intros.
     assert (almost (prob_space_sa_sub prts sub)
@@ -6355,7 +6372,7 @@ Section cond_exp2.
       rv_unfold.
       now apply Rle_min_compat_r.
     }
-    unfold NonNegConditionalExpectation.
+    unfold NonNegCondexp_direct.
     revert H0.
     apply almost_impl, all_almost; intros ??.
     unfold Rbar_rvlim.
@@ -6377,9 +6394,9 @@ Section cond_exp2.
              (NonNegCondexp f2).
   Proof.
     intros.
-    generalize (NonNegConditionalExpectation_ale f1 f2 H); intros.
-    generalize (NonNegCondexp_almost_base f1); intros.
-    generalize (NonNegCondexp_almost_base f2); intros.
+    generalize (NonNegCondexp_direct_ale f1 f2 H); intros.
+    generalize (NonNegCondexp_almost_direct f1); intros.
+    generalize (NonNegCondexp_almost_direct f2); intros.
     revert H2; apply almost_impl.
     revert H1; apply almost_impl.
     revert H0; apply almost_impl.
