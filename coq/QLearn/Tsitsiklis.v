@@ -5295,6 +5295,8 @@ Section MDP.
                         prts (filt_sub t')
                         (fun ω => qlearn_Qmin (g ω) (next_state sa ω)) ω))).
   Proof.
+    apply rvplus_rv.
+    
   Admitted.
 
   Instance isfe_qmin_next (g : Ts -> Rfct (sigT M.(act))) t'
@@ -5363,57 +5365,44 @@ Section MDP.
     unfold qlearn_Q; match_destr.
   Qed.
 
-  Definition qlearn_w (Q : nat -> Ts -> Rfct (sigT M.(act)))(t : nat) (ω : Ts) (sa : (sigT M.(act))) : R :=
+  Definition qlearn_w (Q : nat -> Ts -> Rfct (sigT M.(act)))(t : nat) (ω : Ts) (sa : (sigT M.(act))) 
+             (rvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q t ω sa))
+             (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q t ω sa)) : R :=
                      (qlearn_Qmin (Q t ω) (next_state sa ω) -
                       FiniteConditionalExpectation 
-                        (rv := rv_qmin1 (Q t) sa)
-                        (isfe := isfe_qmin1 (Q t) sa)
+                        (rv := rv_qmin1 (Q t) rvQ sa)
+                        (isfe := isfe_qmin1 (Q t) isfeQ sa)
                         prts (filt_sub t)
                         (fun ω => qlearn_Qmin (Q t ω) (next_state sa ω)) ω).
 
-  Fixpoint qlearn_Q2 (t : nat) (ω : Ts) : (Rfct (sigT M.(act))) :=
-           match t with
-           | 0%nat => Q0
-           | S t' => (fun sa => (qlearn_Q2 t' ω sa) + 
-                     (α t' ω sa) * (qlearn_XF (qlearn_Q2 t' ω) sa - qlearn_Q2 t' ω sa +
-                     ((cost sa ω) - FiniteExpectation prts (cost sa)) +
-                     qlearn_w qlearn_Q2 t' ω sa))
-           end.
-    
-(*
-   Theorem qlearn {Ts} 
-           {dom : SigmaAlgebra Ts}
-           {prts : ProbSpace dom}
+   Theorem qlearn
            (decA : EquivDec.EqDec (sigT M.(act)) eq)
-           (Q α : nat -> Ts -> vector R (S N_sig_act))
-           (β : R)
-           (c Q0 : Ts -> vector R (S N_sig_act))
+           (Q : nat -> Ts -> vector R (S N_sig_act))
+           (c vQ0 : Ts -> vector R (S N_sig_act))
            {isfe: vector_IsFiniteExpectation prts c}
-           {F : nat -> SigmaAlgebra Ts}
-           (isfilt : IsFiltration F) 
-           (filt_sub : forall k, sa_sub (F k) dom) 
-           (adapt_alpha : IsAdapted (Rvector_borel_sa (S N_sig_act)) α F)
-           {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N_sig_act)) Q0}  :
+           (valpha : nat -> Ts -> vector R (S N_sig_act))
+           (adapt_alpha : IsAdapted (Rvector_borel_sa (S N_sig_act)) valpha F)
+           {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N_sig_act)) vQ0}  :
      0 <= β < 1 ->
-     (forall k ω i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
-     (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+     (forall k ω i pf, 0 <= vector_nth i pf (valpha k ω) <= 1) ->
+     (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (valpha k ω))) p_infty) ->
      (exists (C : R),
          forall i pf,
-           almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Finite C))) ->
+           almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (valpha k ω))))) (Finite C))) ->
       almost prts (fun ω => is_lim_seq (fun k => rvmaxabs (Q k) ω) 0).
   Proof.
     intros.
-    pose (Qmin := fun (v : vector R (S n)) (ω : Ts) => v).
-    assert (forall (v : vector R (S n)),
+    pose (Qmin := fun (v : vector R (S N_sig_act)) (ω : Ts) => v).
+    assert (forall (v : vector R (S N_sig_act)),
                         vector_IsFiniteExpectation prts (Qmin v)).
     {
       admit.
     }
-    pose (XF := fun (v : vector R (S n)) => 
+    pose (XF := fun (v : vector R (S N_sig_act)) => 
                   Rvector_plus (vector_FiniteExpectation prts c) 
                                (Rvector_scale β (vector_FiniteExpectation prts (Qmin v)))).
     assert (forall k ω,
-               RandomVariable dom (Rvector_borel_sa (S n)) 
+               RandomVariable dom (Rvector_borel_sa (S N_sig_act)) 
                               (fun omega => Qmin (Q k ω) omega)).
     {
       admit.
@@ -5431,10 +5420,9 @@ Section MDP.
     {
       admit.
     }
-    apply Tsitsiklis_1_3 with (β0 := β) (α0 := α) (F0 := F) (filt_sub0 := filt_sub)
+    apply Tsitsiklis_1_3 with (β0 := β) (α0 := valpha) (F0 := F) (filt_sub0 := filt_sub)
                               (XF0 := XF) (w0 := w) (rvw0 := rvw); try easy.
     Admitted.
-*)
        
 End MDP.
 
