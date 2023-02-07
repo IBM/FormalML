@@ -5207,6 +5207,164 @@ Section MDP.
      - apply max_sqr_bound.
    Qed.
 
+  Definition finite_fun_to_vector {A B} (finA : FiniteType A) (decA : EquivDec.EqDec A eq) (g : A -> B) :=
+    ivector_to_vector (qlearn_redux.finite_fun_to_ivector finA decA g).
+
+  Definition vector_to_finite_fun {A B} (finA : FiniteType A) (decA : EquivDec.EqDec A eq) (vec : vector B (length (nodup decA fin_elms))) : A -> B :=
+    qlearn_redux.ivector_to_finite_fun finA decA (vector_to_ivector vec).
+ 
+  Instance finite_sigact : FiniteType( sigT M.(act)) := 
+    fin_finite_dep_prod M.(fs) M.(fa).
+
+  Definition N_sig_act := length (nodup EqDecsigT fin_elms ).
+
+  Context {Ts : Type}            
+          {dom : SigmaAlgebra Ts}
+          {prts : ProbSpace dom}
+          (next_state : (sigT M.(act)) -> Ts -> M.(state))
+          (cost : (sigT M.(act)) -> Ts -> R)
+          {isfe_cost : forall (sa : sigT M.(act)),
+              IsFiniteExpectation prts (cost sa)}
+          (Q0 : Rfct (sigT M.(act)))
+          (α : nat -> Ts -> Rfct (sigT M.(act)))
+          {F : nat -> SigmaAlgebra Ts}
+          (isfilt : IsFiltration F) 
+          (filt_sub : forall k, sa_sub (F k) dom) 
+          (β : R).
+
+  Definition SA := sigT M.(act).
+
+  Definition qlearn_Qmin (Q : Rfct SA) (s : M.(state)) : R :=
+    Min_{act_list s} (fun a => Q (existT _ s a)).
+
+  Instance isfe_qmin (Q : Rfct SA) (sa : SA) :
+    IsFiniteExpectation prts (fun ω => qlearn_Qmin Q (next_state sa ω)).
+  Proof.
+    Admitted.
+
+  Definition qlearn_XF (Q : Rfct SA) : Rfct SA :=
+    fun sa => FiniteExpectation prts (cost sa) +
+              β * (FiniteExpectation prts (fun ω => qlearn_Qmin Q (next_state sa ω))).
+
+             
+  Instance rv_qmin1 (Q : Ts -> Rfct SA) (sa : SA) :
+    RandomVariable dom borel_sa 
+                   (fun ω : Ts => qlearn_Qmin (Q ω) (next_state sa ω)).
+  Proof.
+  Admitted.
+
+
+  Instance isfe_qmin1 (Q : Ts -> Rfct SA) (sa : SA) :
+    IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin (Q ω) (next_state sa ω)).
+  Proof.
+    Admitted.
+
+
+  Program Fixpoint qlearn_Q (t : nat) {struct t} : {f : (Ts -> Rfct SA) |     (forall sa, RandomVariable dom borel_sa 
+                                                                                                           (fun ω : Ts => qlearn_Qmin (f ω) (next_state sa ω)))
+                                                                              &
+                                                                              (forall sa, IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin (f ω) (next_state sa ω)) )}
+    :=
+
+           match t with
+           | 0%nat => exist2 _ _ (fun ω  => Q0) _ _
+           | S t' => let '(exist2 g rvg isfe) := qlearn_Q t' in 
+exist2 _ _ (fun ω sa => (g ω sa) + 
+                     (α t' ω sa) * (qlearn_XF (g ω) sa - (g ω) sa +
+                     ((cost sa ω) - FiniteExpectation (isfe := isfe_cost sa) prts (cost sa)) +
+                     (qlearn_Qmin (g ω) (next_state sa ω) -
+                      FiniteConditionalExpectation 
+                        (rv := rvg sa) 
+                        (isfe := isfe sa)  
+                        prts (filt_sub t')
+                        (fun ω => qlearn_Qmin (g ω) (next_state sa ω)) ω))) _ _
+           end.
+  Next Obligation.
+    apply rv_qmin1.
+  Defined.
+  Next Obligation.
+    apply isfe_qmin1.
+  Defined.
+  Next Obligation.
+    apply rv_qmin1.
+  Defined.
+  Next Obligation.
+    apply isfe_qmin1.
+  Defined.
+
+  Definition qlearn_w (Q : nat -> Ts -> Rfct SA)(t : nat) (ω : Ts) (sa : SA) : R :=
+                     (qlearn_Qmin (Q t ω) (next_state sa ω) -
+                      FiniteConditionalExpectation 
+                        (rv := rv_qmin1 (Q t) sa)
+                        (isfe := isfe_qmin1 (Q t) sa)
+                        prts (filt_sub t)
+                        (fun ω => qlearn_Qmin (Q t ω) (next_state sa ω)) ω).
+
+  Fixpoint qlearn_Q2 (t : nat) (ω : Ts) : (Rfct SA) :=
+           match t with
+           | 0%nat => Q0
+           | S t' => (fun sa => (qlearn_Q2 t' ω sa) + 
+                     (α t' ω sa) * (qlearn_XF (qlearn_Q2 t' ω) sa - qlearn_Q2 t' ω sa +
+                     ((cost sa ω) - FiniteExpectation prts (cost sa)) +
+                     qlearn_w qlearn_Q2 t' ω sa))
+           end.
+    
+(*
+   Theorem qlearn {Ts} 
+           {dom : SigmaAlgebra Ts}
+           {prts : ProbSpace dom}
+           (decA : EquivDec.EqDec (sigT M.(act)) eq)
+           (Q α : nat -> Ts -> vector R (S N_sig_act))
+           (β : R)
+           (c Q0 : Ts -> vector R (S N_sig_act))
+           {isfe: vector_IsFiniteExpectation prts c}
+           {F : nat -> SigmaAlgebra Ts}
+           (isfilt : IsFiltration F) 
+           (filt_sub : forall k, sa_sub (F k) dom) 
+           (adapt_alpha : IsAdapted (Rvector_borel_sa (S N_sig_act)) α F)
+           {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N_sig_act)) Q0}  :
+     0 <= β < 1 ->
+     (forall k ω i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
+     (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+     (exists (C : R),
+         forall i pf,
+           almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Finite C))) ->
+      almost prts (fun ω => is_lim_seq (fun k => rvmaxabs (Q k) ω) 0).
+  Proof.
+    intros.
+    pose (Qmin := fun (v : vector R (S n)) (ω : Ts) => v).
+    assert (forall (v : vector R (S n)),
+                        vector_IsFiniteExpectation prts (Qmin v)).
+    {
+      admit.
+    }
+    pose (XF := fun (v : vector R (S n)) => 
+                  Rvector_plus (vector_FiniteExpectation prts c) 
+                               (Rvector_scale β (vector_FiniteExpectation prts (Qmin v)))).
+    assert (forall k ω,
+               RandomVariable dom (Rvector_borel_sa (S n)) 
+                              (fun omega => Qmin (Q k ω) omega)).
+    {
+      admit.
+    }
+    assert (forall k ω,
+               vector_IsFiniteExpectation prts (fun omega : Ts => Qmin (Q k ω) omega)).
+    {
+      admit.
+    }
+    pose (w := fun (k : nat) (ω : Ts) =>
+                   Rvector_plus (Rvector_minus (c ω) (vector_FiniteExpectation prts c))
+                                (Rvector_minus (Qmin (Q k ω) ω)
+                                               (vector_FiniteConditionalExpectation prts (filt_sub k) (fun omega => Qmin (Q k ω) omega) ω) )).
+    assert (rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))).
+    {
+      admit.
+    }
+    apply Tsitsiklis_1_3 with (β0 := β) (α0 := α) (F0 := F) (filt_sub0 := filt_sub)
+                              (XF0 := XF) (w0 := w) (rvw0 := rvw); try easy.
+    Admitted.
+*)
+       
 End MDP.
 
     
