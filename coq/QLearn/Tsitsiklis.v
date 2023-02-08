@@ -5223,6 +5223,7 @@ Section MDP.
           {prts : ProbSpace dom}
           (next_state : (sigT M.(act)) -> Ts -> M.(state))
           (cost : (sigT M.(act)) -> Ts -> R)
+          {rv_cost : forall sa, RandomVariable dom borel_sa (cost sa)}
           {isfe_cost : forall (sa : sigT M.(act)),
               IsFiniteExpectation prts (cost sa)}
           (Q0 : Rfct (sigT M.(act)))
@@ -5301,9 +5302,9 @@ Section MDP.
               β * (FiniteExpectation prts (fun ω => qlearn_Qmin Q (next_state sa ω))).
 
 
-    Instance rv_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
-    (rvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
-    (sa : (sigT M.(act))) :
+  Instance rv_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
+           (rvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
+           (sa : (sigT M.(act))) :
     RandomVariable dom borel_sa 
                    (fun ω : Ts => qlearn_Qmin (Q ω) (next_state sa ω)).
   Proof.
@@ -5486,6 +5487,25 @@ Section MDP.
     - apply IsFiniteExpectation_const.
   Qed.
 
+  Instance rv_qlearn_XF (g : Ts -> Rfct (sigT M.(act)))
+           (rvg : forall sa, RandomVariable dom borel_sa (fun ω : Ts => g ω sa)) :
+    forall sa, RandomVariable dom borel_sa (fun ω : Ts => qlearn_XF (g ω) sa).
+  Proof.
+    intros.
+    apply rvplus_rv.
+    - apply rvconst.
+    - apply rvscale_rv.
+      Admitted.
+
+  Instance rvopp_rv' (rv_X : Ts -> R) 
+           {rv : RandomVariable dom borel_sa rv_X} :
+    RandomVariable dom borel_sa (fun ω => - rv_X ω).
+  Proof.
+    generalize (rvopp_rv dom rv_X).
+    apply RandomVariable_proper; try easy.
+    intros ?; unfold rvopp, rvscale; lra.
+  Qed.
+
   Instance rv_qmin_next (g : Ts -> Rfct (sigT M.(act))) t'
     (rvg : forall sa, RandomVariable dom borel_sa (fun ω : Ts => g ω sa))
     (isfe : forall sa, IsFiniteExpectation prts (fun ω : Ts => (g ω sa)))
@@ -5502,18 +5522,18 @@ Section MDP.
     apply rvplus_rv; trivial.
     apply rvmult_rv; trivial.
     apply rvplus_rv.
-    - admit.
-    - assert (RandomVariable dom borel_sa
-          (FiniteConditionalExpectation prts (filt_sub t') (fun ω0 : Ts => qlearn_Qmin (g ω0) (next_state sa ω0)))).
-      {
-        admit.
-      }
-      generalize (rvminus_rv dom (fun ω => qlearn_Qmin (g ω) (next_state sa ω))
-                             (FiniteConditionalExpectation 
-                                (rv := rv_qmin1 g rvg sa) 
-                                prts (filt_sub t') (fun ω0 : Ts => qlearn_Qmin (g ω0) (next_state sa ω0))) ); intros.
-  Admitted.
-
+    - unfold Rminus.
+      apply rvplus_rv.
+      + apply rvplus_rv.
+        * typeclasses eauto.
+        * now apply rvopp_rv'.
+      + apply rvplus_rv; trivial.
+        * apply rvconst.
+    - apply rvplus_rv.
+      + typeclasses eauto.
+      + apply rvopp_rv'.
+        apply FiniteCondexp_rv'.
+  Qed.
 
   Instance isfe_qmin_next (g : Ts -> Rfct (sigT M.(act))) t'
            (rvg : forall sa, RandomVariable dom borel_sa (fun ω : Ts => (g ω sa)))
@@ -5529,6 +5549,24 @@ Section MDP.
                         prts (filt_sub t')
                         (fun ω => qlearn_Qmin (g ω) (next_state sa ω)) ω))).
   Proof.
+    apply IsFiniteExpectation_plus; trivial.
+    - apply rvmult_rv; try easy.
+      apply rvplus_rv.
+      + unfold Rminus.
+        apply rvplus_rv.
+        * apply rvplus_rv.
+          -- typeclasses eauto.
+          -- generalize (rvopp_rv dom (fun ω : Ts => g ω sa)).
+             apply RandomVariable_proper; try easy.
+             intros ?; unfold rvopp, rvscale; lra.
+        * apply rvplus_rv; trivial.
+          apply rvconst.
+      + unfold Rminus.
+        apply rvplus_rv.
+        * typeclasses eauto.
+        * apply rvopp_rv'.
+          apply FiniteCondexp_rv'.
+    - admit.
   Admitted.
 
   Fixpoint qlearn_Qaux (t : nat) {struct t} : {f : (Ts -> Rfct (sigT M.(act))) |     (forall sa, RandomVariable dom borel_sa 
