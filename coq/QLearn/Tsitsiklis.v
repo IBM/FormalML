@@ -5310,11 +5310,55 @@ Section MDP.
   Admitted.
 
 
-  Instance isfe_Rmin_all (Q : Ts -> Rfct (sigT M.(act))) 
-           (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q ω sa)) :
+  Instance rvs_Rmin_list (rvs : list (Ts -> R))
+                          {rv_rvs : List.Forall (RandomVariable dom borel_sa) rvs} :
+    RandomVariable dom borel_sa (fun ω : Ts => Rmin_list (map (fun x => x ω) rvs)).
+  Proof.
+    induction rvs.
+    - apply rvconst.
+    - invcs rv_rvs.
+      cut_to IHrvs; trivial.
+      destruct rvs; trivial.
+      simpl.
+      apply rvmin_rv; trivial.
+  Qed.
+
+  Instance isfe_Rmin_list (rvs : list (Ts -> R))
+                          {rv_rvs : List.Forall (RandomVariable dom borel_sa) rvs}
+                          {rv_isfe : List.Forall (IsFiniteExpectation prts) rvs} :
+    IsFiniteExpectation prts (fun ω : Ts => Rmin_list (map (fun x => x ω) rvs)).
+  Proof.
+    induction rvs.
+    - apply IsFiniteExpectation_const.
+    - invcs rv_rvs.
+      invcs rv_isfe.
+      cut_to IHrvs; trivial.
+      simpl.
+      destruct rvs; trivial.
+      apply IsFiniteExpectation_min; trivial.
+      now apply rvs_Rmin_list.
+  Qed.
+
+  Instance isfe_Rmin_all (Q : Ts -> Rfct (sigT M.(act)))
+    (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
+    (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q ω sa)) :
     IsFiniteExpectation prts (fun ω : Ts => Rmin_all (Q ω)).
   Proof.
-    Admitted.
+    unfold Rmin_all.
+    match_destr.
+    generalize (@isfe_Rmin_list ((map (fun (s : sigT (act M)) ω => Q ω s) fin_elms))); intros HH.
+    cut_to HH.
+    - revert HH.
+      apply IsFiniteExpectation_proper.
+      intros ?.
+      now rewrite map_map.
+    - apply Forall_forall; intros.
+      apply in_map_iff in H.
+      now destruct H as [? [??]]; subst.
+    - apply Forall_forall; intros.
+      apply in_map_iff in H.
+      now destruct H as [? [??]]; subst.
+  Qed.      
 
   Instance isfe_Rmax_all (Q : Ts -> Rfct (sigT M.(act))) 
            (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q ω sa)) :
