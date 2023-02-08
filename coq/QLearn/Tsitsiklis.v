@@ -5323,6 +5323,19 @@ Section MDP.
       apply rvmin_rv; trivial.
   Qed.
 
+  Instance rvs_Rmax_list (rvs : list (Ts -> R))
+                          {rv_rvs : List.Forall (RandomVariable dom borel_sa) rvs} :
+    RandomVariable dom borel_sa (fun ω : Ts => Rmax_list (map (fun x => x ω) rvs)).
+  Proof.
+    induction rvs.
+    - apply rvconst.
+    - invcs rv_rvs.
+      cut_to IHrvs; trivial.
+      destruct rvs; trivial.
+      simpl.
+      apply rvmax_rv; trivial.
+  Qed.
+
   Instance isfe_Rmin_list (rvs : list (Ts -> R))
                           {rv_rvs : List.Forall (RandomVariable dom borel_sa) rvs}
                           {rv_isfe : List.Forall (IsFiniteExpectation prts) rvs} :
@@ -5337,6 +5350,23 @@ Section MDP.
       destruct rvs; trivial.
       apply IsFiniteExpectation_min; trivial.
       now apply rvs_Rmin_list.
+  Qed.
+
+
+  Instance isfe_Rmax_list (rvs : list (Ts -> R))
+                          {rv_rvs : List.Forall (RandomVariable dom borel_sa) rvs}
+                          {rv_isfe : List.Forall (IsFiniteExpectation prts) rvs} :
+    IsFiniteExpectation prts (fun ω : Ts => Rmax_list (map (fun x => x ω) rvs)).
+  Proof.
+    induction rvs.
+    - apply IsFiniteExpectation_const.
+    - invcs rv_rvs.
+      invcs rv_isfe.
+      cut_to IHrvs; trivial.
+      simpl.
+      destruct rvs; trivial.
+      apply IsFiniteExpectation_max; trivial.
+      now apply rvs_Rmax_list.
   Qed.
 
   Instance isfe_Rmin_all (Q : Ts -> Rfct (sigT M.(act)))
@@ -5360,13 +5390,29 @@ Section MDP.
       now destruct H as [? [??]]; subst.
   Qed.      
 
-  Instance isfe_Rmax_all (Q : Ts -> Rfct (sigT M.(act))) 
-           (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q ω sa)) :
+  Instance isfe_Rmax_all (Q : Ts -> Rfct (sigT M.(act)))
+    (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
+    (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q ω sa)) :
     IsFiniteExpectation prts (fun ω : Ts => Rmax_all (Q ω)).
   Proof.
-    Admitted.
+    unfold Rmax_all.
+    match_destr.
+    generalize (@isfe_Rmax_list ((map (fun (s : sigT (act M)) ω => Q ω s) fin_elms))); intros HH.
+    cut_to HH.
+    - revert HH.
+      apply IsFiniteExpectation_proper.
+      intros ?.
+      now rewrite map_map.
+    - apply Forall_forall; intros.
+      apply in_map_iff in H.
+      now destruct H as [? [??]]; subst.
+    - apply Forall_forall; intros.
+      apply in_map_iff in H.
+      now destruct H as [? [??]]; subst.
+  Qed.      
 
   Instance isfe_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
+    (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
     (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q ω sa))
     (sa : (sigT M.(act))) :
     IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin (Q ω) (next_state sa ω)).
@@ -5436,7 +5482,8 @@ Section MDP.
     IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin Q0 (next_state sa ω)).
   Proof.
     apply isfe_qmin1; intros.
-    apply IsFiniteExpectation_const.
+    - apply rvconst.
+    - apply IsFiniteExpectation_const.
   Qed.
 
   Instance rv_qmin_next (g : Ts -> Rfct (sigT M.(act))) t'
@@ -5478,7 +5525,7 @@ Section MDP.
                      (qlearn_Qmin (g ω) (next_state sa ω) -
                       FiniteConditionalExpectation 
                         (rv := rv_qmin1 g rvg sa) 
-                        (isfe := isfe_qmin1 g isfe sa)  
+                        (isfe := isfe_qmin1 g rvg isfe sa)  
                         prts (filt_sub t')
                         (fun ω => qlearn_Qmin (g ω) (next_state sa ω)) ω))).
   Proof.
@@ -5506,7 +5553,7 @@ Section MDP.
                                                    (qlearn_Qmin (g ω) (next_state sa ω) -
                                                       FiniteConditionalExpectation 
                                                         (rv := rv_qmin1 g rvg sa) 
-                                                        (isfe := isfe_qmin1 g isfe sa)  
+                                                        (isfe := isfe_qmin1 g rvg isfe sa)  
                                                         prts (filt_sub t')
                                                         (fun ω => qlearn_Qmin (g ω) (next_state sa ω)) ω)))
                       (fun sa : {x : state M & act M x} =>
@@ -5536,7 +5583,7 @@ Section MDP.
                      (qlearn_Qmin (Q t ω) (next_state sa ω) -
                       FiniteConditionalExpectation 
                         (rv := rv_qmin1 (Q t) rvQ sa)
-                        (isfe := isfe_qmin1 (Q t) isfeQ sa)
+                        (isfe := isfe_qmin1 (Q t) rvQ isfeQ sa)
                         prts (filt_sub t)
                         (fun ω => qlearn_Qmin (Q t ω) (next_state sa ω)) ω).
 
