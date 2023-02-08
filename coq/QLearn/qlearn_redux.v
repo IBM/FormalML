@@ -207,8 +207,6 @@ Section MDP.
       now rewrite H in H0.
   Qed.
 
-  Notation "Min_{ l } ( f )" := (Rmin_list (List.map f l)) (at level 50).
-
   Lemma Rmax_list_map_ge_Rmin {A} (l : list A) (f : A -> R) :
     Rmax_list (map f l) >= Rmin_list (map f l).
   Proof.
