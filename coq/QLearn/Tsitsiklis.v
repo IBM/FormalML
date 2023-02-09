@@ -5574,6 +5574,25 @@ Section MDP.
     - apply IsFiniteExpectation_const.
   Qed.
 
+  Program Instance frf_Qmin (g : Rfct (sigT M.(act))) (f : Ts -> M.(state))
+           {rvf : RandomVariable dom (discrete_sa M.(state)) f} :
+    FiniteRangeFunction (fun ω0 : Ts => qlearn_Qmin g (f ω0))
+    := { frf_vals := map (fun s => qlearn_Qmin g s) fin_elms }.
+  Next Obligation.
+    apply in_map_iff.
+    exists (f x).
+    split; trivial.
+    destruct (M.(fs)).
+    apply fin_finite.
+  Qed.
+
+  Global Instance HasPreimageSingleton_discrete {B} : HasPreimageSingleton (discrete_sa B).
+  Proof.
+    intros ?????.
+    red in rv.
+    apply (rv (DiscreteProbSpace.discrete_singleton c)).
+  Qed.
+    
   Instance rv_qlearn_XF (g : Ts -> Rfct (sigT M.(act)))
            (rvg : forall sa, RandomVariable dom borel_sa (fun ω : Ts => g ω sa)) :
     forall sa, RandomVariable dom borel_sa (fun ω : Ts => qlearn_XF (g ω) sa).
@@ -5582,9 +5601,30 @@ Section MDP.
     apply rvplus_rv.
     - apply rvconst.
     - apply rvscale_rv.
-      
-      Admitted.
+      assert (rv2 : forall a, RandomVariable dom borel_sa (fun v : Ts => qlearn_Qmin (g a) (next_state sa v))).
+      {
+        intros.
+        apply rv_qmin1.
+        - intros.
+          apply rvconst.
+        - typeclasses eauto.
+      } 
+      eapply RandomVariable_proper; [reflexivity | reflexivity | ..].
+      {
+        intros ?.
+        rewrite (FiniteExpectation_simple _ _).
+        apply SimpleExpectation_compose_Finite_type.
+      }
 
+      apply list_sum_rv; intros.
+      apply rvmult_rv.
+      + apply rv_qmin1.
+        * typeclasses eauto.
+        * intros.
+          apply rvconst.
+      + apply rvconst.
+  Qed.
+  
   Instance rvopp_rv' (rv_X : Ts -> R) 
            {rv : RandomVariable dom borel_sa rv_X} :
     RandomVariable dom borel_sa (fun ω => - rv_X ω).
