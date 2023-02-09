@@ -5222,6 +5222,7 @@ Section MDP.
           {dom : SigmaAlgebra Ts}
           {prts : ProbSpace dom}
           (next_state : (sigT M.(act)) -> Ts -> M.(state))
+          {rv_ns: forall sa, RandomVariable dom (discrete_sa (state M)) (next_state sa)}
           (cost : (sigT M.(act)) -> Ts -> R)
           {rv_cost : forall sa, RandomVariable dom borel_sa (cost sa)}
           {isfe_cost : forall (sa : sigT M.(act)),
@@ -5554,6 +5555,7 @@ Section MDP.
   Proof.
     apply rv_qmin1; intros.
     apply rvconst.
+    apply rv_ns.
   Qed.
 
   Instance isfe0
@@ -5601,7 +5603,7 @@ Section MDP.
                      ((cost sa ω) - FiniteExpectation (isfe := isfe_cost sa) prts (cost sa)) +
                      (qlearn_Qmin (g ω) (next_state sa ω) -
                       FiniteConditionalExpectation 
-                        (rv := rv_qmin1 g rvg sa) 
+                        (rv := rv_qmin1 g _ rvg _) 
                         prts (filt_sub t')
                         (fun ω => qlearn_Qmin (g ω) (next_state sa ω)) ω))).
   Proof.
@@ -5630,7 +5632,7 @@ Section MDP.
                      ((cost sa ω) - FiniteExpectation (isfe := isfe_cost sa) prts (cost sa)) +
                      (qlearn_Qmin (g ω) (next_state sa ω) -
                       FiniteConditionalExpectation 
-                        (rv := rv_qmin1 g rvg sa) 
+                        (rv := rv_qmin1 g _ rvg _) 
                         (isfe := isfe_qmin1 g rvg isfe sa)  
                         prts (filt_sub t')
                         (fun ω => qlearn_Qmin (g ω) (next_state sa ω)) ω))).
@@ -5676,7 +5678,7 @@ Section MDP.
                                                    ((cost sa ω) - FiniteExpectation (isfe := isfe_cost sa) prts (cost sa)) +
                                                    (qlearn_Qmin (g ω) (next_state sa ω) -
                                                       FiniteConditionalExpectation 
-                                                        (rv := rv_qmin1 g rvg sa) 
+                                                        (rv := rv_qmin1 g _ rvg _) 
                                                         (isfe := isfe_qmin1 g rvg isfe sa)  
                                                         prts (filt_sub t')
                                                         (fun ω => qlearn_Qmin (g ω) (next_state sa ω)) ω)))
@@ -5706,7 +5708,7 @@ Section MDP.
              (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q t ω sa)) : R :=
                      (qlearn_Qmin (Q t ω) (next_state sa ω) -
                       FiniteConditionalExpectation 
-                        (rv := rv_qmin1 (Q t) rvQ sa)
+                        (rv := rv_qmin1 (Q t) _ rvQ _)
                         (isfe := isfe_qmin1 (Q t) rvQ isfeQ sa)
                         prts (filt_sub t)
                         (fun ω => qlearn_Qmin (Q t ω) (next_state sa ω)) ω).
