@@ -5663,6 +5663,33 @@ Section MDP.
         apply FiniteCondexp_rv'.
   Qed.
 
+  Instance isfe_small_mult (f g: Ts -> R)
+    {rvf: RandomVariable dom borel_sa f}
+    {rvg: RandomVariable dom borel_sa g}
+    (fbounded: forall ω, 0 <= f ω <= 1) {isfeg : IsFiniteExpectation prts g} :
+    IsFiniteExpectation prts (rvmult f g).
+  Proof.
+    eapply (IsFiniteExpectation_bounded prts (rvmin (const 0) g) _ (rvmax (const 0) g)).
+    - intros ?.
+      unfold rvmin, Rmin, const, rvmult.
+      match_destr.
+      + apply Rmult_le_pos; trivial.
+        apply fbounded.
+      + cut (f a * - g a <= - g a); [lra |].
+        cut (f a * - g a <= 1 * - g a); [lra |].
+        apply Rmult_le_compat_r; [lra |].
+        apply fbounded.
+    - intros ?.
+      unfold rvmax, Rmax, const, rvmult.
+      match_destr.
+      + cut (f a * g a <= 1 * g a); [lra |].
+        apply Rmult_le_compat_r; [lra |].
+        apply fbounded.
+      + cut (0 <= f a * - g a); [lra |].
+        apply Rmult_le_pos; [| lra].
+        apply fbounded.
+  Qed.
+            
   Instance isfe_qmin_next (g : Ts -> Rfct (sigT M.(act))) t'
            (rvg : forall sa, RandomVariable dom borel_sa (fun ω : Ts => (g ω sa)))
            (isfe : forall sa, IsFiniteExpectation prts (fun ω : Ts => (g ω sa)))
@@ -5694,7 +5721,8 @@ Section MDP.
         * typeclasses eauto.
         * apply rvopp_rv'.
           apply FiniteCondexp_rv'.
-    - admit.
+    - apply isfe_small_mult.
+
   Admitted.
 
   Fixpoint qlearn_Qaux (t : nat) {struct t} : {f : (Ts -> Rfct (sigT M.(act))) |     (forall sa, RandomVariable dom borel_sa 
