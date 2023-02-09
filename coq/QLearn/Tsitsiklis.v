@@ -5436,49 +5436,35 @@ Section MDP.
       now destruct H as [? [??]]; subst.
   Qed.      
 
-  Definition event_st_eq (rvs : Ts -> M.(state)) 
-             (s0 : M.(state)) : event dom.
-  Admitted.
+  Definition event_st_eq (rvs : Ts -> M.(state)) (s0 : M.(state))
+          {rv : RandomVariable dom (discrete_sa M.(state)) rvs} :
+    event dom := exist _ (fun ω => (rvs ω) = s0) (rv (DiscreteProbSpace.discrete_singleton s0)).
 
-  Lemma qlearn_Qmin_Rmin_indicator (Q : Ts -> Rfct (sigT M.(act))) :
-    forall sa,
-      rv_eq
-        (fun ω : Ts => qlearn_Qmin (Q ω) (next_state sa ω))
-        (fun ω => Rmin_list
-                    (map (fun sa0 =>
-                            rvmult (fun ω => Q ω sa0)
-                                   (EventIndicator 
-                                      (classic_dec
-                                         (event_st_eq 
-                                            (next_state sa)
-                                            (projT1 sa0)))) ω)
-                         fin_elms)).
-    Proof.
-      Admitted.
-
+  Lemma qlearn_Qmin_all_rv (Q : Ts -> Rfct (sigT M.(act))) 
+        {rv : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa)}:
+    forall (s : M.(state)), RandomVariable dom borel_sa (fun ω => qlearn_Qmin (Q ω) s).
+  Proof.
+    intros.
+    unfold qlearn_Qmin.
+    generalize (@rvs_Rmin_list ((map (fun a  ω => Q ω (existT _ s a)) (act_list s)))); intros HH.
+    cut_to HH.
+    - revert HH.
+      apply RandomVariable_proper; try easy.
+      intros ?.
+      now rewrite map_map.
+    - apply Forall_forall; intros.
+      apply in_map_iff in H.
+      now destruct H as [? [??]]; subst.
+ Qed.
+  
   Instance rv_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
            (rvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
            (sa : (sigT M.(act))) :
     RandomVariable dom borel_sa 
                    (fun ω : Ts => qlearn_Qmin (Q ω) (next_state sa ω)).
   Proof.
-    assert (RandomVariable 
-              dom borel_sa
-              (fun ω => Rmin_list
-                          (map (fun sa0 =>
-                                  rvmult (fun ω => Q ω sa0)
-                                         (EventIndicator 
-                                            (classic_dec
-                                               (event_st_eq 
-                                                  (next_state sa)
-                                                  (projT1 sa0)))) ω)
-                               fin_elms))).
-    {
-      admit.
-    }
-    revert H.
-    apply RandomVariable_proper; try easy.
-    apply qlearn_Qmin_Rmin_indicator.
+    generalize (compose_rv); intros.
+
   Admitted.
 
   Instance isfe_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
@@ -5564,6 +5550,7 @@ Section MDP.
     apply rvplus_rv.
     - apply rvconst.
     - apply rvscale_rv.
+      
       Admitted.
 
   Instance rvopp_rv' (rv_X : Ts -> R) 
