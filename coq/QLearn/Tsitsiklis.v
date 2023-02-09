@@ -1,6 +1,6 @@
 Require Import List.
 Require Import mdp qvalues fixed_point pmf_monad.
-Require Import RealAdd CoquelicotAdd.
+Require Import RealAdd CoquelicotAdd EquivDec.
 Require Import utils.Utils.
 Require Import Lra Lia PushNeg.
 Require Import infprod Dvoretzky Expectation RandomVariableFinite RbarExpectation.
@@ -5455,17 +5455,47 @@ Section MDP.
     - apply Forall_forall; intros.
       apply in_map_iff in H.
       now destruct H as [? [??]]; subst.
- Qed.
-  
-  Instance rv_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
-           (rvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
-           (sa : (sigT M.(act))) :
-    RandomVariable dom borel_sa 
-                   (fun ω : Ts => qlearn_Qmin (Q ω) (next_state sa ω)).
-  Proof.
-    generalize (compose_rv); intros.
+  Qed.
 
-  Admitted.
+  Definition finite_Rsum {B:Type} {decB : EqDec B eq} {finB:FiniteType B} (f:B->R)
+    := list_sum (map f (nodup decB fin_elms)).
+
+  Instance rv_finite_Rsum {B:Type} {decB : EqDec B eq} {finB:FiniteType B} (f:Ts->B->R)
+                          {rvf : forall b, RandomVariable dom borel_sa (fun ω => f ω b)}
+    : RandomVariable dom borel_sa (fun ω => finite_Rsum (f ω)).
+  Proof.
+    unfold finite_Rsum.
+    now apply list_sum_map_rv.
+  Qed.
+
+  Existing Instance st_eqdec.
+  Instance rv_qmin1 (Q : Ts -> Rfct (sigT M.(act))) (f:Ts -> state M)
+    (rvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
+    (rvf : RandomVariable dom (discrete_sa M.(state)) f) :
+    RandomVariable dom borel_sa 
+                   (fun ω : Ts => qlearn_Qmin (Q ω) (f ω)).
+  Proof.
+    cut (RandomVariable dom borel_sa
+           (fun ω : Ts => finite_Rsum (fun x => (qlearn_Qmin (Q ω) x) * (EventIndicator (classic_dec (event_st_eq f x)) ω)))).
+    - apply RandomVariable_proper; try reflexivity.
+      intros ?.
+      unfold EventIndicator.
+      unfold finite_Rsum.
+      rewrite list_sum_all_but_zero with (c:=f a).
+      + match_destr; try lra.
+        unfold event_st_eq in *; simpl in *; congruence.
+      + apply NoDup_nodup.
+      + apply nodup_In.
+        apply fin_finite.
+      + intros.
+        match_destr; try lra.
+        unfold event_st_eq in *; simpl in *.
+        congruence.
+    - apply rv_finite_Rsum; intros.
+      apply rvmult_rv.
+      + now apply qlearn_Qmin_all_rv.
+      + apply EventIndicator_rv.
+  Qed.
 
   Instance isfe_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
     (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
