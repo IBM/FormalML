@@ -5806,7 +5806,8 @@ Section MDP.
                 exists  (existT (act M) c x).
                 split; trivial.
     Qed.
-  
+
+  Existing Instance FiniteCondexp_rv'.
   Instance isfe_qmin_next (g : Ts -> Rfct (sigT M.(act))) t'
            (rvg : forall sa, RandomVariable dom borel_sa (fun ω : Ts => (g ω sa)))
            (isfe : forall sa, IsFiniteExpectation prts (fun ω : Ts => (g ω sa)))
@@ -5828,20 +5829,17 @@ Section MDP.
         apply rvminus_rv'; trivial.
         apply rvconst.
       + apply rvminus_rv'; try typeclasses eauto.
-        apply FiniteCondexp_rv'.
     - apply isfe_small_mult; try easy.
       + apply rvplus_rv.
         * apply rvplus_rv; try typeclasses eauto.
           apply rvminus_rv'; trivial.
           apply rvconst.
         * apply rvminus_rv'; try typeclasses eauto.
-          apply FiniteCondexp_rv'.
       + apply IsFiniteExpectation_plus.
         * apply rvplus_rv; try typeclasses eauto.
           apply rvminus_rv'; try easy.
           apply rvconst.
         * apply rvminus_rv'; try typeclasses eauto.
-          apply FiniteCondexp_rv'.
         * apply IsFiniteExpectation_plus; try typeclasses eauto.
           -- apply rvminus_rv'; try easy.
              apply rvconst.
@@ -5849,7 +5847,6 @@ Section MDP.
              ++ apply rvconst.
              ++ apply IsFiniteExpectation_const.
         * apply IsFiniteExpectation_minus'; try typeclasses eauto.
-          apply FiniteCondexp_rv'.
     Qed.
 
   Fixpoint qlearn_Qaux (t : nat) {struct t} : {f : (Ts -> Rfct (sigT M.(act))) |     (forall sa, RandomVariable dom borel_sa 
