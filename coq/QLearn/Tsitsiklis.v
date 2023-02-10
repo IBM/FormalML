@@ -5206,12 +5206,6 @@ Section MDP.
        apply qlearn_redux.Rmax_list_map_ge_Rmin.
      - apply max_sqr_bound.
    Qed.
-
-  Definition finite_fun_to_vector {A B} (finA : FiniteType A) (decA : EquivDec.EqDec A eq) (g : A -> B) :=
-    ivector_to_vector (qlearn_redux.finite_fun_to_ivector finA decA g).
-
-  Definition vector_to_finite_fun {A B} (finA : FiniteType A) (decA : EquivDec.EqDec A eq) (vec : vector B (length (nodup decA fin_elms))) : A -> B :=
-    qlearn_redux.ivector_to_finite_fun finA decA (vector_to_ivector vec).
  
   Instance finite_sigact : FiniteType( sigT M.(act)) := 
     fin_finite_dep_prod M.(fs) M.(fa).

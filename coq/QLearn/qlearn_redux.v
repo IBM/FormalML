@@ -2791,7 +2791,6 @@ Proof.
   Definition ivector_to_sa_fun_space (vec : ivector M.(state) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) fin_elms))) : sa_fun_space :=
     ivector_to_finite_fun _ _ vec.
 
-
   Lemma find_index_aux_S {A} (decA : EqDec A eq) (la : list A) (x: A) (n: nat) (x0 : nat):
     find_index_aux la x (S n) = Some (S x0) ->
     find_index_aux la x n = Some x0.
@@ -2949,7 +2948,7 @@ Proof.
     apply NoDup_nodup.
   Qed.
 
-  Lemma finite_fun_iso_f_b {A B} (finA : FiniteType A) (decA : EqDec A eq) :
+  Lemma finite_funi_iso_f_b {A B} (finA : FiniteType A) (decA : EqDec A eq) :
     forall (vec : ivector B (length (nodup decA fin_elms))), 
       finite_fun_to_ivector _ _ (ivector_to_finite_fun _ _ vec) = vec.
   Proof.
@@ -3044,7 +3043,7 @@ Proof.
      now invcs e.
    Qed.
 
-  Lemma finite_fun_iso_b_f {A B} (finA : FiniteType A) (decA : EqDec A eq) :
+  Lemma finite_funi_iso_b_f {A B} (finA : FiniteType A) (decA : EqDec A eq) :
     forall (g : A -> B),
       ivector_to_finite_fun _ _ (finite_fun_to_ivector _ _ g)  = g.
   Proof.
@@ -3055,26 +3054,177 @@ Proof.
     apply ivector_nth_finite_map.
   Qed.
 
-  Instance finite_fun_vec_encoder {A B} (finA : FiniteType A) (decA :EqDec A eq):
+  Instance finite_fun_ivec_encoder {A B} (finA : FiniteType A) (decA :EqDec A eq):
     Isomorphism (A -> B) (ivector B (length (nodup decA fin_elms)))
     := {
     iso_f := finite_fun_to_ivector finA decA;
     iso_b := ivector_to_finite_fun finA decA;
+    iso_f_b := finite_funi_iso_f_b finA decA ;
+    iso_b_f := finite_funi_iso_b_f finA decA }.
+
+    Definition vector_from_list {A} (l:list A) : vector A (length l) := exist _ l (eq_refl _).
+               
+
+  Definition finite_fun_to_vector {A B} (finA : FiniteType A) (decA : EqDec A eq) (g : A -> B) : vector B ((length (nodup decA fin_elms))) :=
+    vector_map g (vector_from_list (nodup decA fin_elms)).
+
+  Definition vector_to_finite_fun {A B} (finA : FiniteType A) (decA : EqDec A eq) (vec : vector B (length (nodup decA fin_elms))) : A -> B :=
+    (fun (a : A) => vector_nth (fin_finite_index _ a) (fin_finite_index_bound _ _ ) vec).
+
+  
+  Lemma vector_nth_ext'' {T} {n} (v1 v2 : vector T n) i1 i2 pf1 pf2 :
+    i1 = i2 -> v1 = v2 -> vector_nth i1 pf1 v1 = vector_nth i2 pf2 v2.
+  Proof.
+    intros.
+    subst.
+    apply vector_nth_ext.
+  Qed.
+
+  Lemma find_index_vector_nth {A} (decA : EqDec A eq) 
+        (l : list A) (i : nat) (pf : (i < length l)%nat):
+    NoDup l ->
+    FiniteType.find_index l
+        (vector_nth i pf (vector_from_list l)) = 
+      Some i.
+   Proof.
+     intro nodup.
+     apply find_index_correct_nodup; trivial.
+     now rewrite vector_nth_in.
+   Qed.
+
+  Lemma vector_map_nth_finite {A B} (finA : FiniteType A) (decA : EqDec A eq) (vec : vector B (length (nodup decA fin_elms))) :
+    vector_map
+      (fun a : A =>
+         vector_nth  (fin_finite_index finA a)
+                     (fin_finite_index_bound finA a) vec) (vector_from_list (nodup decA fin_elms)) = vec.
+  Proof.
+    apply vector_nth_eq; intros.
+    rewrite vector_nth_map.
+    apply vector_nth_ext''; try reflexivity.
+    unfold fin_finite_index.
+    unfold proj1_sig.
+    match_destr.
+    simpl in e.
+    rewrite find_index_vector_nth in e.    
+    now invcs e.
+    apply NoDup_nodup.
+  Qed.
+
+  Lemma finite_fun_iso_f_b {A B} (finA : FiniteType A) (decA : EqDec A eq) :
+    forall (vec : vector B (length (nodup decA fin_elms))), 
+      finite_fun_to_vector _ _ (vector_to_finite_fun _ _ vec) = vec.
+  Proof.
+    intros.
+    unfold vector_to_finite_fun, finite_fun_to_vector.
+    now apply vector_map_nth_finite.
+  Qed.
+  
+  Lemma vector_nth_finite_map_aux {A B} (la : list A) (decA : EqDec A eq) (g : A -> B) 
+        (x : A) (inx : In x la) :
+    NoDup la ->
+    let find_ind := (@find_index_complete A decA la x inx) in
+    vector_nth (proj1_sig find_ind)
+                (@find_index_bound A decA la x (proj1_sig find_ind) (proj2_sig find_ind))
+                (vector_map g (vector_from_list la)) = g x.
+   Proof.
+     intros nodup inla.
+     simpl.
+     induction la.
+     - tauto.
+     - destruct la.
+       + simpl.
+         destruct inx; [| tauto].
+         unfold proj1_sig.
+         unfold vector_from_list; simpl.
+         match_destr.
+         simpl.
+         rewrite vector_nth_map; simpl.
+         subst.
+         generalize (find_index_bound e0); simpl; intros.
+         destruct x0; [| lia].
+         now unfold vector_nth; simpl.
+       + simpl.
+         simpl in IHla.
+         unfold proj1_sig.
+         match_destr.
+         simpl.
+         destruct x0.
+         * generalize (find_index_0 _ _ _ _ e); intros; subst.
+           reflexivity.
+         * generalize e as e'; intros.
+           generalize (find_index_S decA (a0 :: la) a x); intros.
+           cut_to H.
+           specialize (IHla H).
+           cut_to IHla.
+           -- unfold proj1_sig in IHla.
+              match_destr_in IHla.
+              generalize (find_index_S_x decA a x (a0 :: la) x0 x1 e' e0); intros.
+              subst.
+              unfold vector_from_list.
+              rewrite <- IHla.
+              repeat rewrite vector_nth_map.
+              f_equal.
+              generalize (vector_nth_cons_S a (exist _ (a0::la) (eq_refl _)) x1 (find_index_bound e'))
+              ; intros HH.
+              etransitivity; [| etransitivity]; [| apply HH |]
+              ; apply vector_nth_ext.
+           -- now apply NoDup_cons_iff in nodup.
+           -- exists x0.
+              apply e.
+        Qed.
+
+  Lemma vector_nth_finite_map {A B} (finA : FiniteType A) (decA : EqDec A eq) (g : A -> B) :
+    forall (x : A),
+      vector_nth (fin_finite_index finA x) (fin_finite_index_bound finA x)
+                  (vector_map g (vector_from_list (nodup decA fin_elms))) = g x.
+   Proof.
+     intros.
+     generalize (vector_nth_finite_map_aux (nodup decA fin_elms) decA g x); intros.
+     assert (inx: In x (nodup decA fin_elms)).
+     {
+       apply nodup_In.
+       apply fin_finite.
+     }
+     specialize (H inx).
+     cut_to H; try apply NoDup_nodup.
+     simpl in H.
+     rewrite <- H.
+     apply vector_nth_ext''; trivial.
+     unfold fin_finite_index, proj1_sig.
+     clear H.
+     match_destr.
+     match_destr.
+     unfold fin_finite_nodup in e.
+     simpl in e.
+     rewrite e0 in e.
+     now invcs e.
+   Qed.
+
+  Lemma finite_fun_iso_b_f {A B} (finA : FiniteType A) (decA : EqDec A eq) :
+    forall (g : A -> B),
+      vector_to_finite_fun _ _ (finite_fun_to_vector _ _ g)  = g.
+  Proof.
+    intros.
+    unfold vector_to_finite_fun, finite_fun_to_vector.
+    apply functional_extensionality.
+    intros.
+    apply vector_nth_finite_map.
+  Qed.
+
+  
+  Instance finite_fun_vec_encoder {A B} (finA : FiniteType A) (decA :EqDec A eq):
+    Isomorphism (A -> B) (vector B (length (nodup decA fin_elms)))
+    := {
+    iso_f := finite_fun_to_vector finA decA;
+    iso_b := vector_to_finite_fun finA decA;
     iso_f_b := finite_fun_iso_f_b finA decA ;
     iso_b_f := finite_fun_iso_b_f finA decA }.
-
-  Instance vec_finite_fun_encoder {A B} (finA : FiniteType A) (decA :EqDec A eq):
-    Isomorphism  (ivector B (length (nodup decA fin_elms))) (A -> B)
-    := {
-    iso_b := finite_fun_to_ivector finA decA;
-    iso_f := ivector_to_finite_fun finA decA;
-    iso_b_f := finite_fun_iso_f_b finA decA ;
-    iso_f_b := finite_fun_iso_b_f finA decA }.
 
   Instance vec_finite_fun_encoder_alt :
     Isomorphism (ivector (M.(state)) (length (nodup (sigT_eqdec  M.(st_eqdec) act_eqdec) fin_elms))) ((sigT (M.(act))) -> M.(state)).
   Proof.
-    apply vec_finite_fun_encoder.
+    apply Isomorphism_symm.
+    apply finite_fun_ivec_encoder.
   Defined.
 
   Definition finite_fun_sa : SigmaAlgebra sa_fun_space :=
@@ -3085,7 +3235,6 @@ Proof.
              (discrete_sa (state M))))).
 
   Definition finite_fun_ps : ProbSpace finite_fun_sa := iso_ps vec_sa_space_ps vec_finite_fun_encoder_alt.
-  
   Existing Instance finite_fun_ps.
 
 End stuff.
