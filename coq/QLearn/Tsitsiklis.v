@@ -5231,6 +5231,7 @@ Section MDP.
           (α : nat -> Ts -> Rfct (sigT M.(act)))
           (rvα : forall t sa,
               RandomVariable dom borel_sa (fun ω => α t ω sa))
+          (alpha_bound : forall t ω sa, 0 <= α t ω sa <= 1)
           {F : nat -> SigmaAlgebra Ts}
           (isfilt : IsFiltration F) 
           (filt_sub : forall k, sa_sub (F k) dom) 
@@ -5615,7 +5616,6 @@ Section MDP.
         rewrite (FiniteExpectation_simple _ _).
         apply SimpleExpectation_compose_Finite_type.
       }
-
       apply list_sum_rv; intros.
       apply rvmult_rv.
       + apply rv_qmin1.
@@ -5721,8 +5721,46 @@ Section MDP.
         * typeclasses eauto.
         * apply rvopp_rv'.
           apply FiniteCondexp_rv'.
-    - apply isfe_small_mult.
-
+    - apply isfe_small_mult; try easy.
+      + unfold Rminus.
+        apply rvplus_rv.
+        * apply rvplus_rv.
+          -- typeclasses eauto.
+          -- apply rvplus_rv; trivial.
+             apply rvconst.
+        * apply rvplus_rv.
+          apply rv_qmin1; try easy.
+          apply rvopp_rv'.
+          apply FiniteCondexp_rv'.
+      + apply IsFiniteExpectation_plus.
+        * unfold Rminus.
+          apply rvplus_rv.
+          -- typeclasses eauto.
+          -- apply rvplus_rv; try easy.
+             apply rvconst.
+        * unfold Rminus.
+          apply rvplus_rv; try typeclasses eauto.
+          apply rvopp_rv'.
+          apply FiniteCondexp_rv'.
+        * unfold Rminus.
+          apply IsFiniteExpectation_plus.
+          -- typeclasses eauto.
+          -- apply rvplus_rv; try easy.
+             apply rvconst.
+          -- apply IsFiniteExpectation_plus; try typeclasses eauto.
+             ++ admit.
+             ++ generalize (IsFiniteExpectation_opp prts (fun ω => g ω sa)).
+                apply IsFiniteExpectation_proper.
+                intros ?.
+                rv_unfold; lra.
+         -- apply IsFiniteExpectation_plus; try typeclasses eauto.
+            apply rvconst.
+            apply IsFiniteExpectation_const.
+        * unfold Rminus.
+          apply IsFiniteExpectation_plus; try typeclasses eauto.
+          -- apply rvopp_rv'.
+             apply FiniteCondexp_rv'.
+          -- admit.
   Admitted.
 
   Fixpoint qlearn_Qaux (t : nat) {struct t} : {f : (Ts -> Rfct (sigT M.(act))) |     (forall sa, RandomVariable dom borel_sa 
