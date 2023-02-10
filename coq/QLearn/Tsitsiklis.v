@@ -5255,6 +5255,51 @@ Section MDP.
       apply act_list_not_nil.      
   Qed.
 
+  
+  Instance rvopp_rv' (rv_X : Ts -> R) 
+           {rv : RandomVariable dom borel_sa rv_X} :
+    RandomVariable dom borel_sa (fun ω => - rv_X ω).
+  Proof.
+    generalize (rvopp_rv dom rv_X).
+    apply RandomVariable_proper; try easy.
+    intros ?; unfold rvopp, rvscale; lra.
+  Qed.
+
+  Instance rvminus_rv'
+           (rv_X1 rv_X2 : Ts -> R)
+           {rv1 : RandomVariable dom borel_sa rv_X1}
+           {rv2 : RandomVariable dom borel_sa rv_X2}  :
+    RandomVariable dom borel_sa (fun ω => (rv_X1 ω) - (rv_X2 ω)).
+  Proof.
+    generalize (rvminus_rv dom rv_X1 rv_X2).
+    apply RandomVariable_proper; try easy.
+    intros ?; rv_unfold; lra.
+  Qed.
+
+  Instance IsFiniteExpectation_minus'
+         (rv_X1 rv_X2 : Ts -> R)
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2} 
+         {isfe1:IsFiniteExpectation prts rv_X1}
+         {isfe2:IsFiniteExpectation prts rv_X2} :
+    IsFiniteExpectation prts (fun ω => (rv_X1 ω) - (rv_X2 ω)).
+  Proof.
+    generalize (IsFiniteExpectation_minus prts rv_X1 rv_X2).
+    apply IsFiniteExpectation_proper; try easy.
+    intros ?; rv_unfold; lra.
+  Qed.
+
+  Instance IsFiniteExpectation_opp' rv_X 
+         {isfe:IsFiniteExpectation prts rv_X} :
+    IsFiniteExpectation prts (fun ω => - (rv_X ω)).
+  Proof.
+    generalize (IsFiniteExpectation_opp prts rv_X).
+    apply IsFiniteExpectation_proper; try easy.
+    intros ?; rv_unfold; lra.
+  Qed.
+
+  Existing Instance FiniteCondexp_rv'.    
+
   Context {finA : FiniteType (sigT M.(act))}.
   Definition Rmax_all : Rfct (sigT M.(act)) -> R := let (ls,_) := finA in fun (f:Rfct (sigT M.(act))) => Max_{ls}(fun s => (f s)).
   Definition Rmin_all : Rfct (sigT M.(act)) -> R := let (ls,_) := finA in fun (f:Rfct (sigT M.(act))) => Min_{ls}(fun s => (f s)).
@@ -5548,15 +5593,12 @@ Section MDP.
     apply rvconst.
   Qed.
 
-
   Instance rv_qmin0 
     (sa : (sigT M.(act))) :
     RandomVariable dom borel_sa 
                    (fun ω : Ts => qlearn_Qmin Q0 (next_state sa ω)).
   Proof.
-    apply rv_qmin1; intros.
-    apply rvconst.
-    apply rv_ns.
+    typeclasses eauto.
   Qed.
 
   Instance isfe0
@@ -5570,9 +5612,7 @@ Section MDP.
     (sa : (sigT M.(act))) :
     IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin Q0 (next_state sa ω)).
   Proof.
-    apply isfe_qmin1; intros.
-    - apply rvconst.
-    - apply IsFiniteExpectation_const.
+    typeclasses eauto.
   Qed.
 
   Program Instance frf_Qmin (g : Rfct (sigT M.(act))) (f : Ts -> M.(state))
@@ -5599,75 +5639,21 @@ Section MDP.
     forall sa, RandomVariable dom borel_sa (fun ω : Ts => qlearn_XF (g ω) sa).
   Proof.
     intros.
-    apply rvplus_rv.
-    - apply rvconst.
-    - apply rvscale_rv.
-      assert (rv2 : forall a, RandomVariable dom borel_sa (fun v : Ts => qlearn_Qmin (g a) (next_state sa v))).
-      {
-        intros.
-        apply rv_qmin1.
-        - intros.
-          apply rvconst.
-        - typeclasses eauto.
-      } 
-      eapply RandomVariable_proper; [reflexivity | reflexivity | ..].
-      {
-        intros ?.
-        rewrite (FiniteExpectation_simple _ _).
-        apply SimpleExpectation_compose_Finite_type.
-      }
-      apply list_sum_rv; intros.
-      apply rvmult_rv.
-      + apply rv_qmin1.
-        * typeclasses eauto.
-        * intros.
-          apply rvconst.
-      + apply rvconst.
+    apply rvplus_rv; try typeclasses eauto.
+    apply rvscale_rv.
+    assert (rv2 : forall a, RandomVariable dom borel_sa (fun v : Ts => qlearn_Qmin (g a) (next_state sa v))).
+    {
+      intros.
+      typeclasses eauto.
+    } 
+    eapply RandomVariable_proper; [reflexivity | reflexivity | ..].
+    {
+      intros ?.
+      rewrite (FiniteExpectation_simple _ _).
+      apply SimpleExpectation_compose_Finite_type.
+    }
+    apply list_sum_rv; intros; try typeclasses eauto.
   Qed.
-  
-  Instance rvopp_rv' (rv_X : Ts -> R) 
-           {rv : RandomVariable dom borel_sa rv_X} :
-    RandomVariable dom borel_sa (fun ω => - rv_X ω).
-  Proof.
-    generalize (rvopp_rv dom rv_X).
-    apply RandomVariable_proper; try easy.
-    intros ?; unfold rvopp, rvscale; lra.
-  Qed.
-
-  Instance rvminus_rv'
-           (rv_X1 rv_X2 : Ts -> R)
-           {rv1 : RandomVariable dom borel_sa rv_X1}
-           {rv2 : RandomVariable dom borel_sa rv_X2}  :
-    RandomVariable dom borel_sa (fun ω => (rv_X1 ω) - (rv_X2 ω)).
-  Proof.
-    generalize (rvminus_rv dom rv_X1 rv_X2).
-    apply RandomVariable_proper; try easy.
-    intros ?; rv_unfold; lra.
-  Qed.
-
-  Instance IsFiniteExpectation_minus'
-         (rv_X1 rv_X2 : Ts -> R)
-         {rv1 : RandomVariable dom borel_sa rv_X1}
-         {rv2 : RandomVariable dom borel_sa rv_X2} 
-         {isfe1:IsFiniteExpectation prts rv_X1}
-         {isfe2:IsFiniteExpectation prts rv_X2} :
-    IsFiniteExpectation prts (fun ω => (rv_X1 ω) - (rv_X2 ω)).
-  Proof.
-    generalize (IsFiniteExpectation_minus prts rv_X1 rv_X2).
-    apply IsFiniteExpectation_proper; try easy.
-    intros ?; rv_unfold; lra.
-  Qed.
-
-  Instance IsFiniteExpectation_opp' rv_X 
-         {isfe:IsFiniteExpectation prts rv_X} :
-    IsFiniteExpectation prts (fun ω => - (rv_X ω)).
-  Proof.
-    generalize (IsFiniteExpectation_opp prts rv_X).
-    apply IsFiniteExpectation_proper; try easy.
-    intros ?; rv_unfold; lra.
-  Qed.
-
-    
 
   Instance rv_qmin_next (g : Ts -> Rfct (sigT M.(act))) t'
     (rvg : forall sa, RandomVariable dom borel_sa (fun ω : Ts => g ω sa))
@@ -5682,20 +5668,7 @@ Section MDP.
                         prts (filt_sub t')
                         (fun ω => qlearn_Qmin (g ω) (next_state sa ω)) ω))).
   Proof.
-    apply rvplus_rv; trivial.
-    apply rvmult_rv; trivial.
-    apply rvplus_rv.
-    - unfold Rminus.
-      apply rvplus_rv.
-      + apply rvplus_rv.
-        * typeclasses eauto.
-        * now apply rvopp_rv'.
-      + apply rvplus_rv; trivial.
-        * apply rvconst.
-    - apply rvplus_rv.
-      + typeclasses eauto.
-      + apply rvopp_rv'.
-        apply FiniteCondexp_rv'.
+    typeclasses eauto.
   Qed.
 
   Instance isfe_small_mult (f g: Ts -> R)
@@ -5734,10 +5707,7 @@ Section MDP.
     assert (rv2 : forall a, RandomVariable dom borel_sa (fun v : Ts => qlearn_Qmin (g a) (next_state sa v))).
     {
       intros.
-      apply rv_qmin1.
-      - intros.
-        apply rvconst.
-      - typeclasses eauto.
+      typeclasses eauto.
     } 
     apply IsFiniteExpectation_plus.
     - apply rvconst.
@@ -5748,13 +5718,7 @@ Section MDP.
         rewrite (FiniteExpectation_simple _ _).
         apply SimpleExpectation_compose_Finite_type.
       }
-      apply list_sum_rv; intros.
-      apply rvmult_rv.
-      + apply rv_qmin1.
-        * typeclasses eauto.
-        * intros.
-          apply rvconst.
-      + apply rvconst.
+      apply list_sum_rv; intros; try typeclasses eauto.
     - apply IsFiniteExpectation_const.
     - apply IsFiniteExpectation_scale.
       eapply IsFiniteExpectation_proper.
@@ -5763,23 +5727,34 @@ Section MDP.
         rewrite (FiniteExpectation_simple _ _).
         apply SimpleExpectation_compose_Finite_type.
       }
-      apply IsFiniteExpectation_list_sum.
-      + intros.
-        apply rvmult_rv.
-        * apply rv_qmin1; try easy.
-          apply rvconst.
-        * apply rvconst.
-      + intros.
-        eapply IsFiniteExpectation_proper.
-        intros ?.
-        apply Rmult_comm.
-        apply IsFiniteExpectation_scale.
-        apply IsFiniteExpectation_bounded with
-            (rv_X1 := fun ω => Rmin_all (g ω)) (rv_X3 := fun ω => Rmax_all (g ω)); try typeclasses eauto.
-        * intros ?.
-          unfold Rmin_all, qlearn_Qmin.
-          match_destr.
-          apply Rge_le, Rmin_list_incl.
+      apply IsFiniteExpectation_list_sum; try typeclasses eauto.
+      intros.
+      eapply IsFiniteExpectation_proper.
+      intros ?.
+      apply Rmult_comm.
+      apply IsFiniteExpectation_scale.
+      apply IsFiniteExpectation_bounded with
+          (rv_X1 := fun ω => Rmin_all (g ω)) (rv_X3 := fun ω => Rmax_all (g ω)); try typeclasses eauto.
+      + intros ?.
+        unfold Rmin_all, qlearn_Qmin.
+        match_destr.
+        apply Rge_le, Rmin_list_incl.
+        * rewrite map_not_nil.
+           apply act_list_not_nil.
+        * intros ??.
+           apply in_map_iff in H.
+           destruct H as [? [? ?]].
+           subst.
+           apply in_map_iff.
+           exists  (existT (act M) c x).
+           split; trivial.
+      + intros ?.
+        unfold Rmax_all, qlearn_Qmin.
+        apply Rle_trans with
+            (r2 :=  Max_{ act_list c}(fun a0 : act M c => g a (existT (act M) c a0))).
+        * apply Rge_le, qlearn_redux.Rmax_list_map_ge_Rmin.
+        * match_destr.
+          apply Rmax_list_incl.
           -- rewrite map_not_nil.
              apply act_list_not_nil.
           -- intros ??.
@@ -5789,25 +5764,7 @@ Section MDP.
              apply in_map_iff.
              exists  (existT (act M) c x).
              split; trivial.
-        * intros ?.
-          unfold Rmax_all, qlearn_Qmin.
-          apply Rle_trans with
-              (r2 :=  Max_{ act_list c}(fun a0 : act M c => g a (existT (act M) c a0))).
-          -- apply Rge_le, qlearn_redux.Rmax_list_map_ge_Rmin.
-          -- match_destr.
-             apply Rmax_list_incl.
-             ++ rewrite map_not_nil.
-                apply act_list_not_nil.
-             ++ intros ??.
-                apply in_map_iff in H.
-                destruct H as [? [? ?]].
-                subst.
-                apply in_map_iff.
-                exists  (existT (act M) c x).
-                split; trivial.
-    Qed.
-
-  Existing Instance FiniteCondexp_rv'.
+  Qed.
 
   Instance isfe_qmin_next (g : Ts -> Rfct (sigT M.(act))) t'
            (rvg : forall sa, RandomVariable dom borel_sa (fun ω : Ts => (g ω sa)))
@@ -5824,14 +5781,9 @@ Section MDP.
                         (fun ω => qlearn_Qmin (g ω) (next_state sa ω)) ω))).
   Proof.
     apply IsFiniteExpectation_plus; trivial.
-    - apply rvmult_rv; try easy.
-      apply rvplus_rv.
-      + apply rvplus_rv; try typeclasses eauto.
-      + apply rvminus_rv'; try typeclasses eauto.
+    - apply rvmult_rv; try typeclasses eauto.
     - apply isfe_small_mult; try easy.
-      + apply rvplus_rv.
-        * apply rvplus_rv; try typeclasses eauto.
-        * apply rvminus_rv'; try typeclasses eauto.
+      + apply rvplus_rv; try typeclasses eauto.
       + apply IsFiniteExpectation_plus; try typeclasses eauto.
         * apply IsFiniteExpectation_plus; try typeclasses eauto.
           apply IsFiniteExpectation_minus'; try typeclasses eauto.
