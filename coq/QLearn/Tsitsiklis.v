@@ -5835,18 +5835,16 @@ Section MDP.
           apply rvminus_rv'; trivial.
           apply rvconst.
         * apply rvminus_rv'; try typeclasses eauto.
-      + apply IsFiniteExpectation_plus.
+      + apply IsFiniteExpectation_plus; try typeclasses eauto.
         * apply rvplus_rv; try typeclasses eauto.
           apply rvminus_rv'; try easy.
           apply rvconst.
-        * apply rvminus_rv'; try typeclasses eauto.
         * apply IsFiniteExpectation_plus; try typeclasses eauto.
           -- apply rvminus_rv'; try easy.
              apply rvconst.
           -- apply IsFiniteExpectation_minus'; try typeclasses eauto.
              ++ apply rvconst.
              ++ apply IsFiniteExpectation_const.
-        * typeclasses eauto.
     Qed.
 
   Fixpoint qlearn_Qaux (t : nat) {struct t} : {f : (Ts -> Rfct (sigT M.(act))) |     (forall sa, RandomVariable dom borel_sa 
