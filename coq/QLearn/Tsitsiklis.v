@@ -5846,7 +5846,7 @@ Section MDP.
           -- apply IsFiniteExpectation_minus'; try typeclasses eauto.
              ++ apply rvconst.
              ++ apply IsFiniteExpectation_const.
-        * apply IsFiniteExpectation_minus'; try typeclasses eauto.
+        * typeclasses eauto.
     Qed.
 
   Fixpoint qlearn_Qaux (t : nat) {struct t} : {f : (Ts -> Rfct (sigT M.(act))) |     (forall sa, RandomVariable dom borel_sa 
