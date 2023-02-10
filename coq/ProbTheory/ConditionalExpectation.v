@@ -7061,7 +7061,6 @@ Section fin_cond_exp.
           reflexivity.
         * apply FiniteCondexp_isfe.
       + apply rvpower_rv; try typeclasses eauto.
-        apply rvconst.
       + typeclasses eauto.
     - intros.
       now apply convex_power_abs.

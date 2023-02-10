@@ -6325,10 +6325,6 @@ Qed.
           { Unshelve.
               - shelve.
               - intros.
-                generalize (H0 n); apply RandomVariable_proper; try reflexivity.
-                rv_unfold; intros ?.
-                unfold Rdiv; ring.
-              - intros.
                 apply IsFiniteExpectation_proper with
                     (x := rvscale (Rsqr (/ (INR (S k))))
                                   (rvsqr (rvminus (Y k) (const (FiniteExpectation Prts (Y k)))))).

@@ -123,6 +123,11 @@ Section Const.
       apply sa_none.
   Qed.
 
+  Global Instance rvconst' c : RandomVariable dom cod (fun _ => c).
+  Proof.
+    apply rvconst.
+  Qed.
+
   Lemma rv_preimage_const c A :
     event_equiv (rv_preimage (const c) A) Ω
     \/ event_equiv (rv_preimage (const c) A) event_none.
