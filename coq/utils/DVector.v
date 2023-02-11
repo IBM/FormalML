@@ -584,12 +584,23 @@ Proof.
   apply vector_nth_ext.
 Qed.
 
+  
+  Lemma vector_nth_ext'' {T} {n} (v1 v2 : vector T n) i1 i2 pf1 pf2 :
+    i1 = i2 -> v1 = v2 -> vector_nth i1 pf1 v1 = vector_nth i2 pf2 v2.
+  Proof.
+    intros.
+    subst.
+    apply vector_nth_ext.
+  Qed.
+
 Lemma vector_map_const {A B} {n} (c:A) (f:A->B) : vector_map f (vector_const c n) = vector_const (f c) n.
 Proof.
   apply vector_nth_eq; intros.
   rewrite vector_nth_map.
   now repeat rewrite vector_nth_const.
 Qed.
+
+Definition vector_from_list {A} (l:list A) : vector A (length l) := exist _ l (eq_refl _).
 
 Definition vectorize_relation {T:Type} (R:T->T->Prop) (n:nat) : vector T n -> vector T n -> Prop
   := fun v1 v2 => forall i pf, R (vector_nth i pf v1) (vector_nth i pf v2).
