@@ -3071,15 +3071,6 @@ Proof.
   Definition vector_to_finite_fun {A B} (finA : FiniteType A) (decA : EqDec A eq) (vec : vector B (length (nodup decA fin_elms))) : A -> B :=
     (fun (a : A) => vector_nth (fin_finite_index _ a) (fin_finite_index_bound _ _ ) vec).
 
-  
-  Lemma vector_nth_ext'' {T} {n} (v1 v2 : vector T n) i1 i2 pf1 pf2 :
-    i1 = i2 -> v1 = v2 -> vector_nth i1 pf1 v1 = vector_nth i2 pf2 v2.
-  Proof.
-    intros.
-    subst.
-    apply vector_nth_ext.
-  Qed.
-
   Lemma find_index_vector_nth {A} (decA : EqDec A eq) 
         (l : list A) (i : nat) (pf : (i < length l)%nat):
     NoDup l ->
