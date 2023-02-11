@@ -5900,7 +5900,6 @@ Section MDP.
     pose (N := length (nodup EqDecsigT fin_elms)).
     assert (rvXF : RandomVariable (Rvector_borel_sa N) (Rvector_borel_sa N) XFvec).
     {
-      
       admit.
     }
     generalize (Tsitsiklis_1_3 β Xvec wvec αvec XFvec isfilt filt_sub); intros.
@@ -5910,14 +5909,31 @@ Section MDP.
     }
     assert ( RandomVariable (F 0) (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) (Xvec 0%nat)).
     {
+      apply rv_vecrvnth.
+      revert rvX0.
       admit.
     }
     assert (0 < length (nodup EqDecsigT fin_elms))%nat.
     {
+      assert (NonEmpty (sigT M.(act))).
+      {
+        unfold NonEmpty.
+        generalize (M.(ne)); intros.
+        red in X0.
+        generalize (M.(na) X0); intros.
+        red in X1.
+        exact (existT _ X0 X1).
+      }
+      red in X0.
       admit.
     }
     assert (IsAdapted (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) wvec (fun k : nat => F (S k))).
     {
+      unfold IsAdapted.
+      intros.
+      apply rv_vecrvnth; intros.
+      revert adapt_w.
+      unfold IsAdapted.
       admit.
     }
     assert (RandomVariable (Rvector_borel_sa (length (nodup EqDecsigT fin_elms)))
