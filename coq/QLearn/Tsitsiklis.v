@@ -4426,15 +4426,16 @@ Qed.
       now apply Tsitsiklis3_beta_0 with (w0 := w) (β0 := β) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
   Qed.
 
-    Theorem Tsitsiklis_1_3 {n} (β : R) (X w α : nat -> Ts -> vector R (S n)) 
-        (XF : vector R (S n) -> vector R (S n))
+    Theorem Tsitsiklis_1_3 {n} (β : R) (X w α : nat -> Ts -> vector R n) 
+        (XF : vector R n -> vector R n)
         {F : nat -> SigmaAlgebra Ts}
         (isfilt : IsFiltration F) 
         (filt_sub : forall k, sa_sub (F k) dom) 
-        (adapt_alpha : IsAdapted (Rvector_borel_sa (S n)) α F)
-        {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S n)) (X 0%nat)}
-        (adapt_w : IsAdapted  (Rvector_borel_sa (S n)) w (fun k => F (S k)))
-        {rvXF : RandomVariable (Rvector_borel_sa (S n)) (Rvector_borel_sa (S n)) XF}
+        (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
+        {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
+        (npos : (0 < n)%nat)
+        (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
+        {rvXF : RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) XF}
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
         {iscond : forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (w k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k)))} :
 
@@ -4464,6 +4465,7 @@ Qed.
     almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
   Proof.
     intros.
+    destruct n; try lia.
     generalize (Tsitsiklis1 β X w α XF isfilt filt_sub 
                             adapt_alpha); intros Tsit1.
     specialize (Tsit1 adapt_w _ _ iscond H H0 H1 H2 H3 H4).
@@ -5901,8 +5903,68 @@ Section MDP.
       
       admit.
     }
-(*    generalize (Tsitsiklis_1_3 β Xvec wvec). *) 
-
+    generalize (Tsitsiklis_1_3 β Xvec wvec αvec XFvec isfilt filt_sub); intros.
+    assert (IsAdapted (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) αvec F).
+    {
+      admit.
+    }
+    assert ( RandomVariable (F 0) (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) (Xvec 0%nat)).
+    {
+      admit.
+    }
+    assert (0 < length (nodup EqDecsigT fin_elms))%nat.
+    {
+      admit.
+    }
+    assert (IsAdapted (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) wvec (fun k : nat => F (S k))).
+    {
+      admit.
+    }
+    assert (RandomVariable (Rvector_borel_sa (length (nodup EqDecsigT fin_elms)))
+                           (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) XFvec ).
+    {
+      admit.
+    }
+    assert (forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (wvec k ω))).
+    {
+      admit.
+    }
+    assert (forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (wvec k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (wvec k)))).
+    {
+      admit.
+    }
+    specialize (H6 _ _ H9 _ _ _ H13).
+    cut_to H6; trivial.
+    - revert H6.
+      apply almost_impl, all_almost; intros ??.
+      revert H6.
+      apply is_lim_seq_ext.
+      intros.
+      unfold rvmaxabs, Xvec.
+      admit.
+    - intros; clear H6.
+      unfold αvec.
+      revert alpha_bound.
+      admit.
+    - intros; clear H6.
+      revert H.
+      admit.
+    - destruct H0 as [C ?].
+      exists C.
+      revert H0.
+      admit.
+    - revert H1.
+      admit.
+    - destruct H2 as [A [B [? [? ?]]]].
+      exists A; exists B.
+      split; trivial.
+      split; trivial.
+      revert H15.
+      admit.
+    - revert H4.
+      admit.
+    - revert H5.
+      admit.
     Admitted.
 
    Theorem qlearn 
