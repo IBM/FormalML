@@ -5253,26 +5253,6 @@ Section MDP.
       apply act_list_not_nil.      
   Qed.
 
-  
-  Instance rvopp_rv' (rv_X : Ts -> R) 
-           {rv : RandomVariable dom borel_sa rv_X} :
-    RandomVariable dom borel_sa (fun ω => - rv_X ω).
-  Proof.
-    generalize (rvopp_rv dom rv_X).
-    apply RandomVariable_proper; try easy.
-    intros ?; unfold rvopp, rvscale; lra.
-  Qed.
-
-  Instance rvminus_rv'
-           (rv_X1 rv_X2 : Ts -> R)
-           {rv1 : RandomVariable dom borel_sa rv_X1}
-           {rv2 : RandomVariable dom borel_sa rv_X2}  :
-    RandomVariable dom borel_sa (fun ω => (rv_X1 ω) - (rv_X2 ω)).
-  Proof.
-    generalize (rvminus_rv dom rv_X1 rv_X2).
-    apply RandomVariable_proper; try easy.
-    intros ?; rv_unfold; lra.
-  Qed.
 
   Instance IsFiniteExpectation_minus'
          (rv_X1 rv_X2 : Ts -> R)
@@ -5847,17 +5827,22 @@ Section MDP.
                         (fun ω => qlearn_Qmin (Q t ω) (next_state sa ω)) ω).
 
 (*
-  Definition finite_fun_to_vector {A B} (finA : FiniteType A) (decA : EqDec A eq) (g : A -> B) :=
-    vector_map g (vector_from_list (nodup decA fin_elms)).
-*)
-
   Existing Instance qlearn_redux.finite_fun_vec_encoder.
+ *)
   
-(*
-  Definition rfct_borel_sa {A} (finA:FiniteType A) : SigmaAlgebra (Rfct A)
-    := 
-*)
+  Lemma finite_fun_vector_iso_nth (x : Rfct (sigT M.(act))) (P : R -> Prop) :
+    let iso_f := iso_f
+                   (Isomorphism := qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)) in
+    (forall sa, P (x sa)) <-> (forall i pf, P (vector_nth i pf (iso_f x))).
+  Proof.
+  Admitted.
 
+   Lemma finite_fun_vector_iso_nth_fun {A} (x : A -> Rfct (sigT M.(act))) (P : (A -> R) -> Prop) :
+    let iso_f := iso_f
+                   (Isomorphism := qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)) in
+    (forall sa, P (fun A => x A sa)) <-> (forall i pf, P (fun A => vector_nth i pf (iso_f (x A)))).
+  Proof.
+    Admitted.
       
     Theorem Tsitsiklis_1_3_fintype  (X w  : nat -> Ts -> Rfct (sigT M.(act)))
        (XF : Rfct (sigT M.(act)) -> Rfct (sigT M.(act)))
@@ -5905,13 +5890,23 @@ Section MDP.
     generalize (Tsitsiklis_1_3 β Xvec wvec αvec XFvec isfilt filt_sub); intros.
     assert (IsAdapted (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) αvec F).
     {
-      admit.
+      unfold IsAdapted.
+      intros.
+      apply rv_vecrvnth; intros.
+      assert (forall sa, RandomVariable (F n) borel_sa (fun ω => α n ω sa)).
+      {
+        intros.
+        apply adapt_alpha.
+      }
+      generalize (finite_fun_vector_iso_nth_fun (α n)); intros.
+      rewrite H8 in H7.
+      apply H7.
     }
     assert ( RandomVariable (F 0) (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) (Xvec 0%nat)).
     {
       apply rv_vecrvnth.
-      revert rvX0.
-      admit.
+      rewrite finite_fun_vector_iso_nth_fun in rvX0.
+      apply rvX0.
     }
     assert (0 < length (nodup EqDecsigT fin_elms))%nat.
     {
@@ -5932,39 +5927,59 @@ Section MDP.
       unfold IsAdapted.
       intros.
       apply rv_vecrvnth; intros.
-      revert adapt_w.
-      unfold IsAdapted.
-      admit.
-    }
-    assert (RandomVariable (Rvector_borel_sa (length (nodup EqDecsigT fin_elms)))
-                           (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) XFvec ).
-    {
-      admit.
+      assert (forall sa, RandomVariable (F (S n)) borel_sa (fun ω => w n ω sa)).
+      {
+        intros.
+        apply adapt_w.
+      }
+      rewrite finite_fun_vector_iso_nth_fun in H10.
+      apply H10.
     }
     assert (forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (wvec k ω))).
     {
-      admit.
+      intros k.
+      generalize (rvw k); intros rvw1.
+      rewrite finite_fun_vector_iso_nth_fun in rvw1.
+      apply rvw1.
     }
     assert (forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (wvec k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (wvec k)))).
     {
+      intros k.
+      specialize (iscond k).
+      unfold vecrvnth.
+      clear H0 H1 H2 H6.
+      generalize (finite_fun_vector_iso_nth_fun (w k)); intros.
       admit.
     }
-    specialize (H6 _ _ H9 _ _ _ H13).
+    specialize (H6 _ _ H9 _ _ _ H12).
     cut_to H6; trivial.
     - revert H6.
       apply almost_impl, all_almost; intros ??.
       revert H6.
       apply is_lim_seq_ext.
       intros.
-      unfold rvmaxabs, Xvec.
+      unfold rvmaxabs.
       admit.
-    - intros; clear H6.
-      unfold αvec.
-      revert alpha_bound.
-      admit.
-    - intros; clear H6.
-      revert H.
-      admit.
+    - intros k ω.
+      generalize  (alpha_bound k ω); intros ab.
+      generalize (finite_fun_vector_iso_nth (α k ω) (fun r => 0 <= r <= 1)); intros.
+      now rewrite H13 in ab.
+    - assert (forall ω i pf,
+                 is_lim_seq (sum_n (fun k : nat => vector_nth i pf (αvec k ω))) p_infty).
+      {
+        intros ω.
+        assert (forall sa, is_lim_seq (sum_n (fun k : nat => α k ω sa)) p_infty).
+        {
+          intros.
+          apply H.
+        }
+        generalize (finite_fun_vector_iso_nth_fun (fun k => α k ω) 
+                                                  (fun afun => is_lim_seq (sum_n afun) p_infty)); intros.
+        rewrite H14 in H13.
+        apply H13.
+      }
+      intros.
+      apply H13.
     - destruct H0 as [C ?].
       exists C.
       revert H0.
@@ -5975,7 +5990,7 @@ Section MDP.
       exists A; exists B.
       split; trivial.
       split; trivial.
-      revert H15.
+      revert H14.
       admit.
     - revert H4.
       admit.
@@ -6013,7 +6028,8 @@ Section MDP.
      intros.
      assert (forall k sa, IsFiniteExpectation prts (fun ω : Ts => w k ω sa)).
      {
-       admit.
+       intros.
+       typeclasses eauto.
      }
      eapply Tsitsiklis_1_3_fintype  with (w := w); try easy.
      - intros.
@@ -6024,7 +6040,9 @@ Section MDP.
        + apply (RandomVariable_sa_sub (isfilt n)).
          generalize (rv_qmin1 (qlearn_Q n) (next_state sa)); intros.
          admit.
-       + admit.  
+       + apply rvopp_rv'.
+         apply (RandomVariable_sa_sub (isfilt n)).
+         apply FiniteCondexp_rv.
      - intros.
        now apply Condexp_cond_exp.
     Admitted.

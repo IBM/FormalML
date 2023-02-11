@@ -792,6 +792,15 @@ Section RealRandomVariables.
         now apply rvscale_rv.
       Defined.
 
+      Global Instance rvopp_rv' (rv_X : Ts -> R) 
+               {rv : RandomVariable dom borel_sa rv_X} :
+        RandomVariable dom borel_sa (fun ω => - rv_X ω).
+      Proof.
+        generalize (rvopp_rv rv_X).
+        apply RandomVariable_proper; try easy.
+        intros ?; unfold rvopp, rvscale; lra.
+      Qed.
+
       Global Instance rvclip_rv (rv_X : Ts -> R) (c:nonnegreal)
              {rv : RandomVariable dom borel_sa rv_X}
         : RandomVariable dom borel_sa (rvclip rv_X c).
@@ -835,6 +844,17 @@ Section RealRandomVariables.
              {rv2 : RandomVariable dom borel_sa rv_X2}  :
         RandomVariable dom borel_sa (rvminus rv_X1 rv_X2) := 
         rvplus_rv rv_X1 (rvopp rv_X2).
+
+      Global Instance rvminus_rv'
+               (rv_X1 rv_X2 : Ts -> R)
+               {rv1 : RandomVariable dom borel_sa rv_X1}
+               {rv2 : RandomVariable dom borel_sa rv_X2}  :
+        RandomVariable dom borel_sa (fun ω => (rv_X1 ω) - (rv_X2 ω)).
+      Proof.
+        generalize (rvminus_rv rv_X1 rv_X2).
+        apply RandomVariable_proper; try easy.
+        intros ?; rv_unfold; lra.
+      Qed.
 
       Global Instance rvmult_rv 
              (rv_X1 rv_X2 : Ts -> R)
