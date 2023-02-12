@@ -5231,6 +5231,9 @@ Section MDP.
               RandomVariable dom borel_sa (fun ω => α t ω sa))
           (alpha_bound : forall t ω sa, 0 <= α t ω sa <= 1)
           {F : nat -> SigmaAlgebra Ts}
+          (rvα' : forall t sa,
+              RandomVariable (F t) borel_sa (fun ω => α t ω sa))
+          {rv_cost0 : forall sa, RandomVariable (F 0%nat) borel_sa (cost sa)}
           {rv_ns0: forall sa, RandomVariable (F 0%nat) (discrete_sa (state M)) (next_state sa)}
           (isfilt : IsFiltration F) 
           (filt_sub : forall k, sa_sub (F k) dom) 
@@ -5819,6 +5822,45 @@ Section MDP.
                          (isfe_qmin_next g t' rvg isfe) sa)
            end.
   
+  Fixpoint qlearn_Q_basic (t : nat) : (Ts -> Rfct (sigT M.(act)))    :=
+           match t with
+           | 0%nat => (fun ω  => Q0)
+           | S t' => let g := qlearn_Q_basic t' in 
+                     (fun ω sa => (g ω sa) + 
+                                  (α t' ω sa) * ((cost sa ω) + β * (qlearn_Qmin (g ω) (next_state sa ω))
+                                                                   - (g ω sa)))
+           end.
+
+  Lemma cost_F_rv :
+    forall sa n,
+      RandomVariable (F n) borel_sa (cost sa).
+  Proof.
+    intros.
+    induction n; trivial.
+    now apply (RandomVariable_sa_sub (isfilt n)).
+  Qed.
+    
+  Lemma qlearn_Q_basic_rv :
+    forall t sa, RandomVariable (F t) borel_sa (fun ω => qlearn_Q_basic t ω sa).
+  Proof.
+    intros.
+    induction t.
+    - simpl.
+      apply rvconst.
+    - simpl.
+      apply rvplus_rv.
+      + now apply (RandomVariable_sa_sub (isfilt t)).
+      + apply rvmult_rv.
+        * now apply (RandomVariable_sa_sub (isfilt t)).
+        * apply rvplus_rv.
+          -- apply rvplus_rv; trivial.
+             ++ apply cost_F_rv.
+             ++ apply rvscale_rv.
+                apply (RandomVariable_sa_sub (isfilt t)).      
+                apply rv_qmin1.
+          
+ Admitted.      
+
   Definition qlearn_Q (t : nat) : Ts -> Rfct (sigT M.(act))
     := let '(exist2 g _ _) := qlearn_Qaux t in g.
 
@@ -5838,13 +5880,13 @@ Section MDP.
              (t : nat) (ω : Ts) (sa : (sigT M.(act)))     
              (rvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q t ω sa))
              (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q t ω sa)) : R :=
-
-                     (qlearn_Qmin (Q t ω) (next_state sa ω) -
-                      FiniteConditionalExpectation 
-                        (rv := rv_qmin1 (Q t) _ rvQ _)
-                        (isfe := isfe_qmin1 (Q t) rvQ isfeQ sa)
-                        prts (filt_sub t)
-                        (fun ω => qlearn_Qmin (Q t ω) (next_state sa ω)) ω).
+    ((cost sa ω) - FiniteExpectation (isfe := isfe_cost sa) prts (cost sa)) +
+                     β *(qlearn_Qmin (Q t ω) (next_state sa ω) -
+                         FiniteConditionalExpectation 
+                           (rv := rv_qmin1 (Q t) _ rvQ _)
+                           (isfe := isfe_qmin1 (Q t) rvQ isfeQ sa)
+                           prts (filt_sub t)
+                           (fun ω => qlearn_Qmin (Q t ω) (next_state sa ω)) ω).
 
 (*
   Existing Instance qlearn_redux.finite_fun_vec_encoder.
@@ -6100,7 +6142,9 @@ Section MDP.
     - destruct H2 as [A [B [? [? ?]]]].
       exists A; exists B.
       split; trivial.
-      split; trivial.
+      split; trivial; clear H6.
+      intros.
+      specialize (H14 k (vector_nth i pf (vector_from_list (nodup EqDecsigT fin_elms)))).
       revert H14.
       admit.
     - revert H4.
@@ -6156,7 +6200,14 @@ Section MDP.
      assert (forall k sa, IsFiniteExpectation prts (fun ω : Ts => w k ω sa)).
      {
        intros.
-       typeclasses eauto.
+       subst w.
+       unfold qlearn_w.
+       apply IsFiniteExpectation_plus.
+       - typeclasses eauto.
+       - typeclasses eauto.
+       - apply IsFiniteExpectation_minus'; try typeclasses eauto.
+         apply IsFiniteExpectation_const.
+       - typeclasses eauto.
      }
      assert (forall n sa, RandomVariable (F n) borel_sa (fun ω : Ts => X n ω sa)).
      {
@@ -6168,16 +6219,23 @@ Section MDP.
        induction n; trivial.
        now apply (RandomVariable_sa_sub (isfilt n)).
      }
+     assert (forall n sa, RandomVariable (F n) borel_sa (cost sa)).
+     {
+       intros.
+       induction n; trivial.
+       now apply (RandomVariable_sa_sub (isfilt n)).
+     }
      eapply Tsitsiklis_1_3_fintype  with (w := w); try easy.
      - intros.
        subst w.
        unfold qlearn_w.
        unfold IsAdapted; intros.
        apply rvplus_rv.
+       + typeclasses eauto.
        + apply (RandomVariable_sa_sub (isfilt n)).
+         apply rvscale_rv.
+         apply rvminus_rv'; trivial.
          apply rv_qmin1; trivial.
-       + apply rvopp_rv'.
-         apply (RandomVariable_sa_sub (isfilt n)).
          apply FiniteCondexp_rv.
      - admit.
      - intros.
@@ -6194,10 +6252,11 @@ Section MDP.
                   prts (filt_sub k)
                   (fun ω0 : Ts => qlearn_Qmin (qlearn_Q k ω0) (next_state sa ω0)) ω) with
            (FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q k ω) (next_state sa ω0))).
-       + unfold qlearn_Qmin, qlearn_Q.
+       + ring_simplify.
+         ring_simplify.
          admit.
        + admit.
-    Admitted.
+   Admitted.
        
 End MDP.
 
