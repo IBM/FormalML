@@ -5843,12 +5843,9 @@ Section MDP.
   Lemma qlearn_Q_basic_rv :
     forall t sa, RandomVariable (F t) borel_sa (fun ω => qlearn_Q_basic t ω sa).
   Proof.
-    intros.
-    induction t.
-    - simpl.
-      apply rvconst.
-    - simpl.
-      apply rvplus_rv.
+    induction t; simpl; intros.
+    - apply rvconst.
+    - apply rvplus_rv.
       + now apply (RandomVariable_sa_sub (isfilt t)).
       + apply rvmult_rv.
         * now apply (RandomVariable_sa_sub (isfilt t)).
@@ -5858,6 +5855,10 @@ Section MDP.
              ++ apply rvscale_rv.
                 apply (RandomVariable_sa_sub (isfilt t)).      
                 apply rv_qmin1.
+                ** now apply IHt.
+                ** admit.
+          -- 
+                  
           
   Admitted.
 
@@ -5978,7 +5979,7 @@ Section MDP.
       induction l; simpl; trivial; [lia |]; intros.
       match_destr; simpl; lia.
   Qed.
-
+    
   Existing Instance Rbar_le_pre.
   
   Theorem Tsitsiklis_1_3_fintype  (X w  : nat -> Ts -> Rfct (sigT M.(act)))
@@ -6116,6 +6117,10 @@ Section MDP.
       unfold Rvector_max_abs, vector_fold_left; simpl.
       rewrite map_map.
       unfold Rmax_norm.
+      unfold fin_elms; destruct finA.
+      generalize (nodup_equiv EqDecsigT fin_elms)
+      ; intros eqq1.
+      rewrite <- (map_equivlist (fun x0 : sigT (act M) => Rabs (X n x x0)) _ (reflexivity _) _ _ eqq1).
       admit. (* TODO: Avi *)
     - intros k ω.
       generalize  (alpha_bound k ω); intros ab.
