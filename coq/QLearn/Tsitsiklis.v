@@ -6106,8 +6106,21 @@ Section MDP.
     - revert H4.
       admit.
     - revert H5.
-      admit.
-    Admitted.
+      intros.
+      intros ?.
+      apply vector_nth_eq; intros.
+      unfold Xvec, XFvec, αvec, wvec, our_iso_f, iso_f; simpl.
+      unfold qlearn_redux.finite_fun_to_vector.
+      unfold vecrvminus, vecrvopp, vecrvscale, vecrvplus, vecrvmult.
+      repeat (rewrite Rvector_nth_plus || rewrite Rvector_nth_mult || rewrite Rvector_nth_scale || rewrite vector_nth_map).
+      rewrite H5.
+      unfold our_iso_b.
+      simpl.
+      generalize (qlearn_redux.finite_fun_iso_b_f finA EqDecsigT (X k a)); intros HH.
+      unfold qlearn_redux.finite_fun_to_vector in HH.
+      rewrite HH.
+      lra.
+  Admitted.
 
    Theorem qlearn 
            (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) :
