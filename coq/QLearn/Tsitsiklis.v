@@ -1,4 +1,4 @@
-Require Import List.
+Require Import List EquivDec Morphisms.
 Require Import mdp qvalues fixed_point pmf_monad.
 Require Import RealAdd CoquelicotAdd EquivDec.
 Require Import utils.Utils.
@@ -4580,7 +4580,7 @@ Qed.
   Qed.
 
   Lemma SimpleExpectation_compose {Td} (f1 : Ts -> Td) (f2 : Td -> R)
-        {dec : EquivDec.EqDec Td eq}
+        {dec : EqDec Td eq}
         {σd: SigmaAlgebra Td} 
         {has_pre: HasPreimageSingleton σd}
         {rv1: RandomVariable dom σd f1}
@@ -4721,7 +4721,7 @@ Qed.
  Qed.
  
   Lemma SimpleExpectation_compose_Finite_type {Td} (f1 : Ts -> Td) (f2 : Td -> R)
-        {dec : EquivDec.EqDec Td eq}
+        {dec : EqDec Td eq}
         {fin : FiniteType Td}
         {σd: SigmaAlgebra Td} 
         {has_pre: HasPreimageSingleton σd}
@@ -5855,25 +5855,48 @@ Section MDP.
                    (Isomorphism := qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)) in
     (forall sa, P (x sa)) <-> (forall i pf, P (vector_nth i pf (iso_f x))).
   Proof.
-  Admitted.
+    simpl.
+    split; intros.
+    - unfold qlearn_redux.finite_fun_to_vector; simpl.
+      rewrite vector_nth_map.
+      apply H.
+    - specialize (H _ (fin_finite_index_bound finA (dec:=EqDecsigT) sa)).
+      unfold qlearn_redux.finite_fun_to_vector in H.
+      now rewrite qlearn_redux.vector_nth_finite_map in H.
+  Qed.
 
-   Lemma finite_fun_vector_iso_nth_fun {A} (x : A -> Rfct (sigT M.(act))) (P : (A -> R) -> Prop) :
+  Lemma finite_fun_vector_iso_nth_fun {A} (x : A -> Rfct (sigT M.(act))) (P : (A -> R) -> Prop) 
+    (Pext : Proper (rv_eq ==> iff) P) :
     let iso_f := iso_f
                    (Isomorphism := qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)) in
     (forall sa, P (fun A => x A sa)) <-> (forall i pf, P (fun A => vector_nth i pf (iso_f (x A)))).
   Proof.
-    Admitted.
+    simpl.
+    split; intros.
+    - unfold qlearn_redux.finite_fun_to_vector; simpl.
+      eapply Pext.
+      + intros ?.
+        rewrite vector_nth_map.
+        reflexivity.
+      + apply H.
+    - specialize (H _ (fin_finite_index_bound finA (dec:=EqDecsigT) sa)).
+      unfold qlearn_redux.finite_fun_to_vector in H.
+      eapply Pext in H.
+      + apply H.
+      + intros ?.
+        now rewrite qlearn_redux.vector_nth_finite_map.
+  Qed.
       
-    Theorem Tsitsiklis_1_3_fintype  (X w  : nat -> Ts -> Rfct (sigT M.(act)))
-       (XF : Rfct (sigT M.(act)) -> Rfct (sigT M.(act)))
-        (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) 
-        {rvX0 : forall sa, RandomVariable (F 0%nat) borel_sa (fun ω => X 0%nat ω sa)}
-        (adapt_w : forall sa, IsAdapted borel_sa (fun t ω => w t ω sa) (fun k => F (S k)))
-(*        {rvXF : RandomVariable (Rvector_borel_sa (S n)) 
-                               (Rvector_borel_sa (S n)) XF} *)
-        {rvw : forall k sa, RandomVariable dom borel_sa (fun ω : Ts => w k ω sa)}
-        {iscond : forall k sa, is_conditional_expectation prts (F k) (fun ω => w k ω sa) (ConditionalExpectation prts (filt_sub k) (fun ω => w k ω sa))} :
-
+  Theorem Tsitsiklis_1_3_fintype  (X w  : nat -> Ts -> Rfct (sigT M.(act)))
+    (XF : Rfct (sigT M.(act)) -> Rfct (sigT M.(act)))
+    (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) 
+    {rvX0 : forall sa, RandomVariable (F 0%nat) borel_sa (fun ω => X 0%nat ω sa)}
+    (adapt_w : forall sa, IsAdapted borel_sa (fun t ω => w t ω sa) (fun k => F (S k)))
+    (*        {rvXF : RandomVariable (Rvector_borel_sa (S n)) 
+              (Rvector_borel_sa (S n)) XF} *)
+    {rvw : forall k sa, RandomVariable dom borel_sa (fun ω : Ts => w k ω sa)}
+    {iscond : forall k sa, is_conditional_expectation prts (F k) (fun ω => w k ω sa) (ConditionalExpectation prts (filt_sub k) (fun ω => w k ω sa))} :
+    
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
     (exists (C : R),
         forall sa,
@@ -5921,12 +5944,15 @@ Section MDP.
       generalize (finite_fun_vector_iso_nth_fun (α n)); intros.
       rewrite H8 in H7.
       apply H7.
+      intros.
+      apply RandomVariable_proper; try reflexivity.
     }
     assert ( RandomVariable (F 0) (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) (Xvec 0%nat)).
     {
       apply rv_vecrvnth.
       rewrite finite_fun_vector_iso_nth_fun in rvX0.
       apply rvX0.
+      apply RandomVariable_proper; try reflexivity.
     }
     assert (0 < length (nodup EqDecsigT fin_elms))%nat.
     {
@@ -5954,6 +5980,7 @@ Section MDP.
       }
       rewrite finite_fun_vector_iso_nth_fun in H10.
       apply H10.
+      apply RandomVariable_proper; try reflexivity.
     }
     assert (forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (wvec k ω))).
     {
@@ -5961,6 +5988,7 @@ Section MDP.
       generalize (rvw k); intros rvw1.
       rewrite finite_fun_vector_iso_nth_fun in rvw1.
       apply rvw1.
+      apply RandomVariable_proper; try reflexivity.
     }
     assert (forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (wvec k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (wvec k)))).
     {
@@ -5997,6 +6025,10 @@ Section MDP.
                                                   (fun afun => is_lim_seq (sum_n afun) p_infty)); intros.
         rewrite H14 in H13.
         apply H13.
+        intros ???.
+        apply is_lim_seq_proper; trivial.
+        intros ?.
+        now apply sum_n_ext.
       }
       intros.
       apply H13.
