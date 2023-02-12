@@ -6179,6 +6179,7 @@ Section MDP.
        + apply rvopp_rv'.
          apply (RandomVariable_sa_sub (isfilt n)).
          apply FiniteCondexp_rv.
+     - admit.
      - intros.
        now apply Condexp_cond_exp.
      - intros.
