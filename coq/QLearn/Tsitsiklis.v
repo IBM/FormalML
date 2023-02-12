@@ -5911,6 +5911,8 @@ Section MDP.
       induction l; simpl; trivial; [lia |]; intros.
       match_destr; simpl; lia.
   Qed.
+
+  Existing Instance Rbar_le_pre.
   
   Theorem Tsitsiklis_1_3_fintype  (X w  : nat -> Ts -> Rfct (sigT M.(act)))
     (XF : Rfct (sigT M.(act)) -> Rfct (sigT M.(act)))
@@ -6042,7 +6044,12 @@ Section MDP.
       apply is_lim_seq_ext.
       intros.
       unfold rvmaxabs.
-      admit.
+      unfold Xvec, our_iso_f, iso_f; simpl.
+      unfold qlearn_redux.finite_fun_to_vector; simpl.
+      unfold Rvector_max_abs, vector_fold_left; simpl.
+      rewrite map_map.
+      unfold Rmax_norm.
+      admit. (* TODO: Avi *)
     - intros k ω.
       generalize  (alpha_bound k ω); intros ab.
       generalize (finite_fun_vector_iso_nth (α k ω) (fun r => 0 <= r <= 1)); intros.
@@ -6070,7 +6077,16 @@ Section MDP.
     - destruct H0 as [C ?].
       exists C.
       revert H0.
-      admit.
+      intros HH i pf.
+      generalize (HH (vector_nth i pf (vector_from_list (nodup EqDecsigT fin_elms)))).
+      apply almost_impl; apply all_almost; intros ??.
+      rewrite <- H0.
+      apply refl_refl.
+      apply Lim_seq_ext; intros ?.
+      apply sum_n_ext; intros.
+      unfold αvec, our_iso_f, iso_f; simpl.
+      unfold qlearn_redux.finite_fun_to_vector; simpl.
+      now rewrite vector_nth_map.
     - revert H1.
       admit.
     - destruct H2 as [A [B [? [? ?]]]].
