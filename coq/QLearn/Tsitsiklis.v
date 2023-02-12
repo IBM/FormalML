@@ -5981,7 +5981,20 @@ Section MDP.
   Qed.
     
   Existing Instance Rbar_le_pre.
-  
+
+  Lemma fold_left_Rmax_abs l : List.Forall (Rle 0) l -> fold_left Rmax l 0 = Rmax_list l.
+  Proof.
+    intros.
+    rewrite fold_symmetric.
+    - induction l; simpl; trivial.
+      invcs H.
+      rewrite IHl; trivial.
+      destruct l; simpl; trivial.
+      rewrite Rmax_left; trivial.
+    - apply Rmax_assoc.
+    - apply Rmax_comm.
+  Qed.
+                                                    
   Theorem Tsitsiklis_1_3_fintype  (X w  : nat -> Ts -> Rfct (sigT M.(act)))
     (XF : Rfct (sigT M.(act)) -> Rfct (sigT M.(act)))
     (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) 
@@ -6121,7 +6134,10 @@ Section MDP.
       generalize (nodup_equiv EqDecsigT fin_elms)
       ; intros eqq1.
       rewrite <- (map_equivlist (fun x0 : sigT (act M) => Rabs (X n x x0)) _ (reflexivity _) _ _ eqq1).
-      admit. (* TODO: Avi *)
+      apply fold_left_Rmax_abs.
+      apply Forall_map.
+      apply Forall_forall; intros.
+      apply Rabs_pos.
     - intros k ω.
       generalize  (alpha_bound k ω); intros ab.
       generalize (finite_fun_vector_iso_nth (α k ω) (fun r => 0 <= r <= 1)); intros.
