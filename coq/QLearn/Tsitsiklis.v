@@ -5231,6 +5231,7 @@ Section MDP.
               RandomVariable dom borel_sa (fun ω => α t ω sa))
           (alpha_bound : forall t ω sa, 0 <= α t ω sa <= 1)
           {F : nat -> SigmaAlgebra Ts}
+          {rv_ns0: forall sa, RandomVariable (F 0%nat) (discrete_sa (state M)) (next_state sa)}
           (isfilt : IsFiltration F) 
           (filt_sub : forall k, sa_sub (F k) dom) 
           (β : R).
@@ -5574,9 +5575,25 @@ Section MDP.
     apply rvconst.
   Qed.
 
+  Instance rv0'
+    (sa : (sigT M.(act))) :
+    RandomVariable (F 0%nat) borel_sa 
+                   (fun ω : Ts => Q0 sa).
+  Proof.
+    apply rvconst.
+  Qed.
+
   Instance rv_qmin0 
     (sa : (sigT M.(act))) :
     RandomVariable dom borel_sa 
+                   (fun ω : Ts => qlearn_Qmin Q0 (next_state sa ω)).
+  Proof.
+    typeclasses eauto.
+  Qed.
+
+  Instance rv_qmin0'
+    (sa : (sigT M.(act))) :
+    RandomVariable (F 0%nat) borel_sa 
                    (fun ω : Ts => qlearn_Qmin Q0 (next_state sa ω)).
   Proof.
     typeclasses eauto.
@@ -6002,7 +6019,6 @@ Section MDP.
     Admitted.
 
    Theorem qlearn 
-           (XF : Rfct (sigT M.(act)) -> Rfct (sigT M.(act)))
            (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) :
      0 <= β < 1 ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
@@ -6011,8 +6027,11 @@ Section MDP.
           almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (α k ω sa)))) (Finite C))) ->
     let X := qlearn_Q in 
     let w := fun t ω sa => qlearn_w (qlearn_Q) t ω sa (rv_qlearn_Q t) (isfe_qlearn_Q t) in
+    let XF := qlearn_XF  in
     (forall sa, RandomVariable (F 0%nat) borel_sa (fun ω => X 0%nat ω sa)) ->
+(*
     (forall k sa, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (fun ω => w k ω sa)) (const 0)) ->
+*)
     (exists (A B : R),
         0 < A /\ 0 < B /\
         forall k sa, 
@@ -6024,8 +6043,9 @@ Section MDP.
                                          (fun j ω => Rsqr (Rmax_norm _ (X j ω)))
                                          k)))) ->
     (forall x, Rmax_norm _ (XF x) <= β * Rmax_norm _ x) ->
-    (forall k ω sa, X (S k) ω sa = 
+ (*   (forall k ω sa, X (S k) ω sa = 
                     (X k ω sa) +  ((α k ω sa) * (((XF (X k ω) sa) - (X k ω sa) ) +  (w k ω sa)))) ->
+ *)
     almost prts (fun ω => is_lim_seq (fun n => Rmax_norm _ (X n ω)) 0).
    Proof.
      intros.
@@ -6034,6 +6054,16 @@ Section MDP.
        intros.
        typeclasses eauto.
      }
+     assert (forall n sa, RandomVariable (F n) borel_sa (fun ω : Ts => X n ω sa)).
+     {
+       admit.
+     }
+     assert (forall n sa,  RandomVariable (F n) (discrete_sa (state M)) (next_state sa)).
+     {
+       intros.
+       induction n; trivial.
+       now apply (RandomVariable_sa_sub (isfilt n)).
+     }
      eapply Tsitsiklis_1_3_fintype  with (w := w); try easy.
      - intros.
        subst w.
@@ -6041,15 +6071,27 @@ Section MDP.
        unfold IsAdapted; intros.
        apply rvplus_rv.
        + apply (RandomVariable_sa_sub (isfilt n)).
-         apply rv_qmin1.
-         intros.
-         * admit.
-         * admit.
+         apply rv_qmin1; trivial.
        + apply rvopp_rv'.
          apply (RandomVariable_sa_sub (isfilt n)).
          apply FiniteCondexp_rv.
      - intros.
        now apply Condexp_cond_exp.
+     - intros.
+       subst w.
+       unfold qlearn_w.
+       generalize is_conditional_expectation_plus; intros.
+       admit.
+     - intros.
+       subst w X XF.
+       unfold qlearn_XF, qlearn_w.
+       replace (FiniteConditionalExpectation 
+                  prts (filt_sub k)
+                  (fun ω0 : Ts => qlearn_Qmin (qlearn_Q k ω0) (next_state sa ω0)) ω) with
+           (FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q k ω) (next_state sa ω0))).
+       + unfold qlearn_Qmin, qlearn_Q.
+         admit.
+       + admit.
     Admitted.
        
 End MDP.
