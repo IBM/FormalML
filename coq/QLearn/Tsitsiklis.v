@@ -6087,8 +6087,16 @@ Section MDP.
       unfold αvec, our_iso_f, iso_f; simpl.
       unfold qlearn_redux.finite_fun_to_vector; simpl.
       now rewrite vector_nth_map.
-    - revert H1.
-      admit.
+    - clear H6.
+      intros k i pf.
+      specialize (H1 k (vector_nth i pf (vector_from_list (nodup EqDecsigT fin_elms)))).
+      rewrite <- H1.
+      apply almost_prob_space_sa_sub_lift with (sub := filt_sub k).
+      apply Condexp_proper.
+      apply all_almost; intros.
+      unfold vecrvnth, wvec, our_iso_f, iso_f; simpl.
+      unfold qlearn_redux.finite_fun_to_vector; simpl.
+      now rewrite vector_nth_map.
     - destruct H2 as [A [B [? [? ?]]]].
       exists A; exists B.
       split; trivial.
