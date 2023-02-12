@@ -6019,7 +6019,20 @@ Section MDP.
       unfold vecrvnth.
       clear H0 H1 H2 H6.
       generalize (finite_fun_vector_iso_nth_fun (w k)); intros.
-      admit.
+      unfold wvec.
+      specialize (iscond (vector_nth i pf (vector_from_list (nodup EqDecsigT fin_elms)))).
+      revert iscond.
+      apply is_conditional_expectation_proper; trivial.
+      - apply all_almost; intros.
+        unfold our_iso_f, iso_f; simpl.
+        unfold qlearn_redux.finite_fun_to_vector; simpl.
+        now rewrite vector_nth_map.
+      - apply almost_prob_space_sa_sub_lift with (sub := filt_sub k).
+        apply Condexp_proper.
+        apply all_almost; intros.
+        unfold our_iso_f, iso_f; simpl.
+        unfold qlearn_redux.finite_fun_to_vector; simpl.
+        now rewrite vector_nth_map.
     }
     specialize (H6 _ _ H9 _ _ _ H12).
     cut_to H6; trivial.
