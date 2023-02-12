@@ -5886,14 +5886,38 @@ Section MDP.
       + intros ?.
         now rewrite qlearn_redux.vector_nth_finite_map.
   Qed.
-      
+
+  Let our_iso_f := iso_f (Isomorphism := qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)).
+  Let our_iso_b := iso_b (Isomorphism := qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)).
+
+
+  Lemma nodup_length_le {A} (decA : forall x y : A, {x = y} + {x <> y}) (l : list A) :
+    (length (nodup decA l) <= length l)%nat.
+  Proof.
+    induction l; simpl; trivial.
+    match_destr; simpl; lia.
+  Qed.
+
+  Lemma nodup_length_nzero {A} (decA : forall x y : A, {x = y} + {x <> y}) (l : list A) :
+    (0 < length (nodup decA l) <->
+    0 < length l)%nat.
+  Proof.
+    split.
+    - intros.
+      generalize (nodup_length_le decA l); lia.
+    - destruct l; simpl; trivial.
+      intros _.
+      revert a.
+      induction l; simpl; trivial; [lia |]; intros.
+      match_destr; simpl; lia.
+  Qed.
+  
   Theorem Tsitsiklis_1_3_fintype  (X w  : nat -> Ts -> Rfct (sigT M.(act)))
     (XF : Rfct (sigT M.(act)) -> Rfct (sigT M.(act)))
     (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) 
     {rvX0 : forall sa, RandomVariable (F 0%nat) borel_sa (fun ω => X 0%nat ω sa)}
     (adapt_w : forall sa, IsAdapted borel_sa (fun t ω => w t ω sa) (fun k => F (S k)))
-    (*        {rvXF : RandomVariable (Rvector_borel_sa (S n)) 
-              (Rvector_borel_sa (S n)) XF} *)
+    {rvXF : RandomVariable (Rvector_borel_sa _) (Rvector_borel_sa _) (fun vecrf => our_iso_f (XF (our_iso_b vecrf)))}
     {rvw : forall k sa, RandomVariable dom borel_sa (fun ω : Ts => w k ω sa)}
     {iscond : forall k sa, is_conditional_expectation prts (F k) (fun ω => w k ω sa) (ConditionalExpectation prts (filt_sub k) (fun ω => w k ω sa))} :
     
@@ -5919,17 +5943,12 @@ Section MDP.
     almost prts (fun ω => is_lim_seq (fun n => Rmax_norm _ (X n ω)) 0).
   Proof.
     intros.
-    pose (iso_f := iso_f (Isomorphism := qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R))).
-    pose (iso_b := iso_b (Isomorphism := qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R))).    
-    pose (Xvec := fun t ω => iso_f (X t ω)).
-    pose (wvec := fun t ω => iso_f (w t ω)).
-    pose (αvec := fun t ω => iso_f (α t ω)).    
-    pose (XFvec := fun vecrf => iso_f (XF (iso_b vecrf))).
+  
+    pose (Xvec := fun t ω => our_iso_f (X t ω)).
+    pose (wvec := fun t ω => our_iso_f (w t ω)).
+    pose (αvec := fun t ω => our_iso_f (α t ω)).    
+    pose (XFvec := fun vecrf => our_iso_f (XF (our_iso_b vecrf))).
     pose (N := length (nodup EqDecsigT fin_elms)).
-    assert (rvXF : RandomVariable (Rvector_borel_sa N) (Rvector_borel_sa N) XFvec).
-    {
-      admit.
-    }
     generalize (Tsitsiklis_1_3 β Xvec wvec αvec XFvec isfilt filt_sub); intros.
     assert (IsAdapted (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) αvec F).
     {
@@ -5966,7 +5985,10 @@ Section MDP.
         exact (existT _ X0 X1).
       }
       red in X0.
-      admit.
+      apply nodup_length_nzero.
+      generalize (fin_finite X0).
+      clear.
+      destruct fin_elms; simpl; [tauto | lia].
     }
     assert (IsAdapted (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) wvec (fun k : nat => F (S k))).
     {
