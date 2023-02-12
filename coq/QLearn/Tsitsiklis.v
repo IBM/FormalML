@@ -5859,7 +5859,32 @@ Section MDP.
                 apply (RandomVariable_sa_sub (isfilt t)).      
                 apply rv_qmin1.
           
- Admitted.      
+  Admitted.
+
+
+  Instance qlean_Q_basic_rv_dom :
+    forall t sa, RandomVariable dom borel_sa (fun ω => qlearn_Q_basic t ω sa).
+  Proof.
+    intros.
+    apply (RandomVariable_sa_sub (filt_sub t)).
+    apply qlearn_Q_basic_rv.
+  Qed.
+
+  Lemma isfe_qlearn_Q_basic :
+    forall t sa, IsFiniteExpectation prts (fun ω => qlearn_Q_basic t ω sa).
+  Proof.
+    intros.
+    revert sa.
+    induction t.
+    - simpl.
+      intros.
+      apply IsFiniteExpectation_const.
+    - intros.
+      simpl.
+      apply IsFiniteExpectation_plus; try typeclasses eauto.
+      apply isfe_small_mult; try typeclasses eauto.
+      intros; apply alpha_bound.
+  Qed.      
 
   Definition qlearn_Q (t : nat) : Ts -> Rfct (sigT M.(act))
     := let '(exist2 g _ _) := qlearn_Qaux t in g.
