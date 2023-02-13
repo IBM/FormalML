@@ -5880,7 +5880,7 @@ Section MDP.
     induction t; simpl; intros; typeclasses eauto.
   Qed.
 
-  Lemma isfe_qlearn_Q_basic :
+  Instance isfe_qlearn_Q_basic :
     forall t sa, IsFiniteExpectation prts (fun ω => qlearn_Q_basic t ω sa).
   Proof.
     intros.
@@ -6348,9 +6348,6 @@ Section MDP.
          apply IsFiniteExpectation_const.
        - apply IsFiniteExpectation_scale.
          apply IsFiniteExpectation_minus'; try typeclasses eauto.
-         apply isfe_qmin1; try typeclasses eauto.
-         intros.
-         apply isfe_qlearn_Q_basic.
      }
      assert (next_state_rv : forall sa t,
         RandomVariable (F t) (discrete_sa (sigT M.(act))) sa ->
@@ -6434,9 +6431,6 @@ Section MDP.
          apply IsFiniteExpectation_const.
        + apply IsFiniteExpectation_scale.
          apply IsFiniteExpectation_minus'; try typeclasses eauto.
-         apply isfe_qmin1; try typeclasses eauto.
-         intros.
-         admit.
      - intros.
        subst w X XF.
        unfold qlearn_XF, qlearn_w.
