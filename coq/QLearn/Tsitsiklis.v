@@ -5877,9 +5877,7 @@ Section MDP.
   Instance qlearn_Q_basic_rv_dom :
     forall t sa, RandomVariable dom borel_sa (fun ω => qlearn_Q_basic t ω sa).
   Proof.
-    intros.
-    apply (RandomVariable_sa_sub (filt_sub t)).
-    apply qlearn_Q_basic_rv.
+    induction t; simpl; intros; typeclasses eauto.
   Qed.
 
   Lemma isfe_qlearn_Q_basic :
@@ -6005,7 +6003,18 @@ Section MDP.
     - apply Rmax_assoc.
     - apply Rmax_comm.
   Qed.
+
+(*
+  Instance vector_sa {n} {T} (sav:vector (SigmaAlgebra T) n) : SigmaAlgebra (vector T n)
+  := generated_sa (pre_event_set_vector_product (vector_map sa_sigma sav)).
+
+  Definition Rvector_borel_sa (n:nat) : SigmaAlgebra (vector R n)
+    := vector_sa (vector_const borel_sa n).
+*)
                                                     
+  Program Instance funfun_sa : SigmaAlgebra (Rfct (sigT M.(act))).
+  
+
   Theorem Tsitsiklis_1_3_fintype  (X w  : nat -> Ts -> Rfct (sigT M.(act)))
     (XF : Rfct (sigT M.(act)) -> Rfct (sigT M.(act)))
     (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) 
@@ -6343,10 +6352,16 @@ Section MDP.
          intros.
          apply isfe_qlearn_Q_basic.
      }
+     assert (next_state_rv : forall sa t,
+        RandomVariable (F t) (discrete_sa (sigT M.(act))) sa ->
+        RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state (sa ω) ω)).
+     {
+       admit.
+     }
      assert (forall n sa, RandomVariable (F n) borel_sa (fun ω : Ts => X n ω sa)).
      {
        intros.
-       apply qlearn_Q_basic_rv.
+       now apply qlearn_Q_basic_rv.
      }
      assert (forall n sa,  RandomVariable (F n) (discrete_sa (state M)) (next_state sa)).
      {
