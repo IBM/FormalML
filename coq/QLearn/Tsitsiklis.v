@@ -5857,9 +5857,15 @@ Section MDP.
                 apply rv_qmin1.
                 ** now apply IHt.
                 ** admit.
-          -- 
-                  
-          
+          -- cut (RandomVariable (F (S t)) borel_sa (rvopp (fun ω : Ts => qlearn_Q_basic t ω sa))).
+             { apply RandomVariable_proper; try reflexivity.
+               intros ?.
+               unfold rvopp, rvscale; lra.
+             }
+             apply rvopp_rv.
+             generalize (IHt sa).
+             apply RandomVariable_proper_le; try reflexivity.
+             apply isfilt.
   Admitted.
 
 
