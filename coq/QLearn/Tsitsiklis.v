@@ -5840,7 +5840,12 @@ Section MDP.
     now apply (RandomVariable_sa_sub (isfilt n)).
   Qed.
     
-  Lemma qlearn_Q_basic_rv :
+  Lemma qlearn_Q_basic_rv
+    (*    (next_state_rv : forall sa t,
+          ??? -> 
+        RandomVariable (F (S t)) (discrete_sa (state M)) (next_state sa))
+*)
+    :
     forall t sa, RandomVariable (F t) borel_sa (fun ω => qlearn_Q_basic t ω sa).
   Proof.
     induction t; simpl; intros.
@@ -5853,9 +5858,10 @@ Section MDP.
           -- apply rvplus_rv; trivial.
              ++ apply cost_F_rv.
              ++ apply rvscale_rv.
-                apply (RandomVariable_sa_sub (isfilt t)).      
                 apply rv_qmin1.
-                ** now apply IHt.
+                ** intros.
+                   apply (RandomVariable_sa_sub (isfilt t)).      
+                   now apply IHt.
                 ** admit.
           -- cut (RandomVariable (F (S t)) borel_sa (rvopp (fun ω : Ts => qlearn_Q_basic t ω sa))).
              { apply RandomVariable_proper; try reflexivity.
