@@ -6276,6 +6276,26 @@ Section MDP.
       lra.
   Qed.
 
+    Lemma Condexp_minus' (f1 f2 : Ts -> R) 
+          {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2}
+        {isfe1:IsFiniteExpectation prts f1}
+        {isfe2:IsFiniteExpectation prts f2}
+    :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (ConditionalExpectation prts sub (fun ω => (f1 ω) - (f2 ω)))
+             (Rbar_rvminus (ConditionalExpectation prts sub f1) (ConditionalExpectation prts sub f2)).
+   Proof.
+     generalize (Condexp_minus prts sub f1 f2).
+     apply almost_impl, all_almost; intros ??.
+     rewrite <- H.
+     apply ConditionalExpectation_ext.
+     intros ?.
+     rv_unfold; lra.
+   Qed.
+
    Theorem qlearn 
            (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) :
      0 <= β < 1 ->
@@ -6340,7 +6360,7 @@ Section MDP.
        induction n; trivial.
        now apply (RandomVariable_sa_sub (isfilt n)).
      }
-     eapply Tsitsiklis_1_3_fintype  with (w := w); try easy.
+     eapply Tsitsiklis_1_3_fintype with (w := w); try easy.
      - intros.
        subst w.
        unfold qlearn_w.
@@ -6358,8 +6378,50 @@ Section MDP.
      - intros.
        subst w.
        unfold qlearn_w.
-       generalize is_conditional_expectation_plus; intros.
-       admit.
+       apply almostR2_prob_space_sa_sub_lift with (sub := filt_sub k).
+       generalize (Condexp_minus' (fun ω => cost sa ω) (fun _ => FiniteExpectation 
+                                                                   (isfe := isfe_cost sa)
+                                                                   prts (cost sa)) 
+                                  (filt_sub k) 
+                                  (rv1 := rv_cost sa)
+                                  (isfe1 := isfe_cost sa)
+                                  (isfe2 := IsFiniteExpectation_const prts (FiniteExpectation 
+                                                                   (isfe := isfe_cost sa)
+                                                                   prts (cost sa)))); intros.
+       generalize (@Condexp_plus _ _ prts _ (filt_sub k)
+                     (fun ω : Ts =>
+                               cost sa ω - FiniteExpectation prts (cost sa))
+                     (fun ω => β *
+                               (qlearn_Qmin (qlearn_Q_basic k ω) (next_state sa ω) -
+                                FiniteConditionalExpectation prts (filt_sub k)
+                                                             (isfe :=
+                                                                (isfe_qmin1 (qlearn_Q_basic k) (qlearn_Q_basic_rv_dom k) (isfe_qlearn_Q_basic k) sa))
+                                                             (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω0) (next_state sa ω0)) ω)) _ _ ); intros.
+       cut_to H10.
+       + revert H10; apply almost_impl.
+         revert H9; apply almost_impl.
+         apply all_almost; intros ???.
+         unfold rvplus in H10.
+         rewrite H10.
+         replace (Finite (const 0 x)) with (Rbar_plus (Finite (const 0 x)) (Finite (const 0 x))) by now rewrite Rbar_plus_0_r.
+         unfold Rbar_rvplus.
+         f_equal.
+         * etransitivity; [| etransitivity]; [| apply H9 |]; apply refl_refl.
+           -- apply ConditionalExpectation_ext.
+              reflexivity.
+           -- unfold const.
+              unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
+              generalize (Condexp_const prts (filt_sub k) (FiniteExpectation prts (cost sa)) x); intros.
+              unfold const in H11.
+              admit.
+         * admit.
+       + apply IsFiniteExpectation_minus'; try typeclasses eauto.
+         apply IsFiniteExpectation_const.
+       + apply IsFiniteExpectation_scale.
+         apply IsFiniteExpectation_minus'; try typeclasses eauto.
+         apply isfe_qmin1; try typeclasses eauto.
+         intros.
+         admit.
      - intros.
        subst w X XF.
        unfold qlearn_XF, qlearn_w.
