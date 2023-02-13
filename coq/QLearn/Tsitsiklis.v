@@ -6192,7 +6192,30 @@ Section MDP.
       intros.
       specialize (H14 k (vector_nth i pf (vector_from_list (nodup EqDecsigT fin_elms)))).
       revert H14.
-      admit.
+      apply almost_impl; apply all_almost; intros ??.
+      etransitivity; [| etransitivity]; [| apply H6 |]; apply refl_refl.
+      + apply ConditionalExpectation_ext.
+        intros ?.
+        unfold rvsqr, vecrvnth.
+        f_equal.
+        unfold wvec, our_iso_f; simpl.
+        unfold qlearn_redux.finite_fun_to_vector.
+        now rewrite vector_nth_map.
+      + unfold rvplus, rvscale, rvmaxlist, const, rvsqr, rvmaxabs, Rvector_max_abs.
+        do 3 f_equal.
+        apply Rmax_list_map_ext; intros.
+        f_equal.
+        unfold Rmax_norm.
+        unfold fin_elms; destruct finA.
+        generalize (nodup_equiv EqDecsigT fin_elms)
+        ; intros eqq1.
+        rewrite <- (map_equivlist (fun s : sigT (act M) => Rabs (X x0 x s)) _ (reflexivity _) _ _ eqq1).
+        rewrite <- fold_left_Rmax_abs.
+        * unfold vector_fold_left; simpl.
+          now rewrite map_map.
+        * apply Forall_map.
+          apply Forall_forall; intros.
+          apply Rabs_pos.
     - revert H4.
       admit.
     - revert H5.
