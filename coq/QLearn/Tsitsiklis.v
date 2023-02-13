@@ -6133,7 +6133,10 @@ Section MDP.
     assert (rvXFvec: RandomVariable (Rvector_borel_sa (length (nodup EqDecsigT fin_elms)))
                            (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) XFvec).
     {
+      clear H H0 H1 H2 H3 H4 H5 H6 iscond.
       intros ?.
+      unfold RandomVariable in rvXF.
+      specialize (rvXF (iso_event B)).
       admit.
     }
     specialize (H6 _ _ H9 _ _ _ H12).
@@ -6334,7 +6337,8 @@ Section MDP.
   Qed.
 
    Theorem qlearn 
-           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) :
+           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
+           (rvXF : RandomVariable finfun_sa finfun_sa qlearn_XF)  :
      0 <= β < 1 ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
     (exists (C : R),
@@ -6344,23 +6348,6 @@ Section MDP.
     let w := fun t ω sa => qlearn_w (qlearn_Q_basic) t ω sa (qlearn_Q_basic_rv_dom t) (isfe_qlearn_Q_basic t) in
     let XF := qlearn_XF  in
     (forall sa, RandomVariable (F 0%nat) borel_sa (fun ω => X 0%nat ω sa)) ->
-(*
-    (forall k sa, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (fun ω => w k ω sa)) (const 0)) ->
-*)
-    (exists (A B : R),
-        0 < A /\ 0 < B /\
-        forall k sa, 
-          almostR2 prts Rbar_le (ConditionalExpectation 
-                                   _ (filt_sub k) 
-                                   (rvsqr (fun ω => (w k ω sa))))
-                   (rvplus (const A) 
-                           (rvscale B (rvmaxlist 
-                                         (fun j ω => Rsqr (Rmax_norm _ (X j ω)))
-                                         k)))) ->
-    (forall x, Rmax_norm _ (XF x) <= β * Rmax_norm _ x) ->
- (*   (forall k ω sa, X (S k) ω sa = 
-                    (X k ω sa) +  ((α k ω sa) * (((XF (X k ω) sa) - (X k ω sa) ) +  (w k ω sa)))) ->
- *)
     almost prts (fun ω => is_lim_seq (fun n => Rmax_norm _ (X n ω)) 0).
    Proof.
      intros.
@@ -6412,7 +6399,6 @@ Section MDP.
          apply rvminus_rv'; trivial.
          apply rv_qmin1; trivial.
          apply FiniteCondexp_rv.
-     - admit.
      - intros.
        now apply Condexp_cond_exp.
      - intros.
@@ -6437,13 +6423,13 @@ Section MDP.
                                                              (isfe :=
                                                                 (isfe_qmin1 (qlearn_Q_basic k) (qlearn_Q_basic_rv_dom k) (isfe_qlearn_Q_basic k) sa))
                                                              (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω0) (next_state sa ω0)) ω)) _ _ ); intros.
-       cut_to H10.
+       cut_to H8.
        generalize (is_conditional_expectation_independent_sa prts (filt_sub k) (cost sa)); intros.
-       cut_to H11.
+       cut_to H9.
 
        generalize (Condexp_cond_exp prts (filt_sub k) (cost sa)); intros.
        generalize (is_conditional_expectation_unique prts (filt_sub k) (cost sa)); intros.
-       specialize (H13 _ _ _ _ _ (isfe_cost sa) H11 H12).
+       specialize (H11 _ _ _ _ _ (isfe_cost sa) H9 H10).
        generalize (Condexp_scale prts (filt_sub k) β
                       (fun ω : Ts =>
                          (qlearn_Qmin (qlearn_Q_basic k ω) (next_state sa ω) -
@@ -6453,34 +6439,34 @@ Section MDP.
        generalize (Condexp_f_minus_condexp_f  
                      (fun ω : Ts =>
                         qlearn_Qmin (qlearn_Q_basic k ω) (next_state sa ω) ) (filt_sub k)); intros.
-       + revert H15; apply almost_impl.
-         revert H14; apply almost_impl.
-         revert H13; apply almost_impl.
-         revert H10; apply almost_impl.
-         revert H9; apply almost_impl.
+       + revert H13; apply almost_impl.
+         revert H12; apply almost_impl.
+         revert H11; apply almost_impl.
+         revert H8; apply almost_impl.
+         revert H7; apply almost_impl.
          apply all_almost; intros ??????.
-         unfold rvplus in H10.
-         rewrite H10.
+         unfold rvplus in H8.
+         rewrite H8.
          replace (Finite (const 0 x)) with (Rbar_plus (Finite (const 0 x)) (Finite (const 0 x))) by now rewrite Rbar_plus_0_r.
          unfold Rbar_rvplus.
          f_equal.
-         * etransitivity; [| etransitivity]; [| apply H9 |]; apply refl_refl.
+         * etransitivity; [| etransitivity]; [| apply H7 |]; apply refl_refl.
            -- apply ConditionalExpectation_ext.
               reflexivity.
            -- unfold const.
               unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
               generalize (Condexp_const' (FiniteExpectation prts (cost sa)) (filt_sub k) x); intros.
-              rewrite H16.
+              rewrite H14.
               unfold const.
-              unfold const in H13.
+              unfold const in H11.
               repeat change (fun x => ?h x) with h.
-              rewrite <- H13.
+              rewrite <- H11.
               simpl; f_equal.
               lra.
-         * unfold rvscale in H14.
-           rewrite H14.
+         * unfold rvscale in H12.
+           rewrite H12.
            unfold Rbar_rvmult, const.
-           rewrite H15.
+           rewrite H13.
            unfold const.
            now rewrite Rbar_mult_0_r.
        + admit.
@@ -6488,6 +6474,8 @@ Section MDP.
          apply IsFiniteExpectation_const.
        + apply IsFiniteExpectation_scale.
          apply IsFiniteExpectation_minus'; try typeclasses eauto.
+     - admit.
+     - admit.
      - intros.
        subst w X XF.
        unfold qlearn_XF, qlearn_w.
