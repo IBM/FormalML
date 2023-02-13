@@ -6216,8 +6216,38 @@ Section MDP.
         * apply Forall_map.
           apply Forall_forall; intros.
           apply Rabs_pos.
-    - revert H4.
-      admit.
+    - intros x.
+      generalize (H4 (our_iso_b x)); intros HH.
+      unfold XFvec.
+      unfold Rmax_norm in HH.
+      unfold fin_elms in *.
+      destruct finA.
+      generalize (nodup_equiv EqDecsigT fin_elms)
+      ; intros eqq1.
+      repeat rewrite <- (map_equivlist (fun s : sigT (act M) => Rabs _) _ (reflexivity _) _ _ eqq1) in HH.
+      unfold our_iso_f; simpl.
+      etransitivity; [etransitivity |]; [| apply HH |]; right.
+      + rewrite <- fold_left_Rmax_abs.
+        * unfold Rvector_max_abs, vector_fold_left; simpl.
+          now rewrite map_map.
+        * apply Forall_map.
+          apply Forall_forall; intros.
+          apply Rabs_pos.
+      + rewrite <- fold_left_Rmax_abs.
+        * unfold Rvector_max_abs, vector_fold_left; simpl.
+          f_equal.
+          rewrite <- map_map.
+          repeat rewrite (fold_left_map _ Rabs).
+          f_equal.
+          unfold our_iso_b; simpl.
+          unfold qlearn_redux.vector_to_finite_fun; simpl in *.
+          generalize (qlearn_redux.vector_map_nth_finite (Build_FiniteType _ fin_elms fin_finite) EqDecsigT (B:=R) x); intros HH2.
+          apply (f_equal (@proj1_sig _ _)) in HH2.
+          simpl in HH2.
+          apply HH2.
+        * apply Forall_map.
+          apply Forall_forall; intros.
+          apply Rabs_pos.
     - revert H5.
       intros.
       intros ?.
@@ -6233,7 +6263,7 @@ Section MDP.
       unfold qlearn_redux.finite_fun_to_vector in HH.
       rewrite HH.
       lra.
-  Admitted.
+  Qed.
 
    Theorem qlearn 
            (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) :
