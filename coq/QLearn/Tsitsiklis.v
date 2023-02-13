@@ -5875,7 +5875,7 @@ Section MDP.
   Admitted.
 
 
-  Instance qlean_Q_basic_rv_dom :
+  Instance qlearn_Q_basic_rv_dom :
     forall t sa, RandomVariable dom borel_sa (fun ω => qlearn_Q_basic t ω sa).
   Proof.
     intros.
@@ -6284,8 +6284,8 @@ Section MDP.
     (exists (C : R),
         forall sa,
           almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (α k ω sa)))) (Finite C))) ->
-    let X := qlearn_Q in 
-    let w := fun t ω sa => qlearn_w (qlearn_Q) t ω sa (rv_qlearn_Q t) (isfe_qlearn_Q t) in
+    let X := qlearn_Q_basic in 
+    let w := fun t ω sa => qlearn_w (qlearn_Q_basic) t ω sa (qlearn_Q_basic_rv_dom t) (isfe_qlearn_Q_basic t) in
     let XF := qlearn_XF  in
     (forall sa, RandomVariable (F 0%nat) borel_sa (fun ω => X 0%nat ω sa)) ->
 (*
@@ -6318,11 +6318,16 @@ Section MDP.
        - typeclasses eauto.
        - apply IsFiniteExpectation_minus'; try typeclasses eauto.
          apply IsFiniteExpectation_const.
-       - typeclasses eauto.
+       - apply IsFiniteExpectation_scale.
+         apply IsFiniteExpectation_minus'; try typeclasses eauto.
+         apply isfe_qmin1; try typeclasses eauto.
+         intros.
+         apply isfe_qlearn_Q_basic.
      }
      assert (forall n sa, RandomVariable (F n) borel_sa (fun ω : Ts => X n ω sa)).
      {
-       admit.
+       intros.
+       apply qlearn_Q_basic_rv.
      }
      assert (forall n sa,  RandomVariable (F n) (discrete_sa (state M)) (next_state sa)).
      {
@@ -6361,11 +6366,10 @@ Section MDP.
        unfold qlearn_XF, qlearn_w.
        replace (FiniteConditionalExpectation 
                   prts (filt_sub k)
-                  (fun ω0 : Ts => qlearn_Qmin (qlearn_Q k ω0) (next_state sa ω0)) ω) with
-           (FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q k ω) (next_state sa ω0))).
-       + ring_simplify.
-         ring_simplify.
-         admit.
+                  (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω0) (next_state sa ω0)) ω) with
+           (FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state sa ω0))).
+       + simpl.
+         lra.
        + admit.
    Admitted.
        
