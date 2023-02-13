@@ -6133,6 +6133,7 @@ Section MDP.
     assert (rvXFvec: RandomVariable (Rvector_borel_sa (length (nodup EqDecsigT fin_elms)))
                            (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) XFvec).
     {
+      intros ?.
       admit.
     }
     specialize (H6 _ _ H9 _ _ _ H12).
@@ -6303,6 +6304,15 @@ Section MDP.
      rv_unfold; lra.
    Qed.
 
+   Corollary Condexp_const' c 
+             {dom2 : SigmaAlgebra Ts}
+             (sub : sa_sub dom2 dom) :
+    rv_eq (ConditionalExpectation prts sub (fun _ => c)) (const (Finite c)).
+  Proof.
+    apply Condexp_id.
+    apply rvconst'.
+  Qed.
+
    Theorem qlearn 
            (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) :
      0 <= β < 1 ->
@@ -6408,9 +6418,24 @@ Section MDP.
                                                                 (isfe_qmin1 (qlearn_Q_basic k) (qlearn_Q_basic_rv_dom k) (isfe_qlearn_Q_basic k) sa))
                                                              (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω0) (next_state sa ω0)) ω)) _ _ ); intros.
        cut_to H10.
-       + revert H10; apply almost_impl.
+       generalize (is_conditional_expectation_independent_sa prts (filt_sub k) (cost sa)); intros.
+       cut_to H11.
+
+       generalize (Condexp_cond_exp prts (filt_sub k) (cost sa)); intros.
+       generalize (is_conditional_expectation_unique prts (filt_sub k) (cost sa)); intros.
+       specialize (H13 _ _ _ _ _ (isfe_cost sa) H11 H12).
+       generalize (Condexp_scale prts (filt_sub k) β
+                      (fun ω : Ts =>
+                         (qlearn_Qmin (qlearn_Q_basic k ω) (next_state sa ω) -
+                          FiniteConditionalExpectation 
+                            prts (filt_sub k)
+                            (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω0) (next_state sa ω0)) ω))); intros.
+
+       + revert H14; apply almost_impl.
+         revert H13; apply almost_impl.
+         revert H10; apply almost_impl.
          revert H9; apply almost_impl.
-         apply all_almost; intros ???.
+         apply all_almost; intros ?????.
          unfold rvplus in H10.
          rewrite H10.
          replace (Finite (const 0 x)) with (Rbar_plus (Finite (const 0 x)) (Finite (const 0 x))) by now rewrite Rbar_plus_0_r.
@@ -6421,10 +6446,16 @@ Section MDP.
               reflexivity.
            -- unfold const.
               unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
-              generalize (Condexp_const prts (filt_sub k) (FiniteExpectation prts (cost sa)) x); intros.
-              unfold const in H11.
+              generalize (Condexp_const' (FiniteExpectation prts (cost sa)) (filt_sub k) x); intros.
+              rewrite H15.
+              unfold const.
+              unfold const in H13.
+              rewrite H13.
               admit.
-         * admit.
+         * unfold rvscale in H14.
+           rewrite H14.
+           admit.
+       + admit.
        + apply IsFiniteExpectation_minus'; try typeclasses eauto.
          apply IsFiniteExpectation_const.
        + apply IsFiniteExpectation_scale.
