@@ -6004,23 +6004,16 @@ Section MDP.
     - apply Rmax_comm.
   Qed.
 
-(*
-  Instance vector_sa {n} {T} (sav:vector (SigmaAlgebra T) n) : SigmaAlgebra (vector T n)
-  := generated_sa (pre_event_set_vector_product (vector_map sa_sigma sav)).
-
-  Definition Rvector_borel_sa (n:nat) : SigmaAlgebra (vector R n)
-    := vector_sa (vector_const borel_sa n).
-*)
-                                                    
-  Program Instance funfun_sa : SigmaAlgebra (Rfct (sigT M.(act))).
-  
+  Instance finfun_sa : SigmaAlgebra (Rfct (sigT M.(act))) :=
+    iso_sa (iso := Isomorphism_symm (qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)))
+           (Rvector_borel_sa _).
 
   Theorem Tsitsiklis_1_3_fintype  (X w  : nat -> Ts -> Rfct (sigT M.(act)))
     (XF : Rfct (sigT M.(act)) -> Rfct (sigT M.(act)))
     (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) 
     {rvX0 : forall sa, RandomVariable (F 0%nat) borel_sa (fun ω => X 0%nat ω sa)}
     (adapt_w : forall sa, IsAdapted borel_sa (fun t ω => w t ω sa) (fun k => F (S k)))
-    {rvXF : RandomVariable (Rvector_borel_sa _) (Rvector_borel_sa _) (fun vecrf => our_iso_f (XF (our_iso_b vecrf)))}
+    {rvXF : RandomVariable finfun_sa finfun_sa XF}
     {rvw : forall k sa, RandomVariable dom borel_sa (fun ω : Ts => w k ω sa)}
     {iscond : forall k sa, is_conditional_expectation prts (F k) (fun ω => w k ω sa) (ConditionalExpectation prts (filt_sub k) (fun ω => w k ω sa))} :
     
@@ -6136,6 +6129,11 @@ Section MDP.
         unfold our_iso_f, iso_f; simpl.
         unfold qlearn_redux.finite_fun_to_vector; simpl.
         now rewrite vector_nth_map.
+    }
+    assert (rvXFvec: RandomVariable (Rvector_borel_sa (length (nodup EqDecsigT fin_elms)))
+                           (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) XFvec).
+    {
+      admit.
     }
     specialize (H6 _ _ H9 _ _ _ H12).
     cut_to H6; trivial.
@@ -6283,7 +6281,7 @@ Section MDP.
       unfold qlearn_redux.finite_fun_to_vector in HH.
       rewrite HH.
       lra.
-  Qed.
+   Admitted.
 
     Lemma Condexp_minus' (f1 f2 : Ts -> R) 
           {dom2 : SigmaAlgebra Ts}
