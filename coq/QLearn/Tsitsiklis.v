@@ -6313,6 +6313,26 @@ Section MDP.
     apply rvconst'.
   Qed.
 
+  Lemma Condexp_f_minus_condexp_f (f : Ts -> R)
+                     {dom2 : SigmaAlgebra Ts}
+                     (sub : sa_sub dom2 dom) 
+                     {rv : RandomVariable dom borel_sa f}
+                     {isfe : IsFiniteExpectation prts f} :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (ConditionalExpectation prts sub (fun ω => (f ω) - (FiniteConditionalExpectation prts sub f ω)))
+             (const 0).
+  Proof.
+    generalize (Condexp_minus' f (FiniteConditionalExpectation prts sub f) sub).
+    apply almost_impl, all_almost; intros ??.
+    rewrite H.
+    unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp, const.
+    rewrite Rbar_plus_comm.
+    rewrite Condexp_id.
+    - erewrite FiniteCondexp_eq.
+      simpl; f_equal; lra.
+    - apply FiniteCondexp_rv.
+  Qed.
+
    Theorem qlearn 
            (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) :
      0 <= β < 1 ->
@@ -6430,12 +6450,15 @@ Section MDP.
                           FiniteConditionalExpectation 
                             prts (filt_sub k)
                             (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω0) (next_state sa ω0)) ω))); intros.
-
-       + revert H14; apply almost_impl.
+       generalize (Condexp_f_minus_condexp_f  
+                     (fun ω : Ts =>
+                        qlearn_Qmin (qlearn_Q_basic k ω) (next_state sa ω) ) (filt_sub k)); intros.
+       + revert H15; apply almost_impl.
+         revert H14; apply almost_impl.
          revert H13; apply almost_impl.
          revert H10; apply almost_impl.
          revert H9; apply almost_impl.
-         apply all_almost; intros ?????.
+         apply all_almost; intros ??????.
          unfold rvplus in H10.
          rewrite H10.
          replace (Finite (const 0 x)) with (Rbar_plus (Finite (const 0 x)) (Finite (const 0 x))) by now rewrite Rbar_plus_0_r.
@@ -6447,7 +6470,7 @@ Section MDP.
            -- unfold const.
               unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
               generalize (Condexp_const' (FiniteExpectation prts (cost sa)) (filt_sub k) x); intros.
-              rewrite H15.
+              rewrite H16.
               unfold const.
               unfold const in H13.
               repeat change (fun x => ?h x) with h.
@@ -6456,7 +6479,10 @@ Section MDP.
               lra.
          * unfold rvscale in H14.
            rewrite H14.
-           admit.
+           unfold Rbar_rvmult, const.
+           rewrite H15.
+           unfold const.
+           now rewrite Rbar_mult_0_r.
        + admit.
        + apply IsFiniteExpectation_minus'; try typeclasses eauto.
          apply IsFiniteExpectation_const.
