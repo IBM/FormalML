@@ -5840,11 +5840,10 @@ Section MDP.
     now apply (RandomVariable_sa_sub (isfilt n)).
   Qed.
     
-  Lemma qlearn_Q_basic_rv
-    (*    (next_state_rv : forall sa t,
-          ??? -> 
-        RandomVariable (F (S t)) (discrete_sa (state M)) (next_state sa))
-*)
+  Instance qlearn_Q_basic_rv
+    (next_state_rv : forall sa t,
+        RandomVariable (F t) (discrete_sa (sigT M.(act))) sa ->
+        RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state (sa ω) ω))
     :
     forall t sa, RandomVariable (F t) borel_sa (fun ω => qlearn_Q_basic t ω sa).
   Proof.
@@ -5862,7 +5861,8 @@ Section MDP.
                 ** intros.
                    apply (RandomVariable_sa_sub (isfilt t)).      
                    now apply IHt.
-                ** admit.
+                ** apply next_state_rv.
+                   apply rvconst.
           -- cut (RandomVariable (F (S t)) borel_sa (rvopp (fun ω : Ts => qlearn_Q_basic t ω sa))).
              { apply RandomVariable_proper; try reflexivity.
                intros ?.
@@ -5872,8 +5872,7 @@ Section MDP.
              generalize (IHt sa).
              apply RandomVariable_proper_le; try reflexivity.
              apply isfilt.
-  Admitted.
-
+  Qed.
 
   Instance qlearn_Q_basic_rv_dom :
     forall t sa, RandomVariable dom borel_sa (fun ω => qlearn_Q_basic t ω sa).
