@@ -6450,8 +6450,10 @@ Section MDP.
               rewrite H15.
               unfold const.
               unfold const in H13.
-              rewrite H13.
-              admit.
+              repeat change (fun x => ?h x) with h.
+              rewrite <- H13.
+              simpl; f_equal.
+              lra.
          * unfold rvscale in H14.
            rewrite H14.
            admit.
