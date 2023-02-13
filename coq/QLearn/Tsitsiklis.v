@@ -6006,7 +6006,8 @@ Section MDP.
 
   Instance finfun_sa : SigmaAlgebra (Rfct (sigT M.(act))) :=
     iso_sa (iso := Isomorphism_symm (qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)))
-           (Rvector_borel_sa _).
+      (Rvector_borel_sa _).
+
 
   Theorem Tsitsiklis_1_3_fintype  (X w  : nat -> Ts -> Rfct (sigT M.(act)))
     (XF : Rfct (sigT M.(act)) -> Rfct (sigT M.(act)))
@@ -6133,11 +6134,21 @@ Section MDP.
     assert (rvXFvec: RandomVariable (Rvector_borel_sa (length (nodup EqDecsigT fin_elms)))
                            (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) XFvec).
     {
-      clear H H0 H1 H2 H3 H4 H5 H6 iscond.
-      intros ?.
-      unfold RandomVariable in rvXF.
-      specialize (rvXF (iso_event B)).
-      admit.
+      unfold XFvec.
+      apply (rv_cod_iso_sa_b (Isomorphism_symm (qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)))).
+      apply (RandomVariable_proper
+               _ _ (reflexivity _)
+               _ finfun_sa (reflexivity _) _ 
+               (fun ω' => XF (our_iso_b ω'))).
+      {
+        intros ?.
+        apply iso_b_f.
+      }
+      unfold our_iso_b.
+      generalize (rv_dom_iso_sa_f (qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)) rvXF).
+      apply RandomVariable_proper; try reflexivity.
+      symmetry.
+      apply iso_sa_symm_id.
     }
     specialize (H6 _ _ H9 _ _ _ H12).
     cut_to H6; trivial.

@@ -6,6 +6,8 @@ Require Classical.
 Require Import ClassicalDescription EquivDec.
 Require Import ClassicalChoice ChoiceFacts.
 Require Import FiniteType.
+Require Import Isomorphism.
+
 
 Import ListNotations.
 
@@ -1591,3 +1593,75 @@ Section ps_pullback.
   Qed.
 
 End ps_pullback.
+
+Section iso_rvs.
+  Instance rv_dom_iso_sa_f {Ts Ts' Td} {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td} {rv_X : Ts -> Td}
+    (iso:Isomorphism Ts Ts')
+    (rv:RandomVariable dom cod rv_X) :
+    RandomVariable (iso_sa (iso:=iso) dom) cod (fun ω' => rv_X (iso_b ω')).
+  Proof.
+    now apply pullback_compose_rv.
+  Qed.
+
+  Instance rv_dom_iso_sa_b {Ts Ts' Td} (dom : SigmaAlgebra Ts) (cod : SigmaAlgebra Td) (rv_X : Ts -> Td) 
+    (iso:Isomorphism Ts Ts')
+    (rv:RandomVariable (iso_sa (iso:=iso) dom) cod (fun ω' => rv_X (iso_b ω'))) :
+    RandomVariable dom cod rv_X.
+  Proof.
+    generalize (rv_dom_iso_sa_f (Isomorphism_symm iso) rv).
+    eapply RandomVariable_proper; try reflexivity.
+    - symmetry.
+      apply iso_sa_symm_id.
+    - intros ?; simpl.
+      now rewrite iso_b_f.
+  Qed.
+
+  Instance iso_f_rv {Ts Ts'} (dom : SigmaAlgebra Ts) (iso:Isomorphism Ts Ts') :
+    RandomVariable dom (iso_sa (iso:=iso) dom) (iso_f).
+  Proof.
+    intros ?.
+    destruct B.
+    simpl in s.
+    destruct s as [? [??]]; simpl.
+    unfold event_preimage; simpl.
+    revert s.
+    apply sa_proper; intros ?.
+    rewrite i.
+    now rewrite iso_b_f.
+  Qed.
+
+  Instance iso_b_rv {Ts Ts'} (dom : SigmaAlgebra Ts) (iso:Isomorphism Ts Ts') :
+    RandomVariable (iso_sa (iso:=iso) dom) dom (iso_b).
+  Proof.
+    intros ?.
+    simpl.
+    apply pullback_sa_pullback.
+    now destruct B.
+  Qed.
+
+  Instance rv_cod_iso_sa_f {Ts Td Td'} {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td} {rv_X : Ts -> Td}
+    (iso:Isomorphism Td Td')
+    (rv:RandomVariable dom cod rv_X) :
+    RandomVariable dom (iso_sa (iso:=iso) cod) (fun ω' => iso_f (Isomorphism:=iso) (rv_X ω')).
+  Proof.
+    apply compose_rv; trivial.
+    apply iso_f_rv.
+  Qed.
+
+  Instance rv_cod_iso_sa_b {Ts Td Td'} {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td} {rv_X : Ts -> Td}
+    (iso:Isomorphism Td Td')
+    (rv:RandomVariable dom (iso_sa (iso:=iso) cod) (fun ω' => iso_f (Isomorphism:=iso) (rv_X ω'))) :
+    RandomVariable dom cod rv_X.
+  Proof.
+    generalize (@compose_rv _ _ _ _ (iso_sa cod) cod (fun ω' : Ts => iso_f (rv_X ω')) iso_b); intros HH.
+    cut_to HH.
+    - revert HH.
+      apply RandomVariable_proper; try reflexivity.
+      intros ?.
+      unfold compose.
+      now rewrite iso_b_f.
+    - trivial.
+    - apply iso_b_rv.
+  Qed.
+
+End iso_rvs.

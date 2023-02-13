@@ -1202,6 +1202,36 @@ Proof.
      now unfold id.
   Qed.
 
+ Lemma iso_sa_symm_id {A B} (σ : SigmaAlgebra A) (iso:Isomorphism A B) :
+  sa_equiv (iso_sa (iso:=Isomorphism_symm iso) (iso_sa (iso:=iso) σ)) σ.
+Proof.
+  unfold iso_sa.
+  rewrite <- pullback_sa_compose_equiv.
+  simpl.
+  unfold compose.
+  symmetry.
+  rewrite <- pullback_sa_id at 1.
+  apply (pullback_sa_proper); try reflexivity.
+  intros ?.
+  rewrite iso_b_f.
+  reflexivity.
+Qed.  
+
+Lemma iso_sa_symm_id' {A B} (σ : SigmaAlgebra A) (iso:Isomorphism B A) :
+  sa_equiv (iso_sa (iso:=iso) (iso_sa (iso:=Isomorphism_symm iso) σ)) σ.
+Proof.
+  unfold iso_sa.
+  rewrite <- pullback_sa_compose_equiv.
+  simpl.
+  unfold compose.
+  symmetry.
+  rewrite <- pullback_sa_id at 1.
+  apply (pullback_sa_proper); try reflexivity.
+  intros ?.
+  rewrite iso_f_b.
+  reflexivity.
+Qed.  
+
 Lemma union_pullback_sub_conv {A B : Type} (sa1 sa2 : SigmaAlgebra B) 
       (f : A -> B) :
   (exists (g : B -> A),
