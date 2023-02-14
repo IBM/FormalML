@@ -3509,6 +3509,21 @@ Section Rmax_list.
         congruence.
   Qed.
 
+  Lemma Rmin_list_map_plus {A} (f g : A -> R) (l : list A) :
+    Min_{ l} (fun a => f a + g a) >=
+    Min_{ l} (f) + Min_{ l} (g).
+   Proof.
+    destruct (is_nil_dec l).
+    - subst; simpl. lra.
+    - rewrite Rmin_list_ge_iff.
+      + intros x Hx. rewrite in_map_iff in Hx.
+        destruct Hx as [a [Ha Hina]].
+        rewrite <-Ha.
+        apply Rplus_ge_compat; (apply Rmin_spec; rewrite in_map_iff; exists a; split ; trivial).
+      + rewrite map_not_nil.
+        congruence.
+  Qed.
+
   Lemma Rmax_list_map_triangle {A} (f g : A -> R) (l : list A):
     Max_{ l}(fun a : A => Rabs (f a + g a)) <=
     Max_{ l}(fun a : A => Rabs (f a)) + (Max_{ l}(fun a : A => Rabs (g a))).

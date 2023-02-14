@@ -3641,7 +3641,8 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
                                          k)))) ->
     (forall k, almostR2 prts Rle (rvmaxabs (X k)) D0) ->
     0 < β < 1 ->
-    (forall x, Rvector_max_abs (XF x) <= β * Rvector_max_abs x) ->
+    (forall x, Rvector_max_abs (XF x)<= 
+               β * Rvector_max_abs x) ->
     (forall k, rv_eq (X (S k)) 
                      (vecrvplus (X k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF (X k ω)) (X k) ) (w k))))) ->
     almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
@@ -4733,6 +4734,39 @@ Qed.
                   (fin_elms (FiniteType := fin_finite_nodup _))).
   Proof.
     now rewrite (SimpleExpectation_compose _ _).
+  Qed.
+
+  Program Instance inner_frf_compose {A B C} (g1 : A -> B) (g2 : B -> C)
+          (frf1 : FiniteRangeFunction g1) :
+    FiniteRangeFunction (compose g2 g1)
+    := { frf_vals := map g2 frf_vals }.
+  Next Obligation.
+    apply in_map_iff.
+    exists (g1 x).
+    split; trivial.
+    now destruct frf1.
+  Qed.
+
+  Lemma FiniteExpectation_compose_Finite_type {Td} (f1 : Ts -> Td) (f2 : Td -> R)
+        {dec : EqDec Td eq}
+        {fin : FiniteType Td}
+        {σd: SigmaAlgebra Td} 
+        {has_pre: HasPreimageSingleton σd}
+        {rv1: RandomVariable dom σd f1}
+        {rv2: RandomVariable dom borel_sa (fun v => f2 (f1 v))}
+(*        {frf2 : FiniteRangeFunction (fun v => f2 (f1 v))} *)
+        {isfe : IsFiniteExpectation prts (fun v : Ts => f2 (f1 v))} :
+    FiniteExpectation prts (fun v => f2 (f1 v)) = 
+    list_sum (map (fun (v : Td) => (f2 v) * (ps_P (preimage_singleton f1 v)))
+                  (fin_elms (FiniteType := fin_finite_nodup _))).
+  Proof.
+    assert (frf2 : FiniteRangeFunction (fun v => f2 (f1 v))).
+    {
+      assert (FiniteRangeFunction f1) by apply fin_image_frf.
+      now apply inner_frf_compose.
+    }
+    erewrite FiniteExpectation_simple.
+    apply SimpleExpectation_compose_Finite_type.
   Qed.
 
   Lemma nncondexp_sqr_sum_bound_nneg (x y : Ts -> R)
@@ -6402,11 +6436,77 @@ Section MDP.
     symmetry.
     apply (qlearn_redux.vector_nth_finite_map finA EqDecsigT (rv_X a) sa).
   Qed.
-  
+
+  Lemma FiniteExpectation_Qmin (x : Rfct {s : state M & act M s}) sa :
+    FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state sa ω)) =
+    list_sum (map (fun v : state M => qlearn_Qmin x v * ps_P (preimage_singleton (next_state sa) v)) 
+                  (fin_elms (FiniteType := fin_finite_nodup _))).
+  Proof.
+    apply FiniteExpectation_compose_Finite_type.
+    typeclasses eauto.
+  Qed.
+
+  Lemma qlearn_XF_contraction_helper (xy : Rfct {x : state M & act M x}) sa :
+    Rabs
+      (list_sum
+         (map
+            (fun x0 : state M =>
+               qlearn_Qmin xy x0 * ps_P (preimage_singleton (next_state sa) x0))
+            fin_elms)) <=
+    Rabs (xy sa).
+  Proof.
+    unfold qlearn_Qmin.
+    Admitted.
+
+  Lemma qlearn_XF_contraction :
+    0 <= β < 1 ->
+    forall x y : Rfct {x : state M & act M x},
+      forall sa,
+        Rabs (qlearn_XF x sa - qlearn_XF y sa) <=      
+        β * Rabs (x sa - y sa).
+  Proof.
+    intros.
+    unfold qlearn_XF.
+    replace  (FiniteExpectation prts (cost sa) +
+              β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state sa ω)) -
+              (FiniteExpectation prts (cost sa) +
+               β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin y (next_state sa ω))))
+      with
+        (β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state sa ω)) -
+         β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin y (next_state sa ω))) by lra.
+    rewrite <- Rmult_minus_distr_l.
+    rewrite Rabs_mult.
+    rewrite Rabs_right; try lra.
+    apply Rmult_le_compat_l; try lra.
+    do 2 rewrite FiniteExpectation_Qmin.
+    rewrite <- list_sum_map_sub.
+    rewrite map_ext with
+        (g :=  (fun x0 : state M =>
+          qlearn_Qmin (Rfct_minus {x : state M & act M x} x y) x0 *
+          ps_P (preimage_singleton (next_state sa) x0))).
+    - replace (x sa - y sa) with ((Rfct_minus (sigT M.(act)) x y) sa) by now unfold Rfct_minus.
+      generalize (qlearn_XF_contraction_helper (Rfct_minus (sigT M.(act)) x y) sa); intros.
+      eapply Rle_trans.
+      shelve.
+      apply H0.
+      Unshelve.
+      right.
+      do 3 f_equal.
+      admit.
+    - intros.
+      unfold qlearn_Qmin.
+      rewrite <- Rmult_minus_distr_r.
+      f_equal.
+      admit.
+  Admitted.
+Search Rfct.
+
   Theorem qlearn 
-    (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) :
+    (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) 
+    (fixpt0: forall sa, qlearn_XF (Rfct_zero (sigT M.(act))) sa = 0) :
     0 <= β < 1 ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
+
     (exists (C : R),
       forall sa,
         almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (α k ω sa)))) (Finite C))) ->
@@ -6575,7 +6675,21 @@ Section MDP.
        + apply IsFiniteExpectation_scale.
          apply IsFiniteExpectation_minus'; try typeclasses eauto.
      - admit.
-     - admit.
+     - intros.
+       assert (forall sa, Rabs (qlearn_XF x sa) <= β * Rabs (x sa)).
+       {
+         intros.
+         generalize (qlearn_XF_contraction H x (Rfct_zero (sigT M.(act))) sa);intros.
+         rewrite fixpt0 in H7.
+         unfold Rfct_zero in H7.
+         now do 2 rewrite Rminus_0_r in H7.
+       }
+       unfold Rmax_norm.
+       match_destr.
+       unfold XF.
+       rewrite <- Rmax_list_map_const_mul; try lra.
+       apply Rmax_list_fun_le.
+       now intros.
      - intros.
        subst w X XF.
        unfold qlearn_XF, qlearn_w.

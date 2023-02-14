@@ -265,6 +265,8 @@ Definition Rfct_zero : Rfct A := fun x => 0.
 
 Definition Rfct_plus (f : Rfct A) (g : Rfct A) := fun x => (f x) + (g x).  
 
+Definition Rfct_minus (f : Rfct A) (g : Rfct A) := fun x => (f x) - (g x).  
+
 Definition Rfct_opp (f : Rfct A) := fun x => opp (f x).
 
 Definition Rfct_scal (r : R) (f : Rfct A) := fun x => scal r (f x).
