@@ -5245,7 +5245,10 @@ Section MDP.
 
   Instance rv_ns: forall sa, RandomVariable dom (discrete_sa (state M)) (next_state sa).
   Proof.
-  Admitted.
+    intros.
+    specialize (rv_ns0 sa).
+    now apply (RandomVariable_sa_sub (filt_sub 0%nat)) in rv_ns0.
+  Qed.
 
   (* Definition SA := sigT M.(act). *)
 
@@ -6353,8 +6356,7 @@ Section MDP.
   Qed.
 
    Theorem qlearn 
-           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
-           (rvXF : RandomVariable finfun_sa finfun_sa qlearn_XF)  :
+           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) :
      0 <= β < 1 ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
     (exists (C : R),
@@ -6367,6 +6369,11 @@ Section MDP.
     almost prts (fun ω => is_lim_seq (fun n => Rmax_norm _ (X n ω)) 0).
    Proof.
      intros.
+     assert (rvXF : RandomVariable finfun_sa finfun_sa qlearn_XF).
+     {
+       unfold qlearn_XF.
+       admit.
+     }
      assert (forall k sa, IsFiniteExpectation prts (fun ω : Ts => w k ω sa)).
      {
        intros.
