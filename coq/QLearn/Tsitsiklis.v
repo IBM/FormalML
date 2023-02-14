@@ -6437,7 +6437,7 @@ Section MDP.
     apply (qlearn_redux.vector_nth_finite_map finA EqDecsigT (rv_X a) sa).
   Qed.
 
-  Lemma FiniteExpectation_Qmin (x : Rfct {s : state M & act M s}) sa :
+  Lemma FiniteExpectation_Qmin' (x : Rfct {s : state M & act M s}) sa :
     FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state sa ω)) =
     list_sum (map (fun v : state M => qlearn_Qmin x v * ps_P (preimage_singleton (next_state sa) v)) 
                   (fin_elms (FiniteType := fin_finite_nodup _))).
@@ -6446,6 +6446,20 @@ Section MDP.
     typeclasses eauto.
   Qed.
 
+  Lemma FiniteExpectation_Qmin  (x : Rfct {s : state M & act M s}) sa :
+    FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state sa ω)) =
+    list_sum (map (fun v : state M => qlearn_Qmin x v * ps_P (preimage_singleton (next_state sa) v)) 
+                  fin_elms).
+  Proof.
+    rewrite FiniteExpectation_Qmin'.
+    assert ((@fin_elms (state M) (fs M)) =
+            (@fin_elms (state M) (@fin_finite_nodup (state M) (st_eqdec M) (fs M)))).
+    {
+      admit.
+    }
+    now rewrite H.
+  Admitted.
+    
   Lemma qlearn_XF_contraction_helper (xy : Rfct {x : state M & act M x}) sa :
     Rabs
       (list_sum
@@ -6453,17 +6467,19 @@ Section MDP.
             (fun x0 : state M =>
                qlearn_Qmin xy x0 * ps_P (preimage_singleton (next_state sa) x0))
             fin_elms)) <=
-    Rabs (xy sa).
+    Rmax_norm (sigT M.(act)) (xy).
   Proof.
     unfold qlearn_Qmin.
+    unfold Rmax_norm.
+    match_destr.
     Admitted.
 
-  Lemma qlearn_XF_contraction :
+  Lemma qlearn_XF_contraction0 :
     0 <= β < 1 ->
     forall x y : Rfct {x : state M & act M x},
-      forall sa,
+    forall sa,
         Rabs (qlearn_XF x sa - qlearn_XF y sa) <=      
-        β * Rabs (x sa - y sa).
+        β * Rmax_norm (sigT M.(act)) (Rfct_minus (sigT M.(act)) x y).
   Proof.
     intros.
     unfold qlearn_XF.
@@ -6485,21 +6501,45 @@ Section MDP.
           qlearn_Qmin (Rfct_minus {x : state M & act M x} x y) x0 *
           ps_P (preimage_singleton (next_state sa) x0))).
     - replace (x sa - y sa) with ((Rfct_minus (sigT M.(act)) x y) sa) by now unfold Rfct_minus.
-      generalize (qlearn_XF_contraction_helper (Rfct_minus (sigT M.(act)) x y) sa); intros.
-      eapply Rle_trans.
-      shelve.
-      apply H0.
-      Unshelve.
-      right.
-      do 3 f_equal.
-      admit.
+      now rewrite qlearn_XF_contraction_helper.
     - intros.
       unfold qlearn_Qmin.
       rewrite <- Rmult_minus_distr_r.
       f_equal.
       admit.
   Admitted.
-Search Rfct.
+
+  Lemma qlearn_XF_contraction :
+    0 <= β < 1 ->
+    forall x y : Rfct {x : state M & act M x},
+        Rmax_norm (sigT M.(act)) (Rfct_minus (sigT M.(act)) 
+                                             (qlearn_XF x) (qlearn_XF y)) <=      
+        β * Rmax_norm (sigT M.(act)) (Rfct_minus (sigT M.(act)) x y).
+  Proof.
+    intros.
+    generalize (qlearn_XF_contraction0 H x y); intros.
+    unfold Rmax_norm.
+    match_destr.
+    rewrite Rmax_list_le_iff.
+    - intros.
+      apply in_map_iff in H1.
+      destruct H1 as [? [? ?]].
+      specialize (H0 x1).
+      unfold Rfct_minus in H1.
+      rewrite H1 in H0.
+      apply H0.
+    - rewrite map_not_nil.
+      Admitted.
+
+  Lemma Rfct_minus_zero (x : Rfct (sigT M.(act))) :
+    Rfct_minus (sigT M.(act)) x (Rfct_zero (sigT M.(act))) = x.
+  Proof.
+    unfold Rfct_minus, Rfct_zero.
+    intros.
+    apply Rfct_eq_ext.
+    intros.
+    lra.
+  Qed.
 
   Theorem qlearn 
     (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) 
@@ -6676,20 +6716,18 @@ Search Rfct.
          apply IsFiniteExpectation_minus'; try typeclasses eauto.
      - admit.
      - intros.
-       assert (forall sa, Rabs (qlearn_XF x sa) <= β * Rabs (x sa)).
-       {
-         intros.
-         generalize (qlearn_XF_contraction H x (Rfct_zero (sigT M.(act))) sa);intros.
-         rewrite fixpt0 in H7.
-         unfold Rfct_zero in H7.
-         now do 2 rewrite Rminus_0_r in H7.
-       }
-       unfold Rmax_norm.
-       match_destr.
-       unfold XF.
-       rewrite <- Rmax_list_map_const_mul; try lra.
-       apply Rmax_list_fun_le.
-       now intros.
+       generalize (qlearn_XF_contraction H x (Rfct_zero (sigT M.(act)))); intros.
+       rewrite Rfct_minus_zero in H7.
+       replace (Rmax_norm (sigT (M.(act)))
+                          (Rfct_minus {x : state M & act M x} (qlearn_XF x)
+                                      (qlearn_XF (Rfct_zero {x : state M & act M x})))) with
+           (Rmax_norm (sigT (M.(act))) (qlearn_XF x)) in H7; trivial.
+       f_equal.
+       apply Rfct_eq_ext.
+       intros.
+       unfold Rfct_minus.
+       rewrite fixpt0.
+       lra.
      - intros.
        subst w X XF.
        unfold qlearn_XF, qlearn_w.
