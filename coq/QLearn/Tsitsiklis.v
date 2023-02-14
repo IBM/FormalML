@@ -6355,6 +6355,13 @@ Section MDP.
     - apply FiniteCondexp_rv.
   Qed.
 
+  Instance rv_finfun_sa {Ts1} {dom1 : SigmaAlgebra Ts1}
+           (rv_X : Ts1 -> Rfct (sigT M.(act)))
+           {rv : forall sa, RandomVariable dom1 borel_sa (fun ω => rv_X ω sa)} :
+    RandomVariable dom1 finfun_sa rv_X.
+  Proof.
+    Admitted.
+
    Theorem qlearn 
            (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) :
      0 <= β < 1 ->
@@ -6371,8 +6378,27 @@ Section MDP.
      intros.
      assert (rvXF : RandomVariable finfun_sa finfun_sa qlearn_XF).
      {
-       unfold qlearn_XF.
-       admit.
+       apply rv_finfun_sa.
+       intros.
+       apply rvplus_rv; try typeclasses eauto.
+       apply rvscale_rv.
+       assert (rv2 : forall ω, RandomVariable dom borel_sa (fun v : Ts => qlearn_Qmin ω (next_state sa v))).
+       {
+         intros.
+         typeclasses eauto.
+       } 
+       eapply RandomVariable_proper; [reflexivity | reflexivity | ..].
+       {
+         intros ?.
+         rewrite (FiniteExpectation_simple _ _).
+         apply SimpleExpectation_compose_Finite_type.
+       }
+       apply list_sum_rv; intros; try typeclasses eauto.
+       apply rvmult_rv.
+       - unfold qlearn_Qmin.
+         
+         admit.
+       - apply rvconst.
      }
      assert (forall k sa, IsFiniteExpectation prts (fun ω : Ts => w k ω sa)).
      {
