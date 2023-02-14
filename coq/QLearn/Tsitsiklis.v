@@ -6546,8 +6546,7 @@ Section MDP.
          revert H7; apply almost_impl.
          apply all_almost; intros ??????.
          unfold rvplus in H8.
-(*
-         rewrite H8.
+         rewrite_condexp H8.
          replace (Finite (const 0 x)) with (Rbar_plus (Finite (const 0 x)) (Finite (const 0 x))) by now rewrite Rbar_plus_0_r.
          unfold Rbar_rvplus.
          f_equal.
@@ -6570,8 +6569,6 @@ Section MDP.
            rewrite H13.
            unfold const.
            now rewrite Rbar_mult_0_r.
-*)
-         admit.
        + admit.
        + apply IsFiniteExpectation_minus'; try typeclasses eauto.
          apply IsFiniteExpectation_const.
