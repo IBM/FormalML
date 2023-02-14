@@ -5130,6 +5130,33 @@ Qed.
 
 End Stochastic_convergence.
 
+  Instance rvs_Rmin_list {Ts} {dom2 : SigmaAlgebra Ts} (rvs : list (Ts -> R))
+                          {rv_rvs : List.Forall (RandomVariable dom2 borel_sa) rvs} :
+    RandomVariable dom2 borel_sa (fun ω : Ts => Rmin_list (map (fun x => x ω) rvs)).
+  Proof.
+    induction rvs.
+    - apply rvconst.
+    - invcs rv_rvs.
+      cut_to IHrvs; trivial.
+      destruct rvs; trivial.
+      simpl.
+      apply rvmin_rv; trivial.
+  Qed.
+
+  Instance rvs_Rmax_list {Ts} {dom2 : SigmaAlgebra Ts} (rvs : list (Ts -> R))
+                          {rv_rvs : List.Forall (RandomVariable dom2 borel_sa) rvs} :
+    RandomVariable dom2 borel_sa (fun ω : Ts => Rmax_list (map (fun x => x ω) rvs)).
+  Proof.
+    induction rvs.
+    - apply rvconst.
+    - invcs rv_rvs.
+      cut_to IHrvs; trivial.
+      destruct rvs; trivial.
+      simpl.
+      apply rvmax_rv; trivial.
+  Qed.
+
+
 Section MDP.
 
   Context {M : MDP}  (γ : R).
@@ -5341,31 +5368,6 @@ Section MDP.
     fun sa => FiniteExpectation prts (cost sa) +
               β * (FiniteExpectation prts (fun ω => qlearn_Qmin Q (next_state sa ω))).
 
-  Instance rvs_Rmin_list {dom2 : SigmaAlgebra Ts} (rvs : list (Ts -> R))
-                          {rv_rvs : List.Forall (RandomVariable dom2 borel_sa) rvs} :
-    RandomVariable dom2 borel_sa (fun ω : Ts => Rmin_list (map (fun x => x ω) rvs)).
-  Proof.
-    induction rvs.
-    - apply rvconst.
-    - invcs rv_rvs.
-      cut_to IHrvs; trivial.
-      destruct rvs; trivial.
-      simpl.
-      apply rvmin_rv; trivial.
-  Qed.
-
-  Instance rvs_Rmax_list {dom2 : SigmaAlgebra Ts} (rvs : list (Ts -> R))
-                          {rv_rvs : List.Forall (RandomVariable dom2 borel_sa) rvs} :
-    RandomVariable dom2 borel_sa (fun ω : Ts => Rmax_list (map (fun x => x ω) rvs)).
-  Proof.
-    induction rvs.
-    - apply rvconst.
-    - invcs rv_rvs.
-      cut_to IHrvs; trivial.
-      destruct rvs; trivial.
-      simpl.
-      apply rvmax_rv; trivial.
-  Qed.
 
   Instance isfe_Rmin_list (rvs : list (Ts -> R))
                           {rv_rvs : List.Forall (RandomVariable dom borel_sa) rvs}
@@ -5427,7 +5429,7 @@ Section MDP.
   Proof.
     unfold Rmin_all.
     match_destr.
-    generalize (@rvs_Rmin_list dom2 ((map (fun (s : sigT (act M)) ω => Q ω s) fin_elms))); intros HH.
+    generalize (@rvs_Rmin_list Ts dom2 ((map (fun (s : sigT (act M)) ω => Q ω s) fin_elms))); intros HH.
     cut_to HH.
     - revert HH.
       apply RandomVariable_proper; try easy.
@@ -5444,7 +5446,7 @@ Section MDP.
   Proof.
     unfold Rmax_all.
     match_destr.
-    generalize (@rvs_Rmax_list dom ((map (fun (s : sigT (act M)) ω => Q ω s) fin_elms))); intros HH.
+    generalize (@rvs_Rmax_list Ts dom ((map (fun (s : sigT (act M)) ω => Q ω s) fin_elms))); intros HH.
     cut_to HH.
     - revert HH.
       apply RandomVariable_proper; try easy.
@@ -5486,7 +5488,7 @@ Section MDP.
   Proof.
     intros.
     unfold qlearn_Qmin.
-    generalize (@rvs_Rmin_list dom2 ((map (fun a  ω => Q ω (existT _ s a)) (act_list s)))); intros HH.
+    generalize (@rvs_Rmin_list Ts dom2 ((map (fun a  ω => Q ω (existT _ s a)) (act_list s)))); intros HH.
     cut_to HH.
     - revert HH.
       apply RandomVariable_proper; try easy.
@@ -6384,6 +6386,7 @@ Section MDP.
            {rv : RandomVariable dom1 finfun_sa rv_X} :
     forall sa, RandomVariable dom1 borel_sa (fun ω => rv_X ω sa).
   Proof.
+
     assert (rv': RandomVariable dom1 (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) (fun x => our_iso_f (rv_X x))).
     {
       generalize (rv_cod_iso_sa_f (qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)) rv).
@@ -6432,11 +6435,19 @@ Section MDP.
          apply SimpleExpectation_compose_Finite_type.
        }
        apply list_sum_rv; intros; try typeclasses eauto.
-       apply rvmult_rv.
-       - unfold qlearn_Qmin.
-         
-         admit.
-       - apply rvconst.
+       apply rvmult_rv; [| apply rvconst].
+       unfold qlearn_Qmin.
+       generalize (@rvs_Rmin_list (Rfct (sigT M.(act))) finfun_sa (map (fun a omega => omega (existT _ c a)) (act_list c))); intros HH.
+       cut_to HH.
+       - revert HH.
+         apply RandomVariable_proper; try easy.
+         intros ?.
+         now rewrite map_map.
+       - apply Forall_forall; intros.
+         apply in_map_iff in H3.
+         destruct H3 as [? [??]]; subst.
+         apply finfun_sa_rv.
+         apply id_rv.
      }
      assert (forall k sa, IsFiniteExpectation prts (fun ω : Ts => w k ω sa)).
      {
@@ -6468,7 +6479,15 @@ Section MDP.
        induction n; trivial.
        now apply (RandomVariable_sa_sub (isfilt n)).
      }
-     eapply Tsitsiklis_1_3_fintype with (w := w); try easy.
+     assert (rvw: forall (k : nat) (sa : {x : state M & act M x}),
+                RandomVariable dom borel_sa (fun ω : Ts => w k ω sa)).
+     {
+       unfold w.
+       intros.
+       typeclasses eauto.
+     }
+     apply Tsitsiklis_1_3_fintype with 
+         (w := w) (XF := XF) (rvw := rvw); try easy.
      - intros.
        subst w.
        unfold qlearn_w.
@@ -6527,6 +6546,7 @@ Section MDP.
          revert H7; apply almost_impl.
          apply all_almost; intros ??????.
          unfold rvplus in H8.
+(*
          rewrite H8.
          replace (Finite (const 0 x)) with (Rbar_plus (Finite (const 0 x)) (Finite (const 0 x))) by now rewrite Rbar_plus_0_r.
          unfold Rbar_rvplus.
@@ -6550,6 +6570,8 @@ Section MDP.
            rewrite H13.
            unfold const.
            now rewrite Rbar_mult_0_r.
+*)
+         admit.
        + admit.
        + apply IsFiniteExpectation_minus'; try typeclasses eauto.
          apply IsFiniteExpectation_const.
