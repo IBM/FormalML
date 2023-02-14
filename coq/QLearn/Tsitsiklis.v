@@ -6379,6 +6379,27 @@ Section MDP.
     - apply rv.
   Qed.
 
+  Instance finfun_sa_rv {Ts1} {dom1 : SigmaAlgebra Ts1}
+           (rv_X : Ts1 -> Rfct (sigT M.(act)))
+           {rv : RandomVariable dom1 finfun_sa rv_X} :
+    forall sa, RandomVariable dom1 borel_sa (fun ω => rv_X ω sa).
+  Proof.
+    assert (rv': RandomVariable dom1 (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) (fun x => our_iso_f (rv_X x))).
+    {
+      generalize (rv_cod_iso_sa_f (qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)) rv).
+      apply RandomVariable_proper; try reflexivity.
+      unfold finfun_sa.
+      now rewrite iso_sa_symm_id'.
+    }
+    intros sa.
+    generalize (vecrvnth_rv _ (fin_finite_index_bound (dec:=EqDecsigT) _ sa) _ (rv:=rv')).
+    apply RandomVariable_proper; try reflexivity.
+    intros ?.
+    unfold vecrvnth.
+    symmetry.
+    apply (qlearn_redux.vector_nth_finite_map finA EqDecsigT (rv_X a) sa).
+  Qed.
+  
   Theorem qlearn 
     (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) :
     0 <= β < 1 ->
