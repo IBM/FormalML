@@ -6360,15 +6360,32 @@ Section MDP.
            {rv : forall sa, RandomVariable dom1 borel_sa (fun ω => rv_X ω sa)} :
     RandomVariable dom1 finfun_sa rv_X.
   Proof.
-    Admitted.
+    unfold finfun_sa; simpl.
+    apply (rv_cod_iso_sa_b (qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R))).
+    cut (RandomVariable dom1 (Rvector_borel_sa (length (nodup EqDecsigT fin_elms)))
+           (fun ω' : Ts1 => our_iso_f (rv_X ω'))).
+    {
+      apply RandomVariable_proper; try reflexivity.
+      apply iso_sa_symm_id.
+    }
+    apply rv_vecrvnth; intros.
+    unfold vecrvnth.
+    eapply RandomVariable_proper; [reflexivity | reflexivity | ..].
+    - intros ?.
+      unfold our_iso_f; simpl.
+      unfold qlearn_redux.finite_fun_to_vector.
+      rewrite vector_nth_map.
+      reflexivity.
+    - apply rv.
+  Qed.
 
-   Theorem qlearn 
-           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) :
-     0 <= β < 1 ->
+  Theorem qlearn 
+    (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) :
+    0 <= β < 1 ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
     (exists (C : R),
-        forall sa,
-          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (α k ω sa)))) (Finite C))) ->
+      forall sa,
+        almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (α k ω sa)))) (Finite C))) ->
     let X := qlearn_Q_basic in 
     let w := fun t ω sa => qlearn_w (qlearn_Q_basic) t ω sa (qlearn_Q_basic_rv_dom t) (isfe_qlearn_Q_basic t) in
     let XF := qlearn_XF  in
