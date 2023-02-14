@@ -5249,6 +5249,7 @@ Section MDP.
           {F : nat -> SigmaAlgebra Ts}
 
           (next_state : (sigT M.(act)) -> Ts -> M.(state))
+          {rv_ns0: forall sa, RandomVariable (F 0%nat) (discrete_sa (state M)) (next_state sa)}
           (next_state_rv : forall t sa,
               RandomVariable (F t) (discrete_sa (sigT M.(act))) sa ->
               RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state (sa ω) ω))
@@ -5269,13 +5270,11 @@ Section MDP.
           (filt_sub : forall k, sa_sub (F k) dom) 
           (β : R).
 
-  Instance rv_ns t sa
-    (rv:RandomVariable (F t) (discrete_sa (sigT M.(act))) sa) :
-    RandomVariable dom (discrete_sa (state M)) (fun ω => next_state (sa ω) ω).
+  Instance rv_ns: forall sa, RandomVariable dom (discrete_sa (state M)) (next_state sa).
   Proof.
     intros.
-    apply (RandomVariable_sa_sub (filt_sub (S t)%nat)).
-    now apply next_state_rv.
+    specialize (rv_ns0 sa).
+    now apply (RandomVariable_sa_sub (filt_sub 0%nat)) in rv_ns0.
   Qed.
 
   (* Definition SA := sigT M.(act). *)
@@ -6547,7 +6546,8 @@ Section MDP.
          revert H7; apply almost_impl.
          apply all_almost; intros ??????.
          unfold rvplus in H8.
-         rewrite_condexp H8.
+(*
+         rewrite H8.
          replace (Finite (const 0 x)) with (Rbar_plus (Finite (const 0 x)) (Finite (const 0 x))) by now rewrite Rbar_plus_0_r.
          unfold Rbar_rvplus.
          f_equal.
@@ -6570,6 +6570,8 @@ Section MDP.
            rewrite H13.
            unfold const.
            now rewrite Rbar_mult_0_r.
+*)
+         admit.
        + admit.
        + apply IsFiniteExpectation_minus'; try typeclasses eauto.
          apply IsFiniteExpectation_const.
