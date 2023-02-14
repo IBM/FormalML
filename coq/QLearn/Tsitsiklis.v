@@ -5219,8 +5219,14 @@ Section MDP.
   Context {Ts : Type}            
           {dom : SigmaAlgebra Ts}
           {prts : ProbSpace dom}
+          {F : nat -> SigmaAlgebra Ts}
+
           (next_state : (sigT M.(act)) -> Ts -> M.(state))
-          {rv_ns: forall sa, RandomVariable dom (discrete_sa (state M)) (next_state sa)}
+          {rv_ns0: forall sa, RandomVariable (F 0%nat) (discrete_sa (state M)) (next_state sa)}
+          (next_state_rv : forall t sa,
+              RandomVariable (F t) (discrete_sa (sigT M.(act))) sa ->
+              RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state (sa ω) ω))
+          
           (cost : (sigT M.(act)) -> Ts -> R)
           {rv_cost : forall sa, RandomVariable dom borel_sa (cost sa)}
           {isfe_cost : forall (sa : sigT M.(act)),
@@ -5230,14 +5236,16 @@ Section MDP.
           (rvα : forall t sa,
               RandomVariable dom borel_sa (fun ω => α t ω sa))
           (alpha_bound : forall t ω sa, 0 <= α t ω sa <= 1)
-          {F : nat -> SigmaAlgebra Ts}
           (rvα' : forall t sa,
               RandomVariable (F t) borel_sa (fun ω => α t ω sa))
           {rv_cost0 : forall sa, RandomVariable (F 0%nat) borel_sa (cost sa)}
-          {rv_ns0: forall sa, RandomVariable (F 0%nat) (discrete_sa (state M)) (next_state sa)}
           (isfilt : IsFiltration F) 
           (filt_sub : forall k, sa_sub (F k) dom) 
           (β : R).
+
+  Instance rv_ns: forall sa, RandomVariable dom (discrete_sa (state M)) (next_state sa).
+  Proof.
+  Admitted.
 
   (* Definition SA := sigT M.(act). *)
 
@@ -5841,9 +5849,6 @@ Section MDP.
   Qed.
     
   Instance qlearn_Q_basic_rv
-    (next_state_rv : forall sa t,
-        RandomVariable (F t) (discrete_sa (sigT M.(act))) sa ->
-        RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state (sa ω) ω))
     :
     forall t sa, RandomVariable (F t) borel_sa (fun ω => qlearn_Q_basic t ω sa).
   Proof.
@@ -6374,12 +6379,6 @@ Section MDP.
          apply IsFiniteExpectation_const.
        - apply IsFiniteExpectation_scale.
          apply IsFiniteExpectation_minus'; try typeclasses eauto.
-     }
-     assert (next_state_rv : forall sa t,
-        RandomVariable (F t) (discrete_sa (sigT M.(act))) sa ->
-        RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state (sa ω) ω)).
-     {
-       admit.
      }
      assert (forall n sa, RandomVariable (F n) borel_sa (fun ω : Ts => X n ω sa)).
      {
