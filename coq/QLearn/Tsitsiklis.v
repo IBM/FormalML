@@ -6296,7 +6296,7 @@ Section MDP.
       unfold qlearn_redux.finite_fun_to_vector in HH.
       rewrite HH.
       lra.
-   Admitted.
+  Qed.
 
     Lemma Condexp_minus' (f1 f2 : Ts -> R) 
           {dom2 : SigmaAlgebra Ts}
