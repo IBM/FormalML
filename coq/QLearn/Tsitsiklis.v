@@ -6502,7 +6502,6 @@ Section MDP.
     rewrite map_map.
     unfold qlearn_Qmin.
     unfold Rfct_minus.
-    Search "distr".
     (*
       rewrite <- Rmult_minus_distr_r.
     *)
