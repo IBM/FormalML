@@ -22,6 +22,17 @@ Section Stochastic_convergence.
 Context {Ts : Type}  (* (w α : Ts -> nat -> R)  *)
         {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
 
+Lemma Rmin_max_opp {A} (f : A -> R) (l : list A) :
+    Min_{ l}(fun a : A => (f a)) =
+      - Max_{ l}(fun a => - f a).
+Proof.
+  induction l; simpl; [lra |].
+  rewrite IHl.
+  destruct l; simpl; [lra |].
+  rewrite Ropp_Rmax.
+  f_equal; lra.
+Qed.  
+  
 Lemma isfe_condexp_sqr_bounded (dom2 : SigmaAlgebra Ts) (sub2: sa_sub dom2 dom) (B : R) 
       (w : Ts -> R)
       {rv : RandomVariable dom borel_sa w} :
