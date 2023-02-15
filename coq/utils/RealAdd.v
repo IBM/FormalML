@@ -3638,6 +3638,15 @@ Section Rmax_list.
     f_equal.
     lra.
   Qed.
+
+  Global Instance Rmax_list_le_proper : Proper (Forall2 Rle ==> Rle) Rmax_list.
+  Proof.
+    intros ???.
+    induction H; simpl; [lra |].
+    invcs H0; trivial.
+    rewrite Rle_max_compat_l; eauto.
+    now rewrite Rle_max_compat_r; eauto.
+  Qed.    
     
 
   (* max_{x:A} (max_{f:A->B}(g (f a) f)) = max_{f:A->B} (max_{a:map f A} (g (a,f))) *)
