@@ -6446,20 +6446,6 @@ Section MDP.
     typeclasses eauto.
   Qed.
 
-  Lemma qlearn_XF_contraction_helper (xy : Rfct {x : state M & act M x}) sa :
-    Rabs
-      (list_sum
-         (map
-            (fun x0 : state M =>
-               qlearn_Qmin xy x0 * ps_P (preimage_singleton (next_state sa) x0))
-            fin_elms)) <=
-    Rmax_norm (sigT M.(act)) (xy).
-  Proof.
-    unfold qlearn_Qmin.
-    unfold Rmax_norm.
-    match_destr.
-    Admitted.
-
   Lemma Rmin_list_map_add {A} (f g : A -> R) (l : list A):
     Min_{ l}(fun a : A => (f a + g a)) >=
     Min_{ l}(fun a : A => (f a)) + (Min_{ l}(fun a : A => (g a))).
@@ -6517,11 +6503,14 @@ Section MDP.
     lra.
   Qed.
 
-  Lemma Rmax_list_abs_comm {A} (g : A -> R) (la : list A) :
-    Rabs (Max_{ la}(fun a => g a)) =
-    Max_{ la}(fun a : A => (Rabs (g a))).
+  Lemma list_sum_mult_const_alt {A} (c : R) (l : list A) (f : A -> R) :
+    list_sum (List.map (fun a => c * f a) l) = c*list_sum (List.map f l).
   Proof.
-    Admitted.
+    induction l.
+    simpl; lra.
+    simpl in *. rewrite IHl.
+    lra.
+  Qed.
 
    Lemma qlearn_XF_contraction0 :
     0 <= β < 1 ->
@@ -6556,12 +6545,12 @@ Section MDP.
            list_sum
              (map
                 (fun x0 : state M =>
-                   Rabs
-                     (Max_{ act_list x0}
-                          (fun a : act M x0 => 
+                   (Max_{ act_list x0}
+                        (fun a : act M x0 => 
+                           (Rabs
                              (x (existT (act M) x0 a) - 
-                              y (existT (act M) x0 a)) *
-                             ps_P (preimage_singleton (next_state sa) x0))))
+                              y (existT (act M) x0 a))) *
+                           ps_P (preimage_singleton (next_state sa) x0))))
                 (@FiniteType.fin_elms 
                    (state M)
                    (@fin_finite_nodup (state M) (st_eqdec M) (fs M))))).
@@ -6572,18 +6561,36 @@ Section MDP.
       apply Rge_le.
       setoid_rewrite Rmult_comm.
       rewrite Rmax_list_map_const_mul; [| apply ps_pos].
-      rewrite Rabs_mult.
+      rewrite Rabs_right; [| apply Rle_ge, ps_pos].
       apply Rle_ge.
-      apply Rmult_le_compat_l; [apply Rabs_pos |].
+      apply Rmult_le_compat_l; [apply ps_pos |].
       eapply Rle_trans.
       apply Rmin_list_minus_le_max_abs.
-      simpl; right.
-(*
-      rewrite Rmax_list_abs_comm.
-*)
-      admit.
+      now simpl; right.
     - simpl.
-      
+      apply Rle_trans with
+          (r2 :=
+             list_sum
+               (map
+                  (fun x0 : state M =>
+                     (Max_{ fin_elms}(fun s : {x : state M & act M x} => Rabs (x s - y s))) 
+
+                     * ps_P (preimage_singleton (next_state sa) x0))
+                  (@FiniteType.fin_elms 
+                   (state M)
+                   (@fin_finite_nodup (state M) (st_eqdec M) (fs M))))). 
+      + simpl.
+        apply list_sum_le.
+        intros.
+        setoid_rewrite Rmult_comm.
+        rewrite Rmax_list_map_const_mul; [|apply ps_pos].
+        apply Rmult_le_compat_l; [apply ps_pos |].
+        admit.
+      + rewrite list_sum_mult_const_alt.
+        rewrite <- Rmult_1_r.
+        apply Rmult_le_compat_l.
+        * apply Rmax_list_Rabs_pos.
+        * admit.
   Admitted.
 
   Lemma qlearn_XF_contraction :
