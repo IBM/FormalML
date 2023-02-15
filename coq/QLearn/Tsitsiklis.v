@@ -6460,7 +6460,70 @@ Section MDP.
     match_destr.
     Admitted.
 
-  Lemma qlearn_XF_contraction0 :
+  Lemma Rmin_list_map_add {A} (f g : A -> R) (l : list A):
+    Min_{ l}(fun a : A => (f a + g a)) >=
+    Min_{ l}(fun a : A => (f a)) + (Min_{ l}(fun a : A => (g a))).
+  Proof.
+    destruct (is_nil_dec l).
+    - subst; simpl. lra.
+    - rewrite Rmin_list_ge_iff.
+      intros x Hx. rewrite in_map_iff in Hx.
+      destruct Hx as [a [Ha Hina]].
+      rewrite <-Ha.
+      apply Rplus_ge_compat; try (apply Rmin_spec; rewrite in_map_iff; exists a; split ; trivial).
+      rewrite map_not_nil.
+      congruence.
+  Qed.
+
+  Lemma Rmin_list_map_sub {A} (f g : A -> R) (l : list A):
+    Min_{ l}(fun a : A => (f a - g a)) <=
+    Min_{ l}(fun a : A => (f a)) - (Min_{ l}(fun a : A => (g a))).
+  Proof.
+    generalize (Rmin_list_map_add (fun a : A => (f a - g a))
+                                  (fun a : A => (g a))); intros.
+    assert (Min_{ l}(fun a : A => f a - g a + g a) =
+            Min_{ l}(fun a : A => f a)).
+    {
+      apply Rmin_list_Proper.
+      replace  (map (fun a : A => f a - g a + g a) l) with
+          (map (fun a : A => f a) l).
+      apply Permutation.Permutation_refl.
+      apply map_ext.
+      intros; lra.
+    }
+    specialize (H l).
+    rewrite H0 in H.
+    lra.
+  Qed.
+
+  Lemma Rmax_list_map_sub {A} (f g : A -> R) (l : list A):
+    Max_{ l}(fun a : A => (f a - g a)) >=
+    Max_{ l}(fun a : A => (f a)) - (Max_{ l}(fun a : A => (g a))).
+  Proof.
+    generalize (Rmax_list_map_add (fun a : A => (f a - g a))
+                                  (fun a : A => (g a))); intros.
+    assert (Max_{ l}(fun a : A => f a - g a + g a) =
+            Max_{ l}(fun a : A => f a)).
+    {
+      apply Rmax_list_Proper.
+      replace  (map (fun a : A => f a - g a + g a) l) with
+          (map (fun a : A => f a) l).
+      apply Permutation.Permutation_refl.
+      apply map_ext.
+      intros; lra.
+    }
+    specialize (H l).
+    rewrite H0 in H.
+    lra.
+  Qed.
+
+  Lemma Rmax_list_abs_comm {A} (g : A -> R) (la : list A) :
+    Rabs (Max_{ la}(fun a => g a)) =
+    Max_{ la}(fun a : A => (Rabs (g a))).
+  Proof.
+    Admitted.
+
+   Lemma qlearn_XF_contraction0 :
     0 <= β < 1 ->
     forall x y : Rfct {x : state M & act M x},
     forall sa,
@@ -6488,9 +6551,39 @@ Section MDP.
     rewrite map_map.
     unfold qlearn_Qmin.
     unfold Rfct_minus.
-    (*
+    apply Rle_trans with
+        (r2 :=  
+           list_sum
+             (map
+                (fun x0 : state M =>
+                   Rabs
+                     (Max_{ act_list x0}
+                          (fun a : act M x0 => 
+                             (x (existT (act M) x0 a) - 
+                              y (existT (act M) x0 a)) *
+                             ps_P (preimage_singleton (next_state sa) x0))))
+                (@FiniteType.fin_elms 
+                   (state M)
+                   (@fin_finite_nodup (state M) (st_eqdec M) (fs M))))).
+    - apply list_sum_le.
+      intros.
       rewrite <- Rmult_minus_distr_r.
-    *)
+      rewrite Rabs_mult.
+      apply Rge_le.
+      setoid_rewrite Rmult_comm.
+      rewrite Rmax_list_map_const_mul; [| apply ps_pos].
+      rewrite Rabs_mult.
+      apply Rle_ge.
+      apply Rmult_le_compat_l; [apply Rabs_pos |].
+      eapply Rle_trans.
+      apply Rmin_list_minus_le_max_abs.
+      simpl; right.
+(*
+      rewrite Rmax_list_abs_comm.
+*)
+      admit.
+    - simpl.
+      
   Admitted.
 
   Lemma qlearn_XF_contraction :
