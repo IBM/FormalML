@@ -6459,7 +6459,7 @@ Section MDP.
     }
     now rewrite H.
   Admitted.
-    
+
   Lemma qlearn_XF_contraction_helper (xy : Rfct {x : state M & act M x}) sa :
     Rabs
       (list_sum
@@ -6496,17 +6496,16 @@ Section MDP.
     apply Rmult_le_compat_l; try lra.
     do 2 rewrite FiniteExpectation_Qmin.
     rewrite <- list_sum_map_sub.
-    rewrite map_ext with
-        (g :=  (fun x0 : state M =>
-          qlearn_Qmin (Rfct_minus {x : state M & act M x} x y) x0 *
-          ps_P (preimage_singleton (next_state sa) x0))).
-    - replace (x sa - y sa) with ((Rfct_minus (sigT M.(act)) x y) sa) by now unfold Rfct_minus.
-      now rewrite qlearn_XF_contraction_helper.
-    - intros.
-      unfold qlearn_Qmin.
+    unfold Rmax_norm.
+    match_destr.
+    rewrite list_sum_Rabs_triangle.
+    rewrite map_map.
+    unfold qlearn_Qmin.
+    unfold Rfct_minus.
+    Search "distr".
+    (*
       rewrite <- Rmult_minus_distr_r.
-      f_equal.
-      admit.
+    *)
   Admitted.
 
   Lemma qlearn_XF_contraction :
@@ -6529,7 +6528,14 @@ Section MDP.
       rewrite H1 in H0.
       apply H0.
     - rewrite map_not_nil.
-      Admitted.
+      generalize (M.(ne)); intros.
+      red in X.
+      generalize (M.(na) X); intros.
+      red in X0.
+      apply not_nil_exists.
+      exists (existT _ X X0).
+      apply fin_finite.
+   Qed.
 
   Lemma Rfct_minus_zero (x : Rfct (sigT M.(act))) :
     Rfct_minus (sigT M.(act)) x (Rfct_zero (sigT M.(act))) = x.
