@@ -6437,7 +6437,7 @@ Section MDP.
     apply (qlearn_redux.vector_nth_finite_map finA EqDecsigT (rv_X a) sa).
   Qed.
 
-  Lemma FiniteExpectation_Qmin' (x : Rfct {s : state M & act M s}) sa :
+  Lemma FiniteExpectation_Qmin (x : Rfct {s : state M & act M s}) sa :
     FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state sa ω)) =
     list_sum (map (fun v : state M => qlearn_Qmin x v * ps_P (preimage_singleton (next_state sa) v)) 
                   (fin_elms (FiniteType := fin_finite_nodup _))).
@@ -6445,20 +6445,6 @@ Section MDP.
     apply FiniteExpectation_compose_Finite_type.
     typeclasses eauto.
   Qed.
-
-  Lemma FiniteExpectation_Qmin  (x : Rfct {s : state M & act M s}) sa :
-    FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state sa ω)) =
-    list_sum (map (fun v : state M => qlearn_Qmin x v * ps_P (preimage_singleton (next_state sa) v)) 
-                  fin_elms).
-  Proof.
-    rewrite FiniteExpectation_Qmin'.
-    assert ((@fin_elms (state M) (fs M)) =
-            (@fin_elms (state M) (@fin_finite_nodup (state M) (st_eqdec M) (fs M)))).
-    {
-      admit.
-    }
-    now rewrite H.
-  Admitted.
 
   Lemma qlearn_XF_contraction_helper (xy : Rfct {x : state M & act M x}) sa :
     Rabs
