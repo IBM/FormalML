@@ -3606,6 +3606,39 @@ Section Rmax_list.
              exists a ; split ; trivial. apply Rabs_minus_sym.
   Qed.
 
+  Lemma Rmin_max_opp {A} (f : A -> R) (l : list A) :
+    Min_{ l}(fun a : A => (f a)) =
+      - Max_{ l}(fun a => - f a).
+  Proof.
+    induction l; simpl; [lra |].
+    rewrite IHl.
+    destruct l; simpl; [lra |].
+    rewrite Ropp_Rmax.
+    f_equal; lra.
+  Qed.
+
+  Lemma Rmin_list_minus_le_max_abs {A} (f g : A -> R) (la : list A):
+    Rabs (Min_{la}(f) - Min_{la}(g)) <= Max_{la}(fun a => Rabs(f a - g a)).
+  Proof.
+    rewrite (Rmin_max_opp f).
+    rewrite (Rmin_max_opp g).
+    transitivity (Rabs ((Max_{ la}(fun a : A => - f a)) - (Max_{ la}(fun a : A => - g a)))).
+    {
+      right.
+      rewrite Rabs_minus_sym.
+      f_equal.
+      lra.
+    }
+    rewrite Rmax_list_minus_le_abs .
+    right.
+    apply Rmax_list_Proper.
+    erewrite map_ext; [reflexivity |].
+    intros ?.
+    rewrite Rabs_minus_sym.
+    f_equal.
+    lra.
+  Qed.
+    
 
   (* max_{x:A} (max_{f:A->B}(g (f a) f)) = max_{f:A->B} (max_{a:map f A} (g (a,f))) *)
 
