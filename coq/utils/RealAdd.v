@@ -741,7 +741,7 @@ Section list_sum.
   Qed.
 
   Lemma list_sum_mult_const (c : R) (l : list R) :
-    list_sum (List.map (fun z => c*z) l) = c*list_sum (List.map (fun z => z) l).
+    list_sum (List.map (fun z => c*z) l) = c*list_sum l.
   Proof.
     induction l.
     simpl; lra.
@@ -752,8 +752,7 @@ Section list_sum.
   Lemma list_sum_const_mult_le {x y : R} (l : list R) (hl : list_sum l = R1) (hxy : x <= y) :
     list_sum (List.map (fun z => x*z) l) <= y.
   Proof.
-    rewrite list_sum_mult_const. rewrite map_id.
-    rewrite hl. lra.
+    rewrite list_sum_mult_const, hl; lra.
   Qed.
 
   Lemma list_sum_fun_mult_le {x y D : R} {f g : R -> R}(l : list R)(hf : forall z, f z <= D) (hg : forall z , 0 <= g z) :

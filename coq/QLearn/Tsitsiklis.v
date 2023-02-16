@@ -6503,15 +6503,6 @@ Section MDP.
     lra.
   Qed.
 
-  Lemma list_sum_mult_const_alt {A} (c : R) (l : list A) (f : A -> R) :
-    list_sum (List.map (fun a => c * f a) l) = c*list_sum (List.map f l).
-  Proof.
-    induction l.
-    simpl; lra.
-    simpl in *. rewrite IHl.
-    lra.
-  Qed.
-
    Lemma qlearn_XF_contraction0 :
     0 <= β < 1 ->
     forall x y : Rfct {x : state M & act M x},
@@ -6596,7 +6587,8 @@ Section MDP.
           destruct HH as [? [??]]; subst.
           eexists.
           now split; [reflexivity |].
-      + rewrite list_sum_mult_const_alt.
+      + rewrite <- map_map.
+        rewrite list_sum_mult_const.
         rewrite <- Rmult_1_r.
         apply Rmult_le_compat_l.
         * apply Rmax_list_Rabs_pos.

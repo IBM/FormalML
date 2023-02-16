@@ -492,7 +492,7 @@ Section Rvector_defs.
   Proof.
     unfold Rvector_sum.
     destruct x; simpl.
-    now rewrite list_sum_mult_const, map_id.
+    now rewrite list_sum_mult_const.
   Qed.
 
   Lemma Rvector_inner_scal (x y:vector R n) (l:R) : (l .* x) ⋅ y = Rmult l (x ⋅ y).

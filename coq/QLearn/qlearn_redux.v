@@ -1534,7 +1534,6 @@ Section stuff.
        rewrite list_sum_cat.
        rewrite IHla.
        rewrite list_sum_mult_const.
-       rewrite map_id.
        lra.
    Qed.
 

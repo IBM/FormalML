@@ -497,7 +497,6 @@ Section SimpleExpectation_sec.
                                      (map (fun x : R => ps_P ((preimage_singleton rv_X a) ∩ (preimage_singleton rv_X2 x))) (nodup Req_EM_T (frf_vals (FiniteRangeFunction:=frf2)))))).
     - rewrite list_sum_mult_const.
       f_equal.
-      rewrite map_map.
       apply (prob_inter_all1 (nodup_simple_random_variable Req_EM_T frf) (nodup_simple_random_variable Req_EM_T frf2) a); simpl; try apply NoDup_nodup.
     - now rewrite map_map.
   Qed.
