@@ -6590,13 +6590,19 @@ Section MDP.
           destruct (M a).
           specialize (fin_finite0 (na M a)).
           destruct fin_elms0; simpl in *; congruence.
-        * admit.
+        * intros ? HH.
+          apply in_map_iff in HH.
+          apply in_map_iff.
+          destruct HH as [? [??]]; subst.
+          eexists.
+          now split; [reflexivity |].
       + rewrite list_sum_mult_const_alt.
         rewrite <- Rmult_1_r.
         apply Rmult_le_compat_l.
         * apply Rmax_list_Rabs_pos.
-        * admit.
-  Admitted.
+        * right.
+          now generalize (frf_vals_prob_1 _ (next_state sa)).
+  Qed.
 
   Lemma qlearn_XF_contraction :
     0 <= β < 1 ->
