@@ -6585,7 +6585,12 @@ Section MDP.
         setoid_rewrite Rmult_comm.
         rewrite Rmax_list_map_const_mul; [|apply ps_pos].
         apply Rmult_le_compat_l; [apply ps_pos |].
-        admit.
+        apply Rmax_list_incl.
+        * unfold act_list.
+          destruct (M a).
+          specialize (fin_finite0 (na M a)).
+          destruct fin_elms0; simpl in *; congruence.
+        * admit.
       + rewrite list_sum_mult_const_alt.
         rewrite <- Rmult_1_r.
         apply Rmult_le_compat_l.

@@ -5062,7 +5062,7 @@ Proof.
   unfold expt_value in H.
   rewrite FiniteExpectation_simple with (rvx_rv := rv) (frf := finite_frf rv_X).
   unfold SimpleExpectation.
-  generalize (frf_vals_nodup_preimage_disj rv_X); intros.
+  generalize (frf_vals_nodup_preimage_disj borel_sa rv_X); intros.
   assert (Permutation (nodup Req_EM_T  (@frf_vals Ts R rv_X (finite_frf rv_X)))
                       (nodup Req_EM_T (map rv_X fin_elms))).
   {

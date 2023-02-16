@@ -355,30 +355,34 @@ Section SimpleExpectation_sec.
       congruence.
   Qed.
 
-  Lemma frf_vals_nodup_preimage_disj
-        (rv_X : Ts -> R)
-        {rv : RandomVariable dom borel_sa rv_X}
-        {frf : FiniteRangeFunction rv_X} :
-    ForallOrdPairs event_disjoint (map (preimage_singleton rv_X) (nodup Req_EM_T frf_vals)).
+  Lemma frf_vals_nodup_preimage_disj {Td}
+    {decA:EqDec Td eq} (cod : SigmaAlgebra Td)
+    {has_pre : HasPreimageSingleton cod}
+    (rv_X : Ts -> Td)
+    {rv : RandomVariable dom cod rv_X}
+    {frf : FiniteRangeFunction rv_X} :
+    ForallOrdPairs event_disjoint (map (preimage_singleton rv_X) (nodup decA frf_vals)).
   Proof.
     intros.
     apply event_disjoint_preimage_disj.
     apply NoDup_nodup.
   Qed.
   
-  Lemma frf_vals_prob_1 
-        (rv_X : Ts -> R)
-        {rv: RandomVariable dom borel_sa rv_X}
-        {frf : FiniteRangeFunction rv_X} :
-    list_sum (map (fun x : R => ps_P (preimage_singleton rv_X x)) 
-                  (nodup Req_EM_T frf_vals)) = 1.
+  Lemma frf_vals_prob_1 {Td}
+    {decA:EqDec Td eq} (cod : SigmaAlgebra Td)
+    {has_pre : HasPreimageSingleton cod}
+    (rv_X : Ts -> Td)
+    {rv: RandomVariable dom cod rv_X}
+    {frf : FiniteRangeFunction rv_X} :
+    list_sum (map (fun x => ps_P (preimage_singleton rv_X x)) 
+                  (nodup decA frf_vals)) = 1.
   Proof.
     transitivity (list_sum (map ps_P (map (preimage_singleton rv_X) 
-                                          (nodup Req_EM_T frf_vals)))).
+                                          (nodup decA frf_vals)))).
     { now rewrite map_map. }
 
     generalize (ps_list_disjoint_union Prts
-                                       (map (preimage_singleton rv_X) (nodup Req_EM_T frf_vals)))
+                                       (map (preimage_singleton rv_X) (nodup decA frf_vals)))
     ; intros HH.
     rewrite list_sum_fold_right.
     rewrite <- HH; clear HH.
