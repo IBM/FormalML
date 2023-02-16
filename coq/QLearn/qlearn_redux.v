@@ -1083,10 +1083,8 @@ Section stuff.
   Lemma sa_fun_space_pmf_equal (sp : fun_space) :
     fun_space_pmf_pmf sp = sa_fun_space_pmf_pmf  (fun (sa : sigT M.(act)) => sp (projT1 sa) (projT2 sa)).
   Proof.
-    unfold fun_space_pmf_pmf, sa_fun_space_pmf_pmf.
-    unfold fsa.
-    Admitted.
-
+  Admitted.
+  
   Lemma fsa_sum_one (sa : sigT M.(act)) :
     list_sum (map (fun s' => nonneg (fsa sa s')) 
                   (nodup M.(st_eqdec) (@fin_elms _ M.(fs)))) = 1.
@@ -1477,15 +1475,6 @@ Section stuff.
        eauto.
    Qed.        
 
-   Lemma holds_on_dec_eq_sup {A B : Type} (dec : EqDec B eq) (l1 l2: list A) l :
-     incl l2 l1 ->
-     forall x, In x (nodupA (holds_on_dec dec l1) l) ->
-          Exists (fun y => forall a, (In a l2 \/ ~ In a l1) -> x a = y a) (nodupA (holds_on_dec dec l2) l).
-   Proof.
-     intros.
-   Admitted.
-
-   
    Lemma nodupA_holds_on_dec_eq_sup {A B : Type} (dec : EqDec B eq) (l1 l2: list A) l :
      incl l2 l1 ->
      forall x, In x (nodupA (holds_on_dec dec l1) l) ->

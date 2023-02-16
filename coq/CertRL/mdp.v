@@ -99,12 +99,8 @@ Proof.
  apply st_eqdec.
 Qed.
 
-Global Instance act_finite (M : MDP) : FiniteType (sigT M.(act)).
-Proof.
-  apply fin_finite_dep_prod.
-  + apply fs.
-  + apply fa.
-Qed.
+Global Instance act_finite (M : MDP) : FiniteType (sigT M.(act))
+  := fin_finite_dep_prod M.(fs) M.(fa).
 
 Global Instance nonempty_dec_rule (M : MDP) : NonEmpty (dec_rule M)
   := fun s => na M s.
