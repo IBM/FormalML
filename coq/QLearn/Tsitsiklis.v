@@ -5268,7 +5268,7 @@ Section MDP.
      eapply Rle_trans with
          (r2 := Max_{act_list s} (fun a => Rsqr (ec (existT _ s a)))).
      - apply Rge_le.
-       apply qlearn_redux.Rmax_list_map_ge_Rmin.
+       apply Rmax_list_map_ge_Rmin.
      - apply max_sqr_bound.
    Qed.
 
@@ -5385,7 +5385,7 @@ Section MDP.
       match_destr.
       apply Rle_trans with (r2 := Max_{ act_list (next_state sa a)}(fun a0 : act M (next_state sa a) => Q (existT (act M) (next_state sa a) a0))).
       + apply Rge_le.
-        apply qlearn_redux.Rmax_list_map_ge_Rmin.
+        apply Rmax_list_map_ge_Rmin.
       + apply Rmax_list_incl.
         * rewrite map_not_nil.
           apply act_list_not_nil.
@@ -5603,7 +5603,7 @@ Section MDP.
       unfold Rmax_all, qlearn_Qmin.
       apply Rle_trans with
           (r2 :=  Max_{ act_list (next_state sa a)}(fun a0 : act M (next_state sa a) => Q a (existT (act M) (next_state sa a) a0))).
-      + apply Rge_le, qlearn_redux.Rmax_list_map_ge_Rmin.
+      + apply Rge_le, Rmax_list_map_ge_Rmin.
       + match_destr.
         apply Rmax_list_incl.
         * rewrite map_not_nil.
@@ -5800,7 +5800,7 @@ Section MDP.
         unfold Rmax_all, qlearn_Qmin.
         apply Rle_trans with
             (r2 :=  Max_{ act_list c}(fun a0 : act M c => g a (existT (act M) c a0))).
-        * apply Rge_le, qlearn_redux.Rmax_list_map_ge_Rmin.
+        * apply Rge_le, Rmax_list_map_ge_Rmin.
         * match_destr.
           apply Rmax_list_incl.
           -- rewrite map_not_nil.

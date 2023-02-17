@@ -208,16 +208,6 @@ Section MDP.
       now rewrite H in H0.
   Qed.
 
-  Lemma Rmax_list_map_ge_Rmin {A} (l : list A) (f : A -> R) :
-    Rmax_list (map f l) >= Rmin_list (map f l).
-  Proof.
-    destruct l.
-    - simpl; lra.
-    - apply Rge_trans with (r2 := f a).
-      + apply Rle_ge, Rmax_spec_map, in_eq.
-      + apply Rmin_spec_map, in_eq.
-   Qed.
-
   (* lemma 6 *)
   Lemma lower_bound_step :
     0 < γ < 1 ->
