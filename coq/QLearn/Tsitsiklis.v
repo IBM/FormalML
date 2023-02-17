@@ -13,7 +13,7 @@ Require Import IndefiniteDescription ClassicalDescription.
 Require Import RelationClasses.
 Require Import Dvoretzky infprod.
 Require Import Martingale MartingaleStopped.
-Require qlearn_redux.
+Require Bellman qlearn_redux.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -5200,8 +5200,6 @@ Section MDP.
   Definition Ts := {x : state M & act M x} .
   Definition Td := Rfct Ts.
 
-  
-
   Definition bellmanQbar_alt (ec : Rfct (sigT M.(act))) : Rfct (sigT M.(act)) -> Rfct (sigT M.(act))
   := fun W => fun (sa : sigT M.(act))  => let (s,a) := sa in
                   ec sa +
@@ -5224,7 +5222,7 @@ Section MDP.
       lra.
     }
     rewrite H0.
-    now apply qlearn_redux.bellmanQbar_contraction.
+    now apply Bellman.bellmanQbar_contraction.
   Qed.
 
   Lemma bellmanQbar_alt_contraction_fixed (ec : Rfct (sigT M.(act))) 

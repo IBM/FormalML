@@ -108,6 +108,7 @@ PROB_THEORY = \
 
 QLEARN = \
 	Dvoretzky \
+	Bellman \
 	qlearn_aux \
 	qlearn \
 	qlearn_redux \
