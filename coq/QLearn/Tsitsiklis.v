@@ -13,7 +13,8 @@ Require Import IndefiniteDescription ClassicalDescription.
 Require Import RelationClasses.
 Require Import Dvoretzky infprod.
 Require Import Martingale MartingaleStopped.
-Require Bellman qlearn_redux.
+Require Bellman.
+Require Import FiniteTypeVector.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -5966,48 +5967,48 @@ Section MDP.
                            (fun ω => qlearn_Qmin (Q t ω) (next_state sa ω)) ω).
 
 (*
-  Existing Instance qlearn_redux.finite_fun_vec_encoder.
+  Existing Instance finite_fun_vec_encoder.
  *)
   
   Lemma finite_fun_vector_iso_nth (x : Rfct (sigT M.(act))) (P : R -> Prop) :
     let iso_f := iso_f
-                   (Isomorphism := qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)) in
+                   (Isomorphism := finite_fun_vec_encoder finA EqDecsigT (B := R)) in
     (forall sa, P (x sa)) <-> (forall i pf, P (vector_nth i pf (iso_f x))).
   Proof.
     simpl.
     split; intros.
-    - unfold qlearn_redux.finite_fun_to_vector; simpl.
+    - unfold finite_fun_to_vector; simpl.
       rewrite vector_nth_map.
       apply H.
     - specialize (H _ (fin_finite_index_bound finA (dec:=EqDecsigT) sa)).
-      unfold qlearn_redux.finite_fun_to_vector in H.
-      now rewrite qlearn_redux.vector_nth_finite_map in H.
+      unfold finite_fun_to_vector in H.
+      now rewrite vector_nth_finite_map in H.
   Qed.
 
   Lemma finite_fun_vector_iso_nth_fun {A} (x : A -> Rfct (sigT M.(act))) (P : (A -> R) -> Prop) 
     (Pext : Proper (rv_eq ==> iff) P) :
     let iso_f := iso_f
-                   (Isomorphism := qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)) in
+                   (Isomorphism := finite_fun_vec_encoder finA EqDecsigT (B := R)) in
     (forall sa, P (fun A => x A sa)) <-> (forall i pf, P (fun A => vector_nth i pf (iso_f (x A)))).
   Proof.
     simpl.
     split; intros.
-    - unfold qlearn_redux.finite_fun_to_vector; simpl.
+    - unfold finite_fun_to_vector; simpl.
       eapply Pext.
       + intros ?.
         rewrite vector_nth_map.
         reflexivity.
       + apply H.
     - specialize (H _ (fin_finite_index_bound finA (dec:=EqDecsigT) sa)).
-      unfold qlearn_redux.finite_fun_to_vector in H.
+      unfold finite_fun_to_vector in H.
       eapply Pext in H.
       + apply H.
       + intros ?.
-        now rewrite qlearn_redux.vector_nth_finite_map.
+        now rewrite vector_nth_finite_map.
   Qed.
 
-  Let our_iso_f := iso_f (Isomorphism := qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)).
-  Let our_iso_b := iso_b (Isomorphism := qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)).
+  Let our_iso_f := iso_f (Isomorphism := finite_fun_vec_encoder finA EqDecsigT (B := R)).
+  Let our_iso_b := iso_b (Isomorphism := finite_fun_vec_encoder finA EqDecsigT (B := R)).
 
 
   Lemma nodup_length_le {A} (decA : forall x y : A, {x = y} + {x <> y}) (l : list A) :
@@ -6047,7 +6048,7 @@ Section MDP.
   Qed.
 
   Instance finfun_sa : SigmaAlgebra (Rfct (sigT M.(act))) :=
-    iso_sa (iso := Isomorphism_symm (qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)))
+    iso_sa (iso := Isomorphism_symm (finite_fun_vec_encoder finA EqDecsigT (B := R)))
       (Rvector_borel_sa _).
 
 
@@ -6164,20 +6165,20 @@ Section MDP.
       apply is_conditional_expectation_proper; trivial.
       - apply all_almost; intros.
         unfold our_iso_f, iso_f; simpl.
-        unfold qlearn_redux.finite_fun_to_vector; simpl.
+        unfold finite_fun_to_vector; simpl.
         now rewrite vector_nth_map.
       - apply almost_prob_space_sa_sub_lift with (sub := filt_sub k).
         apply Condexp_proper.
         apply all_almost; intros.
         unfold our_iso_f, iso_f; simpl.
-        unfold qlearn_redux.finite_fun_to_vector; simpl.
+        unfold finite_fun_to_vector; simpl.
         now rewrite vector_nth_map.
     }
     assert (rvXFvec: RandomVariable (Rvector_borel_sa (length (nodup EqDecsigT fin_elms)))
                            (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) XFvec).
     {
       unfold XFvec.
-      apply (rv_cod_iso_sa_b (Isomorphism_symm (qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)))).
+      apply (rv_cod_iso_sa_b (Isomorphism_symm (finite_fun_vec_encoder finA EqDecsigT (B := R)))).
       apply (RandomVariable_proper
                _ _ (reflexivity _)
                _ finfun_sa (reflexivity _) _ 
@@ -6187,7 +6188,7 @@ Section MDP.
         apply iso_b_f.
       }
       unfold our_iso_b.
-      generalize (rv_dom_iso_sa_f (qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)) rvXF).
+      generalize (rv_dom_iso_sa_f (finite_fun_vec_encoder finA EqDecsigT (B := R)) rvXF).
       apply RandomVariable_proper; try reflexivity.
       symmetry.
       apply iso_sa_symm_id.
@@ -6201,7 +6202,7 @@ Section MDP.
       intros.
       unfold rvmaxabs.
       unfold Xvec, our_iso_f, iso_f; simpl.
-      unfold qlearn_redux.finite_fun_to_vector; simpl.
+      unfold finite_fun_to_vector; simpl.
       unfold Rvector_max_abs, vector_fold_left; simpl.
       rewrite map_map.
       unfold Rmax_norm.
@@ -6248,7 +6249,7 @@ Section MDP.
       apply Lim_seq_ext; intros ?.
       apply sum_n_ext; intros.
       unfold αvec, our_iso_f, iso_f; simpl.
-      unfold qlearn_redux.finite_fun_to_vector; simpl.
+      unfold finite_fun_to_vector; simpl.
       now rewrite vector_nth_map.
     - clear H6.
       intros k i pf.
@@ -6258,7 +6259,7 @@ Section MDP.
       apply Condexp_proper.
       apply all_almost; intros.
       unfold vecrvnth, wvec, our_iso_f, iso_f; simpl.
-      unfold qlearn_redux.finite_fun_to_vector; simpl.
+      unfold finite_fun_to_vector; simpl.
       now rewrite vector_nth_map.
     - destruct H2 as [A [B [? [? ?]]]].
       exists A; exists B.
@@ -6274,7 +6275,7 @@ Section MDP.
         unfold rvsqr, vecrvnth.
         f_equal.
         unfold wvec, our_iso_f; simpl.
-        unfold qlearn_redux.finite_fun_to_vector.
+        unfold finite_fun_to_vector.
         now rewrite vector_nth_map.
       + unfold rvplus, rvscale, rvmaxlist, const, rvsqr, rvmaxabs, Rvector_max_abs.
         do 3 f_equal.
@@ -6315,8 +6316,8 @@ Section MDP.
           repeat rewrite (fold_left_map _ Rabs).
           f_equal.
           unfold our_iso_b; simpl.
-          unfold qlearn_redux.vector_to_finite_fun; simpl in *.
-          generalize (qlearn_redux.vector_map_nth_finite (Build_FiniteType _ fin_elms fin_finite) EqDecsigT (B:=R) x); intros HH2.
+          unfold vector_to_finite_fun; simpl in *.
+          generalize (vector_map_nth_finite (Build_FiniteType _ fin_elms fin_finite) EqDecsigT (B:=R) x); intros HH2.
           apply (f_equal (@proj1_sig _ _)) in HH2.
           simpl in HH2.
           apply HH2.
@@ -6328,14 +6329,14 @@ Section MDP.
       intros ?.
       apply vector_nth_eq; intros.
       unfold Xvec, XFvec, αvec, wvec, our_iso_f, iso_f; simpl.
-      unfold qlearn_redux.finite_fun_to_vector.
+      unfold finite_fun_to_vector.
       unfold vecrvminus, vecrvopp, vecrvscale, vecrvplus, vecrvmult.
       repeat (rewrite Rvector_nth_plus || rewrite Rvector_nth_mult || rewrite Rvector_nth_scale || rewrite vector_nth_map).
       rewrite H5.
       unfold our_iso_b.
       simpl.
-      generalize (qlearn_redux.finite_fun_iso_b_f finA EqDecsigT (X k a)); intros HH.
-      unfold qlearn_redux.finite_fun_to_vector in HH.
+      generalize (finite_fun_iso_b_f finA EqDecsigT (X k a)); intros HH.
+      unfold finite_fun_to_vector in HH.
       rewrite HH.
       lra.
   Qed.
@@ -6395,7 +6396,7 @@ Section MDP.
     RandomVariable dom1 finfun_sa rv_X.
   Proof.
     unfold finfun_sa; simpl.
-    apply (rv_cod_iso_sa_b (qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R))).
+    apply (rv_cod_iso_sa_b (finite_fun_vec_encoder finA EqDecsigT (B := R))).
     cut (RandomVariable dom1 (Rvector_borel_sa (length (nodup EqDecsigT fin_elms)))
            (fun ω' : Ts1 => our_iso_f (rv_X ω'))).
     {
@@ -6407,7 +6408,7 @@ Section MDP.
     eapply RandomVariable_proper; [reflexivity | reflexivity | ..].
     - intros ?.
       unfold our_iso_f; simpl.
-      unfold qlearn_redux.finite_fun_to_vector.
+      unfold finite_fun_to_vector.
       rewrite vector_nth_map.
       reflexivity.
     - apply rv.
@@ -6421,7 +6422,7 @@ Section MDP.
 
     assert (rv': RandomVariable dom1 (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) (fun x => our_iso_f (rv_X x))).
     {
-      generalize (rv_cod_iso_sa_f (qlearn_redux.finite_fun_vec_encoder finA EqDecsigT (B := R)) rv).
+      generalize (rv_cod_iso_sa_f (finite_fun_vec_encoder finA EqDecsigT (B := R)) rv).
       apply RandomVariable_proper; try reflexivity.
       unfold finfun_sa.
       now rewrite iso_sa_symm_id'.
@@ -6432,7 +6433,7 @@ Section MDP.
     intros ?.
     unfold vecrvnth.
     symmetry.
-    apply (qlearn_redux.vector_nth_finite_map finA EqDecsigT (rv_X a) sa).
+    apply (vector_nth_finite_map finA EqDecsigT (rv_X a) sa).
   Qed.
 
   Lemma FiniteExpectation_Qmin (x : Rfct {s : state M & act M s}) sa :

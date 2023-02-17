@@ -35,6 +35,7 @@ UTILS = BasicUtils \
 	Isomorphism \
 	ListAdd \
 	FiniteType \
+	FiniteTypeVector \
 	NumberIso \
 	PairEncoding \
 	Quotient \
