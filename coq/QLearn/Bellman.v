@@ -1,20 +1,12 @@
 Require Import List.
 Require Coquelicot.Coquelicot.
-Require Import mdp qvalues pmf_monad FiniteType EquivDec Permutation Morphisms.
+Require Import mdp qvalues pmf_monad EquivDec Permutation Morphisms.
 Require Import Reals RealAdd CoquelicotAdd.
 Require Import utils.Utils.
 Require Import Lra Lia PushNeg.
 Require Import IndefiniteDescription ClassicalDescription.
-Require Import RandomVariableL2 infprod Dvoretzky Expectation.
 Require Import RandomVariableFinite RbarExpectation.
-Require Import Classical.
-Require Import SigmaAlgebras ProbSpace DiscreteProbSpace ProductSpace.
-Require Import DVector.
-Require Import slln ConditionalExpectation.
-Require Import pmf_monad.
 Require Eqdep_dec.
-Require qlearn.
-Require pmf_prob.
 Require SetoidList.
 
 Set Bullet Behavior "Strict Subproofs".
