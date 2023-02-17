@@ -8,7 +8,7 @@ Require Import Classical.
 Require Import SigmaAlgebras ProbSpace.
 Require Import DVector RealVectorHilbert VectorRandomVariable.
 Require Import RandomVariableL2.
-Require Import ConditionalExpectation VectorConditionalExpectation.
+Require Import ConditionalExpectation VectorConditionalExpectation DiscreteProbSpace.
 Require Import IndefiniteDescription ClassicalDescription.
 Require Import RelationClasses.
 Require Import Dvoretzky infprod.
