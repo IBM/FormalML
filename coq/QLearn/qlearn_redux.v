@@ -12,6 +12,7 @@ Require Import SigmaAlgebras ProbSpace DiscreteProbSpace ProductSpace.
 Require Import DVector.
 Require Import slln ConditionalExpectation.
 Require Import pmf_monad.
+Require Eqdep_dec.
 Require qlearn.
 Require pmf_prob.
 Require SetoidList.
@@ -1083,7 +1084,51 @@ Section stuff.
   Lemma sa_fun_space_pmf_equal (sp : fun_space) :
     fun_space_pmf_pmf sp = sa_fun_space_pmf_pmf  (fun (sa : sigT M.(act)) => sp (projT1 sa) (projT2 sa)).
   Proof.
-  Admitted.
+    clear fsum_one.
+    unfold fun_space_pmf_pmf, sa_fun_space_pmf_pmf.
+    simpl.
+    unfold fin_elms, FiniteType.fin_finite_dep_prod_obligation_1.
+    destruct (fs M); simpl.
+    clear fin_finite.
+    induction fin_elms; simpl; trivial.
+    match_destr; simpl; rewrite IHfin_elms; simpl.
+    - rewrite nodup_app2_incl; trivial.
+      intros ? inn.
+      apply in_map_iff in inn.
+      destruct inn as [? [??]]; subst.
+      now apply in_dep_prod_iff.
+    - destruct (M a).
+      rewrite nodup_app_distr.
+      + rewrite map_app.
+        rewrite fold_right_app.
+        rewrite (fold_right_mult_acc (fold_right Rmult 1
+       (map (fun sa : {x : state M & act M x} => nonneg (fsa sa (sp (projT1 sa) (projT2 sa))))
+          (nodup (sigT_eqdec M act_eqdec)
+             (list_dep_prod fin_elms
+                (fun a0 : state M =>
+                 match M a0 with
+                 | {| fin_elms := fin_elms1 |} => fin_elms1
+                 end)))))).
+        f_equal.
+        f_equal.
+        rewrite (nodup_map_inj (act_eqdec a)).
+        * now rewrite map_map. 
+        * intros ?? inn1 inn2 ?.
+          apply in_map_iff in inn1.
+          apply in_map_iff in inn2.
+          destruct inn1 as [? [??]].
+          destruct inn2 as [? [??]].
+          apply Eqdep_dec.inj_pair2_eq_dec in H; try apply st_eqdec.
+          apply Eqdep_dec.inj_pair2_eq_dec in H0; try apply st_eqdec.
+          apply Eqdep_dec.inj_pair2_eq_dec in H2; try apply st_eqdec.
+          congruence.
+      + intros [??] inn1 inn2.
+        apply in_dep_prod_iff in inn2.
+        destruct inn2 as [??].
+        apply in_map_iff in inn1.
+        destruct inn1 as [?[??]].
+        congruence.
+  Qed.
   
   Lemma fsa_sum_one (sa : sigT M.(act)) :
     list_sum (map (fun s' => nonneg (fsa sa s')) 
