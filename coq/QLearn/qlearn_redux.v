@@ -970,60 +970,6 @@ Section stuff.
     apply (@FiniteType_fun _ (sigT_eqdec  M.(st_eqdec) act_eqdec) _  _ _); intros.
   Qed.
 
-  (* uses functional extensionality *)
-  Local Instance eqdec_finite_fun_ext {A B} {fin:FiniteType A} {decA:EqDec A eq} {decB:EqDec B eq}:
-    EqDec (A -> B) eq.
-  Proof.
-    intros ??.
-    destruct fin.
-    cut ({forall a, In a fin_elms -> x a = y a} + {~ (forall a, In a fin_elms -> x a = y a)}).
-    {
-      intros [?|?].
-      - left; apply functional_extensionality; intros a.
-        auto.
-      - right; intros eqq.
-        red in eqq.
-        subst.
-        now apply n; intros.
-    }         
-    clear fin_finite.
-    induction fin_elms.
-    - left; simpl; tauto.
-    - destruct (decB (x a) (y a)).
-      + destruct IHfin_elms.
-        * left; simpl; intros a' [?|inn]; subst; auto.
-        * right; intros HH; simpl in *; eauto.
-      + right; intros HH; simpl in *.
-        elim c; apply HH; eauto.
-  Qed.
-
-    (* uses functional extensionality *)
-  Local Instance eqdec_finite_fun_dep_ext {A} {B:A->Type} {fin:FiniteType A} {decA:EqDec A eq} {decB:forall a, EqDec (B a) eq}:
-    EqDec (forall a, B a) eq.
-  Proof.
-    intros ??.
-    destruct fin.
-    cut ({forall a, In a fin_elms -> x a = y a} + {~ (forall a, In a fin_elms -> x a = y a)}).
-    {
-      intros [?|?].
-      - left; apply functional_extensionality_dep; intros a.
-        auto.
-      - right; intros eqq.
-        red in eqq.
-        subst.
-        now apply n; intros.
-    }         
-    clear fin_finite.
-    induction fin_elms.
-    - left; simpl; tauto.
-    - destruct (decB _ (x a) (y a)).
-      + destruct IHfin_elms.
-        * left; simpl; intros a' [?|inn]; subst; auto.
-        * right; intros HH; simpl in *; eauto.
-      + right; intros HH; simpl in *.
-        elim c; apply HH; eauto.
-  Qed.
-
   Instance fun_space_eqdec : EqDec fun_space eq.
   Proof.
     unfold fun_space.

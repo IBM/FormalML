@@ -1,9 +1,7 @@
-Require Import List EquivDec FunctionalExtensionality.
-Require Import Isomorphism Eqdep_dec.
+Require Import List EquivDec FunctionalExtensionality Lia Eqdep_dec.
 
 Require Import LibUtils.
-Require Import Lia.
-Require Import ListAdd Vector.
+Require Import Isomorphism ListAdd BasicUtils.
 
 Class FiniteType (A:Type) :=
  { fin_elms  : list A ;
@@ -252,67 +250,121 @@ Next Obligation.
   split; apply fin_finite.
 Qed.
 
-  Fixpoint list_dep_prod {A : Type} {B : A -> Type}(l:list A) (l': forall a:A, list (B a)) :
-      list (sigT B) :=
-      match l with
-      | nil => nil
-      | cons x t => map (fun y: B x => existT _ x y) (l' x) ++(list_dep_prod t l')
-      end.
+Fixpoint list_dep_prod {A : Type} {B : A -> Type}(l:list A) (l': forall a:A, list (B a)) :
+  list (sigT B) :=
+  match l with
+  | nil => nil
+  | cons x t => map (fun y: B x => existT _ x y) (l' x) ++(list_dep_prod t l')
+  end.
 
-    Lemma in_dep_prod_aux {A : Type} {B : A -> Type} :
-      forall (x:A) (y:B x) (l:list (B x)),
-	      In y l -> In (existT _ x y) (map (fun y0:B x => existT _ x y0) l).
-    Proof.
-      induction l;
-	[ simpl; auto
-	  | simpl; destruct 1 as [H1| ];
-	    [ left; rewrite H1; trivial | right; auto ] ].
-    Qed.
+Lemma in_dep_prod_aux {A : Type} {B : A -> Type} :
+  forall (x:A) (y:B x) (l:list (B x)),
+    In y l -> In (existT _ x y) (map (fun y0:B x => existT _ x y0) l).
+Proof.
+  induction l;
+    [ simpl; auto
+    | simpl; destruct 1 as [H1| ];
+      [ left; rewrite H1; trivial | right; auto ] ].
+Qed.
 
-    Lemma in_dep_prod {A : Type} {B : A -> Type}:
-      forall (l:list A) (l':forall a:A, list (B a)) (x:A) (y:B x),
-        In x l -> In y (l' x) -> In (existT _ x y) (list_dep_prod l l').
-    Proof.
-      induction l;
-      [ simpl; tauto
-      | simpl; intros; apply in_or_app; destruct H];
-      [ left; rewrite H; apply in_dep_prod_aux; auto | right; auto ].
-    Qed.
+Lemma in_dep_prod {A : Type} {B : A -> Type}:
+  forall (l:list A) (l':forall a:A, list (B a)) (x:A) (y:B x),
+    In x l -> In y (l' x) -> In (existT _ x y) (list_dep_prod l l').
+Proof.
+  induction l;
+    [ simpl; tauto
+    | simpl; intros; apply in_or_app; destruct H];
+    [ left; rewrite H; apply in_dep_prod_aux; auto | right; auto ].
+Qed.
 
-    Lemma in_dep_prod_iff {A:Type} {B : A -> Type} :
-      forall (l:list A)(l':forall a, list (B a))(x:A)(y:B x),
-        In (existT _ x y) (list_dep_prod l l') <-> In x l /\ In y (l' x).
-    Proof.
-      split; [ | intros; apply in_dep_prod; intuition ].
-      induction l; simpl; intros.
-      + intuition.
-      + destruct (in_app_or _ _ _ H); clear H.
-        -- rewrite in_map_iff in H0.
-           destruct H0 as [z [H2 H3]].
-           injection H2; intuition.
-           subst ; clear H.
-           (* This is equivalent to assuming Streicher's Axiom K (?). *)
-           generalize (Eqdep.EqdepTheory.inj_pair2 A B _ _ _ H2); intros.
-           now subst.
-        -- intuition.
-    Qed.
+Lemma in_dep_prod_iff {A:Type} {B : A -> Type} :
+  forall (l:list A)(l':forall a, list (B a))(x:A)(y:B x),
+    In (existT _ x y) (list_dep_prod l l') <-> In x l /\ In y (l' x).
+Proof.
+  split; [ | intros; apply in_dep_prod; intuition ].
+  induction l; simpl; intros.
+  + intuition.
+  + destruct (in_app_or _ _ _ H); clear H.
+    -- rewrite in_map_iff in H0.
+       destruct H0 as [z [H2 H3]].
+       injection H2; intuition.
+       subst ; clear H.
+       (* This is equivalent to assuming Streicher's Axiom K (?). *)
+       generalize (Eqdep.EqdepTheory.inj_pair2 A B _ _ _ H2); intros.
+       now subst.
+    -- intuition.
+Qed.
 
-    Global Program Instance fin_finite_dep_prod {A B} (finA : FiniteType A)
-       (finB : forall a:A, FiniteType (B a))
-      : FiniteType (sigT B).
-    Next Obligation.
-      apply list_dep_prod.
-      + destruct finA ; auto.
-      + intros a. destruct (finB a); auto.
-    Defined.
-    Next Obligation.
-      unfold fin_finite_dep_prod_obligation_1.
-      rewrite in_dep_prod_iff.
-      destruct finA as [la Hla]; split; auto.
-      destruct (finB x) as [lb Hlb]; auto.
-    Qed.
+Global Program Instance fin_finite_dep_prod {A B} (finA : FiniteType A)
+  (finB : forall a:A, FiniteType (B a))
+  : FiniteType (sigT B).
+Next Obligation.
+  apply list_dep_prod.
+  + destruct finA ; auto.
+  + intros a. destruct (finB a); auto.
+Defined.
+Next Obligation.
+  unfold fin_finite_dep_prod_obligation_1.
+  rewrite in_dep_prod_iff.
+  destruct finA as [la Hla]; split; auto.
+  destruct (finB x) as [lb Hlb]; auto.
+Qed.
 
-    
+
+(* uses functional extensionality *)
+Local Instance eqdec_finite_fun_ext {A B} {fin:FiniteType A} {decA:EqDec A eq} {decB:EqDec B eq}:
+  EqDec (A -> B) eq.
+Proof.
+  intros ??.
+  cut ({forall a, In a fin_elms -> x a = y a} + {~ (forall a, In a fin_elms -> x a = y a)}).
+  {
+    intros [?|?].
+    - left; apply functional_extensionality; intros a.
+      apply e; apply fin_finite.
+    - right; intros eqq.
+      red in eqq.
+      subst.
+      now apply n; intros.
+  }
+  destruct fin; simpl.
+  clear fin_finite0.
+  induction fin_elms0.
+  - left; simpl; tauto.
+  - destruct (decB (x a) (y a)).
+    + destruct IHfin_elms0.
+      * left; simpl; intros a' [?|inn]; subst; auto.
+      * right; intros HH; simpl in *; eauto.
+    + right; intros HH; simpl in *.
+      elim c; apply HH; eauto.
+Qed.
+
+(* uses functional extensionality *)
+Local Instance eqdec_finite_fun_dep_ext {A} {B:A->Type} {fin:FiniteType A} {decA:EqDec A eq} {decB:forall a, EqDec (B a) eq}:
+  EqDec (forall a, B a) eq.
+Proof.
+  intros ??.
+  cut ({forall a, In a fin_elms -> x a = y a} + {~ (forall a, In a fin_elms -> x a = y a)}).
+  {
+    intros [?|?].
+    - left; apply functional_extensionality_dep; intros a.
+      apply e; apply fin_finite.
+    - right; intros eqq.
+      red in eqq.
+      subst.
+      now apply n; intros.
+  }         
+  destruct fin; simpl.
+  clear fin_finite0.
+  induction fin_elms0.
+  - left; simpl; tauto.
+  - destruct (decB _ (x a) (y a)).
+    + destruct IHfin_elms0.
+      * left; simpl; intros a' [?|inn]; subst; auto.
+      * right; intros HH; simpl in *; eauto.
+    + right; intros HH; simpl in *.
+      elim c; apply HH; eauto.
+Qed.
+
 Definition bounded_nat_finite_list n : list {x : nat | (x < n)%nat}.
 Proof.
   induction n.

@@ -1,8 +1,5 @@
-Require Import List.
-Require Import Lia.
-Require Import LibUtils.
-
-Require Import ListAdd.
+Require Import List Lia.
+Require Import LibUtils ListAdd BasicUtils.
 
 Section Vector.
 
@@ -268,13 +265,6 @@ Section Vector.
     intros.
     apply FunctionalExtensionality.functional_extensionality.
     apply H.
-  Qed.
-
-  Lemma index_pf_irrel n m pf1 pf2 : 
-    exist (fun n' : nat => (n' < n)%nat) m pf1 =
-    exist (fun n' : nat => (n' < n)%nat) m pf2.
-    f_equal.
-    apply digit_pf_irrel.
   Qed.
 
   Ltac index_prover := erewrite index_pf_irrel; reflexivity.

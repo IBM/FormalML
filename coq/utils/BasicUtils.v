@@ -1,6 +1,6 @@
 Require Import Equivalence EquivDec Eqdep_dec Morphisms.
 
-Require Import LibUtilsCoqLibAdd.
+Require Import LibUtilsCoqLibAdd LibUtilsDigits.
 
 Definition coerce {A B:Type} (pf:A=B) : A -> B.
 Proof.
@@ -69,3 +69,9 @@ Proof.
     congruence.
 Defined.
 
+Lemma index_pf_irrel n m pf1 pf2 : 
+  exist (fun n' : nat => (n' < n)%nat) m pf1 = exist (fun n' : nat => (n' < n)%nat) m pf2.
+Proof.
+  f_equal.
+  apply digit_pf_irrel.
+Qed.
