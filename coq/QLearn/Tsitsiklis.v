@@ -4817,6 +4817,51 @@ Qed.
       simpl; lra.
   Qed.
 
+  Lemma conditional_variance_bound1_alt (x : Ts -> R) (c : R) 
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa x}
+        {isfe : IsFiniteExpectation prts x} :
+    almostR2 prts Rle (rvsqr x) (const c²) ->
+    almostR2 prts Rbar_le (Rbar_rvminus (ConditionalExpectation prts sub (rvsqr x))
+                                        (rvsqr (FiniteConditionalExpectation prts sub x)))
+          (const c²).
+  Proof.
+    intros.
+    assert (csqr_nn:NonnegativeFunction (const (B := Ts) (c²))).
+    {
+      intros ?.
+      unfold const.
+      apply Rle_0_sqr.
+    }
+    generalize (NonNegCondexp_ale 
+                  prts sub (rvsqr x) (const (c²))); intros.
+    cut_to H0; try easy.
+    apply almost_prob_space_sa_sub_lift in H0.
+    revert H0; apply almost_impl.
+    revert H; apply almost_impl.
+    apply all_almost; intros ???.
+    rewrite <- Condexp_nneg_simpl in H0.
+    rewrite <- Condexp_nneg_simpl in H0.    
+    rewrite Condexp_const in H0.
+    rv_unfold.
+    unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
+    eapply Rbar_le_trans.
+    shelve.
+    apply H0.
+    Unshelve.
+    simpl.
+    destruct  (ConditionalExpectation prts sub (fun omega : Ts => (x omega)²) x0).
+    - simpl.
+      assert (0 <=  (FiniteConditionalExpectation prts sub x x0)²).
+      {
+        apply Rle_0_sqr.
+      }
+      lra.
+    - now simpl.
+    - now simpl.
+ Qed.
+
   Lemma conditional_variance_bound1 (x : Ts -> R) (c : R) 
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
@@ -5155,6 +5200,25 @@ Qed.
   Proof.
     intros.
     generalize (conditional_variance_alt x sub); intros.
+    generalize (conditional_variance_bound1 x c sub H); intros.
+    revert H1; apply almost_impl.
+    revert H0; apply almost_impl.
+    apply all_almost; intros ???.
+    rewrite H0.
+    apply H1.
+ Qed.
+
+  Lemma conditional_variance_bound_L2 (x : Ts -> R) (c : R) 
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa x}
+        {isl2: IsLp prts 2 x} :
+    almostR2 prts Rle (rvsqr x) (const c²) ->
+    almostR2 prts Rle (FiniteConditionalExpectation prts sub (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))))
+          (const c²).
+  Proof.
+    intros.
+    generalize (conditional_variance_L2_alt x sub); intros.
     generalize (conditional_variance_bound1 x c sub H); intros.
     revert H1; apply almost_impl.
     revert H0; apply almost_impl.
@@ -5939,6 +6003,67 @@ Section MDP.
       intros; apply alpha_bound.
   Qed.      
 
+  Instance isl2_qlearn_Q_basic
+     (isl2_sa: forall sa, IsLp prts 2 (cost sa)):
+    forall k sa, IsLp prts 2 (fun ω => qlearn_Q_basic k ω sa).
+  Proof.
+    intros.
+    revert sa.
+    induction k.
+    - simpl.
+      intros.
+      apply IsLp_const.
+    - intros.
+      simpl.
+      assert (0 <= 2) by lra.
+      generalize (IsLp_plus prts (mknonnegreal _ H)); intros.
+      apply H0; try typeclasses eauto.
+      apply IsLp_almost_bounded with
+          (rv_X2 :=  
+             (fun ω : Ts =>
+                (Rsqr 
+                   (cost sa ω + 
+                    β * qlearn_Qmin (qlearn_Q_basic k ω) (next_state sa ω) -
+                    qlearn_Q_basic k ω sa)))); try typeclasses eauto.
+      + apply all_almost; intros.
+        rewrite rvpower2; [|apply nnfabs].
+        rv_unfold.
+        rewrite <- Rsqr_abs.        
+        rewrite Rsqr_mult.
+        rewrite <- Rmult_1_l.
+        apply Rmult_le_compat_r; [apply Rle_0_sqr | ].
+        replace 1 with (Rsqr 1).
+        * specialize (alpha_bound k x sa).
+          apply neg_pos_Rsqr_le; lra.
+        * unfold Rsqr; lra.
+      + assert (IsLp prts 2 
+                     (fun ω : Ts =>
+                        (cost sa ω + 
+                         β * qlearn_Qmin (qlearn_Q_basic k ω) (next_state sa ω) -
+                         qlearn_Q_basic k ω sa))).
+        {
+          apply H0; try typeclasses eauto.
+          - apply H0; try typeclasses eauto.
+            apply IsLp_scale.
+            unfold qlearn_Qmin.
+            admit.
+          - generalize (IsLp_opp prts (mknonnegreal _ H) (fun ω => qlearn_Q_basic k ω sa)); intros.
+            revert H1.
+            apply IsLp_proper; try easy.
+            intros ?.
+            rv_unfold'.
+            lra.
+        }
+        unfold IsLp in H1.
+        revert H1.
+        apply IsFiniteExpectation_proper.
+        intros ?.
+        rewrite rvpower2; [|apply nnfabs].
+        rv_unfold.
+        now rewrite <- Rsqr_abs.
+   Admitted.
+
+
   Definition qlearn_Q (t : nat) : Ts -> Rfct (sigT M.(act))
     := let '(exist2 g _ _) := qlearn_Qaux t in g.
 
@@ -6636,6 +6761,7 @@ Section MDP.
 
   Theorem qlearn 
     (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) 
+    (isl2: forall k sa, IsLp prts 2 (fun ω => qlearn_Q_basic k ω sa))
     (fixpt0: forall sa, qlearn_XF (Rfct_zero (sigT M.(act))) sa = 0) :
     0 <= β < 1 ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
@@ -6807,7 +6933,19 @@ Section MDP.
          apply IsFiniteExpectation_const.
        + apply IsFiniteExpectation_scale.
          apply IsFiniteExpectation_minus'; try typeclasses eauto.
-     - admit.
+     - unfold w, qlearn_w.
+       assert (isl2_qmin: forall k sa,
+                  IsLp prts 2 (fun ω => (qlearn_Qmin (qlearn_Q_basic k ω) (next_state sa ω)))).
+       {
+         intros.
+         admit.
+       }
+       generalize (fun k sa c =>
+                     conditional_variance_bound_L2 
+                       (fun ω => (qlearn_Qmin (qlearn_Q_basic k ω) (next_state sa ω)))
+                       c (filt_sub k)); intros.
+       
+         admit.
      - intros.
        generalize (qlearn_XF_contraction H x (Rfct_zero (sigT M.(act)))); intros.
        rewrite Rfct_minus_zero in H7.
