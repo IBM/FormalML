@@ -6761,7 +6761,6 @@ Section MDP.
 
   Theorem qlearn 
     (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) 
-    (isl2: forall k sa, IsLp prts 2 (fun ω => qlearn_Q_basic k ω sa))
     (fixpt0: forall sa, qlearn_XF (Rfct_zero (sigT M.(act))) sa = 0) :
     0 <= β < 1 ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
