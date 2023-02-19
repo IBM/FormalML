@@ -5680,6 +5680,37 @@ Section MDP.
           split; trivial.
   Qed.
 
+
+  Instance isl2_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
+    (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
+    (isfeQ : forall sa, IsLp prts 2 (fun ω => Q ω sa))
+    (sa : (sigT M.(act))) :
+    IsLp prts 2 (fun ω : Ts => qlearn_Qmin (Q ω) (next_state sa ω)).
+  Proof.
+    unfold qlearn_Qmin.
+    apply IsLp_bounded with
+        (rv_X2 := fun ω => (Rmax_all (fun sa => Rsqr (Q ω sa)))).
+    - intros ?.
+      rewrite rvpower2; [| apply nnfabs].
+      rv_unfold.
+      rewrite <- Rsqr_abs.
+      unfold Rmax_all, qlearn_Qmin.
+      match_destr.
+      assert (exists sa0,
+                 Min_{ act_list (next_state sa a)}
+                     (fun a0 : act M (next_state sa a) => Q a (existT (act M) (next_state sa a) a0)) = Q a sa0).
+      {
+        admit.
+      }
+      destruct H.
+      rewrite H.
+      apply Rmax_spec.
+      apply in_map_iff.
+      exists x.
+      split; trivial.
+    - apply isfe_Rmax_all; try typeclasses eauto.
+  Admitted.
+
   Instance rv0 
     (sa : (sigT M.(act))) :
     RandomVariable dom borel_sa 
@@ -6043,16 +6074,12 @@ Section MDP.
                          qlearn_Q_basic k ω sa))).
         {
           apply H0; try typeclasses eauto.
-          - apply H0; try typeclasses eauto.
-            apply IsLp_scale.
-            unfold qlearn_Qmin.
-            admit.
-          - generalize (IsLp_opp prts (mknonnegreal _ H) (fun ω => qlearn_Q_basic k ω sa)); intros.
-            revert H1.
-            apply IsLp_proper; try easy.
-            intros ?.
-            rv_unfold'.
-            lra.
+          generalize (IsLp_opp prts (mknonnegreal _ H) (fun ω => qlearn_Q_basic k ω sa)); intros.
+          revert H1.
+          apply IsLp_proper; try easy.
+          intros ?.
+          rv_unfold'.
+          lra.
         }
         unfold IsLp in H1.
         revert H1.
@@ -6061,7 +6088,7 @@ Section MDP.
         rewrite rvpower2; [|apply nnfabs].
         rv_unfold.
         now rewrite <- Rsqr_abs.
-   Admitted.
+   Qed.
 
 
   Definition qlearn_Q (t : nat) : Ts -> Rfct (sigT M.(act))
