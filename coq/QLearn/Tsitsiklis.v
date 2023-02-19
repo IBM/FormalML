@@ -5355,6 +5355,7 @@ Section MDP.
           {rv_cost : forall sa, RandomVariable dom borel_sa (cost sa)}
           {isfe_cost : forall (sa : sigT M.(act)),
               IsFiniteExpectation prts (cost sa)}
+          (islp_cost: forall sa : {x : state M & act M x}, IsLp prts 2 (cost sa))
           (Q0 : Rfct (sigT M.(act)))
           (α : nat -> Ts -> Rfct (sigT M.(act)))
           (rvα : forall t sa,
@@ -5365,6 +5366,9 @@ Section MDP.
           {rv_cost0 : forall sa, RandomVariable (F 0%nat) borel_sa (cost sa)}
           (isfilt : IsFiltration F) 
           (filt_sub : forall k, sa_sub (F k) dom) 
+          (indep_cost: forall k sa,
+              independent_sas prts (pullback_rv_sub dom borel_sa (cost sa) (rv_cost sa))
+                              (filt_sub k))
           (β : R).
 
   Instance rv_ns: forall sa, RandomVariable dom (discrete_sa (state M)) (next_state sa).
@@ -6793,7 +6797,6 @@ Section MDP.
 
   Theorem qlearn 
           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
-          (islp_cost: forall sa1 : {x : state M & act M x}, IsLp prts 2 (cost sa1))
           (fixpt0: forall sa, qlearn_XF (Rfct_zero (sigT M.(act))) sa = 0) :
     0 <= β < 1 ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
@@ -6960,7 +6963,7 @@ Section MDP.
            rewrite H13.
            unfold const.
            now rewrite Rbar_mult_0_r.
-       + admit.
+       + apply indep_cost.
        + apply IsFiniteExpectation_minus'; try typeclasses eauto.
          apply IsFiniteExpectation_const.
        + apply IsFiniteExpectation_scale.
