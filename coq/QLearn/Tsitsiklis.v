@@ -5700,7 +5700,12 @@ Section MDP.
                  Min_{ act_list (next_state sa a)}
                      (fun a0 : act M (next_state sa a) => Q a (existT (act M) (next_state sa a) a0)) = Q a sa0).
       {
-        admit.
+        generalize (Rmin_list_map_exist (fun a0 : act M (next_state sa a) => Q a (existT (act M) (next_state sa a) a0))  (act_list (next_state sa a))); intros.
+        cut_to H.
+        - destruct H as [? [? ?]].
+          exists (existT _ _ x).
+          now rewrite <- H0.
+        - apply act_list_not_nil.
       }
       destruct H.
       rewrite H.
@@ -5709,7 +5714,7 @@ Section MDP.
       exists x.
       split; trivial.
     - apply isfe_Rmax_all; try typeclasses eauto.
-  Admitted.
+  Qed.
 
   Instance rv0 
     (sa : (sigT M.(act))) :
@@ -6787,8 +6792,9 @@ Section MDP.
   Qed.
 
   Theorem qlearn 
-    (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F) 
-    (fixpt0: forall sa, qlearn_XF (Rfct_zero (sigT M.(act))) sa = 0) :
+          (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
+          (islp_cost: forall sa1 : {x : state M & act M x}, IsLp prts 2 (cost sa1))
+          (fixpt0: forall sa, qlearn_XF (Rfct_zero (sigT M.(act))) sa = 0) :
     0 <= β < 1 ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
 
@@ -6963,8 +6969,7 @@ Section MDP.
        assert (isl2_qmin: forall k sa,
                   IsLp prts 2 (fun ω => (qlearn_Qmin (qlearn_Q_basic k ω) (next_state sa ω)))).
        {
-         intros.
-         admit.
+         typeclasses eauto.
        }
        generalize (fun k sa c =>
                      conditional_variance_bound_L2 
