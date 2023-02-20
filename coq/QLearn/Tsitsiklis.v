@@ -7263,12 +7263,39 @@ Section MDP.
       split; try lra.
       split; try lra.
       intros.
+      assert (almostR2 prts Rle
+                     (FiniteConditionalExpectation 
+                        prts (filt_sub k)
+                        (rvscale (Rsqr β) 
+                                 (rvsqr
+                           (rvminus (Xmin k sa)
+                                    (FiniteConditionalExpectation prts (filt_sub k) 
+                                                                  (Xmin k sa))))))
+                     (FiniteConditionalExpectation 
+                        prts (filt_sub k)
+                        (rvsqr
+                           (rvminus (Xmin k sa)
+                                    (FiniteConditionalExpectation prts (filt_sub k) 
+                                                                  (Xmin k sa)))))).
+      {
+        apply almost_prob_space_sa_sub_lift with (sub := filt_sub k).
+        apply FiniteCondexp_ale.
+        apply all_almost; intros ?.
+        rv_unfold.
+        rewrite <- Rmult_1_l.
+        apply Rmult_le_compat_r.
+        - apply Rle_0_sqr.
+        - unfold Rsqr.
+          replace 1 with (1 * 1) by lra.
+          apply Rmult_le_compat; lra.
+      }
       specialize (H10 k sa).
       specialize (H9 k sa).
       specialize (H13 sa).
+      revert H14; apply almost_impl.
       revert H10; apply almost_impl.
       revert H9; apply almost_impl.
-      apply all_almost; intros ???.
+      apply all_almost; intros ????.
       erewrite Condexp_nneg_simpl.
       unfold rvplus, rvscale in H10.
       unfold Xmin in H10.
@@ -7294,7 +7321,20 @@ Section MDP.
                         (rvsqr
                            (rvminus (Xmin k sa)
                                     (FiniteConditionalExpectation prts (filt_sub k) (Xmin k sa)))) x ).
-           -- admit.
+           -- unfold rvscale in H14.
+              eapply Rle_trans.
+              shelve.
+              apply H14.
+              Unshelve.
+              ++ admit.
+              ++ right.
+                 apply FiniteConditionalExpectation_ext.
+                 intros ?.
+                 rv_unfold.
+                 rewrite Rsqr_mult.
+                 unfold Xmin.
+                 do 2 f_equal.
+                 lra.
            -- eapply Rle_trans.
               ++ apply H9.
               ++ unfold Rmax_norm, Rmax_all, X, rvmaxlist, Rmax_list_map.
