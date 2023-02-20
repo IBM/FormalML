@@ -6905,30 +6905,16 @@ Section MDP.
     - apply Rsqr_le_abs_1 in r; lra.
   Qed.
 
+  (*
    Lemma vec_max_abs_sqr {n} (v : vector R n) :
      Rvector_max_sqr v = Rsqr (Rvector_max_abs v).
    Proof.
      unfold Rvector_max_sqr, Rvector_max_abs, Rvector_sqr, Rvector_abs.
-   Admitted.
-   
-   Lemma Rmax_list_abs_sqr (l : list R) :
-     Rsqr (Rmax_list (map Rabs l)) = Rmax_list (map Rsqr l).
-   Proof.
-     induction l.
-     - simpl; unfold Rsqr; lra.
-     - simpl.
-       rewrite <- IHl.
-       destruct l.
-       + simpl.
-         now rewrite <- Rsqr_abs.
-       + simpl.
-         rewrite max_abs_sqr.
-         rewrite Rsqr_abs.
-         f_equal.
-         rewrite Rabs_right; trivial.
-         
-     Admitted.
+     
+   Qed.
 
+   *)
+  
   Theorem qlearn 
           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
           (fixpt0: forall sa, qlearn_XF (Rfct_zero (sigT M.(act))) sa = 0) :
@@ -7358,7 +7344,9 @@ Section MDP.
                  apply in_map_iff.
                  exists k.
                  split; trivial.
-                 ** admit.
+                 ** rewrite <- map_map.
+                    rewrite Rmax_list_abs_sqr.
+                    now rewrite map_map.
                  ** apply in_seq; lia.
      - intros.
        generalize (qlearn_XF_contraction H x (Rfct_zero (sigT M.(act)))); intros.
