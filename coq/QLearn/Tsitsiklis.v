@@ -7326,7 +7326,22 @@ Section MDP.
               shelve.
               apply H14.
               Unshelve.
-              ++ admit.
+              ++ apply IsFiniteExpectation_bounded with 
+                     (rv_X1 := const 0)
+                     (rv_X3 := rvsqr (rvminus (Xmin k sa) (FiniteConditionalExpectation prts (filt_sub k) (Xmin k sa)))); try typeclasses eauto.
+                 ** intros ?.
+                    rv_unfold.
+                    apply Rle_0_sqr.
+                 ** intros ?.
+                    rv_unfold'.
+                    unfold Xmin.
+                    rewrite Rsqr_mult.
+                    rewrite <- Rmult_1_l.
+                    apply Rmult_le_compat_r.
+                    --- apply Rle_0_sqr.
+                    --- rewrite <- Rmult_1_l.
+                        unfold Rsqr.
+                        apply Rmult_le_compat; lra.
               ++ right.
                  apply FiniteConditionalExpectation_ext.
                  intros ?.
