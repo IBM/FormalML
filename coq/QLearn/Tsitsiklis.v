@@ -6905,15 +6905,27 @@ Section MDP.
     - apply Rsqr_le_abs_1 in r; lra.
   Qed.
 
-  (*
-   Lemma vec_max_abs_sqr {n} (v : vector R n) :
-     Rvector_max_sqr v = Rsqr (Rvector_max_abs v).
-   Proof.
-     unfold Rvector_max_sqr, Rvector_max_abs, Rvector_sqr, Rvector_abs.
-     
-   Qed.
-
-   *)
+  Lemma vec_max_abs_sqr {n} (v : vector R n) :
+    Rvector_max_sqr v = Rsqr (Rvector_max_abs v).
+  Proof.
+    unfold Rvector_max_sqr, Rvector_max_abs, Rvector_sqr, Rvector_abs.
+    destruct v; simpl.
+    unfold vector_fold_left, vector_map; simpl.
+    clear e.
+    rewrite <- Rsqr_0 at 1.
+    assert (0 <= 0) by lra.
+    revert H.
+    generalize 0 at 2 3 4.
+    induction x; simpl; trivial.
+    intros.
+    rewrite <- IHx.
+    - f_equal.
+      rewrite max_abs_sqr.
+      rewrite Rabs_right; trivial.
+      lra.
+    - rewrite H.
+      apply Rmax_l.
+  Qed.
   
   Theorem qlearn 
           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
