@@ -126,8 +126,14 @@ Section vector_ops.
   Definition vecrvabs {n} (rv_X : Ts -> vector R n) := 
     fun omega => Rvector_abs (rv_X omega).
 
+  Definition vecrvsqr {n} (rv_X : Ts -> vector R n) := 
+    fun omega => Rvector_sqr (rv_X omega).
+
   Definition rvmaxabs {n} (rv_X : Ts -> vector R n) := 
     fun omega => Rvector_max_abs (rv_X omega).
+
+  Definition rvmaxsqr {n} (rv_X : Ts -> vector R n) := 
+    fun omega => Rvector_max_sqr (rv_X omega).
 
   Definition rvinner {n} (rv_X1 rv_X2 : Ts -> vector R n) :=
     fun omega => Rvector_inner (rv_X1 omega) (rv_X2 omega).

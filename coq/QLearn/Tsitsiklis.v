@@ -2631,6 +2631,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
      now specialize (H11 t _ H12).
    Qed.
     
+
   Theorem Tsitsiklis1 {n} (β : R) (X w α : nat -> Ts -> vector R (S n)) 
         (XF : vector R (S n) -> vector R (S n))
         {F : nat -> SigmaAlgebra Ts}
@@ -6894,6 +6895,40 @@ Section MDP.
       + destruct (HH a); eauto.
   Qed.
 
+  
+  Lemma max_abs_sqr (a b : R) :
+    Rmax (Rsqr a) (Rsqr b) = Rsqr (Rmax (Rabs a) (Rabs b)).
+  Proof.
+    unfold Rmax.
+    match_destr; match_destr; try now rewrite Rsqr_abs.
+    - apply Rsqr_le_abs_0 in r; lra.
+    - apply Rsqr_le_abs_1 in r; lra.
+  Qed.
+    
+   Lemma vec_max_abs_sqr {n} (v : vector R n) :
+     Rvector_max_sqr v = Rsqr (Rvector_max_abs v).
+   Proof.
+     unfold Rvector_max_sqr, Rvector_max_abs, Rvector_sqr, Rvector_abs.
+   Admitted.
+   
+   Lemma Rmax_list_abs_sqr (l : list R) :
+     Rsqr (Rmax_list (map Rabs l)) = Rmax_list (map Rsqr l).
+   Proof.
+     induction l.
+     - simpl; unfold Rsqr; lra.
+     - simpl.
+       rewrite <- IHl.
+       destruct l.
+       + simpl.
+         now rewrite <- Rsqr_abs.
+       + simpl.
+         rewrite max_abs_sqr.
+         rewrite Rsqr_abs.
+         f_equal.
+         rewrite Rabs_right; trivial.
+         
+     Admitted.
+
   Theorem qlearn 
           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
           (fixpt0: forall sa, qlearn_XF (Rfct_zero (sigT M.(act))) sa = 0) :
@@ -7173,10 +7208,9 @@ Section MDP.
       assert (forall sa,
                  IsFiniteExpectation 
                    prts
-                   (rvsqr
-                      (rvminus
-                         (cost sa)
-                         (const (FiniteExpectation prts (cost sa)))))).
+                   (fun ω => Rsqr
+                               ((cost sa ω) -
+                                (FiniteExpectation prts (cost sa))))).
       {
         intros.
         assert (sa_sub dom dom) by reflexivity.
@@ -7184,24 +7218,26 @@ Section MDP.
         apply IsFiniteExpectation_proper.
         intros ?.
         rv_unfold.
-        do 3 f_equal.
+        f_equal.
+        ring_simplify.
+        f_equal.
         admit.
       }
       assert (exists A,
                  0 < A /\
                  forall sa, 
-                   FiniteExpectation prts (rvsqr
-                                         (rvminus
-                                            (cost sa)
-                                            (const (FiniteExpectation prts (cost sa)))))
+                   FiniteExpectation prts 
+                                     (fun ω => Rsqr
+                                                 ((cost sa ω) -
+                                                  (FiniteExpectation prts (cost sa))))
                    <=   A).
       {
         assert (forall sa,
                    exists A,
-                     FiniteExpectation prts (rvsqr
-                                         (rvminus
-                                            (cost sa)
-                                            (const (FiniteExpectation prts (cost sa)))))
+                     FiniteExpectation prts 
+                                     (fun ω => Rsqr
+                                                 ((cost sa ω) -
+                                                  (FiniteExpectation prts (cost sa))))
                    <=   A).
         {
           intros.
@@ -7239,7 +7275,36 @@ Section MDP.
       eapply Rbar_le_trans; [| eapply Rbar_le_trans]; [| apply H10 |].
        + apply refl_refl.
          now apply NonNegCondexp_ext.
-       + admit.
+       + unfold rvplus, const, Rbar_rvmult, Rbar_rvplus.
+         do 2 rewrite <- Condexp_nneg_simpl.
+         do 2 erewrite FiniteCondexp_eq.
+         simpl.
+         rewrite Rmult_plus_distr_l.
+         apply Rplus_le_compat.
+         * apply Rmult_le_compat_l; try lra.
+           unfold rvsqr.
+           eapply Rle_trans; [| eapply Rle_trans]; [| apply H13 |]; try lra.
+           right; admit.
+         * unfold rvscale.
+           apply Rmult_le_compat_l; try lra.
+           clear H10.
+           apply Rle_trans with
+               (r2 := FiniteConditionalExpectation 
+                        prts (filt_sub k)
+                        (rvsqr
+                           (rvminus (Xmin k sa)
+                                    (FiniteConditionalExpectation prts (filt_sub k) (Xmin k sa)))) x ).
+           -- admit.
+           -- eapply Rle_trans.
+              ++ apply H9.
+              ++ unfold Rmax_norm, Rmax_all, X, rvmaxlist, Rmax_list_map.
+                 match_destr.
+                 apply Rmax_spec.
+                 apply in_map_iff.
+                 exists k.
+                 split; trivial.
+                 ** admit.
+                 ** apply in_seq; lia.
      - intros.
        generalize (qlearn_XF_contraction H x (Rfct_zero (sigT M.(act)))); intros.
        rewrite Rfct_minus_zero in H7.

@@ -60,6 +60,9 @@ Section Rvector_defs.
   Definition Rvector_max_abs (x:vector R n) : R 
     := vector_fold_left Rmax (Rvector_abs x) 0.
 
+  Definition Rvector_max_sqr (x:vector R n) : R 
+    := vector_fold_left Rmax (Rvector_sqr x) 0.
+
   Notation "x ²" := (Rvector_sqr x) (at level 1) : Rvector_scope.
 
   Program Definition Rvector_sum (v:vector R n) : R
