@@ -2273,3 +2273,18 @@ Proof.
       * specialize (H (s1 + n1))%nat; lia.
     + lia.
 Qed.
+
+Lemma fold_left_map_factor
+  {A : Type}
+  (f : A -> A -> A)
+  (g : A -> A)
+  (x : list A)
+  (init : A)
+  (factor : forall a b, f (g a) (g b) = g (f a b)) :
+  fold_left f (map g x) (g init) = g (fold_left f x init).
+Proof.
+  revert init.
+  induction x; simpl; trivial; intros.
+  rewrite <- IHx.
+  now rewrite factor.
+Qed.

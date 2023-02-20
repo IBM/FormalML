@@ -1025,6 +1025,16 @@ Proof.
     congruence.
   - rewrite vector_length; reflexivity.
 Qed.
+  
+Lemma vector_fold_left_map_commute {A} {n} f g (v: vector A n) init
+  (factor : forall a b, f (g a) (g b) = g (f a b)) :
+  vector_fold_left f (vector_map g v) (g init) =
+    g (vector_fold_left f v init).
+Proof.
+  destruct v; simpl.
+  unfold vector_fold_left, vector_map; simpl.
+  now apply fold_left_map_factor.
+Qed.
 
 Section ivector.
 
