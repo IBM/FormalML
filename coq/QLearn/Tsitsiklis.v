@@ -6876,6 +6876,24 @@ Section MDP.
     lra.
   Qed.
 
+  Lemma finite_ex_choice
+    {Idx:Type} {decA: EqDec Idx eq} {finI:FiniteType Idx} {A:Type}
+    (P: Idx -> A -> Prop) :
+    (forall (idx:Idx), exists a, P idx a) ->
+    exists (l:list A),
+      Forall2 P (nodup decA fin_elms) l.
+  Proof.
+    clear.
+    destruct finI; simpl.
+    clear fin_finite; intros HH.
+    induction fin_elms; simpl.
+    - exists nil; trivial.
+    - destruct IHfin_elms as [l F2].
+      match_destr.
+      + eauto.
+      + destruct (HH a); eauto.
+  Qed.
+
   Theorem qlearn 
           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
           (fixpt0: forall sa, qlearn_XF (Rfct_zero (sigT M.(act))) sa = 0) :
@@ -7192,8 +7210,17 @@ Section MDP.
           match_destr.
           exists x; lra.
         }
-        
-        admit.
+        apply (finite_ex_choice _ (decA:=EqDecsigT)) in H12.
+        destruct H12 as [l F2l].
+        exists (Rabs (Rmax_list l) + 1).
+        split.
+        - unfold Rabs; match_destr; lra.
+        - intros sa.
+          apply Rle_trans with (r2:=Rmax_list l); [| unfold Rabs; match_destr; lra].
+          destruct (Forall2_In_l F2l (a:=sa)) as [?[??]].
+          + apply nodup_In; apply fin_finite.
+          + eapply Rle_trans; try apply H13.
+            now apply Rmax_spec.
       }
       destruct H12 as [A [? ?]].
       exists (2 * A); exists 2.
@@ -7209,10 +7236,10 @@ Section MDP.
       erewrite Condexp_nneg_simpl.
       unfold rvplus, rvscale in H10.
       unfold Xmin in H10.
-      eapply Rbar_le_trans.
-                                                      
-      admit.
-      admit.
+      eapply Rbar_le_trans; [| eapply Rbar_le_trans]; [| apply H10 |].
+       + apply refl_refl.
+         now apply NonNegCondexp_ext.
+       + admit.
      - intros.
        generalize (qlearn_XF_contraction H x (Rfct_zero (sigT M.(act)))); intros.
        rewrite Rfct_minus_zero in H7.
