@@ -3955,20 +3955,68 @@ Section Rmax_list.
      now rewrite map_shiftn_seq.
    Qed.
 
-    Lemma Rmax_list_map_seq_incr1 (X : nat -> R) (n m : nat) :
+   Lemma Rmax_list_map_seq_incr1 (X : nat -> R) (n m : nat) :
      Rmax_list (map X (seq (S n) m)) = Rmax_list (map (fun k => X (S k)) (seq n m)).
    Proof.
      now rewrite map_shift1_seq.
    Qed.
-
+   
    Lemma Rmax_list_map_ge_Rmin {A} (l : list A) (f : A -> R) :
      Rmax_list (map f l) >= Rmin_list (map f l).
    Proof.
-    destruct l.
-    - simpl; lra.
-    - apply Rge_trans with (r2 := f a).
-      + apply Rle_ge, Rmax_spec_map, in_eq.
-      + apply Rmin_spec_map, in_eq.
+     destruct l.
+     - simpl; lra.
+     - apply Rge_trans with (r2 := f a).
+       + apply Rle_ge, Rmax_spec_map, in_eq.
+       + apply Rmin_spec_map, in_eq.
+   Qed.
+   
+   Lemma Rmax_list_factor f (l : list R) (nnil:l <> nil) (fproper: forall x y, In x l -> In y l -> x <= y -> f x <= f y) :
+     Rmax_list (map f l) = f (Rmax_list l).
+   Proof.
+     induction l; simpl; [congruence |].
+     destruct l; [simpl; trivial |].
+     cut_to IHl; [| congruence | simpl in *; intuition].
+     rewrite IHl.
+     simpl map.
+     assert (HH:In (Rmax_list (r :: l)) (r :: l)).
+     {
+       now apply Rmax_list_In.
+     }
+     revert HH.
+     generalize (Rmax_list (r :: l)); intros.
+     unfold Rmax.
+     repeat match_destr.
+     - assert (f r0 <= f a).
+       {
+         apply fproper; simpl in *; try tauto.
+         lra.
+       }
+       lra.
+     - apply fproper in r1; simpl in *; tauto.
+   Qed.
+
+   Lemma Rmax_list_factor0 f (l : list R) (f0: f 0 = 0) (fproper: forall x y, In x l -> In y l -> x <= y -> f x <= f y) :
+     Rmax_list (map f l) = f (Rmax_list l).
+   Proof.
+     destruct l; [simpl; auto |].
+     now apply Rmax_list_factor.
+   Qed.
+
+   Lemma Rmax_list_abs_sqr (l : list R) :
+     Rsqr (Rmax_list (map Rabs l)) = Rmax_list (map Rsqr l).
+   Proof.
+     rewrite <- Rmax_list_factor0.
+     - f_equal.
+       rewrite map_map.
+       apply map_ext; intros.
+       now rewrite <- Rsqr_abs.
+     - apply Rsqr_0.
+     - intros.
+       apply in_map_iff in H; destruct H as [? [??]]; subst.
+       apply in_map_iff in H0; destruct H0 as [? [??]]; subst.
+       apply Rsqr_le_abs_1.
+       now repeat rewrite Rabs_Rabsolu.
    Qed.
 
 End Rmax_list.

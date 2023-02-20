@@ -6904,7 +6904,7 @@ Section MDP.
     - apply Rsqr_le_abs_0 in r; lra.
     - apply Rsqr_le_abs_1 in r; lra.
   Qed.
-    
+
    Lemma vec_max_abs_sqr {n} (v : vector R n) :
      Rvector_max_sqr v = Rsqr (Rvector_max_abs v).
    Proof.
