@@ -4894,6 +4894,44 @@ Qed.
     lra.
   Qed.
 
+  Lemma conditional_variance_bound1_fun (x c : Ts -> R)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa x}
+        {rv2 : RandomVariable dom2 borel_sa c}        
+        {isfe : IsFiniteExpectation prts x}
+        {isfe2 : IsFiniteExpectation prts c}
+        {isfe0 : IsFiniteExpectation prts (rvsqr x)} :
+    almostR2 prts Rle (rvsqr x) (c) ->
+    almostR2 prts Rle (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
+                               (rvsqr (FiniteConditionalExpectation prts sub x)))
+             (c).
+  Proof.
+    intros.
+    assert (rv3: RandomVariable dom borel_sa c).
+    {
+      now apply (RandomVariable_sa_sub sub).
+    }
+    generalize (FiniteCondexp_ale 
+                  prts sub (rvsqr x) (c)); intros.
+    cut_to H0; try easy.
+    apply almost_prob_space_sa_sub_lift in H0.
+    revert H0; apply almost_impl.
+    revert H; apply almost_impl.
+    apply all_almost; intros ???.
+    rewrite FiniteCondexp_id with (f := c) in H0; trivial.
+    rv_unfold.
+    eapply Rle_trans.
+    shelve.
+    apply H0.
+    Unshelve.
+    assert (0 <=  (FiniteConditionalExpectation prts sub x x0)²).
+    {
+      apply Rle_0_sqr.
+    }
+    lra.
+  Qed.
+
   Ltac rewrite_condexp_pf_irrel H
   := match type of H with
      | @NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?nnf1 ?x = _ =>
@@ -5227,6 +5265,27 @@ Qed.
     apply H1.
  Qed.
 
+  Lemma conditional_variance_bound_L2_fun (x c : Ts -> R)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa x}
+        {rv2 : RandomVariable dom2 borel_sa c}        
+        {isfe2 : IsFiniteExpectation prts c}
+        {isl2: IsLp prts 2 x} :
+    almostR2 prts Rle (rvsqr x) (c) ->
+    almostR2 prts Rle (FiniteConditionalExpectation prts sub (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))))
+          (c).
+  Proof.
+    intros.
+    generalize (conditional_variance_L2_alt x sub); intros.
+    generalize (conditional_variance_bound1_fun x c sub H); intros.
+    revert H1; apply almost_impl.
+    revert H0; apply almost_impl.
+    apply all_almost; intros ???.
+    rewrite H0.
+    apply H1.
+ Qed.
+
 End Stochastic_convergence.
 
   Instance rvs_Rmin_list {Ts} {dom2 : SigmaAlgebra Ts} (rvs : list (Ts -> R))
@@ -5254,6 +5313,28 @@ End Stochastic_convergence.
       simpl.
       apply rvmax_rv; trivial.
   Qed.
+
+  Ltac rewrite_condexp_pf_irrel H
+  := match type of H with
+     | @NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?nnf1 ?x = _ =>
+         match goal with
+           [|- context [@NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?g ?rv2 ?nnf2 ?x]] =>
+             rewrite <- (fun pf => @NonNegCondexp_ext
+                                 Ts dom prts dom2 sub f g rv1 rv2 nnf1 nnf2 pf x); [rewrite H | reflexivity]
+         end
+     | @ConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?x = _ =>
+         match goal with
+           [|- context [@ConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?g ?rv2 ?x]] =>
+             rewrite <- (fun pf => @ConditionalExpectation_ext
+                                 Ts dom prts dom2 sub f g rv1 rv2 pf x); [rewrite H | reflexivity]
+         end
+     | @FiniteConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?nnf1 ?x = _ =>
+         match goal with
+           [|- context [@FiniteConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv2 ?nnf2 ?x]] =>
+             rewrite <- (fun pf => @FiniteConditionalExpectation_ext
+                                 Ts dom prts dom2 sub f f rv1 rv2 nnf1 nnf2 pf x); [rewrite H | reflexivity]
+         end
+     end.
 
 
 Section MDP.
@@ -5542,12 +5623,13 @@ Section MDP.
   Qed.      
 
   Instance rv_Rmax_all (Q : Ts -> Rfct (sigT M.(act)))
-    (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa)) :
-    RandomVariable dom borel_sa (fun ω : Ts => Rmax_all (Q ω)).
+    {dom2 : SigmaAlgebra Ts}
+    (isrvQ : forall sa, RandomVariable dom2 borel_sa (fun ω => Q ω sa)) :
+    RandomVariable dom2 borel_sa (fun ω : Ts => Rmax_all (Q ω)).
   Proof.
     unfold Rmax_all.
     match_destr.
-    generalize (@rvs_Rmax_list Ts dom ((map (fun (s : sigT (act M)) ω => Q ω s) fin_elms))); intros HH.
+    generalize (@rvs_Rmax_list Ts dom2 ((map (fun (s : sigT (act M)) ω => Q ω s) fin_elms))); intros HH.
     cut_to HH.
     - revert HH.
       apply RandomVariable_proper; try easy.
@@ -5683,7 +5765,6 @@ Section MDP.
           exists  (existT (act M) (next_state sa a) x).
           split; trivial.
   Qed.
-
 
   Instance isl2_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
     (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
@@ -6974,12 +7055,164 @@ Section MDP.
        {
          typeclasses eauto.
        }
-       generalize (fun k sa c =>
-                     conditional_variance_bound_L2 
-                       (fun ω => (qlearn_Qmin (qlearn_Q_basic k ω) (next_state sa ω)))
-                       c (filt_sub k)); intros.
-       
-         admit.
+       assert (forall k,
+                  RandomVariable (F k) borel_sa
+                    (fun ω => (Rmax_all (fun sa => Rsqr (qlearn_Q_basic k ω sa))))).
+       {
+         intros.
+         apply rv_Rmax_all.
+         intros.
+         apply rvsqr_rv.
+         apply H4.
+       }
+       (pose (Xmin := fun k sa ω => qlearn_Qmin (qlearn_Q_basic k ω) (next_state sa ω))).
+       assert (forall k sa,
+                  IsFiniteExpectation 
+                    prts
+                    (rvsqr
+                       (rvminus (Xmin k sa)
+                                (FiniteConditionalExpectation prts (filt_sub k) (Xmin k sa))))).
+       {
+         intros.
+
+         generalize (conditional_variance_L2_alt_isfe (Xmin k sa) (filt_sub k)); intros.
+         revert H8.
+         apply IsFiniteExpectation_proper.
+         intros ?.
+         rv_unfold.
+         do 3 f_equal.
+         unfold Xmin.
+         apply FiniteConditionalExpectation_ext; reflexivity.
+       }
+
+       assert (forall k sa,
+                  almostR2 prts Rle 
+                           (FiniteConditionalExpectation 
+                              prts (filt_sub k)
+                              (rvsqr (rvminus 
+                                        (Xmin k sa)
+                                        (FiniteConditionalExpectation prts (filt_sub k) (Xmin k sa)))))
+                           (fun ω => Rmax_all (fun sa => Rsqr (qlearn_Q_basic k ω sa)))).
+      {
+        intros.
+        assert (RandomVariable dom borel_sa (Xmin k sa)) by typeclasses eauto.
+        assert (IsLp prts 2 (Xmin k sa)) by typeclasses eauto.
+        assert (IsFiniteExpectation 
+                  prts
+                  (fun ω : Ts =>
+                     Rmax_all (fun sa : {x : state M & act M x} => (qlearn_Q_basic k ω sa)²))).
+        {
+          apply isfe_Rmax_all; intros; typeclasses eauto.
+        }
+        generalize (conditional_variance_bound_L2_fun 
+                      (Xmin k sa)
+                      (fun ω => (Rmax_all (fun sa => Rsqr (qlearn_Q_basic k ω sa))))
+                      (filt_sub k)); intros.
+        cut_to H12.
+        - revert H12.
+          apply almost_impl, all_almost; intros ??.
+          etransitivity; [| etransitivity]; [| apply H12 |]; apply refl_refl.
+          + apply FiniteConditionalExpectation_ext.
+            intros ?.
+            rv_unfold.
+            do 3 f_equal.
+            apply FiniteConditionalExpectation_ext; reflexivity.
+          + reflexivity.
+        - rv_unfold.
+          unfold Rmax_all, Xmin, qlearn_Qmin.
+          apply all_almost; intros ?.
+          match_destr.
+          assert (exists sa0,
+                     Min_{ act_list (next_state sa x)}
+                         (fun a0 : act M (next_state sa x) => qlearn_Q_basic k x (existT (act M) (next_state sa x) a0)) = qlearn_Q_basic k x sa0).
+         {
+           generalize (Rmin_list_map_exist (fun a0 : act M (next_state sa x) => qlearn_Q_basic k x (existT (act M) (next_state sa x) a0))  (act_list (next_state sa x))); intros.
+           cut_to H13.
+           - destruct H13 as [? [? ?]].
+             exists (existT _ _ x0).
+             now rewrite <- H14.
+           - apply act_list_not_nil.
+         }
+         destruct H13.
+         rewrite H13.
+         apply Rmax_spec.
+         apply in_map_iff.
+         exists x0.
+         split; trivial.
+      }
+      generalize (fun k sa =>
+                    nncondexp_sqr_sum_bound_nneg
+                      (fun ω : Ts =>
+                         cost sa ω - FiniteExpectation prts (cost sa))
+                      (rvscale 
+                         β 
+                         (fun ω => (Xmin k sa ω) -
+                                   (FiniteConditionalExpectation 
+                                      prts (filt_sub k)
+                                      (Xmin k sa) ω)))
+                      (filt_sub k)
+                 ); intros.                           
+      assert (forall sa,
+                 IsFiniteExpectation 
+                   prts
+                   (rvsqr
+                      (rvminus
+                         (cost sa)
+                         (const (FiniteExpectation prts (cost sa)))))).
+      {
+        intros.
+        assert (sa_sub dom dom) by reflexivity.
+        generalize (conditional_variance_L2_alt_isfe (cost sa) H11).
+        apply IsFiniteExpectation_proper.
+        intros ?.
+        rv_unfold.
+        do 3 f_equal.
+        admit.
+      }
+      assert (exists A,
+                 0 < A /\
+                 forall sa, 
+                   FiniteExpectation prts (rvsqr
+                                         (rvminus
+                                            (cost sa)
+                                            (const (FiniteExpectation prts (cost sa)))))
+                   <=   A).
+      {
+        assert (forall sa,
+                   exists A,
+                     FiniteExpectation prts (rvsqr
+                                         (rvminus
+                                            (cost sa)
+                                            (const (FiniteExpectation prts (cost sa)))))
+                   <=   A).
+        {
+          intros.
+          unfold FiniteExpectation.
+          unfold proj1_sig.
+          match_destr.
+          exists x; lra.
+        }
+        
+        admit.
+      }
+      destruct H12 as [A [? ?]].
+      exists (2 * A); exists 2.
+      split; try lra.
+      split; try lra.
+      intros.
+      specialize (H10 k sa).
+      specialize (H9 k sa).
+      specialize (H13 sa).
+      revert H10; apply almost_impl.
+      revert H9; apply almost_impl.
+      apply all_almost; intros ???.
+      erewrite Condexp_nneg_simpl.
+      unfold rvplus, rvscale in H10.
+      unfold Xmin in H10.
+      eapply Rbar_le_trans.
+                                                      
+      admit.
+      admit.
      - intros.
        generalize (qlearn_XF_contraction H x (Rfct_zero (sigT M.(act)))); intros.
        rewrite Rfct_minus_zero in H7.
