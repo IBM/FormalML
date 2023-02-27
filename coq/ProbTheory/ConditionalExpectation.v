@@ -4104,7 +4104,9 @@ Theorem is_conditional_expectation_factor_out_nneg_both_Rbar
     - apply H0.
     - now apply iscen'.
   Qed.
+    
 End is_cond_exp.
+  
 
 Section is_cond_exp_props.
   Context {Ts:Type} 

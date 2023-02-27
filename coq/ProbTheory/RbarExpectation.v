@@ -306,6 +306,39 @@ Section RbarExpectation.
       lra.
   Qed.
 
+  Lemma Rbar_NonnegExpectation_pinfty_const :
+    @Rbar_NonnegExpectation (const p_infty) (fun x => I) = p_infty.
+  Proof.
+    unfold Rbar_NonnegExpectation, SimpleExpectationSup.
+    unfold Lub_Rbar.
+    repeat match goal with
+             [|- context [proj1_sig ?x]] => destruct x; simpl
+           end.
+    simpl in *.
+    unfold is_lub_Rbar in i.
+    unfold is_ub_Rbar in i.
+    destruct i.
+    clear H0.
+    destruct x; simpl; trivial.
+    - specialize (H (Rabs r+1)).
+      cut_to H.
+      + simpl in H.
+        generalize (Rle_abs r); lra.
+      + exists (const (Rabs r+1)), _, _.
+        repeat split.
+        * apply nnfconst.
+          rewrite (Rabs_pos r).
+          lra.
+        * now rewrite SimpleExpectation_const.
+    - specialize (H 0).
+      cut_to H.
+      + simpl in H; tauto.
+      + exists (const 0), _, _.
+        repeat split.
+        * now apply nnfconst.
+        * now rewrite SimpleExpectation_const.
+  Qed.
+
   Lemma Rbar_NonnegExpectation_const0 :
     (@Rbar_NonnegExpectation (const 0) (nnfconst _ z_le_z)) = 0.
   Proof.
@@ -2787,13 +2820,37 @@ Qed.
       match_destr_in isfe; simpl; rbar_prover.
   Qed.
 
-  (* TODO: This shold hold for Rbar *)
-  Lemma Rbar_Expectation_const (c:R) :
+  Lemma Rbar_Expectation_finite_const (c:R) :
     Rbar_Expectation (const c) = Some (Finite c).
   Proof.
     unfold const.
     rewrite <- Expectation_Rbar_Expectation.
     apply Expectation_const.
+  Qed.
+
+  Lemma Rbar_Expectation_const (c:Rbar) :
+    Rbar_Expectation (const c) = Some c.
+  Proof.
+    destruct c.
+    - apply Rbar_Expectation_finite_const.
+    - unfold Rbar_Expectation.
+      unfold Rbar_pos_fun_part, Rbar_neg_fun_part, const; simpl.
+      rewrite (Rbar_NonnegExpectation_ext _ (rv_X2:=(const p_infty)) (fun _ => I))
+      ; [| intros ?; unfold Rbar_max; match_destr; simpl in *; tauto].
+      rewrite (Rbar_NonnegExpectation_ext _
+                 (rv_X1 := ((fun _ : Ts => Rbar_max m_infty 0)))
+                 (rv_X2:=(const 0)) (nnfconst _ (reflexivity _)))
+      ; [| intros ?; unfold Rbar_max; match_destr; simpl in *; tauto].
+      now rewrite Rbar_NonnegExpectation_pinfty_const, Rbar_NonnegExpectation_const.
+    - unfold Rbar_Expectation.
+      unfold Rbar_pos_fun_part, Rbar_neg_fun_part, const; simpl.
+      rewrite (Rbar_NonnegExpectation_ext _ (rv_X2:=(const 0)) (nnfconst _ (reflexivity _)))
+      ; [| intros ?; unfold Rbar_max; match_destr; simpl in *; tauto].
+      rewrite (Rbar_NonnegExpectation_ext _
+                 (rv_X1 := ((fun _ : Ts => Rbar_max p_infty 0)))
+                 (rv_X2:=(const p_infty)) (fun _ => I))
+      ; [| intros ?; unfold Rbar_max; match_destr; simpl in *; tauto].
+      now rewrite Rbar_NonnegExpectation_pinfty_const, Rbar_NonnegExpectation_const.
   Qed.
 
   Global Instance Rbar_IsFiniteExpectation_indicator f {P} (dec:dec_pre_event P)
@@ -2818,7 +2875,7 @@ Proof.
   - apply Real_Rbar_rv.
     apply rvconst.
   - red.
-    now rewrite Rbar_Expectation_const.
+    now rewrite Rbar_Expectation_finite_const.
 Qed.  
 
   Lemma Rbar_IsFiniteExpectation_Finite (rv_X:Ts->Rbar)
@@ -2860,7 +2917,7 @@ Qed.
   Lemma Rbar_FiniteExpectation_const (c:R) : Rbar_FiniteExpectation (const c) = c.
   Proof.
     unfold Rbar_FiniteExpectation; Rbar_simpl_finite.
-    rewrite Rbar_Expectation_const in e.
+    rewrite Rbar_Expectation_finite_const in e.
     congruence.
   Qed.
 

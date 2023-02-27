@@ -2982,7 +2982,7 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         }
         generalize (Rbar_Expectation_almostR2_proper prts (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k))) (fun x : Ts => const 0 x) H2); intros.
         rewrite H17 in H15.
-        now rewrite Rbar_Expectation_const in H15.
+        now rewrite Rbar_Expectation_finite_const in H15.
       }
       assert (isfef : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (w k))).
       {
