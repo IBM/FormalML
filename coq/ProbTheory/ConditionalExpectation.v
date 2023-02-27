@@ -4106,7 +4106,86 @@ Theorem is_conditional_expectation_factor_out_nneg_both_Rbar
   Qed.
     
 End is_cond_exp.
-  
+
+Section is_cond_exp_trivial.
+
+  Context {Ts:Type} 
+    {dom: SigmaAlgebra Ts}
+    (prts: ProbSpace dom).
+
+  Lemma is_conditional_expectation_trivial 
+    (f : Ts -> R)
+    {rv : RandomVariable dom borel_sa f}
+    {isfe: IsFiniteExpectation prts f}
+    : is_conditional_expectation prts (trivial_sa _) f (const (FiniteExpectation prts f)).
+  Proof.
+    intros ??[?|?].
+    - transitivity (Expectation (const 0)).
+      + apply Expectation_ext; intros ?.
+        unfold rvmult, const, EventIndicator.
+        match_destr; try lra.
+        apply H in p; tauto.
+      + rewrite Expectation_Rbar_Expectation.
+        apply Rbar_Expectation_ext; intros ?.
+        unfold Rbar_rvmult, const, EventIndicator.
+        match_destr.
+        * apply H in p; tauto.
+        * now rewrite Rbar_mult_0_r.
+    - transitivity (Expectation f).
+      + apply Expectation_ext; intros ?.
+        unfold rvmult, const, EventIndicator.
+        match_destr; try lra.
+        now elim n; apply H.
+      + transitivity ( Rbar_Expectation
+                         (fun x : Ts => const (FiniteExpectation prts f) x)).
+        * rewrite Rbar_Expectation_finite_const.
+          apply FiniteExpectation_Expectation.
+        * apply Rbar_Expectation_ext; intros ?.
+          unfold Rbar_rvmult, const, EventIndicator.
+          match_destr.
+          -- now rewrite Rbar_mult_1_r.
+          -- now elim n; apply H.
+  Qed.        
+
+  Lemma is_conditional_expectation_nneg_trivial 
+    (f : Ts -> R)
+    {rv : RandomVariable dom borel_sa f}
+    {nnf: NonnegativeFunction f}
+    : is_conditional_expectation prts (trivial_sa _) f (const (NonnegExpectation f)).
+  Proof.
+    intros ??[?|?].
+    - transitivity (Expectation (const 0)).
+      + apply Expectation_ext; intros ?.
+        unfold rvmult, const, EventIndicator.
+        match_destr; try lra.
+        apply H in p; tauto.
+      + rewrite Expectation_Rbar_Expectation.
+        apply Rbar_Expectation_ext; intros ?.
+        unfold Rbar_rvmult, const, EventIndicator.
+        match_destr.
+        * apply H in p; tauto.
+        * now rewrite Rbar_mult_0_r.
+    - transitivity (Expectation f).
+      + apply Expectation_ext; intros ?.
+        unfold rvmult, const, EventIndicator.
+        match_destr; try lra.
+        now elim n; apply H.
+      + transitivity ( Rbar_Expectation
+                         (fun x => (const (NonnegExpectation f) x))).
+
+        * rewrite Expectation_Rbar_Expectation.
+          rewrite Rbar_Expectation_const.
+          rewrite NNExpectation_Rbar_NNExpectation.
+          apply Rbar_Expectation_pos_pofrf.
+        * apply Rbar_Expectation_ext; intros ?.
+          unfold Rbar_rvmult, const, EventIndicator.
+          match_destr.
+          -- now rewrite Rbar_mult_1_r.
+          -- now elim n; apply H.
+  Qed.        
+
+End is_cond_exp_trivial.
+
 
 Section is_cond_exp_props.
   Context {Ts:Type} 
@@ -6409,6 +6488,56 @@ Section cond_exp2.
 
 End cond_exp2.
 
+Section cond_exp_trivial.
+
+  Context {Ts:Type} 
+    {dom: SigmaAlgebra Ts}
+    (prts: ProbSpace dom).
+  
+  Lemma Condexp_trivial 
+    (f : Ts -> R)
+    {rv : RandomVariable dom borel_sa f}
+    {isfe: IsFiniteExpectation prts f}
+    : almostR2 (prob_space_sa_sub prts (trivial_sa_sub _)) eq
+        (ConditionalExpectation prts (trivial_sa_sub _) f) (const (FiniteExpectation prts f)).
+  Proof.
+    eapply is_conditional_expectation_unique; trivial.
+    - now apply Condexp_cond_exp.
+    - apply is_conditional_expectation_trivial.
+  Qed.
+
+  Lemma NonNegCondexp_trivial 
+    (f : Ts -> R)
+    {rv : RandomVariable dom borel_sa f}
+    {nnf: NonnegativeFunction f}
+    : almostR2 (prob_space_sa_sub prts (trivial_sa_sub _)) eq
+        (NonNegCondexp prts (trivial_sa_sub _) f) (const (NonnegExpectation f)).
+  Proof.
+    eapply is_conditional_expectation_nneg_unique; trivial.
+    - typeclasses eauto.
+    - intros ?.
+      apply NonnegExpectation_pos.
+    - now apply NonNegCondexp_cond_exp.
+    - apply is_conditional_expectation_nneg_trivial.
+  Qed.
+
+  Lemma Condexp_nneg_trivial 
+    (f : Ts -> R)
+    {rv : RandomVariable dom borel_sa f}
+    {nnf: NonnegativeFunction f}
+    : almostR2 (prob_space_sa_sub prts (trivial_sa_sub _)) eq
+        (ConditionalExpectation prts (trivial_sa_sub _) f) (const (NonnegExpectation f)).
+  Proof.
+    eapply is_conditional_expectation_nneg_unique; trivial.
+    - typeclasses eauto.
+    - intros ?.
+      apply NonnegExpectation_pos.
+    - now apply Condexp_cond_exp_nneg.
+    - apply is_conditional_expectation_nneg_trivial.
+  Qed.
+
+End cond_exp_trivial.
+
 Section cond_exp_props.
   Context {Ts:Type} 
           {dom: SigmaAlgebra Ts}
@@ -7554,6 +7683,28 @@ Section fin_cond_exp.
     Qed.
 
 End fin_cond_exp.
+
+Section fin_cond_exp_trivial.
+
+  Context {Ts:Type} 
+    {dom: SigmaAlgebra Ts}
+    (prts: ProbSpace dom).
+  
+  Lemma FiniteCondexp_trivial 
+    (f : Ts -> R)
+    {rv : RandomVariable dom borel_sa f}
+    {isfe: IsFiniteExpectation prts f}
+    : almostR2 (prob_space_sa_sub prts (trivial_sa_sub _)) eq
+        (FiniteConditionalExpectation prts (trivial_sa_sub _) f) (const (FiniteExpectation prts f)).
+  Proof.
+    generalize (Condexp_trivial prts f).
+    rewrite (FiniteCondexp_eq _ _ f).
+    apply almost_impl.
+    apply all_almost; intros ??.
+    now invcs H.
+  Qed.
+
+End fin_cond_exp_trivial.
 
 Section fin_cond_exp_props.
   
