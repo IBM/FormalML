@@ -1126,7 +1126,7 @@ Section SimpleExpectation_sec.
     (fun omega =>
        (RealAdd.list_sum (map (fun c => scale_val_indicator f c omega)
                               (nodup Req_EM_T frf_vals)))).
-
+  
   Lemma frf_indicator_sum_helper f l a:
     NoDup l ->
     In (f a) l ->
@@ -3110,3 +3110,28 @@ Section indep.
   Qed.
 
 End indep.
+
+Section more_stuff.
+  Context {Ts:Type} 
+    {dom: SigmaAlgebra Ts}
+    (prts:ProbSpace dom).
+
+  Lemma frf_indicator_sum_simple_expectation
+    (f : Ts -> R)
+    {rv:RandomVariable dom borel_sa f}
+    {frf : FiniteRangeFunction f} :
+    SimpleExpectation f =
+      (RealAdd.list_sum
+         (map (fun c => c * SimpleExpectation (val_indicator f c))
+            (nodup Req_EM_T frf_vals))).
+  Proof.
+    rewrite (SimpleExpectation_transport _ (frf_indicator_sum f)).
+    unfold frf_indicator.
+    erewrite SimpleExpectation_list_sum_map_all'.
+    f_equal.
+    apply map_ext; intros.
+    rewrite scaleSimpleExpectation.
+    apply SimpleExpectation_pf_irrel.
+  Qed.
+
+End more_stuff.
