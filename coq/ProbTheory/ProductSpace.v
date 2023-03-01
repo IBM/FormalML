@@ -1860,18 +1860,47 @@ Proof.
     
   Admitted.
     
+End ps_product.
 
-Lemma tonelli_nnexp_section_snd (f : (X * Y) -> Rbar) 
+Local Instance product_flip_rv {X Y:Type} {A:SigmaAlgebra X} {B:SigmaAlgebra Y} :
+  RandomVariable (product_sa B A) (product_sa A B) (fun '(a, b) => (b, a)).
+Proof.
+  generalize (pullback_rv (product_sa A B)  (fun '(a, b) => (b, a))).
+  apply RandomVariable_proper; try reflexivity.
+  apply product_flip. 
+Qed.
+
+Section ps_product'.
+  Context {X Y:Type}.
+  Context {A:SigmaAlgebra X}.
+  Context {B:SigmaAlgebra Y}.
+
+  Context (ps1 : ProbSpace A).
+  Context (ps2 : ProbSpace B).
+
+  Existing Instance nneg_section_fst.
+  Existing Instance nneg_section_snd.
+  Existing Instance Rbar_nneg_section_fst.
+  Existing Instance Rbar_nneg_section_snd.
+
+  Lemma tonelli_nnexp_section_snd (f : (X * Y) -> Rbar) 
       {nnf : Rbar_NonnegativeFunction f} 
       {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
     RandomVariable B Rbar_borel_sa
                    (fun y => Rbar_NonnegExpectation (fun x => f (x, y))).
-Proof.
-  generalize product_ps_section_measurable_snd; intros.
-  Admitted.
+  Proof.
+    assert (nnfflip: Rbar_NonnegativeFunction (f ∘ (fun '(a, b) => (b, a)))).
+    {
+      intros [??].
+      apply nnf.
+    }
+    apply (@tonelli_nnexp_section_fst _ _ B A ps2 ps1 (f ∘ (fun '(a, b) => (b,a))) nnfflip).
+    apply (compose_rv (dom2:=product_sa A B)); trivial.
+    apply product_flip_rv.
+  Qed.
 
-End ps_product.
-     
+End ps_product'.
+
    Program Instance rev_sa {X Y:Type} (sa : SigmaAlgebra (X * Y)) : SigmaAlgebra (Y * X)
   := {
       sa_sigma := (fun (f:pre_event (Y * X)) =>
