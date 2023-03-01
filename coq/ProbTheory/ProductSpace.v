@@ -1793,13 +1793,14 @@ Proof.
   apply nnf.
 Qed.
 
-Lemma tonelli_nnexp_section_fst_simple (f : (X * Y) -> R) 
+Instance tonelli_nnexp_section_fst_simple_rv (f : (X * Y) -> R) 
       {frf : FiniteRangeFunction f}
       {nnf : NonnegativeFunction f} 
       {rv : RandomVariable (product_sa A B) borel_sa f} :
     RandomVariable A Rbar_borel_sa
                    (fun x => NonnegExpectation (fun y => f (x, y))).
   Proof.
+(*
   assert (forall E : event (product_sa A B), 
              RandomVariable 
                A Rbar_borel_sa
@@ -1816,7 +1817,7 @@ Lemma tonelli_nnexp_section_fst_simple (f : (X * Y) -> R)
     erewrite <- NonnegExpectation_EventIndicator.
     apply NonnegExpectation_pf_irrel.
   }
-
+*)
   assert (frf_sec_complete : forall x, forall y, In ((fun y : Y => f (x, y)) y) frf_vals).
   {
     intros.
@@ -1844,22 +1845,96 @@ Lemma tonelli_nnexp_section_fst_simple (f : (X * Y) -> R)
     intros ?.
     now apply ps_proper; intros ?; simpl.
   }
-  apply Real_Rbar_rv in H0.
-  revert H0.
+  apply Real_Rbar_rv in H.
+  revert H.
   apply RandomVariable_proper; try easy.
   intros ?.
   now erewrite simple_NonnegExpectation.
   Qed.
 
-Lemma tonelli_nnexp_section_fst (f : (X * Y) -> Rbar) 
+Instance tonelli_nnexp_section_fst_rv (f : (X * Y) -> Rbar) 
       {nnf : Rbar_NonnegativeFunction f} 
       {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
     RandomVariable A Rbar_borel_sa
                    (fun x => Rbar_NonnegExpectation (fun y => f (x, y))).
 Proof.
-    
+  generalize (simple_approx_lim_seq f nnf); intros.
+  generalize (simple_approx_rv (dom := product_sa A B) f); intros apx_rv.
+  generalize (simple_approx_pofrf f); intro apx_nnf.
+  generalize (simple_approx_frf f); intro apx_frf. 
+  generalize (simple_approx_increasing f nnf); intro apx_inc.
+
+  assert (RandomVariable 
+            A Rbar_borel_sa
+            (fun x => Rbar_NonnegExpectation (Rbar_rvlim (fun n y => simple_approx f n (x, y))))).
+  {
+    assert (RandomVariable 
+              A Rbar_borel_sa
+              (Rbar_rvlim (fun n x => NonnegExpectation (fun y => simple_approx f n (x, y))))).
+    {
+      apply Rbar_rvlim_rv.
+      intros.
+      now apply tonelli_nnexp_section_fst_simple_rv.
+    }
+    revert H0.
+    apply RandomVariable_proper; try easy.
+    intros ?.
+    rewrite <- monotone_convergence_Rbar_rvlim.
+    - unfold Rbar_rvlim.
+      apply ELim_seq_ext.
+      intros.
+      now rewrite NNExpectation_Rbar_NNExpectation.
+    - intros.
+      apply Real_Rbar_rv.
+      now apply prod_section_fst_rv.
+    - intros ??.
+      apply apx_inc.
+  }
+  revert H0.
+  apply RandomVariable_proper; try easy.
+  intros ?.
+  apply Rbar_NonnegExpectation_ext.
+  intros ?.
+  unfold Rbar_rvlim.
+  specialize (H (a, a0)).
+  apply is_lim_seq_unique in H.
+  rewrite <- H.
+  now rewrite Elim_seq_fin.
+ Qed.
+
+Lemma tonelli_nnexp_section_fst_simple (f : (X * Y) -> R) 
+      {frf : FiniteRangeFunction f}
+      {nnf : NonnegativeFunction f}
+      {nnf2 : forall x, NonnegativeFunction (fun y => f (x, y))}
+      {nnf3 : Rbar_NonnegativeFunction (fun x => NonnegExpectation (fun y => f (x, y)))}
+      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} 
+      {rv3 : RandomVariable A Rbar_borel_sa (fun x => NonnegExpectation (fun y => f (x, y)))} :
+  NonnegExpectation (Prts := product_ps) f =
+  Rbar_NonnegExpectation (fun x => NonnegExpectation (fun y => f (x, y))).
+Proof.
   Admitted.
-    
+
+
+Lemma tonelli_nnexp_section_fst (f : (X * Y) -> Rbar) 
+      {nnf : Rbar_NonnegativeFunction f}
+      {nnf2 : Rbar_NonnegativeFunction (fun x => Rbar_NonnegExpectation (fun y => f (x, y)))}
+      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
+  Rbar_NonnegExpectation (Prts := product_ps) f =
+  Rbar_NonnegExpectation (fun x => Rbar_NonnegExpectation (fun y => f (x, y))).
+Proof.
+  generalize (simple_approx_lim_seq f nnf); intros.
+  generalize (simple_approx_rv (dom := product_sa A B) f); intros apx_rv.
+  generalize (simple_approx_pofrf f); intro apx_nnf.
+  generalize (simple_approx_frf f); intro apx_frf.
+  generalize (simple_approx_le f nnf); intro apx_le.
+  generalize (simple_approx_increasing f nnf); intro apx_inc.  
+
+  generalize (Rbar_monotone_convergence 
+                f (simple_approx f) rv nnf
+                (fun n => Real_Rbar_rv _ (rv:=apx_rv n)) apx_nnf apx_le apx_inc); intros.
+
+  Admitted.
+
 End ps_product.
 
 Local Instance product_flip_rv {X Y:Type} {A:SigmaAlgebra X} {B:SigmaAlgebra Y} :
@@ -1878,12 +1953,11 @@ Section ps_product'.
   Context (ps1 : ProbSpace A).
   Context (ps2 : ProbSpace B).
 
-  Existing Instance nneg_section_fst.
-  Existing Instance nneg_section_snd.
   Existing Instance Rbar_nneg_section_fst.
   Existing Instance Rbar_nneg_section_snd.
 
-  Lemma tonelli_nnexp_section_snd (f : (X * Y) -> Rbar) 
+
+Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar) 
       {nnf : Rbar_NonnegativeFunction f} 
       {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
     RandomVariable B Rbar_borel_sa
@@ -1894,12 +1968,27 @@ Section ps_product'.
       intros [??].
       apply nnf.
     }
-    apply (@tonelli_nnexp_section_fst _ _ B A ps2 ps1 (f ∘ (fun '(a, b) => (b,a))) nnfflip).
+  Admitted.
+(*
+    apply (@tonelli_nnexp_section_fst_rv _ _ B A ps2 ps1 (f ∘ (fun '(a, b) => (b,a))) nnfflip).
     apply (compose_rv (dom2:=product_sa A B)); trivial.
     apply product_flip_rv.
   Qed.
+ *)
+  
+(*
+Lemma tonelli_nnexp_section_snd (f : (X * Y) -> Rbar) 
+      {nnf : Rbar_NonnegativeFunction f}
+      {nnf2 : Rbar_NonnegativeFunction (fun y => Rbar_NonnegExpectation (fun x => f (x, y)))}
+      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
+  Rbar_NonnegExpectation (Prts := product_ps) f =
+  Rbar_NonnegExpectation (fun y => Rbar_NonnegExpectation (fun x => f (x, y))).
+ Proof.
+   Admitted.
+*)
 
 End ps_product'.
+
 
    Program Instance rev_sa {X Y:Type} (sa : SigmaAlgebra (X * Y)) : SigmaAlgebra (Y * X)
   := {

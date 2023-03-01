@@ -1432,7 +1432,7 @@ Proof.
 Qed.
 
 (* The set of countable and c-countable sets forms a sigma algebra *)
-Program Instance countable_sa (T:Type) : SigmaAlgebra T
+Program Lemma countable_sa (T:Type) : SigmaAlgebra T
   := {
       sa_sigma (f:pre_event T) := is_countable f \/ is_countable (¬ f)
     }.
