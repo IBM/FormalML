@@ -1968,24 +1968,20 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       intros [??].
       apply nnf.
     }
-  Admitted.
-(*
-    apply (@tonelli_nnexp_section_fst_rv _ _ B A ps2 ps1 (f ∘ (fun '(a, b) => (b,a))) nnfflip).
+    apply (@tonelli_nnexp_section_fst_rv _ _ B A ps1 (f ∘ (fun '(a, b) => (b,a))) nnfflip).
     apply (compose_rv (dom2:=product_sa A B)); trivial.
     apply product_flip_rv.
   Qed.
- *)
   
-(*
-Lemma tonelli_nnexp_section_snd (f : (X * Y) -> Rbar) 
-      {nnf : Rbar_NonnegativeFunction f}
-      {nnf2 : Rbar_NonnegativeFunction (fun y => Rbar_NonnegExpectation (fun x => f (x, y)))}
-      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
-  Rbar_NonnegExpectation (Prts := product_ps) f =
-  Rbar_NonnegExpectation (fun y => Rbar_NonnegExpectation (fun x => f (x, y))).
+  Lemma tonelli_nnexp_section_snd (f : (X * Y) -> Rbar) 
+        {nnf : Rbar_NonnegativeFunction f}
+        {nnf2 : Rbar_NonnegativeFunction (fun y => Rbar_NonnegExpectation (fun x => f (x, y)))}
+        {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
+    Rbar_NonnegExpectation (Prts := product_ps ps1 ps2) f =
+    Rbar_NonnegExpectation (fun y => Rbar_NonnegExpectation (fun x => f (x, y))).
  Proof.
    Admitted.
-*)
+
 
 End ps_product'.
 
