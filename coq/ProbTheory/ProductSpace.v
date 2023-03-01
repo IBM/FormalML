@@ -1793,6 +1793,22 @@ Proof.
   apply nnf.
 Qed.
 
+Program Instance frf_section_fst (f : (X * Y) -> R) (x : X)
+         {frf : FiniteRangeFunction f} :
+  FiniteRangeFunction (fun y => f (x,y)) :=
+  { frf_vals := frf_vals}.
+Next Obligation.
+  apply frf_vals_complete.
+Qed.
+
+Program Instance frf_section_snd (f : (X * Y) -> R) (y : Y)
+         {frf : FiniteRangeFunction f} :
+  FiniteRangeFunction (fun x => f (x,y)) :=
+  { frf_vals := frf_vals}.
+Next Obligation.
+  apply frf_vals_complete.
+Qed.
+
 Instance tonelli_nnexp_section_fst_simple_rv (f : (X * Y) -> R) 
       {frf : FiniteRangeFunction f}
       {nnf : NonnegativeFunction f} 
@@ -1818,19 +1834,12 @@ Instance tonelli_nnexp_section_fst_simple_rv (f : (X * Y) -> R)
     apply NonnegExpectation_pf_irrel.
   }
 *)
-  assert (frf_sec_complete : forall x, forall y, In ((fun y : Y => f (x, y)) y) frf_vals).
-  {
-    intros.
-    apply frf_vals_complete.
-  } 
-
-  pose (frf_sec := fun x => Build_FiniteRangeFunction _ (@frf_vals _ _ _ frf) (frf_sec_complete x)).
   assert (RandomVariable 
             A borel_sa
             (fun x : X => SimpleExpectation (fun y : Y => f (x, y)))).
   {
     unfold SimpleExpectation.
-    unfold frf_sec; simpl.
+    simpl.
     apply list_sum_rv; intros.
     apply rvscale_rv.
     unfold preimage_singleton, pre_event_preimage, pre_event_singleton.
@@ -1902,6 +1911,7 @@ Proof.
   now rewrite Elim_seq_fin.
  Qed.
 
+
 Lemma tonelli_nnexp_section_fst_simple (f : (X * Y) -> R) 
       {frf : FiniteRangeFunction f}
       {nnf : NonnegativeFunction f}
@@ -1913,7 +1923,6 @@ Lemma tonelli_nnexp_section_fst_simple (f : (X * Y) -> R)
   Rbar_NonnegExpectation (fun x => NonnegExpectation (fun y => f (x, y))).
 Proof.
   erewrite <- simple_NonnegExpectation.
-  assert (forall x, FiniteRangeFunction (fun y => f (x,y))) by admit.
   assert (nnf4: Rbar_NonnegativeFunction
             (fun x => SimpleExpectation (fun y => f (x,y)))).
   {
@@ -1924,6 +1933,7 @@ Proof.
   erewrite Rbar_NonnegExpectation_ext.
   - erewrite <- simple_Rbar_NonnegExpectation.
     + unfold SimpleExpectation.
+      apply Rbar_finite_eq.
       admit.
     + generalize (tonelli_nnexp_section_fst_simple_rv f).
       apply RandomVariable_proper; try easy.
