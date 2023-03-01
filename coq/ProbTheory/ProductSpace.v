@@ -1931,14 +1931,43 @@ Proof.
     now apply SimpleExpectation_nneg.
   }
   erewrite Rbar_NonnegExpectation_ext.
-  - erewrite <- simple_Rbar_NonnegExpectation.
+  - assert (rv3':RandomVariable A borel_sa (fun x : X => SimpleExpectation (fun y : Y => f (x, y)))).
+    {
+      apply borel_Rbar_borel.
+      revert rv3.
+      apply RandomVariable_proper; try reflexivity; intros ?.
+      apply simple_NonnegExpectation.
+    }
+
+(*    assert (frf_comp:forall x, In ((fun x : X => SimpleExpectation (fun y : Y => f (x, y))) x) (frf_vals (FiniteRangeFunction := frf))).
+    {
+      admit.
+      
+    }
+*)
+
+    assert (frf' : FiniteRangeFunction (fun x : X => SimpleExpectation (fun y : Y => f (x, y)))).
+    {
+      unfold SimpleExpectation; simpl.
+      apply list_sum_map_frf; intros.
+      apply frfscale.
+
+      
+      
+      admit.
+      
+    } 
+    
+    rewrite <- (simple_Rbar_NonnegExpectation _ (rv:=rv3') (frf:=frf')).
+    (* (frf:=Build_FiniteRangeFunction _ _ frf_comp)). *)
     + unfold SimpleExpectation.
       apply Rbar_finite_eq.
       admit.
-    + generalize (tonelli_nnexp_section_fst_simple_rv f).
+(*    + generalize (tonelli_nnexp_section_fst_simple_rv f).
       apply RandomVariable_proper; try easy.
       intros ?.
       now erewrite <- simple_NonnegExpectation.
+*)
   - intros ?.
     now erewrite <- simple_NonnegExpectation.
   Admitted.
