@@ -1907,11 +1907,30 @@ Lemma tonelli_nnexp_section_fst_simple (f : (X * Y) -> R)
       {nnf : NonnegativeFunction f}
       {nnf2 : forall x, NonnegativeFunction (fun y => f (x, y))}
       {nnf3 : Rbar_NonnegativeFunction (fun x => NonnegExpectation (fun y => f (x, y)))}
-      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} 
+      {rv : RandomVariable (product_sa A B) borel_sa f} 
       {rv3 : RandomVariable A Rbar_borel_sa (fun x => NonnegExpectation (fun y => f (x, y)))} :
   NonnegExpectation (Prts := product_ps) f =
   Rbar_NonnegExpectation (fun x => NonnegExpectation (fun y => f (x, y))).
 Proof.
+  erewrite <- simple_NonnegExpectation.
+  assert (forall x, FiniteRangeFunction (fun y => f (x,y))) by admit.
+  assert (nnf4: Rbar_NonnegativeFunction
+            (fun x => SimpleExpectation (fun y => f (x,y)))).
+  {
+    intros ?.
+    simpl.
+    now apply SimpleExpectation_nneg.
+  }
+  erewrite Rbar_NonnegExpectation_ext.
+  - erewrite <- simple_Rbar_NonnegExpectation.
+    + unfold SimpleExpectation.
+      admit.
+    + generalize (tonelli_nnexp_section_fst_simple_rv f).
+      apply RandomVariable_proper; try easy.
+      intros ?.
+      now erewrite <- simple_NonnegExpectation.
+  - intros ?.
+    now erewrite <- simple_NonnegExpectation.
   Admitted.
 
 
