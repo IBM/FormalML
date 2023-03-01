@@ -1816,22 +1816,40 @@ Lemma tonelli_nnexp_section_fst_simple (f : (X * Y) -> R)
     erewrite <- NonnegExpectation_EventIndicator.
     apply NonnegExpectation_pf_irrel.
   }
-  assert (forall x, FiniteRangeFunction (fun y : Y => f (x, y))).
+
+  assert (frf_sec_complete : forall x, forall y, In ((fun y : Y => f (x, y)) y) frf_vals).
   {
-    admit.
-  }
+    intros.
+    apply frf_vals_complete.
+  } 
+
+  pose (frf_sec := fun x => Build_FiniteRangeFunction _ (@frf_vals _ _ _ frf) (frf_sec_complete x)).
   assert (RandomVariable 
             A borel_sa
             (fun x : X => SimpleExpectation (fun y : Y => f (x, y)))).
   {
-    admit.
+    unfold SimpleExpectation.
+    unfold frf_sec; simpl.
+    apply list_sum_rv; intros.
+    apply rvscale_rv.
+    unfold preimage_singleton, pre_event_preimage, pre_event_singleton.
+    assert (saE:sa_sigma (product_sa A B) (fun '(x, y) => f (x, y) = c)).
+    {
+      generalize (sa_preimage_singleton f); intros.
+      generalize (rv (exist _ _ (borel_singleton c))).
+      now apply sa_proper; intros [??]; simpl.
+    }
+    generalize (product_ps_section_measurable_fst (exist _ _ saE)).
+    apply RandomVariable_proper; try reflexivity.
+    intros ?.
+    now apply ps_proper; intros ?; simpl.
   }
   apply Real_Rbar_rv in H0.
   revert H0.
   apply RandomVariable_proper; try easy.
   intros ?.
   now erewrite simple_NonnegExpectation.
-  Admitted.
+  Qed.
 
 Lemma tonelli_nnexp_section_fst (f : (X * Y) -> Rbar) 
       {nnf : Rbar_NonnegativeFunction f} 
