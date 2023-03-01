@@ -832,7 +832,7 @@ Section ps_product.
   Qed.
 
     Lemma product_ps_section_measurable_fst (E:event (product_sa A B)) :
-    RandomVariable A borel_sa 
+      RandomVariable A borel_sa 
                    (fun x => ps_P (exist _ _ (product_section_fst E x))).
   Proof.
     pose (FF := fun (e : pre_event (X * Y)) =>
@@ -1760,6 +1760,97 @@ Section ps_product.
     erewrite NonnegExpectation_ext; [now rewrite HH |].
     reflexivity.
   Qed.
+
+Instance Rbar_nneg_section_fst (f : (X * Y) -> Rbar)
+         {nnf : Rbar_NonnegativeFunction f} :
+  forall x, Rbar_NonnegativeFunction (fun y => f (x, y)).
+Proof.
+  intros ??.
+  apply nnf.
+Qed.
+  
+Instance Rbar_nneg_section_snd (f : (X * Y) -> Rbar)
+         {nnf : Rbar_NonnegativeFunction f} :
+  forall y, Rbar_NonnegativeFunction (fun x => f (x, y)).
+Proof.
+  intros ??.
+  apply nnf.
+Qed.
+
+Instance nneg_section_fst (f : (X * Y) -> R)
+         {nnf : NonnegativeFunction f} :
+  forall x, NonnegativeFunction (fun y => f (x, y)).
+Proof.
+  intros ??.
+  apply nnf.
+Qed.
+  
+Instance nneg_section_snd (f : (X * Y) -> R)
+         {nnf : NonnegativeFunction f} :
+  forall y, NonnegativeFunction (fun x => f (x, y)).
+Proof.
+  intros ??.
+  apply nnf.
+Qed.
+
+Lemma tonelli_nnexp_section_fst_simple (f : (X * Y) -> R) 
+      {frf : FiniteRangeFunction f}
+      {nnf : NonnegativeFunction f} 
+      {rv : RandomVariable (product_sa A B) borel_sa f} :
+    RandomVariable A Rbar_borel_sa
+                   (fun x => NonnegExpectation (fun y => f (x, y))).
+  Proof.
+  assert (forall E : event (product_sa A B), 
+             RandomVariable 
+               A Rbar_borel_sa
+               (fun x => NonnegExpectation 
+                           (EventIndicator (classic_dec
+                                              (fun y : Y => E (x, y)))))).
+  {
+    intros.
+    generalize (product_ps_section_measurable_fst E); intros.
+    apply (Real_Rbar_rv (dom := A)) in H.
+    revert H.
+    apply RandomVariable_proper; try easy.
+    intros ?.
+    erewrite <- NonnegExpectation_EventIndicator.
+    apply NonnegExpectation_pf_irrel.
+  }
+  assert (forall x, FiniteRangeFunction (fun y : Y => f (x, y))).
+  {
+    admit.
+  }
+  assert (RandomVariable 
+            A borel_sa
+            (fun x : X => SimpleExpectation (fun y : Y => f (x, y)))).
+  {
+    admit.
+  }
+  apply Real_Rbar_rv in H0.
+  revert H0.
+  apply RandomVariable_proper; try easy.
+  intros ?.
+  now erewrite simple_NonnegExpectation.
+  Admitted.
+
+Lemma tonelli_nnexp_section_fst (f : (X * Y) -> Rbar) 
+      {nnf : Rbar_NonnegativeFunction f} 
+      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
+    RandomVariable A Rbar_borel_sa
+                   (fun x => Rbar_NonnegExpectation (fun y => f (x, y))).
+Proof.
+    
+  Admitted.
+    
+
+Lemma tonelli_nnexp_section_snd (f : (X * Y) -> Rbar) 
+      {nnf : Rbar_NonnegativeFunction f} 
+      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
+    RandomVariable B Rbar_borel_sa
+                   (fun y => Rbar_NonnegExpectation (fun x => f (x, y))).
+Proof.
+  generalize product_ps_section_measurable_snd; intros.
+  Admitted.
 
 End ps_product.
      
