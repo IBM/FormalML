@@ -1931,41 +1931,243 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma NonnegExpectation_list_sum_map_all
+  {Ts : Type} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) {T : Type} 
+  (f : T -> Ts -> R) (l : list T)
+  {rvX : forall x : T, RandomVariable dom borel_sa (f x)}
+  {frf: NonnegativeFunction (fun omega : Ts => list_sum (map (fun x : T => f x omega) l))}
+  {frfX : forall x : T, NonnegativeFunction (f x)}
+  :
+  NonnegExpectation (fun omega : Ts => list_sum (map (fun x : T => f x omega) l)) =
+    list_Rbar_sum (map (fun x : T => NonnegExpectation (f x)) l).
+Proof.
+  induction l; simpl.
+  - rewrite <- (NonnegExpectation_const 0 (reflexivity _)).
+    apply NonnegExpectation_pf_irrel.
+  - Existing Instance list_sum_map_rv.
+      
+    assert (nnf2 : NonnegativeFunction (fun omega : Ts => list_sum (map (fun x : T => f x omega) l))).
+    {
+      intros ?.
+      apply list_sum_pos_pos'.
+      apply Forall_map.
+      apply Forall_forall; intros.
+      apply frfX.
+    }
+    etransitivity; [etransitivity |]; [ | 
+                                        apply  (NonnegExpectation_sum (f a) (fun omega => list_sum (map (fun x : T => f x omega) l))) | ].
+    + reflexivity.
+    + f_equal.
+      now rewrite IHl.
+Qed.
+
+Instance list_Rbar_sum_map_rv {Ts} {dom:SigmaAlgebra Ts} {T} f (l:list T)
+             {rv : forall x, RandomVariable dom Rbar_borel_sa (f x)} :
+  RandomVariable dom Rbar_borel_sa (fun omega => list_Rbar_sum (map (fun x => f x omega) l)).
+Proof.
+  induction l.
+  - simpl.
+    apply rvconst.
+  - apply Rbar_rvplus_rv; trivial.
+Qed.
+
+    
+Lemma Rbar_NonnegExpectation_list_sum_map_all
+  {Ts : Type} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) {T : Type} 
+  (f : T -> Ts -> Rbar) (l : list T)
+  {rvX : forall x : T, RandomVariable dom Rbar_borel_sa (f x)}
+  {frf: Rbar_NonnegativeFunction (fun omega : Ts => list_Rbar_sum (map (fun x : T => f x omega) l))}
+  {frfX : forall x : T, Rbar_NonnegativeFunction (f x)}
+  :
+  Rbar_NonnegExpectation (fun omega : Ts => list_Rbar_sum (map (fun x : T => f x omega) l)) =
+    list_Rbar_sum (map (fun x : T => Rbar_NonnegExpectation (f x)) l).
+Proof.
+  induction l; simpl.
+  - rewrite <- (Rbar_NonnegExpectation_const 0 (reflexivity _)).
+    apply Rbar_NonnegExpectation_pf_irrel.
+  - Existing Instance list_Rbar_sum_map_rv.
+      
+    assert (nnf2 : Rbar_NonnegativeFunction (fun omega : Ts => list_Rbar_sum (map (fun x : T => f x omega) l))).
+    {
+      intros ?.
+      apply list_Rbar_sum_nneg_nneg; intros.
+      apply in_map_iff in H.
+      destruct H as [? [??]]; subst.
+      apply frfX.
+    }
+    etransitivity; [etransitivity |];
+      [ | 
+        apply  (Rbar_NonnegExpectation_plus (f a) (fun omega => list_Rbar_sum (map (fun x : T => f x omega) l))); trivial | ].
+    + reflexivity.
+    + f_equal.
+      now rewrite IHl.
+Qed.
+
+
+Program Instance Nonnegative_FiniteRangeFunction {Ts} (f: Ts -> R)
+  (frf:FiniteRangeFunction f) (nnf:NonnegativeFunction f) : FiniteRangeFunction f
+  := {|
+    frf_vals := filter (fun x => if Rle_dec 0 x then true else false) frf_vals
+  |} .
+Next Obligation.
+  apply filter_In.
+  split.
+  - apply frf_vals_complete.
+  - match_destr.
+    specialize (nnf x); congruence.
+Qed.
+
+(* Global Arguments frf_vals {Ts Td} {rv_X} FiniteRangeFunction. *)
+
+Lemma Nonnegative_FiniteRangeFunction_nneg {Ts} {f: Ts -> R}
+  (frf:FiniteRangeFunction f) (nnf:NonnegativeFunction f) :
+  Forall (Rle 0) (frf_vals (FiniteRangeFunction:=Nonnegative_FiniteRangeFunction f frf nnf)).
+Proof.
+  simpl.
+  apply Forall_forall; intros ? inn.
+  apply filter_In in inn.
+  destruct inn.
+  match_destr_in H0.
+Qed.
+
 Lemma tonelli_nnexp_section_fst_simple (f : (X * Y) -> R) 
       {frf : FiniteRangeFunction f}
       {nnf : NonnegativeFunction f}
-(*      {nnf2 : forall x, NonnegativeFunction (fun y => f (x, y))} *)
       {nnf3 : Rbar_NonnegativeFunction (fun x => NonnegExpectation (fun y => f (x, y)))}
-(*      {rv : RandomVariable (product_sa A B) borel_sa f}  *) :
+      {rv : RandomVariable (product_sa A B) borel_sa f} :
   NonnegExpectation (Prts := product_ps) f =
   Rbar_NonnegExpectation (fun x => NonnegExpectation (fun y => f (x, y))).
 Proof.
-  generalize (frf_indicator_sum f); intros.
-  assert (NonnegativeFunction (frf_indicator f)).
+  rewrite <- (simple_NonnegExpectation _ (frf:=Nonnegative_FiniteRangeFunction _ frf nnf)).
+  
+  assert (Rbar_NonnegativeFunction (fun x : X => SimpleExpectation (frf:=Nonnegative_FiniteRangeFunction _ _ _) (fun y : Y => f (x, y)))).
   {
-    now rewrite <- H.
+    intros ?; simpl.
+    now apply SimpleExpectation_nneg.
   }
-  erewrite NonnegExpectation_ext; trivial.
-  assert (forall x,
-             (NonnegativeFunction (fun y => (frf_indicator f) (x,y)))).
+  
+  transitivity (Rbar_NonnegExpectation (fun x : X => SimpleExpectation (frf:=Nonnegative_FiniteRangeFunction _ _ _) (fun y : Y => f (x, y)))); cycle 1.
   {
-    intros ??.
-    now rewrite <- H.
+    apply Rbar_NonnegExpectation_ext; intros ?.
+    now rewrite <- (simple_NonnegExpectation _ (frf:=Nonnegative_FiniteRangeFunction _ _ _)).
   }
-  assert (Rbar_NonnegativeFunction
-            (fun x => NonnegExpectation (fun y => (frf_indicator f) (x,y)))).
+  rewrite frf_indicator_sum_simple_expectation.
+
+    assert (nneg : forall x x0, 0 <= x * SimpleExpectation (frf:= Nonnegative_FiniteRangeFunction _ _ _) (fun y : Y => val_indicator f x (x0, y))).
+  {
+    intros.
+    unfold val_indicator.
+    destruct (Rle_dec 0 x).
+    - apply Rmult_le_pos; trivial.
+      apply SimpleExpectation_nneg.
+      apply EventIndicator_pos.
+    - replace (SimpleExpectation
+                 (fun y : Y => EventIndicator (classic_dec (fun omega : X * Y => f omega = x)) (x0, y))) with 0; [lra |].
+      unfold SimpleExpectation.
+      symmetry.
+      apply list_sum0_is0.
+      apply Forall_map.
+      apply Forall_forall; intros.
+      destruct (Req_EM_T x1 0); [subst; lra |].
+      replace (ps_P
+    (preimage_singleton
+       (fun y : Y => EventIndicator (classic_dec (fun omega : X * Y => f omega = x)) (x0, y)) x1))
+        with (ps_P ∅); [rewrite ps_none; lra |].
+      apply ps_proper
+      ; intros ?; simpl
+      ; unfold pre_event_none, pre_event_preimage, pre_event_singleton.
+      split; [tauto |].
+      unfold EventIndicator.
+      match_destr; [| congruence].
+      subst.
+      generalize (nnf (x0, x2)); lra.
+  } 
+
+  assert (NonnegativeFunction (fun x : X =>
+                                 list_sum (map (fun c : R => c * (SimpleExpectation (frf:= Nonnegative_FiniteRangeFunction _ _ _)(fun y => (val_indicator f c) (x, y)))) (nodup Req_EM_T (frf_vals (FiniteRangeFunction:=Nonnegative_FiniteRangeFunction _ _ _)))))).
   {
     intros ?.
-    apply NonnegExpectation_pos.
+    apply list_sum_pos_pos'.
+    apply Forall_map.
+    apply Forall_nodup.
+    apply Forall_forall; intros.
+    apply nneg.
+  } 
+
+  transitivity (NonnegExpectation
+                      (fun x : X =>
+                         list_sum (map (fun c : R => c * (SimpleExpectation (frf:= Nonnegative_FiniteRangeFunction _ _ _)(fun y => (val_indicator f c) (x, y)))) (nodup Req_EM_T (frf_vals (FiniteRangeFunction:=Nonnegative_FiniteRangeFunction _ _ _)))))); cycle 1.
+  {
+    rewrite NNExpectation_Rbar_NNExpectation.
+    apply Rbar_NonnegExpectation_ext; intros ?.
+    rewrite (frf_indicator_sum_simple_expectation _ _).
+    do 2 f_equal.
+    apply map_ext; intros.
+    f_equal.
+    apply SimpleExpectation_ext; reflexivity.
   }
-  erewrite Rbar_NonnegExpectation_ext.
-  - unfold frf_indicator, scale_val_indicator.
-    admit.
-  - intros ?.
-    apply NonnegExpectation_ext.
+
+  simpl.
+
+  assert (sasE:forall a, sa_sigma (product_sa _ _) (fun omega : X * Y => f omega = a)); intros.
+  {
+    apply (rv (exist _ _ (borel_singleton a))).
+  }
+
+  erewrite (NonnegExpectation_list_sum_map_all).
+  Unshelve.
+  - rewrite <- list_Rbar_sum_map_finite, map_map.
+    f_equal.
+    apply map_ext_in; intros.
+    apply nodup_In in H1.
+    apply filter_In in H1.
+    destruct H1 as [_ eqq].
+    match_destr_in eqq; clear eqq.
+    
+    assert (NonnegativeFunction
+                             (rvscale a
+                                (fun omega : X =>
+                                   SimpleExpectation (frf:= Nonnegative_FiniteRangeFunction _ _ _) (fun y : Y => val_indicator f a (omega, y))))).
+    {
+      intros ?.
+      apply nneg.
+    }
+    
+    transitivity (NonnegExpectation
+                    (rvscale a (fun omega : X =>SimpleExpectation (fun y : Y => val_indicator f a (omega, y))))); [| apply NonnegExpectation_pf_irrel].
+    erewrite (NonnegExpectation_scale' a); trivial.
+    Unshelve.
+    + transitivity (Rbar_mult a (NonnegExpectation (Prts:=product_ps) (val_indicator f a))).
+      {
+        now rewrite <- (simple_NonnegExpectation _); simpl.
+      }
+      f_equal.
+      unfold val_indicator.
+      assert (nnf0 : Rbar_NonnegativeFunction
+                       (fun x : X =>
+                          NonnegExpectation (EventIndicator (classic_dec (fun y : Y => f (x, y) = a))))).
+      {
+        intros ?; apply NonnegExpectation_pos.
+      } 
+      generalize (@tonelli_nnexp_section_fst_Indicator (exist _ _ (sasE _)) nnf0); simpl; intros HH.
+      rewrite HH.
+      rewrite NNExpectation_Rbar_NNExpectation.
+      apply Rbar_NonnegExpectation_ext; intros ?.
+      now rewrite <- (simple_NonnegExpectation _ (frf:=Nonnegative_FiniteRangeFunction _ _ _)); simpl.
+    +  intros ?.
+      apply SimpleExpectation_nneg.
+      unfold val_indicator.
+      apply EventIndicator_pos.
+  - intros.
+    apply rvscale_rv.
+    apply borel_Rbar_borel.
+    generalize (@tonelli_nnexp_section_fst_simple_rv (val_indicator f x) _ _ _).
+    apply RandomVariable_proper; try reflexivity.
     intros ?.
-    now rewrite H.
-  Admitted.
+    now rewrite <- (simple_NonnegExpectation _  (frf:=Nonnegative_FiniteRangeFunction _ _ _)); simpl.
+  - intros ??.
+    apply nneg.
+Qed.
 
 
 Lemma tonelli_nnexp_section_fst (f : (X * Y) -> Rbar) 
