@@ -2177,18 +2177,116 @@ Lemma tonelli_nnexp_section_fst (f : (X * Y) -> Rbar)
   Rbar_NonnegExpectation (Prts := product_ps) f =
   Rbar_NonnegExpectation (fun x => Rbar_NonnegExpectation (fun y => f (x, y))).
 Proof.
-  generalize (simple_approx_lim_seq f nnf); intros.
-  generalize (simple_approx_rv (dom := product_sa A B) f); intros apx_rv.
-  generalize (simple_approx_pofrf f); intro apx_nnf.
+  generalize (simple_approx_lim_seq f nnf); intro flim.
   generalize (simple_approx_frf f); intro apx_frf.
+  generalize (simple_approx_pofrf f); intro apx_nnf.
+  generalize (simple_approx_rv (dom := product_sa A B) f); intros apx_rv.
   generalize (simple_approx_le f nnf); intro apx_le.
   generalize (simple_approx_increasing f nnf); intro apx_inc.  
 
-  generalize (Rbar_monotone_convergence 
+  assert (forall n,
+              Rbar_NonnegativeFunction
+                (fun x : X => Rbar_NonnegExpectation (fun y : Y => (simple_approx f n) (x, y)))).
+  {
+    intros ??.
+    apply Rbar_NonnegExpectation_pos.
+  }
+  assert (forall n,
+             Rbar_NonnegExpectation (Prts := product_ps) (simple_approx f n) = 
+             Rbar_NonnegExpectation (fun x : X => Rbar_NonnegExpectation (fun y : Y => (simple_approx f n) (x, y)))).
+  {
+    intros.
+    rewrite <- NNExpectation_Rbar_NNExpectation.
+    now erewrite tonelli_nnexp_section_fst_simple.
+  }
+  assert (nn_lim_apx: Rbar_NonnegativeFunction (Rbar_rvlim (fun n => simple_approx f n))).
+  {
+    intros ?.
+    apply ELim_seq_nneg.
+    intros.
+    apply simple_approx_pofrf.
+  }
+  rewrite <- (Rbar_monotone_convergence 
                 f (simple_approx f) rv nnf
-                (fun n => Real_Rbar_rv _ (rv:=apx_rv n)) apx_nnf apx_le apx_inc); intros.
-
-  Admitted.
+                (fun n => Real_Rbar_rv _ (rv:=apx_rv n)) apx_nnf apx_le apx_inc); [|intros; now apply is_Elim_seq_fin].
+  assert (forall x,
+             Rbar_NonnegExpectation (fun y => f (x, y)) =
+             ELim_seq (fun n : nat => Rbar_NonnegExpectation (fun y => simple_approx f n (x, y)))).
+    {
+      intros.
+      rewrite (Rbar_monotone_convergence 
+                 (fun y => f (x,y))
+                 (fun n y => simple_approx f n (x, y))
+                 (prod_section_fst_rv _ _) _ _ _ ); trivial.
+      - intros ??.
+        now apply simple_approx_le.
+      - intros ??.
+        now apply simple_approx_increasing.
+      - intros.
+        apply is_Elim_seq_fin.
+        now apply simple_approx_lim_seq.
+   }
+  assert (nn_lim_sec_apx: 
+            Rbar_NonnegativeFunction 
+              (fun x => ELim_seq (fun n : nat => Rbar_NonnegExpectation (fun y : Y => simple_approx f n (x, y))))).
+  {
+    intros ?.
+    apply ELim_seq_nneg.
+    intros.
+    apply Rbar_NonnegExpectation_pos.
+  }
+  rewrite (@Rbar_NonnegExpectation_ext _ _ _ _ _ _ nn_lim_sec_apx); [|intros ?; apply H1].
+  assert (forall n : nat,
+    RandomVariable A Rbar_borel_sa (fun x : X => Rbar_NonnegExpectation (fun y : Y => simple_approx f n (x, y)))).
+  {
+    intros.
+    apply (tonelli_nnexp_section_fst_rv (simple_approx f n)).
+  }
+  assert (RandomVariable A Rbar_borel_sa
+         (fun x : X => ELim_seq (fun n : nat => Rbar_NonnegExpectation (fun y : Y => simple_approx f n (x, y))))).
+  {
+    now apply Rbar_rvlim_rv.
+  }
+  assert (posX : Rbar_NonnegativeFunction
+                   (fun x : X =>
+                      ELim_seq (fun n : nat => Rbar_NonnegExpectation (fun y : Y => simple_approx f n (x, y))))).
+  {
+    intros ?.
+    apply ELim_seq_nneg.
+    intros.
+    apply Rbar_NonnegExpectation_pos.
+  }
+  assert (Xn_pos : forall n : nat,
+              Rbar_NonnegativeFunction
+                (fun x : X => Rbar_NonnegExpectation (fun y : Y => simple_approx f n (x, y)))).
+  {
+    intros ??.
+    apply Rbar_NonnegExpectation_pos.
+  }
+  rewrite <- (Rbar_monotone_convergence  
+                (fun x : X => ELim_seq (fun n : nat => Rbar_NonnegExpectation (fun y : Y => simple_approx f n (x, y))))
+                (fun n x => Rbar_NonnegExpectation (fun y : Y => simple_approx f n (x, y))) _ _ _ _).
+  - apply ELim_seq_ext.
+    intros.
+    now rewrite H0.
+  - intros ??.
+    apply (Elim_seq_incr_elem  (fun n0 : nat => Rbar_NonnegExpectation (fun y : Y => simple_approx f n0 (a, y)))).
+    intros.
+    apply Rbar_NonnegExpectation_le.
+    intros ?.
+    now apply simple_approx_increasing.    
+  - intros ??.
+    apply Rbar_NonnegExpectation_le.
+    intros ?.
+    now apply simple_approx_increasing.    
+  - intros.
+    apply ELim_seq_correct.
+    apply ex_Elim_seq_incr.
+    intros.
+    apply Rbar_NonnegExpectation_le.
+    intros ?.
+    now apply simple_approx_increasing.    
+  Qed.
 
 End ps_product.
 
