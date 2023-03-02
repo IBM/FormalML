@@ -367,6 +367,25 @@ End Simple.
     now apply in_map.
   Qed.
 
+  Global Program Instance FiniteRangeFunction_compose_before {A B C} (f : B -> C) (g : A -> B)
+    {frf : FiniteRangeFunction f} :
+    FiniteRangeFunction (f ∘ g)
+    := {| frf_vals := frf_vals |}.
+  Next Obligation.
+    unfold compose.
+    apply frf_vals_complete.
+  Qed.
+
+  Global Program Instance FiniteRangeFunction_compose_after {A B C} (f : A -> B) (g : B -> C)
+    {frf : FiniteRangeFunction f} :
+    FiniteRangeFunction (g ∘ f) 
+    := {| frf_vals := map g frf_vals |}.
+  Next Obligation.
+    unfold compose.
+    apply in_map.
+    apply frf_vals_complete.
+  Qed.
+
 Require Import ListAdd SigmaAlgebras EquivDec Eqdep_dec.
 
 Section Finite.

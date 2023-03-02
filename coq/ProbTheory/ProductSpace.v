@@ -1998,47 +1998,6 @@ Proof.
   apply product_flip. 
 Qed.
 
-Section ps_product'.
-  Context {X Y:Type}.
-  Context {A:SigmaAlgebra X}.
-  Context {B:SigmaAlgebra Y}.
-
-  Context (ps1 : ProbSpace A).
-  Context (ps2 : ProbSpace B).
-
-  Existing Instance Rbar_nneg_section_fst.
-  Existing Instance Rbar_nneg_section_snd.
-
-
-Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar) 
-      {nnf : Rbar_NonnegativeFunction f} 
-      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
-    RandomVariable B Rbar_borel_sa
-                   (fun y => Rbar_NonnegExpectation (fun x => f (x, y))).
-  Proof.
-    assert (nnfflip: Rbar_NonnegativeFunction (f ∘ (fun '(a, b) => (b, a)))).
-    {
-      intros [??].
-      apply nnf.
-    }
-    apply (@tonelli_nnexp_section_fst_rv _ _ B A ps1 (f ∘ (fun '(a, b) => (b,a))) nnfflip).
-    apply (compose_rv (dom2:=product_sa A B)); trivial.
-    apply product_flip_rv.
-  Qed.
-  
-  Lemma tonelli_nnexp_section_snd (f : (X * Y) -> Rbar) 
-        {nnf : Rbar_NonnegativeFunction f}
-        {nnf2 : Rbar_NonnegativeFunction (fun y => Rbar_NonnegExpectation (fun x => f (x, y)))}
-        {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
-    Rbar_NonnegExpectation (Prts := product_ps ps1 ps2) f =
-    Rbar_NonnegExpectation (fun y => Rbar_NonnegExpectation (fun x => f (x, y))).
- Proof.
-   Admitted.
-
-
-End ps_product'.
-
-
    Program Instance rev_sa {X Y:Type} (sa : SigmaAlgebra (X * Y)) : SigmaAlgebra (Y * X)
   := {
       sa_sigma := (fun (f:pre_event (Y * X)) =>
@@ -5171,3 +5130,249 @@ Qed.
 
 End ps_sequence_product.
 
+
+Section ps_product'.
+
+  Lemma SimpleExpectation_iso {X Y} (iso:Isomorphism X Y) {σ:SigmaAlgebra X} (ps:ProbSpace σ)
+    (f : X -> R)
+    {frf : FiniteRangeFunction f}
+    {rv : RandomVariable σ borel_sa f}
+    :
+    SimpleExpectation (Prts:=ps) f =
+      SimpleExpectation (Prts:=iso_ps ps iso) (rv:=rv_dom_iso_sa_f iso rv) (f ∘ (iso_b (Isomorphism:=iso))).
+  Proof.
+    unfold SimpleExpectation.
+    f_equal.
+    apply map_ext; intros.
+    f_equal.
+    simpl.
+    apply ps_proper; intros ?; simpl.
+    unfold pre_event_preimage, pre_event_singleton.
+    unfold compose.
+    now rewrite iso_b_f.
+  Qed.
+
+  Lemma Rbar_NonnegExpectation_iso {X Y} (iso:Isomorphism X Y) {σ:SigmaAlgebra X} (ps:ProbSpace σ)
+    (f : X -> Rbar)
+    {rv : RandomVariable σ Rbar_borel_sa f}
+    {nnf : Rbar_NonnegativeFunction f}
+    :
+    Rbar_NonnegExpectation (Prts:=ps) f =
+      Rbar_NonnegExpectation (Prts:=iso_ps ps iso) (f ∘ (iso_b (Isomorphism:=iso))).
+  Proof.
+    unfold Rbar_NonnegExpectation, SimpleExpectationSup.
+    apply Lub_Rbar_eqset; intros.
+    split; intros [?[?[?[[??]?]]]]; subst.
+    - exists ((x0 ∘ (iso_b (Isomorphism:=iso)))).
+      exists (rv_dom_iso_sa_f iso x1), _.
+      split.
+      + split.
+        * unfold compose; intros ?.
+          apply H.
+        * intros ?.
+          apply H0.
+      + now rewrite <- SimpleExpectation_iso.
+    - exists ((x0 ∘ (iso_f (Isomorphism:=iso)))).
+      assert (rv' : RandomVariable σ borel_sa (x0 ∘ iso_f)).
+      {
+        apply (rv_dom_iso_sa_b _ _ _ iso).
+        unfold compose.
+        revert x1.
+        apply RandomVariable_proper; try reflexivity.
+        now intros ?; rewrite iso_f_b.
+      }
+      exists _, _.
+      split.
+      + split.
+        * unfold compose; intros ?.
+          apply H.
+        * intros ?.
+          eapply Rbar_le_trans; [apply H0 |].
+          unfold compose.
+          rewrite iso_b_f.
+          apply Rbar_le_refl.
+      + rewrite (SimpleExpectation_iso iso).
+        apply SimpleExpectation_ext; intros ?.
+        unfold compose.
+        now rewrite iso_f_b.
+  Qed.
+
+  Lemma Rbar_Expectation_iso {X Y} (iso:Isomorphism X Y) {σ:SigmaAlgebra X} (ps:ProbSpace σ)
+    (f : X -> Rbar)
+    {rv : RandomVariable σ Rbar_borel_sa f}
+    :
+    Rbar_Expectation (Prts:=ps) f =
+      Rbar_Expectation (Prts:=iso_ps ps iso) (f ∘ (iso_b (Isomorphism:=iso))).
+  Proof.
+    unfold Rbar_Expectation.
+    now repeat rewrite (Rbar_NonnegExpectation_iso iso) by typeclasses eauto.
+  Qed.
+
+  Lemma SimpleExpectation_ext_ps {Ts} {σ1 σ2: SigmaAlgebra Ts} (ps1 : ProbSpace σ1) (ps2 : ProbSpace σ2) f g
+    {rvf:RandomVariable σ1 borel_sa f}
+    {rvg:RandomVariable σ2 borel_sa g}
+    {ffrf : FiniteRangeFunction f}
+    {gfrf : FiniteRangeFunction g} :
+    sa_equiv σ1 σ2 ->
+    (forall (A:event σ1) (B:event σ2), pre_event_equiv A B -> ps_P (ProbSpace:=ps1) A = ps_P (ProbSpace:=ps2) B) ->
+    rv_eq f g ->
+    SimpleExpectation (Prts:=ps1) f = SimpleExpectation (Prts:=ps2) g.
+  Proof.
+    intros.
+    assert (rvg' : RandomVariable σ1 borel_sa g).
+    {
+      revert rvg.
+      now apply RandomVariable_proper.
+    } 
+
+    transitivity (@SimpleExpectation Ts σ1 ps1 g rvg' gfrf).
+    - now apply SimpleExpectation_ext.
+    - unfold SimpleExpectation.
+      f_equal.
+      apply map_ext; intros.
+      f_equal.
+      now apply H0.
+  Qed.
+    
+  Lemma Rbar_NonnegExpectation_ext_ps {Ts} {σ1 σ2: SigmaAlgebra Ts} (ps1 : ProbSpace σ1) (ps2 : ProbSpace σ2) f g {fnneg : Rbar_NonnegativeFunction f} {gnneg : Rbar_NonnegativeFunction g} :
+    sa_equiv σ1 σ2 ->
+    (forall (A:event σ1) (B:event σ2), pre_event_equiv A B -> ps_P (ProbSpace:=ps1) A = ps_P (ProbSpace:=ps2) B) ->
+    rv_eq f g ->
+    Rbar_NonnegExpectation (Prts:=ps1) f = Rbar_NonnegExpectation (Prts:=ps2) g.
+  Proof.
+    intros.
+    unfold Rbar_NonnegExpectation.
+    apply Lub_Rbar_eqset; intros.
+    split; intros [?[?[?[[??]?]]]]; subst.
+    - exists x0.
+      assert (RandomVariable σ2 borel_sa x0).
+      {
+        revert x1.
+        now apply RandomVariable_proper.
+      }
+      exists _, _.
+      split; [split |]; trivial.
+      + now intros ?; rewrite <- H1.
+      + apply SimpleExpectation_ext_ps.
+        * now symmetry.
+        * intros.
+          symmetry.
+          apply H0.
+          now symmetry.
+        * reflexivity.
+    - exists x0.
+      assert (RandomVariable σ1 borel_sa x0).
+      {
+        revert x1.
+        now apply RandomVariable_proper.
+      }
+      exists _, _.
+      split; [split |]; trivial.
+      + now intros ?; rewrite H1.
+      + now apply SimpleExpectation_ext_ps.
+  Qed.          
+  
+  Lemma Rbar_Expectation_ext_ps {Ts} {σ1 σ2: SigmaAlgebra Ts} (ps1 : ProbSpace σ1) (ps2 : ProbSpace σ2) f g :
+    sa_equiv σ1 σ2 ->
+    (forall (A:event σ1) (B:event σ2), pre_event_equiv A B -> ps_P (ProbSpace:=ps1) A = ps_P (ProbSpace:=ps2) B) ->
+    rv_eq f g ->
+    Rbar_Expectation (Prts:=ps1) f = Rbar_Expectation (Prts:=ps2) g.
+  Proof.
+    unfold Rbar_Expectation; intros.
+    rewrite (Rbar_NonnegExpectation_ext_ps ps1 ps2 (Rbar_pos_fun_part f) (Rbar_pos_fun_part g)), (Rbar_NonnegExpectation_ext_ps ps1 ps2 (Rbar_neg_fun_part f) (Rbar_neg_fun_part g)); trivial
+    ; now unfold Rbar_neg_fun_part, Rbar_pos_fun_part; intros ?; rewrite H1.
+  Qed.
+
+  Context {X Y:Type}.
+  Context {A:SigmaAlgebra X}.
+  Context {B:SigmaAlgebra Y}.
+
+  Context (ps1 : ProbSpace A).
+  Context (ps2 : ProbSpace B).
+
+  Existing Instance Rbar_nneg_section_fst.
+  Existing Instance Rbar_nneg_section_snd.
+
+
+Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar) 
+      {nnf : Rbar_NonnegativeFunction f} 
+      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
+    RandomVariable B Rbar_borel_sa
+                   (fun y => Rbar_NonnegExpectation (fun x => f (x, y))).
+  Proof.
+    assert (nnfflip: Rbar_NonnegativeFunction (f ∘ (fun '(a, b) => (b, a)))).
+    {
+      intros [??].
+      apply nnf.
+    }
+    apply (@tonelli_nnexp_section_fst_rv _ _ B A ps1 (f ∘ (fun '(a, b) => (b,a))) nnfflip).
+    apply (compose_rv (dom2:=product_sa A B)); trivial.
+    apply product_flip_rv.
+  Qed.
+
+  Lemma Rbar_Expectation_product_flip (f : (X * Y) -> Rbar)
+    {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
+    Rbar_Expectation (Prts:=product_ps ps1 ps2) f =
+      Rbar_Expectation (Prts:=product_ps ps2 ps1) (f ∘ (fun '(a, b) => (b, a))).
+  Proof.
+    rewrite (Rbar_Expectation_iso (Isomorphism_flip) _ _).
+    apply Rbar_Expectation_ext_ps.
+    - rewrite (product_flip B A).
+      apply pullback_sa_proper; try reflexivity.
+      now intros [??].
+    - intros [??] [??] ?.
+      rewrite product_ps_rev.
+      simpl.
+      f_equal.
+      apply product_ps_proper; intros [??].
+      apply H.
+    - now intros [??].
+  Qed.
+
+  Lemma Rbar_NonnegExpectation_product_flip (f : (X * Y) -> Rbar)
+    {nnf : Rbar_NonnegativeFunction f}
+    {nnfflip: Rbar_NonnegativeFunction (f ∘ (fun '(a, b) => (b, a)))}
+    {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} 
+    {rvflip : RandomVariable (product_sa B A) Rbar_borel_sa (f ∘ (fun '(a, b) => (b, a)))} :
+    Rbar_NonnegExpectation (Prts:=product_ps ps1 ps2) f =
+      Rbar_NonnegExpectation (Prts:=product_ps ps2 ps1) (f ∘ (fun '(a, b) => (b, a))).
+  Proof.
+    cut (Some (Rbar_NonnegExpectation (Prts:=product_ps ps1 ps2) f) =
+           Some (Rbar_NonnegExpectation (Prts:=product_ps ps2 ps1) (f ∘ (fun '(a, b) => (b, a))))); [congruence |].
+    repeat rewrite <- Rbar_Expectation_pos_pofrf.
+    now apply Rbar_Expectation_product_flip.
+  Qed.    
+
+  Lemma tonelli_nnexp_section_snd (f : (X * Y) -> Rbar) 
+        {nnf : Rbar_NonnegativeFunction f}
+        {nnf2 : Rbar_NonnegativeFunction (fun y => Rbar_NonnegExpectation (fun x => f (x, y)))}
+        {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} :
+    Rbar_NonnegExpectation (Prts := product_ps ps1 ps2) f =
+    Rbar_NonnegExpectation (fun y => Rbar_NonnegExpectation (fun x => f (x, y))).
+  Proof.
+    assert (nnfflip: Rbar_NonnegativeFunction (f ∘ (fun '(a, b) => (b, a)))).
+    {
+      intros [??].
+      apply nnf.
+    }
+
+    assert (nnf3 : Rbar_NonnegativeFunction
+              (fun x : Y =>
+                 Rbar_NonnegExpectation (fun y : X => (f ∘ (fun '(a, b) => (b, a))) (x, y)))).
+    {
+      intros ?.
+      apply Rbar_NonnegExpectation_pos.
+    }
+    generalize (@tonelli_nnexp_section_fst _ _ _ _ ps2 ps1 (f ∘ (fun '(a, b) => (b, a))) _ _); intros HH.
+    cut_to HH.
+    - etransitivity; [| etransitivity]; [| apply HH |].
+      + apply Rbar_NonnegExpectation_product_flip; trivial.
+        apply (compose_rv (dom2:=product_sa A B)); trivial.
+        apply product_flip_rv.
+      + apply Rbar_NonnegExpectation_pf_irrel.
+    - apply (compose_rv (dom2:=product_sa A B)); trivial.
+      apply product_flip_rv.
+  Qed.
+
+
+End ps_product'.

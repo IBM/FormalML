@@ -5968,3 +5968,23 @@ Section monotonic.
   Qed.
 
 End monotonic.
+
+Section rv_compose.
+  
+  Global Instance Rbar_NonnegativeFunction_compose {A B} (f:B->Rbar) (g:A->B)
+    (nnf:Rbar_NonnegativeFunction f)
+    : Rbar_NonnegativeFunction (f ∘ g).
+  Proof.
+    intros ?; unfold compose.
+    apply nnf.
+  Qed.
+  
+  Global Instance NonnegativeFunction_compose {A B} (f:B->Rbar) (g:A->B)
+    (nnf:NonnegativeFunction f)
+    : NonnegativeFunction (f ∘ g).
+  Proof.
+    intros ?; unfold compose.
+    apply nnf.
+  Qed.
+  
+End rv_compose.

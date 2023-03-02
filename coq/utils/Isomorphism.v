@@ -82,6 +82,13 @@ Global Instance nat_to_N_iso : Isomorphism nat N
       iso_b_f := Nat2N.id ;
     }.
 
+Program Local Instance Isomorphism_flip {A B} : Isomorphism (A*B) (B*A)
+  := {| iso_f '(x, y) := (y,x)
+     ; iso_b '(y, x) := (x,y)
+     ; iso_f_b '(y,x) := eq_refl
+     ; iso_b_f '(x,y) := eq_refl
+     |}.
+
 Section nd.
   Lemma iso_b_nodup {A B} {iso:Isomorphism A B} l :
     NoDup l ->
