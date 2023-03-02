@@ -1911,65 +1911,60 @@ Proof.
   now rewrite Elim_seq_fin.
  Qed.
 
+Lemma tonelli_nnexp_section_fst_Indicator (E : event (product_sa A B))
+      {nnf : Rbar_NonnegativeFunction
+               (fun x => NonnegExpectation 
+                           (EventIndicator (classic_dec
+                                              (fun y : Y => E (x, y)))))} :
+    NonnegExpectation (Prts := product_ps) (EventIndicator (classic_dec E)) =  
+    Rbar_NonnegExpectation
+      (fun x => NonnegExpectation 
+                  (EventIndicator (classic_dec
+                                     (fun y : Y => E (x, y))))).
+Proof.
+  rewrite NonnegExpectation_EventIndicator.
+  rewrite explicit_product_product_pse_fst.
+  rewrite NNExpectation_Rbar_NNExpectation.
+  apply Rbar_NonnegExpectation_ext.
+  intros ?.
+  erewrite <- NonnegExpectation_EventIndicator.
+  reflexivity.
+Qed.
 
 Lemma tonelli_nnexp_section_fst_simple (f : (X * Y) -> R) 
       {frf : FiniteRangeFunction f}
       {nnf : NonnegativeFunction f}
-      {nnf2 : forall x, NonnegativeFunction (fun y => f (x, y))}
+(*      {nnf2 : forall x, NonnegativeFunction (fun y => f (x, y))} *)
       {nnf3 : Rbar_NonnegativeFunction (fun x => NonnegExpectation (fun y => f (x, y)))}
-      {rv : RandomVariable (product_sa A B) borel_sa f} 
-      {rv3 : RandomVariable A Rbar_borel_sa (fun x => NonnegExpectation (fun y => f (x, y)))} :
+(*      {rv : RandomVariable (product_sa A B) borel_sa f}  *) :
   NonnegExpectation (Prts := product_ps) f =
   Rbar_NonnegExpectation (fun x => NonnegExpectation (fun y => f (x, y))).
 Proof.
-  erewrite <- simple_NonnegExpectation.
-  assert (nnf4: Rbar_NonnegativeFunction
-            (fun x => SimpleExpectation (fun y => f (x,y)))).
+  generalize (frf_indicator_sum f); intros.
+  assert (NonnegativeFunction (frf_indicator f)).
+  {
+    now rewrite <- H.
+  }
+  erewrite NonnegExpectation_ext; trivial.
+  assert (forall x,
+             (NonnegativeFunction (fun y => (frf_indicator f) (x,y)))).
+  {
+    intros ??.
+    now rewrite <- H.
+  }
+  assert (Rbar_NonnegativeFunction
+            (fun x => NonnegExpectation (fun y => (frf_indicator f) (x,y)))).
   {
     intros ?.
-    simpl.
-    now apply SimpleExpectation_nneg.
+    apply NonnegExpectation_pos.
   }
   erewrite Rbar_NonnegExpectation_ext.
-  - assert (rv3':RandomVariable A borel_sa (fun x : X => SimpleExpectation (fun y : Y => f (x, y)))).
-    {
-      apply borel_Rbar_borel.
-      revert rv3.
-      apply RandomVariable_proper; try reflexivity; intros ?.
-      apply simple_NonnegExpectation.
-    }
-
-(*    assert (frf_comp:forall x, In ((fun x : X => SimpleExpectation (fun y : Y => f (x, y))) x) (frf_vals (FiniteRangeFunction := frf))).
-    {
-      admit.
-      
-    }
-*)
-
-    assert (frf' : FiniteRangeFunction (fun x : X => SimpleExpectation (fun y : Y => f (x, y)))).
-    {
-      unfold SimpleExpectation; simpl.
-      apply list_sum_map_frf; intros.
-      apply frfscale.
-
-      
-      
-      admit.
-      
-    } 
-    
-    rewrite <- (simple_Rbar_NonnegExpectation _ (rv:=rv3') (frf:=frf')).
-    (* (frf:=Build_FiniteRangeFunction _ _ frf_comp)). *)
-    + unfold SimpleExpectation.
-      apply Rbar_finite_eq.
-      admit.
-(*    + generalize (tonelli_nnexp_section_fst_simple_rv f).
-      apply RandomVariable_proper; try easy.
-      intros ?.
-      now erewrite <- simple_NonnegExpectation.
-*)
+  - unfold frf_indicator, scale_val_indicator.
+    admit.
   - intros ?.
-    now erewrite <- simple_NonnegExpectation.
+    apply NonnegExpectation_ext.
+    intros ?.
+    now rewrite H.
   Admitted.
 
 
