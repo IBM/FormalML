@@ -2288,6 +2288,16 @@ Proof.
     now apply simple_approx_increasing.    
   Qed.
 
+  Theorem fubini_section_fst (f : (X * Y) -> Rbar) 
+      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} 
+      {isfe1 : Rbar_IsFiniteExpectation (product_ps) f}
+      {isfe2 : forall x, Rbar_IsFiniteExpectation ps2 (fun y => f (x, y)) }
+      {isfe3 : Rbar_IsFiniteExpectation ps1 (fun x => Rbar_FiniteExpectation ps2 (fun y => f (x, y)))} :
+  Rbar_FiniteExpectation (product_ps) f =
+  Rbar_FiniteExpectation ps1 (fun x => Rbar_FiniteExpectation ps2 (fun y => f (x, y))).
+  Proof.
+  Admitted.
+
 End ps_product.
 
 Local Instance product_flip_rv {X Y:Type} {A:SigmaAlgebra X} {B:SigmaAlgebra Y} :
@@ -5641,7 +5651,29 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
            Some (Rbar_NonnegExpectation (Prts:=product_ps ps2 ps1) (f ∘ (fun '(a, b) => (b, a))))); [congruence |].
     repeat rewrite <- Rbar_Expectation_pos_pofrf.
     now apply Rbar_Expectation_product_flip.
-  Qed.    
+  Qed.
+
+  Lemma Rbar_FiniteExpectation_product_flip (f : (X * Y) -> Rbar)
+    {rv : RandomVariable (product_sa A B) Rbar_borel_sa f}
+    {isfe1:Rbar_IsFiniteExpectation (product_ps ps1 ps2) f}
+    {isfe2:Rbar_IsFiniteExpectation (product_ps ps2 ps1) (f ∘ (fun '(a, b) => (b, a)))}
+    :
+    Rbar_FiniteExpectation (product_ps ps1 ps2) f =
+      Rbar_FiniteExpectation (product_ps ps2 ps1) (f ∘ (fun '(a, b) => (b, a))).
+  Proof.
+    generalize (Rbar_Expectation_product_flip f).
+    repeat rewrite (Rbar_FiniteExpectation_Rbar_Expectation _ _).
+    congruence.
+  Qed.
+
+  Instance Rbar_IsFiniteExpectation_product_flip (f : (X * Y) -> Rbar)
+    {rv : RandomVariable (product_sa A B) Rbar_borel_sa f}
+    {isfe1:Rbar_IsFiniteExpectation (product_ps ps1 ps2) f} : 
+    Rbar_IsFiniteExpectation (product_ps ps2 ps1) (f ∘ (fun '(a, b) => (b, a))).
+  Proof.
+    unfold Rbar_IsFiniteExpectation.
+    now rewrite <- Rbar_Expectation_product_flip.
+  Qed.
 
   Lemma tonelli_nnexp_section_snd (f : (X * Y) -> Rbar) 
         {nnf : Rbar_NonnegativeFunction f}
@@ -5674,5 +5706,39 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       apply product_flip_rv.
   Qed.
 
+  Theorem fubini_section_snd (f : (X * Y) -> Rbar) 
+      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} 
+      {isfe1 : Rbar_IsFiniteExpectation (product_ps ps1 ps2) f}
+      {isfe2 : forall y, Rbar_IsFiniteExpectation ps1 (fun x => f (x, y)) }
+      {isfe3 : Rbar_IsFiniteExpectation ps2 (fun y => Rbar_FiniteExpectation ps1 (fun x => f (x, y)))} :
+  Rbar_FiniteExpectation (product_ps ps1 ps2) f =
+  Rbar_FiniteExpectation ps2 (fun y => Rbar_FiniteExpectation ps1 (fun x => f (x, y))).
+  Proof.
+    assert (rv':RandomVariable (product_sa B A) Rbar_borel_sa (f ∘ (fun '(a, b) => (b, a)))).
+    {
+      apply (compose_rv (dom2:=product_sa A B)); trivial.
+      apply product_flip_rv.
+    }
+    assert (isfe': forall x : Y, Rbar_IsFiniteExpectation ps1 (fun y : X => (f ∘ (fun '(a, b) => (b, a))) (x, y))).
+    {
+      intros.
+      generalize (isfe2 x).
+      apply Rbar_IsFiniteExpectation_proper; reflexivity.
+    }
+    assert (isfe'2:Rbar_IsFiniteExpectation ps2
+              (fun x : Y => Rbar_FiniteExpectation ps1 (fun y : X => (f ∘ (fun '(a, b) => (b, a))) (x, y)))).
+    {
+      revert isfe3.
+      apply Rbar_IsFiniteExpectation_proper; intros ?.
+      f_equal.
+      apply Rbar_FiniteExpectation_ext; reflexivity.
+    }
+    
+    etransitivity; [| etransitivity]; [| apply (@fubini_section_fst _ _ _ _ ps2 ps1 (f ∘ (fun '(a, b) => (b, a))) _ _ _ _) |].
+    - apply Rbar_FiniteExpectation_product_flip; trivial.
+    - apply Rbar_FiniteExpectation_ext; intros ?.
+      f_equal.
+      now apply Rbar_FiniteExpectation_ext.
+  Qed.
 
 End ps_product'.
