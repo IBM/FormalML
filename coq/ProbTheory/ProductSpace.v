@@ -2302,23 +2302,28 @@ Proof.
                      (fun x => Rbar_NonnegExpectation (fun y => Rbar_pos_fun_part f (x, y)))).
   
   {
-    assert (Rbar_NonnegativeFunction (Rbar_pos_fun_part f)) by typeclasses eauto.
-    assert (Rbar_NonnegativeFunction (fun x : X => Rbar_NonnegExpectation (fun y : Y => Rbar_pos_fun_part f (x, y)))).
-    {
-      intros ?.
-      apply Rbar_NonnegExpectation_pos.
-    }
-    generalize (tonelli_nnexp_section_fst (Rbar_pos_fun_part f)); intros.
-    
-
-    admit.
+    unfold Rbar_IsFiniteExpectation.
+    erewrite Rbar_Expectation_pos_pofrf.
+    erewrite <- (tonelli_nnexp_section_fst (Rbar_pos_fun_part f)); try typeclasses eauto.
+    apply Rbar_IsFiniteNonnegExpectation with (posX := Rbar_pos_fun_pos f)in H1.
+    match_destr.
+    Unshelve.
+    intros ?.
+    apply Rbar_NonnegExpectation_pos.
   }
   assert (isfe_neg:Rbar_IsFiniteExpectation 
                      ps1
                      (fun x => Rbar_NonnegExpectation (fun y => Rbar_neg_fun_part f (x, y)))).
   
   {
-    admit.
+    unfold Rbar_IsFiniteExpectation.
+    erewrite Rbar_Expectation_pos_pofrf.
+    erewrite <- (tonelli_nnexp_section_fst (Rbar_neg_fun_part f)); try typeclasses eauto.
+    apply Rbar_IsFiniteNonnegExpectation with (posX := Rbar_neg_fun_pos f)in H2.
+    match_destr.
+    Unshelve.
+    intros ?.
+    apply Rbar_NonnegExpectation_pos.
   }
   assert (Rbar_NonnegativeFunction
                (fun x : X => Rbar_NonnegExpectation (fun y : Y => Rbar_pos_fun_part f (x, y)))).
@@ -2340,8 +2345,7 @@ Proof.
   apply Rbar_IsFiniteExpectation_from_fin_parts.
   - now rewrite <- H6.
   - now rewrite <- H5.
-
-  Admitted.
+ Qed.
 
 (*
 Definition Fubini_fst (f : (X * Y) -> Rbar) :=
