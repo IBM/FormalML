@@ -2342,6 +2342,22 @@ Proof.
   - now rewrite <- H5.
  Qed.
 
+Definition Rbar_Expectation0 {Ts : Type} {dom : SigmaAlgebra Ts} {Prts : ProbSpace dom}
+  (rv_X : Ts -> Rbar) : Rbar
+  := match Rbar_Expectation rv_X with
+     | Some v => v
+     | None => 0
+     end.
+
+Lemma Rbar_Expectation0_finite {Ts : Type} {dom : SigmaAlgebra Ts} {Prts : ProbSpace dom}
+  (rv_X : Ts -> Rbar)
+  {isfe:Rbar_IsFiniteExpectation Prts rv_X}
+  : Rbar_Expectation0 rv_X = Rbar_FiniteExpectation Prts rv_X.
+Proof.
+  unfold Rbar_Expectation0.
+  now rewrite (Rbar_FiniteExpectation_Rbar_Expectation _ _).
+Qed.
+
 (*
 Definition Fubini_fst (f : (X * Y) -> Rbar) :=
   fun x => Rbar_Non
