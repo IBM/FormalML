@@ -364,6 +364,7 @@ End measure_product.
 
 Require Import RandomVariableFinite.
 Require Import RbarExpectation.
+Require Import Almost.
 
 Section ps_product.
   Context {X Y:Type}.
@@ -2288,7 +2289,66 @@ Proof.
     now apply simple_approx_increasing.    
   Qed.
 
-  Theorem fubini_section_fst (f : (X * Y) -> Rbar) 
+Lemma fubini_section_fst_almost_integrable (f : (X * Y) -> Rbar) 
+      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} 
+      {isfe : Rbar_IsFiniteExpectation product_ps f} :
+  almost ps1 (fun x => Rbar_IsFiniteExpectation ps2 (fun y => f (x, y))).
+Proof.
+  generalize (tonelli_nnexp_section_fst_rv (Rbar_pos_fun_part f)); intros. 
+  generalize (tonelli_nnexp_section_fst_rv (Rbar_neg_fun_part f)); intros.   
+  destruct (Rbar_IsFiniteExpectation_parts product_ps f isfe).
+  assert (isfe_pos:Rbar_IsFiniteExpectation 
+                     ps1
+                     (fun x => Rbar_NonnegExpectation (fun y => Rbar_pos_fun_part f (x, y)))).
+  
+  {
+    assert (Rbar_NonnegativeFunction (Rbar_pos_fun_part f)) by typeclasses eauto.
+    assert (Rbar_NonnegativeFunction (fun x : X => Rbar_NonnegExpectation (fun y : Y => Rbar_pos_fun_part f (x, y)))).
+    {
+      intros ?.
+      apply Rbar_NonnegExpectation_pos.
+    }
+    generalize (tonelli_nnexp_section_fst (Rbar_pos_fun_part f)); intros.
+    
+
+    admit.
+  }
+  assert (isfe_neg:Rbar_IsFiniteExpectation 
+                     ps1
+                     (fun x => Rbar_NonnegExpectation (fun y => Rbar_neg_fun_part f (x, y)))).
+  
+  {
+    admit.
+  }
+  assert (Rbar_NonnegativeFunction
+               (fun x : X => Rbar_NonnegExpectation (fun y : Y => Rbar_pos_fun_part f (x, y)))).
+  {
+    intros ?.
+    apply Rbar_NonnegExpectation_pos.
+  }
+  assert (Rbar_NonnegativeFunction
+               (fun x : X => Rbar_NonnegExpectation (fun y : Y => Rbar_neg_fun_part f (x, y)))).
+  {
+    intros ?.
+    apply Rbar_NonnegExpectation_pos.
+  }
+  generalize (IsFiniteExpectation_nneg_is_almost_finite _ _ isfe_pos); intros finpos.
+  generalize (IsFiniteExpectation_nneg_is_almost_finite _ _ isfe_neg); intros finneg.
+  revert finpos; apply almost_impl.
+  revert finneg; apply almost_impl.
+  apply all_almost; intros ???.
+  apply Rbar_IsFiniteExpectation_from_fin_parts.
+  - now rewrite <- H6.
+  - now rewrite <- H5.
+
+  Admitted.
+
+(*
+Definition Fubini_fst (f : (X * Y) -> Rbar) :=
+  fun x => Rbar_Non
+*)
+                        
+Theorem fubini_section_fst (f : (X * Y) -> Rbar) 
       {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} 
       {isfe1 : Rbar_IsFiniteExpectation (product_ps) f}
       {isfe2 : forall x, Rbar_IsFiniteExpectation ps2 (fun y => f (x, y)) }
