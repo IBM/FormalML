@@ -2289,6 +2289,7 @@ Proof.
     now apply simple_approx_increasing.    
   Qed.
 
+
 Lemma fubini_section_fst_almost_integrable (f : (X * Y) -> Rbar) 
       {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} 
       {isfe : Rbar_IsFiniteExpectation product_ps f} :
@@ -2297,34 +2298,6 @@ Proof.
   generalize (tonelli_nnexp_section_fst_rv (Rbar_pos_fun_part f)); intros. 
   generalize (tonelli_nnexp_section_fst_rv (Rbar_neg_fun_part f)); intros.   
   destruct (Rbar_IsFiniteExpectation_parts product_ps f isfe).
-  assert (isfe_pos:Rbar_IsFiniteExpectation 
-                     ps1
-                     (fun x => Rbar_NonnegExpectation (fun y => Rbar_pos_fun_part f (x, y)))).
-  
-  {
-    unfold Rbar_IsFiniteExpectation.
-    erewrite Rbar_Expectation_pos_pofrf.
-    erewrite <- (tonelli_nnexp_section_fst (Rbar_pos_fun_part f)); try typeclasses eauto.
-    apply Rbar_IsFiniteNonnegExpectation with (posX := Rbar_pos_fun_pos f)in H1.
-    match_destr.
-    Unshelve.
-    intros ?.
-    apply Rbar_NonnegExpectation_pos.
-  }
-  assert (isfe_neg:Rbar_IsFiniteExpectation 
-                     ps1
-                     (fun x => Rbar_NonnegExpectation (fun y => Rbar_neg_fun_part f (x, y)))).
-  
-  {
-    unfold Rbar_IsFiniteExpectation.
-    erewrite Rbar_Expectation_pos_pofrf.
-    erewrite <- (tonelli_nnexp_section_fst (Rbar_neg_fun_part f)); try typeclasses eauto.
-    apply Rbar_IsFiniteNonnegExpectation with (posX := Rbar_neg_fun_pos f)in H2.
-    match_destr.
-    Unshelve.
-    intros ?.
-    apply Rbar_NonnegExpectation_pos.
-  }
   assert (Rbar_NonnegativeFunction
                (fun x : X => Rbar_NonnegExpectation (fun y : Y => Rbar_pos_fun_part f (x, y)))).
   {
@@ -2336,6 +2309,28 @@ Proof.
   {
     intros ?.
     apply Rbar_NonnegExpectation_pos.
+  }
+  assert (isfe_pos:Rbar_IsFiniteExpectation 
+                     ps1
+                     (fun x => Rbar_NonnegExpectation (fun y => Rbar_pos_fun_part f (x, y)))).
+  
+  {
+    unfold Rbar_IsFiniteExpectation.
+    erewrite Rbar_Expectation_pos_pofrf.
+    erewrite <- (tonelli_nnexp_section_fst (Rbar_pos_fun_part f)); try typeclasses eauto.
+    apply Rbar_IsFiniteNonnegExpectation with (posX := Rbar_pos_fun_pos f)in H1.
+    match_destr.
+  }
+  assert (isfe_neg:Rbar_IsFiniteExpectation 
+                     ps1
+                     (fun x => Rbar_NonnegExpectation (fun y => Rbar_neg_fun_part f (x, y)))).
+  
+  {
+    unfold Rbar_IsFiniteExpectation.
+    erewrite Rbar_Expectation_pos_pofrf.
+    erewrite <- (tonelli_nnexp_section_fst (Rbar_neg_fun_part f)); try typeclasses eauto.
+    apply Rbar_IsFiniteNonnegExpectation with (posX := Rbar_neg_fun_pos f)in H2.
+    match_destr.
   }
   generalize (IsFiniteExpectation_nneg_is_almost_finite _ _ isfe_pos); intros finpos.
   generalize (IsFiniteExpectation_nneg_is_almost_finite _ _ isfe_neg); intros finneg.
