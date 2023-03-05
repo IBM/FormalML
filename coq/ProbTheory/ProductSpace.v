@@ -365,6 +365,7 @@ End measure_product.
 Require Import RandomVariableFinite.
 Require Import RbarExpectation.
 Require Import Almost.
+Require Import RandomVariableLpR.
 
 Section ps_product.
   Context {X Y:Type}.
@@ -2351,27 +2352,316 @@ Definition Rbar_Expectation0 {Ts : Type} {dom : SigmaAlgebra Ts} (Prts : ProbSpa
 
 Lemma Rbar_Expectation0_finite {Ts : Type} {dom : SigmaAlgebra Ts} (Prts : ProbSpace dom)
   (rv_X : Ts -> Rbar)
-  {isfe:Rbar_IsFiniteExpectation Prts rv_X}
-  : Rbar_Expectation0 Prts rv_X = Rbar_FiniteExpectation Prts rv_X.
+  {isfe:Rbar_IsFiniteExpectation Prts rv_X} :
+ Rbar_Expectation0 Prts rv_X = Rbar_FiniteExpectation Prts rv_X.
 Proof.
   unfold Rbar_Expectation0.
   now rewrite (Rbar_FiniteExpectation_Rbar_Expectation _ _).
 Qed.
 
-(*
-Definition Fubini_fst (f : (X * Y) -> Rbar) :=
-  fun x => Rbar_Non
-*)
+Definition Rbar_FiniteExpectation0 {Ts : Type} {dom : SigmaAlgebra Ts} (Prts : ProbSpace dom)
+  (rv_X : Ts -> Rbar) : R
+  := match Rbar_Expectation rv_X with
+     | Some (Finite v) => v
+     | _ => 0
+     end.
+
+Lemma Rbar_FiniteExpectation0_finite {Ts : Type} {dom : SigmaAlgebra Ts} (Prts : ProbSpace dom)
+  (rv_X : Ts -> Rbar)
+  {isfe:Rbar_IsFiniteExpectation Prts rv_X} :
+ Rbar_FiniteExpectation0 Prts rv_X = Rbar_FiniteExpectation Prts rv_X.
+Proof.
+  unfold Rbar_FiniteExpectation0.
+  now rewrite (Rbar_FiniteExpectation_Rbar_Expectation _ _).
+Qed.
+
+Lemma IsL1_Rbar_FiniteExpectation0_section_fst  (f : (X * Y) -> Rbar)  
+      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f}:
+  (RandomVariable A borel_sa 
+                  (fun x => Rbar_FiniteExpectation0 ps2 (fun y => f (x, y)))) /\
+  (IsLp ps1 1 (fun x => Rbar_FiniteExpectation0 ps2 (fun y => f (x, y)))).
+Proof.
+  pose (Nposinf := (fun x => Rbar_NonnegExpectation (fun y => Rbar_pos_fun_part f (x, y)) = p_infty)).
+  pose (Nneginf := (fun x => Rbar_NonnegExpectation (fun y => Rbar_neg_fun_part f (x, y)) = p_infty)).
+  assert (rvpos : RandomVariable 
+                    A Rbar_borel_sa 
+                    (fun x => Rbar_NonnegExpectation (fun y => Rbar_pos_fun_part f (x, y)))).
+  {
+    eapply tonelli_nnexp_section_fst_rv.
+    now apply Rbar_pos_fun_part_rv.
+  }
+  assert (rvneg : RandomVariable 
+                    A Rbar_borel_sa 
+                    (fun x => Rbar_NonnegExpectation (fun y => Rbar_neg_fun_part f (x, y)))).
+  {
+    eapply tonelli_nnexp_section_fst_rv.
+    now apply Rbar_neg_fun_part_rv.
+  }
+  assert (Nsig: sa_sigma A (pre_event_union Nposinf Nneginf)).
+  {
+    apply sa_union.
+    - apply Rbar_sa_le_pt.
+      intros.
+      apply Rbar_borel_sa_preimage2.
+      intros.
+      apply rvpos.
+    - apply Rbar_sa_le_pt.
+      intros.
+      apply Rbar_borel_sa_preimage2.
+      intros.
+      apply rvneg.
+  }
+  pose (N := exist _ _ Nsig).
+  assert (RandomVariable A borel_sa 
+                         (fun x => Rbar_FiniteExpectation0 ps2 (fun y => f (x, y)))).
+  {
+    assert (RandomVariable 
+              A borel_sa
+              (Rbar_finite_part
+                 (Rbar_rvminus
+                    (fun x =>
+                       (Rbar_NonnegExpectation 
+                          (Rbar_pos_fun_part (fun y => f (x, y)))))
+                    (fun x => 
+                       (Rbar_NonnegExpectation 
+                          (Rbar_neg_fun_part (fun y => f (x, y)))))))).
+    {
+      apply finite_part_rv.
+      apply Rbar_rvminus_rv.
+      - assert (RandomVariable A Rbar_borel_sa
+                   (fun x : X =>
+                      Rbar_NonnegExpectation 
+                        (fun y => Rbar_pos_fun_part f (x, y)))).
+        {
+          eapply tonelli_nnexp_section_fst_rv; intros.
+          now apply Rbar_pos_fun_part_rv.
+        }
+        revert H.
+        now apply RandomVariable_proper.
+      - assert (RandomVariable A Rbar_borel_sa
+                   (fun x : X =>
+                      Rbar_NonnegExpectation 
+                        (fun y => Rbar_neg_fun_part f (x, y)))).
+        {
+          eapply tonelli_nnexp_section_fst_rv; intros.
+          now apply Rbar_neg_fun_part_rv.
+        }
+        revert H.
+        now apply RandomVariable_proper.
+    }
+    revert H.
+    apply RandomVariable_proper; try easy.
+    intros ?.
+    unfold Rbar_FiniteExpectation0.
+    unfold Rbar_Expectation.
+    unfold Rbar_minus', Rbar_plus', Rbar_finite_part, Rbar_opp, Rbar_rvminus, Rbar_rvopp, Rbar_rvplus.
+    rv_unfold'.
+    case_eq (Rbar_NonnegExpectation (Rbar_pos_fun_part (fun y : Y => f (a, y))));
+      case_eq (Rbar_NonnegExpectation (Rbar_neg_fun_part (fun y : Y => f (a, y)))); intros; simpl; try reflexivity.
+  }
+  split; trivial.
+  apply Finite_abs_IsL1.
+  apply IsFiniteExpectation_abs; trivial.
+  apply IsFiniteExpectation_from_parts.
+  - unfold Rbar_FiniteExpectation0, Rbar_Expectation.
+    admit.
+  - admit.
+  Admitted.
+  
                         
+Lemma Rbar_Expectation_pos_part_finite  {Ts : Type} {dom : SigmaAlgebra Ts} (Prts : ProbSpace dom)
+      (rv_X : Ts -> Rbar)
+      {isfe:Rbar_IsFiniteExpectation Prts rv_X} :
+    is_finite (Rbar_NonnegExpectation (Rbar_pos_fun_part rv_X)).
+  Proof.
+    red in isfe.
+    unfold Rbar_Expectation in isfe.
+    destruct (Rbar_NonnegExpectation (fun x : Ts => Rbar_pos_fun_part rv_X x)).
+    destruct (Rbar_NonnegExpectation (fun x : Ts => Rbar_neg_fun_part rv_X x)).     
+    now unfold is_finite.
+    simpl in isfe; tauto.
+    simpl in isfe; tauto.     
+    destruct (Rbar_NonnegExpectation (fun x : Ts => Rbar_neg_fun_part rv_X x));
+      simpl in isfe; tauto.
+    destruct (Rbar_NonnegExpectation (fun x : Ts => Rbar_neg_fun_part rv_X x));
+      simpl in isfe; tauto.
+  Qed.
+
+  Lemma Rbar_Expectation_neg_part_finite  {Ts : Type} {dom : SigmaAlgebra Ts} (Prts : ProbSpace dom)
+        (rv_X : Ts -> Rbar)
+        {isfe:Rbar_IsFiniteExpectation Prts rv_X} :
+    is_finite (Rbar_NonnegExpectation (Rbar_neg_fun_part rv_X)).
+  Proof.
+    red in isfe.
+    unfold Rbar_Expectation in isfe.
+    destruct (Rbar_NonnegExpectation (fun x : Ts => Rbar_pos_fun_part rv_X x)).
+    destruct (Rbar_NonnegExpectation (fun x : Ts => Rbar_neg_fun_part rv_X x)).     
+    now unfold is_finite.
+    simpl in isfe; tauto.
+    simpl in isfe; tauto.     
+    destruct (Rbar_NonnegExpectation (fun x : Ts => Rbar_neg_fun_part rv_X x));
+      simpl in isfe; tauto.
+    destruct (Rbar_NonnegExpectation (fun x : Ts => Rbar_neg_fun_part rv_X x));
+      simpl in isfe; tauto.
+  Qed.
+
+   Lemma Rbar_Finite_expectation_pos_neg_parts {Ts : Type} {dom : SigmaAlgebra Ts} (Prts : ProbSpace dom)
+         (rv_X : Ts -> Rbar) 
+         {rvx : RandomVariable dom Rbar_borel_sa rv_X}
+         {isfe : Rbar_IsFiniteExpectation Prts rv_X} :
+     Rbar_FiniteExpectation Prts rv_X = Rbar_NonnegExpectation(Rbar_pos_fun_part rv_X) -
+                                     Rbar_NonnegExpectation(Rbar_neg_fun_part rv_X).
+   Proof.
+     unfold Rbar_FiniteExpectation, proj1_sig.
+     match_destr.
+     unfold Rbar_Expectation in e.
+     rewrite <- (Rbar_Expectation_pos_part_finite Prts rv_X) in e.
+     rewrite <- (Rbar_Expectation_neg_part_finite Prts rv_X) in e.     
+     simpl in e.
+     invcs e.
+     simpl.
+     ring.
+  Qed.
+
+Instance isfe_fubini_section_fst (f : (X * Y) -> Rbar) 
+      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} 
+      {isfe1 : Rbar_IsFiniteExpectation (product_ps) f} :
+IsFiniteExpectation ps1 (fun x => Rbar_FiniteExpectation0 ps2 (fun y => f (x, y))).
+Proof.
+  destruct (IsL1_Rbar_FiniteExpectation0_section_fst f).
+  now apply IsL1_Finite.
+Qed.
+  
+Instance Rbar_isfe_fubini_section_fst (f : (X * Y) -> Rbar) 
+      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} 
+      {isfe1 : Rbar_IsFiniteExpectation (product_ps) f} :
+  Rbar_IsFiniteExpectation ps1 (fun x => Rbar_FiniteExpectation0 ps2 (fun y => f (x, y))).
+Proof.
+  destruct (IsL1_Rbar_FiniteExpectation0_section_fst f).
+  apply IsFiniteExpectation_Rbar.
+  now apply IsL1_Finite.
+Qed.
+
 Theorem fubini_section_fst (f : (X * Y) -> Rbar) 
       {rv : RandomVariable (product_sa A B) Rbar_borel_sa f} 
-      {isfe1 : Rbar_IsFiniteExpectation (product_ps) f}
-      {isfe2 : forall x, Rbar_IsFiniteExpectation ps2 (fun y => f (x, y)) }
-      {isfe3 : Rbar_IsFiniteExpectation ps1 (fun x => Rbar_FiniteExpectation ps2 (fun y => f (x, y)))} :
+      {isfe1 : Rbar_IsFiniteExpectation (product_ps) f} :
   Rbar_FiniteExpectation (product_ps) f =
-  Rbar_FiniteExpectation ps1 (fun x => Rbar_FiniteExpectation ps2 (fun y => f (x, y))).
-  Proof.
-  Admitted.
+  Rbar_FiniteExpectation ps1 (fun x => Rbar_FiniteExpectation0 ps2 (fun y => f (x, y))).
+Proof.
+  destruct (IsL1_Rbar_FiniteExpectation0_section_fst f).
+  rewrite Rbar_Finite_expectation_pos_neg_parts; trivial.
+  destruct (Rbar_IsFiniteExpectation_parts product_ps f isfe1) as [HH1 HH2].
+  assert  (rv1 : RandomVariable A Rbar_borel_sa
+                                (fun x : X =>
+                                   Rbar_NonnegExpectation
+                                     (Rbar_pos_fun_part (fun y : Y => f (x, y))))).
+  {
+    generalize (tonelli_nnexp_section_fst_rv (Rbar_pos_fun_part f)); intros. 
+    revert H1.
+    apply RandomVariable_proper; reflexivity.
+  }
+  assert (rv2 : RandomVariable A Rbar_borel_sa
+                               (fun x : X =>
+                                  Rbar_NonnegExpectation
+                                    (Rbar_neg_fun_part (fun y : Y => f (x, y))))).
+  {
+    generalize (tonelli_nnexp_section_fst_rv (Rbar_neg_fun_part f)); intros. 
+    revert H1.
+    apply RandomVariable_proper; reflexivity.
+  }
+  assert (isfex1 : Rbar_IsFiniteExpectation ps1
+                    (fun x : X =>
+                     Rbar_NonnegExpectation
+                       (Rbar_pos_fun_part (fun y : Y => f (x, y))))).
+  {
+    unfold Rbar_IsFiniteExpectation.
+    erewrite Rbar_Expectation_pos_pofrf.
+    erewrite <- (tonelli_nnexp_section_fst (Rbar_pos_fun_part f)); try typeclasses eauto.
+    apply Rbar_IsFiniteNonnegExpectation with (posX := Rbar_pos_fun_pos f)in HH1.
+    match_destr.
+    Unshelve.
+    intros ?.
+    apply Rbar_NonnegExpectation_pos.    
+  }
+  assert (isfex2 : Rbar_IsFiniteExpectation ps1
+                    (fun x : X =>
+                     Rbar_NonnegExpectation
+                       (Rbar_neg_fun_part (fun y : Y => f (x, y))))).
+  {
+    unfold Rbar_IsFiniteExpectation.
+    erewrite Rbar_Expectation_pos_pofrf.
+    erewrite <- (tonelli_nnexp_section_fst (Rbar_neg_fun_part f)); try typeclasses eauto.
+    apply Rbar_IsFiniteNonnegExpectation with (posX := Rbar_neg_fun_pos f)in HH2.
+    match_destr.
+    Unshelve.
+    intros ?.
+    apply Rbar_NonnegExpectation_pos.    
+  }
+
+  assert (almostR2 ps1 eq
+                   (fun x : X => (Finite (Rbar_FiniteExpectation0 ps2 (fun y : Y => f (x, y)))))
+                   (Rbar_rvminus
+                      (fun x : X =>
+                         Rbar_NonnegExpectation (Rbar_pos_fun_part (fun y : Y => f (x, y))))
+                      (fun x : X =>
+                         Rbar_NonnegExpectation (Rbar_neg_fun_part (fun y : Y => f (x, y)))))).
+  {
+    assert (rv_eq
+              (fun x : X => (Finite (Rbar_FiniteExpectation0 ps2 (fun y : Y => f (x, y)))))
+              (Rbar_finite_part
+                 (Rbar_rvminus
+                    (fun x =>
+                       (Rbar_NonnegExpectation 
+                          (Rbar_pos_fun_part (fun y => f (x, y)))))
+                    (fun x => 
+                       (Rbar_NonnegExpectation 
+                          (Rbar_neg_fun_part (fun y => f (x, y)))))))).
+    {
+      intros ?.
+      unfold Rbar_FiniteExpectation0.
+      unfold Rbar_Expectation.
+      unfold Rbar_minus', Rbar_plus', Rbar_finite_part, Rbar_opp, Rbar_rvminus, Rbar_rvopp, Rbar_rvplus.
+      rv_unfold'.
+      case_eq (Rbar_NonnegExpectation (Rbar_pos_fun_part (fun y : Y => f (a, y))));
+      case_eq (Rbar_NonnegExpectation (Rbar_neg_fun_part (fun y : Y => f (a, y)))); intros; simpl; try reflexivity.
+    }
+    apply finexp_almost_finite in isfex1; trivial.
+    apply finexp_almost_finite in isfex2; trivial.
+    revert isfex1; apply almost_impl.
+    revert isfex2; apply almost_impl.
+    apply all_almost; intros ???.
+    rewrite H1.
+    unfold Rbar_rvminus, Rbar_rvopp, Rbar_rvplus, Rbar_finite_part.
+    rewrite <- H2.
+    rewrite <- H3.
+    simpl.
+    now apply Rbar_finite_eq.
+  }
+  eapply Rbar_FiniteExpectation_proper_almostR2 in H1; trivial.
+  - rewrite H1.
+    generalize (Rbar_FiniteExpectation_minus ps1
+               (fun x : X =>
+        Rbar_NonnegExpectation (Rbar_pos_fun_part (fun y : Y => f (x, y))))
+               (fun x : X =>
+        Rbar_NonnegExpectation (Rbar_neg_fun_part (fun y : Y => f (x, y))))); intros.
+    erewrite H2.
+    f_equal.
+    + erewrite  tonelli_nnexp_section_fst; try typeclasses eauto.
+      erewrite Rbar_FiniteExpectation_Rbar_NonnegExpectation.
+      simpl.
+      reflexivity.
+    + erewrite  tonelli_nnexp_section_fst; try typeclasses eauto.
+      erewrite Rbar_FiniteExpectation_Rbar_NonnegExpectation.
+      simpl.
+      reflexivity.
+  - now apply Real_Rbar_rv.
+  - now apply Rbar_rvminus_rv.
+    Unshelve.
+    + intros ?.
+      apply Rbar_NonnegExpectation_pos.
+    + intros ?.
+      apply Rbar_NonnegExpectation_pos.
+ Qed.
 
 End ps_product.
 
