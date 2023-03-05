@@ -2686,10 +2686,7 @@ Theorem fubini_section_fst (f : (X * Y) -> Rbar)
    erewrite fubini_section_fst0.
    apply Rbar_FiniteExpectation_ext.
    intros ?.
-   unfold Rbar_FiniteExpectation, Rbar_FiniteExpectation0.
-   generalize (isfe2 a); intros.
-   unfold Rbar_IsFiniteExpectation in r.
-   unfold proj1_sig.
+   unfold Rbar_FiniteExpectation, Rbar_FiniteExpectation0, proj1_sig.
    symmetry.
    match_destr.
    now rewrite e.
