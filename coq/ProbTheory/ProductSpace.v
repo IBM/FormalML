@@ -366,6 +366,7 @@ Require Import RandomVariableFinite.
 Require Import RbarExpectation.
 Require Import Almost.
 Require Import RandomVariableLpR.
+Require Import ConditionalExpectation.
 
 Section ps_product.
   Context {X Y:Type}.
@@ -6135,5 +6136,176 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       f_equal.
       now apply Rbar_FiniteExpectation_ext.
   Qed.
+
+  Lemma pullback_law_frf {Ts1 Ts2} {dom1 : SigmaAlgebra Ts1} {dom2 : SigmaAlgebra Ts2} {prts : ProbSpace dom1}
+        (rv_X : Ts1 -> Ts2)
+        (rv_Y : Ts2 -> R)
+        {rvx : RandomVariable dom1 dom2 rv_X}
+        {rvy : RandomVariable dom2 borel_sa rv_Y} 
+        {frfy : FiniteRangeFunction rv_Y} :
+    SimpleExpectation (Prts := prts) (rv_Y ∘ rv_X) =
+    SimpleExpectation (Prts := pullback_ps _ _ prts rv_X) rv_Y.
+  Proof.
+    rewrite frf_indicator_sum_simple_expectation.
+    rewrite frf_indicator_sum_simple_expectation.
+    simpl.
+    f_equal.
+    apply map_ext.
+    intros.
+    f_equal.
+    unfold val_indicator.
+    assert (sa_sigma  dom1 (fun omega : Ts1 => (rv_Y ∘ rv_X) omega = a)).
+    {
+      apply sa_le_pt.
+      intros.
+      apply rv_measurable.
+      typeclasses eauto.
+    }
+    generalize (@SimpleExpectation_pre_EventIndicator 
+                  Ts1 dom1 prts _ H 
+                  (classic_dec (fun omega : Ts1 => (rv_Y ∘ rv_X) omega = a))); intros.
+    assert (sa_sigma dom2 (fun omega : Ts2 => rv_Y omega = a)).
+    {
+      apply sa_le_pt.
+      intros.
+      now apply rv_measurable.
+    }
+    generalize (@SimpleExpectation_pre_EventIndicator Ts2 dom2); intros.
+    specialize (H2 (@pullback_ps Ts1 Ts2 dom1 dom2 prts rv_X rvx) _ H1).
+    specialize (H2 (classic_dec (fun omega : Ts2 => rv_Y omega = a))).
+    etransitivity; [| etransitivity]; [|apply H0|].
+    + apply SimpleExpectation_pf_irrel.
+    + symmetry.
+      etransitivity; [| etransitivity]; [|apply H2|].
+      * apply SimpleExpectation_pf_irrel.
+      * simpl.
+        now apply ps_proper.
+  Qed.
+
+  Instance Rbar_nneg_compose {Ts1 Ts2} (f : Ts1 -> Ts2) (g : Ts2 -> Rbar) :
+    Rbar_NonnegativeFunction g -> 
+    Rbar_NonnegativeFunction  (g  ∘ f).
+  Proof.
+    intros ??.
+    apply H.
+  Qed.
+
+  Lemma pullback_law_nneg {Ts1 Ts2} {dom1 : SigmaAlgebra Ts1} {dom2 : SigmaAlgebra Ts2} {prts : ProbSpace dom1}
+        (rv_X : Ts1 -> Ts2)
+        (rv_Y : Ts2 -> Rbar)
+        {rvx : RandomVariable dom1 dom2 rv_X}
+        {rvy : RandomVariable dom2 Rbar_borel_sa rv_Y} 
+        {nny : Rbar_NonnegativeFunction rv_Y} :
+    Rbar_NonnegExpectation (Prts := prts) (rv_Y  ∘ rv_X) =
+    Rbar_NonnegExpectation (Prts := pullback_ps _ _ prts rv_X) rv_Y.
+  Proof.
+  generalize (simple_approx_lim_seq rv_Y nny); intro flim.
+  generalize (simple_approx_frf rv_Y); intro apx_frf.
+  generalize (simple_approx_pofrf rv_Y); intro apx_nnf.
+  generalize (simple_approx_rv (dom := dom2) rv_Y); intros apx_rv.
+  generalize (simple_approx_le rv_Y nny); intro apx_le.
+  generalize (simple_approx_increasing rv_Y nny); intro apx_inc.
+  
+  assert (nn_lim_apx: Rbar_NonnegativeFunction (Rbar_rvlim (fun n => simple_approx rv_Y n))).
+  {
+    intros ?.
+    apply ELim_seq_nneg.
+    intros.
+    apply simple_approx_pofrf.
+  }
+  generalize (Rbar_monotone_convergence (Prts := pullback_ps _ _ prts rv_X) 
+                rv_Y (simple_approx rv_Y) rvy nny _ _ ); intros.
+  rewrite <- H; try easy; [|intros; now apply is_Elim_seq_fin]; clear H.
+  generalize (Rbar_monotone_convergence (rv_Y  ∘ rv_X) (fun n => ((simple_approx rv_Y n)  ∘ rv_X)) ); intros.
+  assert (RandomVariable dom1 Rbar_borel_sa (rv_Y ∘ rv_X)).
+  {
+    now apply compose_rv.
+  }
+  assert (Xn_pos: forall n : nat,
+             Rbar_NonnegativeFunction (fun x : Ts1 => (simple_approx rv_Y n ∘ rv_X) x)).
+  {
+    intros ??.
+    apply (Rbar_NonnegativeFunction_compose (simple_approx rv_Y n) rv_X).
+    apply apx_nnf.
+  }
+  rewrite <- (H H0 _ _ Xn_pos); clear H.
+  - apply ELim_seq_ext.
+    intros.
+    rewrite <- NNExpectation_Rbar_NNExpectation.
+    assert (NonnegativeFunction (fun x : Ts1 => (simple_approx rv_Y n ∘ rv_X) x)).
+    {
+      intros ?.
+      apply (NonnegativeFunction_compose (simple_approx rv_Y n) rv_X).
+      apply apx_nnf.
+    }
+    generalize (NNExpectation_Rbar_NNExpectation _ H); intros.
+    symmetry.
+    etransitivity; [| etransitivity]; [|apply H1|]; [|apply Rbar_NonnegExpectation_pf_irrel].
+    erewrite frf_NonnegExpectation.
+    erewrite frf_NonnegExpectation.
+    now rewrite pullback_law_frf.
+  - intros ??.
+    apply apx_le.
+  - intros ??.
+    apply apx_inc.
+  - intros.
+    apply is_Elim_seq_fin.
+    apply flim.
+  Qed.
+
+  Lemma pullback_law {Ts1 Ts2} {dom1 : SigmaAlgebra Ts1} {dom2 : SigmaAlgebra Ts2} {prts : ProbSpace dom1}
+        (rv_X : Ts1 -> Ts2)
+        (rv_Y : Ts2 -> Rbar)
+        {rvx : RandomVariable dom1 dom2 rv_X}
+        {rvy : RandomVariable dom2 Rbar_borel_sa rv_Y} :
+    Rbar_Expectation (Prts := prts) (rv_Y  ∘ rv_X) =
+    Rbar_Expectation (Prts := pullback_ps _ _ prts rv_X) rv_Y.
+  Proof.
+    generalize (Rbar_rv_pos_neg_id rv_Y); intros.
+    Admitted.
+
+  Lemma freezing {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
+        (rv_f : (X * Y) -> R) 
+        (rv_X : Ts -> X)
+        (rv_Y : Ts -> Y)
+        {rvf : RandomVariable (product_sa A B) borel_sa rv_f}
+        {rvf2 : RandomVariable dom borel_sa (fun ω : Ts => rv_f (rv_X ω, rv_Y ω))}
+        {rvX : RandomVariable dom A rv_X}
+        {rvY : RandomVariable dom B rv_Y} 
+        {isfe : IsFiniteExpectation (product_ps ps1 ps2) rv_f}
+        {isfe2 : forall x, IsFiniteExpectation prts (fun ω0 => rv_f (x, rv_Y ω0))} 
+        {rv2: RandomVariable 
+                (pullback_sa A rv_X) Rbar_borel_sa
+                (fun ω : Ts => (fun x : X => FiniteExpectation prts (fun ω0 : Ts => rv_f (x, rv_Y ω0))) (rv_X ω))} :
+    independent_rvs prts A B rv_X rv_Y ->
+    is_conditional_expectation prts (pullback_sa A rv_X) 
+                               (fun ω => rv_f (rv_X ω, rv_Y ω))
+                               (fun ω => ((fun x => FiniteExpectation prts (fun ω0 => rv_f (x, rv_Y ω0))) (rv_X ω))).
+  Proof.
+    unfold is_conditional_expectation.
+    intros.
+    assert (IsFiniteExpectation prts (rvmult (fun ω : Ts => rv_f (rv_X ω, rv_Y ω)) (EventIndicator dec))).
+    {
+      admit.
+    }
+    erewrite FiniteExpectation_Expectation.
+    assert (Rbar_IsFiniteExpectation prts  (Rbar_rvmult (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => rv_f (rv_X ω, rv_Y ω0)))
+       (fun x : Ts => EventIndicator dec x))).
+    {
+      admit.
+    }
+    erewrite Rbar_FiniteExpectation_Rbar_Expectation.
+    f_equal.
+    assert (RandomVariable dom borel_sa (rvmult (fun ω : Ts => rv_f (rv_X ω, rv_Y ω)) (EventIndicator dec))).
+    {
+      apply rvmult_rv; trivial.
+      apply (RandomVariable_sa_sub  (pullback_rv_sub dom A rv_X _)); trivial.      
+      now apply EventIndicator_pre_rv.
+   }
+    rewrite <- FinExp_Rbar_FinExp; trivial.
+    generalize fubini_section_fst; intros.
+ Admitted.
+           
+                                
 
 End ps_product'.
