@@ -6352,8 +6352,8 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     unfold independent_events in H.
     rewrite <- H.
     apply ps_proper.
-    intros ?.
-    Admitted.
+    intros ?; reflexivity.
+  Qed.
         
 
   Lemma freezing {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
