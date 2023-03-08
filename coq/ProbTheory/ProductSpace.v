@@ -6253,16 +6253,86 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     apply flim.
   Qed.
 
+  Lemma Rbar_rv_pos_neg_id' {Ts} (rv_X:Ts->Rbar) : 
+      rv_eq (rv_X) (Rbar_rvminus (Rbar_pos_fun_part rv_X) (Rbar_neg_fun_part rv_X)).
+  Proof.
+    intros ?.
+    rewrite Rbar_rv_pos_neg_id.
+    now unfold Rbar_rvminus.
+  Qed.
+
   Lemma pullback_law {Ts1 Ts2} {dom1 : SigmaAlgebra Ts1} {dom2 : SigmaAlgebra Ts2} {prts : ProbSpace dom1}
         (rv_X : Ts1 -> Ts2)
         (rv_Y : Ts2 -> Rbar)
         {rvx : RandomVariable dom1 dom2 rv_X}
-        {rvy : RandomVariable dom2 Rbar_borel_sa rv_Y} :
-    Rbar_Expectation (Prts := prts) (rv_Y  ∘ rv_X) =
-    Rbar_Expectation (Prts := pullback_ps _ _ prts rv_X) rv_Y.
+        {rvy : RandomVariable dom2 Rbar_borel_sa rv_Y} 
+        {isfey : Rbar_IsFiniteExpectation (pullback_ps _ _ prts rv_X) rv_Y}
+        {isfexy : Rbar_IsFiniteExpectation prts (rv_Y  ∘ rv_X)} :
+    Rbar_FiniteExpectation prts (rv_Y  ∘ rv_X) =
+    Rbar_FiniteExpectation (pullback_ps _ _ prts rv_X) rv_Y.
   Proof.
-    generalize (Rbar_rv_pos_neg_id rv_Y); intros.
-    Admitted.
+    generalize (Rbar_rv_pos_neg_id' rv_Y); intros.
+    rewrite (Rbar_FiniteExpectation_ext_alt (pullback_ps _ _ prts rv_X) H).
+    assert (rv_eq
+              (rv_Y ∘ rv_X)
+              (Rbar_rvminus ((Rbar_pos_fun_part rv_Y) ∘ rv_X) ((Rbar_neg_fun_part rv_Y) ∘ rv_X))).
+    {
+      intros ?.
+      unfold compose.
+      now rewrite H.
+    }
+    rewrite (Rbar_FiniteExpectation_ext_alt prts H0).
+    destruct (Rbar_IsFiniteExpectation_parts (pullback_ps _ _ prts rv_X) rv_Y isfey).
+    generalize (Rbar_FiniteExpectation_minus (pullback_ps _ _ prts rv_X)); intros.
+    specialize (H3 _ _ _ _ H1 H2).
+    symmetry.
+    etransitivity; [| etransitivity]; [|apply H3|];[now apply Rbar_FiniteExpectation_ext|].
+    assert (RandomVariable dom1 Rbar_borel_sa (Rbar_pos_fun_part rv_Y ∘ rv_X)).
+    {
+      apply compose_rv; typeclasses eauto.
+    }
+    assert (RandomVariable dom1 Rbar_borel_sa (Rbar_neg_fun_part rv_Y ∘ rv_X)).
+    {
+      apply compose_rv; typeclasses eauto.
+    }
+    assert (Rbar_IsFiniteExpectation prts (Rbar_pos_fun_part rv_Y ∘ rv_X)).
+    {
+      unfold Rbar_IsFiniteExpectation.
+      erewrite Rbar_Expectation_pos_pofrf.
+      rewrite (pullback_law_nneg rv_X (Rbar_pos_fun_part rv_Y)).
+      generalize H1; intros.
+      unfold Rbar_IsFiniteExpectation in H6.
+      now erewrite Rbar_Expectation_pos_pofrf in H6.
+      Unshelve.
+      typeclasses eauto.
+    }
+    assert (Rbar_IsFiniteExpectation prts (Rbar_neg_fun_part rv_Y ∘ rv_X)).
+    {
+      unfold Rbar_IsFiniteExpectation.
+      erewrite Rbar_Expectation_pos_pofrf.
+      rewrite (pullback_law_nneg rv_X (Rbar_neg_fun_part rv_Y)).
+      generalize H2; intros.
+      unfold Rbar_IsFiniteExpectation in H7.
+      now erewrite Rbar_Expectation_pos_pofrf in H7.
+      Unshelve.
+      typeclasses eauto.
+    }
+    generalize (Rbar_FiniteExpectation_minus prts); intros.    
+    specialize (H8 _ _ _ _ H6 H7).
+    symmetry.
+    etransitivity; [| etransitivity]; [|apply H8|];[now apply Rbar_FiniteExpectation_ext|].
+    f_equal.
+    - apply Rbar_finite_eq.
+      erewrite <- Rbar_FiniteExpectation_Rbar_NonnegExpectation.
+      erewrite <- Rbar_FiniteExpectation_Rbar_NonnegExpectation.
+      apply pullback_law_nneg.
+      typeclasses eauto.
+    - apply Rbar_finite_eq.
+      erewrite <- Rbar_FiniteExpectation_Rbar_NonnegExpectation.
+      erewrite <- Rbar_FiniteExpectation_Rbar_NonnegExpectation.
+      apply pullback_law_nneg.
+      typeclasses eauto.
+  Qed.
 
   Lemma freezing {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
         (rv_f : (X * Y) -> R) 
