@@ -5988,6 +5988,73 @@ Section ps_product'.
     ; now unfold Rbar_neg_fun_part, Rbar_pos_fun_part; intros ?; rewrite H1.
   Qed.
 
+  Instance Rbar_IsFiniteExpectation_ext_ps {Ts} {σ1 σ2: SigmaAlgebra Ts} (ps1 : ProbSpace σ1) (ps2 : ProbSpace σ2) f g :
+    sa_equiv σ1 σ2 ->
+    (forall (A:event σ1) (B:event σ2), pre_event_equiv A B -> ps_P (ProbSpace:=ps1) A = ps_P (ProbSpace:=ps2) B) ->
+    rv_eq f g ->
+    Rbar_IsFiniteExpectation ps1 f -> Rbar_IsFiniteExpectation ps2 g.
+  Proof.
+    unfold Rbar_IsFiniteExpectation; intros.
+    now rewrite <- (Rbar_Expectation_ext_ps _ _ _ _ H H0 H1).
+  Qed.
+
+  Lemma Rbar_FiniteExpectation_ext_ps {Ts} {σ1 σ2: SigmaAlgebra Ts} (ps1 : ProbSpace σ1) (ps2 : ProbSpace σ2) f g
+    {isfe1: Rbar_IsFiniteExpectation ps1 f}
+    {isfe2: Rbar_IsFiniteExpectation ps2 g}
+    :
+    sa_equiv σ1 σ2 ->
+    (forall (A:event σ1) (B:event σ2), pre_event_equiv A B -> ps_P (ProbSpace:=ps1) A = ps_P (ProbSpace:=ps2) B) ->
+    rv_eq f g ->
+    Rbar_FiniteExpectation ps1 f = Rbar_FiniteExpectation ps2 g.
+  Proof.
+    intros.
+
+    cut (Some (Finite (Rbar_FiniteExpectation ps1 f)) = Some (Finite (Rbar_FiniteExpectation ps2 g))); [congruence |].
+    repeat rewrite <- (Rbar_FiniteExpectation_Rbar_Expectation _ _).
+    now apply Rbar_Expectation_ext_ps.
+  Qed.
+
+  Global Instance Rbar_Expectation_ext_ps' {Ts} {σ: SigmaAlgebra Ts} :
+    Proper (ps_equiv ==> rv_eq ==> eq) (@Rbar_Expectation Ts σ).
+  Proof.
+    intros ??????.
+    apply Rbar_Expectation_ext_ps; trivial.
+    - reflexivity.
+    - intros.
+      rewrite H.
+      now apply ps_proper.
+  Qed.
+
+  Global Instance Rbar_IsFiniteExpectation_ext_ps' {Ts} {σ: SigmaAlgebra Ts} :
+    Proper (ps_equiv ==> rv_eq ==> iff) (@Rbar_IsFiniteExpectation Ts σ).
+  Proof.
+    intros ??????.
+    split; apply Rbar_IsFiniteExpectation_ext_ps; trivial; try reflexivity.
+    - intros.
+      rewrite H.
+      now apply ps_proper.
+    - intros.
+      rewrite H.
+      now apply ps_proper.
+    - now symmetry.
+  Qed.
+
+  Lemma Rbar_FiniteExpectation_ext_ps' {Ts} {σ: SigmaAlgebra Ts}
+    (ps1 ps2 : ProbSpace σ)
+    (pseq : ps_equiv ps1 ps2)
+    f g
+    (fgeq:rv_eq f g)
+    {fisfe : Rbar_IsFiniteExpectation ps1 f}
+    {gisfe : Rbar_IsFiniteExpectation ps2 g}
+    :
+    Rbar_FiniteExpectation ps1 f = Rbar_FiniteExpectation ps2 g.
+  Proof.
+    apply Rbar_FiniteExpectation_ext_ps; trivial; try reflexivity.
+    - intros.
+      rewrite pseq.
+      now apply ps_proper.
+  Qed.
+
   Context {X Y:Type}.
   Context {A:SigmaAlgebra X}.
   Context {B:SigmaAlgebra Y}.
