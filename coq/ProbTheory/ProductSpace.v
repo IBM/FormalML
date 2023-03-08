@@ -6334,6 +6334,28 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       typeclasses eauto.
   Qed.
 
+  Lemma product_pair_law {Ts Td1 Td2} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
+        {cod1 : SigmaAlgebra Td1} {cod2 : SigmaAlgebra Td2}
+        (rv_X : Ts -> Td1) (rv_Y : Ts -> Td2) 
+        {rv1:RandomVariable dom cod1 rv_X}
+        {rv2:RandomVariable dom cod2 rv_Y} :
+    independent_rvs prts cod1 cod2 rv_X rv_Y ->
+    ps_equiv (product_ps (pullback_ps _ _ prts rv_X) (pullback_ps _ _ prts rv_Y))
+             (pullback_ps _ _ prts (fun ω => (rv_X ω, rv_Y ω))).
+  Proof.
+    intros ??.
+    symmetry.
+    apply product_ps_unique.
+    intros.
+    simpl.
+    specialize (H a b).
+    unfold independent_events in H.
+    rewrite <- H.
+    apply ps_proper.
+    intros ?.
+    Admitted.
+        
+
   Lemma freezing {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
         (rv_f : (X * Y) -> R) 
         (rv_X : Ts -> X)
