@@ -6459,6 +6459,7 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
                Rbar_IsFiniteExpectation (pullback_ps dom B prts rv_Y)
                                         (fun y : Y => rvmult rv_f (g ∘ fst) (x, y))).
     {
+      intros.
       admit.
     }
     assert (isfe3': forall a,
@@ -6466,6 +6467,9 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
                      prts
                      ((fun y : Y => rvmult rv_f (fun x : X * Y => g (fst x)) (rv_X a, y)) ∘ rv_Y)).
     {
+      intros.
+
+      
       admit.
     }
 
@@ -6542,11 +6546,15 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     symmetry in H8.
     etransitivity; [| etransitivity]; [|apply H8|]; [now apply Rbar_FiniteExpectation_ext|].
     erewrite fubini_section_fst.
-    - erewrite <- pullback_law.
+    - erewrite <- (pullback_law).
+      Unshelve.
+      3: apply isfe4'.
       + apply Rbar_FiniteExpectation_ext.
         intros ?.
         unfold compose.
         erewrite <- pullback_law.
+        Unshelve.
+        3: apply isfe3'.
         * unfold Rbar_rvmult.
           simpl.
           rewrite Rmult_comm, <- FiniteExpectation_scale.
@@ -6573,9 +6581,6 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
         admit.
     - apply Real_Rbar_rv.
       typeclasses eauto.
-      Unshelve.
-      + apply isfe4'.
-      + apply isfe3'.
  Admitted.
            
                                 
