@@ -6421,7 +6421,6 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     apply ps_proper.
     intros ?; reflexivity.
   Qed.
-        
 
   Lemma freezing {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
         (rv_f : (X * Y) -> R) 
@@ -6443,26 +6442,103 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
   Proof.
     unfold is_conditional_expectation.
     intros.
+    assert (RandomVariable (pullback_sa A rv_X) borel_sa (EventIndicator dec)).
+    {
+      now apply EventIndicator_pre_rv.
+    }
+    destruct (measurable_is_expressible rv_X (EventIndicator dec)) as [g [? ?]].
+    assert (rv_eq
+              (EventIndicator dec)
+              (compose (compose g fst) (fun ω => (rv_X ω, rv_Y ω)))).
+    {
+      intros ?.
+      rewrite H3.
+      tauto.
+    }
     assert (IsFiniteExpectation prts (rvmult (fun ω : Ts => rv_f (rv_X ω, rv_Y ω)) (EventIndicator dec))).
     {
       admit.
     }
-    erewrite FiniteExpectation_Expectation.
-    assert (Rbar_IsFiniteExpectation prts  (Rbar_rvmult (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => rv_f (rv_X ω, rv_Y ω0)))
-       (fun x : Ts => EventIndicator dec x))).
+    rewrite FiniteExpectation_Expectation with (isfe0 := H5).
+    assert (Rbar_IsFiniteExpectation prts
+              (Rbar_rvmult (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => rv_f (rv_X ω, rv_Y ω0)))
+                           (fun x : Ts => EventIndicator dec x))).
     {
       admit.
     }
-    erewrite Rbar_FiniteExpectation_Rbar_Expectation.
+    rewrite Rbar_FiniteExpectation_Rbar_Expectation with (isfe0 := H6).
     f_equal.
-    assert (RandomVariable dom borel_sa (rvmult (fun ω : Ts => rv_f (rv_X ω, rv_Y ω)) (EventIndicator dec))).
+    assert (rv_eq
+              (rvmult (fun ω : Ts => rv_f (rv_X ω, rv_Y ω)) (EventIndicator dec))
+              (compose (rvmult rv_f (compose g fst)) (fun ω => (rv_X ω, rv_Y ω)))).
     {
-      apply rvmult_rv; trivial.
-      apply (RandomVariable_sa_sub  (pullback_rv_sub dom A rv_X _)); trivial.      
-      now apply EventIndicator_pre_rv.
-   }
-    rewrite <- FinExp_Rbar_FinExp; trivial.
-    generalize fubini_section_fst; intros.
+      intros ?.
+      unfold rvmult, compose.
+      now rewrite H4.
+    }
+    rewrite (FiniteExpectation_ext_alt _ _ _ H7).
+    rewrite <- FinExp_Rbar_FinExp; try typeclasses eauto.
+    generalize (pullback_law (fun ω : Ts => (rv_X ω, rv_Y ω)) (dom2 := product_sa A B)); intros.
+    specialize (H8 (rvmult rv_f  (g ∘ fst)) _ _).
+    erewrite H8.
+    generalize (product_pair_law rv_X rv_Y H); intros.
+    assert (rv_eq 
+              (fun omega : X * Y => Finite (rvmult rv_f (g ∘ fst) omega))
+              (fun omega : X * Y => Finite (rvmult rv_f (g ∘ fst) omega))).
+    {
+      reflexivity.
+    }
+    assert (fisfe : Rbar_IsFiniteExpectation
+                     (product_ps (pullback_ps dom A prts rv_X) (pullback_ps dom B prts rv_Y))
+                     (fun omega : X * Y => rvmult rv_f (g ∘ fst) omega)).
+    {
+      admit.
+    }
+    assert (gisfe : Rbar_IsFiniteExpectation
+                    (pullback_ps dom (product_sa A B) prts (fun ω : Ts => (rv_X ω, rv_Y ω)))
+                    (fun omega : X * Y => rvmult rv_f (g ∘ fst) omega)).
+    {
+      admit.
+    }
+    apply Rbar_finite_eq.
+    generalize (Rbar_FiniteExpectation_ext_ps' _ _ H9 _ _ H10); intros.
+    symmetry in H11.
+    etransitivity; [| etransitivity]; [|apply H11|]; [now apply Rbar_FiniteExpectation_ext|].
+    erewrite fubini_section_fst.
+    - erewrite <- pullback_law.
+      + apply Rbar_FiniteExpectation_ext.
+        intros ?.
+        unfold compose.
+        erewrite <- pullback_law.
+        * unfold Rbar_rvmult.
+          simpl.
+          rewrite Rmult_comm, <- FiniteExpectation_scale.
+          erewrite <- FinExp_Rbar_FinExp.
+          -- apply Rbar_finite_eq.
+             apply Rbar_FiniteExpectation_ext.
+             intros ?.
+             unfold compose.
+             unfold rvmult, rvscale.
+             rewrite H3.
+             unfold compose, fst.
+             now rewrite Rmult_comm.
+          -- apply rvscale_rv.
+             admit.
+        * apply Real_Rbar_rv.
+          apply rvmult_rv.
+          -- admit.
+          -- unfold fst.
+             apply rvconst.
+      + admit.
+    - apply Real_Rbar_rv.
+      typeclasses eauto.
+      Unshelve.
+      + admit.
+      + admit.
+      + admit.
+      + admit.
+      + admit. 
+             
  Admitted.
            
                                 
