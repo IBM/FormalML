@@ -6513,6 +6513,7 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
         * unfold Rbar_rvmult.
           simpl.
           rewrite Rmult_comm, <- FiniteExpectation_scale.
+          unfold compose.
           erewrite <- FinExp_Rbar_FinExp.
           -- apply Rbar_finite_eq.
              apply Rbar_FiniteExpectation_ext.
@@ -6523,13 +6524,16 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
              unfold compose, fst.
              now rewrite Rmult_comm.
           -- apply rvscale_rv.
-             admit.
+             apply (compose_rv (dom2 := product_sa A B)); trivial.
+             apply product_sa_rv; typeclasses eauto.
         * apply Real_Rbar_rv.
           apply rvmult_rv.
-          -- admit.
+          -- apply (compose_rv (dom2 := product_sa A B)); trivial.
+             apply product_sa_rv; typeclasses eauto.
           -- unfold fst.
              apply rvconst.
-      + admit.
+      + apply Real_Rbar_rv.
+        admit.
     - apply Real_Rbar_rv.
       typeclasses eauto.
       Unshelve.
