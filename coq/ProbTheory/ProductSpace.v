@@ -6488,23 +6488,36 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     {
       now apply EventIndicator_pre_rv.
     }
-    destruct (measurable_is_expressible rv_X (EventIndicator dec)) as [g [? ?]].
-
-    pose (g' := rvchoice (fun x => if (ClassicalDescription.excluded_middle_informative (exists y, rv_X y = x)) then true else false) g (const 0)).
-    assert (g'rv : RandomVariable A borel_sa g').
-    {
-      unfold g'.
-      apply rvchoiceb_rv; trivial; try apply rvconst.
-      intros ?.
-      unfold event_preimage.
-    }
     
+(*
+    destruct (measurable_is_expressible rv_X (EventIndicator dec)) as [g' [? ?]].
+    assert (rv_eq
+              (EventIndicator dec)
+              (compose (compose g' fst) (fun ω => (rv_X ω, rv_Y ω)))).
+    {
+      intros ?.
+      rewrite H3.
+      tauto.
+    }
+*)
+    destruct (event_indicator_expressible_if_measurable rv_X (exist _ _ H0)) as [E [? ?]].
+    pose (g := EventIndicator (classic_dec E)).
+    assert (HH3: rv_eq (EventIndicator dec) (g ∘ rv_X)).
+    {
+      intros ?.
+      unfold g.
+      unfold compose.
+      rewrite <- H3.
+      apply EventIndicator_ext.
+      intros ?.
+      now simpl.
+    }
     assert (rv_eq
               (EventIndicator dec)
               (compose (compose g fst) (fun ω => (rv_X ω, rv_Y ω)))).
     {
       intros ?.
-      rewrite H3.
+      rewrite HH3.
       tauto.
     }
     assert (rv_eq
@@ -6537,7 +6550,6 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     assert (isfe3: Rbar_IsFiniteExpectation (product_ps (pullback_ps dom A prts rv_X) (pullback_ps dom B prts rv_Y))
                                             (fun omega : X * Y => rvmult rv_f (fun x : X * Y => g (fst x)) omega)).
     {
-      Search Rbar_IsFiniteExpectation.
       admit.
     }
     erewrite Rbar_FiniteExpectation_Rbar_Expectation.
@@ -6559,8 +6571,11 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       apply rvmult_rv.
       - now apply prod_section_fst_rv.
       - apply compose_rv; trivial.
-        apply prod_section_fst_rv.
-        apply fst_rv.
+        + typeclasses eauto.
+        + unfold g.
+          apply EventIndicator_pre_rv.
+          unfold fst.
+          apply sa_sigma_const_classic.
     }
     assert (RandomVariable 
               A borel_sa
@@ -6592,7 +6607,7 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
              intros ?.
              unfold compose.
              unfold rvmult, rvscale.
-             rewrite H3.
+             rewrite HH3.
              unfold compose, fst.
              now rewrite Rmult_comm.
           -- apply rvscale_rv.
@@ -6607,7 +6622,8 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       + now apply Real_Rbar_rv.
     - apply Real_Rbar_rv.
       apply rvmult_rv; trivial.
-      apply compose_rv; trivial.
+      unfold g.
+      apply EventIndicator_pre_rv.
       apply fst_rv.
 
  Admitted.
