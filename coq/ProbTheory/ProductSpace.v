@@ -6494,13 +6494,26 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       admit.
     }
     erewrite Rbar_FiniteExpectation_Rbar_Expectation.
-    assert (isfe4: forall a,  Rbar_IsFiniteExpectation prts ((fun y : Y => Finite (rvmult rv_f (fun x : X * Y => g (fst x)) (rv_X a, y))) ∘ rv_Y)).
-    {
-      admit.
-    }
+
     assert (isfe5: forall x : X, Rbar_IsFiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y))).
     {
+      
       admit.
+    }
+
+    assert (isfe4: forall a,  Rbar_IsFiniteExpectation prts ((fun y : Y => Finite (rvmult rv_f (fun x : X * Y => g (fst x)) (rv_X a, y))) ∘ rv_Y)).
+    {
+      intros.
+      specialize (isfe5 (rv_X a)).
+      unfold Rbar_IsFiniteExpectation in isfe5.
+      rewrite <- pullback_law in isfe5.
+      apply isfe5.
+      apply Real_Rbar_rv.
+      apply rvmult_rv.
+      - now apply prod_section_fst_rv.
+      - apply compose_rv; trivial.
+        apply prod_section_fst_rv.
+        apply fst_rv.
     }
     assert (isfe6: Rbar_IsFiniteExpectation 
                      prts
@@ -6519,7 +6532,6 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
                      (fun x : X => Rbar_FiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y)))).
     {
       unfold Rbar_IsFiniteExpectation.
-      unfold Rbar_IsFiniteExpectation in isfe6.
       rewrite <- pullback_law.
       apply isfe6.
       now apply Real_Rbar_rv.
