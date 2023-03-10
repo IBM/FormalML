@@ -6550,14 +6550,27 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     assert (isfe3: Rbar_IsFiniteExpectation (product_ps (pullback_ps dom A prts rv_X) (pullback_ps dom B prts rv_Y))
                                             (fun omega : X * Y => rvmult rv_f (fun x : X * Y => g (fst x)) omega)).
     {
-      admit.
+      apply IsFiniteExpectation_Rbar.
+      apply IsFiniteExpectation_mult_0_1_bounded; trivial.
+      - intros.
+        unfold g.
+        unfold EventIndicator.
+        match_destr; lra.
+      - admit.
     }
     erewrite Rbar_FiniteExpectation_Rbar_Expectation.
 
     assert (isfe5: forall x : X, Rbar_IsFiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y))).
     {
-      
-      admit.
+      intros.
+      apply IsFiniteExpectation_Rbar.
+      apply IsFiniteExpectation_mult_0_1_bounded.
+      - now apply prod_section_fst_rv.
+      - intros.
+        unfold g.
+        unfold EventIndicator.
+        match_destr; lra.
+      - admit.
     }
 
     assert (isfe4: forall a,  Rbar_IsFiniteExpectation prts ((fun y : Y => Finite (rvmult rv_f (fun x : X * Y => g (fst x)) (rv_X a, y))) ∘ rv_Y)).
@@ -6588,7 +6601,24 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
                      (pullback_ps dom A prts rv_X)
                      (fun x : X => Rbar_FiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y)))).
     {
-        admit.
+      generalize (Rbar_isfe_fubini_section_fst 
+                    (pullback_ps dom A prts rv_X) (pullback_ps dom B prts rv_Y)); intros.
+      assert (Rbar_IsFiniteExpectation 
+                (pullback_ps dom A prts rv_X)
+                (fun x : X => Rbar_FiniteExpectation0 (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y)))).
+      {
+        specialize (H11 (rvmult rv_f (fun x0 : X * Y => g (fst x0)))).
+        apply H11; try easy.
+        apply Real_Rbar_rv.
+        apply rvmult_rv; trivial.
+        unfold g.
+        apply EventIndicator_pre_rv.
+        apply fst_rv.
+      }
+      revert H12.
+      apply Rbar_IsFiniteExpectation_proper.
+      intros ?.
+      now erewrite Rbar_FiniteExpectation0_finite.
     }
     erewrite fubini_section_fst.
     erewrite <- Rbar_FiniteExpectation_Rbar_Expectation.
