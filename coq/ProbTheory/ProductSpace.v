@@ -6489,6 +6489,16 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       now apply EventIndicator_pre_rv.
     }
     destruct (measurable_is_expressible rv_X (EventIndicator dec)) as [g [? ?]].
+
+    pose (g' := rvchoice (fun x => if (ClassicalDescription.excluded_middle_informative (exists y, rv_X y = x)) then true else false) g (const 0)).
+    assert (g'rv : RandomVariable A borel_sa g').
+    {
+      unfold g'.
+      apply rvchoiceb_rv; trivial; try apply rvconst.
+      intros ?.
+      unfold event_preimage.
+    }
+    
     assert (rv_eq
               (EventIndicator dec)
               (compose (compose g fst) (fun ω => (rv_X ω, rv_Y ω)))).

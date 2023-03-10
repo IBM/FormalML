@@ -5309,6 +5309,26 @@ Section real_pullback.
 End real_pullback.
 Section rv_expressible.
 
+  Lemma event_indicator_expressible_if_measurable {Ts : Type} {Td : Type}
+        {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
+        (X : Ts -> Td) (A : event (pullback_sa cod X))
+        {rv_X : RandomVariable dom cod X} :
+    exists (B:event cod),
+      RandomVariable cod borel_sa (EventIndicator (classic_dec B)) /\
+      forall x, 
+         EventIndicator (classic_dec A) x = EventIndicator (classic_dec B) (X x).
+  Proof.
+    destruct A.
+    destruct s as [? [? ?]].
+    exists (exist _ x0 s).
+    split.
+    - now apply (EventIndicator_pre_rv cod (classic_dec x0)).
+    - intros.
+      unfold EventIndicator.
+      generalize (i x1); intros. 
+      match_destr; match_destr; intuition.
+  Qed.
+  
   Lemma event_measurable_iff_expressible {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
         (X : Ts -> Td) (A : event (pullback_sa cod X))
