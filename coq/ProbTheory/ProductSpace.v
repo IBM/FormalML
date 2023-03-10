@@ -2692,7 +2692,24 @@ Theorem fubini_section_fst (f : (X * Y) -> Rbar)
    match_destr.
    now rewrite e.
  Qed.
- 
+
+ Lemma fubini_section_fst_rv  (f : (X * Y) -> Rbar)  
+      {rv : RandomVariable (product_sa A B) Rbar_borel_sa f}
+      {isfe1 : Rbar_IsFiniteExpectation (product_ps) f} 
+      {isfe2 : forall x, Rbar_IsFiniteExpectation ps2 (fun y => f (x, y))} :
+  (RandomVariable A borel_sa 
+                  (fun x => Rbar_FiniteExpectation ps2 (fun y => f (x, y)))).
+ Proof.
+   destruct (IsL1_Rbar_FiniteExpectation0_section_fst f).
+   revert H.
+   apply RandomVariable_proper; try easy.
+   intros ?.
+   unfold Rbar_FiniteExpectation, Rbar_FiniteExpectation0, proj1_sig.
+   symmetry.
+   match_destr.
+   now rewrite e.
+Qed.
+   
 End ps_product.
 
 Local Instance product_flip_rv {X Y:Type} {A:SigmaAlgebra X} {B:SigmaAlgebra Y} :
@@ -6328,7 +6345,53 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     now unfold Rbar_rvminus.
   Qed.
 
+  Lemma ex_Rbar_plus_pos_neg_part {Ts} (f : Ts -> Rbar) :
+    forall x,
+      ex_Rbar_plus (Rbar_pos_fun_part f x) (Rbar_rvopp (Rbar_neg_fun_part f) x).
+  Proof.
+    intros.
+    unfold Rbar_pos_fun_part, Rbar_neg_fun_part, Rbar_rvopp.
+    unfold Rbar_max.
+    match_destr; match_destr; simpl; trivial.
+    - apply ex_Rbar_plus_Finite_l.
+    - apply ex_Rbar_plus_Finite_r.
+    - rewrite Rbar_opp_involutive.
+      unfold ex_Rbar_plus.
+      destruct (f x); now simpl.
+  Qed.
+
   Lemma pullback_law {Ts1 Ts2} {dom1 : SigmaAlgebra Ts1} {dom2 : SigmaAlgebra Ts2} {prts : ProbSpace dom1}
+        (rv_X : Ts1 -> Ts2)
+        (rv_Y : Ts2 -> Rbar)
+        {rvx : RandomVariable dom1 dom2 rv_X}
+        {rvy : RandomVariable dom2 Rbar_borel_sa rv_Y} :
+    Rbar_Expectation (rv_Y  ∘ rv_X) =
+    Rbar_Expectation (Prts := (pullback_ps _ _ prts rv_X)) rv_Y.
+  Proof.
+    generalize (Rbar_rv_pos_neg_id' rv_Y); intros.
+    rewrite (Rbar_Expectation_ext (Prts := (pullback_ps _ _ prts rv_X)) H).
+    assert (rv_eq
+              (rv_Y ∘ rv_X)
+              (Rbar_rvminus ((Rbar_pos_fun_part rv_Y) ∘ rv_X) ((Rbar_neg_fun_part rv_Y) ∘ rv_X))).
+    {
+      intros ?.
+      unfold compose.
+      now rewrite H.
+    }
+    rewrite (Rbar_Expectation_ext H0).
+    unfold Rbar_Expectation.
+    f_equal; erewrite <- pullback_law_nneg; try reflexivity.
+    - apply Rbar_pos_fun_part_rv.
+      apply Rbar_rvminus_rv.
+      + now apply Rbar_pos_fun_part_rv.
+      + now apply Rbar_neg_fun_part_rv.     
+    - apply Rbar_neg_fun_part_rv.
+      apply Rbar_rvminus_rv.
+      + now apply Rbar_pos_fun_part_rv.
+      + now apply Rbar_neg_fun_part_rv.     
+  Qed.
+
+  Lemma pullback_law_Rbar_fin {Ts1 Ts2} {dom1 : SigmaAlgebra Ts1} {dom2 : SigmaAlgebra Ts2} {prts : ProbSpace dom1}
         (rv_X : Ts1 -> Ts2)
         (rv_Y : Ts2 -> Rbar)
         {rvx : RandomVariable dom1 dom2 rv_X}
@@ -6338,67 +6401,11 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     Rbar_FiniteExpectation prts (rv_Y  ∘ rv_X) =
     Rbar_FiniteExpectation (pullback_ps _ _ prts rv_X) rv_Y.
   Proof.
-    generalize (Rbar_rv_pos_neg_id' rv_Y); intros.
-    rewrite (Rbar_FiniteExpectation_ext_alt (pullback_ps _ _ prts rv_X) H).
-    assert (rv_eq
-              (rv_Y ∘ rv_X)
-              (Rbar_rvminus ((Rbar_pos_fun_part rv_Y) ∘ rv_X) ((Rbar_neg_fun_part rv_Y) ∘ rv_X))).
-    {
-      intros ?.
-      unfold compose.
-      now rewrite H.
-    }
-    rewrite (Rbar_FiniteExpectation_ext_alt prts H0).
-    destruct (Rbar_IsFiniteExpectation_parts (pullback_ps _ _ prts rv_X) rv_Y isfey).
-    generalize (Rbar_FiniteExpectation_minus (pullback_ps _ _ prts rv_X)); intros.
-    specialize (H3 _ _ _ _ H1 H2).
-    symmetry.
-    etransitivity; [| etransitivity]; [|apply H3|];[now apply Rbar_FiniteExpectation_ext|].
-    assert (RandomVariable dom1 Rbar_borel_sa (Rbar_pos_fun_part rv_Y ∘ rv_X)).
-    {
-      apply compose_rv; typeclasses eauto.
-    }
-    assert (RandomVariable dom1 Rbar_borel_sa (Rbar_neg_fun_part rv_Y ∘ rv_X)).
-    {
-      apply compose_rv; typeclasses eauto.
-    }
-    assert (Rbar_IsFiniteExpectation prts (Rbar_pos_fun_part rv_Y ∘ rv_X)).
-    {
-      unfold Rbar_IsFiniteExpectation.
-      erewrite Rbar_Expectation_pos_pofrf.
-      rewrite (pullback_law_nneg rv_X (Rbar_pos_fun_part rv_Y)).
-      generalize H1; intros.
-      unfold Rbar_IsFiniteExpectation in H6.
-      now erewrite Rbar_Expectation_pos_pofrf in H6.
-      Unshelve.
-      typeclasses eauto.
-    }
-    assert (Rbar_IsFiniteExpectation prts (Rbar_neg_fun_part rv_Y ∘ rv_X)).
-    {
-      unfold Rbar_IsFiniteExpectation.
-      erewrite Rbar_Expectation_pos_pofrf.
-      rewrite (pullback_law_nneg rv_X (Rbar_neg_fun_part rv_Y)).
-      generalize H2; intros.
-      unfold Rbar_IsFiniteExpectation in H7.
-      now erewrite Rbar_Expectation_pos_pofrf in H7.
-      Unshelve.
-      typeclasses eauto.
-    }
-    generalize (Rbar_FiniteExpectation_minus prts); intros.    
-    specialize (H8 _ _ _ _ H6 H7).
-    symmetry.
-    etransitivity; [| etransitivity]; [|apply H8|];[now apply Rbar_FiniteExpectation_ext|].
-    f_equal.
-    - apply Rbar_finite_eq.
-      erewrite <- Rbar_FiniteExpectation_Rbar_NonnegExpectation.
-      erewrite <- Rbar_FiniteExpectation_Rbar_NonnegExpectation.
-      apply pullback_law_nneg.
-      typeclasses eauto.
-    - apply Rbar_finite_eq.
-      erewrite <- Rbar_FiniteExpectation_Rbar_NonnegExpectation.
-      erewrite <- Rbar_FiniteExpectation_Rbar_NonnegExpectation.
-      apply pullback_law_nneg.
-      typeclasses eauto.
+    cut (Some (Finite (Rbar_FiniteExpectation prts (rv_Y  ∘ rv_X))) =
+         Some (Finite (Rbar_FiniteExpectation (pullback_ps _ _ prts rv_X) rv_Y))); intros.
+    now inversion H.
+    do 2 rewrite <- Rbar_FiniteExpectation_Rbar_Expectation.
+    now apply pullback_law.
   Qed.
 
   Lemma product_pair_law {Ts Td1 Td2} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
@@ -6455,70 +6462,6 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       rewrite H3.
       tauto.
     }
-    assert (isfe3: forall x : X,
-               Rbar_IsFiniteExpectation (pullback_ps dom B prts rv_Y)
-                                        (fun y : Y => rvmult rv_f (g ∘ fst) (x, y))).
-    {
-      intros.
-      admit.
-    }
-    assert (isfe3': forall a,
-               Rbar_IsFiniteExpectation 
-                     prts
-                     ((fun y : Y => rvmult rv_f (fun x : X * Y => g (fst x)) (rv_X a, y)) ∘ rv_Y)).
-    {
-      intros.
-
-      
-      admit.
-    }
-
-    assert (isfe4:  Rbar_IsFiniteExpectation 
-                      (pullback_ps dom A prts rv_X)
-                      (fun x : X =>
-                         Rbar_FiniteExpectation (pullback_ps dom B prts rv_Y)
-                                                (fun y : Y => rvmult rv_f (g ∘ fst) (x, y)))).
-    {
-      admit.
-    }
-    assert (isfe4':  Rbar_IsFiniteExpectation 
-                      prts
-                      ((fun x : X =>
-                          Rbar_FiniteExpectation (pullback_ps dom B prts rv_Y)
-                                                 (fun y : Y => rvmult rv_f (g ∘ fst) (x, y))) ∘ rv_X)).
-    {
-      admit.
-    }
-
-    assert (isfe5: IsFiniteExpectation prts (rvmult (fun ω : Ts => rv_f (rv_X ω, rv_Y ω)) (EventIndicator dec))).
-    {
-      apply IsFiniteExpectation_indicator; trivial.
-      - admit.
-      - admit.
-    }
-
-    assert (isfe5': Rbar_IsFiniteExpectation prts
-              (Rbar_rvmult (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => rv_f (rv_X ω, rv_Y ω0)))
-                           (fun x : Ts => EventIndicator dec x))).
-    {
-      admit.
-    }
-    assert (isfey : Rbar_IsFiniteExpectation
-                      (pullback_ps dom (product_sa A B) prts (fun ω : Ts => (rv_X ω, rv_Y ω)))
-                      (fun omega : X * Y => rvmult rv_f (g ∘ fst) omega)).
-    {
-      admit.
-    }
-    assert (isfexy : Rbar_IsFiniteExpectation prts
-                     ((fun omega : X * Y => rvmult rv_f (g ∘ fst) omega)
-                        ∘ (fun ω : Ts => (rv_X ω, rv_Y ω)))).
-    {
-      admit.
-    } 
-
-    erewrite FiniteExpectation_Expectation.
-    erewrite Rbar_FiniteExpectation_Rbar_Expectation.
-    f_equal.
     assert (rv_eq
               (rvmult (fun ω : Ts => rv_f (rv_X ω, rv_Y ω)) (EventIndicator dec))
               (compose (rvmult rv_f (compose g fst)) (fun ω => (rv_X ω, rv_Y ω)))).
@@ -6527,34 +6470,69 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       unfold rvmult, compose.
       now rewrite H4.
     }
-    rewrite (FiniteExpectation_ext_alt _ _ _ H5).
-    rewrite <- FinExp_Rbar_FinExp; try typeclasses eauto.
+    rewrite (Expectation_ext H5).
+    rewrite Expectation_Rbar_Expectation.
     generalize (pullback_law (fun ω : Ts => (rv_X ω, rv_Y ω)) (dom2 := product_sa A B)); intros.
     specialize (H6 (rvmult rv_f  (g ∘ fst)) _ _).
-    rewrite (H6 _ _).
+    unfold compose in H6.
+    unfold compose.
+    rewrite H6.
     generalize (product_pair_law rv_X rv_Y H); intros.
-    assert (fisfe : Rbar_IsFiniteExpectation
-                     (product_ps (pullback_ps dom A prts rv_X) (pullback_ps dom B prts rv_Y))
-                     (fun omega : X * Y => rvmult rv_f (g ∘ fst) omega))
-      by now apply (Rbar_IsFiniteExpectation_ext_ps' _ _ H7 _ _ (reflexivity _)).
-    assert (gisfe : Rbar_IsFiniteExpectation
-                    (pullback_ps dom (product_sa A B) prts (fun ω : Ts => (rv_X ω, rv_Y ω)))
-                    (fun omega : X * Y => rvmult rv_f (g ∘ fst) omega))
-      by now apply (Rbar_IsFiniteExpectation_ext_ps' _ _ H7 _ _ (reflexivity _)).
-    apply Rbar_finite_eq.
-    generalize (Rbar_FiniteExpectation_ext_ps' _ _ H7 _ _ (reflexivity _)); intros.
-    symmetry in H8.
-    etransitivity; [| etransitivity]; [|apply H8|]; [now apply Rbar_FiniteExpectation_ext|].
+    assert (rv_eq
+              (fun omega : X * Y => Finite (rvmult rv_f (fun x : X * Y => g (fst x)) omega))
+              (fun omega : X * Y => Finite (rvmult rv_f (fun x : X * Y => g (fst x)) omega))).
+    {
+      reflexivity.
+    }
+
+    generalize (Rbar_Expectation_ext_ps' _ _ H7 _ _ H8); intros.
+    symmetry in H9.
+    etransitivity; [| etransitivity]; [|apply H9|]; [now apply Rbar_Expectation_ext|].
+    assert (isfe3: Rbar_IsFiniteExpectation (product_ps (pullback_ps dom A prts rv_X) (pullback_ps dom B prts rv_Y))
+                                            (fun omega : X * Y => rvmult rv_f (fun x : X * Y => g (fst x)) omega)).
+    {
+      admit.
+    }
+    erewrite Rbar_FiniteExpectation_Rbar_Expectation.
+    assert (isfe4: forall a,  Rbar_IsFiniteExpectation prts ((fun y : Y => Finite (rvmult rv_f (fun x : X * Y => g (fst x)) (rv_X a, y))) ∘ rv_Y)).
+    {
+      admit.
+    }
+    assert (isfe5: forall x : X, Rbar_IsFiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y))).
+    {
+      admit.
+    }
+    assert (isfe6: Rbar_IsFiniteExpectation 
+                     prts
+                     ((fun x : X => Rbar_FiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y))) ∘ rv_X)).
+    {
+      admit.
+    }
+    assert (RandomVariable 
+              A borel_sa
+              (fun x : X => Rbar_FiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y)))).
+    {
+      admit.
+    }
+    assert (isfe7: Rbar_IsFiniteExpectation 
+                     (pullback_ps dom A prts rv_X)
+                     (fun x : X => Rbar_FiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y)))).
+    {
+      unfold Rbar_IsFiniteExpectation.
+      unfold Rbar_IsFiniteExpectation in isfe6.
+      rewrite <- pullback_law.
+      apply isfe6.
+      now apply Real_Rbar_rv.
+    }
     erewrite fubini_section_fst.
-    - erewrite <- (pullback_law).
+    - erewrite <- pullback_law_Rbar_fin.
       Unshelve.
-      3: apply isfe4'.
-      + apply Rbar_FiniteExpectation_ext.
+      3: apply isfe6.
+      + erewrite <- Rbar_FiniteExpectation_Rbar_Expectation.
+        apply Rbar_Expectation_ext.
         intros ?.
         unfold compose.
-        erewrite <- pullback_law.
-        Unshelve.
-        3: apply isfe3'.
+        erewrite <- pullback_law_Rbar_fin.
         * unfold Rbar_rvmult.
           simpl.
           rewrite Rmult_comm, <- FiniteExpectation_scale.
@@ -6577,10 +6555,12 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
              apply product_sa_rv; typeclasses eauto.
           -- unfold fst.
              apply rvconst.
-      + apply Real_Rbar_rv.
-        admit.
+      + now apply Real_Rbar_rv.
     - apply Real_Rbar_rv.
-      typeclasses eauto.
+      apply rvmult_rv; trivial.
+      apply compose_rv; trivial.
+      apply fst_rv.
+
  Admitted.
            
                                 
