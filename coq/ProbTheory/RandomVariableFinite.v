@@ -1868,5 +1868,54 @@ Section Independence.
       rewrite <- (Expectation_pos_part_finite Y); trivial.             
       now simpl.
    Qed.
+
+  Lemma independent_expectation_prod_isfe (X Y : Ts -> R)
+        {rvx : RandomVariable dom borel_sa X}
+        {rvy : RandomVariable dom borel_sa Y}        
+        {isfex : IsFiniteExpectation prts X}
+        {isfey : IsFiniteExpectation prts Y} :
+    independent_rvs prts borel_sa borel_sa X Y ->
+    IsFiniteExpectation prts (rvmult X Y).
+  Proof.
+    intros.
+    unfold IsFiniteExpectation.
+    generalize (independent_expectation_prod_nneg prts (pos_fun_part X) (pos_fun_part Y)
+                                                  (indep_pos_part X Y H)); intros.
+    generalize (independent_expectation_prod_nneg prts (neg_fun_part X) (neg_fun_part Y)
+                                                  (indep_neg_part X Y H)); intros.
+    generalize (independent_expectation_prod_nneg prts (pos_fun_part X) (neg_fun_part Y)
+                                                  (indep_pos_neg_part X Y H)); intros.
+    generalize (independent_expectation_prod_nneg prts (neg_fun_part X) (pos_fun_part Y)
+                  (indep_neg_pos_part X Y H)); intros.
+    unfold Expectation.
+    generalize (pos_parts_mult X Y); intros.
+    generalize (neg_parts_mult X Y); intros.    
+    rewrite (NonnegExpectation_ext _ _ H4).
+    rewrite (NonnegExpectation_ext _ _ H5).
+    rewrite NonnegExpectation_sum; try typeclasses eauto.
+    rewrite NonnegExpectation_sum; try typeclasses eauto.
+    rewrite H0, H1, H2, H3.
+    - generalize (Expectation_pos_part_finite X)
+      ; intros HH; red in HH; rewrite <- HH; clear HH.
+      generalize (Expectation_pos_part_finite Y)
+      ; intros HH; red in HH; rewrite <- HH; clear HH.
+      generalize (Expectation_neg_part_finite X)
+      ; intros HH; red in HH; rewrite <- HH; clear HH.
+      generalize (Expectation_neg_part_finite Y)
+      ; intros HH; red in HH; rewrite <- HH; clear HH.
+      now simpl.
+    - rewrite <- (Expectation_neg_part_finite X); trivial.
+      rewrite <- (Expectation_pos_part_finite Y); trivial.
+      now simpl.
+    - rewrite <- (Expectation_pos_part_finite X); trivial.
+      rewrite <- (Expectation_neg_part_finite Y); trivial.             
+      now simpl.
+    - rewrite <- (Expectation_neg_part_finite X); trivial.
+      rewrite <- (Expectation_neg_part_finite Y); trivial.
+      now simpl.
+    - rewrite <- (Expectation_pos_part_finite X); trivial.
+      rewrite <- (Expectation_pos_part_finite Y); trivial.             
+      now simpl.
+   Qed.
   
 End Independence.
