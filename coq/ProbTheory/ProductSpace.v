@@ -6429,39 +6429,41 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     intros ?; reflexivity.
   Qed.
 
-  Lemma IsFiniteExpectation_mult_0_1_bounded {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
-        (f g : Ts -> R)
+  Lemma IsFiniteExpectation_mult_bounded {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
+        (f g : Ts -> R) (gmin gmax : R)
         {rvf : RandomVariable dom borel_sa f}  :
-    (forall x, 0 <= g x <= 1) ->
+    (forall x, gmin <= g x <= gmax) ->
     IsFiniteExpectation prts f ->
     IsFiniteExpectation prts (rvmult f g).
  Proof.
    intros.
+   assert (forall a,
+              0 <= f a ->
+              f a * gmin  <= f a * g a <= f a * gmax).
+   {
+     intros; split; apply Rmult_le_compat_l; trivial; apply H.
+   }
+   assert (forall a,
+              f a <= 0 ->
+              f a * gmax <= f a * g a <= f a * gmin).
+   {
+     intros; split; apply Rmult_le_compat_neg_l; trivial; apply H.
+   }
    apply IsFiniteExpectation_bounded with
-       (rv_X1 := rvmin f (const 0)) 
-       (rv_X3 := rvmax f (const 0)).
-   - apply IsFiniteExpectation_min; trivial.
-     + apply rvconst.
-     + now apply IsFiniteExpectation_const.
-   - apply IsFiniteExpectation_max; trivial.
-     + apply rvconst.
-     + now apply IsFiniteExpectation_const.
+       (rv_X1 := rvmin (rvscale gmin f) (rvscale gmax f))
+       (rv_X3 := rvmax (rvscale gmin f) (rvscale gmax f)).
+   - apply IsFiniteExpectation_min; typeclasses eauto.
+   - apply IsFiniteExpectation_max; typeclasses eauto.
    - intros ?.
-     rv_unfold.
-     unfold Rmin.
-     specialize (H a).
-     match_destr.
-     + rewrite <- Rmult_1_r at 1.
-       apply Rmult_le_compat_neg_l; lra.
-     + apply Rmult_le_pos; lra.
+     specialize (H1 a).
+     specialize (H2 a).
+     rv_unfold;  unfold Rmin.
+     match_destr; destruct (Rle_dec 0 (f a)); lra.
    - intros ?.
-     rv_unfold.
-     unfold Rmax.
-     specialize (H a).
-     match_destr.
-     + apply Rmult_le_0_r; lra.
-     + rewrite <- Rmult_1_r.
-       apply Rmult_le_compat_l; lra.
+     specialize (H1 a).
+     specialize (H2 a).
+     rv_unfold;  unfold Rmax.
+     match_destr; destruct (Rle_dec 0 (f a)); lra.
   Qed.     
 
   Lemma freezing {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
@@ -6472,7 +6474,8 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
         {rvf2 : RandomVariable dom borel_sa (fun ω : Ts => rv_f (rv_X ω, rv_Y ω))}
         {rvX : RandomVariable dom A rv_X}
         {rvY : RandomVariable dom B rv_Y} 
-        {isfe : IsFiniteExpectation (product_ps ps1 ps2) rv_f}
+        (*        {isfe : IsFiniteExpectation (product_ps ps1 ps2) rv_f} *)
+        {isfe : IsFiniteExpectation prts (fun x : Ts => rv_f (rv_X x, rv_Y x))} 
         {isfe2 : forall x, IsFiniteExpectation prts (fun ω0 => rv_f (x, rv_Y ω0))} 
         {rv2: RandomVariable 
                 (pullback_sa A rv_X) Rbar_borel_sa
@@ -6554,9 +6557,11 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
         unfold IsFiniteExpectation.
         rewrite Expectation_Rbar_Expectation.
         rewrite <- pullback_law.
-        - admit.
+        - unfold compose.
+          admit.
         - now apply Real_Rbar_rv.
       }
+      Search IsFiniteExpectation.
       admit.
     }
     
@@ -6564,7 +6569,7 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
                                             (fun omega : X * Y => rvmult rv_f (fun x : X * Y => g (fst x)) omega)).
     {
       apply IsFiniteExpectation_Rbar.
-      apply IsFiniteExpectation_mult_0_1_bounded; trivial.
+      apply IsFiniteExpectation_mult_bounded with (gmin := 0) (gmax := 1); trivial.
       intros.
       unfold g.
       unfold EventIndicator.
@@ -6576,16 +6581,13 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     {
       intros.
       apply IsFiniteExpectation_Rbar.
-      apply IsFiniteExpectation_mult_0_1_bounded.
+      apply IsFiniteExpectation_mult_bounded with (gmin := 0) (gmax := 1).
       - now apply prod_section_fst_rv.
       - intros.
         unfold g.
         unfold EventIndicator.
         match_destr; lra.
-      - unfold IsFiniteExpectation.
-        rewrite Expectation_Rbar_Expectation.
-        generalize (pullback_law rv_Y (fun x0 : Y => Finite (rv_f (x,  x0)))); intros.
-        rewrite <- H10.
+      - Search "section_fst".
         admit.
     }
 
@@ -6619,7 +6621,7 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
         apply EventIndicator_pre_rv.
         apply fst_rv.
       - apply IsFiniteExpectation_Rbar.
-        apply IsFiniteExpectation_mult_0_1_bounded; trivial.
+        apply IsFiniteExpectation_mult_bounded with (gmin := 0) (gmax :=1); trivial.
         intros.
         unfold g.
         unfold EventIndicator.
