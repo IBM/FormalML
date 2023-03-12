@@ -6005,6 +6005,18 @@ Section ps_product'.
     ; now unfold Rbar_neg_fun_part, Rbar_pos_fun_part; intros ?; rewrite H1.
   Qed.
 
+  Lemma Expectation_ext_ps {Ts} {σ1 σ2: SigmaAlgebra Ts} (ps1 : ProbSpace σ1) (ps2 : ProbSpace σ2) f g :
+    sa_equiv σ1 σ2 ->
+    (forall (A:event σ1) (B:event σ2), pre_event_equiv A B -> ps_P (ProbSpace:=ps1) A = ps_P (ProbSpace:=ps2) B) ->
+    rv_eq f g ->
+    Expectation (Prts:=ps1) f = Expectation (Prts:=ps2) g.
+  Proof.
+    intros.
+    repeat rewrite Expectation_Rbar_Expectation.
+    apply Rbar_Expectation_ext_ps; trivial.
+    intros ?; congruence.
+  Qed.
+
   Instance Rbar_IsFiniteExpectation_ext_ps {Ts} {σ1 σ2: SigmaAlgebra Ts} (ps1 : ProbSpace σ1) (ps2 : ProbSpace σ2) f g :
     sa_equiv σ1 σ2 ->
     (forall (A:event σ1) (B:event σ2), pre_event_equiv A B -> ps_P (ProbSpace:=ps1) A = ps_P (ProbSpace:=ps2) B) ->
@@ -6013,6 +6025,16 @@ Section ps_product'.
   Proof.
     unfold Rbar_IsFiniteExpectation; intros.
     now rewrite <- (Rbar_Expectation_ext_ps _ _ _ _ H H0 H1).
+  Qed.
+
+  Instance IsFiniteExpectation_ext_ps {Ts} {σ1 σ2: SigmaAlgebra Ts} (ps1 : ProbSpace σ1) (ps2 : ProbSpace σ2) f g :
+    sa_equiv σ1 σ2 ->
+    (forall (A:event σ1) (B:event σ2), pre_event_equiv A B -> ps_P (ProbSpace:=ps1) A = ps_P (ProbSpace:=ps2) B) ->
+    rv_eq f g ->
+    IsFiniteExpectation ps1 f -> IsFiniteExpectation ps2 g.
+  Proof.
+    unfold IsFiniteExpectation; intros.
+    now rewrite <- (Expectation_ext_ps _ _ _ _ H H0 H1).
   Qed.
 
   Lemma Rbar_FiniteExpectation_ext_ps {Ts} {σ1 σ2: SigmaAlgebra Ts} (ps1 : ProbSpace σ1) (ps2 : ProbSpace σ2) f g
@@ -6031,11 +6053,38 @@ Section ps_product'.
     now apply Rbar_Expectation_ext_ps.
   Qed.
 
+    Lemma FiniteExpectation_ext_ps {Ts} {σ1 σ2: SigmaAlgebra Ts} (ps1 : ProbSpace σ1) (ps2 : ProbSpace σ2) f g
+    {isfe1: IsFiniteExpectation ps1 f}
+    {isfe2: IsFiniteExpectation ps2 g}
+    :
+    sa_equiv σ1 σ2 ->
+    (forall (A:event σ1) (B:event σ2), pre_event_equiv A B -> ps_P (ProbSpace:=ps1) A = ps_P (ProbSpace:=ps2) B) ->
+    rv_eq f g ->
+    FiniteExpectation ps1 f = FiniteExpectation ps2 g.
+  Proof.
+    intros.
+
+    cut (Some (Finite (FiniteExpectation ps1 f)) = Some (Finite (FiniteExpectation ps2 g))); [congruence |].
+    repeat rewrite <- (FiniteExpectation_Expectation _ _).
+    now apply Expectation_ext_ps.
+  Qed.
+
   Global Instance Rbar_Expectation_ext_ps' {Ts} {σ: SigmaAlgebra Ts} :
     Proper (ps_equiv ==> rv_eq ==> eq) (@Rbar_Expectation Ts σ).
   Proof.
     intros ??????.
     apply Rbar_Expectation_ext_ps; trivial.
+    - reflexivity.
+    - intros.
+      rewrite H.
+      now apply ps_proper.
+  Qed.
+
+  Global Instance Expectation_ext_ps' {Ts} {σ: SigmaAlgebra Ts} :
+    Proper (ps_equiv ==> rv_eq ==> eq) (@Expectation Ts σ).
+  Proof.
+    intros ??????.
+    apply Expectation_ext_ps; trivial.
     - reflexivity.
     - intros.
       rewrite H.
@@ -6056,6 +6105,20 @@ Section ps_product'.
     - now symmetry.
   Qed.
 
+  Global Instance IsFiniteExpectation_ext_ps' {Ts} {σ: SigmaAlgebra Ts} :
+    Proper (ps_equiv ==> rv_eq ==> iff) (@IsFiniteExpectation Ts σ).
+  Proof.
+    intros ??????.
+    split; apply IsFiniteExpectation_ext_ps; trivial; try reflexivity.
+    - intros.
+      rewrite H.
+      now apply ps_proper.
+    - intros.
+      rewrite H.
+      now apply ps_proper.
+    - now symmetry.
+  Qed.
+
   Lemma Rbar_FiniteExpectation_ext_ps' {Ts} {σ: SigmaAlgebra Ts}
     (ps1 ps2 : ProbSpace σ)
     (pseq : ps_equiv ps1 ps2)
@@ -6067,6 +6130,22 @@ Section ps_product'.
     Rbar_FiniteExpectation ps1 f = Rbar_FiniteExpectation ps2 g.
   Proof.
     apply Rbar_FiniteExpectation_ext_ps; trivial; try reflexivity.
+    - intros.
+      rewrite pseq.
+      now apply ps_proper.
+  Qed.
+
+    Lemma FiniteExpectation_ext_ps' {Ts} {σ: SigmaAlgebra Ts}
+    (ps1 ps2 : ProbSpace σ)
+    (pseq : ps_equiv ps1 ps2)
+    f g
+    (fgeq:rv_eq f g)
+    {fisfe : IsFiniteExpectation ps1 f}
+    {gisfe : IsFiniteExpectation ps2 g}
+    :
+    FiniteExpectation ps1 f = FiniteExpectation ps2 g.
+  Proof.
+    apply FiniteExpectation_ext_ps; trivial; try reflexivity.
     - intros.
       rewrite pseq.
       now apply ps_proper.
@@ -6391,7 +6470,7 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       + now apply Rbar_neg_fun_part_rv.     
   Qed.
 
-  Lemma pullback_law_Rbar_isfe {Ts1 Ts2} {dom1 : SigmaAlgebra Ts1} {dom2 : SigmaAlgebra Ts2} {prts : ProbSpace dom1}
+  Instance pullback_law_Rbar_isfe {Ts1 Ts2} {dom1 : SigmaAlgebra Ts1} {dom2 : SigmaAlgebra Ts2} {prts : ProbSpace dom1}
         (rv_X : Ts1 -> Ts2)
         (rv_Y : Ts2 -> Rbar)
         {rvx : RandomVariable dom1 dom2 rv_X}
@@ -6403,11 +6482,11 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     now rewrite (pullback_law _ _).
   Qed.
 
-    Lemma pullback_law_isfe {Ts1 Ts2} {dom1 : SigmaAlgebra Ts1} {dom2 : SigmaAlgebra Ts2} {prts : ProbSpace dom1}
+  Instance pullback_law_isfe {Ts1 Ts2} {dom1 : SigmaAlgebra Ts1} {dom2 : SigmaAlgebra Ts2} {prts : ProbSpace dom1}
         (rv_X : Ts1 -> Ts2)
         (rv_Y : Ts2 -> R)
         {rvx : RandomVariable dom1 dom2 rv_X}
-        {rvy : RandomVariable dom2 Rbar_borel_sa rv_Y} :
+        {rvy : RandomVariable dom2 borel_sa rv_Y} :
     IsFiniteExpectation prts (rv_Y  ∘ rv_X) ->
     IsFiniteExpectation (pullback_ps _ _ prts rv_X) rv_Y.
     Proof.
@@ -6580,17 +6659,11 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     {
       assert (IsFiniteExpectation (pullback_ps dom (product_sa A B) prts (fun ω : Ts => (rv_X ω, rv_Y ω))) rv_f).
       {
-
-        rewrite IsFiniteExpectation.
-        unfold IsFiniteExpectation.
-        rewrite Expectation_Rbar_Expectation.
-        rewrite <- pullback_law.
-        - unfold compose.
-          admit.
-        - now apply Real_Rbar_rv.
+        now apply pullback_law_isfe.
       }
-      Search IsFiniteExpectation.
-      admit.
+      revert H10.
+      apply IsFiniteExpectation_ext_ps'; trivial.
+      reflexivity.
     }
     
     assert (isfe3: Rbar_IsFiniteExpectation (product_ps (pullback_ps dom A prts rv_X) (pullback_ps dom B prts rv_Y))
