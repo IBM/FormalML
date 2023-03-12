@@ -6596,18 +6596,6 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     {
       now apply EventIndicator_pre_rv.
     }
-    
-(*
-    destruct (measurable_is_expressible rv_X (EventIndicator dec)) as [g' [? ?]].
-    assert (rv_eq
-              (EventIndicator dec)
-              (compose (compose g' fst) (fun ω => (rv_X ω, rv_Y ω)))).
-    {
-      intros ?.
-      rewrite H3.
-      tauto.
-    }
-*)
     destruct (event_indicator_expressible_if_measurable rv_X (exist _ _ H0)) as [E [? ?]].
     pose (g := EventIndicator (classic_dec E)).
     assert (HH3: rv_eq (EventIndicator dec) (g ∘ rv_X)).
@@ -6688,11 +6676,11 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
         unfold g.
         unfold EventIndicator.
         match_destr; lra.
-      - Search "section_fst".
-        admit.
+      - apply pullback_law_isfe.
+        + now apply prod_section_fst_rv.
+        + apply isfe2.
     }
-
-(*    assert (isfe4: forall a,  Rbar_IsFiniteExpectation prts ((fun y : Y => Finite (rvmult rv_f (fun x : X * Y => g (fst x)) (rv_X a, y))) ∘ rv_Y)).
+    assert (isfe4: forall a,  Rbar_IsFiniteExpectation prts ((fun y : Y => Finite (rvmult rv_f (fun x : X * Y => g (fst x)) (rv_X a, y))) ∘ rv_Y)).
     {
       intros.
       specialize (isfe5 (rv_X a)).
@@ -6702,15 +6690,12 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       apply Real_Rbar_rv.
       apply rvmult_rv.
       - now apply prod_section_fst_rv.
-      - apply compose_rv; trivial.
-        + typeclasses eauto.
-        + unfold g.
-          apply EventIndicator_pre_rv.
-          unfold fst.
-          apply sa_sigma_const_classic.
+      - unfold g.
+        apply EventIndicator_pre_rv.
+        unfold fst.
+        apply sa_sigma_const_classic.
     }
- *)
-    
+
     assert (RandomVariable 
               A borel_sa
               (fun x : X => Rbar_FiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y)))).
@@ -6788,9 +6773,6 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       unfold g.
       apply EventIndicator_pre_rv.
       apply fst_rv.
-
- Admitted.
-           
-                                
+  Qed.
 
 End ps_product'.
