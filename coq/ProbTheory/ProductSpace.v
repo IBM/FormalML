@@ -6692,7 +6692,7 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
         admit.
     }
 
-    assert (isfe4: forall a,  Rbar_IsFiniteExpectation prts ((fun y : Y => Finite (rvmult rv_f (fun x : X * Y => g (fst x)) (rv_X a, y))) ∘ rv_Y)).
+(*    assert (isfe4: forall a,  Rbar_IsFiniteExpectation prts ((fun y : Y => Finite (rvmult rv_f (fun x : X * Y => g (fst x)) (rv_X a, y))) ∘ rv_Y)).
     {
       intros.
       specialize (isfe5 (rv_X a)).
@@ -6709,6 +6709,8 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
           unfold fst.
           apply sa_sigma_const_classic.
     }
+ *)
+    
     assert (RandomVariable 
               A borel_sa
               (fun x : X => Rbar_FiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y)))).
