@@ -6750,11 +6750,9 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
           rewrite Rmult_comm, <- FiniteExpectation_scale.
           unfold compose.
           erewrite <- FinExp_Rbar_FinExp.
-          -- apply Rbar_finite_eq.
-             apply Rbar_FiniteExpectation_ext.
+          -- apply Rbar_finite_eq, Rbar_FiniteExpectation_ext.
              intros ?.
-             unfold compose.
-             unfold rvmult, rvscale.
+             unfold compose, rvmult, rvscale.
              rewrite HH3.
              unfold compose, fst.
              now rewrite Rmult_comm.
@@ -6768,11 +6766,60 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
           -- unfold fst.
              apply rvconst.
       + now apply Real_Rbar_rv.
-    - apply Real_Rbar_rv.
-      apply rvmult_rv; trivial.
+    - apply Real_Rbar_rv, rvmult_rv; trivial.
       unfold g.
-      apply EventIndicator_pre_rv.
-      apply fst_rv.
+      apply EventIndicator_pre_rv, fst_rv.
   Qed.
 
 End ps_product'.
+
+Instance independent_expectation_prod_isfe {Ts : Type} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom)
+        (X Y : Ts -> R)
+        {rvx : RandomVariable dom borel_sa X} {rvy : RandomVariable dom borel_sa Y}
+        {isfex : IsFiniteExpectation prts X} {isfey : IsFiniteExpectation prts Y} 
+        (indep: independent_rvs prts borel_sa borel_sa X Y) :
+    IsFiniteExpectation prts (rvmult X Y).
+Admitted.
+
+Lemma independent_expectation_prod {Ts : Type} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom)
+        (X Y : Ts -> R)
+        {rvx : RandomVariable dom borel_sa X} {rvy : RandomVariable dom borel_sa Y}
+        {isfex : IsFiniteExpectation prts X} {isfey : IsFiniteExpectation prts Y}
+        {isfexy : IsFiniteExpectation prts (rvmult X Y)}
+        (indep: independent_rvs prts borel_sa borel_sa X Y) :
+    FiniteExpectation prts (rvmult X Y) =
+    (FiniteExpectation prts X) * (FiniteExpectation prts Y).
+Admitted.
+
+Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
+      (sub : sa_sub dom2 dom)
+      (X Z : Ts -> R) 
+      {rvx1 : RandomVariable dom borel_sa X}
+      {rvx2 : RandomVariable dom2 borel_sa X}      
+      {rvz : RandomVariable dom borel_sa Z}  
+      {isfe : IsFiniteExpectation prts Z} 
+      {isfe2 : IsFiniteExpectation prts (rvmult Z X)} :
+  independent_sas prts (pullback_rv_sub dom borel_sa Z rvz) sub ->
+  almostR2 (prob_space_sa_sub prts sub) eq (ConditionalExpectation prts sub (rvmult Z X))
+           (rvscale (FiniteExpectation prts Z) X).
+ Proof.
+   intros.
+   generalize (is_conditional_expectation_independent_sa prts sub Z H); intros.
+   generalize (Condexp_cond_exp prts sub Z); intros.
+   generalize (is_conditional_expectation_unique prts sub _ _ _ H0 H1); intros.
+   generalize (Condexp_factor_out prts sub Z X); intros.
+   revert H3; apply almost_impl.
+   revert H2; apply almost_impl.
+   apply all_almost; intros ???.
+   rewrite H3.
+   unfold const in H2.
+   unfold rvscale.
+   unfold Rbar_rvmult.
+   replace (Finite (Rmult (FiniteExpectation prts Z) (X x))) with
+        (Rbar_mult (Finite (FiniteExpectation prts Z)) (X x)) by now simpl.
+   rewrite H2.
+   now rewrite Rbar_mult_comm.
+  Qed.  
+      
+  
+
