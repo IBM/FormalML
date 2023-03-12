@@ -6391,6 +6391,32 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
       + now apply Rbar_neg_fun_part_rv.     
   Qed.
 
+  Lemma pullback_law_Rbar_isfe {Ts1 Ts2} {dom1 : SigmaAlgebra Ts1} {dom2 : SigmaAlgebra Ts2} {prts : ProbSpace dom1}
+        (rv_X : Ts1 -> Ts2)
+        (rv_Y : Ts2 -> Rbar)
+        {rvx : RandomVariable dom1 dom2 rv_X}
+        {rvy : RandomVariable dom2 Rbar_borel_sa rv_Y} :
+    Rbar_IsFiniteExpectation prts (rv_Y  ∘ rv_X) ->
+    Rbar_IsFiniteExpectation (pullback_ps _ _ prts rv_X) rv_Y.
+  Proof.
+    unfold Rbar_IsFiniteExpectation.
+    now rewrite (pullback_law _ _).
+  Qed.
+
+    Lemma pullback_law_isfe {Ts1 Ts2} {dom1 : SigmaAlgebra Ts1} {dom2 : SigmaAlgebra Ts2} {prts : ProbSpace dom1}
+        (rv_X : Ts1 -> Ts2)
+        (rv_Y : Ts2 -> R)
+        {rvx : RandomVariable dom1 dom2 rv_X}
+        {rvy : RandomVariable dom2 Rbar_borel_sa rv_Y} :
+    IsFiniteExpectation prts (rv_Y  ∘ rv_X) ->
+    IsFiniteExpectation (pullback_ps _ _ prts rv_X) rv_Y.
+    Proof.
+      unfold IsFiniteExpectation.
+      repeat rewrite Expectation_Rbar_Expectation.
+      rewrite <- (pullback_law _ _).
+      rewrite (Rbar_Expectation_ext (rv_X2:=(@compose Ts1 Ts2 Rbar (fun x : Ts2 => Finite (rv_Y x)) rv_X))); try reflexivity; tauto.
+  Qed.
+
   Lemma pullback_law_Rbar_fin {Ts1 Ts2} {dom1 : SigmaAlgebra Ts1} {dom2 : SigmaAlgebra Ts2} {prts : ProbSpace dom1}
         (rv_X : Ts1 -> Ts2)
         (rv_Y : Ts2 -> Rbar)
@@ -6554,6 +6580,8 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
     {
       assert (IsFiniteExpectation (pullback_ps dom (product_sa A B) prts (fun ω : Ts => (rv_X ω, rv_Y ω))) rv_f).
       {
+
+        rewrite IsFiniteExpectation.
         unfold IsFiniteExpectation.
         rewrite Expectation_Rbar_Expectation.
         rewrite <- pullback_law.
