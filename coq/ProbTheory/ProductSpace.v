@@ -6773,32 +6773,14 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
 
 End ps_product'.
 
-Instance independent_expectation_prod_isfe {Ts : Type} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom)
-        (X Y : Ts -> R)
-        {rvx : RandomVariable dom borel_sa X} {rvy : RandomVariable dom borel_sa Y}
-        {isfex : IsFiniteExpectation prts X} {isfey : IsFiniteExpectation prts Y} 
-        (indep: independent_rvs prts borel_sa borel_sa X Y) :
-    IsFiniteExpectation prts (rvmult X Y).
-Admitted.
-
-Lemma independent_expectation_prod {Ts : Type} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom)
-        (X Y : Ts -> R)
-        {rvx : RandomVariable dom borel_sa X} {rvy : RandomVariable dom borel_sa Y}
-        {isfex : IsFiniteExpectation prts X} {isfey : IsFiniteExpectation prts Y}
-        {isfexy : IsFiniteExpectation prts (rvmult X Y)}
-        (indep: independent_rvs prts borel_sa borel_sa X Y) :
-    FiniteExpectation prts (rvmult X Y) =
-    (FiniteExpectation prts X) * (FiniteExpectation prts Y).
-Admitted.
-
 Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
       (sub : sa_sub dom2 dom)
       (X Z : Ts -> R) 
       {rvx1 : RandomVariable dom borel_sa X}
       {rvx2 : RandomVariable dom2 borel_sa X}      
       {rvz : RandomVariable dom borel_sa Z}  
-      {isfe : IsFiniteExpectation prts Z} 
-      {isfe2 : IsFiniteExpectation prts (rvmult Z X)} :
+      {isfex : IsFiniteExpectation prts X}
+      {isfez : IsFiniteExpectation prts Z} :
   independent_sas prts (pullback_rv_sub dom borel_sa Z rvz) sub ->
   almostR2 (prob_space_sa_sub prts sub) eq (ConditionalExpectation prts sub (rvmult Z X))
            (rvscale (FiniteExpectation prts Z) X).
@@ -6807,6 +6789,15 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
    generalize (is_conditional_expectation_independent_sa prts sub Z H); intros.
    generalize (Condexp_cond_exp prts sub Z); intros.
    generalize (is_conditional_expectation_unique prts sub _ _ _ H0 H1); intros.
+
+   assert (indepZX: independent_rvs prts borel_sa borel_sa Z X).
+   {
+     rewrite independent_rv_sas.
+     apply independent_sas_sub_proper with (sub1 := pullback_rv_sub dom borel_sa Z rvz)
+                                           (sub2 := sub); try easy.
+     now apply pullback_rv_sub.
+   }
+   generalize (independent_expectation_prod_isfe prts Z X indepZX); intros isfexz.
    generalize (Condexp_factor_out prts sub Z X); intros.
    revert H3; apply almost_impl.
    revert H2; apply almost_impl.
@@ -6819,7 +6810,8 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
         (Rbar_mult (Finite (FiniteExpectation prts Z)) (X x)) by now simpl.
    rewrite H2.
    now rewrite Rbar_mult_comm.
-  Qed.  
-      
+ Qed.
+ 
+
   
 
