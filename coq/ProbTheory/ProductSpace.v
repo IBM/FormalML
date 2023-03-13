@@ -6691,24 +6691,17 @@ Lemma freezing {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
     unfold compose.
     rewrite H5.
     generalize (product_pair_law rv_X rv_Y indep); intros.
-    assert (rv_eq
-              (fun omega : X * Y => Finite (rvmult rv_f (fun x : X * Y => g (fst x)) omega))
-              (fun omega : X * Y => Finite (rvmult rv_f (fun x : X * Y => g (fst x)) omega))).
-    {
-      reflexivity.
-    }
-
-    generalize (Rbar_Expectation_ext_ps' _ _ H6 _ _ H7); intros.
-    symmetry in H8.
-    etransitivity; [| etransitivity]; [|apply H8|]; [now apply Rbar_Expectation_ext|].
-
+    symmetry in H6.
+    generalize (Rbar_Expectation_ext_ps' _ _ H6 ); intros.
+    etransitivity; [| etransitivity]; [|apply H7|]; [now eapply Rbar_Expectation_ext| apply reflexivity |].
+    symmetry in H6.
     assert (isfe': IsFiniteExpectation (product_ps (pullback_ps dom A prts rv_X) (pullback_ps dom B prts rv_Y)) rv_f).
     {
       assert (IsFiniteExpectation (pullback_ps dom (product_sa A B) prts (fun ω : Ts => (rv_X ω, rv_Y ω))) rv_f).
       {
         now apply pullback_law_isfe.
       }
-      revert H9.
+      revert H8.
       apply IsFiniteExpectation_ext_ps'; trivial.
       reflexivity.
     }
@@ -6760,8 +6753,8 @@ Lemma freezing {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
               (fun x : X => Rbar_FiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y)))).
     {
       generalize (fubini_section_fst_rv (A := A) (pullback_ps dom A prts rv_X)  (pullback_ps dom B prts rv_Y) ); intros.
-      specialize (H9 (rvmult rv_f (fun x0 : X * Y => g (fst x0)))).
-      apply H9.
+      specialize (H8 (rvmult rv_f (fun x0 : X * Y => g (fst x0)))).
+      apply H8.
       - apply Real_Rbar_rv.
         apply rvmult_rv; trivial.
         unfold g.
@@ -6784,13 +6777,13 @@ Lemma freezing {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
                 (pullback_ps dom A prts rv_X)
                 (fun x : X => Rbar_FiniteExpectation0 (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y)))).
       {
-        specialize (H10 (rvmult rv_f (fun x0 : X * Y => g (fst x0)))).
-        apply H10; try easy.
+        specialize (H9 (rvmult rv_f (fun x0 : X * Y => g (fst x0)))).
+        apply H9; try easy.
         apply Real_Rbar_rv, rvmult_rv; trivial.
         unfold g.
         apply EventIndicator_pre_rv, fst_rv.
       }
-      revert H11.
+      revert H10.
       apply Rbar_IsFiniteExpectation_proper.
       intros ?.
       now erewrite Rbar_FiniteExpectation0_finite.
