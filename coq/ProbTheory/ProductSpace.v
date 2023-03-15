@@ -6571,7 +6571,7 @@ Instance tonelli_nnexp_section_snd_rv (f : (X * Y) -> Rbar)
      match_destr; destruct (Rle_dec 0 (f a)); lra.
   Qed.     
 
-  Lemma freezing_rv2 {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
+  Lemma freezing_rvce {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
         (rv_f : (X * Y) -> R) 
         (rv_X : Ts -> X)
         (rv_Y : Ts -> Y)
@@ -6647,7 +6647,7 @@ Lemma freezing {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
     is_conditional_expectation prts (pullback_sa A rv_X) 
                                (fun ω => rv_f (rv_X ω, rv_Y ω))
                                (fun ω => ((fun x => FiniteExpectation prts (fun ω0 => rv_f (x, rv_Y ω0))) (rv_X ω)))
-                               (rvce := freezing_rv2 rv_f rv_X rv_Y (indep := indep)).
+                               (rvce := freezing_rvce rv_f rv_X rv_Y (indep := indep)).
   Proof.
     unfold is_conditional_expectation.
     intros.
@@ -6861,7 +6861,22 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
    rewrite H2.
    now rewrite Rbar_mult_comm.
  Qed.
- 
+
+ Lemma freezing_sa {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+       (sub2 : sa_sub dom2 dom)
+       (sub3 : sa_sub dom3 dom)       
+       (X : Ts -> Ts2) 
+       (Psi : Ts2 * Ts -> R)
+       {rvx : RandomVariable dom2 cod X}      
+       {rvPsi : RandomVariable (product_sa cod dom3) borel_sa Psi}
+       {rvPsi2: RandomVariable dom borel_sa (fun ω : Ts => Psi (X ω, ω))}
+       {isfe : IsFiniteExpectation prts (fun ω => Psi (X ω, ω))}
+       {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => Psi (x, ω))}   :
+  independent_sas prts sub2 sub3 ->
+  almostR2 (prob_space_sa_sub prts sub2) eq (ConditionalExpectation prts sub2 (fun ω => Psi (X ω, ω)))
+           (fun ω => ((fun x => FiniteExpectation prts (fun ω => Psi (x, ω))) (X ω))).
+ Proof.
+   Admitted.
 
   
 
