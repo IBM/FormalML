@@ -6862,6 +6862,25 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
    now rewrite Rbar_mult_comm.
  Qed.
 
+ Instance freezing_rv {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+       (sub2 : sa_sub dom2 dom)
+       (sub3 : sa_sub dom3 dom)       
+       (X : Ts -> Ts2) 
+       (Psi : Ts2 * Ts -> R)
+       {rvx : RandomVariable dom2 cod X}      
+       {rvPsi : RandomVariable (product_sa cod dom3) borel_sa Psi} :
+   RandomVariable dom borel_sa (fun ω : Ts => Psi (X ω, ω)).
+ Proof.
+   assert (RandomVariable dom (product_sa cod dom3) (fun ω : Ts => (X ω, ω))).
+   {
+     apply product_sa_rv; trivial.
+     - now apply (RandomVariable_sa_sub sub2).
+     - apply (RandomVariable_sa_sub sub3).
+       typeclasses eauto.
+   }
+   apply (compose_rv (dom2 := product_sa cod dom3) (fun ω => (X ω, ω)) Psi).
+ Qed.
+
  Lemma freezing_sa {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
        (sub3 : sa_sub dom3 dom)       
