@@ -151,7 +151,7 @@ Section Digits.
       rewrite digits_to_nat_aux_app.
       simpl.
       destruct (nat_to_digits_backwards (n / base)
-                                        (nat_to_digits_backwards_obligation_3 n H)).
+                                        (nat_to_digits_backwards_obligation_3 n _)).
       simpl.
       destruct a as [e1 e2].
       split. 
@@ -160,8 +160,8 @@ Section Digits.
         rewrite mult_comm.
         rewrite <- Nat.div_mod; trivial.
         lia.
-      - intros. destruct (rev x); simpl in * .
-        + inversion H0; clear H0; subst.
+      - intros ? HH. destruct (rev x); simpl in * .
+        + inversion HH; clear HH; subst.
           simpl.
           unfold digits_to_nat in e1.
           simpl in *.

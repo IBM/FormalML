@@ -1,3 +1,4 @@
+Require Import Qreals.
 Require Import QArith.
 Require Import Morphisms.
 Require Import Equivalence.
@@ -2683,7 +2684,7 @@ Section mct.
           apply refl_refl.
           
           assert (nnc :  0 <= Rmax (- a) 0) by apply Rmax_r.
-          rewrite <- (NonnegExpectation_const (Rmax (- a) 0)) with (nnc0:=nnc).
+          rewrite <- (NonnegExpectation_const (Rmax (- a) 0) nnc).
           f_equal.
         }
 
@@ -2728,12 +2729,12 @@ Section mct.
       
     Corollary upcrossing_var_lim_isf_allQ (K:R) :
         is_ELimSup_seq (fun n => NonnegExpectation (pos_fun_part (M n))) K ->
-        almost prts (fun ts => forall (a b:Q), (a < b)%Q -> is_finite (Rbar_rvlim (upcrossing_var M (Qreals.Q2R a) (Qreals.Q2R b)) ts)).
+        almost prts (fun ts => forall (a b:Q), (a < b)%Q -> is_finite (Rbar_rvlim (upcrossing_var M (Q2R a) (Q2R b)) ts)).
     Proof.
       intros.
       apply almost_forallQ; intros a.
       apply almost_forallQ; intros b.
-      generalize (upcrossing_var_lim_isf K (Qreals.Q2R a) (Qreals.Q2R b) H)
+      generalize (upcrossing_var_lim_isf K (Q2R a) (Q2R b) H)
       ; intros HH.
       destruct (Qlt_le_dec a b).
       - specialize (HH (Qreals.Qlt_Rlt _ _ q)).
@@ -2800,7 +2801,7 @@ Section mct.
       unfold Rbar_rvlim in eqq.
 
       generalize (Elim_seq_incr_elem
-                    (fun n : nat => upcrossing_var M (Qreals.Q2R a) (Qreals.Q2R b) n x))
+                    (fun n : nat => upcrossing_var M (Q2R a) (Q2R b) n x))
       ; intros HHle.
       cut_to HHle; [| intros; apply upcrossing_var_incr].
       rewrite eqq in HHle.
@@ -2816,7 +2817,7 @@ Section mct.
       } 
       
       assert (HHle2:
-               forall j n, (upcrossing_var_expr M (Qreals.Q2R a) (Qreals.Q2R b) (S n) x j <= (Z.to_nat (up nmax)))%nat).
+               forall j n, (upcrossing_var_expr M (Q2R a) (Q2R b) (S n) x j <= (Z.to_nat (up nmax)))%nat).
       {
         intros.
         apply upcrossing_var_var_expr_le.
@@ -2830,7 +2831,7 @@ Section mct.
       specialize (HHle2 (S (Z.to_nat (up nmax))%nat)).
       assert (HHle3:
           (match
-              upcrossing_times M (Qreals.Q2R a) (Qreals.Q2R b) (2 * S (Z.to_nat (up nmax))) x
+              upcrossing_times M (Q2R a) (Q2R b) (2 * S (Z.to_nat (up nmax))) x
             with
             | Some upn => S (Z.to_nat (up nmax))
             | None => 0
@@ -2848,13 +2849,13 @@ Section mct.
       destruct eqq0 as [[i alt]|[i bgt]].
       + apply Rbar_lt_not_le in age.
         apply age.
-        rewrite <- (ELimInf_seq_const (Qreals.Q2R a)).
+        rewrite <- (ELimInf_seq_const (Q2R a)).
         apply ELimInf_le; simpl.
         exists i; intros.
         now left; apply alt.
       + apply Rbar_lt_not_le in blt.
         apply blt.
-        rewrite <- (ELimSup_seq_const (Qreals.Q2R b)).
+        rewrite <- (ELimSup_seq_const (Q2R b)).
         apply ELimSup_le; simpl.
         exists i; intros.
         now left; apply bgt.

@@ -2609,13 +2609,17 @@ Section semi_premeasure.
           rewrite eqqi.
           now destruct Ri; simpl.
         }
-        
-        rewrite <- semipremeasure_list_disjoint_union with (pf0:=pf).
-        - apply semipremeasure_proper.
-          now red.
-        - apply pre_list_disjoint_inter with (a:=Ri) in disjS.
+
+        assert (HH:ForallOrdPairs pre_event_disjoint
+                     (map salg_pre (map (fun s : salg_set SAlg => salg_inter Ri s) S))).
+        { 
+          apply pre_list_disjoint_inter with (a:=Ri) in disjS.
           rewrite map_map in disjS.
           now rewrite map_map.
+        } 
+        rewrite <- (semipremeasure_list_disjoint_union _ HH pf).
+        apply semipremeasure_proper.
+        now red.
       }
 
       assert (eqqs:forall Si, In Si S ->
@@ -2652,20 +2656,24 @@ Section semi_premeasure.
         {
           rewrite eqqi.
           now destruct Si; simpl.
-        } 
-        rewrite <- semipremeasure_list_disjoint_union with (pf0:=pf).
-        - apply semipremeasure_proper.
-          now red.
-        - apply pre_list_disjoint_inter with (a:=Si) in disjR.
+        }
+        assert (HH: ForallOrdPairs pre_event_disjoint
+                      (map salg_pre (map (fun r : salg_set SAlg => salg_inter r Si) R))).
+        {
+          apply pre_list_disjoint_inter with (a:=Si) in disjR.
           rewrite map_map in disjR.
           rewrite map_map.
           revert disjR.
           apply (ForallOrdPairs_Forall2_prop pre_event_equiv).
-          + intros ???????. eapply pre_event_disjoint_eq_proper; eauto; symmetry; eauto.
-          + apply Forall2_map_f.
+          - intros ???????. eapply pre_event_disjoint_eq_proper; eauto; symmetry; eauto.
+          - apply Forall2_map_f.
             apply Forall2_refl.
             intros ?; simpl.
             apply pre_event_inter_comm.
+        } 
+        rewrite <- (semipremeasure_list_disjoint_union _ HH pf).
+        apply semipremeasure_proper.
+        now red.
       }
 
       assert (eqq1:list_Rbar_sum (map λ R) = list_Rbar_sum (map (fun Ri => list_Rbar_sum (map λ (map (fun s : salg_set SAlg => salg_inter Ri s) S))) R)).
@@ -2725,11 +2733,14 @@ Section semi_premeasure.
         {
           rewrite eqqi.
           now destruct Ri; simpl.
-        } 
-        rewrite <- semipremeasure_countable_disjoint_union with (pf0:=pf).
-        - apply semipremeasure_proper.
-          now red.
-        - now apply pre_collection_is_pairwise_disjoint_inter.
+        }
+        assert (HH: pre_collection_is_pairwise_disjoint (fun x : nat => salg_inter Ri (S x))).
+        {
+          now apply pre_collection_is_pairwise_disjoint_inter.
+        }
+        rewrite <- (semipremeasure_countable_disjoint_union _ HH pf).
+        apply semipremeasure_proper.
+        now red.
       }
 
       assert (eqqs:forall j, 
@@ -2765,20 +2776,25 @@ Section semi_premeasure.
         {
           rewrite eqqi.
           now destruct (S j); simpl.
-        } 
-        rewrite <- semipremeasure_list_disjoint_union with (pf0:=pf).
-        - apply semipremeasure_proper.
-          now red.
-        - apply pre_list_disjoint_inter with (a:=S j) in disjR.
+        }
+        assert (HH: ForallOrdPairs pre_event_disjoint
+                      (map salg_pre (map (fun r : salg_set SAlg => salg_inter r (S j)) R))).
+        {
+          apply pre_list_disjoint_inter with (a:=S j) in disjR.
           rewrite map_map in disjR.
           rewrite map_map.
           revert disjR.
           apply (ForallOrdPairs_Forall2_prop pre_event_equiv).
-          + intros ???????. eapply pre_event_disjoint_eq_proper; eauto; symmetry; eauto.
-          + apply Forall2_map_f.
+          - intros ???????. eapply pre_event_disjoint_eq_proper; eauto; symmetry; eauto.
+          - apply Forall2_map_f.
             apply Forall2_refl.
             intros ?; simpl.
             apply pre_event_inter_comm.
+        } 
+          
+        rewrite <- (semipremeasure_list_disjoint_union _ HH pf).
+        apply semipremeasure_proper.
+        now red.
       }
 
       assert (eqq1:list_Rbar_sum (map λ R) = list_Rbar_sum (map (fun Ri => ELim_seq (sum_Rbar_n (fun j : nat => λ (salg_inter Ri (S j))))) R)).
@@ -3045,13 +3061,17 @@ Section semi_premeasure.
         rewrite list_dep_zip_map1.
         now rewrite <- H0.
       }
-      rewrite <- (semipremeasure_list_disjoint_union ((list_dep_zip x0 f))) with (pf0:=pf).
-      - eapply semipremeasure_proper; red; simpl.
+      assert (HH: ForallOrdPairs pre_event_disjoint (map salg_pre (list_dep_zip x0 f))).
+      {
         unfold salg_pre, salg_set.
-        rewrite list_dep_zip_map1.
-        now symmetry.
-      - unfold salg_pre, salg_set.
         now rewrite list_dep_zip_map1.
+      } 
+
+      rewrite <- (semipremeasure_list_disjoint_union (list_dep_zip x0 f) HH pf).
+      eapply semipremeasure_proper; red; simpl.
+      unfold salg_pre, salg_set.
+      rewrite list_dep_zip_map1.
+      now symmetry.
     Qed.
 
 End semi_premeasure.

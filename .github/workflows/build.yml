@@ -12,9 +12,11 @@ jobs:
       matrix:
         coq_version:
           - '8.12.2'
-#          - '8.14.0'
         ocaml_version:
           - '4.07.1-flambda'
+      include:
+      - coq_version: '8.16.1'
+        ocaml_version: '4.12.1'
     steps:
       - uses: actions/checkout@v2
         with:

@@ -597,16 +597,16 @@ Lemma not_ex_derive_Rmax_eq (f g: R-> R) (x df dg : R) :
   ~ex_derive (fun x0 => Rmax (f x0) (g x0)) x.
 Proof.
   intros; unfold ex_derive; intro; destruct H3.
-  apply is_derive_ext with (g0:= (fun x => (f x + g x + Rabs(f x - g x))/2)) in H3
+  apply (is_derive_ext _ (fun x => (f x + g x + Rabs(f x - g x))/2)) in H3
   ; [|intro; apply max_abs].
   apply is_derive_scal with (k := 2) in H3.
-  apply is_derive_ext with (g0 := (fun x => (f x + g x) + Rabs (f x - g x))) in H3
+  apply (is_derive_ext _ (fun x => (f x + g x) + Rabs (f x - g x))) in H3
   ; [|intro; lra].
   generalize (is_derive_plus f g x df dg); intro.
   specialize (H4 H0 H1); unfold plus in H4; simpl in H4.
-  apply is_derive_minus with 
-      (f0 := (fun x : R => f x + g x + Rabs (f x - g x))) (df0 := 2*x0) in H4; trivial.
-  apply is_derive_ext with (g0 := (fun x => Rabs (f x - g x))) in H4.
+  apply (is_derive_minus 
+           (fun x : R => f x + g x + Rabs (f x - g x)) _ _  (2*x0)) in H4; trivial.
+  apply (is_derive_ext _ (fun x => Rabs (f x - g x))) in H4.
   - generalize (not_ex_derive_Rabs_f0 (fun x => f x - g x) x (df - dg)); intros.
     generalize (is_derive_minus f g x df dg); intros.
     specialize (H6 H0 H1); specialize (H5 H H6 H2).
@@ -652,11 +652,11 @@ Proof.
   intros.
   apply is_derive_max_abs with (df := df) (dg := dg); trivial.
   apply is_derive_scal_div.
-  apply is_derive_plus with (f0 := fun x0 => f x0 + g x0) (g0 := fun x0 => Rabs(f x0 - g x0)).
-  apply is_derive_plus with (f0 := f) (g0 := g); trivial.
-  apply is_derive_comp with (f0 := Rabs) (g0 := fun x0 => f x0 - g x0).
+  apply (is_derive_plus (fun x0 => f x0 + g x0) (fun x0 => Rabs(f x0 - g x0))).
+  apply (is_derive_plus f g); trivial.
+  apply (is_derive_comp Rabs (fun x0 => f x0 - g x0)).
   apply is_derive_abs; lra.
-  apply is_derive_minus with (f0 := f) (g0 := g); trivial.
+  now apply (is_derive_minus f g).
 Qed.
 
 Lemma locally_gt (x:R) : 

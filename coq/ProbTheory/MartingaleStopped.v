@@ -494,9 +494,12 @@ Section stopped_process.
       intros.
       rewrite <- expectation_process_stopped_at_0.
       apply Rle_ge.
-      apply is_sub_martingale_expectation with (sas := F) (adapt0 :=process_stopped_at_adapted Y F T) 
-                                           (rv0 := process_stopped_at_rv Y F T) 
-                                           (filt0 := filt) (sub0 := sub); try lia.
+      apply (@is_sub_martingale_expectation _ _ _ _ F
+               (process_stopped_at_rv Y F T)
+               _ 
+               (process_stopped_at_adapted Y F T) 
+               filt
+               sub); try lia.
       now apply process_stopped_at_sub_martingale.
     Qed.
 
@@ -510,9 +513,13 @@ Section stopped_process.
       intros.
       rewrite <- expectation_process_stopped_at_0.
       apply Rge_le.
-      apply is_super_martingale_expectation with (sas := F) (adapt0 :=process_stopped_at_adapted Y F T) 
-                                           (rv0 := process_stopped_at_rv Y F T) 
-                                           (filt0 := filt) (sub0 := sub); try lia.
+      apply (@is_super_martingale_expectation _ _ _ _
+               F
+               (process_stopped_at_rv Y F T)
+               _ 
+               (process_stopped_at_adapted Y F T) 
+               filt
+             sub); try lia.
       now apply process_stopped_at_super_martingale.
     Qed.
 
@@ -525,9 +532,12 @@ Section stopped_process.
     Proof.
       intros.
       rewrite <- expectation_process_stopped_at_0.
-      apply is_martingale_expectation with (sas := F) (adapt0 :=process_stopped_at_adapted Y F T) 
-                                           (rv0 := process_stopped_at_rv Y F T) 
-                                           (filt0 := filt) (sub0 := sub).
+      apply (@is_martingale_expectation _ _ _ _
+               F
+               (process_stopped_at_rv Y F T)
+               _
+               (process_stopped_at_adapted Y F T) 
+               filt sub).
       apply process_stopped_at_martingale.
     Qed.
 
@@ -540,7 +550,12 @@ Section stopped_process.
     Proof.
       intros.
       rewrite process_stopped_at_martingale_expectation_0.
-      now apply is_martingale_expectation with (sas := F) (rv0 := rv) (adapt0 := adapt) (filt0 := filt) (sub0 := sub).
+      now apply (@is_martingale_expectation _ _ _ _
+                   F
+                   rv _
+                   adapt
+                   filt
+                 sub).
     Qed.
 
   End process_stopped_at_props_ext.

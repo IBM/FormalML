@@ -842,7 +842,7 @@ End rv_expressible.
         intros.
         assert (ex_series (fun n => a (n + N)%nat)).
         apply ex_series_incr_n with (n := N) in H.
-        apply ex_series_ext with (a0 := (fun k : nat => a (N + k)%nat)); trivial.
+        apply (ex_series_ext (fun k : nat => a (N + k)%nat)); trivial.
         intros; f_equal; lia.
         generalize (series_finite_sum _ H0); intros.
         unfold ex_finite_lim_seq in H1.
@@ -2225,7 +2225,7 @@ End rv_expressible.
                  ++ replace (1 - (1 - gamma) * α n) with (1 - α n + gamma * α n) by lra.
                     apply H.
                  ++ assert (xstar = plus (scal (1 - (α n)) xstar) (scal (α n) xstar)).
-                    ** rewrite scal_minus_distr_r with (x0 := 1).
+                    ** rewrite (scal_minus_distr_r 1).
                        unfold minus.
                        rewrite <- plus_assoc.
                        rewrite plus_opp_l.
@@ -3400,7 +3400,7 @@ End rv_expressible.
          apply Rplus_le_reg_r with (r :=  RMseq α (fun _ : nat => gamma * C) C n).
          unfold Rminus at 1.
          rewrite Rplus_0_l, Rplus_assoc, Rplus_opp_l, Rplus_0_r.
-         now apply Induction_I2_full_vec_ptwise with (F0 := F).
+         now apply (@Induction_I2_full_vec_ptwise _ _ _ _ _ _ F).
        }
        lra.
        Qed.
@@ -3530,7 +3530,7 @@ End rv_expressible.
       symmetry.
       generalize (frf_NonnegExpectation (rvsqr (rvabs (vecrvnth i pf (Xn n0))))); intros.
       now rewrite H0.
-      now apply lim_rvinner_0 with (frfxn0 := frfxn).
+      now apply (@lim_rvinner_0 _ _ _ _ _ frfxn).
    Qed.
 
     Lemma conv_l2_vector_prob {n:nat}
@@ -3546,7 +3546,7 @@ End rv_expressible.
           is_lim_seq (fun n0 => ps_P (event_ge dom (rvabs (vecrvnth i pf (Xn n0))) eps)) 0.
     Proof.
       intros.
-      now apply conv_l2_vector_prob_i with (frfxn0 := frfxn).
+      now apply (conv_l2_vector_prob_i _ _ _ _ frfxn).
     Qed.
 
     Lemma conv_l2_conv_linf_sqr {n:nat}

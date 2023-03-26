@@ -1499,8 +1499,8 @@ Section Assoc.
       unfold equivlist, lookup_equiv.
       intros nd1 nd2 loeq.
       intros [a b]; split; intros inn
-      ; apply lookup_in with (dec0:=dec)
-      ; apply (in_lookup_nodup) with (dec0:=dec) in inn; trivial
+      ; apply (@lookup_in _ _ dec)
+      ; apply (@in_lookup_nodup _ _ dec) in inn; trivial
       ; congruence.
     Qed.
 

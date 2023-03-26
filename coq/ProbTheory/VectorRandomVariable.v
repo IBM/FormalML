@@ -1379,7 +1379,7 @@ Section vector_ops_ext.
     f_equal.
     apply vector_create_ext.
     intros.
-    erewrite gen_conditional_tower_law with (l0 := l); trivial.
+    erewrite (gen_conditional_tower_law _ l); trivial.
     - apply SimpleExpectation_ext.
       rewrite gen_conditional_scale_measurable; trivial.
       + intro x.
@@ -1416,7 +1416,7 @@ Section vector_ops_ext.
     SimpleExpectation (rvinner rv_X1 rv_X2) (rv:=Rvector_inner_rv _ _) (frf:=frfinner _ _) = 0.
   Proof.
     intros.
-    rewrite simple_expection_rvinner_measurable with (l0 := l); trivial.
+    rewrite (simple_expection_rvinner_measurable _ _ l); trivial.
     assert (rv_eq  
               (rvinner rv_X1 (vector_SimpleConditionalExpectationSA rv_X2 l))
               (const 0)).

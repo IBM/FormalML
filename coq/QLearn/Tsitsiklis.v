@@ -4424,9 +4424,23 @@ Qed.
   Proof.
     intros.
     destruct (Rlt_dec 0 β).
-    - now apply Tsitsiklis3_beta_pos with (w0 := w) (β0 := β) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
+    - now apply (@Tsitsiklis3_beta_pos
+                   _
+                   _
+                   w α β D0 XF _ _
+                   filt_sub
+                   _ _ _
+                   posD0
+                   _
+                   rvw).
     - assert (β = 0) by lra.
-      now apply Tsitsiklis3_beta_0 with (w0 := w) (β0 := β) (α0 := α) (D1 := D0) (XF0 := XF) (filt_sub0 := filt_sub) (rvw0 := rvw).
+      now apply (@Tsitsiklis3_beta_0 _ _
+                   w α β D0 XF _ _
+                   filt_sub
+                   _ _ _
+                   posD0
+                   _
+                   rvw).
   Qed.
 
     Theorem Tsitsiklis_1_3 {n} (β : R) (X w α : nat -> Ts -> vector R n) 

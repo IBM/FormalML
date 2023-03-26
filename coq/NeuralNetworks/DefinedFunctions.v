@@ -13593,7 +13593,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                    with
                      (df_eval_backprop_delta σ v (s, DTfloat) grad_env
                               (ConstVector n 1%R)).
-          rewrite df_eval_backprop_delta_by_unit_parts with (d1 := d); trivial.
+          rewrite (df_eval_backprop_delta_by_unit_parts _ _ _ _ d); trivial.
           * intros.
             specialize (HH i).
             unfold df_eval_backprop_delta.
@@ -13635,7 +13635,7 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
                    with
                      (df_eval_backprop_delta σ v (s, DTfloat) grad_env
                               (ConstMatrix m n 1%R)).
-          rewrite df_eval_backprop_delta_by_unit_parts_mat with (d1 := d); trivial.
+          rewrite (df_eval_backprop_delta_by_unit_parts_mat _ _ _ _ d); trivial.
           * intros.
             specialize (HH i).
             specialize (apply vectoro_to_ovector_forall_some_f HH); intros.

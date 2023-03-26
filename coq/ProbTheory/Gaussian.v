@@ -155,7 +155,7 @@ Proof.
         intros.
         apply Derive_const.
       * replace (0) with (0 - 0) at 1 by lra.
-        apply is_RInt_gen_Derive with (f0 := fun _ => 0) (la := 0) (lb := 0).
+        apply (is_RInt_gen_Derive (fun _ => 0) 0 0).
         - apply filter_forall.
            intros.
            apply ex_derive_const.
@@ -190,7 +190,7 @@ Proof.
       intros.
       apply Derive_const.
       replace (0) with (0 - 0) at 1 by lra.
-      apply is_RInt_gen_Derive with (f0 := fun _ => 0) (la := 0) (lb := 0).
+      apply (is_RInt_gen_Derive (fun _ => 0) 0 0).
       * apply filter_forall.
         intros.
         apply ex_derive_const.

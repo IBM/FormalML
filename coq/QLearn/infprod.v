@@ -947,7 +947,7 @@ Proof.
   intros.
   specialize (H Vsqle n).
   unfold sum_n in H.
-  rewrite sum_split with (m0 := m) in H; trivial; [|lia].
+  rewrite (sum_split _ _ _ m) in H; trivial; [|lia].
   generalize (sum_bound_prod_A F sigma A n m F1); intros.
   generalize (max_prod_le (pos_sq_fun F) 0 (S m) n); intros.
   generalize (sum_bound3_max F sigma n m); intros.
@@ -1009,7 +1009,7 @@ Proof.
   intros.
   specialize (H Vle n).
   unfold sum_n in H.
-  rewrite sum_split with (m0 := m) in H; trivial; [|lia].
+  rewrite (sum_split _ _ _ m) in H; trivial; [|lia].
   generalize (sum_bound_prod_A_sigma1 F sigma A n m F1); intros.
   generalize (max_prod_le (pos_sq_fun F) 0 (S m) n); intros.
   generalize (sum_bound3_max_sigma1 F sigma n m); intros.

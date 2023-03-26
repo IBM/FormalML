@@ -1926,8 +1926,8 @@ Lemma zerotails_eps2k_double_sum_finite  (a : nat -> R) (pf:ex_series a) {anneg:
       + intros.
         now rewrite sum_Rbar_n_finite_sum_n.
     - generalize (ex_series_incr_n a); intros.
-      apply ex_series_ext with
-          (a1 := (fun x : nat => a (S (zerotails_eps2k_fun a pf a0) + x)%nat)).
+      apply (ex_series_ext 
+          (fun x : nat => a (S (zerotails_eps2k_fun a pf a0) + x)%nat)).
       + intros.
         f_equal.
         lia.
@@ -2007,8 +2007,8 @@ Proof.
                 match_destr; try lra.
                 unfold zerotails_eps2k_fun in *.
                 lia.
-          -- apply ex_series_ext with
-                 (a1 := fun x => a ((S (zerotails_eps2k_fun a pf a0)) + x)%nat).
+          -- apply (ex_series_ext 
+                      (fun x => a ((S (zerotails_eps2k_fun a pf a0)) + x)%nat)).
              ++ intros; f_equal; lia.
              ++ now apply ex_series_incr_n.
           -- apply (ex_series_le (fun j : nat => a j * (if le_dec (S (zerotails_eps2k_fun a pf a0)) j then 1 else 0)) a); trivial.

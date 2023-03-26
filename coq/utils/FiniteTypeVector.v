@@ -64,7 +64,7 @@ Proof.
     + right.
       assert (S x0 >= 2)%nat.
       {
-        now apply find_index_aux_n with (decA0 := decA) (la0 := la) (x1 := x).
+        now apply (find_index_aux_n decA x la).
       }
       apply IHla.
       exists (x0 - 1)%nat.

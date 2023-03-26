@@ -445,7 +445,7 @@ Section Derman_Sacks.
          replace (seq N (S (S h))) with
              ((seq N (S h)) ++ [(S h + N)%nat]).
          * rewrite Rmax_list_app; [| apply seq_not_nil; lia].
-           rewrite sum_n_m_zero with (n0 := (S (S h + N)%nat)); try lia.
+           rewrite (sum_n_m_zero _ ((S (S h + N)%nat))); try lia.
            rewrite Rmult_0_r, Rplus_0_r.
            unfold Rdiv; rewrite Rinv_r_simpl_r; [|apply Rgt_not_eq, part_prod_n_pos].
            rewrite Rmax_comm.
@@ -1241,7 +1241,7 @@ Section Derman_Sacks.
       almost _ (fun omega =>  exists N:nat, forall n, (N <= n)%nat -> rvabs (Y n) omega <= Rmax (α n) (a n)).
  Proof.
    intros.
-   apply (DS_Dvor_11_12_Y_fun (fun (n:nat) (omega:Ts) => a n)) with (isfe0 := isfe); trivial.
+   apply (@DS_Dvor_11_12_Y_fun (fun (n:nat) (omega:Ts) => a n) _ isfe); trivial.
  Qed.
  
  Global Instance IsFiniteExpectation_mult_sign (X : Ts -> R) f
@@ -1339,10 +1339,10 @@ Section Derman_Sacks.
        rewrite <- rvmult_assoc.
        apply IsFiniteExpectation_mult_sign; try typeclasses eauto.
    } 
-   apply Ash_6_2_1_filter with 
-       (filt_sub0 := fun n => filt_sub (S n))
-       (rv := rvZ)
-       (isfesqr:=isfesqrZ) ; trivial.
+   apply (@Ash_6_2_1_filter _ _ _ _ _ _
+            (fun n => filt_sub (S n)) _
+            rvZ
+            isfesqrZ) ; trivial.
    - intros.
      assert (isfef : IsFiniteExpectation prts (Y (S n))) by (intros; now apply IsFiniteExpectation_rvsqr_lower).
 

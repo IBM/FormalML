@@ -380,7 +380,7 @@ Section groupbydomain.
     - repeat rewrite nin_update; trivial.
       + apply lookup_none_nin in eqq1.
         rewrite (dom_perm _ _ H) in eqq1.
-        apply lookup_nin_none with (dec0:=dec) in eqq1.
+        apply (@lookup_nin_none _ _ dec) in eqq1.
         generalize (concat_list_unnest_lookup_none eqq1); intros inn1.
         rewrite groupby_domain_concat_list_unest_equiv in inn1; trivial.
       + generalize (concat_list_unnest_lookup_none eqq1); intros inn1.
