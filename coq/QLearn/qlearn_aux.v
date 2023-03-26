@@ -429,7 +429,7 @@ Qed.
       almost prts (fun x => is_lim_seq (fun n => f n x) 0).
    Proof.
      intros.
-     apply conv_prob_sup_0_as with (rv3 := rv2); trivial.
+     apply (@conv_prob_sup_0_as _ _ _ rv2); trivial.
      intros.
      now rewrite <- lim_ps_sub_1_0.
   Qed.

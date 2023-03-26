@@ -2158,9 +2158,9 @@ Section MartingaleDifferenceSeq.
     constructor.
     intros n.
     specialize (Hn n).
-    eapply FiniteCondexp_proper with (sub0 := sub n)
-                                    (rv1 := rv (S n))
-                                    (isfe1 := isfe (S n))
+    eapply (@FiniteCondexp_proper _ _ _ _ (sub n) _ _ 
+              (rv (S n)) _
+              (isfe (S n)) _)
       in Hn.
     apply almost_prob_space_sa_sub_lift in Hn.
     assert (almostR2 (prob_space_sa_sub prts (sub n)) eq

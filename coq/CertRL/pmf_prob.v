@@ -395,7 +395,7 @@ Section pmf_prob.
    - rewrite (infinite_sum'_unique i HH).
      clear i HH.
      unfold pmf_parts; simpl.
-     rewrite nodup_map_inj with (decA0:=decA)
+     rewrite (nodup_map_inj decA)
       ; [| intros; now apply countable_index_inj].
       rewrite map_map.
       erewrite map_ext

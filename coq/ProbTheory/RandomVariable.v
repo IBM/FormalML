@@ -271,7 +271,7 @@ Section Simple.
             -- eauto.
     } 
     destruct H as [ld [ld_incl ld_iff]].
-    apply sa_proper with (x0:=pre_list_union (map (fun d omega => rv_X omega = d) ld)).
+    apply (sa_proper _ (pre_list_union (map (fun d omega => rv_X omega = d) ld))).
     - intros e.
       split; intros HH.
       + destruct HH as [? [??]].

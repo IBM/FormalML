@@ -4180,7 +4180,7 @@ Qed.
       + transitivity p_infty.
         * assert (rvm:RandomVariable dom Rbar_borel_sa (Rbar_rvmult (const p_infty) rv_X)) 
             by (apply Rbar_rvmult_rv; typeclasses eauto).
-          apply Rbar_NonnegExpectation_pinfty_prob with (rv0 := rvm).
+          apply (@Rbar_NonnegExpectation_pinfty_prob _ _ _ _ rvm).
           assert (pre_event_equiv
                     (fun x : Ts => Rbar_rvmult (const p_infty) rv_X x = p_infty)
                     (pre_event_complement (fun x : Ts => rv_X x = 0))).

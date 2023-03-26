@@ -814,7 +814,7 @@ Section Rvector_defs.
     apply Nth_Hnorm1; trivial.
     intros.
     rewrite <- minus_nth.
-    now rewrite abs_minus with (x0 := (vector_nth i pf v)).
+    now rewrite (abs_minus (vector_nth i pf v)).
   Qed.
 
   Lemma Rvector_filter_part_cauchy (F:(PreHilbert_UniformSpace -> Prop) -> Prop) i pf :

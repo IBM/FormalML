@@ -94,7 +94,7 @@ Section is_cond_exp.
         now apply sub.
       }
       generalize (independent_expectation_prod prts f (EventIndicator dec) indep_ind); intros.
-      rewrite FiniteExpectation_Expectation with (isfe0 := isfexy).
+      rewrite (@FiniteExpectation_Expectation _ _ _ _ isfexy).
       rewrite H2.
       assert (rv_eq
                  (Rbar_rvmult (fun x : Ts => const (FiniteExpectation prts f) x)
@@ -110,7 +110,7 @@ Section is_cond_exp.
       }
       rewrite (Rbar_Expectation_ext H3).
       rewrite <- Expectation_Rbar_Expectation.
-      rewrite FiniteExpectation_Expectation with (isfe0 := IsFiniteExpectation_scale prts (FiniteExpectation prts f) _ ).
+      rewrite (@FiniteExpectation_Expectation _ _ _ _ (IsFiniteExpectation_scale prts (FiniteExpectation prts f) _ )).
       f_equal.
       rewrite Rbar_finite_eq.
       now rewrite FiniteExpectation_scale.
@@ -4700,7 +4700,7 @@ Section cond_exp_l2.
         {nneg: NonnegativeFunction f} :
     almostR2 prts Rle (const 0) (conditional_expectation_L2fun f).
   Proof.
-    apply almostR2_prob_space_sa_sub_lift with (sub0 := sub).
+    apply (almostR2_prob_space_sa_sub_lift _ sub).
     now apply conditional_expectation_L2fun_nonneg.
   Qed.
 
@@ -4829,7 +4829,7 @@ Section cond_exp2.
              (conditional_expectation_L2fun prts sub f2).
   Proof.
     intros.
-    apply almostR2_prob_space_sa_sub_lift with (sub0 := sub).
+    apply (almostR2_prob_space_sa_sub_lift _ sub).
     now apply conditional_expectation_L2fun_le.
   Qed.
 
@@ -4875,7 +4875,7 @@ Section cond_exp2.
                 conditional_expectation_L2fun prts sub (rvmin f (const (INR n))) x
                 <= conditional_expectation_L2fun prts sub (rvmin f (const (INR (S n)))) x).
   Proof.
-    apply almost_prob_space_sa_sub_lift with (sub0 := sub).
+    apply (almost_prob_space_sa_sub_lift _ sub).
     apply NonNegCondexp_direct_almost_increasing.
   Qed.
 
@@ -4936,7 +4936,7 @@ Section cond_exp2.
         {nnf : NonnegativeFunction f} :
     almostR2 prts Rbar_le (const 0) (NonNegCondexp_direct f).
   Proof.
-    apply almost_prob_space_sa_sub_lift with (sub0 := sub).
+    apply (almost_prob_space_sa_sub_lift _ sub).
     apply NonNegCondexp_direct_almost_nonneg.
   Qed.
 

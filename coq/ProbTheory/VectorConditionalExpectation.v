@@ -584,7 +584,7 @@ Section vec_cond_exp.
   Proof.
     intros.
     rewrite (FiniteExpectation_rvinner _) with (isfe_mult := isfefg); trivial.
-    - rewrite vector_FiniteCondexp_factor_out_zero with (rvf0 := rvf) (isfef0 := isfef); trivial.
+    - rewrite (@vector_FiniteCondexp_factor_out_zero _ _ _ rvf _ isfef); trivial.
       now rewrite RealVectorHilbert.Rvector_sum0.
   Qed.
 

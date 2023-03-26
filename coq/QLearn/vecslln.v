@@ -144,7 +144,7 @@ Section ash.
       by (intros ; rewrite Rabs_mult, Rmult_comm ;
           apply Rmult_le_compat_r; auto; apply Rabs_pos).
     assert (hy2 : forall n M, ex_series(fun j => M*Rabs(a n j)))
-      by (intros; now apply (ex_series_scal_l) with (a0 := fun j => Rabs(a n j))).
+      by (intros; now apply (ex_series_scal_l _ (fun j => Rabs(a n j)))).
     assert (hy3 : forall n, ex_series (fun j : nat => Rabs(a n j * x j))).
     {
       intros n.
@@ -215,8 +215,8 @@ Section ash.
            rewrite Rabs_mult, Rmult_comm.
            apply Rmult_le_compat_r; try(apply Rabs_pos).
            left. apply HN0; lia.
-         + apply (ex_series_scal_l) with (c0 := eps/(2*c))(a0 := fun j => Rabs(a n (N0+1+j)%nat)).
-           now rewrite <-(ex_series_incr_n) with (n0 := (N0 + 1)%nat)(a0:=fun j => Rabs (a n j)).
+         + apply (ex_series_scal_l (eps/(2*c)) (fun j => Rabs(a n (N0+1+j)%nat))).
+           now rewrite <-(ex_series_incr_n (fun j => Rabs (a n j)) ((N0 + 1)%nat)).
        }
        eapply Rle_lt_trans; eauto.
        rewrite Series_scal_l. rewrite Rmult_comm.
@@ -238,7 +238,7 @@ Section ash.
       by (intros ; rewrite Rabs_mult, Rmult_comm ;
           apply Rmult_le_compat_r; auto; apply Rabs_pos).
     assert (hy2 : forall n M, ex_series(fun j => M*Rabs(a n j)))
-      by (intros; now apply (ex_series_scal_l) with (a0 := fun j => Rabs(a n j))).
+      by (intros; now apply (ex_series_scal_l _ (fun j => Rabs(a n j)))).
     assert (hy3 : forall n, ex_series (fun j : nat => Rabs(a n j * x j))).
     {
       intros n.
@@ -336,7 +336,7 @@ Section ash.
              unfold is_Rbar_mult; simpl.
              now rewrite Rmult_0_r.
       + intros.
-        apply ex_series_ext with (a0 := fun j => A n j).
+        apply (ex_series_ext (fun j => A n j)).
         * intros.
           rewrite Rabs_right; trivial.
           specialize (Apos n n0); lra.
@@ -496,7 +496,7 @@ Section ash.
         replace (bb (S n)) with (b (S n)).
         * f_equal.
           rewrite sum_n_zeroval.
-          -- rewrite sum_n_m_ext_loc with (b0 :=  (fun j : nat => b j * x j)); [easy | ].
+          -- rewrite (sum_n_m_ext_loc _ (fun j : nat => b j * x j)); [easy | ].
              intros.
              unfold bb.
              match_destr.
@@ -823,7 +823,7 @@ Lemma vec_expec_cross_zero {size:nat} (X : nat -> Ts -> vector R size)
     - rewrite sum_n_const.
       lra.
     - intros.
-      apply vec_expec_cross_zero with (rv0 := rv) (isfe0 := isfe) ; trivial.
+      apply (@vec_expec_cross_zero _ _ rv _ _ isfe) ; trivial.
       lia.
   Qed.
 
@@ -2545,7 +2545,7 @@ End ash.
             now unfold Sum, rvsumvec.
           }
           erewrite (FiniteExpectation_ext _ _ _ H2).
-          apply vec_indicator_prod_cross_shift with (isfe0 := isfe) (rv0 := rv); trivial.
+          apply (@vec_indicator_prod_cross_shift _ _ _ _ _ rv isfe); trivial.
           }
               f_equal.
               apply a_plus_b_eq_b .
@@ -3160,7 +3160,7 @@ End ash.
     Proof.
       rewrite <- vec_sum_n_m_shift.
       unfold sum_n.
-      rewrite sum_split with (m0 := m); try lia.
+      rewrite (@sum_split _ _ _ _ m); try lia.
       unfold minus,plus,opp; simpl.
       generalize (sum_n_m X 0 m) as k.
       generalize (sum_n_m X (S m) (a + S m)).
@@ -3565,9 +3565,9 @@ End ash.
       apply Forall_vector; intros; simpl.
       rewrite vector_nth_fun_to_vector.
       unfold vector_IsFiniteExpectation in H.
-      apply vector_Forall with (i0 := i) (pf0 := pf) in H.
-      simpl in H.
-      rewrite vector_nth_fun_to_vector in H.
+      generalize (@vector_Forall _ _ _ _ H i pf); intros HH.
+      simpl in HH.
+      rewrite vector_nth_fun_to_vector in HH.
       assert (rv_eq (fun x => vector_nth i pf ((vecrvmult (vecrvscale b X) (vecrvscale c Y)) x))
                     (rvscale (b * c) (fun x => vector_nth i pf ((vecrvmult X Y) x)))).
       {

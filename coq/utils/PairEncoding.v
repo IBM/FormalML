@@ -411,7 +411,7 @@ Qed.
 Next Obligation.
   destruct (wildcard'0); simpl in *.
   - destruct pfl as [? ?]; lia.
-  - elim (H _ _ _ (eq_refl _)).
+  - firstorder congruence.
 Qed.
 
 Lemma uninterleave_odd_skip {A:Type} (l:list A) a :

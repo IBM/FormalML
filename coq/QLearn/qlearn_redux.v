@@ -1804,9 +1804,9 @@ Section stuff.
     {
       now rewrite map_length.
     }
-    rewrite <- ivector_nth_map_length_from_list with (pf3 := pf2).
+    rewrite <- (ivector_nth_map_length_from_list _ _ _ _ pf2).
     apply (map_nth_error g) in H.
-    rewrite ivector_nth_from_list with (pf0 := pf2) in H.
+    rewrite (ivector_nth_from_list _ _ pf2) in H.
     now inversion H.
   Qed.
 
@@ -2921,7 +2921,7 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
     almost prts (fun x => Lim_seq.is_lim_seq (fun n => f n x) (Rbar.Finite 0)).
   Proof.
     intros.
-    apply qlearn.conv_prob_sup_0_as with (rv3 := rv2); trivial.
+    apply (@qlearn.conv_prob_sup_0_as _ _ _ _ _ rv2); trivial.
     intros.
     specialize (H eps).
     apply Lim_seq.is_lim_seq_ext with
@@ -3668,7 +3668,7 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
      intros.
      apply core_contraction_conv with (Y := Y) (Z := Z) (alpha := alpha) (tk := tk) (BB := (fun (n:nat) => BB ∘ X (S n)) ); trivial.
      - now apply Dvoretzky_converge_Y with (alpha := alpha) (F := F).
-     - now apply (Dvoretzky_converge_Z_indep cod X Z BB alpha) with (filt_sub0 := filt_sub) (rvX0 := rvX) (isfe0 := isfe).
+     - now apply (@Dvoretzky_converge_Z_indep _ cod X Z BB alpha _ _ filt_sub _ _ _ rvX isfe).
    Qed.
 
 End converge.

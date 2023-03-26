@@ -2260,8 +2260,7 @@ Section tails.
                  - apply Rge_le, HN0.
                  - apply H.
                }
-               apply ex_series_ext with
-                   (a0 := const 0); try (apply ex_series_const0).
+               apply (ex_series_ext (const 0)); try (apply ex_series_const0).
                intros.
                unfold const.
                rewrite H1.
@@ -2310,7 +2309,7 @@ Section tails.
        destruct (lt_dec n m).
        - unfold sum_n.
          apply Rge_le.
-         rewrite sum_n_m_Chasles with (m0 := n); try lia.
+         rewrite (sum_n_m_Chasles _ _ n); try lia.
          apply Rle_ge.
          replace (sum_n_m gamma 0 n) with ((sum_n_m gamma 0 n) + 0) at 1 by lra.
          unfold plus; simpl.
@@ -2592,8 +2591,7 @@ Section tails.
           apply continuity_pt_sqrt; lra.
           replace (Finite 0) with (Rbar_inv p_infty); [| now simpl].
           apply is_lim_seq_inv; trivial; discriminate.
-        + apply ex_series_ext with
-              (a0 := fun n => a n * x n); trivial.
+        + apply (ex_series_ext (fun n => a n * x n)); trivial.
           intros.
           unfold Rdiv.
           f_equal.

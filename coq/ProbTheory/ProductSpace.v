@@ -3417,7 +3417,7 @@ Section ps_sequence_product.
     intros.
     unfold inf_cylinder_event.
     intros ?.
-    now rewrite ivector_take_sequence with (m0 := m) (lt := pf).
+    now rewrite (ivector_take_sequence _ _ _ m pf).
   Qed.
 
   Definition section_seq_event {T} {σ:SigmaAlgebra T} (x : T) 
@@ -3646,7 +3646,7 @@ Section ps_sequence_product.
        rewrite <- Rbar_opp_minus in H4.
        apply (f_equal Rbar_opp) in H4.
        repeat rewrite Rbar_opp_involutive in H4.
-       rewrite Expectation_pos_pofrf with (nnf0 := nncf) in H2.  
+       rewrite (@Expectation_pos_pofrf _ _ _ _ nncf) in H2.  
        inversion H2.
        now rewrite H4 in H5.
      - rewrite H2 in H0.
@@ -4150,7 +4150,7 @@ Section ps_sequence_product.
         rewrite Expectation_pos_pofrf with (nnf := Xpos).
         now rewrite H0.
       }
-      apply rvlt_finexp_contra with (prts0 := prts) (isfe := H1); trivial.
+      apply (rvlt_finexp_contra prts _ _ H1); trivial.
       rewrite H0 in H.
       simpl in H.
       rewrite FiniteNonnegExpectation with (posX := Xpos).

@@ -3834,7 +3834,7 @@ Section complete.
     IsLp (event_restricted_prob_space prts P pf) n (event_restricted_function P f).
   Proof.
     unfold IsLp, IsFiniteExpectation in *.
-    now rewrite event_restricted_Expectation with (P0 := P) (pf0 := pf) in isl; trivial.
+    now rewrite (event_restricted_Expectation _ P pf1 pf) in isl.
   Qed.
 
   Program Definition event_restricted_LpRRV n P (pf1 : ps_P P = 1) pf (rv:LpRRV prts n) :
@@ -3873,7 +3873,7 @@ Section complete.
                 (event_restricted_prob_space prts P pf)
                 (rvpower (rvabs (event_restricted_function P f)) (const p))).
     simpl.
-    rewrite event_restricted_Expectation with (P0 := P) (pf0 := pf) in e; trivial.
+    rewrite (event_restricted_Expectation _ P pf1 pf) in e.
     assert (rv_eq
               (event_restricted_function P (rvpower (rvabs f) (const p)))
               (rvpower (rvabs (event_restricted_function P f)) (const p))) by easy.

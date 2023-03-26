@@ -34,7 +34,7 @@ Proof.
     by (intros ; rewrite Rabs_mult, Rmult_comm ;
         apply Rmult_le_compat_r; auto; apply Rabs_pos).
   assert (hy2 : forall n M, ex_series(fun j => M*Rabs(a n j)))
-    by (intros; now apply (ex_series_scal_l) with (a0 := fun j => Rabs(a n j))).
+    by (intros; now apply (ex_series_scal_l _ ( fun j => Rabs(a n j)))).
   assert (hy3 : forall n, ex_series (fun j : nat => Rabs(a n j * x j))).
   {
     intros n.
@@ -105,8 +105,8 @@ Proof.
          rewrite Rabs_mult, Rmult_comm.
          apply Rmult_le_compat_r; try(apply Rabs_pos).
          left. apply HN0; lia.
-       + apply (ex_series_scal_l) with (c0 := eps/(2*c))(a0 := fun j => Rabs(a n (N0+1+j)%nat)).
-         now rewrite <-(ex_series_incr_n) with (n0 := (N0 + 1)%nat)(a0:=fun j => Rabs (a n j)).
+       + apply (ex_series_scal_l (eps/(2*c)) (fun j => Rabs(a n (N0+1+j)%nat))).
+         now rewrite <-(ex_series_incr_n (fun j => Rabs (a n j)) ((N0 + 1)%nat)).
      }
   eapply Rle_lt_trans; eauto.
   rewrite Series_scal_l. rewrite Rmult_comm.
@@ -128,7 +128,7 @@ Proof.
     by (intros ; rewrite Rabs_mult, Rmult_comm ;
         apply Rmult_le_compat_r; auto; apply Rabs_pos).
   assert (hy2 : forall n M, ex_series(fun j => M*Rabs(a n j)))
-    by (intros; now apply (ex_series_scal_l) with (a0 := fun j => Rabs(a n j))).
+    by (intros; now apply (ex_series_scal_l _ (fun j => Rabs(a n j)))).
   assert (hy3 : forall n, ex_series (fun j : nat => Rabs(a n j * x j))).
   {
     intros n.
@@ -226,7 +226,7 @@ Lemma ash_6_1_2  {a x : nat -> R} {x0 : R}(ha : forall n, 0 <= a n)
              unfold is_Rbar_mult; simpl.
              now rewrite Rmult_0_r.
      + intros.
-       apply ex_series_ext with (a0 := fun j => A n j).
+       apply (ex_series_ext (fun j => A n j)).
        * intros.
          rewrite Rabs_right; trivial.
          specialize (Apos n n0); lra.
@@ -386,7 +386,7 @@ Proof.
       replace (bb (S n)) with (b (S n)).
       * f_equal.
         rewrite sum_n_zeroval.
-        -- rewrite sum_n_m_ext_loc with (b0 :=  (fun j : nat => b j * x j)); [easy | ].
+        -- rewrite (sum_n_m_ext_loc _ ((fun j : nat => b j * x j))); [easy | ].
            intros.
            unfold bb.
            match_destr.
@@ -2881,7 +2881,7 @@ Qed.
    Proof.
      rewrite <- sum_n_m_shift.
      unfold sum_n.
-     rewrite sum_split with (m0 := m); try lia.
+     rewrite (@sum_split _ _ _ _ m); try lia.
      unfold plus; simpl.
      lra.
    Qed.
@@ -4624,8 +4624,8 @@ Qed.
             eapply (@filtration_history_is_sub_algebra _ _ _ X dom _).
             eauto.
           }
-          rewrite FiniteExpectation_Expectation with (isfe0 := H3).
-          rewrite FiniteExpectation_Expectation with (isfe0 := H4).
+          rewrite (@FiniteExpectation_Expectation _ _ _ _ H3).
+          rewrite (@FiniteExpectation_Expectation _ _ _ _ H4).
           f_equal.
           erewrite independent_expectation_prod.
           * erewrite independent_expectation_prod.
@@ -6086,7 +6086,7 @@ Qed.
     {
       now apply IsFiniteExpectation_abs.
     }
-    pose (Y := fun n => rvmult (X n) (EventIndicator (classic_dec (event_lt _ (rvabs (X n)) (INR n + 1))))).
+    pose (Y := fun n => rvmult (X n) (EventIndicator (classic_dec (event_lt dom (rvabs (X n)) (INR n + 1))))).
     assert (isfey: forall n, IsFiniteExpectation Prts (Y n)).
     {
       intros.
@@ -6098,7 +6098,7 @@ Qed.
       - now apply rvabs_rv.
       - apply H0.
     }
-    assert (isfey0: forall (n:nat), IsFiniteExpectation Prts (rvmult (X 0%nat) (EventIndicator (classic_dec (event_lt _ (rvabs (X 0%nat)) (INR n + 1)))))).
+    assert (isfey0: forall (n:nat), IsFiniteExpectation Prts (rvmult (X 0%nat) (EventIndicator (classic_dec (event_lt dom (rvabs (X 0%nat)) (INR n + 1)))))).
     {
       intros.
       apply IsFiniteExpectation_indicator; trivial.

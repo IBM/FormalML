@@ -3758,7 +3758,7 @@ Section Rmax_list.
     simpl.
     assert (Rmax (Rmax_list (map f l)) (f a) = Rmax_list ((f a) :: (map f l))).
     {
-      simpl. rewrite <-map_not_nil with (f0 := f) in hl.
+      simpl. rewrite <- (map_not_nil _ f) in hl.
       match_destr; intuition.
       apply Rmax_comm.
     }
@@ -3774,7 +3774,7 @@ Section Rmax_list.
     unfold Rmax_list_map.
     apply Rmax_spec.
     rewrite in_map_iff.
-    rewrite  <-(map_not_nil) with (f0 := f) (l := l1) in Hl1.
+    rewrite  <-(map_not_nil l1 f) in Hl1.
     generalize (Rmax_list_In _ Hl1); intros .
     rewrite in_map_iff in H0.
     destruct H0 as [x [Hx1 Hx2]].
@@ -4737,7 +4737,7 @@ Proof.
   intros m.
   rewrite ex_series_incr_n with (n:=m) in ha.
   assert (ha' : ex_series (fun k => a (k + m)%nat))
-    by (apply ex_series_ext with (a0 := (fun k => a (m+k)%nat)); [intros; f_equal; lia|trivial]).
+    by (apply (ex_series_ext (fun k => a (m+k)%nat)); [intros; f_equal; lia|trivial]).
   generalize (ex_series_is_lim_seq (fun n => a (n+m)%nat) ha'); intros.
   apply is_LimSup_seq_unique. now apply is_lim_LimSup_seq.
 Qed.
@@ -5315,9 +5315,9 @@ Section Qinr.
   Lemma Qs_between_Rbars (x y:Rbar) :
       Rbar_lt x y ->
       exists (a b:Q),
-        Rbar_lt x (Qreals.Q2R a) /\
+        Rbar_lt x (Q2R a) /\
           (a < b)%Q /\
-          Rbar_lt (Qreals.Q2R b) y.
+          Rbar_lt (Q2R b) y.
     Proof.
       destruct x; destruct y; simpl in *; intros ltxy; try tauto.
       - destruct (Q_dense r r0 ltxy) as [a [??]].
