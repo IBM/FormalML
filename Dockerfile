@@ -1,4 +1,4 @@
-ARG coq_image="coqorg/coq:8.11.2"
+ARG coq_image="coqorg/coq:8.12.2"
 FROM ${coq_image}
 
 MAINTAINER Avi Shinnar "shinnar@us.ibm.com"
