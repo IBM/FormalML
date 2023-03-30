@@ -6923,7 +6923,7 @@ Section monotone_class.
 
   Context {S:Type}.
 
-  Lemma vector_monotone_class_theorem
+  Lemma vector_monotone_class_theorem_simple
     (H:(S->R)->Prop)
     (Hbounded:forall f, H f -> exists k, forall s, f s <= k)
     (Hplus: forall f g, H f -> H g -> H (rvplus f g))
@@ -6944,6 +6944,7 @@ Section monotone_class.
     (gk:R)
     (gbounded:forall s, g s <= gk)
     (grv:RandomVariable (generated_sa I) borel_sa g)
+    (gfrf:FiniteRangeFunction g)
     : H g.
   Proof.
     pose (D:=fun F => H (EventIndicator (classic_dec F))).
@@ -7070,7 +7071,31 @@ Section monotone_class.
       now apply Dynkin.
     } 
 
-    
+  Admitted.
+  
+    Lemma vector_monotone_class_theorem
+    (H:(S->R)->Prop)
+    (Hbounded:forall f, H f -> exists k, forall s, f s <= k)
+    (Hplus: forall f g, H f -> H g -> H (rvplus f g))
+    (Hscal: forall c f, H f -> H (rvscale c f))
+    (Hone:H (const 1))
+    (Hlim_closure:
+      forall (fn:nat->(S->R)) (f:S->R) k,
+        (forall n, H (fn n)) ->
+        (forall n s, 0 <= (fn n s)) ->
+        (forall n s, fn n s <= fn (Datatypes.S n) s) ->
+        (forall s, f s <= k) ->
+        (forall s, is_lim_seq (fun n => fn n s) (f s)) ->
+       H f)
+    (I:(S->Prop) -> Prop)
+    {Ipi : Pi_system I}
+    (HcontainsI:forall i, I i -> H (EventIndicator (classic_dec i)))
+    (g:S->R)
+    (gk:R)
+    (gbounded:forall s, g s <= gk)
+    (grv:RandomVariable (generated_sa I) borel_sa g)
+    : H g.
+
 
   Admitted.
 
