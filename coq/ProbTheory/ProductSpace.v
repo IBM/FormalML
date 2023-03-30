@@ -6943,8 +6943,34 @@ Section monotone_class.
     } 
 
     pose (D:=fun F => H (EventIndicator (classic_dec F))).
+    assert (Hproper:Proper (pointwise_relation _ eq ==> iff) H).
+    {
+      intros ???.
+      now apply functional_extensionality in H0; subst.
+    }
+    
     assert (Dlambda : Lambda_system D).
     {
+      unfold D.
+      constructor.
+      - eapply Hproper; try apply Hone.
+        intros ?.
+        unfold EventIndicator, const, pre_Ω.
+        match_destr.
+        tauto.
+      - intros ???.
+        apply Hproper; intros ?.
+        unfold EventIndicator.
+        specialize (H0 a).
+        repeat match_destr; tauto.
+      - intros.
+        apply (Hproper _ 
+                   (proj1_sig (minus (G:=MH) (exist _ (const 1) Hone)
+                (exist _ (EventIndicator (classic_dec a)) H0)))).
+        + intros s.
+          unfold EventIndicator, minus, plus, opp
+        + unfold proj1_sig; match_destr.
+        
       admit.
     }
 
