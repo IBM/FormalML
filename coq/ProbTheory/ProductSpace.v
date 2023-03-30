@@ -6941,6 +6941,18 @@ Section monotone_class.
       intros.
       now destruct (scal x y); simpl.
     } 
+
+    pose (D:=fun F => H (EventIndicator (classic_dec F))).
+    assert (Dlambda : Lambda_system D).
+    {
+      admit.
+    }
+
+    assert (Dcontains_genI :
+             pre_event_sub (sa_sigma (generated_sa I)) D).
+    {
+      now apply Dynkin.
+    } 
     
 
   Admitted.
