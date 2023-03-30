@@ -5442,10 +5442,13 @@ Section MDP.
           {F : nat -> SigmaAlgebra Ts}
 
           (next_state : (sigT M.(act)) -> Ts -> M.(state))
+          (next_state_t : nat -> (sigT M.(act)) -> Ts -> M.(state))          
           {rv_ns0: forall sa, RandomVariable (F 0%nat) (discrete_sa (state M)) (next_state sa)}
           (next_state_rv : forall t sa,
               RandomVariable (F t) (discrete_sa (sigT M.(act))) sa ->
               RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state (sa ω) ω))
+          (next_state_t_rv : forall t sa,
+              RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state_t t sa ω))
           
           (cost : (sigT M.(act)) -> Ts -> R)
           {rv_cost : forall sa, RandomVariable dom borel_sa (cost sa)}
@@ -5472,6 +5475,12 @@ Section MDP.
     intros.
     specialize (rv_ns0 sa).
     now apply (RandomVariable_sa_sub (filt_sub 0%nat)) in rv_ns0.
+  Qed.
+
+  Instance rv_ns_t: forall t sa, RandomVariable dom (discrete_sa (state M)) (next_state_t t sa).
+  Proof.
+    intros.
+    now apply (RandomVariable_sa_sub (filt_sub (S t))).
   Qed.
 
   (* Definition SA := sigT M.(act). *)
@@ -5561,10 +5570,53 @@ Section MDP.
           split; trivial.
   Qed.
 
+  Instance isfe_qmin_t (Q : Rfct (sigT M.(act))) (t : nat) (sa : (sigT M.(act))) :
+    IsFiniteExpectation prts (fun ω => qlearn_Qmin Q (next_state_t t sa ω)).
+  Proof.
+    apply IsFiniteExpectation_bounded with (rv_X1 := const (Rmin_all Q))
+                                           (rv_X3 := const (Rmax_all Q)).
+    - apply IsFiniteExpectation_const.
+    - apply IsFiniteExpectation_const.
+    - intros ?.
+      unfold const, qlearn_Qmin, Rmin_all.
+      match_destr.
+      apply Rge_le.
+      apply Rmin_list_incl.
+      * rewrite map_not_nil.
+        apply act_list_not_nil.
+      * intros ??.
+        apply in_map_iff in H.
+        destruct H as [? [? ?]].
+        subst.
+        apply in_map_iff.
+        exists  (existT (act M) (next_state_t t sa a) x).
+        split; trivial.
+    - intros ?.
+      unfold const, qlearn_Qmin.
+      unfold Rmax_all.
+      match_destr.
+      apply Rle_trans with (r2 := Max_{ act_list (next_state_t t sa a)}(fun a0 : act M (next_state_t t sa a) => Q (existT (act M) (next_state_t t sa a) a0))).
+      + apply Rge_le.
+        apply Rmax_list_map_ge_Rmin.
+      + apply Rmax_list_incl.
+        * rewrite map_not_nil.
+          apply act_list_not_nil.
+        * intros ??.
+          apply in_map_iff in H.
+          destruct H as [? [? ?]].
+          subst.
+          apply in_map_iff.
+          exists  (existT (act M) (next_state_t t sa a) x).
+          split; trivial.
+  Qed.
+
   Definition qlearn_XF (Q : Rfct (sigT M.(act))) : Rfct (sigT M.(act)) :=
     fun sa => FiniteExpectation prts (cost sa) +
               β * (FiniteExpectation prts (fun ω => qlearn_Qmin Q (next_state sa ω))).
 
+  Definition qlearn_XF_t0 (Q : Rfct (sigT M.(act))) : Rfct (sigT M.(act)) :=
+    fun sa => FiniteExpectation prts (cost sa) +
+              β * (FiniteExpectation prts (fun ω => qlearn_Qmin Q (next_state_t 0%nat sa ω))).
 
   Instance isfe_Rmin_list (rvs : list (Ts -> R))
                           {rv_rvs : List.Forall (RandomVariable dom borel_sa) rvs}
@@ -5902,6 +5954,27 @@ Section MDP.
     apply list_sum_rv; intros; try typeclasses eauto.
   Qed.
 
+  Instance rv_qlearn_XF_t0 (g : Ts -> Rfct (sigT M.(act)))
+           (rvg : forall sa, RandomVariable dom borel_sa (fun ω : Ts => g ω sa)) :
+    forall sa, RandomVariable dom borel_sa (fun ω : Ts => qlearn_XF_t0 (g ω) sa).
+  Proof.
+    intros.
+    apply rvplus_rv; try typeclasses eauto.
+    apply rvscale_rv.
+    assert (rv2 : forall a, RandomVariable dom borel_sa (fun v : Ts => qlearn_Qmin (g a) (next_state sa v))).
+    {
+      intros.
+      typeclasses eauto.
+    } 
+    eapply RandomVariable_proper; [reflexivity | reflexivity | ..].
+    {
+      intros ?.
+      rewrite (FiniteExpectation_simple _ _).
+      apply SimpleExpectation_compose_Finite_type.
+    }
+    apply list_sum_rv; intros; try typeclasses eauto.
+  Qed.
+
   Instance rv_qmin_next (g : Ts -> Rfct (sigT M.(act))) t'
     (rvg : forall sa, RandomVariable dom borel_sa (fun ω : Ts => g ω sa))
     (isfe : forall sa, IsFiniteExpectation prts (fun ω : Ts => (g ω sa)))
@@ -5952,6 +6025,74 @@ Section MDP.
     IsFiniteExpectation prts (fun ω : Ts => qlearn_XF (g ω) sa).
   Proof.
     assert (rv2 : forall a, RandomVariable dom borel_sa (fun v : Ts => qlearn_Qmin (g a) (next_state sa v))).
+    {
+      intros.
+      typeclasses eauto.
+    } 
+    apply IsFiniteExpectation_plus.
+    - apply rvconst.
+    - apply rvscale_rv.
+      eapply RandomVariable_proper; [reflexivity | reflexivity | ..].
+      {
+        intros ?.
+        rewrite (FiniteExpectation_simple _ _).
+        apply SimpleExpectation_compose_Finite_type.
+      }
+      apply list_sum_rv; intros; try typeclasses eauto.
+    - apply IsFiniteExpectation_const.
+    - apply IsFiniteExpectation_scale.
+      eapply IsFiniteExpectation_proper.
+      {
+        intros ?.
+        rewrite (FiniteExpectation_simple _ _).
+        apply SimpleExpectation_compose_Finite_type.
+      }
+      apply IsFiniteExpectation_list_sum; try typeclasses eauto.
+      intros.
+      eapply IsFiniteExpectation_proper.
+      intros ?.
+      apply Rmult_comm.
+      apply IsFiniteExpectation_scale.
+      apply IsFiniteExpectation_bounded with
+          (rv_X1 := fun ω => Rmin_all (g ω)) (rv_X3 := fun ω => Rmax_all (g ω)); try typeclasses eauto.
+      + intros ?.
+        unfold Rmin_all, qlearn_Qmin.
+        match_destr.
+        apply Rge_le, Rmin_list_incl.
+        * rewrite map_not_nil.
+           apply act_list_not_nil.
+        * intros ??.
+           apply in_map_iff in H.
+           destruct H as [? [? ?]].
+           subst.
+           apply in_map_iff.
+           exists  (existT (act M) c x).
+           split; trivial.
+      + intros ?.
+        unfold Rmax_all, qlearn_Qmin.
+        apply Rle_trans with
+            (r2 :=  Max_{ act_list c}(fun a0 : act M c => g a (existT (act M) c a0))).
+        * apply Rge_le, Rmax_list_map_ge_Rmin.
+        * match_destr.
+          apply Rmax_list_incl.
+          -- rewrite map_not_nil.
+             apply act_list_not_nil.
+          -- intros ??.
+             apply in_map_iff in H.
+             destruct H as [? [? ?]].
+             subst.
+             apply in_map_iff.
+             exists  (existT (act M) c x).
+             split; trivial.
+  Qed.
+
+  Instance isfe_qlearn_XF_t0 (g : Ts -> Rfct (sigT M.(act))) 
+           (rvg : forall sa, RandomVariable dom borel_sa (fun ω : Ts => (g ω sa)))
+           (isfe : forall sa, IsFiniteExpectation prts (fun ω : Ts => (g ω sa)))
+           (sa : (sigT M.(act))) :
+    IsFiniteExpectation prts (fun ω : Ts => qlearn_XF_t0 (g ω) sa).
+  Proof.
+    assert (rv2 : forall a, RandomVariable dom borel_sa (fun v : Ts => qlearn_Qmin (g a) (next_state_t 0%nat sa v))).
     {
       intros.
       typeclasses eauto.

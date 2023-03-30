@@ -6821,6 +6821,247 @@ Lemma freezing {Ts} {dom : SigmaAlgebra Ts} {prts : ProbSpace dom}
       apply EventIndicator_pre_rv, fst_rv.
   Qed.
 
+  Lemma independent_sas_comm {Ts} {dom dom1 dom2 : SigmaAlgebra Ts} {prts : ProbSpace dom}
+        (sub1 : sa_sub dom1 dom)
+        (sub2 : sa_sub dom2 dom) :
+    independent_sas prts sub1 sub2 <->
+    independent_sas prts sub2 sub1.
+  Proof.
+    unfold independent_sas.
+    split; intros; now apply symmetry.
+  Qed.
+
+  Lemma independent_sas_rv {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
+      {sub : sa_sub dom2 dom}
+      {rv_X : Ts -> X}
+      {rv_Y : Ts -> Y}
+        {rvX : RandomVariable dom A rv_X}
+        {rvY : RandomVariable dom B rv_Y} 
+        {rvX2 : RandomVariable dom2 A rv_X} :
+    independent_sas prts (pullback_rv_sub dom B rv_Y rvY) sub ->  
+    independent_rvs prts A B rv_X rv_Y.
+  Proof.
+    intros.
+    apply independent_sas_comm in H.
+    apply independent_rv_sas.
+    revert H.
+    apply independent_sas_sub_proper; try easy.
+    now apply pullback_rv_sub.
+  Qed.           
+
+  Lemma freezing_rvce_sa {Ts} {dom dom2 : SigmaAlgebra Ts} {prts : ProbSpace dom}
+      (sub : sa_sub dom2 dom)
+        (rv_f : (X * Y) -> R) 
+        (rv_X : Ts -> X)
+        (rv_Y : Ts -> Y)
+        {rvf : RandomVariable (product_sa A B) borel_sa rv_f}
+        {rvf2 : RandomVariable dom borel_sa (fun ω : Ts => rv_f (rv_X ω, rv_Y ω))}
+        {rvX : RandomVariable dom A rv_X}
+        {rvX2 : RandomVariable dom2 A rv_X}
+        {rvY : RandomVariable dom B rv_Y}
+        {indep: independent_sas prts (pullback_rv_sub dom B rv_Y rvY) sub}
+        {isfe:  IsFiniteExpectation prts (fun x : Ts => rv_f (rv_X x, rv_Y x)) }
+        {isfe2 : forall x, IsFiniteExpectation prts (fun ω0 => rv_f (x, rv_Y ω0))} :
+    RandomVariable dom2 Rbar_borel_sa
+                   (fun ω : Ts => (fun x : X => FiniteExpectation prts (fun ω0 : Ts => rv_f (x, rv_Y ω0))) (rv_X ω)).
+  Proof.
+    generalize (freezing_rvce rv_f rv_X rv_Y (indep := independent_sas_rv indep)); intros.
+    now apply (RandomVariable_sa_sub (pullback_rv_sub _ _ _ rvX2)).
+  Qed.
+    
+Lemma freezing_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
+      (sub : sa_sub dom2 dom)
+        (rv_f : (X * Y) -> R) 
+        (rv_X : Ts -> X)
+        (rv_Y : Ts -> Y)
+        {rvf : RandomVariable (product_sa A B) borel_sa rv_f}
+        {rvf2 : RandomVariable dom borel_sa (fun ω : Ts => rv_f (rv_X ω, rv_Y ω))}
+        {rvX : RandomVariable dom A rv_X}
+        {rvX2 : RandomVariable dom2 A rv_X}
+        {rvY : RandomVariable dom B rv_Y} 
+        {indep: independent_sas prts (pullback_rv_sub dom B rv_Y rvY) sub}
+        {isfe : IsFiniteExpectation prts (fun x : Ts => rv_f (rv_X x, rv_Y x))} 
+        {isfe2 : forall x, IsFiniteExpectation prts (fun ω0 => rv_f (x, rv_Y ω0))} :
+
+    is_conditional_expectation prts dom2
+                               (fun ω => rv_f (rv_X ω, rv_Y ω))
+                               (fun ω => ((fun x => FiniteExpectation prts (fun ω0 => rv_f (x, rv_Y ω0))) (rv_X ω)))
+                               (rvce := freezing_rvce_sa sub rv_f rv_X rv_Y (indep := indep)).
+  Proof.
+    unfold is_conditional_expectation.
+    intros.
+    assert (RandomVariable dom2 borel_sa (EventIndicator dec)).
+    {
+      now apply EventIndicator_pre_rv.
+    }
+(*
+    destruct (event_indicator_expressible_if_measurable rv_X (exist _ _ H)) as [E [? ?]].
+    pose (g := EventIndicator (classic_dec E)).
+    assert (HH3: rv_eq (EventIndicator dec) (g ∘ rv_X)).
+    {
+      intros ?.
+      unfold g.
+      unfold compose.
+      rewrite <- H2.
+      apply EventIndicator_ext.
+      intros ?.
+      now simpl.
+    }
+    assert (rv_eq
+              (EventIndicator dec)
+              (compose (compose g fst) (fun ω => (rv_X ω, rv_Y ω)))).
+    {
+      intros ?.
+      rewrite HH3.
+      tauto.
+    }
+    assert (rv_eq
+              (rvmult (fun ω : Ts => rv_f (rv_X ω, rv_Y ω)) (EventIndicator dec))
+              (compose (rvmult rv_f (compose g fst)) (fun ω => (rv_X ω, rv_Y ω)))).
+    {
+      intros ?.
+      unfold rvmult, compose.
+      now rewrite H3.
+    }
+    rewrite (Expectation_ext H4).
+    rewrite Expectation_Rbar_Expectation.
+    generalize (pullback_law (fun ω : Ts => (rv_X ω, rv_Y ω)) (dom2 := product_sa A B)); intros.
+    specialize (H5 (rvmult rv_f  (g ∘ fst)) _ _).
+    unfold compose in H5.
+    unfold compose.
+    rewrite H5.
+    generalize (product_pair_law rv_X rv_Y indep); intros.
+    symmetry in H6.
+    generalize (Rbar_Expectation_ext_ps' _ _ H6 ); intros.
+    etransitivity; [| etransitivity]; [|apply H7|]; [now eapply Rbar_Expectation_ext| apply reflexivity |].
+    symmetry in H6.
+    assert (isfe': IsFiniteExpectation (product_ps (pullback_ps dom A prts rv_X) (pullback_ps dom B prts rv_Y)) rv_f).
+    {
+      assert (IsFiniteExpectation (pullback_ps dom (product_sa A B) prts (fun ω : Ts => (rv_X ω, rv_Y ω))) rv_f).
+      {
+        now apply pullback_law_isfe.
+      }
+      revert H8.
+      apply IsFiniteExpectation_ext_ps'; trivial.
+      reflexivity.
+    }
+    
+    assert (isfe3: Rbar_IsFiniteExpectation (product_ps (pullback_ps dom A prts rv_X) (pullback_ps dom B prts rv_Y))
+                                            (fun omega : X * Y => rvmult rv_f (fun x : X * Y => g (fst x)) omega)).
+    {
+      apply IsFiniteExpectation_Rbar.
+      apply IsFiniteExpectation_mult_bounded with (gmin := 0) (gmax := 1); trivial.
+      intros.
+      unfold g.
+      unfold EventIndicator.
+      match_destr; lra.
+    }
+    erewrite Rbar_FiniteExpectation_Rbar_Expectation.
+
+    assert (isfe5: forall x : X, Rbar_IsFiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y))).
+    {
+      intros.
+      apply IsFiniteExpectation_Rbar.
+      apply IsFiniteExpectation_mult_bounded with (gmin := 0) (gmax := 1).
+      - now apply prod_section_fst_rv.
+      - intros.
+        unfold g.
+        unfold EventIndicator.
+        match_destr; lra.
+      - apply pullback_law_isfe.
+        + now apply prod_section_fst_rv.
+        + apply isfe2.
+    }
+    assert (isfe4: forall a,  Rbar_IsFiniteExpectation prts ((fun y : Y => Finite (rvmult rv_f (fun x : X * Y => g (fst x)) (rv_X a, y))) ∘ rv_Y)).
+    {
+      intros.
+      specialize (isfe5 (rv_X a)).
+      unfold Rbar_IsFiniteExpectation in isfe5.
+      rewrite <- pullback_law in isfe5.
+      apply isfe5.
+      apply Real_Rbar_rv.
+      apply rvmult_rv.
+      - now apply prod_section_fst_rv.
+      - unfold g.
+        apply EventIndicator_pre_rv.
+        unfold fst.
+        apply sa_sigma_const_classic.
+    }
+
+    assert (RandomVariable 
+              A borel_sa
+              (fun x : X => Rbar_FiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y)))).
+    {
+      generalize (fubini_section_fst_rv (A := A) (pullback_ps dom A prts rv_X)  (pullback_ps dom B prts rv_Y) ); intros.
+      specialize (H8 (rvmult rv_f (fun x0 : X * Y => g (fst x0)))).
+      apply H8.
+      - apply Real_Rbar_rv.
+        apply rvmult_rv; trivial.
+        unfold g.
+        apply EventIndicator_pre_rv.
+        apply fst_rv.
+      - apply IsFiniteExpectation_Rbar.
+        apply IsFiniteExpectation_mult_bounded with (gmin := 0) (gmax :=1); trivial.
+        intros.
+        unfold g.
+        unfold EventIndicator.
+        match_destr; lra.
+    }
+    assert (isfe6: Rbar_IsFiniteExpectation 
+                     (pullback_ps dom A prts rv_X)
+                     (fun x : X => Rbar_FiniteExpectation (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y)))).
+    {
+      generalize (Rbar_isfe_fubini_section_fst 
+                    (pullback_ps dom A prts rv_X) (pullback_ps dom B prts rv_Y)); intros.
+      assert (Rbar_IsFiniteExpectation 
+                (pullback_ps dom A prts rv_X)
+                (fun x : X => Rbar_FiniteExpectation0 (pullback_ps dom B prts rv_Y) (fun y : Y => rvmult rv_f (fun x0 : X * Y => g (fst x0)) (x, y)))).
+      {
+        specialize (H9 (rvmult rv_f (fun x0 : X * Y => g (fst x0)))).
+        apply H9; try easy.
+        apply Real_Rbar_rv, rvmult_rv; trivial.
+        unfold g.
+        apply EventIndicator_pre_rv, fst_rv.
+      }
+      revert H10.
+      apply Rbar_IsFiniteExpectation_proper.
+      intros ?.
+      now erewrite Rbar_FiniteExpectation0_finite.
+    }
+    erewrite fubini_section_fst.
+    erewrite <- Rbar_FiniteExpectation_Rbar_Expectation.
+    - erewrite <- pullback_law.
+      + apply Rbar_Expectation_ext.
+        intros ?.
+        unfold compose.
+        erewrite <- pullback_law_Rbar_fin.
+        * unfold Rbar_rvmult.
+          simpl.
+          rewrite Rmult_comm, <- FiniteExpectation_scale.
+          unfold compose.
+          erewrite <- FinExp_Rbar_FinExp.
+          -- apply Rbar_finite_eq, Rbar_FiniteExpectation_ext.
+             intros ?.
+             unfold compose, rvmult, rvscale.
+             rewrite HH3.
+             unfold compose, fst.
+             now rewrite Rmult_comm.
+          -- apply rvscale_rv.
+             apply (compose_rv (dom2 := product_sa A B)); trivial.
+             apply product_sa_rv; typeclasses eauto.
+        * apply Real_Rbar_rv.
+          apply rvmult_rv.
+          -- apply (compose_rv (dom2 := product_sa A B)); trivial.
+             apply product_sa_rv; typeclasses eauto.
+          -- unfold fst.
+             apply rvconst.
+      + now apply Real_Rbar_rv.
+    - apply Real_Rbar_rv, rvmult_rv; trivial.
+      unfold g.
+      apply EventIndicator_pre_rv, fst_rv.
+  Qed.
+*)
+ Admitted.
 End ps_product'.
 
 Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
@@ -6881,7 +7122,7 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
    apply (compose_rv (dom2 := product_sa cod dom3) (fun ω => (X ω, ω)) Psi).
  Qed.
 
- Lemma freezing_sa {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+ Lemma freezing_sa_alt {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
        (sub3 : sa_sub dom3 dom)       
        (X : Ts -> Ts2) 
@@ -6923,9 +7164,9 @@ Section monotone_class.
 
   Context {S:Type}.
 
-  Lemma vector_monotone_class_theorem_simple
+  Lemma function_monotone_class_theorem_simple
     (H:(S->R)->Prop)
-    (Hbounded:forall f, H f -> exists k, forall s, f s <= k)
+    (Hbounded:forall f, H f -> exists k, forall s, Rabs(f s) <= k)
     (Hplus: forall f g, H f -> H g -> H (rvplus f g))
     (Hscal: forall c f, H f -> H (rvscale c f))
     (Hone:H (const 1))
@@ -6942,7 +7183,7 @@ Section monotone_class.
     (HcontainsI:forall i, I i -> H (EventIndicator (classic_dec i)))
     (g:S->R)
     (gk:R)
-    (gbounded:forall s, g s <= gk)
+    (gbounded:forall s, Rabs(g s) <= gk)
     (grv:RandomVariable (generated_sa I) borel_sa g)
     (gfrf:FiniteRangeFunction g)
     : H g.
@@ -7069,13 +7310,43 @@ Section monotone_class.
              pre_event_sub (sa_sigma (generated_sa I)) D).
     {
       now apply Dynkin.
-    } 
-
-  Admitted.
+    }
+    assert (forall (e : pre_event S),
+               (sa_sigma (generated_sa I) e) ->
+               H (EventIndicator (classic_dec e))).
+    {
+      intros.
+      assert (D e) by now apply Dcontains_genI.
+      apply H1.
+    }
+    rewrite frf_preimage_indicator'.
+    specialize (Hlist_sum 
+                  (map (fun c a => c * point_preimage_indicator g c a) (nodup Req_EM_T frf_vals))).
+    cut_to Hlist_sum.
+    - revert Hlist_sum.
+      apply Hproper; intros s.
+      now rewrite map_map.
+    - apply Forall_map.
+      apply Forall_nodup.
+      apply Forall_forall.
+      intros.
+      apply Hscal.
+      unfold point_preimage_indicator.
+      specialize (H0 (fun x0 => g x0 = x)).
+      cut_to H0.
+      + revert H0.
+        apply Hproper.
+        intros ?.
+        unfold EventIndicator.
+        repeat match_destr; congruence.
+      + apply sa_le_pt.
+        intros.
+        now apply rv_measurable.
+  Qed.
   
-    Lemma vector_monotone_class_theorem
+  Lemma function_monotone_class_theorem_nneg
     (H:(S->R)->Prop)
-    (Hbounded:forall f, H f -> exists k, forall s, f s <= k)
+    (Hbounded:forall f, H f -> exists k, forall s, Rabs(f s) <= k)
     (Hplus: forall f g, H f -> H g -> H (rvplus f g))
     (Hscal: forall c f, H f -> H (rvscale c f))
     (Hone:H (const 1))
@@ -7094,10 +7365,76 @@ Section monotone_class.
     (gk:R)
     (gbounded:forall s, g s <= gk)
     (grv:RandomVariable (generated_sa I) borel_sa g)
+    (nng:NonnegativeFunction g)
     : H g.
-
-
-  Admitted.
+  Proof.
+    generalize (simple_approx_lim_seq g nng); intro glim.
+    generalize (simple_approx_frf g); intro apx_frf.
+    generalize (simple_approx_pofrf g); intro apx_nnf.
+    generalize (simple_approx_rv (dom := generated_sa I) g); intros apx_rv.
+    generalize (simple_approx_le g nng); intro apx_le.
+    generalize (simple_approx_increasing g nng); intro apx_inc.
+    apply (Hlim_closure (fun n s => simple_approx g n s) _ gk); try easy.
+    intros.
+    apply function_monotone_class_theorem_simple with (I := I) (gk := gk); try easy.
+    intros.
+    specialize (apx_le n s).
+    simpl in apx_le.
+    rewrite Rabs_right.
+    - eapply Rle_trans.
+      apply apx_le.
+      apply gbounded.
+    - apply Rle_ge.
+      apply apx_nnf.
+  Qed.      
+      
+  Lemma function_monotone_class_theorem
+    (H:(S->R)->Prop)
+    (Hbounded:forall f, H f -> exists k, forall s, Rabs (f s) <= k)
+    (Hplus: forall f g, H f -> H g -> H (rvplus f g))
+    (Hscal: forall c f, H f -> H (rvscale c f))
+    (Hone:H (const 1))
+    (Hlim_closure:
+      forall (fn:nat->(S->R)) (f:S->R) k,
+        (forall n, H (fn n)) ->
+        (forall n s, 0 <= (fn n s)) ->
+        (forall n s, fn n s <= fn (Datatypes.S n) s) ->
+        (forall s, f s <= k) ->
+        (forall s, is_lim_seq (fun n => fn n s) (f s)) ->
+       H f)
+    (I:(S->Prop) -> Prop)
+    {Ipi : Pi_system I}
+    (HcontainsI:forall i, I i -> H (EventIndicator (classic_dec i)))
+    (g:S->R)
+    (gk:R)
+    (gbounded:forall s, Rabs(g s) <= gk)
+    (grv:RandomVariable (generated_sa I) borel_sa g)
+    : H g.
+  Proof.
+    assert (Hproper:Proper (pointwise_relation _ eq ==> iff) H).
+    {
+      intros ???.
+      now apply functional_extensionality in H0; subst.
+    }
+    rewrite rv_pos_neg_id.
+    apply Hplus.
+    - apply function_monotone_class_theorem_nneg with (I := I) (gk := gk); try easy.
+      + intros.
+        eapply Rle_trans.
+        apply pos_fun_part_le.
+        apply gbounded.
+      + now apply positive_part_rv.
+      + apply positive_part_nnf.
+    - unfold rvopp.
+      apply Hscal.
+      apply function_monotone_class_theorem_nneg with (I := I) (gk := gk); try easy.
+      + intros.
+        eapply Rle_trans.
+        apply neg_fun_part_le.
+        apply gbounded.
+      + now apply negative_part_rv.
+      + apply negative_part_nnf.
+  Qed.
 
 End monotone_class.
    
