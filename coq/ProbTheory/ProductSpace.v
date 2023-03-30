@@ -6905,9 +6905,8 @@ Section monotone_class.
   Lemma vector_monotone_class_theorem
     (H:(S->R)->Prop)
     (Hbounded:forall f, H f -> exists k, forall s, f s <= k)
-    (Habel:AbelianGroup.mixin_of {x | H x})
-    (Hmodule:ModuleSpace.mixin_of R_Ring
-               (AbelianGroup.Pack _ Habel {x | H x})) 
+    (Hplus: forall f g, H f -> H g -> H (rvplus f g))
+    (Hscal: forall c f, H f -> H (rvscale c f))
     (Hone:H (const 1))
     (Hlim_closure:
       forall (fn:nat->(S->R)) (f:S->R) k,
@@ -6926,22 +6925,6 @@ Section monotone_class.
     (grv:RandomVariable (generated_sa I) borel_sa g)
     : H g.
   Proof.
-    pose (MH:=ModuleSpace.Pack R_Ring
-                (AbelianGroup.Pack _ Habel {x | H x})
-                (ModuleSpace.Class _ _ _ Hmodule ) R_Ring).
-
-    assert (Htemp : forall (x y : MH), H (proj1_sig (plus x y))).
-    {
-      intros.
-      now destruct (plus x y); simpl.
-    } 
-
-    assert (Htemp2 : forall (x:R) (y : MH), H (proj1_sig (scal x y))).
-    {
-      intros.
-      now destruct (scal x y); simpl.
-    } 
-
     pose (D:=fun F => H (EventIndicator (classic_dec F))).
     assert (Hproper:Proper (pointwise_relation _ eq ==> iff) H).
     {
@@ -6964,14 +6947,12 @@ Section monotone_class.
         specialize (H0 a).
         repeat match_destr; tauto.
       - intros.
-        apply (Hproper _ 
-                   (proj1_sig (minus (G:=MH) (exist _ (const 1) Hone)
-                (exist _ (EventIndicator (classic_dec a)) H0)))).
-        + intros s.
-          unfold EventIndicator, minus, plus, opp
-        + unfold proj1_sig; match_destr.
-        
-      admit.
+        generalize (Hplus _ _ Hone (Hscal (-1) _ H0)).
+        apply Hproper; intros ?.
+        unfold EventIndicator, rvplus, rvscale, const, pre_event_complement.
+        repeat match_destr; try tauto; try lra.
+      - intros.
+
     }
 
     assert (Dcontains_genI :
