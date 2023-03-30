@@ -6897,8 +6897,29 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
  Proof.
    Admitted.
 
-Require Import Coquelicot.Coquelicot Dynkin.
+Require Import Dynkin.
 Section monotone_class.
+
+  Lemma pre_event_indicator_disjoint_sum {Ts}
+    (l : list (pre_event Ts))
+    (union_dec:forall l (a:Ts), {pre_list_union l a} + {~ pre_list_union l a})
+    (is_disj: ForallOrdPairs pre_event_disjoint l) :
+    forall a, EventIndicator (union_dec l) a =
+    (list_sum
+       (map (fun ev => EventIndicator (classic_dec ev) a) l)).
+  Proof.
+    unfold EventIndicator; intros.
+    induction l.
+    - match_destr; simpl in *.
+      destruct p; simpl in *; tauto.
+    - invcs is_disj.
+      specialize (IHl H2).
+      simpl.
+      rewrite Forall_forall in H1.
+      rewrite <- IHl; clear IHl.
+      unfold pre_list_union in *.
+      repeat match_destr; try lra; firstorder congruence.
+  Qed.
 
   Context {S:Type}.
 
@@ -6931,6 +6952,25 @@ Section monotone_class.
       intros ???.
       now apply functional_extensionality in H0; subst.
     }
+
+    assert (Hconst : forall c, H (const c)).
+    {
+      intros.
+      apply (Hproper _ (rvscale c (const 1))).
+      - unfold rvscale, const.
+        intros ?; lra.
+      - apply Hscal.
+        apply Hone.
+    }
+
+    assert (Hlist_sum : forall (l:list (S->R)),
+               Forall H l -> H (fun s => (list_sum (map (fun x => x s) l)))).
+    {
+      induction l; intros; simpl.
+      - apply Hconst.
+      - invcs H0.
+        apply Hplus; auto.
+    }
     
     assert (Dlambda : Lambda_system D).
     {
@@ -6952,7 +6992,76 @@ Section monotone_class.
         unfold EventIndicator, rvplus, rvscale, const, pre_event_complement.
         repeat match_destr; try tauto; try lra.
       - intros.
-
+        apply (Hlim_closure
+                 (fun n => (EventIndicator (classic_dec
+                                           (pre_list_union (collection_take an n))))) _ 1).
+        + intros.
+          apply (Hproper _
+                         (fun a : S =>
+                            list_sum
+                              (map (fun x => x a)
+                                 (map (fun ev : pre_event S => EventIndicator (classic_dec ev)) (collection_take an n))))
+).
+          * intros ?.
+            rewrite (pre_event_indicator_disjoint_sum (collection_take an n)
+                       (fun l => classic_dec (pre_list_union l))).
+            -- now rewrite map_map.
+            -- now apply pre_collection_take_preserves_disjoint.
+          * apply Hlist_sum.
+            apply Forall_map.
+            apply Forall_forall; intros.
+            apply In_collection_take in H2.
+            now destruct H2 as [? [??]]; subst.
+        + intros.
+          apply EventIndicator_pos.
+        + intros.
+          unfold EventIndicator.
+          repeat match_destr; try lra.
+          elim n0.
+          apply pre_list_union_take_Sn.
+          now left.
+        + intros.
+          unfold EventIndicator.
+          match_destr; try lra.
+        + intros.
+          apply is_lim_seq_spec.
+          simpl; intros eps.
+          destruct (classic_min_of_sumbool (fun n => an n s)).
+          * destruct s0 as [N [anN _]].
+            exists (Datatypes.S N).
+            intros.
+            assert (eqq:(EventIndicator (classic_dec (pre_list_union (collection_take an n))) s =
+                       EventIndicator (classic_dec (pre_union_of_collection an)) s)).
+            {
+              unfold EventIndicator.
+              repeat match_destr.
+              - elim n0.
+                revert p.
+                apply pre_list_union_take_collection_sub.
+              - elim n0.
+                exists (an N).
+                split; trivial.
+                apply in_map.
+                apply in_seq.
+                lia.
+            }
+            rewrite eqq, Rminus_eq_0, Rabs_R0.
+            apply cond_pos.
+          * exists 0%nat; intros.
+            assert (eqq:(EventIndicator (classic_dec (pre_list_union (collection_take an n0))) s =
+                           EventIndicator (classic_dec (pre_union_of_collection an)) s)).
+            {
+              unfold EventIndicator.
+              repeat match_destr.
+              - destruct p as [? [inn ?]].
+                apply In_collection_take in inn.
+                destruct inn as [? [??]]; subst.
+                elim (n _ H3).
+              - destruct p.
+                elim (n _ H3).
+            }
+            rewrite eqq, Rminus_eq_0, Rabs_R0.
+            apply cond_pos.
     }
 
     assert (Dcontains_genI :
@@ -6960,6 +7069,7 @@ Section monotone_class.
     {
       now apply Dynkin.
     } 
+
     
 
   Admitted.
