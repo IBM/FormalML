@@ -6926,6 +6926,8 @@ Section monotone_class.
     (grv:RandomVariable (generated_sa I) borel_sa g)
     : H g.
   Proof.
+    pose (MH:=ModuleSpace.Pack R_Ring
+               (AbelianGroup.Pack _ Habel R)).
   Admitted.
 
 End monotone_class.
