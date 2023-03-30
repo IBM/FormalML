@@ -6907,7 +6907,7 @@ Section monotone_class.
     (Hbounded:forall f, H f -> exists k, forall s, f s <= k)
     (Habel:AbelianGroup.mixin_of {x | H x})
     (Hmodule:ModuleSpace.mixin_of R_Ring
-               (AbelianGroup.Pack _ Habel R)) 
+               (AbelianGroup.Pack _ Habel {x | H x})) 
     (Hone:H (const 1))
     (Hlim_closure:
       forall (fn:nat->(S->R)) (f:S->R) k,
@@ -6927,7 +6927,22 @@ Section monotone_class.
     : H g.
   Proof.
     pose (MH:=ModuleSpace.Pack R_Ring
-               (AbelianGroup.Pack _ Habel R)).
+                (AbelianGroup.Pack _ Habel {x | H x})
+                (ModuleSpace.Class _ _ _ Hmodule ) R_Ring).
+
+    assert (Htemp : forall (x y : MH), H (proj1_sig (plus x y))).
+    {
+      intros.
+      now destruct (plus x y); simpl.
+    } 
+
+    assert (Htemp2 : forall (x:R) (y : MH), H (proj1_sig (scal x y))).
+    {
+      intros.
+      now destruct (scal x y); simpl.
+    } 
+    
+
   Admitted.
 
 End monotone_class.
