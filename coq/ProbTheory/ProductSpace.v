@@ -6897,5 +6897,37 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
  Proof.
    Admitted.
 
-  
+Require Import Coquelicot.Coquelicot Dynkin.
+Section monotone_class.
 
+  Context {S:Type}.
+
+  Lemma vector_monotone_class_theorem
+    (H:(S->R)->Prop)
+    (Hbounded:forall f, H f -> exists k, forall s, f s <= k)
+    (Habel:AbelianGroup.mixin_of {x | H x})
+    (Hmodule:ModuleSpace.mixin_of R_Ring
+               (AbelianGroup.Pack _ Habel R)) 
+    (Hone:H (const 1))
+    (Hlim_closure:
+      forall (fn:nat->(S->R)) (f:S->R) k,
+        (forall n, H (fn n)) ->
+        (forall n s, 0 <= (fn n s)) ->
+        (forall n s, fn n s <= fn (Datatypes.S n) s) ->
+        (forall s, f s <= k) ->
+        (forall s, is_lim_seq (fun n => fn n s) (f s)) ->
+       H f)
+    (I:(S->Prop) -> Prop)
+    {Ipi : Pi_system I}
+    (HcontainsI:forall i, I i -> H (EventIndicator (classic_dec i)))
+    (g:S->R)
+    (gk:R)
+    (gbounded:forall s, g s <= gk)
+    (grv:RandomVariable (generated_sa I) borel_sa g)
+    : H g.
+  Proof.
+  Admitted.
+
+End monotone_class.
+   
+   
