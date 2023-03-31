@@ -7434,8 +7434,6 @@ Section monotone_class.
         apply gbounded.
       + now apply negative_part_rv.
       + apply negative_part_nnf.
-  Qed.
+  Qed.  
 
 End monotone_class.
-   
-   

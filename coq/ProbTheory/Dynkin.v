@@ -644,3 +644,69 @@ Section extension_uniqueness.
   Qed.
 
 End extension_uniqueness.
+
+(* alternative language of monotone class theorem *)
+Section monotone_class_def.
+
+  (* This is redundant with Dynkin and lambda_union_alt_suffices. *)
+  Context {E:Type}.
+  
+  Class monotone_class (M : pre_event E -> Prop)
+    := mk_monotone_class {
+        monotone_Ω : M pre_Ω
+      ; monotone_proper :> Proper (pre_event_equiv ==> iff) M
+      ; monotone_diff a b :
+          M a -> M b ->
+          pre_event_sub a b ->
+          M (pre_event_diff b a)
+      ; monotone_inc_union (collection: nat -> pre_event E) :
+        (forall n, M (collection n)) ->
+        (forall (n:nat), pre_event_sub (collection n) (collection (S n))) ->
+        M (pre_union_of_collection collection)
+         }.
+
+  Lemma pre_union_of_collection_as_ascending_equiv (an : nat -> pre_event E) :
+    pre_event_equiv (pre_union_of_collection an)
+      (pre_union_of_collection (fun n : nat => pre_list_union (collection_take an (S n)))).
+  Proof.
+    intros e.
+    split; intros [n ?].
+    - exists n, (an n).
+      split; trivial.
+      apply in_map.
+      apply in_seq; lia.
+    - destruct H as [n2 [??]].
+      apply In_collection_take in H.
+      destruct H as [? [??]]; subst.
+      now exists x.
+  Qed.
+
+  Instance monotone_class_lambda_systeem (M : pre_event E -> Prop)
+    {Mmc : monotone_class M} : Lambda_system M.
+  Proof.
+    apply lambda_union_alt_suffices.
+    - apply monotone_Ω.
+    - apply monotone_proper.
+    - apply monotone_diff.
+    - intros.
+      now apply monotone_inc_union.
+  Qed.      
+
+  Instance lambda_systeem_monotone_class (M : pre_event E -> Prop)
+    {Mls : Lambda_system M} : monotone_class M.
+  Proof.
+    constructor.
+    - apply lambda_Ω.
+    - apply lambda_proper.
+    - now apply lambda_complement_alt .
+    - now apply lambda_union_alt.
+  Qed.      
+
+  Theorem monotone_class_theorem (C:pre_event E -> Prop) (D:pre_event E -> Prop) {cpi:Pi_system C} {Dmc:monotone_class D} :
+    pre_event_sub C D -> pre_event_sub (sa_sigma (generated_sa C)) D.
+  Proof.
+    apply Dynkin; trivial.
+    now apply monotone_class_lambda_systeem.
+  Qed.
+  
+End monotone_class_def.
