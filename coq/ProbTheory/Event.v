@@ -2206,6 +2206,22 @@ Section event.
     apply collection_take_sub.
   Qed.
 
+  Lemma pre_union_of_collection_as_ascending_equiv {E} (an : nat -> pre_event E) :
+    pre_event_equiv (pre_union_of_collection an)
+      (pre_union_of_collection (fun n : nat => pre_list_union (collection_take an (S n)))).
+  Proof.
+    intros e.
+    split; intros [n ?].
+    - exists n, (an n).
+      split; trivial.
+      apply in_map.
+      apply in_seq; lia.
+    - destruct H as [n2 [??]].
+      apply In_collection_take in H.
+      destruct H as [? [??]]; subst.
+      now exists x.
+  Qed.
+
   End take.
 
   Lemma event_union_list_union (c:nat->event σ) :
