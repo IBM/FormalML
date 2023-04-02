@@ -7158,9 +7158,7 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
                 (EventIndicator (classic_dec b)))).
    {
      intros ?.
-     unfold EventIndicator, rvmult.
-     match_destr; match_destr; match_destr; try lra; try (rewrite H0 in e; now destruct e).
-     rewrite H0 in n; now destruct n.
+     apply H1.
    }
    assert (rvx2 : RandomVariable dom2 borel_sa (fun ω : Ts => EventIndicator (classic_dec a) (X ω))).
    {
@@ -7220,76 +7218,213 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      apply EventIndicator_rv.
  Qed.
 
-   Lemma freezing_class_nneg_monotone 
-         {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+
+ Section class_of_stuff.
+
+   Context
+     {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
          (sub2 : sa_sub dom2 dom)
          (sub3 : sa_sub dom3 dom)       
          (indep: independent_sas prts sub2 sub3)
-         (M:(Ts2 * Ts ->R)->Prop)
-         (rvPsi : forall f, M f -> RandomVariable (product_sa cod dom3) borel_sa f)
-         (rvPsi2: forall f (X : Ts -> Ts2), 
-             M f ->
-             RandomVariable dom2 cod X ->
-             RandomVariable dom borel_sa (fun ω : Ts => f (X ω, ω)))
-         (isfe : forall f (X : Ts -> Ts2), 
-             M f -> 
-             RandomVariable dom2 cod X ->
-             IsFiniteExpectation prts (fun ω => f (X ω, ω)))
-         (isfe2: forall f x, M f -> IsFiniteExpectation prts (fun ω : Ts => f (x, ω)))
-         (cefe : forall (f : (Ts2 * Ts -> R)) (X : Ts -> Ts2),
-             forall (rvX : RandomVariable dom2 cod X), 
-             forall (rv : RandomVariable dom borel_sa (fun ω : Ts => f (X ω, ω))),
-             forall (isfe : forall x, IsFiniteExpectation prts (fun ω : Ts => f (x, ω))),
-             M f ->
-             almostR2 (prob_space_sa_sub prts sub2) eq (ConditionalExpectation prts sub2 (fun ω => f (X ω, ω)))
-                      (fun ω => ((fun x => FiniteExpectation prts (fun ω => f (x, ω))) (X ω)))) :
-     forall (fn : nat -> (Ts2 * Ts) -> R) (X : Ts -> Ts2),
-       forall (rvX : RandomVariable dom2 cod X),
-       (forall n, NonnegativeFunction (fn n)) ->
-       (forall n, M (fn n)) ->
-       (forall n, rv_le (fn n) (fn (S n))) ->
-       forall (rv : RandomVariable dom borel_sa (fun ω : Ts => Lim_seq (fun n => fn n (X ω, ω)))),
-       forall (isfe : forall x, IsFiniteExpectation prts (fun ω : Ts => Lim_seq (fun n => fn n (x, ω)))),
-         almostR2 (prob_space_sa_sub prts sub2) eq (ConditionalExpectation prts sub2 (fun ω => Lim_seq (fun n => fn n (X ω, ω))))
-                  (fun ω => ((fun x => FiniteExpectation prts (fun ω => Lim_seq (fun n => fn n (x, ω)))) (X ω))).
+         (X:Ts -> Ts2)
+         {rvX:RandomVariable dom2 cod X}.
+
+   Definition freezing_Vplus (ψ:Ts2 * Ts ->R) : Prop
+     := NonnegativeFunction ψ /\
+          exists rvψ : RandomVariable dom borel_sa (fun ω : Ts => ψ (X ω, ω)),
+            exists isfeψ : forall x, IsFiniteExpectation prts (fun ω : Ts => ψ (x, ω)),
+                    almostR2 (prob_space_sa_sub prts sub2) eq
+                    (ConditionalExpectation _ sub2 (fun ω => ψ (X ω,ω)))
+                    (fun ω => ((fun x => FiniteExpectation prts (fun ω => ψ (x, ω))) (X ω))).
+
+
+   Lemma freezing_Vplus_has_increasing_limits
+     (ψn : nat -> (Ts2 * Ts -> R))
+     (ψn_Vplus : forall n, freezing_Vplus (ψn n)) : 
+     (forall n, rv_le (ψn n) (ψn (S n))) ->
+     freezing_Vplus (fun ω => Lim_seq (fun n => ψn n ω)).
    Proof.
      intros.
-     pose (F := (fun ω => Lim_seq (fun n => fn n ω))).
-     
-     assert (rvF : RandomVariable (product_sa cod dom3) borel_sa F).
-     {
+     split.
+     - admit.
+     - assert (rvψ : RandomVariable dom borel_sa (fun ω : Ts => Lim_seq (fun n : nat => ψn n (X ω, ω)))).
+       {
+         admit.
+       }
+       exists rvψ.
+       assert (isfeψ : forall x : Ts2,
+                  IsFiniteExpectation prts (fun ω : Ts => Lim_seq (fun n : nat => ψn n (x, ω)))).
+       {
+         admit.
+       }
+       exists isfeψ.
        admit.
-     }
-     assert (rvF2 : 
-               forall (X : Ts -> Ts2),
-                 RandomVariable dom2 cod X ->
-                 RandomVariable dom borel_sa (fun ω : Ts => F (X ω, ω))).
+   Admitted.
+   
+   Lemma EventIndicator_all {Ts'} : rv_eq (EventIndicator (Ts:=Ts') (classic_dec pre_Ω)) (const 1).
+   Proof.
+     intros ?.
+     unfold EventIndicator.
+     match_destr.
+     now elim n.
+   Qed.
+
+   Instance freezing_Vplus_proper : Proper (rv_eq ==> iff) (freezing_Vplus).
+   Proof.
+     cut (Proper (rv_eq ==> Basics.impl) (freezing_Vplus)).
      {
-       admit.
-     }
-     assert (isfeF : 
-               forall (X : Ts -> Ts2), 
-                 RandomVariable dom2 cod X ->
-                 IsFiniteExpectation prts (fun ω => F (X ω, ω))).
+       intros ????.
+       split; apply H; trivial.
+       now symmetry.
+     } 
+     intros ???[?[?[??]]].
+     split.
+     - now rewrite <- H. 
+     - assert (rvψ : RandomVariable dom borel_sa
+                      (fun ω : Ts => y (X ω, ω))).
+       {
+         eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _)); try apply x0.
+         intros ?.
+         now rewrite <- H.
+       } 
+       exists rvψ.
+       assert (isfeψ : forall x2 : Ts2,
+                  IsFiniteExpectation prts (fun ω : Ts => y (x2, ω))).
+       {
+         intros.
+         eapply IsFiniteExpectation_proper; try apply x1.
+         intros ?.
+         now rewrite <- H.
+       }
+       exists isfeψ.
+       etransitivity; [etransitivity |]; [| apply H1 |].
+       + apply Condexp_proper.
+         apply all_almost; intros ?.
+         now rewrite <- H.
+       + apply all_almost; intros ?.
+         f_equal.
+         apply FiniteExpectation_ext; intros ?.
+         now rewrite <- H.
+   Qed.
+
+   Lemma freezing_Vplus_all : freezing_Vplus (EventIndicator (classic_dec pre_Ω)).
+   Proof.
+     rewrite EventIndicator_all.
+     split.
+     - intros ?; unfold const; lra.
+     - assert (rvψ : RandomVariable dom borel_sa
+                        (fun ω : Ts => const 1 (X ω, ω))).
+       {
+         apply rvconst.
+       } 
+       exists rvψ.
+       assert (isfeψ : forall x : Ts2,
+                  IsFiniteExpectation prts (fun ω : Ts => const 1 (x, ω))).
+       {
+         intros.
+         apply IsFiniteExpectation_const.
+       }
+       exists isfeψ.
+       unfold const.
+       transitivity (ConditionalExpectation prts sub2 (const 1)).
+       + apply Condexp_proper.
+         reflexivity.
+       + rewrite Condexp_const.
+         apply all_almost; intros ?.
+         rewrite (FiniteExpectation_ext _ _ (const 1)).
+         * now rewrite FiniteExpectation_const.
+         * reflexivity.
+   Qed.
+
+   Definition freezing_M (e:pre_event (Ts2 * Ts))
+     : Prop
+     := sa_sigma (product_sa cod dom3) e /\
+          freezing_Vplus (EventIndicator (classic_dec e)).
+
+   Instance freezing_M_proper : Proper (pre_event_equiv ==> iff) (freezing_M).
+   Proof.
+     cut (Proper (pre_event_equiv ==> Basics.impl) (freezing_M)).
      {
-       admit.
-     }
-     assert (isfeF2 : forall x, IsFiniteExpectation prts (fun ω : Ts => F (x, ω))).
-     {
-       admit.
-     }
-     assert (cefeF : 
-               forall (X : Ts -> Ts2),
-               forall (rv : RandomVariable dom borel_sa (fun ω : Ts => F (X ω, ω))),
-               forall (isfe : forall x, IsFiniteExpectation prts (fun ω : Ts => F (x, ω))),
-                 RandomVariable dom2 cod X ->
-                 almostR2 (prob_space_sa_sub prts sub2) eq (ConditionalExpectation prts sub2 (fun ω => F (X ω, ω)))
-                          (fun ω => ((fun x => FiniteExpectation prts (fun ω => F (x, ω))) (X ω)))).
-     {
-       admit.
-     }
-     Admitted.
- 
+       intros ????.
+       split; apply H; trivial.
+       now symmetry.
+     } 
+
+     intros ???[??].
+     split.
+     - revert H0.
+       now apply sa_proper.
+     - revert H1.
+       apply freezing_Vplus_proper.
+       intros ?.
+       unfold EventIndicator.
+       repeat match_destr.
+       + now apply H in y0.
+       + now apply H in x0.
+   Qed.
+
+   Lemma freezing_M_all : freezing_M pre_Ω.
+   Proof.
+     split.
+     - apply sa_all.
+     - apply freezing_Vplus_all.
+   Qed.
+
+   Lemma freezing_M_relative_complement (a b : pre_event (Ts2 * Ts)) :
+     freezing_M a -> freezing_M b -> pre_event_sub a b -> freezing_M (pre_event_diff b a).
+   Proof.
+     intros [??] [??] subab.
+     split.
+     - now apply sa_diff.
+     - split.
+       + apply EventIndicator_pos.
+       + assert (rvψ : RandomVariable dom borel_sa
+                         (fun ω : Ts => EventIndicator (classic_dec (pre_event_diff b a)) (X ω, ω))).
+         {
+           admit.
+         } 
+   Admitted.
+
+   Lemma Lim_seq_ascending_EventIndicator_union {Ts'} (collection: nat -> pre_event Ts') :
+      (forall n : nat, pre_event_sub (collection n) (collection (S n))) ->
+     rv_eq (EventIndicator (classic_dec (pre_union_of_collection collection)))
+       (fun ω : Ts' => Lim_seq (fun n : nat => EventIndicator (classic_dec (collection n)) ω)).
+   Proof.
+   Admitted.
+
+   Lemma freezing_M_ascending_limit (collection : nat -> pre_event (Ts2 * Ts)) :
+      (forall n : nat, freezing_M (collection n)) ->
+      (forall n : nat, pre_event_sub (collection n) (collection (S n))) ->
+      freezing_M (pre_union_of_collection collection).
+    Proof.
+      intros ??.
+      split.
+      - apply sa_countable_union; intros.
+        apply (H n).
+      - generalize (freezing_Vplus_has_increasing_limits (fun n => EventIndicator (classic_dec (collection n)))); intros HH.
+        cut_to HH.
+        + revert HH.
+          apply freezing_Vplus_proper.
+          now apply Lim_seq_EventIndicator_union.
+        + intros.
+          apply (H n).
+        + intros ??.
+          unfold EventIndicator.
+          repeat match_destr; try lra.
+          elim n0.
+          now apply H0.
+    Qed.
+   
+   Instance freezing_M_monotone_class : monotone_class freezing_M.
+   Proof.
+     constructor.
+     - apply freezing_M_all.
+     - apply freezing_M_proper.
+     - apply freezing_M_relative_complement.
+     - apply freezing_M_ascending_limit.
+   Qed.
+
+   
  Lemma freezing_sa_indicator {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
        (sub3 : sa_sub dom3 dom)       
