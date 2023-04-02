@@ -7387,10 +7387,26 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
 
    Lemma Lim_seq_ascending_EventIndicator_union {Ts'} (collection: nat -> pre_event Ts') :
       (forall n : nat, pre_event_sub (collection n) (collection (S n))) ->
-     rv_eq (EventIndicator (classic_dec (pre_union_of_collection collection)))
+     rv_eq (fun x => Finite (EventIndicator (classic_dec (pre_union_of_collection collection)) x))
        (fun ω : Ts' => Lim_seq (fun n : nat => EventIndicator (classic_dec (collection n)) ω)).
    Proof.
-   Admitted.
+     intros ??.
+     unfold EventIndicator.
+     match_destr.
+     - destruct p.
+       rewrite <- (Lim_seq_incr_n _ (S x)).
+       rewrite <- (Lim_seq_const 1).
+       apply Lim_seq_ext; intros ?.
+       match_destr.
+       elim n0.
+       eapply pre_collection_increasing_trans; try apply H0; trivial.
+       lia.
+     - rewrite <- (Lim_seq_const 0).
+       apply Lim_seq_ext; intros ?.
+       match_destr.
+       elim n.
+       now exists n0.
+   Qed.
 
    Lemma freezing_M_ascending_limit (collection : nat -> pre_event (Ts2 * Ts)) :
       (forall n : nat, freezing_M (collection n)) ->
@@ -7401,12 +7417,14 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
       split.
       - apply sa_countable_union; intros.
         apply (H n).
-      - generalize (freezing_Vplus_has_increasing_limits (fun n => EventIndicator (classic_dec (collection n)))); intros HH.
+      - generalize (freezing_Vplus_has_increasing_limits
+                      (fun n => EventIndicator (classic_dec (collection n)))); intros HH.
         cut_to HH.
         + revert HH.
           apply freezing_Vplus_proper.
-          now apply Lim_seq_EventIndicator_union.
-        + intros.
+          intros ?.
+          now rewrite <- Lim_seq_ascending_EventIndicator_union.
+        + intro.
           apply (H n).
         + intros ??.
           unfold EventIndicator.
