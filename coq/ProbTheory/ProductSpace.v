@@ -7211,13 +7211,14 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
        rewrite Rmult_comm.
        rewrite <- FiniteExpectation_scale.
        unfold rvmult, rvscale.
-       admit.
+       f_equal.
+       now apply FiniteExpectation_ext.
    - rewrite independent_sas_comm in H.
      revert H.
      apply independent_sas_sub_proper; try easy.
      apply pullback_rv_sub.
      apply EventIndicator_rv.
- Admitted.
+ Qed.
  
  Lemma freezing_sa_indicator {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
