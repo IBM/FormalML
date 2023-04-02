@@ -7219,6 +7219,76 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      apply pullback_rv_sub.
      apply EventIndicator_rv.
  Qed.
+
+   Lemma freezing_class_nneg_monotone 
+         {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+         (sub2 : sa_sub dom2 dom)
+         (sub3 : sa_sub dom3 dom)       
+         (indep: independent_sas prts sub2 sub3)
+         (M:(Ts2 * Ts ->R)->Prop)
+         (rvPsi : forall f, M f -> RandomVariable (product_sa cod dom3) borel_sa f)
+         (rvPsi2: forall f (X : Ts -> Ts2), 
+             M f ->
+             RandomVariable dom2 cod X ->
+             RandomVariable dom borel_sa (fun ω : Ts => f (X ω, ω)))
+         (isfe : forall f (X : Ts -> Ts2), 
+             M f -> 
+             RandomVariable dom2 cod X ->
+             IsFiniteExpectation prts (fun ω => f (X ω, ω)))
+         (isfe2: forall f x, M f -> IsFiniteExpectation prts (fun ω : Ts => f (x, ω)))
+         (cefe : forall (f : (Ts2 * Ts -> R)) (X : Ts -> Ts2),
+             forall (rvX : RandomVariable dom2 cod X), 
+             forall (rv : RandomVariable dom borel_sa (fun ω : Ts => f (X ω, ω))),
+             forall (isfe : forall x, IsFiniteExpectation prts (fun ω : Ts => f (x, ω))),
+             M f ->
+             almostR2 (prob_space_sa_sub prts sub2) eq (ConditionalExpectation prts sub2 (fun ω => f (X ω, ω)))
+                      (fun ω => ((fun x => FiniteExpectation prts (fun ω => f (x, ω))) (X ω)))) :
+     forall (fn : nat -> (Ts2 * Ts) -> R) (X : Ts -> Ts2),
+       forall (rvX : RandomVariable dom2 cod X),
+       (forall n, NonnegativeFunction (fn n)) ->
+       (forall n, M (fn n)) ->
+       (forall n, rv_le (fn n) (fn (S n))) ->
+       forall (rv : RandomVariable dom borel_sa (fun ω : Ts => Lim_seq (fun n => fn n (X ω, ω)))),
+       forall (isfe : forall x, IsFiniteExpectation prts (fun ω : Ts => Lim_seq (fun n => fn n (x, ω)))),
+         almostR2 (prob_space_sa_sub prts sub2) eq (ConditionalExpectation prts sub2 (fun ω => Lim_seq (fun n => fn n (X ω, ω))))
+                  (fun ω => ((fun x => FiniteExpectation prts (fun ω => Lim_seq (fun n => fn n (x, ω)))) (X ω))).
+   Proof.
+     intros.
+     pose (F := (fun ω => Lim_seq (fun n => fn n ω))).
+     
+     assert (rvF : RandomVariable (product_sa cod dom3) borel_sa F).
+     {
+       admit.
+     }
+     assert (rvF2 : 
+               forall (X : Ts -> Ts2),
+                 RandomVariable dom2 cod X ->
+                 RandomVariable dom borel_sa (fun ω : Ts => F (X ω, ω))).
+     {
+       admit.
+     }
+     assert (isfeF : 
+               forall (X : Ts -> Ts2), 
+                 RandomVariable dom2 cod X ->
+                 IsFiniteExpectation prts (fun ω => F (X ω, ω))).
+     {
+       admit.
+     }
+     assert (isfeF2 : forall x, IsFiniteExpectation prts (fun ω : Ts => F (x, ω))).
+     {
+       admit.
+     }
+     assert (cefeF : 
+               forall (X : Ts -> Ts2),
+               forall (rv : RandomVariable dom borel_sa (fun ω : Ts => F (X ω, ω))),
+               forall (isfe : forall x, IsFiniteExpectation prts (fun ω : Ts => F (x, ω))),
+                 RandomVariable dom2 cod X ->
+                 almostR2 (prob_space_sa_sub prts sub2) eq (ConditionalExpectation prts sub2 (fun ω => F (X ω, ω)))
+                          (fun ω => ((fun x => FiniteExpectation prts (fun ω => F (x, ω))) (X ω)))).
+     {
+       admit.
+     }
+     Admitted.
  
  Lemma freezing_sa_indicator {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
