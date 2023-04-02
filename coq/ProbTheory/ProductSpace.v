@@ -7122,6 +7122,121 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
    apply (compose_rv (dom2 := product_sa cod dom3) (fun ω => (X ω, ω)) Psi).
  Qed.
 
+ Lemma freezing_sa_rectangle {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+       (sub2 : sa_sub dom2 dom)
+       (sub3 : sa_sub dom3 dom)       
+       (X : Ts -> Ts2) 
+       (EPsi : pre_event (Ts2 * Ts))
+       {sa_EPsi : sa_sigma (product_sa cod dom3) EPsi} 
+       {rvx : RandomVariable dom2 cod X}
+       {rve: RandomVariable dom borel_sa (fun ω : Ts => EventIndicator (classic_dec EPsi) (X ω, ω))}
+       {isfe : IsFiniteExpectation prts (fun ω =>  EventIndicator (classic_dec EPsi) (X ω, ω))}
+       {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => EventIndicator (classic_dec EPsi) (x, ω))}:
+   independent_sas prts sub2 sub3 ->
+   is_measurable_rectangle EPsi ->
+   almostR2 (prob_space_sa_sub prts sub2) eq (ConditionalExpectation prts sub2 (fun ω => EventIndicator (classic_dec EPsi) (X ω, ω)))
+            (fun ω => (fun x => FiniteExpectation prts (fun ω => EventIndicator (classic_dec EPsi) (x, ω))) (X ω)).
+ Proof.
+   intros.
+   destruct H0 as [a [b ?]].
+   assert (forall x,
+              rv_eq
+                (fun ω => EventIndicator (classic_dec EPsi) (X x, ω))
+                (rvmult
+                   (fun ω => EventIndicator (classic_dec a) (X x))
+                   (EventIndicator (classic_dec b)))).
+   {
+     intros ??.
+     unfold EventIndicator, rvmult.
+     match_destr; match_destr; match_destr; try lra; try (rewrite H0 in e; now destruct e).
+     rewrite H0 in n; now destruct n.
+   }
+   assert (rv_eq
+             (fun ω => EventIndicator (classic_dec EPsi) (X ω, ω))
+             (rvmult
+                (fun ω => EventIndicator (classic_dec a) (X ω))
+                (EventIndicator (classic_dec b)))).
+   {
+     intros ?.
+     unfold EventIndicator, rvmult.
+     match_destr; match_destr; match_destr; try lra; try (rewrite H0 in e; now destruct e).
+     rewrite H0 in n; now destruct n.
+   }
+   assert (rvx2 : RandomVariable dom2 borel_sa (fun ω : Ts => EventIndicator (classic_dec a) (X ω))).
+   {
+     apply (compose_rv X); trivial.
+     apply EventIndicator_rv.       
+   }
+   assert (rvx1 : RandomVariable dom borel_sa (fun ω : Ts => EventIndicator (classic_dec a) (X ω))).
+   {
+     now apply (RandomVariable_sa_sub sub2).
+   }
+   assert (rvz : RandomVariable dom borel_sa (EventIndicator (classic_dec b))).
+   {
+     apply (RandomVariable_sa_sub sub3).
+     apply EventIndicator_rv.
+   }
+   assert (isfex : IsFiniteExpectation prts (fun ω : Ts => EventIndicator (classic_dec a) (X ω))).
+   {
+     apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const 1).
+     - apply IsFiniteExpectation_const.
+     - apply IsFiniteExpectation_const.
+     - apply EventIndicator_pos.
+     - intros ?.
+       unfold EventIndicator, const.
+       match_destr; lra.
+   }
+   assert (isfez : IsFiniteExpectation prts (EventIndicator (classic_dec b))).
+   {
+     apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const 1).
+     - apply IsFiniteExpectation_const.
+     - apply IsFiniteExpectation_const.
+     - apply EventIndicator_pos.
+     - intros ?.
+       unfold EventIndicator, const.
+       match_destr; lra.
+   }
+   generalize (freezing_prod_sa sub2 (prts := prts)
+                                (fun ω => EventIndicator (classic_dec a) (X ω))
+                                (EventIndicator (classic_dec b))); intros.
+   cut_to H3.
+   - revert H3.
+     apply almost_impl, all_almost; intros ??.
+     etransitivity; [| etransitivity]; [|apply H3|].
+     + apply ConditionalExpectation_ext.
+       rewrite H2.
+       now rewrite rvmult_comm.
+     + rewrite (FiniteExpectation_ext_alt prts _ _ (H1 x)).
+       unfold rvscale.
+       rewrite Rmult_comm.
+       rewrite <- FiniteExpectation_scale.
+       unfold rvmult, rvscale.
+       admit.
+   - rewrite independent_sas_comm in H.
+     revert H.
+     apply independent_sas_sub_proper; try easy.
+     apply pullback_rv_sub.
+     apply EventIndicator_rv.
+ Admitted.
+ 
+ Lemma freezing_sa_indicator {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+       (sub2 : sa_sub dom2 dom)
+       (sub3 : sa_sub dom3 dom)       
+       (X : Ts -> Ts2) 
+       (EPsi : pre_event (Ts2 * Ts))
+       {sa_EPsi : sa_sigma (product_sa cod dom3) EPsi} 
+       {rvx : RandomVariable dom2 cod X}
+       {rve: RandomVariable dom borel_sa (fun ω : Ts => EventIndicator (classic_dec EPsi) (X ω, ω))}
+       {isfe : IsFiniteExpectation prts (fun ω =>  EventIndicator (classic_dec EPsi) (X ω, ω))}
+       {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => EventIndicator (classic_dec EPsi) (x, ω))}   :
+   independent_sas prts sub2 sub3 ->
+   almostR2 (prob_space_sa_sub prts sub2) eq (ConditionalExpectation prts sub2 (fun ω => EventIndicator (classic_dec EPsi) (X ω, ω)))
+           (fun ω => (fun x => FiniteExpectation prts (fun ω => EventIndicator (classic_dec EPsi) (x, ω))) (X ω)).
+ Proof.
+   intros.
+
+   Admitted.
+
  Lemma freezing_sa_alt {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
        (sub3 : sa_sub dom3 dom)       
