@@ -7231,6 +7231,7 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
 
    Definition freezing_Vplus (ψ:Ts2 * Ts ->R) : Prop
      := NonnegativeFunction ψ /\
+          (forall x, RandomVariable dom borel_sa (fun ω : Ts => ψ (x, ω))) /\
           exists rvψ : RandomVariable dom borel_sa (fun ω : Ts => ψ (X ω, ω)),
             exists isfeψ : forall x, IsFiniteExpectation prts (fun ω : Ts => ψ (x, ω)),
                     almostR2 (prob_space_sa_sub prts sub2) eq
@@ -7251,6 +7252,10 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
        {
          admit.
        }
+       split.
+       {
+         admit.
+       } 
        exists rvψ.
        assert (isfeψ : forall x : Ts2,
                   IsFiniteExpectation prts (fun ω : Ts => Lim_seq (fun n : nat => ψn n (x, ω)))).
@@ -7277,12 +7282,20 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
        split; apply H; trivial.
        now symmetry.
      } 
-     intros ???[?[?[??]]].
+     intros ???[?[?[?[??]]]].
      split.
      - revert H0.
        apply NonnegativeFunction_proper.
        now symmetry.
-     - assert (rvψ : RandomVariable dom borel_sa
+     - split.
+       {
+         intros.
+         eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _)); try apply H1.
+         intros ?.
+         symmetry; apply H.
+
+       } 
+       assert (rvψ : RandomVariable dom borel_sa
                       (fun ω : Ts => y (X ω, ω))).
        {
          eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _)); try apply x0.
@@ -7299,7 +7312,7 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
          symmetry; apply H.
        }
        exists isfeψ.
-       etransitivity; [etransitivity |]; [| apply H1 |].
+       etransitivity; [etransitivity |]; [| apply H2 |].
        + apply Condexp_proper.
          apply all_almost; intros ?.
          now rewrite <- H.
@@ -7317,6 +7330,11 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      - assert (rvψ : RandomVariable dom borel_sa
                         (fun ω : Ts => const 1 (X ω, ω))).
        {
+         apply rvconst.
+       }
+       split.
+       {
+         intros.
          apply rvconst.
        } 
        exists rvψ.
@@ -7384,42 +7402,178 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      - repeat match_destr_in H1; try lra; firstorder.
      - repeat match_destr_in H1; try lra; firstorder.
    Qed.
-   
+
+   Lemma EventIndicator_pre_event_diff_sub_eq {Ts'} (a b:pre_event Ts') :
+     pre_event_sub b a ->
+     rv_eq (EventIndicator (classic_dec (pre_event_diff a b)))
+       (rvminus (EventIndicator (classic_dec a))
+          (EventIndicator (classic_dec b))).
+   Proof.
+     intros ??.
+     unfold pre_event_diff, EventIndicator, pos_fun_part, rvminus, rvplus, rvopp, rvscale; simpl.
+     repeat match_destr; try lra; try firstorder.
+   Qed.
+
+   Instance indicator_isfe {P} (dec:forall x, {P x} + {~ P x}) :
+     IsFiniteExpectation prts (EventIndicator dec).
+   Proof.
+     eapply (IsFiniteExpectation_bounded _ (const 0) _ (const 1))
+       ; intros ?; unfold const, EventIndicator; match_destr; lra.
+   Qed.
+
    Lemma freezing_M_relative_complement (a b : pre_event (Ts2 * Ts)) :
      freezing_M a -> freezing_M b -> pre_event_sub a b -> freezing_M (pre_event_diff b a).
    Proof.
      intros [??] [??] subab.
+     assert (rvb1:RandomVariable dom borel_sa (fun ω : Ts => EventIndicator (classic_dec b) (X ω, ω))).
+     { 
+       apply EventIndicator_pre_rv.
+       destruct H2 as [? [?[??]]].
+       generalize (x (exist _ _ (borel_singleton 1))).
+       apply sa_proper ; intros ?; simpl.
+       unfold EventIndicator, pre_event_singleton.
+       match_destr.
+       - split; tauto.
+       - split; try lra.
+         tauto.
+     }
+     assert (rva1:RandomVariable dom borel_sa (fun ω : Ts => EventIndicator (classic_dec a) (X ω, ω))).
+     { 
+       apply EventIndicator_pre_rv.
+       destruct H0 as [? [?[??]]].
+       generalize (x (exist _ _ (borel_singleton 1))).
+       apply sa_proper ; intros ?; simpl.
+       unfold EventIndicator, pre_event_singleton.
+       match_destr.
+       - split; tauto.
+       - split; try lra.
+         tauto.
+     }
+
+     assert (rv': (RandomVariable dom borel_sa
+                     (fun ω : Ts =>
+                        rvminus (EventIndicator (classic_dec b))
+                          (EventIndicator (classic_dec a)) (X ω, ω)))).
+     { 
+       apply rvminus_rv; trivial.
+     }
+
+     assert (rvb1':forall x, RandomVariable dom borel_sa (fun ω : Ts => EventIndicator (classic_dec b) (x, ω))).
+     {
+       intros.
+       apply EventIndicator_pre_rv.
+       destruct H2 as [? [?[?[??]]]].
+       generalize (H3 x (exist _ _ (borel_singleton 1))).
+       apply sa_proper ; intros ?; simpl.
+       unfold EventIndicator, pre_event_singleton.
+       match_destr.
+       - split; tauto.
+       - split; try lra.
+         tauto.
+     }
+     assert (rva1':forall x, RandomVariable dom borel_sa (fun ω : Ts => EventIndicator (classic_dec a) (x, ω))).
+     {
+       intros.
+       apply EventIndicator_pre_rv.
+       destruct H0 as [? [?[?[??]]]].
+       generalize (H3 x (exist _ _ (borel_singleton 1))).
+       apply sa_proper ; intros ?; simpl.
+       unfold EventIndicator, pre_event_singleton.
+       match_destr.
+       - split; tauto.
+       - split; try lra.
+         tauto.
+     }
+
+     assert (rv'': forall x, (RandomVariable dom borel_sa
+                     (fun ω : Ts =>
+                        rvminus (EventIndicator (classic_dec b))
+                          (EventIndicator (classic_dec a)) (x, ω)))).
+     {
+       intros.
+       apply rvminus_rv; trivial.
+     }
+     
+     assert (isfeψ: forall x, IsFiniteExpectation prts
+                           (fun ω : Ts => EventIndicator (classic_dec (pre_event_diff b a)) (x, ω))).
+     {
+       intros.
+       apply indicator_isfe.
+     }
      split.
      - now apply sa_diff.
-       (* 
      - split.
        + typeclasses eauto.
        + assert (rvψ : RandomVariable dom borel_sa
                          (fun ω : Ts => EventIndicator (classic_dec (pre_event_diff b a)) (X ω, ω))).
          {
            eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _))
-           ; try apply EventIndicator_pre_event_diff_eq.
-           apply positive_part_rv.
-           apply rvminus_rv.
-           - apply EventIndicator_pre_rv.
-             admit.
-           - apply EventIndicator_pre_rv.
-             admit.
+           ; try apply EventIndicator_pre_event_diff_sub_eq.
+           - intros ?.
+             apply subab.
+           - apply rv'.
          }
-         exists rvψ.
-         assert  (isfeψ : forall x : Ts2,
-           IsFiniteExpectation prts
-             (fun ω : Ts => EventIndicator (classic_dec (pre_event_diff b a)) (x, ω))).
+         split.
          {
            intros.
-           apply IsFiniteExpectation_simple.
-           -  apply EventIndicator_pre_rv.
-              admit.
-           - typeclasses eauto.
-         }            
+           eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _))
+           ; try apply EventIndicator_pre_event_diff_sub_eq.
+           - intros ?.
+             apply subab.
+           - apply rv''.
+         } 
+         exists rvψ.
          exists isfeψ.
-        *)
-   Admitted.
+
+         transitivity (ConditionalExpectation prts sub2
+                         (rvminus  (fun ω => (EventIndicator (classic_dec b) (X ω, ω)))
+                                         (fun ω => (EventIndicator (classic_dec a) (X ω, ω))))).
+         {
+           apply all_almost; intros ?.
+           apply ConditionalExpectation_ext; intros ?.
+           now rewrite EventIndicator_pre_event_diff_sub_eq.
+         }
+
+         assert (isfeb' : forall ω, IsFiniteExpectation prts (fun ω0 => EventIndicator (classic_dec b) (X ω, ω0))) by (intros; apply indicator_isfe).
+         assert (isfea' : forall ω, IsFiniteExpectation prts (fun ω0 => EventIndicator (classic_dec a) (X ω, ω0))) by (intros; apply indicator_isfe).
+
+
+         transitivity ((fun ω : Ts =>
+                          FiniteExpectation prts (isfe:=IsFiniteExpectation_minus _ _ _)
+                            (rvminus (fun ω0 : Ts => EventIndicator (classic_dec b)  (X ω, ω0))
+                               (fun ω0 : Ts => EventIndicator (classic_dec a)  (X ω, ω0)))))
+         ; cycle 1.
+         {
+           apply all_almost; intros ?.
+           f_equal.
+           apply FiniteExpectation_ext; intros ?.
+           now rewrite EventIndicator_pre_event_diff_sub_eq.
+         }
+
+         destruct H0 as [?[?[?[? eqq1]]]].
+         destruct H2 as [?[?[?[? eqq2]]]].
+
+         revert eqq1; apply almost_impl.
+         revert eqq2; apply almost_impl.
+         generalize (Condexp_minus prts sub2
+                       (fun ω => (EventIndicator (classic_dec b) (X ω, ω)))
+                       (fun ω => (EventIndicator (classic_dec a) (X ω, ω))))
+         ; apply almost_impl.
+         apply all_almost; intros ????.
+         etransitivity; [etransitivity |]; [| apply H5 |].
+         * now apply ConditionalExpectation_ext; intros ?.
+         * rewrite FiniteExpectation_minus.
+           unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
+           rewrite_condexp H6.
+           rewrite_condexp H7.
+           simpl.
+           f_equal.
+           unfold Rminus.
+           f_equal.
+           -- now apply FiniteExpectation_ext.
+           -- f_equal.
+              now apply FiniteExpectation_ext.
+   Qed.
 
    Lemma Lim_seq_ascending_EventIndicator_union {Ts'} (collection: nat -> pre_event Ts') :
       (forall n : nat, pre_event_sub (collection n) (collection (S n))) ->
