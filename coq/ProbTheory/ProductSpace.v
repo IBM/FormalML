@@ -7269,7 +7269,7 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      now elim n.
    Qed.
 
-   Instance freezing_Vplus_proper : Proper (rv_eq ==> iff) (freezing_Vplus).
+   Instance freezing_Vplus_proper : Proper (rv_eq ==> iff) freezing_Vplus.
    Proof.
      cut (Proper (rv_eq ==> Basics.impl) (freezing_Vplus)).
      {
@@ -7279,13 +7279,15 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      } 
      intros ???[?[?[??]]].
      split.
-     - now rewrite <- H. 
+     - revert H0.
+       apply NonnegativeFunction_proper.
+       now symmetry.
      - assert (rvψ : RandomVariable dom borel_sa
                       (fun ω : Ts => y (X ω, ω))).
        {
          eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _)); try apply x0.
          intros ?.
-         now rewrite <- H.
+         symmetry; apply H.
        } 
        exists rvψ.
        assert (isfeψ : forall x2 : Ts2,
@@ -7294,7 +7296,7 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
          intros.
          eapply IsFiniteExpectation_proper; try apply x1.
          intros ?.
-         now rewrite <- H.
+         symmetry; apply H.
        }
        exists isfeψ.
        etransitivity; [etransitivity |]; [| apply H1 |].
@@ -7304,7 +7306,7 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
        + apply all_almost; intros ?.
          f_equal.
          apply FiniteExpectation_ext; intros ?.
-         now rewrite <- H.
+         apply H.
    Qed.
 
    Lemma freezing_Vplus_all : freezing_Vplus (EventIndicator (classic_dec pre_Ω)).
