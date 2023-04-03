@@ -7632,7 +7632,9 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      - apply freezing_M_ascending_limit.
    Qed.
 
-   
+
+ End class_of_stuff.
+
  Lemma freezing_sa_indicator {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
        (sub3 : sa_sub dom3 dom)       
