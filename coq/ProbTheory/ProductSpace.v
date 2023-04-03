@@ -7370,19 +7370,53 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      - apply freezing_Vplus_all.
    Qed.
 
+   Lemma EventIndicator_pre_event_diff_eq {Ts'} (a b:pre_event Ts') :
+     rv_eq (EventIndicator (classic_dec (pre_event_diff a b)))
+       (pos_fun_part (rvminus (EventIndicator (classic_dec a))
+                        (EventIndicator (classic_dec b)))).
+   Proof.
+     intros ?.
+     unfold pre_event_diff, EventIndicator, pos_fun_part, rvminus, rvplus, rvopp, rvscale; simpl.
+     unfold Rmax.
+     repeat match_destr; try lra; firstorder.
+     - repeat match_destr_in H1; try lra; firstorder.
+     - repeat match_destr_in H1; try lra; firstorder.
+   Qed.
+   
    Lemma freezing_M_relative_complement (a b : pre_event (Ts2 * Ts)) :
      freezing_M a -> freezing_M b -> pre_event_sub a b -> freezing_M (pre_event_diff b a).
    Proof.
      intros [??] [??] subab.
      split.
      - now apply sa_diff.
+       (* 
      - split.
-       + apply EventIndicator_pos.
+       + typeclasses eauto.
        + assert (rvψ : RandomVariable dom borel_sa
                          (fun ω : Ts => EventIndicator (classic_dec (pre_event_diff b a)) (X ω, ω))).
          {
-           admit.
-         } 
+           eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _))
+           ; try apply EventIndicator_pre_event_diff_eq.
+           apply positive_part_rv.
+           apply rvminus_rv.
+           - apply EventIndicator_pre_rv.
+             admit.
+           - apply EventIndicator_pre_rv.
+             admit.
+         }
+         exists rvψ.
+         assert  (isfeψ : forall x : Ts2,
+           IsFiniteExpectation prts
+             (fun ω : Ts => EventIndicator (classic_dec (pre_event_diff b a)) (x, ω))).
+         {
+           intros.
+           apply IsFiniteExpectation_simple.
+           -  apply EventIndicator_pre_rv.
+              admit.
+           - typeclasses eauto.
+         }            
+         exists isfeψ.
+        *)
    Admitted.
 
    Lemma Lim_seq_ascending_EventIndicator_union {Ts'} (collection: nat -> pre_event Ts') :
