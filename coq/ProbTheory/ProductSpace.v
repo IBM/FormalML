@@ -7232,39 +7232,292 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
    Definition freezing_Vplus (ψ:Ts2 * Ts ->R) : Prop
      := NonnegativeFunction ψ /\
           (forall x, RandomVariable dom borel_sa (fun ω : Ts => ψ (x, ω))) /\
+                   IsFiniteExpectation prts (fun ω : Ts => ψ (X ω, ω)) /\ 
           exists rvψ : RandomVariable dom borel_sa (fun ω : Ts => ψ (X ω, ω)),
             exists isfeψ : forall x, IsFiniteExpectation prts (fun ω : Ts => ψ (x, ω)),
                     almostR2 (prob_space_sa_sub prts sub2) eq
                     (ConditionalExpectation _ sub2 (fun ω => ψ (X ω,ω)))
                     (fun ω => ((fun x => FiniteExpectation prts (fun ω => ψ (x, ω))) (X ω))).
 
+   Lemma freezing_Vplus_scale
+     (ψ : (Ts2 * Ts -> R))
+     (c : R)
+     (ψ_Vplus : freezing_Vplus ψ) : 
+     0 <= c ->
+     freezing_Vplus (rvscale c ψ).
+   Proof.
+     intros.
+     destruct ψ_Vplus as [? [? [? [? [? ?]]]]].
+     split.
+     - intros ?.
+       unfold rvscale.
+       now apply Rmult_le_pos.
+     - assert (rvψ' : forall x : Ts2, RandomVariable dom borel_sa (fun ω : Ts => rvscale c ψ (x, ω))).
+       {
+         intros.
+         now apply rvscale_rv.
+       }
+       assert (rvψ : RandomVariable dom borel_sa (fun ω => rvscale c ψ (X ω, ω))).
+       {
+         now apply rvscale_rv.
+       }
+       split; trivial.
+       assert (IsFiniteExpectation prts (fun ω : Ts => rvscale c ψ (X ω, ω))).
+       {
+         now apply IsFiniteExpectation_scale.
+       }
+       split; trivial.
+       exists rvψ.
+       assert (isfeψ : forall x : Ts2,
+                  IsFiniteExpectation prts (fun ω : Ts => rvscale c ψ (x, ω))).
+       {
+         intros.
+         unfold rvscale.
+         now apply IsFiniteExpectation_scale.
+       }
+       exists isfeψ.
+       generalize (Condexp_scale prts sub2 c (fun ω : Ts => ψ (X ω, ω))); apply almost_impl.
+       revert H3; apply almost_impl.
+       apply all_almost; intros ???.
+       apply (f_equal (Rbar_mult c)) in H3.
+       etransitivity; [etransitivity |]; [| apply H3 |].
+       + etransitivity; [etransitivity |]; [| apply H5 |];[|reflexivity].
+         apply ConditionalExpectation_ext.
+         intros ?; now unfold rvscale.
+       + simpl.
+         apply f_equal.
+         rewrite <- FiniteExpectation_scale.
+         apply FiniteExpectation_ext.
+         intros ?; now unfold rvscale.
+   Qed.
+
+   Lemma freezing_Vplus_sum
+     (ψ1 ψ2 : (Ts2 * Ts -> R))
+     (ψ1_Vplus : freezing_Vplus ψ1) 
+     (ψ2_Vplus : freezing_Vplus ψ2) :      
+     freezing_Vplus (rvplus ψ1 ψ2).
+   Proof.
+     destruct ψ1_Vplus as [? [? [? [? [? ?]]]]].
+     destruct ψ2_Vplus as [? [? [? [? [? ?]]]]].     
+     split.
+     - now apply rvplus_nnf.
+     - assert (rvψ' : forall x : Ts2, RandomVariable dom borel_sa (fun ω : Ts => rvplus ψ1 ψ2 (x, ω))).
+       {
+         intros.
+         now apply rvplus_rv.
+       }
+       assert (rvψ : RandomVariable dom borel_sa (fun ω : Ts => rvplus ψ1 ψ2 (X ω, ω))).
+       {
+         now apply rvplus_rv.
+       }
+       split; trivial.
+       assert (isfe2: IsFiniteExpectation prts (fun ω : Ts => rvplus ψ1 ψ2 (X ω, ω))).
+       {
+         now apply IsFiniteExpectation_plus.
+       }
+       split; trivial.
+       exists rvψ.
+       assert (isfeψ : forall x : Ts2, IsFiniteExpectation prts (fun ω : Ts => rvplus ψ1 ψ2 (x, ω))).
+       {
+         intros.
+         now apply IsFiniteExpectation_plus.
+       }
+       exists isfeψ.
+       generalize (Condexp_plus prts sub2 (fun ω : Ts => ψ1 (X ω, ω)) (fun ω : Ts => ψ2 (X ω, ω))).
+       apply almost_impl.
+       revert H2; apply almost_impl.
+       revert H6; apply almost_impl.
+       apply all_almost; intros ????.
+       unfold Rbar_rvplus in H7.
+       rewrite H2 in H7.
+       rewrite H6 in H7.
+       etransitivity; [etransitivity |]; [| apply H7 |].
+       + apply ConditionalExpectation_ext.
+         reflexivity.
+       + simpl.
+         f_equal.
+         generalize (FiniteExpectation_plus prts (fun ω : Ts => ψ1 (X x3, ω)) (fun ω : Ts => ψ2 (X x3, ω))); intros.
+         symmetry in H8.
+         etransitivity; [etransitivity |]; [| apply H8 |]; trivial.
+         apply FiniteExpectation_ext.
+         reflexivity.
+   Qed.
+   
+  (* should replace rvlim_incr *)
+   Lemma rvlim_incr_alt (f : nat -> Ts -> R)  :
+        (forall (n:nat), NonnegativeFunction  (f n)) ->
+        (forall (n:nat), rv_le (f n) (f (S n))) ->
+        (forall (omega:Ts), ex_finite_lim_seq (fun n => f n omega)) ->
+        (forall (n:nat), rv_le (f n) (rvlim f)).
+      Proof.
+        unfold rv_le, pointwise_relation, rvlim; intros.
+        generalize (Lim_seq_le_loc (fun _ => f n a) (fun n0 => f n0 a)); intros.
+        cut_to H2.
+        rewrite Lim_seq_const in H2.
+        generalize (isfin_Lim_seq _ H1); intros.
+        now rewrite <- (H3 a) in H2.
+        exists n; intros.
+        now apply (incr_le_strong (fun n => f n a)).
+      Qed.
 
    Lemma freezing_Vplus_has_increasing_limits
      (ψn : nat -> (Ts2 * Ts -> R))
      (ψn_Vplus : forall n, freezing_Vplus (ψn n)) : 
      (forall n, rv_le (ψn n) (ψn (S n))) ->
-     freezing_Vplus (fun ω => Lim_seq (fun n => ψn n ω)).
+     (forall ω, ex_finite_lim_seq (fun n => ψn n ω)) ->
+     IsFiniteExpectation prts (rvlim (fun n ω => ψn n (X ω, ω))) ->
+     (forall x, IsFiniteExpectation prts (rvlim (fun n ω => ψn n (x, ω)))) ->     
+     freezing_Vplus (rvlim ψn).
    Proof.
-     intros.
+     intros incr fin isfe isfe2.
      split.
-     - admit.
-     - assert (rvψ : RandomVariable dom borel_sa (fun ω : Ts => Lim_seq (fun n : nat => ψn n (X ω, ω)))).
+     - apply nnflim.
+       intros.
+       apply ψn_Vplus.
+     - assert (rvψ' : forall x : Ts2, RandomVariable dom borel_sa (rvlim (fun n ω => ψn n (x, ω)))).
        {
-         admit.
+         intros.
+         apply rvlim_rv; trivial.
+         intros.
+         apply ψn_Vplus.
        }
-       split.
+       assert (rvψ : RandomVariable dom borel_sa (rvlim (fun n ω => ψn n (X ω, ω)))).
        {
-         admit.
-       } 
+         apply rvlim_rv; trivial.
+         intros.
+         apply ψn_Vplus.
+       }
+       split; trivial.
+       split; trivial.
        exists rvψ.
-       assert (isfeψ : forall x : Ts2,
-                  IsFiniteExpectation prts (fun ω : Ts => Lim_seq (fun n : nat => ψn n (x, ω)))).
+       exists isfe2.
+       assert (forall n : nat, RandomVariable dom borel_sa ((fun (n0 : nat) (ω : Ts) => ψn n0 (X ω, ω)) n)).
        {
-         admit.
+         intros.
+         apply (ψn_Vplus n).
        }
-       exists isfeψ.
-       admit.
-   Admitted.
+       assert (forall n ω, IsFiniteExpectation prts (fun ω0 : Ts => ψn n (X ω, ω0))).
+       {
+         intros.
+         destruct (ψn_Vplus n) as [? [? [? [? [? ?]]]]].
+         apply x0.
+       }
+       assert (forall n, almostR2 (prob_space_sa_sub prts sub2) eq
+                           (ConditionalExpectation prts sub2 (fun ω : Ts => ψn n (X ω, ω)))
+                           (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => ψn n (X ω, ω0)))).
+       {
+         intros.
+         destruct (ψn_Vplus n) as [? [? [? [? [? ?]]]]].
+         revert H4; apply almost_impl.
+         apply all_almost; intros ??.
+         etransitivity; [etransitivity |]; [| apply H4 |].
+         - apply ConditionalExpectation_ext; reflexivity.
+         - f_equal; apply FiniteExpectation_ext; reflexivity.
+       }
+       assert (almost (prob_space_sa_sub prts sub2)
+                      (fun ω =>
+                         forall n, 
+                           ((ConditionalExpectation prts sub2 (fun ω0 : Ts => ψn n (X ω0, ω0))) ω) = 
+                             (FiniteExpectation prts (fun ω0 : Ts => ψn n (X ω, ω0))))).
+       {
+         apply almost_forall.
+         intros.
+         specialize (H1 n).
+         revert H1; apply almost_impl.
+         apply all_almost; intros ??.
+         etransitivity; [etransitivity |]; [| apply H1 |]; reflexivity.
+       }
+       generalize (Condexp_monotone_convergence prts sub2 
+                     (fun ω : Ts => rvlim ψn (X ω, ω))
+                     (fun n ω => ψn n (X ω, ω)) 
+                  ); intros.
+       cut_to H3.
+       + revert H3; apply almost_impl.
+         revert H2; apply almost_impl.
+         apply all_almost; intros ???.
+         assert (forall n : nat, RandomVariable dom borel_sa (fun ω : Ts => ψn n (X x, ω))).
+         {
+           intros.
+           apply (ψn_Vplus n).
+         }
+         assert (forall n : nat, NonnegativeFunction (fun ω : Ts => ψn n (X x, ω))).
+         {
+           intros.
+           destruct (ψn_Vplus n) as [? [? [? [? [? ?]]]]].           
+           intros ?.
+           apply H5.
+         }
+         assert (RandomVariable dom borel_sa (rvlim (fun (n : nat) (ω : Ts) => ψn n (X x, ω)))).
+         {
+           now apply rvlim_rv.
+         }
+         assert (NonnegativeFunction (rvlim (fun (n : nat) (ω : Ts) => ψn n (X x, ω)))).
+         {
+           now apply nnflim.
+         }
+         generalize (monotone_convergence
+                       (rvlim (fun n ω => ψn n (X x, ω)))
+                       (fun n ω => ψn n (X x, ω))
+                       H6 H7 H4 H5
+                    ); intros.
+         cut_to H8; try easy.
+         * apply is_Elim_seq_unique in H3.
+           rewrite <- H3.
+           rewrite FiniteNonnegExpectation_alt with (posX := H7).
+           rewrite <- H8.
+           rewrite <- Elim_seq_fin.
+           apply ELim_seq_ext.
+           intros.
+           rewrite H2.
+           rewrite FiniteNonnegExpectation_alt with (posX := (H5 n)).
+           now rewrite IsFiniteNonnegExpectation.
+         * intros.
+           apply (rvlim_incr_alt (fun n ω =>  ψn n (X x, ω))); try easy.
+           intros ??.
+           apply incr.
+         * intros ??.
+           apply incr.
+         * intros.
+           now apply IsFiniteNonnegExpectation.
+         * intros.
+           specialize (fin  (X x, omega)).
+           apply ex_finite_lim_seq_correct in fin.
+           destruct fin.
+           unfold rvlim.
+           rewrite H10.
+           now apply Lim_seq_correct.
+       + apply all_almost; intros ?.
+         apply nnflim.
+         intros.
+         apply (ψn_Vplus n).
+       + intros; apply all_almost; intros ?.
+         apply (ψn_Vplus n).
+       + intros; apply all_almost; intros.
+         unfold rvlim.
+         generalize (Lim_seq_increasing_le (fun n0 : nat => ψn n0 (X x, x))); intros.
+         cut_to H4.
+         * specialize (H4 n).
+           specialize (fin (X x, x)).
+           apply ex_finite_lim_seq_correct in fin.         
+           destruct fin.
+           rewrite <- H6 in H4.
+           now simpl in H4.
+         * intros.
+           apply incr.
+       + intros; apply all_almost; intros.         
+         apply incr.
+       + apply isfe.
+       + intros.
+         apply (ψn_Vplus n).
+       + apply all_almost; intros ?.
+         apply is_Elim_seq_fin.
+         unfold rvlim.
+         specialize (fin (X x, x)).
+         apply ex_finite_lim_seq_correct in fin.
+         destruct fin.
+         rewrite H5.
+         now apply Lim_seq_correct.
+   Qed.
    
    Lemma EventIndicator_all {Ts'} : rv_eq (EventIndicator (Ts:=Ts') (classic_dec pre_Ω)) (const 1).
    Proof.
@@ -7295,32 +7548,39 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
          symmetry; apply H.
 
        } 
-       assert (rvψ : RandomVariable dom borel_sa
+       split.
+       + eapply IsFiniteExpectation_proper.
+         * intros ?.
+           symmetry in H.
+           apply H.
+         * apply H2.
+       + assert (rvψ : RandomVariable dom borel_sa
                       (fun ω : Ts => y (X ω, ω))).
-       {
-         eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _)); try apply x0.
-         intros ?.
-         symmetry; apply H.
-       } 
-       exists rvψ.
-       assert (isfeψ : forall x2 : Ts2,
-                  IsFiniteExpectation prts (fun ω : Ts => y (x2, ω))).
-       {
-         intros.
-         eapply IsFiniteExpectation_proper; try apply x1.
-         intros ?.
-         symmetry; apply H.
-       }
-       exists isfeψ.
-       etransitivity; [etransitivity |]; [| apply H2 |].
-       + apply Condexp_proper.
-         apply all_almost; intros ?.
-         now rewrite <- H.
-       + apply all_almost; intros ?.
-         f_equal.
-         apply FiniteExpectation_ext; intros ?.
-         apply H.
-   Qed.
+         {
+           eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _)); try apply x0.
+           intros ?.
+           symmetry; apply H.
+         } 
+         exists rvψ.
+         destruct H3.
+         assert (isfeψ : forall x2 : Ts2,
+                    IsFiniteExpectation prts (fun ω : Ts => y (x2, ω))).
+         {
+           intros.
+           eapply IsFiniteExpectation_proper; try apply x1.
+           intros ?.
+           symmetry; apply H.
+         }
+         exists isfeψ.
+         etransitivity; [etransitivity |]; [| apply H3 |].
+         * apply Condexp_proper.
+           apply all_almost; intros ?.
+           now rewrite <- H.
+         * apply all_almost; intros ?.
+           f_equal.
+           apply FiniteExpectation_ext; intros ?.
+           apply H.
+    Qed.
 
    Lemma freezing_Vplus_all : freezing_Vplus (EventIndicator (classic_dec pre_Ω)).
    Proof.
@@ -7336,7 +7596,11 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
        {
          intros.
          apply rvconst.
-       } 
+       }
+       split.
+       {
+         apply IsFiniteExpectation_const.
+       }
        exists rvψ.
        assert (isfeψ : forall x : Ts2,
                   IsFiniteExpectation prts (fun ω : Ts => const 1 (x, ω))).
@@ -7428,7 +7692,7 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      assert (rvb1:RandomVariable dom borel_sa (fun ω : Ts => EventIndicator (classic_dec b) (X ω, ω))).
      { 
        apply EventIndicator_pre_rv.
-       destruct H2 as [? [?[??]]].
+       destruct H2 as [? [?[?[? ?]]]].
        generalize (x (exist _ _ (borel_singleton 1))).
        apply sa_proper ; intros ?; simpl.
        unfold EventIndicator, pre_event_singleton.
@@ -7440,7 +7704,7 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      assert (rva1:RandomVariable dom borel_sa (fun ω : Ts => EventIndicator (classic_dec a) (X ω, ω))).
      { 
        apply EventIndicator_pre_rv.
-       destruct H0 as [? [?[??]]].
+       destruct H0 as [? [?[?[??]]]].
        generalize (x (exist _ _ (borel_singleton 1))).
        apply sa_proper ; intros ?; simpl.
        unfold EventIndicator, pre_event_singleton.
@@ -7462,7 +7726,7 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      {
        intros.
        apply EventIndicator_pre_rv.
-       destruct H2 as [? [?[?[??]]]].
+       destruct H2 as [? [?[?[?[??]]]]].
        generalize (H3 x (exist _ _ (borel_singleton 1))).
        apply sa_proper ; intros ?; simpl.
        unfold EventIndicator, pre_event_singleton.
@@ -7475,7 +7739,7 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      {
        intros.
        apply EventIndicator_pre_rv.
-       destruct H0 as [? [?[?[??]]]].
+       destruct H0 as [? [?[?[?[??]]]]].
        generalize (H3 x (exist _ _ (borel_singleton 1))).
        apply sa_proper ; intros ?; simpl.
        unfold EventIndicator, pre_event_singleton.
@@ -7521,7 +7785,11 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
            - intros ?.
              apply subab.
            - apply rv''.
-         } 
+         }
+         split.
+         {
+           apply indicator_isfe.
+         }
          exists rvψ.
          exists isfeψ.
 
@@ -7550,8 +7818,8 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
            now rewrite EventIndicator_pre_event_diff_sub_eq.
          }
 
-         destruct H0 as [?[?[?[? eqq1]]]].
-         destruct H2 as [?[?[?[? eqq2]]]].
+         destruct H0 as [?[?[?[? [? eqq1]]]]].
+         destruct H2 as [?[?[?[? [? eqq2]]]]].
 
          revert eqq1; apply almost_impl.
          revert eqq2; apply almost_impl.
@@ -7560,12 +7828,12 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
                        (fun ω => (EventIndicator (classic_dec a) (X ω, ω))))
          ; apply almost_impl.
          apply all_almost; intros ????.
-         etransitivity; [etransitivity |]; [| apply H5 |].
+         etransitivity; [etransitivity |]; [| apply H7 |].
          * now apply ConditionalExpectation_ext; intros ?.
          * rewrite FiniteExpectation_minus.
            unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
-           rewrite_condexp H6.
-           rewrite_condexp H7.
+           rewrite_condexp H8.
+           rewrite_condexp H9.
            simpl.
            f_equal.
            unfold Rminus.
@@ -7609,18 +7877,79 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
         apply (H n).
       - generalize (freezing_Vplus_has_increasing_limits
                       (fun n => EventIndicator (classic_dec (collection n)))); intros HH.
-        cut_to HH.
-        + revert HH.
-          apply freezing_Vplus_proper.
-          intros ?.
-          now rewrite <- Lim_seq_ascending_EventIndicator_union.
-        + intro.
-          apply (H n).
-        + intros ??.
+        assert (incr: forall n : nat, rv_le (EventIndicator (classic_dec (collection n))) (EventIndicator (classic_dec (collection (S n))))).
+        {
+          intros ??.
           unfold EventIndicator.
           repeat match_destr; try lra.
           elim n0.
           now apply H0.
+        }
+        assert (fin: forall ω : Ts2 * Ts, ex_finite_lim_seq (fun n : nat => EventIndicator (classic_dec (collection n)) ω)).
+        {
+          intros.
+          apply ex_finite_lim_seq_incr with (M := 1).
+          - intros.
+            apply incr.
+          - intros.
+            unfold EventIndicator.
+            match_destr; lra.
+        }
+        cut_to HH; trivial.
+        + revert HH.
+          apply freezing_Vplus_proper.
+          intros ?.
+          unfold rvlim.
+          now rewrite <- Lim_seq_ascending_EventIndicator_union.
+        + intro.
+          apply (H n).
+        + apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const 1).
+          * apply IsFiniteExpectation_const.
+          * apply IsFiniteExpectation_const.
+          * intros ?.
+            apply nnflim.
+            intros.
+            apply EventIndicator_pos.
+          * unfold rvlim, const.
+            intros ?.
+            generalize (Lim_seq_le_loc  (fun n : nat => EventIndicator (classic_dec (collection n)) (X a, a)) (const 1)); intros.
+            cut_to H1.
+            -- unfold const in H1.
+               rewrite Lim_seq_const in H1.
+               case_eq ( Lim_seq (fun n : nat => EventIndicator (classic_dec (collection n)) (X a, a)));intros.
+               ++ rewrite H2 in H1.
+                  simpl.
+                  now simpl in H1.
+               ++ simpl; lra.
+               ++ simpl; lra.
+            -- exists (0%nat).
+               intros.
+               unfold EventIndicator, const.
+               match_destr; lra.
+        + intros.
+          apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const 1).
+          * apply IsFiniteExpectation_const.
+          * apply IsFiniteExpectation_const.
+          * intros ?.
+            apply nnflim.
+            intros.
+            apply EventIndicator_pos.
+          * unfold rvlim, const.
+            intros ?.
+            generalize (Lim_seq_le_loc  (fun n : nat => EventIndicator (classic_dec (collection n)) (x, a)) (const 1)); intros.
+            cut_to H1.
+            -- unfold const in H1.
+               rewrite Lim_seq_const in H1.
+               case_eq ( Lim_seq (fun n : nat => EventIndicator (classic_dec (collection n)) (x, a)));intros.
+               ++ rewrite H2 in H1.
+                  simpl.
+                  now simpl in H1.
+               ++ simpl; lra.
+               ++ simpl; lra.
+            -- exists (0%nat).
+               intros.
+               unfold EventIndicator, const.
+               match_destr; lra.
     Qed.
    
    Instance freezing_M_monotone_class : monotone_class freezing_M.
