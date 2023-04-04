@@ -7964,7 +7964,45 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
 
  End class_of_stuff.
 
- Lemma freezing_sa_indicator {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+ Lemma freezing_M_rectangle {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+       (sub2 : sa_sub dom2 dom)
+       (sub3 : sa_sub dom3 dom)       
+       (X : Ts -> Ts2) 
+       (EPsi : pre_event (Ts2 * Ts))
+       {sa_EPsi : sa_sigma (product_sa cod dom3) EPsi} 
+       {rvx : RandomVariable dom2 cod X}
+       {rve: RandomVariable dom borel_sa (fun ω : Ts => EventIndicator (classic_dec EPsi) (X ω, ω))}
+       {isfe : IsFiniteExpectation prts (fun ω =>  EventIndicator (classic_dec EPsi) (X ω, ω))}
+       {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => EventIndicator (classic_dec EPsi) (x, ω))}:
+   independent_sas prts sub2 sub3 ->
+   is_measurable_rectangle EPsi ->
+   freezing_M sub2 X EPsi.
+  Proof.
+    intros.
+    constructor; trivial.
+    constructor.
+    - apply EventIndicator_pos.
+    - split.
+      {
+        intros.
+        apply EventIndicator_pre_rv.
+        apply sub3.
+        generalize (product_section_fst (exist _ EPsi sa_EPsi) x); intros.
+        revert H1.
+        apply sa_proper.
+        intros ?.
+        reflexivity.
+      }
+      split.
+      {
+        apply indicator_isfe.
+      }
+      exists rve.
+      exists isfe2.
+      now apply freezing_sa_rectangle with (sub3 := sub3).
+  Qed.
+
+ Lemma freezing_M_product_sa {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
        (sub3 : sa_sub dom3 dom)       
        (X : Ts -> Ts2) 
@@ -7975,12 +8013,55 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
        {isfe : IsFiniteExpectation prts (fun ω =>  EventIndicator (classic_dec EPsi) (X ω, ω))}
        {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => EventIndicator (classic_dec EPsi) (x, ω))}   :
    independent_sas prts sub2 sub3 ->
-   almostR2 (prob_space_sa_sub prts sub2) eq (ConditionalExpectation prts sub2 (fun ω => EventIndicator (classic_dec EPsi) (X ω, ω)))
-           (fun ω => (fun x => FiniteExpectation prts (fun ω => EventIndicator (classic_dec EPsi) (x, ω))) (X ω)).
+   freezing_M sub2 X EPsi.
  Proof.
    intros.
-
-   Admitted.
+   generalize (monotone_class_theorem 
+                 (pre_event_set_product (sa_sigma cod) (sa_sigma dom3))
+              ); intros.
+   specialize (H0 (freezing_M sub2 X)).
+   cut_to H0.
+   - apply H0.
+     apply sa_EPsi.
+   - apply pre_event_set_product_pi.
+   - apply freezing_M_monotone_class.
+   - intros ??.
+     apply freezing_M_rectangle with (sub3 := sub3); try easy.
+     + simpl.
+       intros.
+       now apply H2.
+     + destruct H1 as [? [? [? [? ?]]]].
+       apply EventIndicator_pre_rv.
+       assert (sa_sigma dom (fun ω => (x0 (X ω)) /\ (x1 ω))).
+       {
+         apply sa_inter.
+         - generalize (pullback_sa_pullback cod X x0 H1); intros.
+           assert (sa_sub (pullback_sa cod X) dom).
+           {
+             apply pullback_rv_sub.
+             now apply (RandomVariable_sa_sub sub2).
+           }
+           apply H5.
+           apply H4.
+         - now apply sub3.
+       }
+       revert H4.
+       apply sa_proper.
+       intros ?.
+       specialize (H3 (X x2, x2)).
+       now rewrite H3.
+     + apply indicator_isfe.
+     + intros.
+       apply indicator_isfe.
+     + unfold is_measurable_rectangle.
+       destruct H1 as [? [? [? [? ?]]]].
+       exists (exist _ x0 H1).
+       exists (exist _ x1 H2).
+       intros.
+       split; intros.
+       * now apply H3 in H4.
+       * now apply H3.
+   Qed.
 
  Lemma freezing_sa_alt {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
