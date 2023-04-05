@@ -8300,6 +8300,16 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
       now rewrite flim.
   Qed.
 
+  Lemma rv_pos_neg_id' {Ts} (rv_X:Ts->R) : 
+    rv_eq rv_X 
+      (rvminus (pos_fun_part rv_X) (neg_fun_part rv_X)).
+    Proof.
+      intros x.
+      unfold rvminus, rvplus, rvopp, pos_fun_part, neg_fun_part, rvscale; simpl.
+      unfold Rmax, Rmin.
+      repeat match_destr; lra.
+    Qed.
+
  Lemma freezing_sa_alt {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
        (sub3 : sa_sub dom3 dom)       
@@ -8314,8 +8324,60 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
   almostR2 (prob_space_sa_sub prts sub2) eq (ConditionalExpectation prts sub2 (fun ω => Psi (X ω, ω)))
            (fun ω => ((fun x => FiniteExpectation prts (fun ω => Psi (x, ω))) (X ω))).
  Proof.
-   Admitted.
-
+   intros.
+   generalize (rv_pos_neg_id' Psi); intros HH.
+   assert (freezing_Vplus sub2 X (pos_fun_part Psi)).
+   {
+     apply freezing_Vplus_nnf with (sub3 := sub3); trivial.
+     - apply positive_part_nnf.
+     - now apply positive_part_rv.
+     - now apply positive_part_rv.
+     - now apply (IsFiniteExpectation_parts prts (fun ω => Psi (X ω, ω))).
+     - intros; now apply (IsFiniteExpectation_parts prts (fun ω => Psi (x, ω))).
+   }
+   assert (freezing_Vplus sub2 X (neg_fun_part Psi)).
+   {
+     apply freezing_Vplus_nnf with (sub3 := sub3); trivial.
+     - apply negative_part_nnf.
+     - now apply negative_part_rv.
+     - now apply negative_part_rv.
+     - now apply (IsFiniteExpectation_parts prts (fun ω => Psi (X ω, ω))).
+     - intros; now apply (IsFiniteExpectation_parts prts (fun ω => Psi (x, ω))).
+   }
+   destruct H0 as [?[?[?[?[??]]]]].
+   destruct H1 as [?[?[?[?[??]]]]].   
+   generalize (Condexp_minus prts sub2
+                 (fun ω : Ts => pos_fun_part Psi (X ω, ω))
+                 (fun ω : Ts => neg_fun_part Psi (X ω, ω))                 
+              ); intros.
+   revert H8; apply almost_impl.
+   revert H7; apply almost_impl.
+   revert H4; apply almost_impl.
+   apply all_almost; intros ????.
+   unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp in H8.
+   rewrite H4 in H8.
+   rewrite H7 in H8.
+   etransitivity; [etransitivity |]; [| apply H8 |].
+   - apply ConditionalExpectation_ext.
+     intros ?.
+     now rewrite HH.
+   - generalize (FiniteExpectation_minus prts
+                   (fun ω : Ts => pos_fun_part Psi (X x3, ω))
+                   (fun ω : Ts => neg_fun_part Psi (X x3, ω))); intros.
+     simpl.
+     apply Rbar_finite_eq.
+     simpl in H9.
+     ring_simplify.
+     rewrite <- H9.
+     apply FiniteExpectation_ext.
+     intros ?.
+     unfold rvminus, rvplus, rvopp, rvscale.
+     unfold rvminus, rvplus, rvopp, rvscale in HH.
+     specialize (HH (X x3, a)).
+     simpl in HH.
+     now symmetry.
+  Qed.
+       
 Require Import Dynkin.
 Section monotone_class.
 
