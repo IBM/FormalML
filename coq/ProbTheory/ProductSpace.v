@@ -8193,6 +8193,113 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
         now apply nodup_In in H3.
     Admitted.
 
+ Lemma freezing_Vplus_nnf {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+       (sub2 : sa_sub dom2 dom)
+       (sub3 : sa_sub dom3 dom)       
+       (X : Ts -> Ts2) 
+       (Psi : Ts2 * Ts -> R)
+       {nnf : NonnegativeFunction Psi}       
+       {rvx : RandomVariable dom2 cod X}      
+       {rvPsi : RandomVariable (product_sa cod dom3) borel_sa Psi}
+       {rvPsi2: RandomVariable dom borel_sa (fun ω : Ts => Psi (X ω, ω))}
+       {isfe : IsFiniteExpectation prts (fun ω => Psi (X ω, ω))}
+       {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => Psi (x, ω))}   :
+   independent_sas prts sub2 sub3 ->
+   freezing_Vplus sub2 X Psi.
+  Proof.
+    intros.
+    generalize (simple_approx_lim_seq Psi nnf); intro flim.
+    generalize (simple_approx_frf Psi); intro apx_frf.
+    generalize (simple_approx_pofrf Psi); intro apx_nnf.
+    generalize (simple_approx_rv (dom := (product_sa cod dom3)) Psi); intros apx_rv.
+    generalize (simple_approx_le Psi nnf); intro apx_le.
+    generalize (simple_approx_increasing Psi nnf); intro apx_inc.
+    generalize (freezing_Vplus_has_increasing_limits 
+                  sub2 X
+                  (fun n ω => simple_approx (fun x : Ts2 * Ts => Psi x) n ω)
+               ); intros.
+    cut_to H0.
+    - revert H0.
+      apply freezing_Vplus_proper.
+      intros ?.
+      unfold rvlim.
+      specialize (flim a).
+      apply is_lim_seq_unique in flim.
+      assert (is_finite 
+                (Lim_seq (fun n : nat => simple_approx (fun x : Ts2 * Ts => Psi x) n a))).
+      {
+        rewrite flim.
+        now unfold is_finite.
+      }
+      rewrite <- H0 in flim.
+      apply Rbar_finite_eq in flim.
+      now rewrite flim.
+    - intros.
+      apply freezing_Vplus_frf with (sub3 := sub3); try easy.
+      + apply (compose_rv (dom2 := product_sa cod dom3) (fun ω => (X ω, ω))); trivial.
+        apply product_sa_rv.
+        * now apply (RandomVariable_sa_sub sub2).
+        * apply (RandomVariable_sa_sub sub3).
+          apply id_rv.
+      + apply IsFiniteExpectation_bounded with 
+          (rv_X1 := const 0) 
+          (rv_X3 := fun ω => Psi (X ω, ω)).
+        * apply IsFiniteExpectation_const.
+        * apply isfe.
+        * intros ?.
+          apply apx_nnf.
+        * intros ?.
+          specialize (apx_le n (X a, a)).
+          now simpl in apx_le.
+       + intros.
+         apply IsFiniteExpectation_bounded with
+          (rv_X1 := const 0) 
+          (rv_X3 := fun ω => Psi (x, ω)).
+         * apply IsFiniteExpectation_const.
+         * apply isfe2.
+         * intros ?.
+           apply apx_nnf.
+         * intros ?.
+           apply apx_le.
+    - intros ??.
+      apply apx_inc.
+    - intros.
+      exists (Psi ω).
+      apply flim.
+    - revert isfe.
+      apply IsFiniteExpectation_proper.
+      intros ?.
+      unfold rvlim.
+      specialize (flim (X a, a)).
+      apply is_lim_seq_unique in flim.
+      assert (is_finite 
+                (Lim_seq (fun n : nat => simple_approx (fun x : Ts2 * Ts => Psi x) n (X a, a)))).
+      {
+        rewrite flim.
+        now unfold is_finite.
+      }
+      rewrite <- H1 in flim.
+      apply Rbar_finite_eq in flim.
+      now rewrite flim.
+    - intros.
+      specialize (isfe2 x).
+      revert isfe2.
+      apply IsFiniteExpectation_proper.
+      intros ?.
+      unfold rvlim.
+      specialize (flim (x, a)).
+      apply is_lim_seq_unique in flim.
+      assert (is_finite 
+                (Lim_seq (fun n : nat => simple_approx (fun x : Ts2 * Ts => Psi x) n (x, a)))).
+      {
+        rewrite flim.
+        now unfold is_finite.
+      }
+      rewrite <- H1 in flim.
+      apply Rbar_finite_eq in flim.
+      now rewrite flim.
+  Qed.
+
  Lemma freezing_sa_alt {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
        (sub3 : sa_sub dom3 dom)       
