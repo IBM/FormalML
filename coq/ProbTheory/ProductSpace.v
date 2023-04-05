@@ -8151,19 +8151,20 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
   Proof.
     intros.
     generalize (Nonnegative_FiniteRangeFunction_nneg frf nnf); intros HH.
-    generalize (frf_preimage_indicator Psi); intros.
+    generalize (frf_preimage_indicator Psi (frf:=(Nonnegative_FiniteRangeFunction Psi frf nnf)))
+    ; intros.
     apply (freezing_Vplus_proper _ _ _ _ H0).
     generalize (freezing_Vplus_list_sum 
                   sub2 X
                   (map (fun c a => c * point_preimage_indicator Psi c a)
                      (nodup Req_EM_T (@frf_vals (prod Ts2 Ts) R Psi
-            (Nonnegative_FiniteRangeFunction Psi frf nnf)) ))); intros.
+                                        (Nonnegative_FiniteRangeFunction Psi frf nnf)) ))); intros.
     cut_to H1.
     - revert H1.
+      simpl.
       apply freezing_Vplus_proper.
       intros ?.
-      rewrite map_map.
-      admit.
+      now rewrite map_map.
     - intros.
       apply in_map_iff in H2.
       destruct H2 as [? [??]].
@@ -8191,7 +8192,7 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
       + rewrite Forall_forall in HH.
         apply HH.
         now apply nodup_In in H3.
-    Admitted.
+  Qed.
 
  Lemma freezing_Vplus_nnf {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
