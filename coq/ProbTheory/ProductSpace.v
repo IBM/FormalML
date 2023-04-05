@@ -7342,7 +7342,61 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
          apply FiniteExpectation_ext.
          reflexivity.
    Qed.
-   
+
+   Lemma freezing_Vplus_const (c : R) :
+     0 <= c ->
+     freezing_Vplus (const c).
+   Proof.
+     intros.
+     constructor.
+     - now intros ?.
+     - split.
+       + intros.
+         apply rvconst.
+       + split.
+         * apply IsFiniteExpectation_const.
+         * assert (rvψ : RandomVariable dom borel_sa (const c))
+             by apply rvconst.
+           exists rvψ.
+           assert (isfeψ : forall (x : Ts2), IsFiniteExpectation prts (const c)) 
+             by (intros; apply IsFiniteExpectation_const).
+           exists isfeψ.
+           apply all_almost; intros ?.
+           generalize (Condexp_const prts sub2 c); intros.
+           generalize (FiniteExpectation_const prts c); intros.
+           specialize (H0 x).
+           unfold const in *.
+           etransitivity; [etransitivity |]; [| apply H0 |].
+           -- apply ConditionalExpectation_ext.
+              reflexivity.
+           -- f_equal.
+              symmetry.
+              etransitivity; [etransitivity |]; [| apply H1 |]; trivial.
+              apply FiniteExpectation_ext.
+              reflexivity.
+    Qed.              
+
+   Lemma freezing_Vplus_list_sum
+     (lψ : (list (Ts2 * Ts -> R))):
+     (forall (f : (Ts2 * Ts) -> R),
+         In f lψ -> freezing_Vplus f) ->
+     freezing_Vplus (fun ω => list_sum (map (fun f => f ω) lψ)).
+   Proof.
+     intros.
+     induction lψ.
+     - simpl.
+       apply freezing_Vplus_const.
+       lra.
+     - simpl.
+       apply freezing_Vplus_sum.
+       + apply H.
+         simpl; tauto.
+       + apply IHlψ.
+         intros.
+         apply H.
+         simpl; tauto.
+   Qed.
+
   (* should replace rvlim_incr *)
    Lemma rvlim_incr_alt (f : nat -> Ts -> R)  :
         (forall (n:nat), NonnegativeFunction  (f n)) ->
@@ -8062,6 +8116,82 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
        * now apply H3 in H4.
        * now apply H3.
    Qed.
+
+ Lemma freezing_Vplus_indicator {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+       (sub2 : sa_sub dom2 dom)
+       (sub3 : sa_sub dom3 dom)       
+       (X : Ts -> Ts2) 
+       (EPsi : pre_event (Ts2 * Ts))
+       {sa_EPsi : sa_sigma (product_sa cod dom3) EPsi} 
+       {rvx : RandomVariable dom2 cod X}
+       {rve: RandomVariable dom borel_sa (fun ω : Ts => EventIndicator (classic_dec EPsi) (X ω, ω))}
+       {isfe : IsFiniteExpectation prts (fun ω =>  EventIndicator (classic_dec EPsi) (X ω, ω))}
+       {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => EventIndicator (classic_dec EPsi) (x, ω))}   :
+   independent_sas prts sub2 sub3 ->
+   freezing_Vplus sub2 X (EventIndicator (classic_dec EPsi)).
+  Proof.
+    intros.
+    now destruct (freezing_M_product_sa sub2 sub3 X EPsi (sa_EPsi := sa_EPsi) H); intros.
+  Qed.
+
+ Lemma freezing_Vplus_frf {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+       (sub2 : sa_sub dom2 dom)
+       (sub3 : sa_sub dom3 dom)       
+       (X : Ts -> Ts2) 
+       (Psi : Ts2 * Ts -> R)
+       {frf : FiniteRangeFunction Psi}
+       {nnf : NonnegativeFunction Psi}       
+       {rvx : RandomVariable dom2 cod X}      
+       {rvPsi : RandomVariable (product_sa cod dom3) borel_sa Psi}
+       {rvPsi2: RandomVariable dom borel_sa (fun ω : Ts => Psi (X ω, ω))}
+       {isfe : IsFiniteExpectation prts (fun ω => Psi (X ω, ω))}
+       {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => Psi (x, ω))}   :
+   independent_sas prts sub2 sub3 ->
+   freezing_Vplus sub2 X Psi.
+  Proof.
+    intros.
+    generalize (Nonnegative_FiniteRangeFunction_nneg frf nnf); intros HH.
+    generalize (frf_preimage_indicator Psi); intros.
+    apply (freezing_Vplus_proper _ _ _ _ H0).
+    generalize (freezing_Vplus_list_sum 
+                  sub2 X
+                  (map (fun c a => c * point_preimage_indicator Psi c a)
+                     (nodup Req_EM_T (@frf_vals (prod Ts2 Ts) R Psi
+            (Nonnegative_FiniteRangeFunction Psi frf nnf)) ))); intros.
+    cut_to H1.
+    - revert H1.
+      apply freezing_Vplus_proper.
+      intros ?.
+      rewrite map_map.
+      admit.
+    - intros.
+      apply in_map_iff in H2.
+      destruct H2 as [? [??]].
+      rewrite <- H2.
+      apply freezing_Vplus_scale.
+      + unfold point_preimage_indicator.
+        generalize (freezing_Vplus_indicator sub2 sub3 X); intros.
+        specialize (H4 (fun x0 : Ts2 * Ts => (Psi x0) = x)).
+        cut_to H4; trivial.
+        * revert H4.
+          apply freezing_Vplus_proper.
+          intros ?.
+          unfold EventIndicator.
+          match_destr; match_destr; tauto.
+        * apply sa_le_pt.
+          intros.
+          now apply rv_measurable.
+        * apply EventIndicator_pre_rv.
+          apply sa_le_pt.
+          intros.
+          now apply rv_measurable.
+        * apply indicator_isfe.
+        * intros.
+          apply indicator_isfe.
+      + rewrite Forall_forall in HH.
+        apply HH.
+        now apply nodup_In in H3.
+    Admitted.
 
  Lemma freezing_sa_alt {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
