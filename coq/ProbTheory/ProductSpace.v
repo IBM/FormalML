@@ -7950,7 +7950,6 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
        {nnf : NonnegativeFunction Psi}       
        {rvx : RandomVariable dom2 cod X}      
        {rvPsi : RandomVariable (product_sa cod dom3) borel_sa Psi}
-       {rvPsi2: RandomVariable dom borel_sa (fun ω : Ts => Psi (X ω, ω))}
        {isfe : IsFiniteExpectation prts (fun ω => Psi (X ω, ω))}
        {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => Psi (x, ω))}   :
    independent_sas prts sub2 sub3 ->
@@ -7992,7 +7991,8 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
         * apply EventIndicator_pre_rv.
           apply sa_le_pt.
           intros.
-          now apply rv_measurable.
+          apply rv_measurable.
+          now apply (freezing_rv sub2 sub3).
         * apply indicator_isfe.
         * intros.
           apply indicator_isfe.
@@ -8009,7 +8009,6 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
        {nnf : NonnegativeFunction Psi}       
        {rvx : RandomVariable dom2 cod X}      
        {rvPsi : RandomVariable (product_sa cod dom3) borel_sa Psi}
-       {rvPsi2: RandomVariable dom borel_sa (fun ω : Ts => Psi (X ω, ω))}
        {isfe : IsFiniteExpectation prts (fun ω => Psi (X ω, ω))}
        {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => Psi (x, ω))}   :
    independent_sas prts sub2 sub3 ->
@@ -8044,11 +8043,6 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
       now rewrite flim.
     - intros.
       apply freezing_Vplus_frf with (sub3 := sub3); try easy.
-      + apply (compose_rv (dom2 := product_sa cod dom3) (fun ω => (X ω, ω))); trivial.
-        apply product_sa_rv.
-        * now apply (RandomVariable_sa_sub sub2).
-        * apply (RandomVariable_sa_sub sub3).
-          apply id_rv.
       + apply IsFiniteExpectation_bounded with 
           (rv_X1 := const 0) 
           (rv_X3 := fun ω => Psi (X ω, ω)).
@@ -8125,12 +8119,12 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
        (Psi : Ts2 * Ts -> R)
        {rvx : RandomVariable dom2 cod X}      
        {rvPsi : RandomVariable (product_sa cod dom3) borel_sa Psi}
-       {rvPsi2: RandomVariable dom borel_sa (fun ω : Ts => Psi (X ω, ω))}
        {isfe : IsFiniteExpectation prts (fun ω => Psi (X ω, ω))}
        {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => Psi (x, ω))}   :
-  independent_sas prts sub2 sub3 ->
-  almostR2 (prob_space_sa_sub prts sub2) eq (ConditionalExpectation prts sub2 (fun ω => Psi (X ω, ω)))
-           (fun ω => ((fun x => FiniteExpectation prts (fun ω => Psi (x, ω))) (X ω))).
+   independent_sas prts sub2 sub3 ->
+  almostR2 (prob_space_sa_sub prts sub2) eq 
+    (ConditionalExpectation prts sub2 (fun ω => Psi (X ω, ω)) (rv := freezing_rv sub2 sub3 X Psi))
+     (fun ω => ((fun x => FiniteExpectation prts (fun ω => Psi (x, ω))) (X ω))).
  Proof.
    intros.
    generalize (rv_pos_neg_id' Psi); intros HH.
@@ -8139,7 +8133,6 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      apply freezing_Vplus_nnf with (sub3 := sub3); trivial.
      - apply positive_part_nnf.
      - now apply positive_part_rv.
-     - now apply positive_part_rv.
      - now apply (IsFiniteExpectation_parts prts (fun ω => Psi (X ω, ω))).
      - intros; now apply (IsFiniteExpectation_parts prts (fun ω => Psi (x, ω))).
    }
@@ -8147,7 +8140,6 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
    {
      apply freezing_Vplus_nnf with (sub3 := sub3); trivial.
      - apply negative_part_nnf.
-     - now apply negative_part_rv.
      - now apply negative_part_rv.
      - now apply (IsFiniteExpectation_parts prts (fun ω => Psi (X ω, ω))).
      - intros; now apply (IsFiniteExpectation_parts prts (fun ω => Psi (x, ω))).
