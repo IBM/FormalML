@@ -8178,6 +8178,77 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      now symmetry.
   Qed.
        
+ Instance freezing_rv_alt {Ts Td2 Td3} {dom dom2 dom3: SigmaAlgebra Ts} {cod2 : SigmaAlgebra Td2} {cod3 : SigmaAlgebra Td3} {prts : ProbSpace dom}
+       (sub2 : sa_sub dom2 dom)
+       (sub3 : sa_sub dom3 dom)       
+       (X : Ts -> Td2)
+       (Y : Ts -> Td3)        
+       (Psi : Td2 * Td3 -> R)
+       {rvx : RandomVariable dom2 cod2 X}
+       {rvy : RandomVariable dom3 cod3 Y}
+       {rvPsi : RandomVariable (product_sa cod2 cod3) borel_sa Psi} :
+   RandomVariable dom borel_sa (fun ω : Ts => Psi (X ω, Y ω)).
+ Proof.
+   assert (RandomVariable dom (product_sa cod2 cod3) (fun ω : Ts => (X ω, Y ω))).
+   {
+     apply product_sa_rv; trivial.
+     - now apply (RandomVariable_sa_sub sub2).
+     - apply (RandomVariable_sa_sub sub3).
+       typeclasses eauto.
+   }
+   apply (compose_rv (dom2 := product_sa cod2 cod3) (fun ω => (X ω, Y ω)) Psi).
+ Qed.
+
+ Lemma freezing_sa_alt {Ts Td2 Td3} {dom dom2 dom3: SigmaAlgebra Ts} {cod2 : SigmaAlgebra Td2} {cod3 : SigmaAlgebra Td3} {prts : ProbSpace dom}
+       (sub2 : sa_sub dom2 dom)
+       (sub3 : sa_sub dom3 dom)       
+       (X : Ts -> Td2)
+       (Y : Ts -> Td3)        
+       (Psi : Td2 * Td3 -> R)
+       {rvx : RandomVariable dom2 cod2 X}
+       {rvy : RandomVariable dom3 cod3 Y}
+       {rvPsi : RandomVariable (product_sa cod2 cod3) borel_sa Psi}
+       {isfe : IsFiniteExpectation prts (fun ω => Psi (X ω, Y ω))}
+       {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => Psi (x, Y ω))}   :
+   independent_sas prts sub2 sub3 ->
+  almostR2 (prob_space_sa_sub prts sub2) eq 
+    (ConditionalExpectation prts sub2 (fun ω => Psi (X ω, Y ω))  (rv := freezing_rv_alt sub2 sub3 X Y Psi))
+     (fun ω => ((fun x => FiniteExpectation prts (fun ω0 => Psi (x, Y ω0))) (X ω))).
+  Proof.
+    intros.
+    generalize (freezing_sa sub2 sub3 X ); intros.
+    specialize (H0 (fun '(ω2,ω) => Psi (ω2, Y ω)) _).
+    assert (rvPsi2: RandomVariable (product_sa cod2 dom3) borel_sa (fun '(ω2, ω) => Psi (ω2, Y ω))).
+    {
+      generalize @compose_rv; intros.
+      assert (RandomVariable (product_sa cod2 dom3) (product_sa cod2 cod3) (fun '(ω2, ω) => (ω2, Y ω))).
+      {
+        generalize (product_sa_rv (dom := product_sa cod2 dom3) (cod1 := cod2) fst); intros.
+        specialize (H2 (fun a => Y (snd a))).
+        cut_to H2.
+        - revert H2.
+          apply RandomVariable_proper; try easy.
+          intros ?.
+          destruct a.
+          now simpl.
+        - apply fst_rv.
+        - apply compose_rv; trivial.
+          apply snd_rv.
+      }
+      generalize (compose_rv (dom1 := product_sa cod2 dom3) (dom2 := product_sa cod2 cod3) (fun '(ω2, ω) => (ω2, Y ω)) Psi).
+      apply RandomVariable_proper; try easy.
+      intros ?.
+      destruct a.
+      now unfold compose.
+    }
+    specialize (H0 rvPsi2 _ _ H).
+    revert H0; apply almost_impl.
+    apply all_almost; intros ??.
+    etransitivity; [etransitivity |]; [| apply H0 |]; try reflexivity.
+    apply ConditionalExpectation_ext.
+    reflexivity.
+  Qed.
+
 Require Import Dynkin.
 Section monotone_class.
 
