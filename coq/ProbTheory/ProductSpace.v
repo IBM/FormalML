@@ -8216,17 +8216,15 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      (fun ω => ((fun x => FiniteExpectation prts (fun ω0 => Psi (x, Y ω0))) (X ω))).
   Proof.
     intros.
-    generalize (freezing_sa sub2 sub3 X ); intros.
-    specialize (H0 (fun '(ω2,ω) => Psi (ω2, Y ω)) _).
     assert (rvPsi2: RandomVariable (product_sa cod2 dom3) borel_sa (fun '(ω2, ω) => Psi (ω2, Y ω))).
     {
       generalize @compose_rv; intros.
       assert (RandomVariable (product_sa cod2 dom3) (product_sa cod2 cod3) (fun '(ω2, ω) => (ω2, Y ω))).
       {
         generalize (product_sa_rv (dom := product_sa cod2 dom3) (cod1 := cod2) fst); intros.
-        specialize (H2 (fun a => Y (snd a))).
-        cut_to H2.
-        - revert H2.
+        specialize (H1 (fun a => Y (snd a))).
+        cut_to H1.
+        - revert H1.
           apply RandomVariable_proper; try easy.
           intros ?.
           destruct a.
@@ -8241,9 +8239,8 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
       destruct a.
       now unfold compose.
     }
-    specialize (H0 rvPsi2 _ _ H).
-    revert H0; apply almost_impl.
-    apply all_almost; intros ??.
+    generalize (freezing_sa sub2 sub3 X (fun '(ω2,ω) => Psi (ω2, Y ω)) H).
+    apply almost_impl, all_almost; intros ??.
     etransitivity; [etransitivity |]; [| apply H0 |]; try reflexivity.
     apply ConditionalExpectation_ext.
     reflexivity.
