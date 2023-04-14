@@ -5449,7 +5449,8 @@ Section MDP.
               RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state (sa ω) ω))
           (next_state_t_rv : forall t sa,
               RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state_t t sa ω))
-          
+          (next_state_t_rv2 : forall t sa,
+              RandomVariable dom (discrete_sa (state M)) (fun ω => next_state_t t sa ω))
           (cost : (sigT M.(act)) -> Ts -> R)
           {rv_cost : forall sa, RandomVariable dom borel_sa (cost sa)}
           {isfe_cost : forall (sa : sigT M.(act)),
@@ -5467,7 +5468,10 @@ Section MDP.
           (filt_sub : forall k, sa_sub (F k) dom) 
           (indep_cost: forall k sa,
               independent_sas prts (pullback_rv_sub dom borel_sa (cost sa) (rv_cost sa))
-                              (filt_sub k))
+                (filt_sub k))
+          (indep_next_state_t: forall k sa,
+              independent_sas prts (pullback_rv_sub dom (discrete_sa (state M)) (next_state_t k sa) (next_state_t_rv2 k sa))
+                (filt_sub k))
           (β : R).
 
   Instance rv_ns: forall sa, RandomVariable dom (discrete_sa (state M)) (next_state sa).
@@ -7570,15 +7574,12 @@ Section MDP.
                                 (FiniteExpectation prts (cost sa))))).
       {
         intros.
-        assert (sa_sub dom dom) by reflexivity.
-        generalize (conditional_variance_L2_alt_isfe (cost sa) H11).
+        generalize (isfe_variance_l2 prts (cost sa) (rv_cost sa)).
         apply IsFiniteExpectation_proper.
         intros ?.
-        rv_unfold.
-        f_equal.
-        ring_simplify.
-        f_equal.
-        admit.
+        rv_unfold'.
+        do 2 f_equal.
+        now apply FiniteExpectation_ext.
       }
       assert (exists A,
                  0 < A /\
