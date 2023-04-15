@@ -5,7 +5,7 @@ Require Import utils.Utils.
 Require Import Lra Lia PushNeg.
 Require Import infprod Dvoretzky Expectation RandomVariableFinite RbarExpectation.
 Require Import Classical.
-Require Import SigmaAlgebras ProbSpace.
+Require Import SigmaAlgebras ProbSpace ProductSpace.
 Require Import DVector RealVectorHilbert VectorRandomVariable.
 Require Import RandomVariableL2.
 Require Import ConditionalExpectation VectorConditionalExpectation DiscreteProbSpace.
@@ -5472,6 +5472,12 @@ Section MDP.
           (indep_next_state_t: forall k sa,
               independent_sas prts (pullback_rv_sub dom (discrete_sa (state M)) (next_state_t k sa) (next_state_t_rv2 k sa))
                 (filt_sub k))
+          (ident_distr_next_state_t: forall k sa,
+              identically_distributed_rvs prts (discrete_sa (state M))
+                (rv1 := next_state_t_rv2 0%nat sa)
+                (rv2 := next_state_t_rv2 k sa)
+                (next_state_t 0%nat sa)
+                (next_state_t k sa))
           (β : R).
 
   Instance rv_ns: forall sa, RandomVariable dom (discrete_sa (state M)) (next_state sa).
@@ -7670,7 +7676,11 @@ Section MDP.
            unfold rvsqr.
            eapply Rle_trans; [| eapply Rle_trans]; [| apply H13 |]; try lra.
            right.
-           admit.
+           generalize (is_conditional_expectation_independent_sa prts (filt_sub k)
+                         (fun omega : Ts => (cost sa omega - FiniteExpectation prts (cost sa))²) ); intros.
+           cut_to H15.
+           -- admit.
+           -- admit.
          * unfold rvscale.
            apply Rmult_le_compat_l; try lra.
            clear H10.
@@ -7748,8 +7758,18 @@ Section MDP.
          replace (FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))) with
            (FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t 0%nat sa ω0))).
          * lra.
-         * admit.
-       + admit.
+         * eapply ident_distr_finite_exp_eq.
+           generalize (identically_distributed_rv_compose prts
+                         (discrete_sa (state M))
+                         borel_sa
+                         (next_state_t 0%nat sa) 
+                         (next_state_t k sa)
+                         (qlearn_Qmin (qlearn_Q_basic k ω))
+                         (ident_distr_next_state_t k sa)); intros.
+           unfold compose in H7.
+           admit.
+       + generalize freezing_sa_alt; intros.
+         admit.
    Admitted.
        
 End MDP.

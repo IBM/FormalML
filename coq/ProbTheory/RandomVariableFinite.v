@@ -1639,6 +1639,7 @@ Proof.
         lra.
    Qed.
 
+
 End ExpNonNeg.
 
 Section sa_sub.
@@ -1918,4 +1919,22 @@ Section Independence.
       now simpl.
    Qed.
   
+    Lemma ident_distr_finite_exp_eq (X Y:Ts->R)
+          {isfex : IsFiniteExpectation prts X}
+          {isfey : IsFiniteExpectation prts Y}          
+          {rvx  : RandomVariable dom borel_sa X}
+          {rvy  : RandomVariable dom borel_sa Y} :
+    identically_distributed_rvs prts borel_sa X Y ->
+    FiniteExpectation prts X = FiniteExpectation prts Y.
+   Proof.
+     intros.
+     rewrite Finite_expectation_pos_neg_parts; trivial.
+     rewrite Finite_expectation_pos_neg_parts; trivial.
+     rewrite (ident_distr_nnexp_eq prts (pos_fun_part X) (pos_fun_part Y)
+                                   (identially_distributed_pos_part X Y H)).
+     now rewrite (ident_distr_nnexp_eq prts (neg_fun_part X) (neg_fun_part Y)
+                                   (identially_distributed_neg_part X Y H)).
+   Qed.
+
 End Independence.
+

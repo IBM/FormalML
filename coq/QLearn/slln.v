@@ -3351,23 +3351,6 @@ Qed.
       now rewrite Rbar_mult_0_r.
   Qed.
 
-    Lemma ident_distr_finite_exp_eq (X Y:Ts->R)
-          {isfex : IsFiniteExpectation Prts X}
-          {isfey : IsFiniteExpectation Prts Y}          
-          {rvx  : RandomVariable dom borel_sa X}
-          {rvy  : RandomVariable dom borel_sa Y} :
-    identically_distributed_rvs Prts borel_sa X Y ->
-    FiniteExpectation Prts X = FiniteExpectation Prts Y.
-   Proof.
-     intros.
-     rewrite Finite_expectation_pos_neg_parts; trivial.
-     rewrite Finite_expectation_pos_neg_parts; trivial.
-     rewrite (ident_distr_nnexp_eq Prts (pos_fun_part X) (pos_fun_part Y)
-                                   (identially_distributed_pos_part X Y H)).
-     now rewrite (ident_distr_nnexp_eq Prts (neg_fun_part X) (neg_fun_part Y)
-                                   (identially_distributed_neg_part X Y H)).
-   Qed.
-
   Instance rv_collection (X : nat -> Ts -> R)
            {rv : forall n, RandomVariable dom borel_sa (X n)} :
     forall (n:nat), RandomVariable dom (const borel_sa n) (X n).
