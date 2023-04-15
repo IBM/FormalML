@@ -7680,7 +7680,12 @@ Section MDP.
                          (fun omega : Ts => (cost sa omega - FiniteExpectation prts (cost sa))²) ); intros.
            cut_to H15.
            -- admit.
-           -- admit.
+           -- specialize (indep_cost k sa).
+              revert indep_cost.
+              apply independent_sas_sub_proper; try easy.
+              apply (pullback_sa_compose_sub_rv 
+                            borel_sa (cost sa)
+                            (fun x => (x - FiniteExpectation prts (cost sa))²)).
          * unfold rvscale.
            apply Rmult_le_compat_l; try lra.
            clear H10.
@@ -7766,8 +7771,8 @@ Section MDP.
                          (next_state_t k sa)
                          (qlearn_Qmin (qlearn_Q_basic k ω))
                          (ident_distr_next_state_t k sa)); intros.
-           unfold compose in H7.
-           admit.
+           revert H7.
+           apply identically_distributed_rvs_proper; try easy.
        + generalize freezing_sa_alt; intros.
          admit.
    Admitted.
