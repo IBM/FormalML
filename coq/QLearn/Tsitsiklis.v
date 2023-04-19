@@ -5973,8 +5973,9 @@ Section MDP.
   Lemma ps_equiv_pullback_fst :
     ps_equiv (pullback_ps (product_sa dom dom) dom (product_ps prts prts) fst) prts.
   Proof.
-    Search ps_equiv.
-   Admitted.
+    intros ?.
+    now rewrite <- product_pullback_fst.
+  Qed.
 
   Lemma isfe_prod_fst (f : Ts -> R)
       {rv : RandomVariable dom borel_sa f}
