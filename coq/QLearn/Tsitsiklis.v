@@ -7424,7 +7424,50 @@ Section MDP.
          apply IsFiniteExpectation_const.
        - apply IsFiniteExpectation_scale.
          apply IsFiniteExpectation_minus'; try typeclasses eauto.
-         admit.
+
+         generalize (@isfe_fubini_section_fst _ _ _ _ prts prts
+                       (fun '(ω, ω0) =>
+                          qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0)))
+         ; intros HH.
+         {
+           assert (rvf: RandomVariable (product_sa dom dom) Rbar_borel_sa
+                          (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))).
+           {
+             admit.
+           }
+           assert (isfef: Rbar_IsFiniteExpectation (product_ps prts prts)
+                            (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))).
+           {
+             assert (forall x, IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) x)).
+             {
+               intros.
+               (* this would be good as a lemma *)
+               admit.
+             } 
+             cut (IsFiniteExpectation prts
+                    (fun ω0 : Ts =>
+                       FiniteExpectation prts (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0)))).
+             {
+               admit. (* by lemma TBD *)
+             }
+             apply IsFiniteExpectation_simple.
+             - admit.
+             - generalize (FiniteRangeFunction_compose_after
+                        (fun ω0 => next_state_t k sa ω0)
+                        (fun x => FiniteExpectation prts (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) x))).
+               apply FiniteRangeFunction_ext; intros ?.
+               unfold compose.
+               now apply FiniteExpectation_ext.
+           }
+           specialize (HH _ _).
+           revert HH.
+           apply IsFiniteExpectation_proper; intros ?.
+           rewrite <- FinExp_Rbar_FinExp.
+           + now rewrite (Rbar_FiniteExpectation0_finite _ _ (isfe:= (@IsFiniteExpectation_Rbar Ts dom prts
+                                                                      (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k a) (next_state_t k sa ω0))
+                                                                      (isfe_qmin_t (qlearn_Q_basic k a) k sa)))).
+           + typeclasses eauto.
+         } 
      }
      assert (forall n sa, RandomVariable (F n) borel_sa (fun ω : Ts => X n ω sa)).
      {
