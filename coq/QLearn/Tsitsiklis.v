@@ -5806,6 +5806,41 @@ Section MDP.
       + apply EventIndicator_rv.
   Qed.
 
+  Instance rv_qmin2 (Q : Ts -> Rfct (sigT M.(act))) (f:Ts -> state M) 
+           {dom2 : SigmaAlgebra Ts}
+    (rvQ : forall sa, RandomVariable dom2 borel_sa (fun ω => Q ω sa))
+
+    (rvf : RandomVariable dom2 (discrete_sa M.(state)) f) :
+    RandomVariable (product_sa dom2 dom2) borel_sa 
+                   (fun '(ω,ω0) => qlearn_Qmin (Q ω) (f ω0)).
+  Proof.
+    cut (RandomVariable (product_sa dom2 dom2) borel_sa
+           (fun '(ω,ω0) => finite_Rsum (fun x => (qlearn_Qmin (Q ω) x) * (EventIndicator (classic_dec (event_st_eq f x)) ω0)))).
+    - apply RandomVariable_proper; try reflexivity.
+      intros ?.
+      unfold EventIndicator.
+      unfold finite_Rsum.
+      destruct a.
+      rewrite list_sum_all_but_zero with (c:=f t0).
+      + match_destr; try lra.
+        unfold event_st_eq in *; simpl in *; congruence.
+      + apply NoDup_nodup.
+      + apply nodup_In.
+        apply fin_finite.
+      + intros.
+        match_destr; try lra.
+        unfold event_st_eq in *; simpl in *.
+        congruence.
+    - generalize (@rv_finite_Rsum ); intros.
+      Admitted.
+(*
+apply rv_finite_Rsum; intros.
+      apply rvmult_rv.
+      + now apply qlearn_Qmin_all_rv.
+      + apply EventIndicator_rv.
+  Qed.
+*)
+
   Instance isfe_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
     (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
     (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q ω sa))
@@ -7433,7 +7468,18 @@ Section MDP.
            assert (rvf: RandomVariable (product_sa dom dom) Rbar_borel_sa
                           (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))).
            {
-             admit.
+             assert (RandomVariable (product_sa dom dom) borel_sa
+                       (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))).
+             {
+               apply rv_qmin2; try easy.
+               intros.
+               typeclasses eauto.
+             }
+             apply borel_Rbar_borel in H3.
+             revert H3.
+             apply RandomVariable_proper; try easy.
+             intros ?.
+             now destruct a.
            }
            assert (isfef: Rbar_IsFiniteExpectation (product_ps prts prts)
                             (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))).
