@@ -18,6 +18,18 @@ Require Import FiniteTypeVector.
 
 Set Bullet Behavior "Strict Subproofs".
 
+  Definition finite_Rsum {B:Type} {decB : EqDec B eq} {finB:FiniteType B} (f:B->R)
+    := list_sum (map f (nodup decB fin_elms)).
+
+  Instance rv_finite_Rsum {Ts} {B:Type} {decB : EqDec B eq} {finB:FiniteType B} (f:Ts->B->R)
+                          {dom2 : SigmaAlgebra Ts}
+                          {rvf : forall b, RandomVariable dom2 borel_sa (fun ω => f ω b)}
+    : RandomVariable dom2 borel_sa (fun ω => finite_Rsum (f ω)).
+  Proof.
+    unfold finite_Rsum.
+    now apply list_sum_map_rv.
+  Qed.
+
 Section Stochastic_convergence.
   
 Context {Ts : Type}  (* (w α : Ts -> nat -> R)  *)
@@ -5763,18 +5775,6 @@ Section MDP.
       now destruct H as [? [??]]; subst.
   Qed.
 
-  Definition finite_Rsum {B:Type} {decB : EqDec B eq} {finB:FiniteType B} (f:B->R)
-    := list_sum (map f (nodup decB fin_elms)).
-
-  Instance rv_finite_Rsum {B:Type} {decB : EqDec B eq} {finB:FiniteType B} (f:Ts->B->R)
-                          {dom2 : SigmaAlgebra Ts}
-                          {rvf : forall b, RandomVariable dom2 borel_sa (fun ω => f ω b)}
-    : RandomVariable dom2 borel_sa (fun ω => finite_Rsum (f ω)).
-  Proof.
-    unfold finite_Rsum.
-    now apply list_sum_map_rv.
-  Qed.
-
   Existing Instance st_eqdec.
   Instance rv_qmin1 (Q : Ts -> Rfct (sigT M.(act))) (f:Ts -> state M) 
            {dom2 : SigmaAlgebra Ts}
@@ -5831,15 +5831,20 @@ Section MDP.
         match_destr; try lra.
         unfold event_st_eq in *; simpl in *.
         congruence.
-    - generalize (@rv_finite_Rsum ); intros.
-      Admitted.
-(*
-apply rv_finite_Rsum; intros.
-      apply rvmult_rv.
-      + now apply qlearn_Qmin_all_rv.
-      + apply EventIndicator_rv.
+    -
+      generalize (@rv_finite_Rsum (prod Ts Ts) (state M) _ _); intros HH.
+      specialize (HH (fun ω x => qlearn_Qmin (Q (fst ω)) x * EventIndicator (classic_dec (event_st_eq f x)) (snd ω))).
+      specialize (HH (product_sa dom2 dom2)).
+      cut_to HH.
+      + revert HH.
+        apply RandomVariable_proper; try reflexivity; intros ?.
+        now destruct a.
+      + intros.
+        apply rvmult_rv.
+        * generalize qlearn_Qmin_all_rv; intros HH2.
+          apply (compose_rv fst (fun ω : Ts => qlearn_Qmin (Q ω) b)).
+        * apply (compose_rv snd _). 
   Qed.
-*)
 
   Instance isfe_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
     (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
