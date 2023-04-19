@@ -5886,6 +5886,46 @@ Section MDP.
           exists  (existT (act M) (next_state sa a) x).
           split; trivial.
   Qed.
+  
+  Instance isfe_qmin2 (Q : Ts -> Rfct (sigT M.(act)))
+    (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
+    (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q ω sa)) :
+    forall x, IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin (Q ω) x).
+  Proof.
+    intros.
+    apply IsFiniteExpectation_bounded with
+        (rv_X1 := fun ω => Rmin_all (Q ω)) (rv_X3 := fun ω => Rmax_all (Q ω)).
+    - typeclasses eauto.
+    - typeclasses eauto.      
+    - intros ?.
+      unfold Rmin_all, qlearn_Qmin.
+      match_destr.
+      apply Rge_le, Rmin_list_incl.
+      + rewrite map_not_nil.
+        apply act_list_not_nil.
+      + intros ??.
+        apply in_map_iff in H.
+        destruct H as [? [? ?]].
+        subst.
+        apply in_map_iff.
+        eexists.
+        split; try reflexivity; trivial.
+    - intros ?.
+      unfold Rmax_all, qlearn_Qmin.
+      apply Rle_trans with
+        (r2:=Max_{ act_list x}(fun a0 : act M x => Q a (existT (act M) x a0))).
+      + apply Rge_le, Rmax_list_map_ge_Rmin.
+      + match_destr.
+        apply Rmax_list_incl.
+        * rewrite map_not_nil.
+          apply act_list_not_nil.
+        * intros ??.
+          apply in_map_iff in H.
+          destruct H as [? [? ?]].
+          subst.
+          apply in_map_iff.
+          eexists; split; try reflexivity; trivial.
+  Qed.
 
   Instance isfe_qmin1_t (Q : Ts -> Rfct (sigT M.(act)))
     (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
@@ -7427,7 +7467,7 @@ Section MDP.
                 IsFiniteExpectation prts
                   (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0)))).
      {
-       admit.
+
      }
 *)
      assert (rvw: forall (k : nat) (sa : {x : state M & act M x}),
@@ -7491,9 +7531,7 @@ Section MDP.
            {
              assert (forall x, IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) x)).
              {
-               intros.
-               (* this would be good as a lemma *)
-               admit.
+               typeclasses eauto.
              } 
              cut (IsFiniteExpectation prts
                     (fun ω0 : Ts =>
@@ -7502,7 +7540,17 @@ Section MDP.
                admit. (* by lemma TBD *)
              }
              apply IsFiniteExpectation_simple.
-             - admit.
+             - clear HH.
+               generalize (rv_fun_simple
+                             (next_state_t k sa)
+                             (fun x=>
+                                FiniteExpectation prts (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) x)))
+               ; intros HH.
+               apply HH.
+               + intros.
+                 generalize (next_state_t_rv k sa); intros HH2.
+                 apply RandomVariable_sa_sub in HH2; trivial.
+                 now apply sa_preimage_singleton.
              - generalize (FiniteRangeFunction_compose_after
                         (fun ω0 => next_state_t k sa ω0)
                         (fun x => FiniteExpectation prts (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) x))).

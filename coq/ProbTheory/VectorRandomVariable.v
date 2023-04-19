@@ -1147,7 +1147,7 @@ Section vector_ops_ext.
            (frfx : FiniteRangeFunction x) :
     RandomVariable dom (Rvector_borel_sa n) (fun u => f (x u)).
   Proof.
-    eapply rv_fun_simple; eauto.
+    eapply (rv_fun_simple (domi:=Rvector_borel_sa n)); eauto.
     intros.
     now apply Rvector_borel_sa_has_preimages.
   Qed.

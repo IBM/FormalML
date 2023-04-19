@@ -292,16 +292,29 @@ Section Simple.
       now apply ld_incl.
   Qed.
 
-  Instance rv_fun_simple {dom: SigmaAlgebra Ts}
-           {cod: SigmaAlgebra Td}
-           (x : Ts -> Td) (f : Td -> Td)
-           {rvx : RandomVariable dom cod x}
-           {frfx : FiniteRangeFunction x} :
+End Simple.
+
+ Global Program Instance frf_fun2 {Ts Td1 Td2} (rv_X : Ts -> Td1) (f : Td1 -> Td2)
+         (frf:FiniteRangeFunction rv_X) : 
+    FiniteRangeFunction (fun v => f (rv_X v)) :=
+    {frf_vals := map f frf_vals}.
+  Next Obligation.
+    destruct frf.
+    now apply in_map.
+  Qed.
+
+  Instance rv_fun_simple {Ts Td Tf}
+    {dom: SigmaAlgebra Ts}
+    {domi: SigmaAlgebra Td}
+    {cod: SigmaAlgebra Tf}
+    (x : Ts -> Td) (f : Td -> Tf)
+    {rvx : RandomVariable dom domi x}
+    {frfx : FiniteRangeFunction x} :
     (forall (c : Td), In c frf_vals -> sa_sigma _ (pre_event_preimage x (pre_event_singleton c))) ->
     RandomVariable dom cod (fun u => f (x u)).    
   Proof.
     intros Hsingleton.
-    generalize (frf_fun x f frfx); intros.
+    generalize (frf_fun2 x f frfx); intros.
     apply frf_singleton_rv with (frf:=X); trivial.
     destruct X.
     destruct frfx.
@@ -356,16 +369,6 @@ Section Simple.
       apply Classical_Prop.classic.
   Qed.
 
-End Simple.
-
- Global Program Instance frf_fun2 {Ts Td1 Td2} (rv_X : Ts -> Td1) (f : Td1 -> Td2)
-         (frf:FiniteRangeFunction rv_X) : 
-    FiniteRangeFunction (fun v => f (rv_X v)) :=
-    {frf_vals := map f frf_vals}.
-  Next Obligation.
-    destruct frf.
-    now apply in_map.
-  Qed.
 
   Global Program Instance FiniteRangeFunction_compose_before {A B C} (f : B -> C) (g : A -> B)
     {frf : FiniteRangeFunction f} :
