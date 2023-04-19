@@ -5970,13 +5970,40 @@ Section MDP.
           split; trivial.
   Qed.
 
+  Lemma ps_equiv_pullback_fst :
+    ps_equiv (pullback_ps (product_sa dom dom) dom (product_ps prts prts) fst) prts.
+  Proof.
+    Search ps_equiv.
+   Admitted.
+
   Lemma isfe_prod_fst (f : Ts -> R)
       {rv : RandomVariable dom borel_sa f}
       {isfe : IsFiniteExpectation prts f} :
   IsFiniteExpectation (product_ps prts prts)
     (fun p : Ts * Ts => f (fst p)).
   Proof.
-    Admitted.
+    generalize (@pullback_law (Ts * Ts) Ts (product_sa dom dom) dom
+                  (product_ps prts prts) fst f); intros.
+    generalize (fst_rv (T1 := Ts * Ts) (T2 := Ts) (product_sa dom dom) dom ); intros.
+    specialize (H _ _).
+    unfold compose in H.
+    rewrite <- Expectation_Rbar_Expectation in H.
+    rewrite <- Expectation_Rbar_Expectation in H.
+    unfold IsFiniteExpectation.
+    rewrite H.
+    assert (Expectation 
+              (Prts :=
+                 (@pullback_ps (prod Ts Ts) Ts (@product_sa Ts Ts dom dom) dom
+                    (@product_ps Ts Ts dom dom prts prts) (@fst Ts Ts) 
+                    (@fst_rv Ts Ts dom dom))) f  =
+              Expectation (Prts := prts) f).
+    {
+      apply Expectation_ext_ps'; try easy.
+      apply ps_equiv_pullback_fst.
+    }
+    rewrite H1.
+    apply isfe.
+  Qed.
 
   Instance isfe_qmin2_t (Q : Ts -> Rfct (sigT M.(act)))
     (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
