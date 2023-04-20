@@ -5970,13 +5970,6 @@ Section MDP.
           split; trivial.
   Qed.
 
-  Lemma ps_equiv_pullback_fst :
-    ps_equiv (pullback_ps (product_sa dom dom) dom (product_ps prts prts) fst) prts.
-  Proof.
-    intros ?.
-    now rewrite <- product_pullback_fst.
-  Qed.
-
   Lemma isfe_prod_fst (f : Ts -> R)
       {rv : RandomVariable dom borel_sa f}
       {isfe : IsFiniteExpectation prts f} :
@@ -6000,7 +5993,8 @@ Section MDP.
               Expectation (Prts := prts) f).
     {
       apply Expectation_ext_ps'; try easy.
-      apply ps_equiv_pullback_fst.
+      intros ?.
+      now rewrite <- product_pullback_fst.
     }
     rewrite H1.
     apply isfe.
