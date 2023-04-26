@@ -8080,27 +8080,11 @@ Section MDP.
          intros ?.
          unfold rvsqr.
          do 4 f_equal.
-         
-         generalize (freezing_sa_alt (filt_sub k)
-                       (pullback_rv_sub dom (discrete_sa (state M))
-                          (next_state_t k sa) (next_state_t_rv2 k sa))
-                       (qlearn_Q_basic k)
-                       (next_state_t k sa)
-                    ); intros.
-         specialize (H16 (fun '(q, ns) => (qlearn_Qmin q ns)) _ ).
-         assert (rvy : RandomVariable
-                         (pullback_sa (discrete_sa (state M)) (next_state_t k sa))
-                         (discrete_sa (state M)) (next_state_t k sa)).
-         {
-           apply pullback_rv.
-         }
-         assert  (rvPsi : RandomVariable (product_sa finfun_sa (discrete_sa (state M)))
-                     borel_sa (fun '(q, ns) => qlearn_Qmin q ns)).
-         {
-           admit.
-         }
-         specialize (H16 rvy rvPsi).
-         
+         unfold rvplus; f_equal.
+         unfold rvscale; f_equal.
+         f_equal.
+         unfold Xmin.
+         clear H10 H14 H15.
          admit.
        + unfold rvplus, const, Rbar_rvmult, Rbar_rvplus.
          do 2 rewrite <- Condexp_nneg_simpl.
