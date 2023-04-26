@@ -7491,6 +7491,15 @@ Section MDP.
       + now simpl.
   Qed.
 
+    Global Instance Condexp_rv' {dom2 : SigmaAlgebra Ts}
+          (sub : sa_sub dom2 dom) (f : Ts -> R) 
+         {rv : RandomVariable dom borel_sa f} :
+    RandomVariable dom Rbar_borel_sa (ConditionalExpectation prts sub f).
+    Proof.
+      generalize (Condexp_rv prts sub  f).
+      eapply RandomVariable_proper_le; trivial; try reflexivity.
+    Qed.
+  
   Theorem qlearn 
           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
           (fixpt0: forall sa, qlearn_XF (Rfct_zero (sigT M.(act))) sa = 0) :
@@ -7785,19 +7794,47 @@ Section MDP.
            generalize product_sa_rv; intros.
            admit.
          }
+         rewrite H13; clear H13.
          specialize (H14 rvy rvPsi _ _).
          cut_to H14.
-         - revert H13; apply almost_impl.
-           revert H14; apply almost_impl.
-           apply all_almost; intros ???.
-           rewrite H14.
-           unfold Rbar_rvminus, Rbar_rvopp, Rbar_rvplus, const.
-           apply Rbar_plus_opp_zero.
-           etransitivity; [| etransitivity]; [| apply H13 |].
-           + apply ConditionalExpectation_ext.
-             reflexivity.
-           + admit.
-         -          admit.
+         - cut (almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
+                  (ConditionalExpectation prts (filt_sub k)
+                     (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))
+                  (ConditionalExpectation prts (filt_sub k)
+                     (fun ω : Ts =>
+                        FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))))).
+           {
+             apply almost_impl; apply all_almost; intros ??.
+             unfold Rbar_rvminus, Rbar_rvopp, Rbar_rvplus, const.
+             apply Rbar_plus_opp_zero.
+             now rewrite H13.
+           }
+           simpl in H14.
+
+           assert (eqq:almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
+                   (ConditionalExpectation prts (filt_sub k)
+                      (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))
+                   (ConditionalExpectation prts (filt_sub k)
+                         (FiniteConditionalExpectation prts (filt_sub k)
+                            (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω0) (next_state_t k sa ω0))))).
+           {
+             apply all_almost; intros ?.
+             symmetry.
+             rewrite Condexp_id.
+             - now rewrite (FiniteCondexp_eq _ _ _).
+             - apply FiniteCondexp_rv.
+           }
+           rewrite eqq; clear eqq.
+           apply Condexp_proper.
+           apply almostR2_prob_space_sa_sub_lift with (sub := filt_sub k).
+           revert H14.
+           apply almost_impl.
+           apply all_almost; intros ??.
+           rewrite (FiniteCondexp_eq _ _ _) in H13.
+           apply Rbar_finite_eq in H13.
+           rewrite <- H13.
+           apply FiniteConditionalExpectation_ext; reflexivity.
+         - admit.
        }
        + revert H13; apply almost_impl.
          revert H12; apply almost_impl.
