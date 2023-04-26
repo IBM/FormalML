@@ -7464,6 +7464,33 @@ Section MDP.
       generalize (sq_sum_le_2sum_sq (f x) (g x)); lra.
   Qed.
 
+  Lemma Rbar_plus_opp_zero (a b : Rbar) :
+    a = b ->
+    Rbar_plus a (Rbar_opp b) = 0.
+  Proof.
+    destruct a.
+    - destruct b; intros.
+      + simpl; apply Rbar_finite_eq in H.
+        rewrite H.
+        apply Rbar_finite_eq; lra.
+      + rewrite H.
+        now simpl.
+      + rewrite H.
+        now simpl.
+    - destruct b; intros.
+      + rewrite H.
+        simpl.
+        apply Rbar_finite_eq; lra.        
+      + now simpl.
+      + now simpl.
+    - destruct b; intros.
+      + rewrite H.
+        simpl.
+        apply Rbar_finite_eq; lra.        
+      + now simpl.
+      + now simpl.
+  Qed.
+
   Theorem qlearn 
           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
           (fixpt0: forall sa, qlearn_XF (Rfct_zero (sigT M.(act))) sa = 0) :
@@ -7642,6 +7669,39 @@ Section MDP.
        induction n; trivial.
        now apply (RandomVariable_sa_sub (isfilt n)).
      }
+     (*
+     assert (freez1: forall k sa,
+                almostR2  (prob_space_sa_sub prts (filt_sub k))  eq
+                  (fun ω => FiniteExpectation prts
+                               (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0)))
+                  (FiniteConditionalExpectation prts (filt_sub k)
+                     (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))).
+     {
+       intros.
+       generalize (freezing_sa_alt (filt_sub k)
+                     (pullback_rv_sub dom (discrete_sa (state M))
+                        (next_state_t k sa) (next_state_t_rv2 k sa))
+                     (qlearn_Q_basic k)
+                     (next_state_t k sa)
+                  ); intros.
+       specialize (H7 (fun '(q, ns) => (qlearn_Qmin q ns)) _ ).
+       assert (rvy : RandomVariable
+                       (pullback_sa (discrete_sa (state M)) (next_state_t k sa))
+                       (discrete_sa (state M)) (next_state_t k sa)).
+       {
+         apply pullback_rv.
+       }
+       assert  (rvPsi : RandomVariable (product_sa finfun_sa (discrete_sa (state M)))
+                          borel_sa (fun '(q, ns) => qlearn_Qmin q ns)).
+       {
+         admit.
+       }
+       specialize (H7 rvy rvPsi).
+       
+
+       admit.
+     }
+    *)
      apply Tsitsiklis_1_3_fintype with 
          (w := w) (XF := XF) (rvw := rvw); try easy.
      - intros.
@@ -7688,20 +7748,63 @@ Section MDP.
        generalize (Condexp_scale prts (filt_sub k) β
                      (fun ω : Ts =>
                          (qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω) -
-         FiniteExpectation prts
-           (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))))); intros.
-(*
-       generalize (Condexp_f_minus_condexp_f  
-                     (fun ω : Ts =>
-                        qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω) ) (filt_sub k)); intros.
+                            FiniteExpectation prts
+                              (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))))); intros.
 
-        revert H13; apply almost_impl.
-*)
-       + revert H12; apply almost_impl.
+       assert (almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
+                 (ConditionalExpectation prts (filt_sub k)
+                    (fun ω : Ts =>
+                       qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω) -
+                         FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))))
+                 (const 0)).
+       {
+         generalize (Condexp_minus'  (fun ω : Ts =>
+                                        qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω))
+                                     (fun ω =>
+                                        FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))) (filt_sub k)); intros.
+         
+         generalize (freezing_sa_alt (filt_sub k)
+                       (pullback_rv_sub dom (discrete_sa (state M))
+                          (next_state_t k sa) (next_state_t_rv2 k sa))
+                       (qlearn_Q_basic k)
+                       (next_state_t k sa)
+                    ); intros.
+         specialize (H14 (fun '(q, ns) => (qlearn_Qmin q ns)) _ ).
+         assert (rvy : RandomVariable
+                         (pullback_sa (discrete_sa (state M)) (next_state_t k sa))
+                         (discrete_sa (state M)) (next_state_t k sa)).
+         {
+           apply pullback_rv.
+         }
+         assert  (rvPsi : RandomVariable (product_sa finfun_sa (discrete_sa (state M)))
+                            borel_sa (fun '(q, ns) => qlearn_Qmin q ns)).
+         {
+           generalize rv_qmin2; intros.
+           Search product_sa.
+           Search qlearn_Qmin.
+           generalize product_sa_rv; intros.
+           admit.
+         }
+         specialize (H14 rvy rvPsi _ _).
+         cut_to H14.
+         - revert H13; apply almost_impl.
+           revert H14; apply almost_impl.
+           apply all_almost; intros ???.
+           rewrite H14.
+           unfold Rbar_rvminus, Rbar_rvopp, Rbar_rvplus, const.
+           apply Rbar_plus_opp_zero.
+           etransitivity; [| etransitivity]; [| apply H13 |].
+           + apply ConditionalExpectation_ext.
+             reflexivity.
+           + admit.
+         -          admit.
+       }
+       + revert H13; apply almost_impl.
+         revert H12; apply almost_impl.
          revert H11; apply almost_impl.
          revert H8; apply almost_impl.
          revert H7; apply almost_impl.
-         apply all_almost; intros ?????.
+         apply all_almost; intros ??????.
          unfold rvplus in H8.
          rewrite_condexp H8.
          replace (Finite (const 0 x)) with (Rbar_plus (Finite (const 0 x)) (Finite (const 0 x))) by now rewrite Rbar_plus_0_r.
@@ -7713,7 +7816,7 @@ Section MDP.
            -- unfold const.
               unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
               generalize (Condexp_const' (FiniteExpectation prts (cost sa)) (filt_sub k) x); intros.
-              rewrite H13.
+              rewrite H14.
               unfold const.
               unfold const in H11.
               repeat change (fun x => ?h x) with h.
@@ -7725,43 +7828,8 @@ Section MDP.
            unfold Rbar_rvmult, const.
            replace (Finite 0) with (Rbar_mult β 0) by apply Rbar_mult_0_r.
            f_equal.
-           generalize (freezing_sa_alt (filt_sub k)
-                         (pullback_rv_sub dom (discrete_sa (state M))
-                            (next_state_t k sa) (next_state_t_rv2 k sa))
-                         (qlearn_Q_basic k)
-                         (next_state_t k sa)
-                      ); intros.
-           specialize (H13 (fun '(q, ns) => (qlearn_Qmin q ns)) _ ).
-           assert (rvy : RandomVariable
-                   (pullback_sa (discrete_sa (state M)) (next_state_t k sa))
-                   (discrete_sa (state M)) (next_state_t k sa)).
-           {
-             apply pullback_rv.
-           }
-           assert  (rvPsi : RandomVariable (product_sa finfun_sa (discrete_sa (state M)))
-                     borel_sa (fun '(q, ns) => qlearn_Qmin q ns)).
-           {
-             admit.
-           }
-           specialize (H13 rvy rvPsi).
-           assert (IsFiniteExpectation prts
-                     (fun ω : Ts =>
-                        (fun '(q, ns) => qlearn_Qmin q ns)
-                          (qlearn_Q_basic k ω, next_state_t k sa ω))).
-           {
-             admit.
-           }
-           assert (isfe2 : forall x : Rfct {x : state M & act M x},
-                  IsFiniteExpectation prts
-                    (fun ω : Ts =>
-                     (fun '(q, ns) => qlearn_Qmin q ns) (x, next_state_t k sa ω))).
-           {
-             admit.
-           }
-           specialize (H13 H14 isfe2).
-           cut_to H13.
-           -- admit.
-           -- now rewrite independent_sas_comm.
+           rewrite H13.
+           now unfold const.
        + apply indep_cost.
        + apply IsFiniteExpectation_minus'; try typeclasses eauto.
          apply IsFiniteExpectation_const.
@@ -7955,26 +8023,36 @@ Section MDP.
       specialize (H10 k sa).
       specialize (H9 k sa).
       specialize (H13 sa).
+      assert (freezn: almostR2  prts  eq
+                  (fun ω => FiniteExpectation prts
+                               (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0)))
+                  (FiniteConditionalExpectation prts (filt_sub k)
+                     (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))).
+      {
+        admit.
+      }
       revert H14; apply almost_impl.
       revert H10; apply almost_impl.
       revert H9; apply almost_impl.
-      apply all_almost; intros ????.
+      revert freezn; apply almost_impl.
+      apply all_almost; intros ?????.
       erewrite Condexp_nneg_simpl.
       unfold rvplus, rvscale in H10.
       unfold Xmin in H10.
-      eapply Rbar_le_trans; [| eapply Rbar_le_trans]; [| apply H10 |].
+      eapply Rbar_le_trans; [| eapply Rbar_le_trans]; [| apply H14 |].
        + apply refl_refl.
          apply NonNegCondexp_ext.
          intros ?.
          unfold rvsqr.
          do 4 f_equal.
+         
          generalize (freezing_sa_alt (filt_sub k)
                        (pullback_rv_sub dom (discrete_sa (state M))
                           (next_state_t k sa) (next_state_t_rv2 k sa))
                        (qlearn_Q_basic k)
                        (next_state_t k sa)
                     ); intros.
-         specialize (H15 (fun '(q, ns) => (qlearn_Qmin q ns)) _ ).
+         specialize (H16 (fun '(q, ns) => (qlearn_Qmin q ns)) _ ).
          assert (rvy : RandomVariable
                          (pullback_sa (discrete_sa (state M)) (next_state_t k sa))
                          (discrete_sa (state M)) (next_state_t k sa)).
@@ -7986,7 +8064,7 @@ Section MDP.
          {
            admit.
          }
-         specialize (H15 rvy rvPsi).
+         specialize (H16 rvy rvPsi).
          
          admit.
        + unfold rvplus, const, Rbar_rvmult, Rbar_rvplus.
@@ -8001,7 +8079,7 @@ Section MDP.
            right.
            generalize (is_conditional_expectation_independent_sa prts (filt_sub k)
                          (fun omega : Ts => (cost sa omega - FiniteExpectation prts (cost sa))²) ); intros.
-           cut_to H15.
+           cut_to H16.
            -- generalize is_conditional_expectation_independent_sa; intros.
               admit.
            -- specialize (indep_cost k sa).
@@ -8019,10 +8097,10 @@ Section MDP.
                         (rvsqr
                            (rvminus (Xmin k sa)
                                     (FiniteConditionalExpectation prts (filt_sub k) (Xmin k sa)))) x ).
-           -- unfold rvscale in H14.
+           -- unfold rvscale in H15.
               eapply Rle_trans.
               shelve.
-              apply H14.
+              apply H15.
               Unshelve.
               ++ apply IsFiniteExpectation_bounded with 
                      (rv_X1 := const 0)
@@ -8049,7 +8127,9 @@ Section MDP.
                  do 2 f_equal.
                  lra.
            -- eapply Rle_trans.
-              ++ apply H9.
+              admit.
+        (*
+              ++ apply H15.
               ++ unfold Rmax_norm, Rmax_all, X, rvmaxlist, Rmax_list_map.
                  match_destr.
                  apply Rmax_spec.
@@ -8060,6 +8140,8 @@ Section MDP.
                     rewrite Rmax_list_abs_sqr.
                     now rewrite map_map.
                  ** apply in_seq; lia.
+       *)
+              admit.
      - intros.
        generalize (qlearn_XF_contraction H x (Rfct_zero (sigT M.(act)))); intros.
        rewrite Rfct_minus_zero in H7.
