@@ -7678,39 +7678,6 @@ Section MDP.
        induction n; trivial.
        now apply (RandomVariable_sa_sub (isfilt n)).
      }
-     (*
-     assert (freez1: forall k sa,
-                almostR2  (prob_space_sa_sub prts (filt_sub k))  eq
-                  (fun ω => FiniteExpectation prts
-                               (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0)))
-                  (FiniteConditionalExpectation prts (filt_sub k)
-                     (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))).
-     {
-       intros.
-       generalize (freezing_sa_alt (filt_sub k)
-                     (pullback_rv_sub dom (discrete_sa (state M))
-                        (next_state_t k sa) (next_state_t_rv2 k sa))
-                     (qlearn_Q_basic k)
-                     (next_state_t k sa)
-                  ); intros.
-       specialize (H7 (fun '(q, ns) => (qlearn_Qmin q ns)) _ ).
-       assert (rvy : RandomVariable
-                       (pullback_sa (discrete_sa (state M)) (next_state_t k sa))
-                       (discrete_sa (state M)) (next_state_t k sa)).
-       {
-         apply pullback_rv.
-       }
-       assert  (rvPsi : RandomVariable (product_sa finfun_sa (discrete_sa (state M)))
-                          borel_sa (fun '(q, ns) => qlearn_Qmin q ns)).
-       {
-         admit.
-       }
-       specialize (H7 rvy rvPsi).
-       
-
-       admit.
-     }
-    *)
      apply Tsitsiklis_1_3_fintype with 
          (w := w) (XF := XF) (rvw := rvw); try easy.
      - intros.
@@ -7834,7 +7801,7 @@ Section MDP.
            apply Rbar_finite_eq in H13.
            rewrite <- H13.
            apply FiniteConditionalExpectation_ext; reflexivity.
-         - admit.
+         - now apply independent_sas_comm.
        }
        + revert H13; apply almost_impl.
          revert H12; apply almost_impl.
