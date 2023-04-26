@@ -5846,6 +5846,7 @@ Section MDP.
         * apply (compose_rv snd _). 
   Qed.
 
+
   Instance isfe_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
     (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
     (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q ω sa))
@@ -6741,6 +6742,41 @@ Section MDP.
     iso_sa (iso := Isomorphism_symm (finite_fun_vec_encoder finA EqDecsigT (B := R)))
       (Rvector_borel_sa _).
 
+  Instance rv_qmin3 :
+    RandomVariable (product_sa finfun_sa (discrete_sa (state M)))
+                            borel_sa (fun '(q, ns) => qlearn_Qmin q ns).
+  Proof.
+    cut (RandomVariable (product_sa finfun_sa (discrete_sa (state M))) borel_sa
+           (fun qns => finite_Rsum 
+                             (fun x => (qlearn_Qmin (fst qns) x) * 
+                                         (EventIndicator (classic_dec (preimage_singleton (fun qns => snd qns) x))) qns))).
+    - apply RandomVariable_proper; try reflexivity.
+      intros ?.
+      unfold EventIndicator.
+      unfold finite_Rsum.
+      destruct a.
+      rewrite list_sum_all_but_zero with (c:=s).
+      + unfold fst; match_destr; try lra.
+        unfold preimage_singleton in n; simpl in n.
+        now unfold pre_event_preimage, pre_event_singleton, snd in n.
+      + apply NoDup_nodup.
+      + apply nodup_In.
+        apply fin_finite.
+      + intros.
+        match_destr; try lra.
+        unfold preimage_singleton in e; simpl in e.
+        unfold pre_event_preimage, pre_event_singleton, snd in e.
+        congruence.
+    - apply list_sum_map_rv.
+      intros.
+      apply rvmult_rv.
+      + generalize (@compose_rv _ _ _ (product_sa finfun_sa (discrete_sa (state M)))
+                      finfun_sa borel_sa fst  (fun q => qlearn_Qmin q x)); intros.
+        apply H; try typeclasses eauto.
+        unfold qlearn_Qmin.
+        admit.
+      + apply EventIndicator_rv.
+  Admitted.
 
   Theorem Tsitsiklis_1_3_fintype  (X w  : nat -> Ts -> Rfct (sigT M.(act)))
     (XF : Rfct (sigT M.(act)) -> Rfct (sigT M.(act)))
@@ -7755,53 +7791,48 @@ Section MDP.
          assert  (rvPsi : RandomVariable (product_sa finfun_sa (discrete_sa (state M)))
                             borel_sa (fun '(q, ns) => qlearn_Qmin q ns)).
          {
-           generalize rv_qmin2; intros.
-           Search product_sa.
-           Search qlearn_Qmin.
-           generalize product_sa_rv; intros.
-           admit.
+           apply rv_qmin3.
          }
          rewrite H13; clear H13.
          specialize (H14 rvy rvPsi _ _).
-         cut_to H14.
-         - cut (almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
-                  (ConditionalExpectation prts (filt_sub k)
-                     (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))
-                  (ConditionalExpectation prts (filt_sub k)
-                     (fun ω : Ts =>
-                        FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))))).
-           {
-             apply almost_impl; apply all_almost; intros ??.
-             unfold Rbar_rvminus, Rbar_rvopp, Rbar_rvplus, const.
-             apply Rbar_plus_opp_zero.
-             now rewrite H13.
-           }
-           simpl in H14.
-
-           assert (eqq:almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
-                   (ConditionalExpectation prts (filt_sub k)
-                      (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))
-                   (ConditionalExpectation prts (filt_sub k)
-                         (FiniteConditionalExpectation prts (filt_sub k)
-                            (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω0) (next_state_t k sa ω0))))).
-           {
-             apply all_almost; intros ?.
-             symmetry.
-             rewrite Condexp_id.
-             - now rewrite (FiniteCondexp_eq _ _ _).
-             - apply FiniteCondexp_rv.
-           }
-           rewrite eqq; clear eqq.
-           apply Condexp_proper.
-           apply almostR2_prob_space_sa_sub_lift with (sub := filt_sub k).
-           revert H14.
-           apply almost_impl.
-           apply all_almost; intros ??.
-           rewrite (FiniteCondexp_eq _ _ _) in H13.
-           apply Rbar_finite_eq in H13.
-           rewrite <- H13.
-           apply FiniteConditionalExpectation_ext; reflexivity.
-         - now apply independent_sas_comm.
+         cut_to H14; [| now apply independent_sas_comm].
+         cut (almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
+                (ConditionalExpectation prts (filt_sub k)
+                   (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))
+                (ConditionalExpectation prts (filt_sub k)
+                   (fun ω : Ts =>
+                      FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))))).
+         {
+           apply almost_impl; apply all_almost; intros ??.
+           unfold Rbar_rvminus, Rbar_rvopp, Rbar_rvplus, const.
+           apply Rbar_plus_opp_zero.
+           now rewrite H13.
+         }
+         simpl in H14.
+         
+         assert (eqq:almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
+                       (ConditionalExpectation prts (filt_sub k)
+                          (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))
+                       (ConditionalExpectation prts (filt_sub k)
+                          (FiniteConditionalExpectation prts (filt_sub k)
+                             (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω0) (next_state_t k sa ω0))))).
+         {
+           apply all_almost; intros ?.
+           symmetry.
+           rewrite Condexp_id.
+           - now rewrite (FiniteCondexp_eq _ _ _).
+           - apply FiniteCondexp_rv.
+         }
+         rewrite eqq; clear eqq.
+         apply Condexp_proper.
+         apply almostR2_prob_space_sa_sub_lift with (sub := filt_sub k).
+         revert H14.
+         apply almost_impl.
+         apply all_almost; intros ??.
+         rewrite (FiniteCondexp_eq _ _ _) in H13.
+         apply Rbar_finite_eq in H13.
+         rewrite <- H13.
+         apply FiniteConditionalExpectation_ext; reflexivity.
        }
        + revert H13; apply almost_impl.
          revert H12; apply almost_impl.
