@@ -6768,7 +6768,10 @@ Section MDP.
     iso_sa (iso := Isomorphism_symm (finite_fun_vec_encoder finA EqDecsigT (B := R)))
       (Rvector_borel_sa _).
 
-  Instance rv_qmin3 :
+  Instance rv_qmin3
+    {rv: forall sa, 
+        RandomVariable finfun_sa borel_sa
+          (fun q : Rfct {x : state M & act M x} => q sa)} :
     RandomVariable (product_sa finfun_sa (discrete_sa (state M)))
                             borel_sa (fun '(q, ns) => qlearn_Qmin q ns).
   Proof.
@@ -6801,10 +6804,9 @@ Section MDP.
         apply H; try typeclasses eauto.
         unfold qlearn_Qmin.
         apply rvs_Rmin_list'.
-        rewrite Forall_forall; intros.
-        admit.
+        now rewrite Forall_forall; intros.
       + apply EventIndicator_rv.
-  Admitted.
+  Qed.
 
   Theorem Tsitsiklis_1_3_fintype  (X w  : nat -> Ts -> Rfct (sigT M.(act)))
     (XF : Rfct (sigT M.(act)) -> Rfct (sigT M.(act)))
