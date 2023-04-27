@@ -8117,7 +8117,14 @@ Section MDP.
           revert H17.
           apply almost_impl, all_almost; intros ??.
           now apply Rbar_finite_eq in H17.
-        - admit.                 
+        - specialize (indep_cost k sa).
+          revert indep_cost.
+          apply independent_sas_sub_proper; try easy.
+          apply pullback_rv_sub.
+          apply rvsqr_rv.
+          unfold Rminus.
+          apply rvplus_rv; try typeclasses eauto.
+          apply pullback_rv.
       }
       revert H14; apply almost_impl.
       revert H10; apply almost_impl.
@@ -8152,7 +8159,6 @@ Section MDP.
            eapply Rle_trans; [| eapply Rle_trans]; [| apply H13 |]; try lra.
          * unfold rvscale.
            apply Rmult_le_compat_l; try lra.
-           clear H10.
            apply Rle_trans with
                (r2 := FiniteConditionalExpectation 
                         prts (filt_sub k)
@@ -8188,9 +8194,9 @@ Section MDP.
                  unfold Xmin.
                  do 2 f_equal.
                  lra.
-           -- eapply Rle_trans.
-              admit.
+           -- admit.
         (*
+          eapply Rle_trans.
               ++ apply H15.
               ++ unfold Rmax_norm, Rmax_all, X, rvmaxlist, Rmax_list_map.
                  match_destr.
@@ -8203,7 +8209,7 @@ Section MDP.
                     now rewrite map_map.
                  ** apply in_seq; lia.
        *)
-              admit.
+
      - intros.
        generalize (qlearn_XF_contraction H x (Rfct_zero (sigT M.(act)))); intros.
        rewrite Rfct_minus_zero in H7.
