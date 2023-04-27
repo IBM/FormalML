@@ -7563,7 +7563,24 @@ Section MDP.
       generalize (Condexp_rv prts sub  f).
       eapply RandomVariable_proper_le; trivial; try reflexivity.
     Qed.
-  
+
+    Global Instance almostR2_eq_sqr_proper:
+      Proper (almostR2 prts eq ==> almostR2 prts eq) rvsqr.
+    Proof.
+      intros ??.
+      apply almost_impl; apply all_almost; intros ??.
+      unfold rvsqr.
+      now rewrite H.
+    Qed.
+
+    Lemma almostR2_eq_opp'_proper :
+      Proper (almostR2 prts eq ==> almostR2 prts eq) (fun f ω => - f ω).
+    Proof.
+      intros ??.
+      apply almost_impl; apply all_almost; intros ??.
+      now rewrite H.
+    Qed.
+      
   Theorem qlearn 
           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
           (fixpt0: forall sa, qlearn_XF (Rfct_zero (sigT M.(act))) sa = 0) :
@@ -8115,8 +8132,10 @@ Section MDP.
          apply almost_prob_space_sa_sub_lift with (sub := filt_sub k).
          revert H15.
          apply almost_impl, all_almost; intros ??.
-
-        admit.
+         rewrite (FiniteCondexp_eq _ _ _) in H15.
+         apply Rbar_finite_eq in H15.
+         rewrite <- H15.
+         apply FiniteConditionalExpectation_ext; intros ?; reflexivity.
       }
       assert (almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
           (fun _ : Ts =>
@@ -8150,29 +8169,44 @@ Section MDP.
           apply rvplus_rv; try typeclasses eauto.
           apply pullback_rv.
       }
-      revert H14; apply almost_impl.
-      revert H10; apply almost_impl.
-      revert H9; apply almost_impl.
-      revert freezn; apply almost_impl.
-      apply almost_prob_space_sa_sub_lift with (sub := filt_sub k).
-      revert H15; apply almost_impl.
-      apply all_almost; intros ??????.
-      erewrite Condexp_nneg_simpl.
-      unfold rvplus, rvscale in H10.
-      unfold Xmin in H10.
-      eapply Rbar_le_trans; [| eapply Rbar_le_trans]; [| apply H15 |].
-       + apply refl_refl.
-         apply NonNegCondexp_ext.
-         intros ?.
-         unfold rvsqr.
-         do 4 f_equal.
-         unfold rvplus; f_equal.
-         unfold rvscale; f_equal.
-         f_equal.
+      etransitivity; [etransitivity |]; [| apply H10 |].
+       + cut (almostR2 prts eq
+                (ConditionalExpectation prts (filt_sub k)
+                   (rvsqr
+                      (fun ω : Ts =>
+                         cost sa ω - FiniteExpectation prts (cost sa) +
+                           β *
+                             (qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω) -
+                                FiniteExpectation prts
+                                  (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))))))
+                (NonNegCondexp prts (filt_sub k)
+                   (rvsqr
+                      (rvplus (fun ω : Ts => cost sa ω - FiniteExpectation prts (cost sa))
+                         (rvscale β
+                            (fun ω : Ts => Xmin k sa ω - FiniteConditionalExpectation prts (filt_sub k) (Xmin k sa) ω)))))).
+         {
+           apply almostR2_subrelation.
+           intros ???; subst; reflexivity.
+         }
+         rewrite (Condexp_nneg_simpl _ _ _).
+         apply almost_prob_space_sa_sub_lift with (sub := filt_sub k).
+         apply NonNegCondexp_proper.
+         apply almostR2_eq_sqr_proper.
+         apply almostR2_eq_plus_proper; try reflexivity.
+         apply almostR2_eq_mult_proper; try reflexivity.
          unfold Xmin.
-         clear H9 H15 H16.
-         admit.
-       + unfold rvplus, const, Rbar_rvmult, Rbar_rvplus.
+         unfold Rminus.
+         apply almostR2_eq_plus_proper; try reflexivity.
+         apply almostR2_eq_opp'_proper.
+         apply freezn.
+       + clear freezn.
+         revert H9; apply almost_impl.
+         revert H10; apply almost_impl.
+         revert H14; apply almost_impl.
+         apply almost_prob_space_sa_sub_lift with (sub := filt_sub k) in H15.
+         revert H15; apply almost_impl.
+         apply all_almost; intros ?????.
+         unfold rvplus, const, Rbar_rvmult, Rbar_rvplus.
          do 2 rewrite <- Condexp_nneg_simpl.
          do 2 erewrite FiniteCondexp_eq.
          simpl.
@@ -8189,10 +8223,10 @@ Section MDP.
                         (rvsqr
                            (rvminus (Xmin k sa)
                                     (FiniteConditionalExpectation prts (filt_sub k) (Xmin k sa)))) x ).
-           -- unfold rvscale in H16.
+           -- unfold rvscale in *.
               eapply Rle_trans.
               shelve.
-              apply H16.
+              apply H10.
               Unshelve.
               ++ apply IsFiniteExpectation_bounded with 
                      (rv_X1 := const 0)
@@ -8219,7 +8253,7 @@ Section MDP.
                  do 2 f_equal.
                  lra.
            -- eapply Rle_trans.
-              ++ apply H14.
+              ++ apply H15.
               ++ unfold Rmax_norm, Rmax_all, X, rvmaxlist, Rmax_list_map.
                  match_destr.
                  apply Rmax_spec.
@@ -8261,7 +8295,7 @@ Section MDP.
                      (ident_distr_next_state_t k sa)); intros.
        revert H7.
        apply identically_distributed_rvs_proper; try easy.
-   Admitted.
+   Qed.
        
 End MDP.
 
