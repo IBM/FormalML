@@ -3521,6 +3521,48 @@ Section Rmax_list.
         apply Rplus_ge_compat; (apply Rmin_spec; rewrite in_map_iff; exists a; split ; trivial).
       + rewrite map_not_nil.
         congruence.
+   Qed.
+
+  Lemma Rmin_list_map_minus {A} (f g : A -> R) (l : list A):
+    Min_{ l}(fun a : A => (f a - g a)) <=
+    Min_{ l}(fun a : A => (f a)) - (Min_{ l}(fun a : A => (g a))).
+  Proof.
+    generalize (Rmin_list_map_plus (fun a : A => (f a - g a))
+                                  (fun a : A => (g a))); intros.
+    assert (Min_{ l}(fun a : A => f a - g a + g a) =
+            Min_{ l}(fun a : A => f a)).
+    {
+      apply Rmin_list_Proper.
+      replace  (map (fun a : A => f a - g a + g a) l) with
+          (map (fun a : A => f a) l).
+      apply Permutation.Permutation_refl.
+      apply map_ext.
+      intros; lra.
+    }
+    specialize (H l).
+    rewrite H0 in H.
+    lra.
+  Qed.
+
+  Lemma Rmax_list_map_minus {A} (f g : A -> R) (l : list A):
+    Max_{ l}(fun a : A => (f a - g a)) >=
+    Max_{ l}(fun a : A => (f a)) - (Max_{ l}(fun a : A => (g a))).
+  Proof.
+    generalize (Rmax_list_map_plus (fun a : A => (f a - g a))
+                                  (fun a : A => (g a))); intros.
+    assert (Max_{ l}(fun a : A => f a - g a + g a) =
+            Max_{ l}(fun a : A => f a)).
+    {
+      apply Rmax_list_Proper.
+      replace  (map (fun a : A => f a - g a + g a) l) with
+          (map (fun a : A => f a) l).
+      apply Permutation.Permutation_refl.
+      apply map_ext.
+      intros; lra.
+    }
+    specialize (H l).
+    rewrite H0 in H.
+    lra.
   Qed.
 
   Lemma Rmax_list_map_triangle {A} (f g : A -> R) (l : list A):

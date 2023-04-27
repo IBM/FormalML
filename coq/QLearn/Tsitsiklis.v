@@ -7126,26 +7126,6 @@ Section MDP.
     apply rvconst'.
   Qed.
 
-  Lemma Condexp_f_minus_condexp_f (f : Ts -> R)
-                     {dom2 : SigmaAlgebra Ts}
-                     (sub : sa_sub dom2 dom) 
-                     {rv : RandomVariable dom borel_sa f}
-                     {isfe : IsFiniteExpectation prts f} :
-    almostR2 (prob_space_sa_sub prts sub) eq
-             (ConditionalExpectation prts sub (fun ω => (f ω) - (FiniteConditionalExpectation prts sub f ω)))
-             (const 0).
-  Proof.
-    generalize (Condexp_minus' f (FiniteConditionalExpectation prts sub f) sub).
-    apply almost_impl, all_almost; intros ??.
-    rewrite H.
-    unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp, const.
-    rewrite Rbar_plus_comm.
-    rewrite Condexp_id.
-    - erewrite FiniteCondexp_eq.
-      simpl; f_equal; lra.
-    - apply FiniteCondexp_rv.
-  Qed.
-
   Instance rv_finfun_sa {Ts1} {dom1 : SigmaAlgebra Ts1}
            (rv_X : Ts1 -> Rfct (sigT M.(act)))
            {rv : forall sa, RandomVariable dom1 borel_sa (fun ω => rv_X ω sa)} :
@@ -7210,63 +7190,6 @@ Section MDP.
     intros.
     apply FiniteExpectation_compose_Finite_type.
     typeclasses eauto.
-  Qed.
-
-  Lemma Rmin_list_map_add {A} (f g : A -> R) (l : list A):
-    Min_{ l}(fun a : A => (f a + g a)) >=
-    Min_{ l}(fun a : A => (f a)) + (Min_{ l}(fun a : A => (g a))).
-  Proof.
-    destruct (is_nil_dec l).
-    - subst; simpl. lra.
-    - rewrite Rmin_list_ge_iff.
-      intros x Hx. rewrite in_map_iff in Hx.
-      destruct Hx as [a [Ha Hina]].
-      rewrite <-Ha.
-      apply Rplus_ge_compat; try (apply Rmin_spec; rewrite in_map_iff; exists a; split ; trivial).
-      rewrite map_not_nil.
-      congruence.
-  Qed.
-
-  Lemma Rmin_list_map_sub {A} (f g : A -> R) (l : list A):
-    Min_{ l}(fun a : A => (f a - g a)) <=
-    Min_{ l}(fun a : A => (f a)) - (Min_{ l}(fun a : A => (g a))).
-  Proof.
-    generalize (Rmin_list_map_add (fun a : A => (f a - g a))
-                                  (fun a : A => (g a))); intros.
-    assert (Min_{ l}(fun a : A => f a - g a + g a) =
-            Min_{ l}(fun a : A => f a)).
-    {
-      apply Rmin_list_Proper.
-      replace  (map (fun a : A => f a - g a + g a) l) with
-          (map (fun a : A => f a) l).
-      apply Permutation.Permutation_refl.
-      apply map_ext.
-      intros; lra.
-    }
-    specialize (H l).
-    rewrite H0 in H.
-    lra.
-  Qed.
-
-  Lemma Rmax_list_map_sub {A} (f g : A -> R) (l : list A):
-    Max_{ l}(fun a : A => (f a - g a)) >=
-    Max_{ l}(fun a : A => (f a)) - (Max_{ l}(fun a : A => (g a))).
-  Proof.
-    generalize (Rmax_list_map_add (fun a : A => (f a - g a))
-                                  (fun a : A => (g a))); intros.
-    assert (Max_{ l}(fun a : A => f a - g a + g a) =
-            Max_{ l}(fun a : A => f a)).
-    {
-      apply Rmax_list_Proper.
-      replace  (map (fun a : A => f a - g a + g a) l) with
-          (map (fun a : A => f a) l).
-      apply Permutation.Permutation_refl.
-      apply map_ext.
-      intros; lra.
-    }
-    specialize (H l).
-    rewrite H0 in H.
-    lra.
   Qed.
 
    Lemma qlearn_XF_contraction0 :
