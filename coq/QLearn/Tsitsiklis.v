@@ -5341,6 +5341,32 @@ End Stochastic_convergence.
       apply rvmax_rv; trivial.
   Qed.
 
+  Instance rvs_Rmin_list' {A Ts} {dom2 : SigmaAlgebra Ts} (rvs : list A) g
+                          {rv_rvs : List.Forall (fun x => RandomVariable dom2 borel_sa (g x)) rvs} :
+    RandomVariable dom2 borel_sa (fun ω : Ts => Rmin_list (map (fun x => g x ω) rvs)).
+  Proof.
+    induction rvs.
+    - apply rvconst.
+    - invcs rv_rvs.
+      cut_to IHrvs; trivial.
+      destruct rvs; trivial.
+      simpl.
+      apply rvmin_rv; trivial.
+  Qed.
+
+  Instance rvs_Rmax_list' {A} {Ts} {dom2 : SigmaAlgebra Ts} (rvs : list A) g
+                          {rv_rvs : List.Forall (fun x => RandomVariable dom2 borel_sa (g x)) rvs} :
+    RandomVariable dom2 borel_sa (fun ω : Ts => Rmax_list (map (fun x => g x ω) rvs)).
+  Proof.
+    induction rvs.
+    - apply rvconst.
+    - invcs rv_rvs.
+      cut_to IHrvs; trivial.
+      destruct rvs; trivial.
+      simpl.
+      apply rvmax_rv; trivial.
+  Qed.
+
   Ltac rewrite_condexp_pf_irrel H
   := match type of H with
      | @NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?nnf1 ?x = _ =>
@@ -6774,6 +6800,8 @@ Section MDP.
                       finfun_sa borel_sa fst  (fun q => qlearn_Qmin q x)); intros.
         apply H; try typeclasses eauto.
         unfold qlearn_Qmin.
+        apply rvs_Rmin_list'.
+        rewrite Forall_forall; intros.
         admit.
       + apply EventIndicator_rv.
   Admitted.
