@@ -7566,22 +7566,6 @@ Section MDP.
       eapply RandomVariable_proper_le; trivial; try reflexivity.
     Qed.
 
-    Global Instance almostR2_eq_sqr_proper:
-      Proper (almostR2 prts eq ==> almostR2 prts eq) rvsqr.
-    Proof.
-      intros ??.
-      apply almost_impl; apply all_almost; intros ??.
-      unfold rvsqr.
-      now rewrite H.
-    Qed.
-
-    Lemma almostR2_eq_opp'_proper :
-      Proper (almostR2 prts eq ==> almostR2 prts eq) (fun f ω => - f ω).
-    Proof.
-      intros ??.
-      apply almost_impl; apply all_almost; intros ??.
-      now rewrite H.
-    Qed.
       
   Theorem qlearn 
           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)

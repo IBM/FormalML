@@ -194,6 +194,19 @@ Section RealRandomVariables.
       now apply sa_le_ge.
     Qed.
 
+    Instance Ropp'_measurable (f : Ts -> R) :
+      RealMeasurable f ->
+      RealMeasurable (rvopp' f).
+    Proof.
+      intros ??.
+      assert (pre_event_equiv (fun omega : Ts => rvopp' f omega <= r)
+                              (fun omega : Ts => (f omega) >= -r)).
+      unfold pre_event_equiv; intros.
+      unfold rvopp'; lra.
+      rewrite H0.
+      now apply sa_le_ge.
+    Qed.
+
     Instance plus_measurable (f g : Ts -> R) :
       RealMeasurable f ->
       RealMeasurable g ->
@@ -799,6 +812,13 @@ Section RealRandomVariables.
         generalize (rvopp_rv rv_X).
         apply RandomVariable_proper; try easy.
         intros ?; unfold rvopp, rvscale; lra.
+      Qed.
+
+      Global Instance rvopp'_rv (rv_X : Ts -> R) 
+               {rv : RandomVariable dom borel_sa rv_X} :
+        RandomVariable dom borel_sa (rvopp' rv_X).
+      Proof.
+        typeclasses eauto.
       Qed.
 
       Global Instance rvclip_rv (rv_X : Ts -> R) (c:nonnegreal)
@@ -4663,6 +4683,17 @@ Section rv_almost.
     now apply almostR2_eq_scale_proper.
   Qed.
 
+  Global Instance almostR2_eq_opp'_proper 
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) : Proper (almostR2 prts eq ==> almostR2 prts eq) rvopp'.
+    Proof.
+      intros ??.
+      apply almost_impl; apply all_almost; intros ??.
+      unfold rvopp'.
+      now rewrite H.
+    Qed.
+
   Global Instance almostR2_eq_minus_proper
          {Ts:Type} 
          {dom: SigmaAlgebra Ts}
@@ -4672,6 +4703,17 @@ Section rv_almost.
     unfold rvminus.
     now rewrite H, H0.
   Qed.  
+
+    Global Instance almostR2_eq_sqr_proper
+         {Ts:Type} 
+         {dom: SigmaAlgebra Ts}
+         (prts: ProbSpace dom) : Proper (almostR2 prts eq ==> almostR2 prts eq) rvsqr.
+    Proof.
+      intros ??.
+      apply almost_impl; apply all_almost; intros ??.
+      unfold rvsqr.
+      now rewrite H.
+    Qed.
 
   Lemma almostR2_eq_plus_inv {Ts:Type} 
          {dom: SigmaAlgebra Ts}
