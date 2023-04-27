@@ -87,9 +87,13 @@ Section defs.
       fun omega => c * (rv_X omega).
 
     Definition rvopp (rv_X : Ts -> R) := rvscale (-1) rv_X.
+    Definition rvopp' (rv_X : Ts -> R) := (fun omega => - (rv_X omega)).    
 
     Definition rvminus (rv_X1 rv_X2 : Ts -> R) :=
       rvplus rv_X1 (rvopp rv_X2).
+    Definition rvminus' (rv_X1 rv_X2 : Ts -> R) :=
+      rvplus rv_X1 (rvopp' rv_X2).
+
 
     Definition rvmult (rv_X1 rv_X2 : Ts -> R) := 
       fun omega => (rv_X1 omega) * (rv_X2 omega).
@@ -232,6 +236,13 @@ Section defs.
       now rewrite eqq.
     Qed.
 
+    Global Instance rvopp'_proper : Proper (rv_eq ==> rv_eq ) rvopp'.
+    Proof.
+      unfold rv_eq, rvopp', Proper, respectful, pointwise_relation.
+      intros x y eqq z.
+      now rewrite eqq.
+    Qed.
+
     Global Instance rvminus_proper : Proper (rv_eq ==> rv_eq ==> rv_eq) rvminus.
     Proof.
       unfold rv_eq, rvminus, rvplus, rvopp, rvscale, pointwise_relation.
@@ -239,6 +250,13 @@ Section defs.
       now rewrite H, H0.
     Qed.
     
+    Global Instance rvminus'_proper : Proper (rv_eq ==> rv_eq ==> rv_eq) rvminus'.
+    Proof.
+      unfold rv_eq, rvminus', rvplus, rvopp', pointwise_relation.
+      intros ???????.
+      now rewrite H, H0.
+    Qed.
+
     Global Instance rvmult_proper : Proper (rv_eq ==> rv_eq ==> rv_eq) rvmult.
     Proof.
       unfold rv_eq, rvmult.
