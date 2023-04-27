@@ -8066,15 +8066,42 @@ Section MDP.
       {
         admit.
       }
+      assert (almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
+          (fun _ : Ts =>
+           FiniteExpectation prts
+             (fun ω : Ts => (cost sa ω - FiniteExpectation prts (cost sa))²))
+          (fun x : Ts =>
+           FiniteConditionalExpectation prts (filt_sub k)
+             (fun ω : Ts => (cost sa ω - FiniteExpectation prts (cost sa))²) x)).
+      {
+        generalize (is_conditional_expectation_independent_sa prts (filt_sub k)
+                      (fun ω : Ts => (cost sa ω - FiniteExpectation prts (cost sa))²)); intros.
+              cut_to H15.
+        - unfold const in H15.
+          generalize (FiniteCondexp_is_cond_exp prts (filt_sub k)
+                        (fun ω : Ts => (cost sa ω - FiniteExpectation prts (cost sa))²)
+                     ); intros.
+          generalize (is_conditional_expectation_unique prts (filt_sub k)); intros.
+          assert (IsFiniteExpectation 
+                    prts
+                    (fun omega : Ts => (cost sa omega - FiniteExpectation prts (cost sa))²)) by easy.
+          specialize (H17 _ _ _ _ _ _ H18 H15 H16).
+          revert H17.
+          apply almost_impl, all_almost; intros ??.
+          now apply Rbar_finite_eq in H17.
+        - admit.                 
+      }
       revert H14; apply almost_impl.
       revert H10; apply almost_impl.
       revert H9; apply almost_impl.
       revert freezn; apply almost_impl.
-      apply all_almost; intros ?????.
+      apply almost_prob_space_sa_sub_lift with (sub := filt_sub k).
+      revert H15; apply almost_impl.
+      apply all_almost; intros ??????.
       erewrite Condexp_nneg_simpl.
       unfold rvplus, rvscale in H10.
       unfold Xmin in H10.
-      eapply Rbar_le_trans; [| eapply Rbar_le_trans]; [| apply H14 |].
+      eapply Rbar_le_trans; [| eapply Rbar_le_trans]; [| apply H15 |].
        + apply refl_refl.
          apply NonNegCondexp_ext.
          intros ?.
@@ -8084,7 +8111,7 @@ Section MDP.
          unfold rvscale; f_equal.
          f_equal.
          unfold Xmin.
-         clear H10 H14 H15.
+         clear H9 H14 H15 H16.
          admit.
        + unfold rvplus, const, Rbar_rvmult, Rbar_rvplus.
          do 2 rewrite <- Condexp_nneg_simpl.
@@ -8095,18 +8122,6 @@ Section MDP.
          * apply Rmult_le_compat_l; try lra.
            unfold rvsqr.
            eapply Rle_trans; [| eapply Rle_trans]; [| apply H13 |]; try lra.
-           right.
-           generalize (is_conditional_expectation_independent_sa prts (filt_sub k)
-                         (fun omega : Ts => (cost sa omega - FiniteExpectation prts (cost sa))²) ); intros.
-           cut_to H16.
-           -- generalize is_conditional_expectation_independent_sa; intros.
-              admit.
-           -- specialize (indep_cost k sa).
-              revert indep_cost.
-              apply independent_sas_sub_proper; try easy.
-              apply (pullback_sa_compose_sub_rv 
-                            borel_sa (cost sa)
-                            (fun x => (x - FiniteExpectation prts (cost sa))²)).
          * unfold rvscale.
            apply Rmult_le_compat_l; try lra.
            clear H10.
@@ -8116,10 +8131,10 @@ Section MDP.
                         (rvsqr
                            (rvminus (Xmin k sa)
                                     (FiniteConditionalExpectation prts (filt_sub k) (Xmin k sa)))) x ).
-           -- unfold rvscale in H15.
+           -- unfold rvscale in H16.
               eapply Rle_trans.
               shelve.
-              apply H15.
+              apply H16.
               Unshelve.
               ++ apply IsFiniteExpectation_bounded with 
                      (rv_X1 := const 0)
