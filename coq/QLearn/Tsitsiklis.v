@@ -8092,6 +8092,30 @@ Section MDP.
                   (FiniteConditionalExpectation prts (filt_sub k)
                      (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))).
       {
+         generalize (freezing_sa_alt (filt_sub k)
+                       (pullback_rv_sub dom (discrete_sa (state M))
+                          (next_state_t k sa) (next_state_t_rv2 k sa))
+                       (qlearn_Q_basic k)
+                       (next_state_t k sa)
+                    ); intros.
+         specialize (H15 (fun '(q, ns) => (qlearn_Qmin q ns)) _ ).
+         assert (rvy : RandomVariable
+                         (pullback_sa (discrete_sa (state M)) (next_state_t k sa))
+                         (discrete_sa (state M)) (next_state_t k sa)).
+         {
+           apply pullback_rv.
+         }
+         assert  (rvPsi : RandomVariable (product_sa finfun_sa (discrete_sa (state M)))
+                            borel_sa (fun '(q, ns) => qlearn_Qmin q ns)).
+         {
+           apply rv_qmin3.
+         }
+         specialize (H15 rvy rvPsi _ _).
+         cut_to H15; [| now apply independent_sas_comm].
+         apply almost_prob_space_sa_sub_lift with (sub := filt_sub k).
+         revert H15.
+         apply almost_impl, all_almost; intros ??.
+
         admit.
       }
       assert (almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
@@ -8146,7 +8170,7 @@ Section MDP.
          unfold rvscale; f_equal.
          f_equal.
          unfold Xmin.
-         clear H9 H14 H15 H16.
+         clear H9 H15 H16.
          admit.
        + unfold rvplus, const, Rbar_rvmult, Rbar_rvplus.
          do 2 rewrite <- Condexp_nneg_simpl.
@@ -8194,10 +8218,8 @@ Section MDP.
                  unfold Xmin.
                  do 2 f_equal.
                  lra.
-           -- admit.
-        (*
-          eapply Rle_trans.
-              ++ apply H15.
+           -- eapply Rle_trans.
+              ++ apply H14.
               ++ unfold Rmax_norm, Rmax_all, X, rvmaxlist, Rmax_list_map.
                  match_destr.
                  apply Rmax_spec.
@@ -8208,8 +8230,6 @@ Section MDP.
                     rewrite Rmax_list_abs_sqr.
                     now rewrite map_map.
                  ** apply in_seq; lia.
-       *)
-
      - intros.
        generalize (qlearn_XF_contraction H x (Rfct_zero (sigT M.(act)))); intros.
        rewrite Rfct_minus_zero in H7.
