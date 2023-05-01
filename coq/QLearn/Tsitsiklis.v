@@ -5479,17 +5479,17 @@ Section MDP.
           {prts : ProbSpace dom}
           {F : nat -> SigmaAlgebra Ts}
 
-          (next_state_t : nat -> (sigT M.(act)) -> Ts -> M.(state))          
-          (next_state_t_rv : forall t sa,
-              RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state_t t sa ω))
-          (next_state_t_rv2 : forall t sa,
-              RandomVariable dom (discrete_sa (state M)) (fun ω => next_state_t t sa ω))
-          (cost_t : nat -> (sigT M.(act)) -> Ts -> R)          
-          (cost_t_rv : forall t sa, RandomVariable (F (S t)) borel_sa (cost_t t sa))
-          (cost_t_rv2 : forall t sa, RandomVariable dom borel_sa (cost_t t sa))
-          {isfe_cost_t : forall t (sa : sigT M.(act)),
-              IsFiniteExpectation prts (cost_t t sa)}
-          (islp_cost_t: forall t (sa : {x : state M & act M x}), IsLp prts 2 (cost_t t sa))          
+          (next_state : nat -> (sigT M.(act)) -> Ts -> M.(state))          
+          (next_state_rv : forall t sa,
+              RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state t sa ω))
+          (next_state_rv2 : forall t sa,
+              RandomVariable dom (discrete_sa (state M)) (fun ω => next_state t sa ω))
+          (cost : nat -> (sigT M.(act)) -> Ts -> R)          
+          (cost_rv : forall t sa, RandomVariable (F (S t)) borel_sa (cost t sa))
+          (cost_rv2 : forall t sa, RandomVariable dom borel_sa (cost t sa))
+          {isfe_cost : forall t (sa : sigT M.(act)),
+              IsFiniteExpectation prts (cost t sa)}
+          (islp_cost: forall t (sa : {x : state M & act M x}), IsLp prts 2 (cost t sa))          
           (Q0 : Rfct (sigT M.(act)))
           (α : nat -> Ts -> Rfct (sigT M.(act)))
           (rvα : forall t sa,
@@ -5499,28 +5499,28 @@ Section MDP.
               RandomVariable (F t) borel_sa (fun ω => α t ω sa))
           (isfilt : IsFiltration F) 
           (filt_sub : forall k, sa_sub (F k) dom) 
-          (indep_cost_t: forall k sa,
-              independent_sas prts (pullback_rv_sub dom borel_sa (cost_t k sa) (cost_t_rv2 k sa))
+          (indep_cost: forall k sa,
+              independent_sas prts (pullback_rv_sub dom borel_sa (cost k sa) (cost_rv2 k sa))
                 (filt_sub k))
-          (indep_next_state_t: forall k sa,
-              independent_sas prts (pullback_rv_sub dom (discrete_sa (state M)) (next_state_t k sa) (next_state_t_rv2 k sa))
+          (indep_next_state: forall k sa,
+              independent_sas prts (pullback_rv_sub dom (discrete_sa (state M)) (next_state k sa) (next_state_rv2 k sa))
                 (filt_sub k))
-          (ident_distr_next_state_t: forall k sa,
+          (ident_distr_next_state: forall k sa,
               identically_distributed_rvs prts (discrete_sa (state M))
-                (rv1 := next_state_t_rv2 0%nat sa)
-                (rv2 := next_state_t_rv2 k sa)
-                (next_state_t 0%nat sa)
-                (next_state_t k sa))
-          (ident_distr_cost_t: forall k sa,
+                (rv1 := next_state_rv2 0%nat sa)
+                (rv2 := next_state_rv2 k sa)
+                (next_state 0%nat sa)
+                (next_state k sa))
+          (ident_distr_cost: forall k sa,
               identically_distributed_rvs prts borel_sa
-                (rv1 := cost_t_rv2 0%nat sa)
-                (rv2 := cost_t_rv2 k sa)
-                (cost_t 0%nat sa)
-                (cost_t k sa))
+                (rv1 := cost_rv2 0%nat sa)
+                (rv2 := cost_rv2 k sa)
+                (cost 0%nat sa)
+                (cost k sa))
           (β : R).
 
 
-  Instance rv_ns_t: forall t sa, RandomVariable dom (discrete_sa (state M)) (next_state_t t sa).
+  Instance rv_ns_t: forall t sa, RandomVariable dom (discrete_sa (state M)) (next_state t sa).
   Proof.
     intros.
     now apply (RandomVariable_sa_sub (filt_sub (S t))).
@@ -5574,7 +5574,7 @@ Section MDP.
   Definition Rmin_all : Rfct (sigT M.(act)) -> R := let (ls,_) := finA in fun (f:Rfct (sigT M.(act))) => Min_{ls}(fun s => (f s)).
   
   Instance isfe_qmin_t (Q : Rfct (sigT M.(act))) (t : nat) (sa : (sigT M.(act))) :
-    IsFiniteExpectation prts (fun ω => qlearn_Qmin Q (next_state_t t sa ω)).
+    IsFiniteExpectation prts (fun ω => qlearn_Qmin Q (next_state t sa ω)).
   Proof.
     apply IsFiniteExpectation_bounded with (rv_X1 := const (Rmin_all Q))
                                            (rv_X3 := const (Rmax_all Q)).
@@ -5592,13 +5592,13 @@ Section MDP.
         destruct H as [? [? ?]].
         subst.
         apply in_map_iff.
-        exists  (existT (act M) (next_state_t t sa a) x).
+        exists  (existT (act M) (next_state t sa a) x).
         split; trivial.
     - intros ?.
       unfold const, qlearn_Qmin.
       unfold Rmax_all.
       match_destr.
-      apply Rle_trans with (r2 := Max_{ act_list (next_state_t t sa a)}(fun a0 : act M (next_state_t t sa a) => Q (existT (act M) (next_state_t t sa a) a0))).
+      apply Rle_trans with (r2 := Max_{ act_list (next_state t sa a)}(fun a0 : act M (next_state t sa a) => Q (existT (act M) (next_state t sa a) a0))).
       + apply Rge_le.
         apply Rmax_list_map_ge_Rmin.
       + apply Rmax_list_incl.
@@ -5609,13 +5609,13 @@ Section MDP.
           destruct H as [? [? ?]].
           subst.
           apply in_map_iff.
-          exists  (existT (act M) (next_state_t t sa a) x).
+          exists  (existT (act M) (next_state t sa a) x).
           split; trivial.
   Qed.
 
   Definition qlearn_XF_t0 (Q : Rfct (sigT M.(act))) : Rfct (sigT M.(act)) :=
-    fun sa => FiniteExpectation prts (cost_t 0%nat sa) +
-                β * (FiniteExpectation prts (fun ω => qlearn_Qmin Q (next_state_t 0%nat sa ω))).
+    fun sa => FiniteExpectation prts (cost 0%nat sa) +
+                β * (FiniteExpectation prts (fun ω => qlearn_Qmin Q (next_state 0%nat sa ω))).
 
   Definition qlearn_XF (Q : Rfct (sigT M.(act))) : Rfct (sigT M.(act)) :=
     qlearn_XF_t0 Q.
@@ -5869,7 +5869,7 @@ Section MDP.
     (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q ω sa))
     (sa : (sigT M.(act))) :
     forall t,
-      IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin (Q ω) (next_state_t t sa ω)).
+      IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin (Q ω) (next_state t sa ω)).
   Proof.
     intros.
     apply IsFiniteExpectation_bounded with
@@ -5887,12 +5887,12 @@ Section MDP.
         destruct H as [? [? ?]].
         subst.
         apply in_map_iff.
-        exists  (existT (act M) (next_state_t t sa a) x).
+        exists  (existT (act M) (next_state t sa a) x).
         split; trivial.
     - intros ?.
       unfold Rmax_all, qlearn_Qmin.
       apply Rle_trans with
-          (r2 :=  Max_{ act_list (next_state_t t sa a)}(fun a0 : act M (next_state_t t sa a) => Q a (existT (act M) (next_state_t t sa a) a0))).
+          (r2 :=  Max_{ act_list (next_state t sa a)}(fun a0 : act M (next_state t sa a) => Q a (existT (act M) (next_state t sa a) a0))).
       + apply Rge_le, Rmax_list_map_ge_Rmin.
       + match_destr.
         apply Rmax_list_incl.
@@ -5903,7 +5903,7 @@ Section MDP.
           destruct H as [? [? ?]].
           subst.
           apply in_map_iff.
-          exists  (existT (act M) (next_state_t t sa a) x).
+          exists  (existT (act M) (next_state t sa a) x).
           split; trivial.
   Qed.
 
@@ -5943,7 +5943,7 @@ Section MDP.
     (sa : (sigT M.(act))) :
     forall k,
       IsFiniteExpectation (product_ps prts prts)
-        (fun '(ω, ω0) => qlearn_Qmin (Q ω) (next_state_t k sa ω0)).
+        (fun '(ω, ω0) => qlearn_Qmin (Q ω) (next_state k sa ω0)).
   Proof.
     intros.
     apply IsFiniteExpectation_bounded with
@@ -5963,13 +5963,13 @@ Section MDP.
         subst.
         apply in_map_iff.
         simpl.
-        exists  (existT (act M) (next_state_t k sa t0) x).
+        exists  (existT (act M) (next_state k sa t0) x).
         split; trivial.
     - intros ?.
       unfold Rmax_all, qlearn_Qmin.
       destruct a.
       apply Rle_trans with
-          (r2 :=  Max_{ act_list (next_state_t k sa t0)}(fun a0 : act M (next_state_t k sa t0) => Q t (existT (act M) (next_state_t k sa t0) a0))).
+          (r2 :=  Max_{ act_list (next_state k sa t0)}(fun a0 : act M (next_state k sa t0) => Q t (existT (act M) (next_state k sa t0) a0))).
       + apply Rge_le, Rmax_list_map_ge_Rmin.
       + match_destr.
         apply Rmax_list_incl.
@@ -5981,7 +5981,7 @@ Section MDP.
           subst.
           apply in_map_iff.
           simpl.
-          exists  (existT (act M) (next_state_t k sa t0) x).
+          exists  (existT (act M) (next_state k sa t0) x).
           split; trivial.
   Qed.
 
@@ -5990,7 +5990,7 @@ Section MDP.
     (isfeQ : forall sa, IsLp prts 2 (fun ω => Q ω sa))
     (sa : (sigT M.(act))) :
     forall t,
-      IsLp prts 2 (fun ω : Ts => qlearn_Qmin (Q ω) (next_state_t t sa ω)).
+      IsLp prts 2 (fun ω : Ts => qlearn_Qmin (Q ω) (next_state t sa ω)).
   Proof.
     intros.
     unfold qlearn_Qmin.
@@ -6003,10 +6003,10 @@ Section MDP.
       unfold Rmax_all, qlearn_Qmin.
       match_destr.
       assert (exists sa0,
-                 Min_{ act_list (next_state_t t sa a)}
-                     (fun a0 : act M (next_state_t t sa a) => Q a (existT (act M) (next_state_t t sa a) a0)) = Q a sa0).
+                 Min_{ act_list (next_state t sa a)}
+                     (fun a0 : act M (next_state t sa a) => Q a (existT (act M) (next_state t sa a) a0)) = Q a sa0).
       {
-        generalize (Rmin_list_map_exist (fun a0 : act M (next_state_t t sa a) => Q a (existT (act M) (next_state_t t sa a) a0))  (act_list (next_state_t t sa a))); intros.
+        generalize (Rmin_list_map_exist (fun a0 : act M (next_state t sa a) => Q a (existT (act M) (next_state t sa a) a0))  (act_list (next_state t sa a))); intros.
         cut_to H.
         - destruct H as [? [? ?]].
           exists (existT _ _ x).
@@ -6041,7 +6041,7 @@ Section MDP.
   Instance rv_qmin0_t0 
     (sa : (sigT M.(act))) :
     RandomVariable dom borel_sa 
-                   (fun ω : Ts => qlearn_Qmin Q0 (next_state_t 0%nat sa ω)).
+                   (fun ω : Ts => qlearn_Qmin Q0 (next_state 0%nat sa ω)).
   Proof.
     typeclasses eauto.
   Qed.
@@ -6049,11 +6049,11 @@ Section MDP.
   Instance rv_qmin0'_t0
     (sa : (sigT M.(act))) :
     RandomVariable (F 1%nat) borel_sa 
-                   (fun ω : Ts => qlearn_Qmin Q0 (next_state_t 0%nat sa ω)).
+                   (fun ω : Ts => qlearn_Qmin Q0 (next_state 0%nat sa ω)).
   Proof.
     apply rv_qmin1.
     - intros; apply rvconst.
-    - apply next_state_t_rv.
+    - apply next_state_rv.
   Qed.
 
   Instance isfe0
@@ -6065,7 +6065,7 @@ Section MDP.
 
   Instance isfe_qmin0_t
     (sa : (sigT M.(act))) :
-    IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin Q0 (next_state_t 0%nat sa ω)).
+    IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin Q0 (next_state 0%nat sa ω)).
   Proof.
     typeclasses eauto.
   Qed.
@@ -6122,7 +6122,7 @@ Section MDP.
            | 0%nat => (fun ω  => Q0)
            | S t' => let g := qlearn_Q_basic t' in 
                      (fun ω sa => (g ω sa) + 
-                                  (α t' ω sa) * ((cost_t t' sa ω) + β * (qlearn_Qmin (g ω) (next_state_t t' sa ω))
+                                  (α t' ω sa) * ((cost t' sa ω) + β * (qlearn_Qmin (g ω) (next_state t' sa ω))
                                                                    - (g ω sa)))
            end.
 
@@ -6142,7 +6142,7 @@ Section MDP.
              ++ intros.
                 apply (RandomVariable_sa_sub (isfilt t)).      
                 now apply IHt.
-             ++ apply next_state_t_rv.
+             ++ apply next_state_rv.
           -- cut (RandomVariable (F (S t)) borel_sa (rvopp (fun ω : Ts => qlearn_Q_basic t ω sa))).
              { apply RandomVariable_proper; try reflexivity.
                intros ?.
@@ -6175,7 +6175,7 @@ Section MDP.
   Qed.      
 
   Instance isl2_qlearn_Q_basic
-     (isl2_sa: forall k sa, IsLp prts 2 (cost_t k sa)):
+     (isl2_sa: forall k sa, IsLp prts 2 (cost k sa)):
     forall k sa, IsLp prts 2 (fun ω => qlearn_Q_basic k ω sa).
   Proof.
     intros.
@@ -6193,8 +6193,8 @@ Section MDP.
           (rv_X2 :=  
              (fun ω : Ts =>
                 (Rsqr 
-                   (cost_t k sa ω + 
-                    β * qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω) -
+                   (cost k sa ω + 
+                    β * qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω) -
                     qlearn_Q_basic k ω sa)))); try typeclasses eauto.
       + apply all_almost; intros.
         rewrite rvpower2; [|apply nnfabs].
@@ -6209,8 +6209,8 @@ Section MDP.
         * unfold Rsqr; lra.
       + assert (IsLp prts 2 
                      (fun ω : Ts =>
-                        (cost_t k sa ω + 
-                         β * qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω) -
+                        (cost k sa ω + 
+                         β * qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω) -
                          qlearn_Q_basic k ω sa))).
         {
           apply H0; try typeclasses eauto.
@@ -6234,11 +6234,11 @@ Section MDP.
              (t : nat) (ω : Ts) (sa : (sigT M.(act)))     
              (rvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q t ω sa))
              (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q t ω sa)) : R :=
-    ((cost_t t sa ω) - FiniteExpectation (isfe := isfe_cost_t t sa) prts (cost_t t sa)) +
-                     β *(qlearn_Qmin (Q t ω) (next_state_t t sa ω) -
+    ((cost t sa ω) - FiniteExpectation (isfe := isfe_cost t sa) prts (cost t sa)) +
+                     β *(qlearn_Qmin (Q t ω) (next_state t sa ω) -
                          (FiniteExpectation 
                            prts 
-                           (fun ω0 => qlearn_Qmin (Q t ω) (next_state_t t sa ω0)))).
+                           (fun ω0 => qlearn_Qmin (Q t ω) (next_state t sa ω0)))).
 
   Lemma finite_fun_vector_iso_nth (x : Rfct (sigT M.(act))) (P : R -> Prop) :
     let iso_f := iso_f
@@ -6726,8 +6726,8 @@ Section MDP.
 
   Lemma FiniteExpectation_Qmin_t (x : Rfct {s : state M & act M s}) sa :
     forall t,
-      FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state_t t sa ω)) =
-        list_sum (map (fun v : state M => qlearn_Qmin x v * ps_P (preimage_singleton (next_state_t t sa) v)) 
+      FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state t sa ω)) =
+        list_sum (map (fun v : state M => qlearn_Qmin x v * ps_P (preimage_singleton (next_state t sa) v)) 
                   (fin_elms (FiniteType := fin_finite_nodup _))).
   Proof.
     intros.
@@ -6744,13 +6744,13 @@ Section MDP.
   Proof.
     intros.
     unfold qlearn_XF, qlearn_XF_t0.
-    replace  (FiniteExpectation prts (cost_t 0%nat sa) +
-              β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state_t 0%nat sa ω)) -
-              (FiniteExpectation prts (cost_t 0%nat sa) +
-               β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin y (next_state_t 0%nat sa ω))))
+    replace  (FiniteExpectation prts (cost 0%nat sa) +
+              β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state 0%nat sa ω)) -
+              (FiniteExpectation prts (cost 0%nat sa) +
+               β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin y (next_state 0%nat sa ω))))
       with
-        (β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state_t 0%nat sa ω)) -
-         β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin y (next_state_t 0%nat sa ω))) by lra.
+        (β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state 0%nat sa ω)) -
+         β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin y (next_state 0%nat sa ω))) by lra.
     rewrite <- Rmult_minus_distr_l.
     rewrite Rabs_mult.
     rewrite Rabs_right; try lra.
@@ -6773,7 +6773,7 @@ Section MDP.
                            (Rabs
                              (x (existT (act M) x0 a) - 
                               y (existT (act M) x0 a))) *
-                           ps_P (preimage_singleton (next_state_t 0%nat sa) x0))))
+                           ps_P (preimage_singleton (next_state 0%nat sa) x0))))
                 (@FiniteType.fin_elms 
                    (state M)
                    (@fin_finite_nodup (state M) (st_eqdec M) (fs M))))).
@@ -6798,7 +6798,7 @@ Section MDP.
                   (fun x0 : state M =>
                      (Max_{ fin_elms}(fun s : {x : state M & act M x} => Rabs (x s - y s))) 
 
-                     * ps_P (preimage_singleton (next_state_t 0%nat sa) x0))
+                     * ps_P (preimage_singleton (next_state 0%nat sa) x0))
                   (@FiniteType.fin_elms 
                    (state M)
                    (@fin_finite_nodup (state M) (st_eqdec M) (fs M))))). 
@@ -6825,7 +6825,7 @@ Section MDP.
         apply Rmult_le_compat_l.
         * apply Rmax_list_Rabs_pos.
         * right.
-          now generalize (frf_vals_prob_1 _ (next_state_t 0%nat sa)).
+          now generalize (frf_vals_prob_1 _ (next_state 0%nat sa)).
   Qed.
 
   Lemma qlearn_XF_contraction :
@@ -7054,7 +7054,7 @@ Section MDP.
        intros.
        apply rvplus_rv; try typeclasses eauto.
        apply rvscale_rv.
-       assert (rv2 : forall ω, RandomVariable dom borel_sa (fun v : Ts => qlearn_Qmin ω (next_state_t 0%nat sa v))).
+       assert (rv2 : forall ω, RandomVariable dom borel_sa (fun v : Ts => qlearn_Qmin ω (next_state 0%nat sa v))).
        {
          intros.
          typeclasses eauto.
@@ -7081,11 +7081,11 @@ Section MDP.
          apply id_rv.
      }
      assert (rvfinexp : forall k sa, RandomVariable (F (S k)) borel_sa
-                                       (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0)))).
+                                       (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0)))).
      {
        intros.
        assert (RandomVariable (F (S k)) borel_sa
-                              (fun ω => list_sum (map (fun v : state M => qlearn_Qmin (qlearn_Q_basic k ω) v * ps_P (preimage_singleton (next_state_t k sa) v))  (@fin_elms (state M) (@fin_finite_nodup (state M) (st_eqdec M) (fs M)))))).
+                              (fun ω => list_sum (map (fun v : state M => qlearn_Qmin (qlearn_Q_basic k ω) v * ps_P (preimage_singleton (next_state k sa) v))  (@fin_elms (state M) (@fin_finite_nodup (state M) (st_eqdec M) (fs M)))))).
        {
          apply list_sum_rv.
          intros.
@@ -7103,7 +7103,7 @@ Section MDP.
        now rewrite FiniteExpectation_Qmin_t.
      }
      assert (rvfinexp' : forall k sa, RandomVariable dom borel_sa
-                                       (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0)))).
+                                       (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0)))).
      {
        intros.
        now apply (RandomVariable_sa_sub (filt_sub (S k))).
@@ -7122,7 +7122,7 @@ Section MDP.
          + typeclasses eauto.
          + generalize (rvopp_rv dom); intros.
            specialize (H3
-                         (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0)))).
+                         (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0)))).
            unfold rvopp, rvscale in H3.
            cut_to H3; try easy.
            revert H3.
@@ -7131,19 +7131,19 @@ Section MDP.
      }
      assert (isfe_finexp: forall k sa,
                 IsFiniteExpectation prts
-                  (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0)))).
+                  (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0)))).
      {
        intros.
          generalize (@isfe_fubini_section_fst _ _ _ _ prts prts
                        (fun '(ω, ω0) =>
-                          qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0)))
+                          qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0)))
          ; intros HH.
          {
            assert (rvf: RandomVariable (product_sa dom dom) Rbar_borel_sa
-                          (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))).
+                          (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0))).
            {
              assert (RandomVariable (product_sa dom dom) borel_sa
-                       (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))).
+                       (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0))).
              {
                apply rv_qmin2; try easy.
                intros.
@@ -7158,12 +7158,12 @@ Section MDP.
            
 
            assert (IsFiniteExpectation (product_ps prts prts)
-                            (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))).
+                            (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0))).
           {
             apply isfe_qmin2_t; typeclasses eauto.
           }
            assert (isfef: Rbar_IsFiniteExpectation (product_ps prts prts)
-                            (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))).
+                            (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0))).
           {
             apply IsFiniteExpectation_Rbar in H3.
             revert H3.
@@ -7176,7 +7176,7 @@ Section MDP.
            apply IsFiniteExpectation_proper; intros ?.
            rewrite <- FinExp_Rbar_FinExp.
            + now rewrite (Rbar_FiniteExpectation0_finite _ _ (isfe:= (@IsFiniteExpectation_Rbar Ts dom prts
-                                                                      (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k a) (next_state_t k sa ω0))
+                                                                      (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k a) (next_state k sa ω0))
                                                                       (isfe_qmin_t (qlearn_Q_basic k a) k sa)))).
            + typeclasses eauto.
          }
@@ -7199,7 +7199,7 @@ Section MDP.
        intros.
        typeclasses eauto.
      }
-     assert (forall n sa,  RandomVariable (F (S n)) (discrete_sa (state M)) (next_state_t n sa)).
+     assert (forall n sa,  RandomVariable (F (S n)) (discrete_sa (state M)) (next_state n sa)).
      {
        intros.
        easy.
@@ -7222,59 +7222,59 @@ Section MDP.
        subst w.
        unfold qlearn_w.
        apply almostR2_prob_space_sa_sub_lift with (sub := filt_sub k).
-       generalize (Condexp_minus' (fun ω => cost_t k sa ω) (fun _ => FiniteExpectation 
-                                                                   (isfe := isfe_cost_t k sa)
-                                                                   prts (cost_t k sa)) 
+       generalize (Condexp_minus' (fun ω => cost k sa ω) (fun _ => FiniteExpectation 
+                                                                   (isfe := isfe_cost k sa)
+                                                                   prts (cost k sa)) 
                                   (filt_sub k) 
-                                  (rv1 := cost_t_rv2 k sa)
-                                  (isfe1 := isfe_cost_t k sa)
+                                  (rv1 := cost_rv2 k sa)
+                                  (isfe1 := isfe_cost k sa)
                                   (isfe2 := IsFiniteExpectation_const prts (FiniteExpectation 
-                                                                   (isfe := isfe_cost_t k sa)
-                                                                   prts (cost_t k sa)))); intros.
+                                                                   (isfe := isfe_cost k sa)
+                                                                   prts (cost k sa)))); intros.
        generalize (@Condexp_plus _ _ prts _ (filt_sub k)
                      (fun ω : Ts =>
-                        cost_t k sa ω - FiniteExpectation
-                                          prts (cost_t k sa))
+                        cost k sa ω - FiniteExpectation
+                                          prts (cost k sa))
                      (fun ω => β *
-                               (qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω) -
+                               (qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω) -
                                 (FiniteExpectation prts 
 
-                                   (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))))) _  _); intros.
+                                   (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0))))) _  _); intros.
        cut_to H7.
-       generalize (is_conditional_expectation_independent_sa prts (filt_sub k) (cost_t k sa)); intros.
+       generalize (is_conditional_expectation_independent_sa prts (filt_sub k) (cost k sa)); intros.
        cut_to H8.
 
-       generalize (Condexp_cond_exp prts (filt_sub k) (cost_t k sa)); intros.
-       generalize (is_conditional_expectation_unique prts (filt_sub k) (cost_t k sa)); intros.
-       specialize (H10 _ _ _ _ _ (isfe_cost_t k sa) H8 H9).
+       generalize (Condexp_cond_exp prts (filt_sub k) (cost k sa)); intros.
+       generalize (is_conditional_expectation_unique prts (filt_sub k) (cost k sa)); intros.
+       specialize (H10 _ _ _ _ _ (isfe_cost k sa) H8 H9).
        generalize (Condexp_scale prts (filt_sub k) β
                      (fun ω : Ts =>
-                         (qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω) -
+                         (qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω) -
                             FiniteExpectation prts
-                              (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))))); intros.
+                              (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0))))); intros.
 
        assert (almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
                  (ConditionalExpectation prts (filt_sub k)
                     (fun ω : Ts =>
-                       qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω) -
-                         FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))))
+                       qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω) -
+                         FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0))))
                  (const 0)).
        {
          generalize (Condexp_minus'  (fun ω : Ts =>
-                                        qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω))
+                                        qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω))
                                      (fun ω =>
-                                        FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))) (filt_sub k)); intros.
+                                        FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0))) (filt_sub k)); intros.
          
          generalize (freezing_sa_alt (filt_sub k)
                        (pullback_rv_sub dom (discrete_sa (state M))
-                          (next_state_t k sa) (next_state_t_rv2 k sa))
+                          (next_state k sa) (next_state_rv2 k sa))
                        (qlearn_Q_basic k)
-                       (next_state_t k sa)
+                       (next_state k sa)
                     ); intros.
          specialize (H13 (fun '(q, ns) => (qlearn_Qmin q ns)) _ ).
          assert (rvy : RandomVariable
-                         (pullback_sa (discrete_sa (state M)) (next_state_t k sa))
-                         (discrete_sa (state M)) (next_state_t k sa)).
+                         (pullback_sa (discrete_sa (state M)) (next_state k sa))
+                         (discrete_sa (state M)) (next_state k sa)).
          {
            apply pullback_rv.
          }
@@ -7288,10 +7288,10 @@ Section MDP.
          cut_to H13; [| now apply independent_sas_comm].
          cut (almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
                 (ConditionalExpectation prts (filt_sub k)
-                   (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))
+                   (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω)))
                 (ConditionalExpectation prts (filt_sub k)
                    (fun ω : Ts =>
-                      FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))))).
+                      FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0))))).
          {
            apply almost_impl; apply all_almost; intros ??.
            unfold Rbar_rvminus, Rbar_rvopp, Rbar_rvplus, const.
@@ -7302,10 +7302,10 @@ Section MDP.
          
          assert (eqq:almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
                        (ConditionalExpectation prts (filt_sub k)
-                          (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))
+                          (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω)))
                        (ConditionalExpectation prts (filt_sub k)
                           (FiniteConditionalExpectation prts (filt_sub k)
-                             (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω0) (next_state_t k sa ω0))))).
+                             (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω0) (next_state k sa ω0))))).
          {
            apply all_almost; intros ?.
            symmetry.
@@ -7340,7 +7340,7 @@ Section MDP.
               reflexivity.
            -- unfold const.
               unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
-              generalize (Condexp_const' (FiniteExpectation prts (cost_t k sa)) (filt_sub k) x); intros.
+              generalize (Condexp_const' (FiniteExpectation prts (cost k sa)) (filt_sub k) x); intros.
               rewrite H13.
               unfold const.
               unfold const in H10.
@@ -7355,14 +7355,14 @@ Section MDP.
            f_equal.
            rewrite H12.
            now unfold const.
-       + apply indep_cost_t.
+       + apply indep_cost.
        + apply IsFiniteExpectation_minus'; try typeclasses eauto.
          apply IsFiniteExpectation_const.
        + apply IsFiniteExpectation_scale.
          apply IsFiniteExpectation_minus'; try typeclasses eauto.
      - unfold w.
        assert (isl2_qmin: forall k sa,
-                  IsLp prts 2 (fun ω => (qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))).
+                  IsLp prts 2 (fun ω => (qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω)))).
        {
          typeclasses eauto.
        }
@@ -7377,7 +7377,7 @@ Section MDP.
          apply rvsqr_rv.
          apply H4.
        }
-       (pose (Xmin := fun k sa ω => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω))).
+       (pose (Xmin := fun k sa ω => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω))).
        assert (forall k sa,
                   IsFiniteExpectation 
                     prts
@@ -7435,10 +7435,10 @@ Section MDP.
           apply all_almost; intros ?.
           match_destr.
           assert (exists sa0,
-                     Min_{ act_list (next_state_t k sa x)}
-                         (fun a0 : act M (next_state_t k sa x) => qlearn_Q_basic k x (existT (act M) (next_state_t k sa x) a0)) = qlearn_Q_basic k x sa0).
+                     Min_{ act_list (next_state k sa x)}
+                         (fun a0 : act M (next_state k sa x) => qlearn_Q_basic k x (existT (act M) (next_state k sa x) a0)) = qlearn_Q_basic k x sa0).
          {
-           generalize (Rmin_list_map_exist (fun a0 : act M (next_state_t k sa x) => qlearn_Q_basic k x (existT (act M) (next_state_t k sa x) a0))  (act_list (next_state_t k sa x))); intros.
+           generalize (Rmin_list_map_exist (fun a0 : act M (next_state k sa x) => qlearn_Q_basic k x (existT (act M) (next_state k sa x) a0))  (act_list (next_state k sa x))); intros.
            cut_to H12.
            - destruct H12 as [? [? ?]].
              exists (existT _ _ x0).
@@ -7455,7 +7455,7 @@ Section MDP.
       generalize (fun k sa =>
                     nncondexp_sqr_sum_bound_nneg
                       (fun ω : Ts =>
-                         cost_t k sa ω - FiniteExpectation prts (cost_t k sa))
+                         cost k sa ω - FiniteExpectation prts (cost k sa))
                       (rvscale 
                          β 
                          (fun ω => (Xmin k sa ω) -
@@ -7468,11 +7468,11 @@ Section MDP.
                  IsFiniteExpectation 
                    prts
                    (fun ω => Rsqr
-                               ((cost_t k sa ω) -
-                                (FiniteExpectation prts (cost_t k sa))))).
+                               ((cost k sa ω) -
+                                (FiniteExpectation prts (cost k sa))))).
       {
         intros.
-        generalize (isfe_variance_l2 prts (cost_t k sa) (cost_t_rv2 k sa)).
+        generalize (isfe_variance_l2 prts (cost k sa) (cost_rv2 k sa)).
         apply IsFiniteExpectation_proper.
         intros ?.
         rv_unfold'.
@@ -7484,16 +7484,16 @@ Section MDP.
                  forall k sa, 
                    FiniteExpectation prts 
                                      (fun ω => Rsqr
-                                                 ((cost_t k sa ω) -
-                                                  (FiniteExpectation prts (cost_t k sa))))
+                                                 ((cost k sa ω) -
+                                                  (FiniteExpectation prts (cost k sa))))
                    <=   A).
       {
         assert (forall k sa,
                    exists A,
                      FiniteExpectation prts 
                                      (fun ω => Rsqr
-                                                 ((cost_t k sa ω) -
-                                                  (FiniteExpectation prts (cost_t k sa))))
+                                                 ((cost k sa ω) -
+                                                  (FiniteExpectation prts (cost k sa))))
                    <=   A).
         {
           intros.
@@ -7506,7 +7506,7 @@ Section MDP.
                    0 < A /\
                      (forall (sa : {x : state M & act M x}),
                          FiniteExpectation prts
-                           (fun ω : Ts => (cost_t 0%nat sa ω - FiniteExpectation prts (cost_t 0%nat sa))²) <=  A)).
+                           (fun ω : Ts => (cost 0%nat sa ω - FiniteExpectation prts (cost 0%nat sa))²) <=  A)).
         {
           specialize (H11 0%nat).
           apply (finite_ex_choice _ (decA:=EqDecsigT)) in H11.
@@ -7532,22 +7532,22 @@ Section MDP.
         right.
         eapply ident_distr_finite_exp_eq.
         generalize (identically_distributed_sqr
-                      (fun ω : Ts => (cost_t k sa ω - FiniteExpectation prts (cost_t k sa)))
-                      (fun ω : Ts => (cost_t 0 sa ω - FiniteExpectation prts (cost_t 0%nat sa)))); intros.
+                      (fun ω : Ts => (cost k sa ω - FiniteExpectation prts (cost k sa)))
+                      (fun ω : Ts => (cost 0 sa ω - FiniteExpectation prts (cost 0%nat sa)))); intros.
         unfold compose in H14.
         cut_to H14.
         - revert H14.
           now apply identically_distributed_rvs_proper.
         - cut (identically_distributed_rvs prts borel_sa
-                 (fun ω : Ts => cost_t k sa ω - FiniteExpectation prts (cost_t 0 sa))
-                 (fun ω : Ts => cost_t 0 sa ω - FiniteExpectation prts (cost_t 0 sa))).
+                 (fun ω : Ts => cost k sa ω - FiniteExpectation prts (cost 0 sa))
+                 (fun ω : Ts => cost 0 sa ω - FiniteExpectation prts (cost 0 sa))).
           + apply identically_distributed_rvs_proper; try reflexivity.
             intros ?.
             f_equal.
             eapply ident_distr_finite_exp_eq.
             now apply identically_distributed_rvs_comm.
           + generalize (identically_distributed_rv_compose prts borel_sa borel_sa
-                          (cost_t k sa) (cost_t 0 sa) (fun x => x - FiniteExpectation prts (cost_t 0 sa)))
+                          (cost k sa) (cost 0 sa) (fun x => x - FiniteExpectation prts (cost 0 sa)))
             ; intros HH.
             cut_to HH.
             * revert HH.
@@ -7590,20 +7590,20 @@ Section MDP.
       specialize (H12 k sa).
       assert (freezn: almostR2  prts  eq
                   (fun ω => FiniteExpectation prts
-                               (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0)))
+                               (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0)))
                   (FiniteConditionalExpectation prts (filt_sub k)
-                     (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω)))).
+                     (fun ω : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω)))).
       {
          generalize (freezing_sa_alt (filt_sub k)
                        (pullback_rv_sub dom (discrete_sa (state M))
-                          (next_state_t k sa) (next_state_t_rv2 k sa))
+                          (next_state k sa) (next_state_rv2 k sa))
                        (qlearn_Q_basic k)
-                       (next_state_t k sa)
+                       (next_state k sa)
                     ); intros.
          specialize (H14 (fun '(q, ns) => (qlearn_Qmin q ns)) _ ).
          assert (rvy : RandomVariable
-                         (pullback_sa (discrete_sa (state M)) (next_state_t k sa))
-                         (discrete_sa (state M)) (next_state_t k sa)).
+                         (pullback_sa (discrete_sa (state M)) (next_state k sa))
+                         (discrete_sa (state M)) (next_state k sa)).
          {
            apply pullback_rv.
          }
@@ -7625,28 +7625,28 @@ Section MDP.
       assert (almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
           (fun _ : Ts =>
            FiniteExpectation prts
-             (fun ω : Ts => (cost_t k sa ω - FiniteExpectation prts (cost_t k sa))²))
+             (fun ω : Ts => (cost k sa ω - FiniteExpectation prts (cost k sa))²))
           (fun x : Ts =>
            FiniteConditionalExpectation prts (filt_sub k)
-             (fun ω : Ts => (cost_t k sa ω - FiniteExpectation prts (cost_t k sa))²) x)).
+             (fun ω : Ts => (cost k sa ω - FiniteExpectation prts (cost k sa))²) x)).
       {
         generalize (is_conditional_expectation_independent_sa prts (filt_sub k)
-                      (fun ω : Ts => (cost_t k sa ω - FiniteExpectation prts (cost_t k sa))²)); intros.
+                      (fun ω : Ts => (cost k sa ω - FiniteExpectation prts (cost k sa))²)); intros.
               cut_to H14.
         - unfold const in H14.
           generalize (FiniteCondexp_is_cond_exp prts (filt_sub k)
-                        (fun ω : Ts => (cost_t k sa ω - FiniteExpectation prts (cost_t k sa))²)
+                        (fun ω : Ts => (cost k sa ω - FiniteExpectation prts (cost k sa))²)
                      ); intros.
           generalize (is_conditional_expectation_unique prts (filt_sub k)); intros.
           assert (IsFiniteExpectation 
                     prts
-                    (fun omega : Ts => (cost_t k sa omega - FiniteExpectation prts (cost_t k sa))²)) by easy.
+                    (fun omega : Ts => (cost k sa omega - FiniteExpectation prts (cost k sa))²)) by easy.
           specialize (H16 _ _ _ _ _ _ H17 H14 H15).
           revert H16.
           apply almost_impl, all_almost; intros ??.
           now apply Rbar_finite_eq in H16.
-        - specialize (indep_cost_t k sa).
-          revert indep_cost_t.
+        - specialize (indep_cost k sa).
+          revert indep_cost.
           apply independent_sas_sub_proper; try easy.
           apply pullback_rv_sub.
           apply rvsqr_rv.
@@ -7659,14 +7659,14 @@ Section MDP.
                 (ConditionalExpectation prts (filt_sub k)
                    (rvsqr
                       (fun ω : Ts =>
-                         cost_t k sa ω - FiniteExpectation prts (cost_t k sa) +
+                         cost k sa ω - FiniteExpectation prts (cost k sa) +
                            β *
-                             (qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω) -
+                             (qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω) -
                                 FiniteExpectation prts
-                                  (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))))))
+                                  (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0))))))
                 (NonNegCondexp prts (filt_sub k)
                    (rvsqr
-                      (rvplus (fun ω : Ts => cost_t k sa ω - FiniteExpectation prts (cost_t k sa))
+                      (rvplus (fun ω : Ts => cost k sa ω - FiniteExpectation prts (cost k sa))
                          (rvscale β
                             (fun ω : Ts => Xmin k sa ω - FiniteConditionalExpectation prts (filt_sub k) (Xmin k sa) ω)))))).
          {
@@ -7767,20 +7767,20 @@ Section MDP.
        unfold qlearn_XF, qlearn_XF_t0, qlearn_w.
        simpl.
        do 2 f_equal.
-       replace (FiniteExpectation prts (cost_t k sa)) with
-         (FiniteExpectation prts (cost_t 0 sa)).
+       replace (FiniteExpectation prts (cost k sa)) with
+         (FiniteExpectation prts (cost 0 sa)).
        ring_simplify.
        + replace
-         (FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))) with
-         (FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t 0 sa ω0))); try lra.
+         (FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state k sa ω0))) with
+         (FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state 0 sa ω0))); try lra.
          eapply ident_distr_finite_exp_eq.
          generalize (identically_distributed_rv_compose prts
                        (discrete_sa (state M))
                        borel_sa
-                       (next_state_t 0%nat sa) 
-                       (next_state_t k sa)
+                       (next_state 0%nat sa) 
+                       (next_state k sa)
                        (qlearn_Qmin (qlearn_Q_basic k ω))
-                       (ident_distr_next_state_t k sa)).
+                       (ident_distr_next_state k sa)).
          apply identically_distributed_rvs_proper; try easy.
        + now eapply ident_distr_finite_exp_eq.
    Qed.
