@@ -8939,20 +8939,41 @@ Section MDP.
           match_destr.
           exists x; lra.
         }
+        assert (exists A : R,
+                   0 < A /\
+                     (forall (sa : {x : state M & act M x}),
+                         FiniteExpectation prts
+                           (fun ω : Ts => (cost_t 0%nat sa ω - FiniteExpectation prts (cost_t 0%nat sa))²) <=  A)).
+        {
+          specialize (H11 0%nat).
+          apply (finite_ex_choice _ (decA:=EqDecsigT)) in H11.
+          destruct H11 as [l F2l].
+          exists (Rabs (Rmax_list l) + 1).
+          split.
+          - unfold Rabs; match_destr; lra.
+          - intros sa.
+            apply Rle_trans with (r2:=Rmax_list l); [| unfold Rabs; match_destr; lra].
+            destruct (Forall2_In_l F2l (a:=sa)) as [?[??]].
+            + apply nodup_In; apply fin_finite.
+            + eapply Rle_trans; try apply H12.
+              now apply Rmax_spec.
+        }
+        destruct H12 as [? [? ?]].
+        exists x.
+        split; trivial.
+        intros.
+        eapply Rle_trans.
+        shelve.
+        apply (H13 sa).
+        Unshelve.
+        right.
+        eapply ident_distr_finite_exp_eq.
+        generalize (identically_distributed_sqr
+                      (fun ω : Ts => (cost_t k sa ω - FiniteExpectation prts (cost_t k sa)))
+                      (fun ω : Ts => (cost_t k sa ω - FiniteExpectation prts (cost_t 0%nat sa)))); intros.
+        unfold compose in H14.
         admit.
-      (*
-        apply (finite_ex_choice _ (decA:=EqDecsigT)) in H11.
-        destruct H11 as [l F2l].
-        exists (Rabs (Rmax_list l) + 1).
-        split.
-        - unfold Rabs; match_destr; lra.
-        - intros sa.
-          apply Rle_trans with (r2:=Rmax_list l); [| unfold Rabs; match_destr; lra].
-          destruct (Forall2_In_l F2l (a:=sa)) as [?[??]].
-          + apply nodup_In; apply fin_finite.
-          + eapply Rle_trans; try apply H12.
-            now apply Rmax_spec.
-       *)
+                  
       }
       destruct H11 as [A [? ?]].
       exists (2 * A); exists 2.
