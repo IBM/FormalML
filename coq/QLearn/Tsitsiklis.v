@@ -13,7 +13,6 @@ Require Import IndefiniteDescription ClassicalDescription.
 Require Import RelationClasses.
 Require Import Dvoretzky infprod.
 Require Import Martingale MartingaleStopped.
-Require Bellman.
 Require Import FiniteTypeVector.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -5389,7 +5388,9 @@ End Stochastic_convergence.
          end
      end.
 
-
+(*
+Require Bellman.
+*)
 Section MDP.
 
   Context {M : MDP}  (γ : R).
@@ -5399,6 +5400,7 @@ Section MDP.
   Definition Ts := {x : state M & act M x} .
   Definition Td := Rfct Ts.
 
+(*
   Definition bellmanQbar_alt (ec : Rfct (sigT M.(act))) : Rfct (sigT M.(act)) -> Rfct (sigT M.(act))
   := fun W => fun (sa : sigT M.(act))  => let (s,a) := sa in
                   ec sa +
@@ -5436,7 +5438,8 @@ Section MDP.
     rewrite <- H0 at 1.
     now apply bellmanQbar_alt_contraction.
   Qed.
-
+ *)
+  
   Lemma max_sqr_bound (ec : Rfct (sigT M.(act))) :
     forall (s : state M),
       Max_{act_list s} (fun a => Rsqr (ec (existT _ s a))) <= Rmax_sq_norm _ ec.
@@ -6058,7 +6061,7 @@ Section MDP.
     apply IsFiniteExpectation_const.
   Qed.
 
-  Instance isfe_qmin0_t
+  Instance isfe_qmin0
     (sa : (sigT M.(act))) :
     IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin Q0 (next_state 0%nat sa ω)).
   Proof.
@@ -6719,7 +6722,7 @@ Section MDP.
     apply (vector_nth_finite_map finA EqDecsigT (rv_X a) sa).
   Qed.
 
-  Lemma FiniteExpectation_Qmin_t (x : Rfct {s : state M & act M s}) sa :
+  Lemma FiniteExpectation_Qmin (x : Rfct {s : state M & act M s}) sa :
     forall t,
       FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state t sa ω)) =
         list_sum (map (fun v : state M => qlearn_Qmin x v * ps_P (preimage_singleton (next_state t sa) v)) 
@@ -6750,7 +6753,7 @@ Section MDP.
     rewrite Rabs_mult.
     rewrite Rabs_right; try lra.
     apply Rmult_le_compat_l; try lra.
-    do 2 rewrite FiniteExpectation_Qmin_t.
+    do 2 rewrite FiniteExpectation_Qmin.
     rewrite <- list_sum_map_sub.
     unfold Rmax_norm.
     match_destr.
@@ -6879,7 +6882,6 @@ Section MDP.
       + eauto.
       + destruct (HH a); eauto.
   Qed.
-
   
   Lemma max_abs_sqr (a b : R) :
     Rmax (Rsqr a) (Rsqr b) = Rsqr (Rmax (Rabs a) (Rabs b)).
@@ -7095,7 +7097,7 @@ Section MDP.
        revert H3.
        apply RandomVariable_proper; try easy.
        intros ?.
-       now rewrite FiniteExpectation_Qmin_t.
+       now rewrite FiniteExpectation_Qmin.
      }
      assert (rvfinexp' : forall k sa, RandomVariable dom borel_sa
                                        (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q k ω) (next_state k sa ω0)))).
