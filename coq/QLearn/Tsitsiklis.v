@@ -8460,7 +8460,18 @@ Section MDP.
        revert H7.
        apply identically_distributed_rvs_proper; try easy.
    Qed.
-      
+
+
+   Lemma identically_distributed_rvs_comm {Td} (cod:SigmaAlgebra Td)
+     (X1 X2 : Ts -> Td)
+     {rv1:RandomVariable dom cod X1}
+     {rv2:RandomVariable dom cod X2} :
+     identically_distributed_rvs prts _ X1 X2 <-> identically_distributed_rvs prts _ X2 X1.
+   Proof.
+     unfold identically_distributed_rvs.
+     intuition congruence.
+   Qed.
+
   Theorem qlearn_alt
           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
           (fixpt0: forall sa, qlearn_XF_alt (Rfct_zero (sigT M.(act))) sa = 0) :
@@ -8970,10 +8981,26 @@ Section MDP.
         eapply ident_distr_finite_exp_eq.
         generalize (identically_distributed_sqr
                       (fun ω : Ts => (cost_t k sa ω - FiniteExpectation prts (cost_t k sa)))
-                      (fun ω : Ts => (cost_t k sa ω - FiniteExpectation prts (cost_t 0%nat sa)))); intros.
+                      (fun ω : Ts => (cost_t 0 sa ω - FiniteExpectation prts (cost_t 0%nat sa)))); intros.
         unfold compose in H14.
-        admit.
-                  
+        cut_to H14.
+        - revert H14.
+          now apply identically_distributed_rvs_proper.
+        - cut (identically_distributed_rvs prts borel_sa
+                 (fun ω : Ts => cost_t k sa ω - FiniteExpectation prts (cost_t 0 sa))
+                 (fun ω : Ts => cost_t 0 sa ω - FiniteExpectation prts (cost_t 0 sa))).
+          + apply identically_distributed_rvs_proper; try reflexivity.
+            intros ?.
+            f_equal.
+            eapply ident_distr_finite_exp_eq.
+            now apply identically_distributed_rvs_comm.
+          + generalize (identically_distributed_rv_compose prts borel_sa borel_sa
+                          (cost_t k sa) (cost_t 0 sa) (fun x => x - FiniteExpectation prts (cost_t 0 sa)))
+            ; intros HH.
+            cut_to HH.
+            * revert HH.
+              now apply identically_distributed_rvs_proper.
+            * now apply identically_distributed_rvs_comm.
       }
       destruct H11 as [A [? ?]].
       exists (2 * A); exists 2.
@@ -9204,10 +9231,7 @@ Section MDP.
                        (ident_distr_next_state_t k sa)).
          apply identically_distributed_rvs_proper; try easy.
        + now eapply ident_distr_finite_exp_eq.
-
-       Admitted.
-       
-
+   Qed.
 
 End MDP.
 
