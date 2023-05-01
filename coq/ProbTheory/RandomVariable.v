@@ -1237,6 +1237,16 @@ Section indep.
     apply indep.
   Qed.
 
+   Lemma identically_distributed_rvs_comm {Td} (cod:SigmaAlgebra Td)
+     (X1 X2 : Ts -> Td)
+     {rv1:RandomVariable dom cod X1}
+     {rv2:RandomVariable dom cod X2} :
+     identically_distributed_rvs _ X1 X2 <-> identically_distributed_rvs _ X2 X1.
+   Proof.
+     unfold identically_distributed_rvs.
+     intuition congruence.
+   Qed.
+
     Lemma identically_distributed_rv_compose
         {Td Tdf : Type}
         (cod: SigmaAlgebra Td)

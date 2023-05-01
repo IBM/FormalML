@@ -8461,17 +8461,6 @@ Section MDP.
        apply identically_distributed_rvs_proper; try easy.
    Qed.
 
-
-   Lemma identically_distributed_rvs_comm {Td} (cod:SigmaAlgebra Td)
-     (X1 X2 : Ts -> Td)
-     {rv1:RandomVariable dom cod X1}
-     {rv2:RandomVariable dom cod X2} :
-     identically_distributed_rvs prts _ X1 X2 <-> identically_distributed_rvs prts _ X2 X1.
-   Proof.
-     unfold identically_distributed_rvs.
-     intuition congruence.
-   Qed.
-
   Theorem qlearn_alt
           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
           (fixpt0: forall sa, qlearn_XF_alt (Rfct_zero (sigT M.(act))) sa = 0) :
