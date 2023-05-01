@@ -5520,7 +5520,7 @@ Section MDP.
           (β : R).
 
 
-  Instance rv_ns_t: forall t sa, RandomVariable dom (discrete_sa (state M)) (next_state t sa).
+  Instance rv_ns: forall t sa, RandomVariable dom (discrete_sa (state M)) (next_state t sa).
   Proof.
     intros.
     now apply (RandomVariable_sa_sub (filt_sub (S t))).
@@ -5543,7 +5543,6 @@ Section MDP.
     - apply map_not_nil.
       apply act_list_not_nil.      
   Qed.
-
 
   Instance IsFiniteExpectation_minus'
          (rv_X1 rv_X2 : Ts -> R)
@@ -5613,13 +5612,9 @@ Section MDP.
           split; trivial.
   Qed.
 
-  Definition qlearn_XF_t0 (Q : Rfct (sigT M.(act))) : Rfct (sigT M.(act)) :=
+  Definition qlearn_XF (Q : Rfct (sigT M.(act))) : Rfct (sigT M.(act)) :=
     fun sa => FiniteExpectation prts (cost 0%nat sa) +
                 β * (FiniteExpectation prts (fun ω => qlearn_Qmin Q (next_state 0%nat sa ω))).
-
-  Definition qlearn_XF (Q : Rfct (sigT M.(act))) : Rfct (sigT M.(act)) :=
-    qlearn_XF_t0 Q.
-
 
   Instance isfe_Rmin_list (rvs : list (Ts -> R))
                           {rv_rvs : List.Forall (RandomVariable dom borel_sa) rvs}
@@ -6743,7 +6738,7 @@ Section MDP.
         β * Rmax_norm (sigT M.(act)) (Rfct_minus (sigT M.(act)) x y).
   Proof.
     intros.
-    unfold qlearn_XF, qlearn_XF_t0.
+    unfold qlearn_XF, qlearn_XF.
     replace  (FiniteExpectation prts (cost 0%nat sa) +
               β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state 0%nat sa ω)) -
               (FiniteExpectation prts (cost 0%nat sa) +
@@ -7764,7 +7759,7 @@ Section MDP.
        lra.
      - intros.
        subst w X XF.
-       unfold qlearn_XF, qlearn_XF_t0, qlearn_w.
+       unfold qlearn_XF, qlearn_XF, qlearn_w.
        simpl.
        do 2 f_equal.
        replace (FiniteExpectation prts (cost k sa)) with
