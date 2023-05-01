@@ -6738,7 +6738,7 @@ Section MDP.
         β * Rmax_norm (sigT M.(act)) (Rfct_minus (sigT M.(act)) x y).
   Proof.
     intros.
-    unfold qlearn_XF, qlearn_XF.
+    unfold qlearn_XF.
     replace  (FiniteExpectation prts (cost 0%nat sa) +
               β * FiniteExpectation prts (fun ω : Ts => qlearn_Qmin x (next_state 0%nat sa ω)) -
               (FiniteExpectation prts (cost 0%nat sa) +
@@ -7759,7 +7759,7 @@ Section MDP.
        lra.
      - intros.
        subst w X XF.
-       unfold qlearn_XF, qlearn_XF, qlearn_w.
+       unfold qlearn_XF, qlearn_w.
        simpl.
        do 2 f_equal.
        replace (FiniteExpectation prts (cost k sa)) with
