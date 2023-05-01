@@ -5527,6 +5527,12 @@ Section MDP.
                 (rv2 := next_state_t_rv2 k sa)
                 (next_state_t 0%nat sa)
                 (next_state_t k sa))
+          (ident_distr_cost_t: forall k sa,
+              identically_distributed_rvs prts borel_sa
+                (rv1 := cost_t_rv2 0%nat sa)
+                (rv2 := cost_t_rv2 k sa)
+                (cost_t 0%nat sa)
+                (cost_t k sa))
           (β : R).
 
   Instance rv_ns: forall sa, RandomVariable dom (discrete_sa (state M)) (next_state sa).
@@ -8438,6 +8444,7 @@ Section MDP.
        subst w X XF.
        unfold qlearn_XF, qlearn_XF_t0, qlearn_w.
        simpl.
+       do 2 f_equal.
        ring_simplify.
        replace
          (FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic k ω) (next_state_t k sa ω0))) with
@@ -8453,8 +8460,6 @@ Section MDP.
        revert H7.
        apply identically_distributed_rvs_proper; try easy.
    Qed.
-       
-
       
   Theorem qlearn_alt
           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
@@ -8640,7 +8645,6 @@ Section MDP.
          (w := w) (XF := XF) (rvw := rvw); try easy.
      - intros.
        subst w.
-       unfold qlearn_w.
        unfold IsAdapted; intros.
        apply rvplus_rv.
        + typeclasses eauto.
@@ -8793,7 +8797,7 @@ Section MDP.
          apply IsFiniteExpectation_const.
        + apply IsFiniteExpectation_scale.
          apply IsFiniteExpectation_minus'; try typeclasses eauto.
-     - unfold w, qlearn_w.
+     - unfold w.
        assert (isl2_qmin: forall k sa,
                   IsLp prts 2 (fun ω => (qlearn_Qmin (qlearn_Q_basic_alt k ω) (next_state_t k sa ω)))).
        {
@@ -9160,25 +9164,26 @@ Section MDP.
        lra.
      - intros.
        subst w X XF.
-       unfold qlearn_XF_alt, qlearn_XF_t0_alt, qlearn_w.
+       unfold qlearn_XF_alt, qlearn_XF_t0_alt, qlearn_w_alt.
        simpl.
+       do 2 f_equal.
+       replace (FiniteExpectation prts (cost_t k sa)) with
+         (FiniteExpectation prts (cost_t 0 sa)).
        ring_simplify.
-       admit.
-(*
-       replace
+       + replace
          (FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic_alt k ω) (next_state_t k sa ω0))) with
          (FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q_basic_alt k ω) (next_state_t 0 sa ω0))); try lra.
-       eapply ident_distr_finite_exp_eq.
-       generalize (identically_distributed_rv_compose prts
-                     (discrete_sa (state M))
-                     borel_sa
-                     (next_state_t 0%nat sa) 
-                     (next_state_t k sa)
-                     (qlearn_Qmin (qlearn_Q_basic k ω))
-                     (ident_distr_next_state_t k sa)); intros.
-       revert H7.
-       apply identically_distributed_rvs_proper; try easy.
-*)
+         eapply ident_distr_finite_exp_eq.
+         generalize (identically_distributed_rv_compose prts
+                       (discrete_sa (state M))
+                       borel_sa
+                       (next_state_t 0%nat sa) 
+                       (next_state_t k sa)
+                       (qlearn_Qmin (qlearn_Q_basic_alt k ω))
+                       (ident_distr_next_state_t k sa)).
+         apply identically_distributed_rvs_proper; try easy.
+       + now eapply ident_distr_finite_exp_eq.
+
        Admitted.
        
 
