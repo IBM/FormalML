@@ -6968,27 +6968,10 @@ Section MDP.
     a = b ->
     Rbar_plus a (Rbar_opp b) = 0.
   Proof.
-    destruct a.
-    - destruct b; intros.
-      + simpl; apply Rbar_finite_eq in H.
-        rewrite H.
-        apply Rbar_finite_eq; lra.
-      + rewrite H.
-        now simpl.
-      + rewrite H.
-        now simpl.
-    - destruct b; intros.
-      + rewrite H.
-        simpl.
-        apply Rbar_finite_eq; lra.        
-      + now simpl.
-      + now simpl.
-    - destruct b; intros.
-      + rewrite H.
-        simpl.
-        apply Rbar_finite_eq; lra.        
-      + now simpl.
-      + now simpl.
+    intros.
+    rewrite H.
+    destruct b; try now simpl.
+    apply Rbar_finite_eq; lra.
   Qed.
 
     Global Instance Condexp_rv' {dom2 : SigmaAlgebra Ts}
