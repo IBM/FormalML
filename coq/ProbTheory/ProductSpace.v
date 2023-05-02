@@ -8243,8 +8243,50 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
     apply almost_impl, all_almost; intros ??.
     etransitivity; [etransitivity |]; [| apply H0 |]; try reflexivity.
     apply ConditionalExpectation_ext.
+(*
+    assert (rvf : RandomVariable dom borel_sa (fun ω : Ts => Psi (X ω, Y ω))) by admit.
+    assert (rv2 : RandomVariable dom2 Rbar_borel_sa
+                (fun ω => ((fun x => FiniteExpectation prts (fun ω0 => Psi (x, Y ω0))) (X ω)))) by admit.
+    assert (is_conditional_expectation prts dom2 (fun ω => Psi (X ω, Y ω))
+     (fun ω => ((fun x => FiniteExpectation prts (fun ω0 => Psi (x, Y ω0))) (X ω)))).
+    {
+      assert (almostR2 (prob_space_sa_sub prts sub2) eq 
+                (ConditionalExpectation prts sub2 (fun ω => Psi (X ω, Y ω))  (rv := freezing_rv_alt sub2 sub3 X Y Psi))
+                (fun ω => ((fun x => FiniteExpectation prts (fun ω0 => Psi (x, Y ω0))) (X ω)))) by admit.
+      generalize (Condexp_cond_exp prts sub2 (fun ω => Psi (X ω, Y ω))).
+      apply is_conditional_expectation_proper; try easy.
+      apply almost_prob_space_sa_sub_lift with (sub := sub2).
+      revert H1.
+      apply almost_impl, all_almost.
+      intros ??.
+      rewrite <- H1.
+      apply ConditionalExpectation_ext.
+      reflexivity.
+    }
+*)
     reflexivity.
   Qed.
+  
+ (*
+Lemma freezing_sa_alt_iscond {Ts Td2 Td3} {dom dom2 dom3: SigmaAlgebra Ts} {cod2 : SigmaAlgebra Td2} {cod3 : SigmaAlgebra Td3} {prts : ProbSpace dom}
+       (sub2 : sa_sub dom2 dom)
+       (sub3 : sa_sub dom3 dom)       
+       (X : Ts -> Td2)
+       (Y : Ts -> Td3)        
+       (Psi : Td2 * Td3 -> R)
+       {rvx : RandomVariable dom2 cod2 X}
+       {rvy : RandomVariable dom3 cod3 Y}
+       {rvPsi : RandomVariable (product_sa cod2 cod3) borel_sa Psi}
+       (rvf : RandomVariable dom borel_sa (fun ω : Ts => Psi (X ω, Y ω)))
+       (rv2 : RandomVariable dom2 Rbar_borel_sa
+                (fun ω => ((fun x => FiniteExpectation prts (fun ω0 => Psi (x, Y ω0))) (X ω))))
+       (rvPsi2: RandomVariable (product_sa cod2 dom3) borel_sa (fun '(ω2, ω) => Psi (ω2, Y ω)))
+       {isfe : IsFiniteExpectation prts (fun ω => Psi (X ω, Y ω))}
+       {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => Psi (x, Y ω))}   
+       (indep: independent_sas prts sub2 sub3) :
+   is_conditional_expectation prts dom2 (fun ω => Psi (X ω, Y ω))
+     (fun ω => ((fun x => FiniteExpectation prts (fun ω0 => Psi (x, Y ω0))) (X ω))).
+*)
 
 Require Import Dynkin.
 Section monotone_class.
