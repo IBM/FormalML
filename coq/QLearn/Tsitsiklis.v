@@ -5575,7 +5575,7 @@ Section MDP.
   Definition Rmax_all : Rfct (sigT M.(act)) -> R := let (ls,_) := finA in fun (f:Rfct (sigT M.(act))) => Max_{ls}(fun s => (f s)).
   Definition Rmin_all : Rfct (sigT M.(act)) -> R := let (ls,_) := finA in fun (f:Rfct (sigT M.(act))) => Min_{ls}(fun s => (f s)).
   
-  Instance isfe_qmin_t (Q : Rfct (sigT M.(act))) (t : nat) (sa : (sigT M.(act))) :
+  Instance isfe_qmin (Q : Rfct (sigT M.(act))) (t : nat) (sa : (sigT M.(act))) :
     IsFiniteExpectation prts (fun ω => qlearn_Qmin Q (next_state t sa ω)).
   Proof.
     apply IsFiniteExpectation_bounded with (rv_X1 := const (Rmin_all Q))
@@ -5862,7 +5862,7 @@ Section MDP.
           eexists; split; try reflexivity; trivial.
   Qed.
 
-  Instance isfe_qmin1_t (Q : Ts -> Rfct (sigT M.(act)))
+  Instance isfe_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
     (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
     (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q ω sa))
     (sa : (sigT M.(act))) :
@@ -5935,7 +5935,7 @@ Section MDP.
     apply isfe.
   Qed.
 
-  Instance isfe_qmin2_t (Q : Ts -> Rfct (sigT M.(act)))
+  Instance isfe_qmin2' (Q : Ts -> Rfct (sigT M.(act)))
     (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
     (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q ω sa))
     (sa : (sigT M.(act))) :
@@ -5983,7 +5983,7 @@ Section MDP.
           split; trivial.
   Qed.
 
-  Instance isl2_qmin1_t (Q : Ts -> Rfct (sigT M.(act)))
+  Instance isl2_qmin1 (Q : Ts -> Rfct (sigT M.(act)))
     (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
     (isfeQ : forall sa, IsLp prts 2 (fun ω => Q ω sa))
     (sa : (sigT M.(act))) :
@@ -7128,7 +7128,7 @@ Section MDP.
            assert (IsFiniteExpectation (product_ps prts prts)
                             (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q k ω) (next_state k sa ω0))).
           {
-            apply isfe_qmin2_t; typeclasses eauto.
+            apply isfe_qmin2'; typeclasses eauto.
           }
            assert (isfef: Rbar_IsFiniteExpectation (product_ps prts prts)
                             (fun '(ω, ω0) => qlearn_Qmin (qlearn_Q k ω) (next_state k sa ω0))).
@@ -7145,7 +7145,7 @@ Section MDP.
            rewrite <- FinExp_Rbar_FinExp.
            + now rewrite (Rbar_FiniteExpectation0_finite _ _ (isfe:= (@IsFiniteExpectation_Rbar Ts dom prts
                                                                       (fun ω0 : Ts => qlearn_Qmin (qlearn_Q k a) (next_state k sa ω0))
-                                                                      (isfe_qmin_t (qlearn_Q k a) k sa)))).
+                                                                      (isfe_qmin (qlearn_Q k a) k sa)))).
            + typeclasses eauto.
          }
      }
