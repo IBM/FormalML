@@ -5942,6 +5942,30 @@ Section cond_exp2.
       congruence.
   Qed.
 
+  Lemma Condexp_minus' (f1 f2 : Ts -> R) 
+    {rv1 : RandomVariable dom borel_sa f1}
+    {rv2 : RandomVariable dom borel_sa f2}
+    {isfe1:IsFiniteExpectation prts f1}
+    {isfe2:IsFiniteExpectation prts f2}    :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (ConditionalExpectation (fun ω => (f1 ω) - (f2 ω)))
+             (Rbar_rvminus (ConditionalExpectation f1) (ConditionalExpectation f2)).
+   Proof.
+     generalize (Condexp_minus f1 f2).
+     apply almost_impl, all_almost; intros ??.
+     rewrite <- H.
+     apply ConditionalExpectation_ext.
+     intros ?.
+     rv_unfold; lra.
+   Qed.
+
+   Corollary Condexp_const' c :
+    rv_eq (ConditionalExpectation (fun _ => c)) (const (Finite c)).
+  Proof.
+    apply Condexp_id.
+    apply rvconst'.
+  Qed.
+
   Theorem Condexp_factor_out
         (f g : Ts -> R)
         {rvf : RandomVariable dom borel_sa f}

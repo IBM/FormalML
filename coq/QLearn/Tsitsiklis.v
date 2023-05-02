@@ -6647,35 +6647,6 @@ Section MDP.
       lra.
   Qed.
 
-    Lemma Condexp_minus' (f1 f2 : Ts -> R) 
-          {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rv1 : RandomVariable dom borel_sa f1}
-        {rv2 : RandomVariable dom borel_sa f2}
-        {isfe1:IsFiniteExpectation prts f1}
-        {isfe2:IsFiniteExpectation prts f2}
-    :
-    almostR2 (prob_space_sa_sub prts sub) eq
-             (ConditionalExpectation prts sub (fun ω => (f1 ω) - (f2 ω)))
-             (Rbar_rvminus (ConditionalExpectation prts sub f1) (ConditionalExpectation prts sub f2)).
-   Proof.
-     generalize (Condexp_minus prts sub f1 f2).
-     apply almost_impl, all_almost; intros ??.
-     rewrite <- H.
-     apply ConditionalExpectation_ext.
-     intros ?.
-     rv_unfold; lra.
-   Qed.
-
-   Corollary Condexp_const' c 
-             {dom2 : SigmaAlgebra Ts}
-             (sub : sa_sub dom2 dom) :
-    rv_eq (ConditionalExpectation prts sub (fun _ => c)) (const (Finite c)).
-  Proof.
-    apply Condexp_id.
-    apply rvconst'.
-  Qed.
-
   Instance rv_finfun_sa {Ts1} {dom1 : SigmaAlgebra Ts1}
            (rv_X : Ts1 -> Rfct (sigT M.(act)))
            {rv : forall sa, RandomVariable dom1 borel_sa (fun ω => rv_X ω sa)} :
@@ -7219,15 +7190,16 @@ Section MDP.
        subst w.
        unfold qlearn_w.
        apply almostR2_prob_space_sa_sub_lift with (sub := filt_sub k).
-       generalize (Condexp_minus' (fun ω => cost k sa ω) (fun _ => FiniteExpectation 
+       generalize (Condexp_minus' prts (filt_sub k)
+                     (fun ω => cost k sa ω) (fun _ => FiniteExpectation 
                                                                    (isfe := isfe_cost k sa)
-                                                                   prts (cost k sa)) 
-                                  (filt_sub k) 
-                                  (rv1 := cost_rv2 k sa)
-                                  (isfe1 := isfe_cost k sa)
-                                  (isfe2 := IsFiniteExpectation_const prts (FiniteExpectation 
-                                                                   (isfe := isfe_cost k sa)
-                                                                   prts (cost k sa)))); intros.
+                                                                   prts (cost k sa))
+                     (rv1 := cost_rv2 k sa) 
+                     (isfe1 := isfe_cost k sa) 
+                     (isfe2 := IsFiniteExpectation_const prts (FiniteExpectation 
+                                                                 (isfe := isfe_cost k sa)
+                                                                 prts (cost k sa)))
+                  ); intros.
        generalize (@Condexp_plus _ _ prts _ (filt_sub k)
                      (fun ω : Ts =>
                         cost k sa ω - FiniteExpectation
@@ -7257,11 +7229,11 @@ Section MDP.
                          FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q k ω) (next_state k sa ω0))))
                  (const 0)).
        {
-         generalize (Condexp_minus'  (fun ω : Ts =>
-                                        qlearn_Qmin (qlearn_Q k ω) (next_state k sa ω))
-                                     (fun ω =>
-                                        FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q k ω) (next_state k sa ω0))) (filt_sub k)); intros.
-         
+         generalize (Condexp_minus' prts (filt_sub k)
+                       (fun ω : Ts =>
+                          qlearn_Qmin (qlearn_Q k ω) (next_state k sa ω))
+                       (fun ω =>
+                          FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q k ω) (next_state k sa ω0)))); intros.
          generalize (freezing_sa_alt (filt_sub k)
                        (pullback_rv_sub dom (discrete_sa (state M))
                           (next_state k sa) (next_state_rv2 k sa))
@@ -7337,7 +7309,8 @@ Section MDP.
               reflexivity.
            -- unfold const.
               unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
-              generalize (Condexp_const' (FiniteExpectation prts (cost k sa)) (filt_sub k) x); intros.
+              generalize (Condexp_const' prts (filt_sub k) 
+                            (FiniteExpectation prts (cost k sa)) x); intros.
               rewrite H13.
               unfold const.
               unfold const in H10.
