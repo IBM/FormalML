@@ -5454,6 +5454,42 @@ Section rv_expressible.
         now apply in_cons.
    Qed.
 
+  Global Instance list_sum_map_rv {Ts} {dom} {A} (f:A->Ts->R) (l:list A)
+             {rv : forall x, RandomVariable dom borel_sa (f x)} :
+      RandomVariable dom borel_sa (fun omega => list_sum (map (fun x => f x omega) l)).
+    Proof.
+      induction l.
+      - simpl.
+        apply rvconst.
+      - apply rvplus_rv; trivial.
+    Qed.
+
+    Global Instance list_sum_map_frf {Ts} {A} (f:A->Ts->R) (l:list A)
+             {frf : forall x, FiniteRangeFunction (f x)} :
+      FiniteRangeFunction (fun omega => list_sum (map (fun x => f x omega) l)).
+    Proof.
+      induction l; simpl.
+      - apply frfconst.
+      - apply frfplus; trivial.
+    Qed.
+
+  Global Instance rv_finite_Rsum {Ts} {B:Type} {decB : EqDec B eq} {finB:FiniteType B} (f:Ts->B->R)
+    {dom2 : SigmaAlgebra Ts}
+    {rvf : forall b, RandomVariable dom2 borel_sa (fun ω => f ω b)}
+    : RandomVariable dom2 borel_sa (fun ω => finite_Rsum (f ω)).
+  Proof.
+    unfold finite_Rsum.
+    now apply list_sum_map_rv.
+  Qed.
+
+  Global Instance finite_Rsum_frf {Ts} {B:Type} {decB : EqDec B eq} {finB:FiniteType B} (f:Ts->B->R)
+    {frf : forall x, FiniteRangeFunction (fun ω => f ω x)} :
+    FiniteRangeFunction (fun ω => finite_Rsum (f ω)).
+    Proof.
+      unfold finite_Rsum.
+      now apply list_sum_map_frf.
+  Qed.
+
   Lemma frf_measurable_is_expressible {Ts : Type} {Td : Type}
         {dom : SigmaAlgebra Ts} {cod : SigmaAlgebra Td}
         (X : Ts -> Td) (Y : Ts -> R)

@@ -6571,3 +6571,6 @@ Proof.
     rewrite (H1 a); [lra |].
     congruence.
 Qed.
+
+Definition finite_Rsum {B:Type} {decB : EqDec B eq} {finB:FiniteType B} (f:B->R)
+  := list_sum (map f (nodup decB fin_elms)).

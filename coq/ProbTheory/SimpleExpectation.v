@@ -2845,25 +2845,6 @@ Section indep.
             {dom: SigmaAlgebra Ts}
             (prts:ProbSpace dom).
 
-    Instance list_sum_map_rv {A} f (l:list A)
-             {rv : forall x, RandomVariable dom borel_sa (f x)} :
-      RandomVariable dom borel_sa (fun omega => list_sum (map (fun x => f x omega) l)).
-    Proof.
-      induction l.
-      - simpl.
-        apply rvconst.
-      - apply rvplus_rv; trivial.
-    Qed.
-
-    Instance list_sum_map_frf {A} (f:A->Ts->R) (l:list A)
-             {frf : forall x, FiniteRangeFunction (f x)} :
-      FiniteRangeFunction (fun omega => list_sum (map (fun x => f x omega) l)).
-    Proof.
-      induction l; simpl.
-      - apply frfconst.
-      - apply frfplus; trivial.
-    Qed.
-
     Lemma SimpleExpectation_list_sum_map_all {A} f (l:list A)
           {rvX : forall x, RandomVariable dom borel_sa (f x)}
           {frfX : forall x, FiniteRangeFunction (f x)}

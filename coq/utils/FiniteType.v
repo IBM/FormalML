@@ -661,3 +661,21 @@ Next Obligation.
   destruct x; simpl; tauto.
 Qed.
   
+Lemma finite_ex_choice
+  {Idx:Type} {decA: EqDec Idx eq} {finI:FiniteType Idx} {A:Type}
+  (P: Idx -> A -> Prop) :
+  (forall (idx:Idx), exists a, P idx a) ->
+  exists (l:list A),
+    Forall2 P (nodup decA fin_elms) l.
+Proof.
+  clear.
+  destruct finI as [elms fin]; simpl.
+  clear fin; intros HH.
+  induction elms; simpl.
+  - exists nil; trivial.
+  - destruct IHelms as [l F2].
+    match_destr.
+    + eauto.
+    + destruct (HH a); eauto.
+Qed.
+

@@ -17,18 +17,6 @@ Require Import FiniteTypeVector.
 
 Set Bullet Behavior "Strict Subproofs".
 
-  Definition finite_Rsum {B:Type} {decB : EqDec B eq} {finB:FiniteType B} (f:B->R)
-    := list_sum (map f (nodup decB fin_elms)).
-
-  Instance rv_finite_Rsum {Ts} {B:Type} {decB : EqDec B eq} {finB:FiniteType B} (f:Ts->B->R)
-                          {dom2 : SigmaAlgebra Ts}
-                          {rvf : forall b, RandomVariable dom2 borel_sa (fun ω => f ω b)}
-    : RandomVariable dom2 borel_sa (fun ω => finite_Rsum (f ω)).
-  Proof.
-    unfold finite_Rsum.
-    now apply list_sum_map_rv.
-  Qed.
-
 Section Stochastic_convergence.
   
 Context {Ts : Type}  (* (w α : Ts -> nat -> R)  *)
@@ -6836,24 +6824,6 @@ Section MDP.
     lra.
   Qed.
 
-  Lemma finite_ex_choice
-    {Idx:Type} {decA: EqDec Idx eq} {finI:FiniteType Idx} {A:Type}
-    (P: Idx -> A -> Prop) :
-    (forall (idx:Idx), exists a, P idx a) ->
-    exists (l:list A),
-      Forall2 P (nodup decA fin_elms) l.
-  Proof.
-    clear.
-    destruct finI; simpl.
-    clear fin_finite; intros HH.
-    induction fin_elms; simpl.
-    - exists nil; trivial.
-    - destruct IHfin_elms as [l F2].
-      match_destr.
-      + eauto.
-      + destruct (HH a); eauto.
-  Qed.
-  
   Lemma max_abs_sqr (a b : R) :
     Rmax (Rsqr a) (Rsqr b) = Rsqr (Rmax (Rabs a) (Rabs b)).
   Proof.
