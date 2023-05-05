@@ -8579,7 +8579,6 @@ Lemma freezing_sa_alt_iscond {Ts Td2 Td3} {dom dom2 dom3: SigmaAlgebra Ts} {cod2
     exists rv2 : RandomVariable dom2 Rbar_borel_sa
                   (fun ω => FiniteExpectation prts (fun ω0 => Psi (X ω, Y ω0))),
    is_conditional_expectation prts dom2 (fun ω => Psi (X ω, Y ω))
-
      (fun ω => FiniteExpectation prts (fun ω0 => Psi (X ω, Y ω0))).
 Proof.
   intros.
