@@ -7208,6 +7208,7 @@ Section MDP.
          rewrite H12; clear H12.
          specialize (H13 rvy rvPsi _ _).
          cut_to H13; [| now apply independent_sas_comm].
+         destruct H13 as [_ H13].
          cut (almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
                 (ConditionalExpectation prts (filt_sub k)
                    (fun ω : Ts => qlearn_Qmin (qlearn_Q k ω) (next_state k sa ω)))
@@ -7537,6 +7538,7 @@ Section MDP.
          }
          specialize (H14 rvy rvPsi _ _).
          cut_to H14; [| now apply independent_sas_comm].
+         destruct H14 as [_ H14].
          apply almost_prob_space_sa_sub_lift with (sub := filt_sub k).
          revert H14.
          apply almost_impl, all_almost; intros ??.

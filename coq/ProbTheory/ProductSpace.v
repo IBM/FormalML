@@ -6929,6 +6929,100 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
    apply (compose_rv (dom2 := product_sa cod dom3) (fun ω => (X ω, ω)) Psi).
  Qed.
 
+ Lemma freezing_sa_rectangle_rv {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+       (sub2 : sa_sub dom2 dom)
+       (sub3 : sa_sub dom3 dom)       
+       (X : Ts -> Ts2) 
+       (EPsi : pre_event (Ts2 * Ts))
+       {sa_EPsi : sa_sigma (product_sa cod dom3) EPsi} 
+       {rvx : RandomVariable dom2 cod X}
+       {rve: RandomVariable dom borel_sa (fun ω : Ts => EventIndicator (classic_dec EPsi) (X ω, ω))}
+       {isfe : IsFiniteExpectation prts (fun ω =>  EventIndicator (classic_dec EPsi) (X ω, ω))}
+       {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => EventIndicator (classic_dec EPsi) (x, ω))}:
+   independent_sas prts sub2 sub3 ->
+   is_measurable_rectangle EPsi ->
+   RandomVariable dom2 Rbar_borel_sa
+     (fun ω => FiniteExpectation prts (fun ω0 => EventIndicator (classic_dec EPsi) (X ω, ω0))).
+ Proof.
+   intros.
+   apply Real_Rbar_rv.
+   destruct H0 as [a [b ?]].
+   assert (forall x,
+              rv_eq
+                (fun ω => EventIndicator (classic_dec EPsi) (X x, ω))
+                (rvmult
+                   (fun ω => EventIndicator (classic_dec a) (X x))
+                   (EventIndicator (classic_dec b)))).
+   {
+     intros ??.
+     unfold EventIndicator, rvmult.
+     match_destr; match_destr; match_destr; try lra; try (rewrite H0 in e; now destruct e).
+     rewrite H0 in n; now destruct n.
+   }
+   assert (isfez : IsFiniteExpectation prts (EventIndicator (classic_dec b))).
+   {
+     apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := const 1).
+     - apply IsFiniteExpectation_const.
+     - apply IsFiniteExpectation_const.
+     - apply EventIndicator_pos.
+     - intros ?.
+       unfold EventIndicator, const.
+       match_destr; lra.
+   }
+   assert (isfex: forall x,
+              IsFiniteExpectation prts
+                   (rvmult (fun _ : Ts => EventIndicator (classic_dec a) (X x))
+                      (EventIndicator (classic_dec b)))).
+   {
+     intros.
+     simpl.
+     unfold rvmult.
+     now apply IsFiniteExpectation_scale.
+   }
+   assert (RandomVariable dom2 borel_sa
+             (fun x =>
+                FiniteExpectation prts
+                   (rvmult (fun _ : Ts => EventIndicator (classic_dec a) (X x))
+                      (EventIndicator (classic_dec b))))).
+   {
+     assert (rv_eq
+               (fun x =>
+                  FiniteExpectation prts
+                    (rvmult (fun _ : Ts => EventIndicator (classic_dec a) (X x))
+                       (EventIndicator (classic_dec b))))  
+               (fun x =>
+                  (EventIndicator (classic_dec a) (X x)) *
+                    (FiniteExpectation prts                    
+                       (EventIndicator (classic_dec b))))).
+     {
+       intros ?.
+       unfold rvmult.
+       rewrite <- FiniteExpectation_scale.
+       now apply FiniteExpectation_ext.
+     }
+     assert (RandomVariable dom2 borel_sa
+               (fun x =>
+                  (EventIndicator (classic_dec a) (X x)) *
+                    (FiniteExpectation prts                    
+                       (EventIndicator (classic_dec b))))).
+     {
+       setoid_rewrite Rmult_comm.
+       apply rvscale_rv.
+       assert (RandomVariable cod borel_sa (EventIndicator (classic_dec a))).
+       {
+         apply EventIndicator_rv.
+       }
+       apply (compose_rv (dom1 := dom2) (dom2 := cod) (dom3 := borel_sa)); trivial.
+     }
+     revert H3.
+     now apply RandomVariable_proper.
+   }
+   revert H2.
+   apply RandomVariable_proper; try easy.
+   intros ?.
+   now apply FiniteExpectation_ext.
+  Qed.
+
  Lemma freezing_sa_rectangle {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
        (sub3 : sa_sub dom3 dom)       
@@ -6942,7 +7036,7 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
    independent_sas prts sub2 sub3 ->
    is_measurable_rectangle EPsi ->
    almostR2 (prob_space_sa_sub prts sub2) eq (ConditionalExpectation prts sub2 (fun ω => EventIndicator (classic_dec EPsi) (X ω, ω)))
-            (fun ω => (fun x => FiniteExpectation prts (fun ω => EventIndicator (classic_dec EPsi) (x, ω))) (X ω)).
+            (fun ω => FiniteExpectation prts (fun ω0 => EventIndicator (classic_dec EPsi) (X ω, ω0))).
  Proof.
    intros.
    destruct H0 as [a [b ?]].
@@ -7041,10 +7135,13 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
           (forall x, RandomVariable dom borel_sa (fun ω : Ts => ψ (x, ω))) /\
                    IsFiniteExpectation prts (fun ω : Ts => ψ (X ω, ω)) /\ 
           exists rvψ : RandomVariable dom borel_sa (fun ω : Ts => ψ (X ω, ω)),
-            exists isfeψ : forall x, IsFiniteExpectation prts (fun ω : Ts => ψ (x, ω)),
-                    almostR2 (prob_space_sa_sub prts sub2) eq
-                    (ConditionalExpectation _ sub2 (fun ω => ψ (X ω,ω)))
-                    (fun ω => ((fun x => FiniteExpectation prts (fun ω => ψ (x, ω))) (X ω))).
+          exists isfeψ : forall x, IsFiniteExpectation prts (fun ω : Ts => ψ (x, ω)),
+            RandomVariable dom2 borel_sa 
+              (fun ω => ((fun x => FiniteExpectation prts (fun ω => ψ (x, ω))) (X ω))) /\
+
+              almostR2 (prob_space_sa_sub prts sub2) eq
+                (ConditionalExpectation _ sub2 (fun ω => ψ (X ω,ω)))
+                (fun ω => ((fun x => FiniteExpectation prts (fun ω => ψ (x, ω))) (X ω))).                
 
    Lemma freezing_Vplus_scale
      (ψ : (Ts2 * Ts -> R))
@@ -7083,19 +7180,32 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
          now apply IsFiniteExpectation_scale.
        }
        exists isfeψ.
-       generalize (Condexp_scale prts sub2 c (fun ω : Ts => ψ (X ω, ω))); apply almost_impl.
-       revert H3; apply almost_impl.
-       apply all_almost; intros ???.
-       apply (f_equal (Rbar_mult c)) in H3.
-       etransitivity; [etransitivity |]; [| apply H3 |].
-       + etransitivity; [etransitivity |]; [| apply H5 |];[|reflexivity].
-         apply ConditionalExpectation_ext.
-         intros ?; now unfold rvscale.
-       + simpl.
-         apply f_equal.
+       destruct H3.
+       split.
+       + assert (RandomVariable dom2 borel_sa
+                   (rvscale c (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => ψ (X ω, ω0))))).
+         {
+           now apply rvscale_rv.
+         }
+         revert H6.
+         apply RandomVariable_proper; try easy.
+         unfold rvscale.
+         intros ?.
          rewrite <- FiniteExpectation_scale.
-         apply FiniteExpectation_ext.
-         intros ?; now unfold rvscale.
+         now apply FiniteExpectation_ext.
+       + generalize (Condexp_scale prts sub2 c (fun ω : Ts => ψ (X ω, ω))); apply almost_impl.
+         revert H5; apply almost_impl.
+         apply all_almost; intros ???.
+         apply (f_equal (Rbar_mult c)) in H5.
+         etransitivity; [etransitivity |]; [| apply H5 |].
+         * etransitivity; [etransitivity |]; [| apply H6 |];[|reflexivity].
+           apply ConditionalExpectation_ext.
+           intros ?; now unfold rvscale.
+         * simpl.
+           apply f_equal.
+           rewrite <- FiniteExpectation_scale.
+           apply FiniteExpectation_ext.
+           intros ?; now unfold rvscale.
    Qed.
 
    Lemma freezing_Vplus_sum
@@ -7130,24 +7240,41 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
          now apply IsFiniteExpectation_plus.
        }
        exists isfeψ.
-       generalize (Condexp_plus prts sub2 (fun ω : Ts => ψ1 (X ω, ω)) (fun ω : Ts => ψ2 (X ω, ω))).
-       apply almost_impl.
-       revert H2; apply almost_impl.
-       revert H6; apply almost_impl.
-       apply all_almost; intros ????.
-       unfold Rbar_rvplus in H7.
-       rewrite H2 in H7.
-       rewrite H6 in H7.
-       etransitivity; [etransitivity |]; [| apply H7 |].
-       + apply ConditionalExpectation_ext.
-         reflexivity.
-       + simpl.
-         f_equal.
-         generalize (FiniteExpectation_plus prts (fun ω : Ts => ψ1 (X x3, ω)) (fun ω : Ts => ψ2 (X x3, ω))); intros.
-         symmetry in H8.
-         etransitivity; [etransitivity |]; [| apply H8 |]; trivial.
+       destruct H2 as [H2' H2].
+       destruct H6 as [H6' H6].
+       split.
+       + assert (RandomVariable dom2 borel_sa
+                   (rvplus 
+                      (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => ψ1 (X ω, ω0)))
+                      (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => ψ2 (X ω, ω0))))).                 
+         {
+           now apply rvplus_rv.
+         }
+         revert H7.
+         apply RandomVariable_proper; try easy.
+         intros ?.
+         unfold rvplus.
+         rewrite <- (FiniteExpectation_plus prts _ _ (isfe1 := x0 (X a)) (isfe2 := x2 (X a))).
          apply FiniteExpectation_ext.
          reflexivity.
+       + generalize (Condexp_plus prts sub2 (fun ω : Ts => ψ1 (X ω, ω)) (fun ω : Ts => ψ2 (X ω, ω))).
+         apply almost_impl.
+         revert H2; apply almost_impl.
+         revert H6; apply almost_impl.
+         apply all_almost; intros ????.
+         unfold Rbar_rvplus in H7.
+         rewrite H2 in H7.
+         rewrite H6 in H7.
+         etransitivity; [etransitivity |]; [| apply H7 |].
+         * apply ConditionalExpectation_ext.
+           reflexivity.
+         * simpl.
+           f_equal.
+           generalize (FiniteExpectation_plus prts (fun ω : Ts => ψ1 (X x3, ω)) (fun ω : Ts => ψ2 (X x3, ω))); intros.
+           symmetry in H8.
+           etransitivity; [etransitivity |]; [| apply H8 |]; trivial.
+           apply FiniteExpectation_ext.
+           reflexivity.
    Qed.
 
    Lemma freezing_Vplus_const (c : R) :
@@ -7168,19 +7295,32 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
            assert (isfeψ : forall (x : Ts2), IsFiniteExpectation prts (const c)) 
              by (intros; apply IsFiniteExpectation_const).
            exists isfeψ.
-           apply all_almost; intros ?.
-           generalize (Condexp_const prts sub2 c); intros.
-           generalize (FiniteExpectation_const prts c); intros.
-           specialize (H0 x).
-           unfold const in *.
-           etransitivity; [etransitivity |]; [| apply H0 |].
-           -- apply ConditionalExpectation_ext.
-              reflexivity.
-           -- f_equal.
-              symmetry.
-              etransitivity; [etransitivity |]; [| apply H1 |]; trivial.
-              apply FiniteExpectation_ext.
-              reflexivity.
+           split.
+           --  assert (RandomVariable dom2 borel_sa (const c)).
+               {
+                 apply rvconst.
+               }
+               revert H0.
+               apply RandomVariable_proper; try easy.
+               unfold const.
+               intros ?.
+               generalize (FiniteExpectation_const prts c); intros.
+               rewrite <- H0 at 1.
+               apply FiniteExpectation_ext.
+               reflexivity.
+           -- apply all_almost; intros ?.
+              generalize (Condexp_const prts sub2 c); intros.
+              generalize (FiniteExpectation_const prts c); intros.
+              specialize (H0 x).
+              unfold const in *.
+              etransitivity; [etransitivity |]; [| apply H0 |].
+              ++ apply ConditionalExpectation_ext.
+                 reflexivity.
+              ++ f_equal.
+                 symmetry.
+                 etransitivity; [etransitivity |]; [| apply H1 |]; trivial.
+                 apply FiniteExpectation_ext.
+                 reflexivity.
     Qed.              
 
    Lemma freezing_Vplus_list_sum
@@ -7205,10 +7345,10 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
    Qed.
 
   (* should replace rvlim_incr *)
-   Lemma rvlim_incr_alt (f : nat -> Ts -> R)  :
+   Lemma rvlim_incr_alt {Tsx} (f : nat -> Tsx -> R)  :
         (forall (n:nat), NonnegativeFunction  (f n)) ->
         (forall (n:nat), rv_le (f n) (f (S n))) ->
-        (forall (omega:Ts), ex_finite_lim_seq (fun n => f n omega)) ->
+        (forall (omega:Tsx), ex_finite_lim_seq (fun n => f n omega)) ->
         (forall (n:nat), rv_le (f n) (rvlim f)).
       Proof.
         unfold rv_le, pointwise_relation, rvlim; intros.
@@ -7263,54 +7403,15 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
          destruct (ψn_Vplus n) as [? [? [? [? [? ?]]]]].
          apply x0.
        }
-       assert (forall n, almostR2 (prob_space_sa_sub prts sub2) eq
-                           (ConditionalExpectation prts sub2 (fun ω : Ts => ψn n (X ω, ω)))
-                           (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => ψn n (X ω, ω0)))).
+       assert (lim_exp : forall x, 
+                  Lim_seq (fun n : nat => FiniteExpectation prts (fun ω : Ts => ψn n (X x, ω))) =
+                    FiniteExpectation prts (rvlim (fun (n : nat) (ω : Ts) => ψn n (X x, ω)))).
        {
          intros.
-         destruct (ψn_Vplus n) as [? [? [? [? [? ?]]]]].
-         revert H4; apply almost_impl.
-         apply all_almost; intros ??.
-         etransitivity; [etransitivity |]; [| apply H4 |].
-         - apply ConditionalExpectation_ext; reflexivity.
-         - f_equal; apply FiniteExpectation_ext; reflexivity.
-       }
-       assert (almost (prob_space_sa_sub prts sub2)
-                      (fun ω =>
-                         forall n, 
-                           ((ConditionalExpectation prts sub2 (fun ω0 : Ts => ψn n (X ω0, ω0))) ω) = 
-                             (FiniteExpectation prts (fun ω0 : Ts => ψn n (X ω, ω0))))).
-       {
-         apply almost_forall.
-         intros.
-         specialize (H1 n).
-         revert H1; apply almost_impl.
-         apply all_almost; intros ??.
-         etransitivity; [etransitivity |]; [| apply H1 |]; reflexivity.
-       }
-       generalize (Condexp_monotone_convergence prts sub2 
-                     (fun ω : Ts => rvlim ψn (X ω, ω))
-                     (fun n ω => ψn n (X ω, ω)) 
-                  ); intros.
-       cut_to H3.
-       + revert H3; apply almost_impl.
-         revert H2; apply almost_impl.
-         apply all_almost; intros ???.
-         assert (forall n : nat, RandomVariable dom borel_sa (fun ω : Ts => ψn n (X x, ω))).
+         assert  (Xn_pos : forall n : nat, NonnegativeFunction (fun ω : Ts => ψn n (X x, ω))).
          {
-           intros.
+           intros ??.
            apply (ψn_Vplus n).
-         }
-         assert (forall n : nat, NonnegativeFunction (fun ω : Ts => ψn n (X x, ω))).
-         {
-           intros.
-           destruct (ψn_Vplus n) as [? [? [? [? [? ?]]]]].           
-           intros ?.
-           apply H5.
-         }
-         assert (RandomVariable dom borel_sa (rvlim (fun (n : nat) (ω : Ts) => ψn n (X x, ω)))).
-         {
-           now apply rvlim_rv.
          }
          assert (NonnegativeFunction (rvlim (fun (n : nat) (ω : Ts) => ψn n (X x, ω)))).
          {
@@ -7318,66 +7419,175 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
          }
          generalize (monotone_convergence
                        (rvlim (fun n ω => ψn n (X x, ω)))
-                       (fun n ω => ψn n (X x, ω))
-                       H6 H7 H4 H5
-                    ); intros.
-         cut_to H8; try easy.
-         * apply is_Elim_seq_unique in H3.
-           rewrite <- H3.
-           rewrite FiniteNonnegExpectation_alt with (posX := H7).
-           rewrite <- H8.
-           rewrite <- Elim_seq_fin.
-           apply ELim_seq_ext.
-           intros.
-           rewrite H2.
-           rewrite FiniteNonnegExpectation_alt with (posX := (H5 n)).
-           now rewrite IsFiniteNonnegExpectation.
-         * intros.
+                       (fun n ω => ψn n (X x, ω))); intros.
+         cut_to H2.
+         specialize (H2 H1).
+         cut_to H2.
+         specialize (H2 Xn_pos).
+         cut_to H2.
+         - etransitivity; [| etransitivity]; [|apply H2|].
+           + apply Lim_seq_ext.
+             intros.
+             now rewrite FiniteNonnegExpectation_real with (posX := (Xn_pos n)).
+           + now rewrite FiniteNonnegExpectation_alt with (posX := H1).
+         - intros.
            apply (rvlim_incr_alt (fun n ω =>  ψn n (X x, ω))); try easy.
            intros ??.
            apply incr.
-         * intros ??.
+         - intros ??.
            apply incr.
-         * intros.
+         - intros.
            now apply IsFiniteNonnegExpectation.
-         * intros.
+         - intros.
            specialize (fin  (X x, omega)).
            apply ex_finite_lim_seq_correct in fin.
            destruct fin.
            unfold rvlim.
-           rewrite H10.
+           rewrite H4.
            now apply Lim_seq_correct.
-       + apply all_almost; intros ?.
-         apply nnflim.
-         intros.
-         apply (ψn_Vplus n).
-       + intros; apply all_almost; intros ?.
-         apply (ψn_Vplus n).
-       + intros; apply all_almost; intros.
-         unfold rvlim.
-         generalize (Lim_seq_increasing_le (fun n0 : nat => ψn n0 (X x, x))); intros.
-         cut_to H4.
-         * specialize (H4 n).
-           specialize (fin (X x, x)).
-           apply ex_finite_lim_seq_correct in fin.         
-           destruct fin.
-           rewrite <- H6 in H4.
-           now simpl in H4.
-         * intros.
+         - intros.
+           apply ψn_Vplus.
+         - easy.
+       }
+       split.
+       +  assert (RandomVariable dom2 Rbar_borel_sa 
+                                (fun x =>
+                                   Lim_seq (fun n : nat => FiniteExpectation prts (fun ω : Ts => ψn n (X x, ω))))).
+         {
+           generalize (Rbar_rvlim_rv (dom := dom2)); intros.
+           specialize (H1 (fun n ω => FiniteExpectation prts (fun ω0 : Ts => ψn n (X ω, ω0)))).
+           cut_to H1.
+           - revert H1.
+             unfold Rbar_rvlim.
+             apply RandomVariable_proper; try easy.
+             intros ?.
+             now rewrite Elim_seq_fin.
+           - intros.
+             apply Real_Rbar_rv.
+             destruct (ψn_Vplus n) as [? [? [? [? [? [? ?]]]]]].
+             revert H5.
+             apply RandomVariable_proper; try easy.
+             intros ?.
+             now apply FiniteExpectation_ext.
+         }
+         rewrite borel_Rbar_borel.
+         revert H1.
+         now apply RandomVariable_proper.
+       + assert (forall n, almostR2 (prob_space_sa_sub prts sub2) eq
+                           (ConditionalExpectation prts sub2 (fun ω : Ts => ψn n (X ω, ω)))
+                           (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => ψn n (X ω, ω0)))).
+         {
+           intros.
+           destruct (ψn_Vplus n) as [? [? [? [? [? [? ?]]]]]].
+           revert H5; apply almost_impl.
+           apply all_almost; intros ??.
+           etransitivity; [etransitivity |]; [| apply H5 |].
+           - apply ConditionalExpectation_ext; reflexivity.
+           - f_equal; apply FiniteExpectation_ext; reflexivity.
+         }
+         assert (almost (prob_space_sa_sub prts sub2)
+                   (fun ω =>
+                      forall n, 
+                        ((ConditionalExpectation prts sub2 (fun ω0 : Ts => ψn n (X ω0, ω0))) ω) = 
+                          (FiniteExpectation prts (fun ω0 : Ts => ψn n (X ω, ω0))))).
+         {
+           apply almost_forall.
+           intros.
+           specialize (H1 n).
+           revert H1; apply almost_impl.
+           apply all_almost; intros ??.
+           etransitivity; [etransitivity |]; [| apply H1 |]; reflexivity.
+         }
+         generalize (Condexp_monotone_convergence prts sub2 
+                       (fun ω : Ts => rvlim ψn (X ω, ω))
+                       (fun n ω => ψn n (X ω, ω)) 
+                    ); intros.
+         cut_to H3.
+         * revert H3; apply almost_impl.
+           revert H2; apply almost_impl.
+           apply all_almost; intros ???.
+           assert (forall n : nat, RandomVariable dom borel_sa (fun ω : Ts => ψn n (X x, ω))).
+           {
+             intros.
+             apply (ψn_Vplus n).
+           }
+           assert (forall n : nat, NonnegativeFunction (fun ω : Ts => ψn n (X x, ω))).
+           {
+             intros.
+             destruct (ψn_Vplus n) as [? [? [? [? [? ?]]]]].           
+             intros ?.
+             apply H5.
+           }
+           assert (RandomVariable dom borel_sa (rvlim (fun (n : nat) (ω : Ts) => ψn n (X x, ω)))).
+           {
+             now apply rvlim_rv.
+           }
+           assert (NonnegativeFunction (rvlim (fun (n : nat) (ω : Ts) => ψn n (X x, ω)))).
+           {
+             now apply nnflim.
+           }
+           generalize (monotone_convergence
+                         (rvlim (fun n ω => ψn n (X x, ω)))
+                         (fun n ω => ψn n (X x, ω))
+                         H6 H7 H4 H5
+                      ); intros.
+           cut_to H8; try easy.
+           -- apply is_Elim_seq_unique in H3.
+              rewrite <- H3.
+              rewrite FiniteNonnegExpectation_alt with (posX := H7).
+              rewrite <- H8.
+              rewrite <- Elim_seq_fin.
+              apply ELim_seq_ext.
+              intros.
+              rewrite H2.
+              rewrite FiniteNonnegExpectation_alt with (posX := (H5 n)).
+              now rewrite IsFiniteNonnegExpectation.
+           -- intros.
+              apply (rvlim_incr_alt (fun n ω =>  ψn n (X x, ω))); try easy.
+              intros ??.
+              apply incr.
+         -- intros ??.
+            apply incr.
+         -- intros.
+            now apply IsFiniteNonnegExpectation.
+         -- intros.
+            specialize (fin  (X x, omega)).
+            apply ex_finite_lim_seq_correct in fin.
+            destruct fin.
+            unfold rvlim.
+            rewrite H10.
+            now apply Lim_seq_correct.
+         * apply all_almost; intros ?.
+           apply nnflim.
+           intros.
+           apply (ψn_Vplus n).
+         * intros; apply all_almost; intros ?.
+           apply (ψn_Vplus n).
+         * intros; apply all_almost; intros.
+           unfold rvlim.
+           generalize (Lim_seq_increasing_le (fun n0 : nat => ψn n0 (X x, x))); intros.
+           cut_to H4.
+           -- specialize (H4 n).
+              specialize (fin (X x, x)).
+              apply ex_finite_lim_seq_correct in fin.         
+              destruct fin.
+              rewrite <- H6 in H4.
+              now simpl in H4.
+           -- intros.
+              apply incr.
+         * intros; apply all_almost; intros.         
            apply incr.
-       + intros; apply all_almost; intros.         
-         apply incr.
-       + apply isfe.
-       + intros.
-         apply (ψn_Vplus n).
-       + apply all_almost; intros ?.
-         apply is_Elim_seq_fin.
-         unfold rvlim.
-         specialize (fin (X x, x)).
-         apply ex_finite_lim_seq_correct in fin.
-         destruct fin.
-         rewrite H5.
-         now apply Lim_seq_correct.
+         * apply isfe.
+         * intros.
+           apply (ψn_Vplus n).
+         * apply all_almost; intros ?.
+           apply is_Elim_seq_fin.
+           unfold rvlim.
+           specialize (fin (X x, x)).
+           apply ex_finite_lim_seq_correct in fin.
+           destruct fin.
+           rewrite H5.
+           now apply Lim_seq_correct.
    Qed.
    
    Lemma EventIndicator_all {Ts'} : rv_eq (EventIndicator (Ts:=Ts') (classic_dec pre_Ω)) (const 1).
@@ -7433,14 +7643,22 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
            symmetry; apply H.
          }
          exists isfeψ.
-         etransitivity; [etransitivity |]; [| apply H3 |].
-         * apply Condexp_proper.
-           apply all_almost; intros ?.
-           now rewrite <- H.
-         * apply all_almost; intros ?.
+         destruct H3 as [x2 H3].
+         split.
+         * destruct H3.
+           eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _));try apply x2.
+           intros ?.
            f_equal.
            apply FiniteExpectation_ext; intros ?.
-           apply H.
+           now rewrite H.
+         * etransitivity; [etransitivity |]; [| apply H3 |].
+           -- apply Condexp_proper.
+              apply all_almost; intros ?.
+              now rewrite <- H.
+           -- apply all_almost; intros ?.
+              f_equal.
+              apply FiniteExpectation_ext; intros ?.
+              apply H.
     Qed.
 
    Lemma freezing_Vplus_all : freezing_Vplus (EventIndicator (classic_dec pre_Ω)).
@@ -7470,15 +7688,28 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
          apply IsFiniteExpectation_const.
        }
        exists isfeψ.
-       unfold const.
-       transitivity (ConditionalExpectation prts sub2 (const 1)).
-       + apply Condexp_proper.
+       split.
+       + assert (RandomVariable dom2 borel_sa (const 1)).
+         {
+           apply rvconst.
+         }
+         revert H.
+         apply RandomVariable_proper; try easy.
+         intros ?.
+         generalize (FiniteExpectation_const prts 1); intros.
+         unfold const.
+         rewrite <- H.
+         apply FiniteExpectation_ext.
          reflexivity.
-       + rewrite Condexp_const.
-         apply all_almost; intros ?.
-         rewrite (FiniteExpectation_ext _ _ (const 1)).
-         * now rewrite FiniteExpectation_const.
-         * reflexivity.
+       + unfold const.
+         transitivity (ConditionalExpectation prts sub2 (const 1)).
+         * apply Condexp_proper.
+           reflexivity.
+         * rewrite Condexp_const.
+           apply all_almost; intros ?.
+           rewrite (FiniteExpectation_ext _ _ (const 1)).
+           -- now rewrite FiniteExpectation_const.
+           -- reflexivity.
    Qed.
 
    Definition freezing_M (e:pre_event (Ts2 * Ts))
@@ -7653,10 +7884,27 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
          }
          exists rvψ.
          exists isfeψ.
-
-         transitivity (ConditionalExpectation prts sub2
-                         (rvminus  (fun ω => (EventIndicator (classic_dec b) (X ω, ω)))
-                                         (fun ω => (EventIndicator (classic_dec a) (X ω, ω))))).
+         split.
+         * destruct H0 as [? [? [? [? [? [? [? ?]]]]]]].
+           destruct H2 as [? [? [? [? [? [? [? ?]]]]]]].           
+           assert (RandomVariable dom2 borel_sa
+                     (rvminus
+                        (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => EventIndicator (classic_dec b) (X ω, ω0)))
+                        (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => EventIndicator (classic_dec a) (X ω, ω0))))).
+           {
+             now apply rvminus_rv.
+           }
+           revert H11.
+           apply RandomVariable_proper; try easy.
+           intros ?.
+           rewrite rvminus_unfold.
+           erewrite <- FiniteExpectation_minus.
+           apply FiniteExpectation_ext.
+           intros ?.
+           now rewrite EventIndicator_pre_event_diff_sub_eq.
+         * transitivity (ConditionalExpectation prts sub2
+                           (rvminus  (fun ω => (EventIndicator (classic_dec b) (X ω, ω)))
+                              (fun ω => (EventIndicator (classic_dec a) (X ω, ω))))).
          {
            apply all_almost; intros ?.
            apply ConditionalExpectation_ext; intros ?.
@@ -7679,8 +7927,8 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
            now rewrite EventIndicator_pre_event_diff_sub_eq.
          }
 
-         destruct H0 as [?[?[?[? [? eqq1]]]]].
-         destruct H2 as [?[?[?[? [? eqq2]]]]].
+         destruct H0 as [?[?[?[? [? [? eqq1]]]]]].
+         destruct H2 as [?[?[?[? [? [? eqq2]]]]]].
 
          revert eqq1; apply almost_impl.
          revert eqq2; apply almost_impl.
@@ -7689,19 +7937,19 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
                        (fun ω => (EventIndicator (classic_dec a) (X ω, ω))))
          ; apply almost_impl.
          apply all_almost; intros ????.
-         etransitivity; [etransitivity |]; [| apply H7 |].
-         * now apply ConditionalExpectation_ext; intros ?.
-         * rewrite FiniteExpectation_minus.
-           unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
-           rewrite_condexp H8.
-           rewrite_condexp H9.
-           simpl.
-           f_equal.
-           unfold Rminus.
-           f_equal.
-           -- now apply FiniteExpectation_ext.
-           -- f_equal.
-              now apply FiniteExpectation_ext.
+         etransitivity; [etransitivity |]; [| apply H9 |].
+           -- now apply ConditionalExpectation_ext; intros ?.
+           -- rewrite FiniteExpectation_minus.
+              unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
+              rewrite_condexp H10.
+              rewrite_condexp H11.
+              simpl.
+              f_equal.
+              unfold Rminus.
+              f_equal.
+              ++ now apply FiniteExpectation_ext.
+              ++ f_equal.
+                 now apply FiniteExpectation_ext.
    Qed.
 
    Lemma Lim_seq_ascending_EventIndicator_union {Ts'} (collection: nat -> pre_event Ts') :
@@ -7860,7 +8108,10 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
       }
       exists rve.
       exists isfe2.
-      now apply freezing_sa_rectangle with (sub3 := sub3).
+      split.
+      + rewrite borel_Rbar_borel.
+        now apply freezing_sa_rectangle_rv with (sub2 := sub2) (sub3 := sub3).
+      + now apply freezing_sa_rectangle with (sub3 := sub3).
   Qed.
 
  Lemma freezing_M_product_sa {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
@@ -8122,7 +8373,9 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
        {isfe : IsFiniteExpectation prts (fun ω => Psi (X ω, ω))}
        {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => Psi (x, ω))}   :
    independent_sas prts sub2 sub3 ->
-  almostR2 (prob_space_sa_sub prts sub2) eq 
+   RandomVariable dom2 borel_sa
+     (fun ω => ((fun x => FiniteExpectation prts (fun ω => Psi (x, ω))) (X ω))) /\
+     almostR2 (prob_space_sa_sub prts sub2) eq 
     (ConditionalExpectation prts sub2 (fun ω => Psi (X ω, ω)) (rv := freezing_rv sub2 sub3 X Psi))
      (fun ω => ((fun x => FiniteExpectation prts (fun ω => Psi (x, ω))) (X ω))).
  Proof.
@@ -8144,39 +8397,98 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
      - now apply (IsFiniteExpectation_parts prts (fun ω => Psi (X ω, ω))).
      - intros; now apply (IsFiniteExpectation_parts prts (fun ω => Psi (x, ω))).
    }
-   destruct H0 as [?[?[?[?[??]]]]].
-   destruct H1 as [?[?[?[?[??]]]]].   
+   destruct H0 as [?[?[?[?[?[??]]]]]].
+   destruct H1 as [?[?[?[?[?[??]]]]]].   
    generalize (Condexp_minus prts sub2
                  (fun ω : Ts => pos_fun_part Psi (X ω, ω))
                  (fun ω : Ts => neg_fun_part Psi (X ω, ω))                 
               ); intros.
-   revert H8; apply almost_impl.
-   revert H7; apply almost_impl.
-   revert H4; apply almost_impl.
-   apply all_almost; intros ????.
-   unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp in H8.
-   rewrite H4 in H8.
-   rewrite H7 in H8.
-   etransitivity; [etransitivity |]; [| apply H8 |].
-   - apply ConditionalExpectation_ext.
+   split.
+   - assert (RandomVariable 
+               dom2 borel_sa
+               (fun ω : Ts => FiniteExpectation 
+                                prts (fun ω0 : Ts => rvminus (pos_fun_part Psi) (neg_fun_part Psi) (X ω, ω0)))).
+     {
+       assert (RandomVariable
+                 dom2 borel_sa
+                 (rvminus
+                    (fun ω : Ts => FiniteExpectation 
+                                     prts (fun ω0 : Ts => (pos_fun_part Psi) (X ω, ω0)))
+                    (fun ω : Ts => FiniteExpectation 
+                                     prts (fun ω0 : Ts => (neg_fun_part Psi) (X ω, ω0))))).
+       {
+         now apply rvminus_rv.
+       }
+       revert H11.
+       apply RandomVariable_proper; try easy.
+       intros ?.
+       rewrite rvminus_unfold.
+       now erewrite <- FiniteExpectation_minus.
+     }
+     revert H11.
+     apply RandomVariable_proper; try easy.
      intros ?.
-     now rewrite HH.
-   - generalize (FiniteExpectation_minus prts
-                   (fun ω : Ts => pos_fun_part Psi (X x3, ω))
-                   (fun ω : Ts => neg_fun_part Psi (X x3, ω))); intros.
-     simpl.
-     apply Rbar_finite_eq.
-     simpl in H9.
-     ring_simplify.
-     rewrite <- H9.
-     apply FiniteExpectation_ext.
-     intros ?.
-     unfold rvminus, rvplus, rvopp, rvscale.
-     unfold rvminus, rvplus, rvopp, rvscale in HH.
-     specialize (HH (X x3, a)).
-     simpl in HH.
-     now symmetry.
-  Qed.
+     now apply FiniteExpectation_ext.
+   - revert H10; apply almost_impl.
+     revert H9; apply almost_impl.
+     revert H5; apply almost_impl.
+     apply all_almost; intros ????.
+     unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp in H10.
+     rewrite H5 in H10.
+     rewrite H9 in H10.
+     etransitivity; [etransitivity |]; [| apply H10 |].
+     + apply ConditionalExpectation_ext.
+       intros ?.
+       now rewrite HH.
+     + generalize (FiniteExpectation_minus prts
+                     (fun ω : Ts => pos_fun_part Psi (X x3, ω))
+                     (fun ω : Ts => neg_fun_part Psi (X x3, ω))); intros.
+       simpl.
+       apply Rbar_finite_eq.
+       simpl in H11.
+       ring_simplify.
+       rewrite <- H11.
+       apply FiniteExpectation_ext.
+       intros ?.
+       rewrite rvminus_unfold.
+       rewrite rvminus_unfold in HH.
+       specialize (HH (X x3, a)).
+       simpl in HH.
+       now symmetry.
+ Qed.
+
+  Lemma freezing_sa_iscond {Ts Ts2} {dom dom2 dom3: SigmaAlgebra Ts} {cod : SigmaAlgebra Ts2} {prts : ProbSpace dom}
+       (sub2 : sa_sub dom2 dom)
+       (sub3 : sa_sub dom3 dom)       
+       (X : Ts -> Ts2) 
+       (Psi : Ts2 * Ts -> R)
+       {rvx : RandomVariable dom2 cod X}      
+       {rvPsi : RandomVariable (product_sa cod dom3) borel_sa Psi}
+       {isfe : IsFiniteExpectation prts (fun ω => Psi (X ω, ω))}
+       {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => Psi (x, ω))}  :
+    independent_sas prts sub2 sub3 ->
+    exists rvf : RandomVariable dom borel_sa (fun ω : Ts => Psi (X ω, ω)),
+    exists rvψ2 :  RandomVariable dom2 Rbar_borel_sa
+                     (fun ω => FiniteExpectation prts (fun ω0 => Psi (X ω, ω0))), 
+      is_conditional_expectation prts dom2 (fun ω => Psi(X ω,ω))
+        (fun ω => FiniteExpectation prts (fun ω0 => Psi (X ω, ω0))).
+  Proof.
+    intros.
+    generalize (freezing_rv sub2 sub3 X Psi); intros rvf.
+    exists rvf.
+    destruct (freezing_sa sub2 sub3 X Psi H).
+    rewrite borel_Rbar_borel in H0.
+    exists H0.
+    generalize (Condexp_cond_exp prts sub2  (fun ω => Psi (X ω, ω))).
+    apply is_conditional_expectation_proper; try easy.
+    apply almost_prob_space_sa_sub_lift with (sub := sub2).
+    revert H1.
+    apply almost_impl, all_almost.
+    intros ??.
+    rewrite <- H1.
+    apply ConditionalExpectation_ext.
+    reflexivity.
+ Qed.
        
  Instance freezing_rv_alt {Ts Td2 Td3} {dom dom2 dom3: SigmaAlgebra Ts} {cod2 : SigmaAlgebra Td2} {cod3 : SigmaAlgebra Td3} {prts : ProbSpace dom}
        (sub2 : sa_sub dom2 dom)
@@ -8211,10 +8523,12 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
        {isfe : IsFiniteExpectation prts (fun ω => Psi (X ω, Y ω))}
        {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => Psi (x, Y ω))}   :
    independent_sas prts sub2 sub3 ->
-  almostR2 (prob_space_sa_sub prts sub2) eq 
-    (ConditionalExpectation prts sub2 (fun ω => Psi (X ω, Y ω))
-       (rv := freezing_rv_alt sub2 sub3 X Y Psi))
-     (fun ω => FiniteExpectation prts (fun ω0 => Psi (X ω, Y ω0))).
+   exists rv2 : RandomVariable dom2 Rbar_borel_sa
+                  (fun ω => FiniteExpectation prts (fun ω0 => Psi (X ω, Y ω0))),
+     almostR2 (prob_space_sa_sub prts sub2) eq 
+       (ConditionalExpectation prts sub2 (fun ω => Psi (X ω, Y ω))
+          (rv := freezing_rv_alt sub2 sub3 X Y Psi))
+       (fun ω => FiniteExpectation prts (fun ω0 => Psi (X ω, Y ω0))).
   Proof.
     intros.
     assert (rvPsi2: RandomVariable (product_sa cod2 dom3) borel_sa (fun '(ω2, ω) => Psi (ω2, Y ω))).
@@ -8239,9 +8553,12 @@ Lemma freezing_prod_sa {Ts} {dom dom2: SigmaAlgebra Ts} {prts : ProbSpace dom}
       destruct a.
       now unfold compose.
     }
-    generalize (freezing_sa sub2 sub3 X (fun '(ω2,ω) => Psi (ω2, Y ω)) H).
+    destruct (freezing_sa sub2 sub3 X (fun '(ω2,ω) => Psi (ω2, Y ω)) H).
+    rewrite borel_Rbar_borel in H0.
+    exists H0.
+    revert H1.
     apply almost_impl, all_almost; intros ??.
-    etransitivity; [etransitivity |]; [| apply H0 |]; try reflexivity.
+    etransitivity; [etransitivity |]; [| apply H1 |]; try reflexivity.
     apply ConditionalExpectation_ext.
     reflexivity.
   Qed.
@@ -8256,17 +8573,20 @@ Lemma freezing_sa_alt_iscond {Ts Td2 Td3} {dom dom2 dom3: SigmaAlgebra Ts} {cod2
        {rvy : RandomVariable dom3 cod3 Y}
        {rvPsi : RandomVariable (product_sa cod2 cod3) borel_sa Psi}
        {isfe : IsFiniteExpectation prts (fun ω => Psi (X ω, Y ω))} 
-       {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => Psi (x, Y ω))}   
-       (rv2 : RandomVariable dom2 Rbar_borel_sa
-                (fun ω => FiniteExpectation prts (fun ω0 => Psi (X ω, Y ω0)))) :
-       independent_sas prts sub2 sub3 ->
+       {isfe2: forall x, IsFiniteExpectation prts (fun ω : Ts => Psi (x, Y ω))} :
+  independent_sas prts sub2 sub3 ->
+    exists rvf :  RandomVariable dom borel_sa (fun ω : Ts => Psi (X ω, Y ω)),
+    exists rv2 : RandomVariable dom2 Rbar_borel_sa
+                  (fun ω => FiniteExpectation prts (fun ω0 => Psi (X ω, Y ω0))),
    is_conditional_expectation prts dom2 (fun ω => Psi (X ω, Y ω))
-       (rvf := freezing_rv_alt sub2 sub3 X Y Psi)
+
      (fun ω => FiniteExpectation prts (fun ω0 => Psi (X ω, Y ω0))).
 Proof.
   intros.
   generalize (freezing_rv_alt sub2 sub3 X Y Psi); intros rvf.
-  generalize (freezing_sa_alt sub2 sub3 X Y Psi H); intros.  
+  exists rvf.
+  destruct (freezing_sa_alt sub2 sub3 X Y Psi H).
+  exists x.
   generalize (Condexp_cond_exp prts sub2 (fun ω => Psi (X ω, Y ω))).
   apply is_conditional_expectation_proper; try easy.
   apply almost_prob_space_sa_sub_lift with (sub := sub2).
