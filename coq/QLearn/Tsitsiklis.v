@@ -6964,7 +6964,6 @@ Section MDP.
         almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (α k ω sa)))) (Finite C))) ->
     let X := qlearn_Q in 
     let w := fun t ω sa => qlearn_w (qlearn_Q) t ω sa (qlearn_Q_rv_dom t) (isfe_qlearn_Q t) in
-    let XF := qlearn_XF  in
     (forall sa, RandomVariable (F 0%nat) borel_sa (fun ω => X 0%nat ω sa)) ->
     almost prts (fun ω => is_lim_seq (fun n => Rmax_norm _ (X n ω)) 0).
    Proof.
@@ -7126,7 +7125,7 @@ Section MDP.
        easy.
      }
      apply Tsitsiklis_1_3_fintype with 
-         (w := w) (XF := XF) (rvw := rvw); try easy.
+         (w := w) (XF := qlearn_XF) (rvw := rvw); try easy.
      - intros.
        subst w.
        unfold IsAdapted; intros.
@@ -7688,7 +7687,7 @@ Section MDP.
        rewrite fixpt0.
        lra.
      - intros.
-       subst w X XF.
+       subst w X.
        unfold qlearn_XF, qlearn_w.
        simpl.
        do 2 f_equal.
