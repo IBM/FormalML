@@ -4552,6 +4552,49 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     + apply Rvector_max_abs_nth_le.
   Qed.
 
+  Lemma lim_seq_maxabs0_b {n} (X : nat -> vector R n) :
+    (forall i pf,
+      is_lim_seq (fun m => vector_nth i pf (X m)) 0) ->
+    is_lim_seq (fun m => Rvector_max_abs (X m)) 0.
+  Proof.
+    intros.
+    apply is_lim_seq_spec.
+    intros eps.
+    assert (HH:forall (i : nat) (pf : (i < n)%nat),
+               eventually (fun m : nat => Rabs (vector_nth i pf (X m)) < eps)).
+    {
+      intros i pf.
+      specialize (H i pf).
+      apply is_lim_seq_spec in H.
+      specialize (H eps).
+      simpl in H.
+      revert H.
+      apply eventually_impl, all_eventually; intros.
+      now rewrite Rminus_0_r in H.
+    }
+    apply bounded_nat_ex_choice_vector in HH.
+    destruct HH as [v HH].
+    exists (list_max (proj1_sig v)).
+    intros n0 n0ge.
+    destruct n.
+    - destruct (Rvector_max_abs_zero (X n0)) as [? HH2].
+      rewrite HH2.
+      + rewrite Rminus_0_r, Rabs_R0.
+        apply cond_pos.
+      + apply vector_eq; simpl.
+        now rewrite (vector0_0 (X n0)); simpl.
+    - destruct (Rvector_max_abs_nth_in (X n0)) as [?[? eqq]].
+      rewrite Rminus_0_r.
+      rewrite eqq.
+      rewrite Rabs_Rabsolu.
+      apply HH.
+      rewrite <- n0ge.
+      generalize (list_max_upper (` v)); intros HH2.
+      rewrite Forall_forall in HH2.
+      apply HH2.
+      apply vector_nth_In.
+  Qed.
+  
   Lemma lim_seq_maxabs {n} (X : nat -> vector R n) (x: vector R n) :
     is_lim_seq (fun m => Rvector_max_abs (Rvector_minus (X m) x)) 0 ->
     forall i pf,
