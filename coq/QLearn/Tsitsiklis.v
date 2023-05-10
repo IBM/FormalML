@@ -6693,7 +6693,10 @@ Section MDP.
      (forall x, Rmax_norm _ (Rfct_minus _ (XF x) x') <= β * Rmax_norm _ (Rfct_minus _ x x')) ->
     (forall k ω sa, X (S k) ω sa = 
                     (X k ω sa) +  ((α k ω sa) * (((XF (X k ω) sa) - (X k ω sa) ) +  (w k ω sa)))) ->
-    almost prts (fun ω => is_lim_seq (fun n => Rmax_norm _ (Rfct_minus _ (X n ω) x')) 0).
+(*    almost prts (fun ω => is_lim_seq (fun n => Rmax_norm _ (Rfct_minus _ (X n ω) x')) 0). *)
+    almost prts (fun ω =>
+                   forall sa,
+                     is_lim_seq (fun n => X n ω sa) (x' sa)).
   Proof.
     intros.
   
@@ -6703,7 +6706,7 @@ Section MDP.
     pose (XFvec := fun vecrf => our_iso_f (XF (our_iso_b vecrf))).
     pose (xvec' := our_iso_f x').
     pose (N := length (nodup EqDecsigT fin_elms)).
-    generalize (Tsitsiklis_1_3_max_abs β Xvec wvec αvec xvec' XFvec isfilt filt_sub); intros.
+    generalize (Tsitsiklis_1_3 β Xvec wvec αvec xvec' XFvec isfilt filt_sub); intros.
     assert (IsAdapted (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) αvec F).
     {
       unfold IsAdapted.
@@ -6811,6 +6814,8 @@ Section MDP.
     cut_to H6; trivial.
     - revert H6.
       apply almost_impl, all_almost; intros ??.
+      admit.
+(*
       revert H6.
       apply is_lim_seq_ext.
       intros.
@@ -6831,6 +6836,7 @@ Section MDP.
       + apply Forall_map.
         apply Forall_forall; intros.
         apply Rabs_pos.
+*)
     - intros k ω.
       generalize  (alpha_bound k ω); intros ab.
       generalize (finite_fun_vector_iso_nth (α k ω) (fun r => 0 <= r <= 1)); intros.
@@ -6962,7 +6968,7 @@ Section MDP.
       unfold finite_fun_to_vector in HH.
       rewrite HH.
       lra.
-  Qed.
+  Admitted.
 
   Instance rv_finfun_sa {Ts1} {dom1 : SigmaAlgebra Ts1}
            (rv_X : Ts1 -> Rfct (sigT M.(act)))
@@ -7295,7 +7301,9 @@ Section MDP.
     let X := qlearn_Q in 
     let w := fun t ω sa => qlearn_w (qlearn_Q) t ω sa (qlearn_Q_rv_dom t) (isfe_qlearn_Q t) in
     (forall sa, RandomVariable (F 0%nat) borel_sa (fun ω => X 0%nat ω sa)) ->
-    almost prts (fun ω => is_lim_seq (fun n => Rmax_norm _ (Rfct_minus _ (X n ω) x')) 0).
+    almost prts (fun ω =>
+                   forall sa,
+                     is_lim_seq (fun n => X n ω sa) (x' sa)).
    Proof.
      intros.
      assert (rvXF : RandomVariable finfun_sa finfun_sa qlearn_XF).
