@@ -6775,7 +6775,9 @@ Section MDP.
       ; intros eqq1.
       rewrite <- (map_equivlist (fun x0 : sigT (act M) => Rabs ((X n x x0) - (x' x0))) _ (reflexivity _) _ _ eqq1).
       rewrite fold_left_Rmax_abs.
-      + admit.  
+      + rewrite map_map, combine_map_l, combine_map_r, combine_self, map_map, map_map, map_map.
+        f_equal; apply map_ext; intros.
+        f_equal; lra.
       + apply Forall_map.
         apply Forall_forall; intros.
         apply Rabs_pos.
@@ -6870,8 +6872,10 @@ Section MDP.
       etransitivity; [etransitivity |]; [| apply HH |]; right.
       + rewrite <- fold_left_Rmax_abs.
         * unfold Rvector_max_abs, vector_fold_left; simpl.
-          rewrite map_map.
-          admit.
+          rewrite map_map, map_map, combine_map_l, combine_map_r, combine_self, map_map, map_map, map_map.
+          f_equal; apply map_ext; intros.
+          f_equal.
+          unfold Rfct_minus; lra.
         * apply Forall_map.
           apply Forall_forall; intros.
           apply Rabs_pos.
@@ -6886,10 +6890,10 @@ Section MDP.
           generalize (vector_map_nth_finite (Build_FiniteType _ fin_elms fin_finite) EqDecsigT (B:=R) x); intros HH2.
           apply (f_equal (@proj1_sig _ _)) in HH2.
           simpl in HH2.
-          admit.
-          (*
-            apply HH2.
-          *)
+          rewrite <- HH2.
+          rewrite map_map, combine_map_l, combine_map_r, combine_self, map_map, map_map, map_map.
+          apply map_ext; intros.
+          unfold Rfct_minus; lra.
         * apply Forall_map.
           apply Forall_forall; intros.
           apply Rabs_pos.
@@ -6908,7 +6912,7 @@ Section MDP.
       unfold finite_fun_to_vector in HH.
       rewrite HH.
       lra.
-  Admitted.
+  Qed.
 
   Instance rv_finfun_sa {Ts1} {dom1 : SigmaAlgebra Ts1}
            (rv_X : Ts1 -> Rfct (sigT M.(act)))
