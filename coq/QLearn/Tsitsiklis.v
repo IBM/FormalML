@@ -6814,29 +6814,20 @@ Section MDP.
     cut_to H6; trivial.
     - revert H6.
       apply almost_impl, all_almost; intros ??.
-      admit.
-(*
+      intros sa.
+      specialize (H6 _ (fin_finite_index_bound _ sa)).
+      unfold xvec', our_iso_f in H6.
+      simpl in H6.
+      generalize (finite_fun_iso_b_f finA EqDecsigT x').
+      unfold vector_to_finite_fun; intros eqq1.
+      apply (f_equal (fun x => x sa)) in eqq1.
+      rewrite eqq1 in H6.
       revert H6.
-      apply is_lim_seq_ext.
-      intros.
-      unfold rvmaxabs.
-      unfold Xvec, our_iso_f, iso_f; simpl.
-      unfold finite_fun_to_vector; simpl.
-      unfold Rvector_max_abs, vector_fold_left; simpl.
-      rewrite map_map.
-      unfold Rmax_norm.
-      unfold fin_elms; destruct finA.
-      generalize (nodup_equiv EqDecsigT fin_elms)
-      ; intros eqq1.
-      rewrite <- (map_equivlist (fun x0 : sigT (act M) => Rabs ((X n x x0) - (x' x0))) _ (reflexivity _) _ _ eqq1).
-      rewrite fold_left_Rmax_abs.
-      + rewrite map_map, combine_map_l, combine_map_r, combine_self, map_map, map_map, map_map.
-        f_equal; apply map_ext; intros.
-        f_equal; lra.
-      + apply Forall_map.
-        apply Forall_forall; intros.
-        apply Rabs_pos.
-*)
+      apply is_lim_seq_ext; intros.
+      unfold Xvec, our_iso_f; simpl.
+      generalize (finite_fun_iso_b_f finA EqDecsigT (X n x)).
+      unfold vector_to_finite_fun; intros eqq2.
+      now apply (f_equal (fun x => x sa)) in eqq2.
     - intros k ω.
       generalize  (alpha_bound k ω); intros ab.
       generalize (finite_fun_vector_iso_nth (α k ω) (fun r => 0 <= r <= 1)); intros.
@@ -6968,7 +6959,7 @@ Section MDP.
       unfold finite_fun_to_vector in HH.
       rewrite HH.
       lra.
-  Admitted.
+  Qed.
 
   Instance rv_finfun_sa {Ts1} {dom1 : SigmaAlgebra Ts1}
            (rv_X : Ts1 -> Rfct (sigT M.(act)))
