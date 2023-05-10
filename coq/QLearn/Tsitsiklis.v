@@ -4596,20 +4596,27 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
   Qed.
   
   Lemma lim_seq_maxabs {n} (X : nat -> vector R n) (x: vector R n) :
-    is_lim_seq (fun m => Rvector_max_abs (Rvector_minus (X m) x)) 0 ->
+    is_lim_seq (fun m => Rvector_max_abs (Rvector_minus (X m) x)) 0 <->
     forall i pf,
       is_lim_seq (fun m => vector_nth i pf (X m)) (vector_nth i pf x).
   Proof.
-    intros.
-    generalize (lim_seq_maxabs0 (fun m => Rvector_minus (X m) x) H i pf); intros.
-    generalize (is_lim_seq_const (vector_nth i pf x)); intros.
-    generalize (is_lim_seq_plus' _ _ _ _  H0 H1); intros.
-    rewrite Rplus_0_l in H2.
-    revert H2.
-    apply is_lim_seq_ext.
-    intros.
-    rewrite Rvector_nth_minus.
-    lra.
+    split; intros.
+    - generalize (lim_seq_maxabs0 (fun m => Rvector_minus (X m) x) H i pf); intros.
+      generalize (is_lim_seq_const (vector_nth i pf x)); intros.
+      generalize (is_lim_seq_plus' _ _ _ _  H0 H1); intros.
+      rewrite Rplus_0_l in H2.
+      revert H2.
+      apply is_lim_seq_ext.
+      intros.
+      rewrite Rvector_nth_minus.
+      lra.
+    - apply lim_seq_maxabs0_b.
+      intros.
+      specialize (H i pf).
+      generalize (is_lim_seq_const (vector_nth i pf x)); intros.
+      generalize (is_lim_seq_minus' _ _ _ _  H H0); intros.
+      setoid_rewrite Rvector_nth_minus.
+      now rewrite Rminus_eq_0 in H1.
   Qed.
 
   Theorem Tsitsiklis3 {n} 
