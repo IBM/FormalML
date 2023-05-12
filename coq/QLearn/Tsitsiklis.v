@@ -5839,6 +5839,15 @@ Section MDP.
   Definition qlearn_Qmin (Q : Rfct (sigT M.(act))) (s : M.(state)) : R :=
     Min_{act_list s} (fun a => Q (existT _ s a)).
 
+  Instance qlearn_Qmin_proper : Proper (rv_eq ==> eq ==> eq) qlearn_Qmin.
+  Proof.
+    intros ??????; subst.
+    unfold qlearn_Qmin.
+    f_equal.
+    apply map_ext; intros.
+    apply H.
+  Qed.
+
   Lemma qlearn_Qmin_sa  (Q : Rfct (sigT M.(act))) (s : M.(state)) :
     exists (sa : sigT M.(act)), qlearn_Qmin Q s = Q sa.
   Proof.
@@ -8214,13 +8223,29 @@ Section Jaakkola.
   Qed.
 *)
 
+  Lemma FiniteType_eq_ext {A B} {finA:FiniteType A} {decA:EqDec A eq} (f g:A->B) :
+    rv_eq f g -> f = g.
+  Proof.
+    intros.
+    rewrite <- (iso_b_f f
+                 (Isomorphism := finite_fun_vec_encoder finA decA (B := B))).
+    rewrite <- (iso_b_f g
+                 (Isomorphism := finite_fun_vec_encoder finA decA (B := B))).
+    simpl.
+    f_equal.
+    apply vector_nth_eq; intros.
+    unfold finite_fun_to_vector.
+    now repeat rewrite vector_nth_map.
+  Qed.
+    
   Theorem qlearn_single_path
       (x' : Rfct (sigT M.(act)))
       (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
-      (fixpt: qlearn_XF_single x' = x') :
+      (fixpt: qlearn_XF_single x' = x')
+      (αzeros: forall n ω sa, sa_seq n ω <> sa -> α n ω sa = 0)
+    :
     0 <= β < 1 ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
-
     (exists (C : R),
       forall sa,
         almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (α k ω sa)))) (Finite C))) ->
@@ -8250,12 +8275,16 @@ Section Jaakkola.
       + now simpl.
       + simpl.
         rewrite IHn.
-        do 6 f_equal.
+        do 5 f_equal.
+        apply qlearn_Qmin_proper; try reflexivity; intros ?.
+        destruct (EqDecsigT a sa).
+        * red in e; congruence.
+        * specialize (αzeros n x a).
+
         admit.
     - rewrite <- fixpt at 2.
-      apply functional_extensionality.
-      intros.
       unfold qlearn_XF, next_state, qlearn_XF_single.
+      apply (FiniteType_eq_ext (decA:=EqDecsigT)); intros ?.
       do 2 f_equal.
       now apply FiniteExpectation_ext.
     - intros.
