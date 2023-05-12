@@ -8175,6 +8175,7 @@ Section Jaakkola.
     fun sa => FiniteExpectation prts (cost 0%nat sa) +
                 β * (FiniteExpectation prts (fun ω => qlearn_Qmin Q (projT1 (sa_seq 1%nat ω)))).
 
+(*
   Definition qlearn_w_single (Q : nat -> Ts -> Rfct (sigT M.(act)))
              (t : nat) (ω : Ts) (sa : (sigT M.(act)))     
              (rvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q t ω sa))
@@ -8184,6 +8185,7 @@ Section Jaakkola.
                          (FiniteExpectation 
                            prts 
                            (fun ω0 => qlearn_Qmin (Q t ω) (projT1 (sa_seq (S t) ω0))))).
+*)
 
 (*
   Instance isfe_qlearn_Q_single:
@@ -8251,8 +8253,11 @@ Section Jaakkola.
         do 6 f_equal.
         admit.
     - rewrite <- fixpt at 2.
+      apply functional_extensionality.
+      intros.
       unfold qlearn_XF, next_state, qlearn_XF_single.
-      admit.
+      do 2 f_equal.
+      now apply FiniteExpectation_ext.
     - intros.
       apply indep_next_state.
     - intros.
