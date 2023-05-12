@@ -8047,64 +8047,97 @@ Section Jaakkola.
           {M : MDP}
 
           {F : nat -> SigmaAlgebra Ts}
-(*
-          (next_state : nat -> (sigT M.(act)) -> Ts -> M.(state))          
-          (next_state_rv : forall t sa,
-              RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state t sa ω))
-          (next_state_rv2 : forall t sa,
-              RandomVariable dom (discrete_sa (state M)) (fun ω => next_state t sa ω))
-*)
           (sa_seq : nat -> Ts -> sigT M.(act))
           (sa_seq_rv : forall t,
               RandomVariable (F t) (discrete_sa (sigT M.(act))) (fun ω => sa_seq t ω))
-          (sa_seq_rv2 : forall t,
-              RandomVariable dom (discrete_sa (sigT M.(act))) (fun ω => sa_seq t ω))
-          (sa_seq_proj_rv : forall t,
-              RandomVariable (F t) (discrete_sa (M.(state))) (fun ω => projT1 (sa_seq t ω)))
-          (sa_seq_proj_rv2 : forall t,
-              RandomVariable dom (discrete_sa (M.(state))) (fun ω => projT1 (sa_seq t ω)))
-
           (cost : nat -> (sigT M.(act)) -> Ts -> R)          
           (cost_rv : forall t sa, RandomVariable (F (S t)) borel_sa (cost t sa))
-          (cost_rv2 : forall t sa, RandomVariable dom borel_sa (cost t sa))
-          {isfe_cost : forall t (sa : sigT M.(act)),
-              IsFiniteExpectation prts (cost t sa)}
-          (islp_cost: forall t (sa : {x : state M & act M x}), IsLp prts 2 (cost t sa))          
+
+          (islp_cost: forall t (sa : {x : state M & act M x}),
+              IsLp prts 2 (cost t sa))          
           (Q0 : Rfct (sigT M.(act)))
           (α : nat -> Ts -> Rfct (sigT M.(act)))
+          (β : R)
           (rvα : forall t sa,
               RandomVariable dom borel_sa (fun ω => α t ω sa))
           (alpha_bound : forall t ω sa, 0 <= α t ω sa <= 1)
           (rvα' : forall t sa,
               RandomVariable (F t) borel_sa (fun ω => α t ω sa))
           (isfilt : IsFiltration F) 
-          (filt_sub : forall k, sa_sub (F k) dom) 
-          (indep_cost: forall k sa,
-              independent_sas prts (pullback_rv_sub dom borel_sa (cost k sa) (cost_rv2 k sa))
-                (filt_sub k))
-          (indep_next_state:  
-            forall k,
-              independent_sas prts
-                (pullback_rv_sub dom (discrete_sa (state M)) (fun ω : Ts => projT1 (sa_seq (S k) ω)) (sa_seq_proj_rv2 (S k))) 
-                (filt_sub k))
-          (ident_distr_next_state: forall k,
-              identically_distributed_rvs prts (discrete_sa (state M)) (fun ω : Ts => projT1 (sa_seq 1%nat ω))
-                (fun ω : Ts => projT1 (sa_seq (S k) ω)))
-          (ident_distr_cost: forall k sa,
-              identically_distributed_rvs prts borel_sa
-                (rv1 := cost_rv2 0%nat sa)
-                (rv2 := cost_rv2 k sa)
-                (cost 0%nat sa)
-                (cost k sa))
-          (β : R).
+          (filt_sub : forall k, sa_sub (F k) dom).
+
+  Instance cost_rv2 :
+    forall t sa, RandomVariable dom borel_sa (cost t sa).
+  Proof.
+    intros.
+    now apply (RandomVariable_sa_sub (filt_sub (S t))).
+  Qed.
+
+  Instance isfe_cost :
+    forall t (sa : sigT M.(act)),
+      IsFiniteExpectation prts (cost t sa).
+  Proof.
+    intros.
+    apply IsLp_Finite with (n := 2); try lra; try easy.
+    typeclasses eauto.
+  Qed.
+
+  Instance sa_seq_rv2 :
+    forall t,
+      RandomVariable dom (discrete_sa (sigT M.(act))) (fun ω => sa_seq t ω).
+    intros.
+    now apply (RandomVariable_sa_sub (filt_sub t)).
+  Qed.
+
+  Instance sa_seq_proj_rv :
+    forall t,
+      RandomVariable (F t) (discrete_sa (M.(state))) (fun ω => projT1 (sa_seq t ω)).
+  Proof.
+    intros.
+    apply (compose_rv (sa_seq t)); trivial.
+    apply discrete_sa_rv.
+  Qed.
+
+  Instance sa_seq_proj_rv2 :
+    forall t,
+      RandomVariable dom (discrete_sa (M.(state))) (fun ω => projT1 (sa_seq t ω)).
+  Proof.
+    intros.
+    apply (RandomVariable_sa_sub (filt_sub t)).
+    typeclasses eauto.
+  Qed.
+
+  Context
+    (indep_cost: forall k sa,
+        independent_sas prts (pullback_rv_sub dom borel_sa (cost k sa) 
+                                (cost_rv2 k sa))
+          (filt_sub k))
+    (indep_next_state:  
+      forall k,
+        independent_sas prts
+          (pullback_rv_sub dom (discrete_sa (state M)) 
+             (fun ω : Ts => projT1 (sa_seq (S k) ω)) (sa_seq_proj_rv2 (S k))) 
+          (filt_sub k))
+      (ident_distr_next_state: forall k,
+          identically_distributed_rvs prts (discrete_sa (state M)) 
+            (fun ω : Ts => projT1 (sa_seq 1%nat ω))
+            (fun ω : Ts => projT1 (sa_seq (S k) ω)))
+      (ident_distr_cost: forall k sa,
+          identically_distributed_rvs prts borel_sa
+            (cost 0%nat sa)
+            (cost k sa)).
+
 
   Fixpoint qlearn_Q_single (t : nat) : (Ts -> Rfct (sigT M.(act)))    :=
            match t with
            | 0%nat => (fun ω  => Q0)
            | S t' => let g := qlearn_Q_single t' in 
-                     (fun ω sa => (g ω sa) + 
-                                  (α t' ω sa) * ((cost t' sa ω) + β * (qlearn_Qmin (g ω) (projT1 (sa_seq t ω)))
-                                                                   - (g ω sa)))
+                     (fun ω sa => 
+                        (g ω sa) + 
+                          (α t' ω sa) * 
+                            ((cost t' sa ω) + 
+                               β * (qlearn_Qmin (g ω) (projT1 (sa_seq t ω)))
+                             - (g ω sa)))
            end.
 
   Instance qlearn_Q_single_rv    :
@@ -8183,45 +8216,6 @@ Section Jaakkola.
   Definition qlearn_XF_single (Q : Rfct (sigT M.(act))) : Rfct (sigT M.(act)) :=
     fun sa => FiniteExpectation prts (cost 0%nat sa) +
                 β * (FiniteExpectation prts (fun ω => qlearn_Qmin Q (projT1 (sa_seq 1%nat ω)))).
-
-(*
-  Definition qlearn_w_single (Q : nat -> Ts -> Rfct (sigT M.(act)))
-             (t : nat) (ω : Ts) (sa : (sigT M.(act)))     
-             (rvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q t ω sa))
-             (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q t ω sa)) : R :=
-    ((cost t sa ω) - FiniteExpectation (isfe := isfe_cost t sa) prts (cost t sa)) +
-                     β *(qlearn_Qmin (Q t ω) (projT1 (sa_seq (S t) ω)) -
-                         (FiniteExpectation 
-                           prts 
-                           (fun ω0 => qlearn_Qmin (Q t ω) (projT1 (sa_seq (S t) ω0))))).
-*)
-
-(*
-  Instance isfe_qlearn_Q_single:
-    forall t sa, IsFiniteExpectation prts (fun ω => qlearn_Q_single t ω sa).
-  Proof.
-    intros.
-    revert sa.
-    induction t.
-    - intros.
-      simpl.
-      apply IsFiniteExpectation_const.
-    - intros.
-      simpl.
-      assert (RandomVariable dom borel_sa (fun ω : Ts => qlearn_Qmin (qlearn_Q_single t ω) (projT1 (sa_seq (S t) ω)))).
-      {
-        apply rv_qmin1; try typeclasses eauto.
-      }        
-      apply IsFiniteExpectation_plus; try typeclasses eauto.
-      apply isfe_small_mult; try typeclasses eauto; try easy.
-      apply IsFiniteExpectation_plus; try typeclasses eauto.
-      + apply IsFiniteExpectation_plus; try typeclasses eauto.
-        apply IsFiniteExpectation_scale.
-        apply (isfe_qmin1 (fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω))); try easy.
-        typeclasses eauto.
-      + now apply IsFiniteExpectation_opp'.
-  Qed.
-*)
 
   Lemma FiniteType_eq_ext {A B} {finA:FiniteType A} {decA:EqDec A eq} (f g:A->B) :
     rv_eq f g -> f = g.
