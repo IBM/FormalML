@@ -8052,19 +8052,25 @@ Section Jaakkola.
               RandomVariable (F t) (discrete_sa (sigT M.(act))) (fun ω => sa_seq t ω))
           (cost : nat -> (sigT M.(act)) -> Ts -> R)          
           (cost_rv : forall t sa, RandomVariable (F (S t)) borel_sa (cost t sa))
-
           (islp_cost: forall t (sa : {x : state M & act M x}),
               IsLp prts 2 (cost t sa))          
           (Q0 : Rfct (sigT M.(act)))
           (α : nat -> Ts -> Rfct (sigT M.(act)))
           (β : R)
-          (rvα : forall t sa,
-              RandomVariable dom borel_sa (fun ω => α t ω sa))
           (alpha_bound : forall t ω sa, 0 <= α t ω sa <= 1)
+          (beta_bound : 0 <= β < 1)
           (rvα' : forall t sa,
               RandomVariable (F t) borel_sa (fun ω => α t ω sa))
           (isfilt : IsFiltration F) 
           (filt_sub : forall k, sa_sub (F k) dom).
+
+  Instance rvα :
+    forall t sa,
+      RandomVariable dom borel_sa (fun ω => α t ω sa).
+  Proof.
+    intros.
+    now apply (RandomVariable_sa_sub (filt_sub t)).
+  Qed.
 
   Instance cost_rv2 :
     forall t sa, RandomVariable dom borel_sa (cost t sa).
@@ -8238,7 +8244,7 @@ Section Jaakkola.
       (fixpt: qlearn_XF_single x' = x')
 (*      (αzeros: forall n ω sa, sa_seq n ω <> sa -> α n ω sa = 0) *)
     :
-    0 <= β < 1 ->
+
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
     (exists (C : R),
       forall sa,
@@ -8251,16 +8257,16 @@ Section Jaakkola.
     intros.
     generalize (qlearn (M := M)); intros.
     pose (next_state := fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)).
-    specialize (H2 next_state _ _).
-    specialize (H2 cost _ _ _ _ Q0 α _ alpha_bound _ _ filt_sub).
-    cut_to H2; try easy.
-    specialize (H2 β _ x' _ ).
-    cut_to H2; try easy.
-    - revert H2.
+    specialize (H1 next_state _ _).
+    specialize (H1 cost _ _ _ _ Q0 α _ alpha_bound _ _ filt_sub).
+    cut_to H1; try easy.
+    specialize (H1 β _ x' _ ).
+    cut_to H1; try easy.
+    - revert H1.
       simpl.
       apply almost_impl, all_almost; intros ???.
-      specialize (H2 sa).
-      revert H2.
+      specialize (H1 sa).
+      revert H1.
       apply is_lim_seq_ext.
       intros.
       unfold next_state.
