@@ -7144,16 +7144,6 @@ Section MDP.
       apply fin_finite.
    Qed.
 
-  Lemma Rfct_minus_zero (x : Rfct (sigT M.(act))) :
-    Rfct_minus (sigT M.(act)) x (Rfct_zero (sigT M.(act))) = x.
-  Proof.
-    unfold Rfct_minus, Rfct_zero.
-    intros.
-    apply Rfct_eq_ext.
-    intros.
-    lra.
-  Qed.
-
   Lemma max_abs_sqr (a b : R) :
     Rmax (Rsqr a) (Rsqr b) = Rsqr (Rmax (Rabs a) (Rabs b)).
   Proof.

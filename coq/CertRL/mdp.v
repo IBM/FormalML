@@ -393,6 +393,15 @@ Proof.
   apply (plus_opp_r (f x)).
 Qed.
 
+Lemma Rfct_minus_zero (f : Rfct A) :
+  Rfct_minus f Rfct_zero = f.
+Proof.
+  unfold Rfct_minus, Rfct_zero.
+  intros.
+  apply Rfct_eq_ext.
+  intros.
+  lra.
+Qed.
 
 Definition Rfct_AbelianGroup_mixin :=
   AbelianGroup.Mixin (Rfct A) Rfct_plus Rfct_opp Rfct_zero Rfct_plus_comm
