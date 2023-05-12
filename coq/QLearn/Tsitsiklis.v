@@ -7285,18 +7285,18 @@ Section MDP.
       (fixpt: qlearn_XF x' = x') :
     0 <= β < 1 ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
-
     (exists (C : R),
       forall sa,
         almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (α k ω sa)))) (Finite C))) ->
+
     let X := qlearn_Q in 
-    let w := fun t ω sa => qlearn_w (qlearn_Q) t ω sa (qlearn_Q_rv_dom t) (isfe_qlearn_Q t) in
-    (forall sa, RandomVariable (F 0%nat) borel_sa (fun ω => X 0%nat ω sa)) ->
     almost prts (fun ω =>
                    forall sa,
                      is_lim_seq (fun n => X n ω sa) (x' sa)).
    Proof.
      intros.
+     pose (H2 := 1).
+     pose (w := fun t ω sa => qlearn_w (qlearn_Q) t ω sa (qlearn_Q_rv_dom t) (isfe_qlearn_Q t)).
      assert (rvXF : RandomVariable finfun_sa finfun_sa qlearn_XF).
      {
        apply rv_finfun_sa.
@@ -8031,17 +8031,30 @@ Section MDP.
 
 End MDP.
 
-(*
+Section Jaakkola.
   Context {Ts : Type}            
           {dom : SigmaAlgebra Ts}
           {prts : ProbSpace dom}
-          {F : nat -> SigmaAlgebra Ts}
+          {M : MDP}
 
+          {F : nat -> SigmaAlgebra Ts}
+(*
           (next_state : nat -> (sigT M.(act)) -> Ts -> M.(state))          
           (next_state_rv : forall t sa,
               RandomVariable (F (S t)) (discrete_sa (state M)) (fun ω => next_state t sa ω))
           (next_state_rv2 : forall t sa,
               RandomVariable dom (discrete_sa (state M)) (fun ω => next_state t sa ω))
+*)
+          (sa_seq : nat -> Ts -> sigT M.(act))
+          (sa_seq_rv : forall t,
+              RandomVariable (F t) (discrete_sa (sigT M.(act))) (fun ω => sa_seq t ω))
+          (sa_seq_rv2 : forall t,
+              RandomVariable dom (discrete_sa (sigT M.(act))) (fun ω => sa_seq t ω))
+          (sa_seq_proj_rv : forall t,
+              RandomVariable (F t) (discrete_sa (M.(state))) (fun ω => projT1 (sa_seq t ω)))
+          (sa_seq_proj_rv2 : forall t,
+              RandomVariable dom (discrete_sa (M.(state))) (fun ω => projT1 (sa_seq t ω)))
+
           (cost : nat -> (sigT M.(act)) -> Ts -> R)          
           (cost_rv : forall t sa, RandomVariable (F (S t)) borel_sa (cost t sa))
           (cost_rv2 : forall t sa, RandomVariable dom borel_sa (cost t sa))
@@ -8060,15 +8073,14 @@ End MDP.
           (indep_cost: forall k sa,
               independent_sas prts (pullback_rv_sub dom borel_sa (cost k sa) (cost_rv2 k sa))
                 (filt_sub k))
-          (indep_next_state: forall k sa,
-              independent_sas prts (pullback_rv_sub dom (discrete_sa (state M)) (next_state k sa) (next_state_rv2 k sa))
+          (indep_next_state:  
+            forall k,
+              independent_sas prts
+                (pullback_rv_sub dom (discrete_sa (state M)) (fun ω : Ts => projT1 (sa_seq (S k) ω)) (sa_seq_proj_rv2 (S k))) 
                 (filt_sub k))
-          (ident_distr_next_state: forall k sa,
-              identically_distributed_rvs prts (discrete_sa (state M))
-                (rv1 := next_state_rv2 0%nat sa)
-                (rv2 := next_state_rv2 k sa)
-                (next_state 0%nat sa)
-                (next_state k sa))
+          (ident_distr_next_state: forall k,
+              identically_distributed_rvs prts (discrete_sa (state M)) (fun ω : Ts => projT1 (sa_seq 1%nat ω))
+                (fun ω : Ts => projT1 (sa_seq (S k) ω)))
           (ident_distr_cost: forall k sa,
               identically_distributed_rvs prts borel_sa
                 (rv1 := cost_rv2 0%nat sa)
@@ -8080,23 +8092,171 @@ End MDP.
   Fixpoint qlearn_Q_single (t : nat) : (Ts -> Rfct (sigT M.(act)))    :=
            match t with
            | 0%nat => (fun ω  => Q0)
-           | S t' => let g := qlearn_Q t' in 
+           | S t' => let g := qlearn_Q_single t' in 
                      (fun ω sa => (g ω sa) + 
-                                  (α t' ω sa) * ((cost t' sa ω) + β * (qlearn_Qmin (g ω) (next_state t' sa ω))
+                                  (α t' ω sa) * ((cost t' sa ω) + β * (qlearn_Qmin (g ω) (projT1 (sa_seq t ω)))
                                                                    - (g ω sa)))
            end.
 
-Theorem qlearn_single_path
-          (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
-          (fixpt0: forall sa, qlearn_XF (Rfct_zero (sigT M.(act))) sa = 0) :
+  Instance qlearn_Q_single_rv    :
+    forall t sa, RandomVariable (F t) borel_sa (fun ω => qlearn_Q_single t ω sa).
+  Proof.
+    induction t; simpl; intros.
+    - apply rvconst.
+    - apply rvplus_rv.
+      + now apply (RandomVariable_sa_sub (isfilt t)).
+      + apply rvmult_rv.
+        * now apply (RandomVariable_sa_sub (isfilt t)).
+        * apply rvplus_rv.
+          -- apply rvplus_rv; try easy.
+             apply rvscale_rv.
+             apply rv_qmin1; try typeclasses eauto.
+             ++ intros.
+                apply (RandomVariable_sa_sub (isfilt t)).      
+                now apply IHt.
+          -- cut (RandomVariable (F (S t)) borel_sa (rvopp (fun ω : Ts => qlearn_Q_single t ω sa))).
+             { apply RandomVariable_proper; try reflexivity.
+               intros ?.
+               unfold rvopp, rvscale; lra.
+             }
+             apply rvopp_rv.
+             now apply (RandomVariable_sa_sub (isfilt t)).                   
+  Qed.
+
+  Instance qlearn_Q_single_rv_dom :
+    forall t sa, RandomVariable dom borel_sa (fun ω => qlearn_Q_single t ω sa).
+  Proof.
+    intros.
+    apply (RandomVariable_sa_sub (filt_sub t)).
+    typeclasses eauto.
+  Qed.
+
+  Instance isfe_qmin_single (Q : Rfct (sigT M.(act))) (t : nat) :
+    IsFiniteExpectation prts (fun ω => qlearn_Qmin Q (projT1 (sa_seq t ω))).
+  Proof.
+    apply IsFiniteExpectation_bounded with (rv_X1 := const (Rmin_all Q))
+                                           (rv_X3 := const (Rmax_all Q)).
+    - apply IsFiniteExpectation_const.
+    - apply IsFiniteExpectation_const.
+    - intros ?.
+      unfold const, qlearn_Qmin, Rmin_all.
+      match_destr.
+      apply Rge_le.
+      apply Rmin_list_incl.
+      * rewrite map_not_nil.
+        apply act_list_not_nil.
+      * intros ??.
+        apply in_map_iff in H.
+        destruct H as [? [? ?]].
+        subst.
+        apply in_map_iff.
+        exists  (existT (act M) (projT1 (sa_seq t a)) x).
+        split; trivial.
+    - intros ?.
+      unfold const, qlearn_Qmin.
+      unfold Rmax_all.
+      match_destr.
+      apply Rle_trans with (r2 := Max_{ act_list (projT1 (sa_seq t a))}(fun a0 : act M (projT1 (sa_seq t a)) => Q (existT (act M) (projT1 (sa_seq t a)) a0))).
+      + apply Rge_le.
+        apply Rmax_list_map_ge_Rmin.
+      + apply Rmax_list_incl.
+        * rewrite map_not_nil.
+          apply act_list_not_nil.
+        * intros ??.
+          apply in_map_iff in H.
+          destruct H as [? [? ?]].
+          subst.
+          apply in_map_iff.
+          exists  (existT (act M) (projT1 (sa_seq t a)) x).
+          split; trivial.
+  Qed.
+
+  Definition qlearn_XF_single (Q : Rfct (sigT M.(act))) : Rfct (sigT M.(act)) :=
+    fun sa => FiniteExpectation prts (cost 0%nat sa) +
+                β * (FiniteExpectation prts (fun ω => qlearn_Qmin Q (projT1 (sa_seq 1%nat ω)))).
+
+  Definition qlearn_w_single (Q : nat -> Ts -> Rfct (sigT M.(act)))
+             (t : nat) (ω : Ts) (sa : (sigT M.(act)))     
+             (rvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q t ω sa))
+             (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q t ω sa)) : R :=
+    ((cost t sa ω) - FiniteExpectation (isfe := isfe_cost t sa) prts (cost t sa)) +
+                     β *(qlearn_Qmin (Q t ω) (projT1 (sa_seq (S t) ω)) -
+                         (FiniteExpectation 
+                           prts 
+                           (fun ω0 => qlearn_Qmin (Q t ω) (projT1 (sa_seq (S t) ω0))))).
+
+(*
+  Instance isfe_qlearn_Q_single:
+    forall t sa, IsFiniteExpectation prts (fun ω => qlearn_Q_single t ω sa).
+  Proof.
+    intros.
+    revert sa.
+    induction t.
+    - intros.
+      simpl.
+      apply IsFiniteExpectation_const.
+    - intros.
+      simpl.
+      assert (RandomVariable dom borel_sa (fun ω : Ts => qlearn_Qmin (qlearn_Q_single t ω) (projT1 (sa_seq (S t) ω)))).
+      {
+        apply rv_qmin1; try typeclasses eauto.
+      }        
+      apply IsFiniteExpectation_plus; try typeclasses eauto.
+      apply isfe_small_mult; try typeclasses eauto; try easy.
+      apply IsFiniteExpectation_plus; try typeclasses eauto.
+      + apply IsFiniteExpectation_plus; try typeclasses eauto.
+        apply IsFiniteExpectation_scale.
+        apply (isfe_qmin1 (fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω))); try easy.
+        typeclasses eauto.
+      + now apply IsFiniteExpectation_opp'.
+  Qed.
+*)
+
+  Theorem qlearn_single_path
+      (x' : Rfct (sigT M.(act)))
+      (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
+      (fixpt: qlearn_XF_single x' = x') :
     0 <= β < 1 ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
 
     (exists (C : R),
       forall sa,
         almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (α k ω sa)))) (Finite C))) ->
-    let X := qlearn_Q in 
-    let w := fun t ω sa => qlearn_w (qlearn_Q) t ω sa (qlearn_Q_rv_dom t) (isfe_qlearn_Q t) in
-    (forall sa, RandomVariable (F 0%nat) borel_sa (fun ω => X 0%nat ω sa)) ->
-    almost prts (fun ω => is_lim_seq (fun n => Rmax_norm _ (X n ω)) 0).    
-*)
+    let X := qlearn_Q_single in 
+    almost prts (fun ω =>
+                   forall sa,
+                     is_lim_seq (fun n => X n ω sa) (x' sa)).
+  Proof.
+    intros.
+    generalize (qlearn (M := M)); intros.
+    pose (next_state := fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)).
+    specialize (H2 next_state _ _).
+    specialize (H2 cost _ _ _ _ Q0 α _ alpha_bound _ _ filt_sub).
+    cut_to H2; try easy.
+    specialize (H2 β _ x' _ ).
+    cut_to H2; try easy.
+    - revert H2.
+      simpl.
+      apply almost_impl, all_almost; intros ???.
+      specialize (H2 sa).
+      revert H2.
+      apply is_lim_seq_ext.
+      intros.
+      unfold next_state.
+      unfold X.
+      induction n.
+      + now simpl.
+      + simpl.
+        rewrite IHn.
+        do 6 f_equal.
+        admit.
+    - rewrite <- fixpt at 2.
+      unfold qlearn_XF, next_state, qlearn_XF_single.
+      admit.
+    - intros.
+      apply indep_next_state.
+    - intros.
+      apply ident_distr_next_state.
+    Admitted.
+
+End Jaakkola.
