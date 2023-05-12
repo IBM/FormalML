@@ -282,6 +282,15 @@ Section fe.
     lra.
   Qed.
 
+  Global Instance IsFiniteExpectation_opp' rv_X 
+         {isfe:IsFiniteExpectation rv_X} :
+    IsFiniteExpectation (fun ω => - (rv_X ω)).
+  Proof.
+    generalize (IsFiniteExpectation_opp rv_X).
+    apply IsFiniteExpectation_proper; try easy.
+    intros ?; rv_unfold; lra.
+  Qed.
+
   Lemma FiniteExpectation_opp rv_X 
         {isfe:IsFiniteExpectation rv_X} :
     FiniteExpectation (rvopp rv_X) = -1 * FiniteExpectation rv_X.
@@ -304,6 +313,19 @@ Section fe.
   Proof.
     unfold rvminus.
     typeclasses eauto.
+  Qed.
+
+  Global Instance IsFiniteExpectation_minus'
+         (rv_X1 rv_X2 : Ts -> R)
+         {rv1 : RandomVariable dom borel_sa rv_X1}
+         {rv2 : RandomVariable dom borel_sa rv_X2} 
+         {isfe1:IsFiniteExpectation rv_X1}
+         {isfe2:IsFiniteExpectation rv_X2} :
+    IsFiniteExpectation (fun ω => (rv_X1 ω) - (rv_X2 ω)).
+  Proof.
+    generalize (IsFiniteExpectation_minus rv_X1 rv_X2).
+    apply IsFiniteExpectation_proper; try easy.
+    intros ?; rv_unfold; lra.
   Qed.
 
   Lemma FiniteExpectation_minus

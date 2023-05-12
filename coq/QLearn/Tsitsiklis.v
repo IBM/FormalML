@@ -5861,28 +5861,6 @@ Section MDP.
       apply act_list_not_nil.      
   Qed.
 
-  Instance IsFiniteExpectation_minus'
-         (rv_X1 rv_X2 : Ts -> R)
-         {rv1 : RandomVariable dom borel_sa rv_X1}
-         {rv2 : RandomVariable dom borel_sa rv_X2} 
-         {isfe1:IsFiniteExpectation prts rv_X1}
-         {isfe2:IsFiniteExpectation prts rv_X2} :
-    IsFiniteExpectation prts (fun ω => (rv_X1 ω) - (rv_X2 ω)).
-  Proof.
-    generalize (IsFiniteExpectation_minus prts rv_X1 rv_X2).
-    apply IsFiniteExpectation_proper; try easy.
-    intros ?; rv_unfold; lra.
-  Qed.
-
-  Instance IsFiniteExpectation_opp' rv_X 
-         {isfe:IsFiniteExpectation prts rv_X} :
-    IsFiniteExpectation prts (fun ω => - (rv_X ω)).
-  Proof.
-    generalize (IsFiniteExpectation_opp prts rv_X).
-    apply IsFiniteExpectation_proper; try easy.
-    intros ?; rv_unfold; lra.
-  Qed.
-
   Existing Instance FiniteCondexp_rv'.    
 
   Context {finA : FiniteType (sigT M.(act))}.
