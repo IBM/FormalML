@@ -8242,7 +8242,7 @@ Section Jaakkola.
       (x' : Rfct (sigT M.(act)))
       (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
       (fixpt: qlearn_XF_single x' = x')
-      (αzeros: forall n ω sa, sa_seq n ω <> sa -> α n ω sa = 0)
+(*      (αzeros: forall n ω sa, sa_seq n ω <> sa -> α n ω sa = 0) *)
     :
     0 <= β < 1 ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
@@ -8271,17 +8271,17 @@ Section Jaakkola.
       intros.
       unfold next_state.
       unfold X.
+      revert sa.
       induction n.
       + now simpl.
-      + simpl.
+      + intros.
+        simpl.
         rewrite IHn.
         do 5 f_equal.
         apply qlearn_Qmin_proper; try reflexivity; intros ?.
         destruct (EqDecsigT a sa).
         * red in e; congruence.
-        * specialize (αzeros n x a).
-
-        admit.
+        * now rewrite IHn.
     - rewrite <- fixpt at 2.
       unfold qlearn_XF, next_state, qlearn_XF_single.
       apply (FiniteType_eq_ext (decA:=EqDecsigT)); intros ?.
@@ -8291,6 +8291,6 @@ Section Jaakkola.
       apply indep_next_state.
     - intros.
       apply ident_distr_next_state.
-    Admitted.
+  Qed.
 
 End Jaakkola.
