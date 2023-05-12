@@ -6455,12 +6455,7 @@ Section MDP.
                 apply (RandomVariable_sa_sub (isfilt t)).      
                 now apply IHt.
              ++ apply next_state_rv.
-          -- cut (RandomVariable (F (S t)) borel_sa (rvopp (fun ω : Ts => qlearn_Q t ω sa))).
-             { apply RandomVariable_proper; try reflexivity.
-               intros ?.
-               unfold rvopp, rvscale; lra.
-             }
-             apply rvopp_rv.
+          -- apply rvopp_rv'.
              now apply (RandomVariable_sa_sub (isfilt t)).                   
   Qed.
 
@@ -7378,14 +7373,7 @@ Section MDP.
          unfold Rminus.
          apply rvplus_rv.
          + typeclasses eauto.
-         + generalize (rvopp_rv dom); intros.
-           specialize (H3
-                         (fun ω : Ts => FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (qlearn_Q k ω) (next_state k sa ω0)))).
-           unfold rvopp, rvscale in H3.
-           cut_to H3; try easy.
-           revert H3.
-           apply RandomVariable_proper; try easy.
-           intros ?; lra.
+         + now apply rvopp_rv'.
      }
      assert (isfe_finexp: forall k sa,
                 IsFiniteExpectation prts
@@ -8162,12 +8150,7 @@ Section Jaakkola.
              ++ intros.
                 apply (RandomVariable_sa_sub (isfilt t)).      
                 now apply IHt.
-          -- cut (RandomVariable (F (S t)) borel_sa (rvopp (fun ω : Ts => qlearn_Q_single t ω sa))).
-             { apply RandomVariable_proper; try reflexivity.
-               intros ?.
-               unfold rvopp, rvscale; lra.
-             }
-             apply rvopp_rv.
+          -- apply rvopp_rv'.
              now apply (RandomVariable_sa_sub (isfilt t)).                   
   Qed.
 
