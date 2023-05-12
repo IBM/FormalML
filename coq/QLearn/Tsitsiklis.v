@@ -6334,54 +6334,6 @@ Section MDP.
     - apply isfe_Rmax_all; try typeclasses eauto.
   Qed.
 
-  Instance rv0 
-    (sa : (sigT M.(act))) :
-    RandomVariable dom borel_sa 
-                   (fun ω : Ts => Q0 sa).
-  Proof.
-    apply rvconst.
-  Qed.
-
-  Instance rv0'
-    (sa : (sigT M.(act))) :
-    RandomVariable (F 0%nat) borel_sa 
-                   (fun ω : Ts => Q0 sa).
-  Proof.
-    apply rvconst.
-  Qed.
-
-  Instance rv_qmin0_t0 
-    (sa : (sigT M.(act))) :
-    RandomVariable dom borel_sa 
-                   (fun ω : Ts => qlearn_Qmin Q0 (next_state 0%nat sa ω)).
-  Proof.
-    typeclasses eauto.
-  Qed.
-
-  Instance rv_qmin0'_t0
-    (sa : (sigT M.(act))) :
-    RandomVariable (F 1%nat) borel_sa 
-                   (fun ω : Ts => qlearn_Qmin Q0 (next_state 0%nat sa ω)).
-  Proof.
-    apply rv_qmin1.
-    - intros; apply rvconst.
-    - apply next_state_rv.
-  Qed.
-
-  Instance isfe0
-    (sa : (sigT M.(act))) :
-    IsFiniteExpectation prts (fun ω : Ts => Q0 sa).
-  Proof.
-    apply IsFiniteExpectation_const.
-  Qed.
-
-  Instance isfe_qmin0
-    (sa : (sigT M.(act))) :
-    IsFiniteExpectation prts (fun ω : Ts => qlearn_Qmin Q0 (next_state 0%nat sa ω)).
-  Proof.
-    typeclasses eauto.
-  Qed.
-
   Program Instance frf_Qmin (g : Rfct (sigT M.(act))) (f : Ts -> M.(state))
            {rvf : RandomVariable dom (discrete_sa M.(state)) f} :
     FiniteRangeFunction (fun ω0 : Ts => qlearn_Qmin g (f ω0))
