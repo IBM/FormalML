@@ -17,7 +17,6 @@ Require Import FiniteTypeVector.
 
 Set Bullet Behavior "Strict Subproofs".
 
-
 Section Stochastic_convergence.
   
 
@@ -8151,10 +8150,47 @@ Section Melo.
   Proof.
   Admitted.
 
+  Instance melo_cost_rv2 k sa :
+    RandomVariable dom borel_sa (melo_cost k sa).
+  Proof.
+    apply (RandomVariable_sa_sub (filt_sub (S k))).
+    apply melo_cost_rv.
+  Qed.
+
+  Lemma frf_melo_cost k sa :
+    FiniteRangeFunction (melo_cost k sa).
+  Proof.
+    unfold melo_cost.
+    Admitted.
+
   Instance islp_melo_cost k sa :
     IsLp prts 2 (melo_cost k sa).
   Proof.
-  Admitted.
+    unfold IsLp.
+    assert (IsFiniteExpectation prts
+              (rvsqr (rvabs (melo_cost k sa)))).
+    {
+      assert (IsFiniteExpectation 
+                prts
+                (rvsqr (melo_cost k sa))).
+      {
+        generalize (FiniteRangeFunction_compose_after (melo_cost k sa) (C := R)); intros.
+        specialize (X Rsqr (frf_melo_cost k sa)).
+        apply IsFiniteExpectation_simple.
+        - typeclasses eauto.
+        - easy.
+      }
+      revert H.
+      apply IsFiniteExpectation_proper.
+      intros ?.
+      unfold rvsqr, rvabs.
+      now rewrite <- Rsqr_abs.
+    }
+    revert H.
+    apply IsFiniteExpectation_proper.
+    rewrite rvpower2; try reflexivity.
+    apply nnfabs.
+ Qed.
     
   Lemma melo_qlearn_Q_single_const
     (αzeros: forall t ω sa, sa_seq t ω <> sa -> α t ω sa = 0) :
