@@ -5786,35 +5786,12 @@ Section FixedPoint_contract.
          unfold ball; simpl.
          unfold Rmax_ball.
          intros.
-         specialize (H0 x1 x2).
-         assert (Rmax_norm A (fun s : A => minus (F x2 s) (F x1 s)) <=
-                   gamma * Rmax_norm A (fun s : A => minus (x2 s) (x1 s))).
-         {
-           clear H2.
-           unfold norm in H0.
-           simpl in H0.
-           assert (Rmax_norm A (minus (F x1) (F x2)) = Rmax_norm A (fun s : A => minus (F x2 s) (F x1 s))).
-           {
-             f_equal.
-             unfold minus, plus, opp.
-             simpl.
-             admit.
-           }
-           assert (Rmax_norm A (minus x1 x2) = Rmax_norm A (fun s : A => minus (x2 s) (x1 s))).
-           {
-             f_equal.
-             unfold minus, plus, opp.
-             simpl.
-             admit.
-           }
-           rewrite <- H2.
-           now rewrite <- H5.
-         }
+         specialize (H0 x2 x1).
          eapply Rle_lt_trans.
-         apply H5.
+         apply H0.
          assert (0 < gamma) by lra.
          now apply Rmult_lt_compat_l.
-   Admitted.
+  Qed.
    
 End FixedPoint_contract.
 
