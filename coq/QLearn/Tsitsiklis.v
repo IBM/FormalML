@@ -8145,7 +8145,9 @@ Section Melo.
   Definition melo_cost k (sa : sigT M.(act)) ω :=
     cost_fun (sa_seq k ω) (projT1 (sa_seq (S k) ω)).
 
-  Instance rv_pair {T1 T2} {dom2} (rv1 : Ts -> T1) (rv2 : Ts -> T2) :
+  Instance rv_pair {T1 T2} {dom2} (rv1 : Ts -> T1) (rv2 : Ts -> T2) 
+                   {fin1 : FiniteType T1}
+                   {fin2 : FiniteType T1} :
     RandomVariable dom2 (discrete_sa T1) rv1 ->
     RandomVariable dom2 (discrete_sa T2) rv2 ->
     RandomVariable dom2 (discrete_sa (T1 * T2)) (fun ω => (rv1 ω, rv2 ω)).
@@ -8153,7 +8155,8 @@ Section Melo.
     intros.
     generalize (product_sa_rv rv1 rv2).
     apply RandomVariable_proper; try easy.
-    Admitted.
+    
+  Admitted.
                    
   Instance melo_cost_rv k sa :
     RandomVariable (F (S k)) borel_sa (melo_cost k sa).
@@ -8163,7 +8166,7 @@ Section Melo.
     assert (RandomVariable (F (S k)) borel_sa (compose cost2 rv2)).
     {
       apply compose_rv.
-      - generalize (rv_pair (sa_seq k) (fun ω => projT1 (sa_seq (S k) ω)) (dom2 := F (S k))); intros.
+      - generalize (rv_pair (dom2 := F (S k)) (sa_seq k) (fun ω => projT1 (sa_seq (S k) ω)) ); intros.
         apply H.
         + now apply (RandomVariable_sa_sub (isfilt k)).
         + now apply (compose_rv (sa_seq (S k))).
