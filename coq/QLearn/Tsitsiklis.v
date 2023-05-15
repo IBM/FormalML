@@ -7992,7 +7992,13 @@ Section Jaakkola.
           (beta_bound : 0 <= β < 1)
           (rvα : forall t sa,
               RandomVariable (F t) borel_sa (fun ω => α t ω sa))
+
           (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
+          (alpha_lim1: forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty)
+          (alpha_lim2 :
+            exists (C : R),
+            forall sa,
+              almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (α k ω sa)))) (Finite C)))
           (isfilt : IsFiltration F) 
           (filt_sub : forall k, sa_sub (F k) dom)
           (indep_cost: forall k sa,
@@ -8024,32 +8030,20 @@ Section Jaakkola.
     typeclasses eauto.
   Qed.
 
-(* assumes implicitly αzeros since use of sa_seq only valid when sa_seq = sa *)
-(*      (αzeros: forall n ω sa, sa_seq n ω <> sa -> α n ω sa = 0) *)
-  Fixpoint qlearn_Q_single (t : nat) : (Ts -> Rfct (sigT M.(act)))    :=
-           match t with
-           | 0%nat => (fun ω  => Q0)
-           | S t' => let g := qlearn_Q_single t' in 
-                     (fun ω sa => 
-                        (g ω sa) + 
-                          (α t' ω sa) * 
-                            ((cost t' sa ω) + 
-                               β * (qlearn_Qmin (g ω) (projT1 (sa_seq t ω)))
-                             - (g ω sa)))
-           end.
-
-  Lemma qlearn_Q_single_const 
+  Lemma qlearn_Q_single_const
     (αzeros: forall t ω sa, sa_seq t ω <> sa -> α t ω sa = 0) :
+    let next_state := (fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)) in
+    let X := (qlearn_Q next_state cost Q0 α β) in
     forall t ω sa,
       sa_seq t ω <> sa ->
-      qlearn_Q_single (S t) ω sa = qlearn_Q_single t ω sa.
+      X (S t) ω sa = X t ω sa.
    Proof.
      intros.
      simpl.
      rewrite αzeros; trivial.
      lra.
    Qed.
-      
+
   Lemma FiniteType_eq_ext {A B} {finA:FiniteType A} {decA:EqDec A eq} (f g:A->B) :
     rv_eq f g -> f = g.
   Proof.
@@ -8079,44 +8073,18 @@ Section Jaakkola.
             (fun ω : Ts => projT1 (sa_seq (S k) ω)))     :
    
     let next_state := (fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)) in
-    qlearn_XF next_state cost cost_rv islp_cost filt_sub β x' = x' ->
-
-    (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
-    (exists (C : R),
-      forall sa,
-        almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (α k ω sa)))) (Finite C))) ->
-    let X := qlearn_Q_single in 
+    let X := (qlearn_Q next_state cost Q0 α β) in
+    let XF := (qlearn_XF next_state cost cost_rv islp_cost filt_sub β) in
+    XF x' = x' ->
     almost prts (fun ω =>
                    forall sa,
                      is_lim_seq (fun n => X n ω sa) (x' sa)).
   Proof.
     intros.
-    generalize (qlearn (M := M)); intros.
-    specialize (H2 next_state _).
-    specialize (H2 cost _ _ Q0 α alpha_bound _ _ filt_sub).
-    cut_to H2; try easy.
-    specialize (H2 β _ x' _ ).
-    cut_to H2; try easy.
-    - revert H2.
-      simpl.
-      apply almost_impl, all_almost; intros ???.
-      specialize (H2 sa).
-      revert H2.
-      apply is_lim_seq_ext.
-      intros.
-      unfold next_state.
-      unfold X.
-      revert sa.
-      induction n.
-      + now simpl.
-      + intros.
-        simpl.
-        rewrite IHn.
-        do 5 f_equal.
-        apply qlearn_Qmin_proper; try reflexivity; intros ?.
-        destruct (EqDecsigT a sa).
-        * red in e; congruence.
-        * now rewrite IHn.
+    generalize (qlearn (M := M) next_state _); intros.
+    specialize (H0 cost _ _ Q0 α alpha_bound _ _ filt_sub).
+    cut_to H0; try easy.
+    apply (H0 β _ x' _ H beta_bound alpha_lim1 alpha_lim2).
     - intros.
       generalize (indep_next_state k).
       now apply independent_sas_proper.      
