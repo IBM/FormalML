@@ -4677,27 +4677,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
     now apply lim_seq_maxabs.
   Qed.
 
-  (* move to RealVectorHilbert *)
-  Lemma Rvector_max_abs_triang_inv {n} (v1 v2 : vector R n) :
-    Rvector_max_abs v1 - Rvector_max_abs v2 <= Rvector_max_abs (Rvector_minus v1 v2).
-  Proof.
-    generalize (Rvector_max_abs_triang (Rvector_minus v1 v2) v2); intros.
-    replace (Rvector_plus (Rvector_minus v1 v2) v2) with v1 in H; try lra.
-    unfold Rvector_minus.
-    rewrite <- Rvector_plus_assoc.
-    rewrite Rvector_inv_plus.
-    now rewrite Rvector_plus_zero.
-  Qed.
-
-  Lemma Rvector_max_abs_opp {n} (v : vector R n) :
-    Rvector_max_abs (Rvector_opp v) = Rvector_max_abs v.
-  Proof.
-    unfold Rvector_opp.
-    rewrite Rvector_max_abs_scale.
-    rewrite Rabs_m1.
-    lra.
-  Qed.
-
   Theorem Tsitsiklis_1_3_max_abs {n} 
     (β : R) 
     (X w α : nat -> Ts -> vector R n)
