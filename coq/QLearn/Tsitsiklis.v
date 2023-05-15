@@ -8006,13 +8006,6 @@ Section Jaakkola.
                 (cost 0%nat sa)
                 (cost k sa)).
 
-  Instance sa_seq_rv2 :
-    forall t,
-      RandomVariable dom (discrete_sa (sigT M.(act))) (fun ω => sa_seq t ω).
-    intros.
-    now apply (RandomVariable_sa_sub (filt_sub t)).
-  Qed.
-
   Instance sa_seq_proj_rv :
     forall t,
       RandomVariable (F t) (discrete_sa (M.(state))) (fun ω => projT1 (sa_seq t ω)).
@@ -8028,22 +8021,6 @@ Section Jaakkola.
   Proof.
     intros.
     apply (RandomVariable_sa_sub (filt_sub t)).
-    typeclasses eauto.
-  Qed.
-
-  Instance jaakkola_cost_rv2 :
-    forall t sa, RandomVariable dom borel_sa (cost t sa).
-  Proof.
-    intros.
-    now apply (RandomVariable_sa_sub (filt_sub (S t))).
-  Qed.
-
-  Instance jaakkola_isfe_cost :
-    forall t (sa : sigT M.(act)),
-      IsFiniteExpectation prts (cost t sa).
-  Proof.
-    intros.
-    apply IsLp_Finite with (n := 2); try lra; try easy.
     typeclasses eauto.
   Qed.
 
@@ -8073,78 +8050,6 @@ Section Jaakkola.
      lra.
    Qed.
       
-  Instance qlearn_Q_single_rv    :
-    forall t sa, RandomVariable (F t) borel_sa (fun ω => qlearn_Q_single t ω sa).
-  Proof.
-    induction t; simpl; intros.
-    - apply rvconst.
-    - apply rvplus_rv.
-      + now apply (RandomVariable_sa_sub (isfilt t)).
-      + apply rvmult_rv.
-        * now apply (RandomVariable_sa_sub (isfilt t)).
-        * apply rvplus_rv.
-          -- apply rvplus_rv; try easy.
-             apply rvscale_rv.
-             apply rv_qmin1; try typeclasses eauto.
-             ++ intros.
-                apply (RandomVariable_sa_sub (isfilt t)).      
-                now apply IHt.
-          -- apply rvopp_rv'.
-             now apply (RandomVariable_sa_sub (isfilt t)).                   
-  Qed.
-
-  Instance qlearn_Q_single_rv_dom :
-    forall t sa, RandomVariable dom borel_sa (fun ω => qlearn_Q_single t ω sa).
-  Proof.
-    intros.
-    apply (RandomVariable_sa_sub (filt_sub t)).
-    typeclasses eauto.
-  Qed.
-
-  Instance isfe_qmin_single (Q : Rfct (sigT M.(act))) (t : nat) :
-    IsFiniteExpectation prts (fun ω => qlearn_Qmin Q (projT1 (sa_seq t ω))).
-  Proof.
-    apply IsFiniteExpectation_bounded with (rv_X1 := const (Rmin_all Q))
-                                           (rv_X3 := const (Rmax_all Q)).
-    - apply IsFiniteExpectation_const.
-    - apply IsFiniteExpectation_const.
-    - intros ?.
-      unfold const, qlearn_Qmin, Rmin_all.
-      match_destr.
-      apply Rge_le.
-      apply Rmin_list_incl.
-      * rewrite map_not_nil.
-        apply act_list_not_nil.
-      * intros ??.
-        apply in_map_iff in H.
-        destruct H as [? [? ?]].
-        subst.
-        apply in_map_iff.
-        exists  (existT (act M) (projT1 (sa_seq t a)) x).
-        split; trivial.
-    - intros ?.
-      unfold const, qlearn_Qmin.
-      unfold Rmax_all.
-      match_destr.
-      apply Rle_trans with (r2 := Max_{ act_list (projT1 (sa_seq t a))}(fun a0 : act M (projT1 (sa_seq t a)) => Q (existT (act M) (projT1 (sa_seq t a)) a0))).
-      + apply Rge_le.
-        apply Rmax_list_map_ge_Rmin.
-      + apply Rmax_list_incl.
-        * rewrite map_not_nil.
-          apply act_list_not_nil.
-        * intros ??.
-          apply in_map_iff in H.
-          destruct H as [? [? ?]].
-          subst.
-          apply in_map_iff.
-          exists  (existT (act M) (projT1 (sa_seq t a)) x).
-          split; trivial.
-  Qed.
-
-  Definition qlearn_XF_single (Q : Rfct (sigT M.(act))) : Rfct (sigT M.(act)) :=
-    fun sa => FiniteExpectation prts (cost 0%nat sa) +
-                β * (FiniteExpectation prts (fun ω => qlearn_Qmin Q (projT1 (sa_seq 1%nat ω)))).
-
   Lemma FiniteType_eq_ext {A B} {finA:FiniteType A} {decA:EqDec A eq} (f g:A->B) :
     rv_eq f g -> f = g.
   Proof.
@@ -8162,7 +8067,6 @@ Section Jaakkola.
     
   Theorem qlearn_single_path
       (x' : Rfct (sigT M.(act)))
-      (fixpt: qlearn_XF_single x' = x')
       (indep_next_state:  
         forall k,
           independent_sas prts
@@ -8173,6 +8077,9 @@ Section Jaakkola.
           identically_distributed_rvs prts (discrete_sa (state M)) 
             (fun ω : Ts => projT1 (sa_seq 1%nat ω))
             (fun ω : Ts => projT1 (sa_seq (S k) ω)))     :
+   
+    let next_state := (fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)) in
+    qlearn_XF next_state cost cost_rv islp_cost filt_sub β x' = x' ->
 
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
     (exists (C : R),
@@ -8185,17 +8092,16 @@ Section Jaakkola.
   Proof.
     intros.
     generalize (qlearn (M := M)); intros.
-    pose (next_state := fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)).
-    specialize (H1 next_state _).
-    specialize (H1 cost _ _ Q0 α alpha_bound _ _ filt_sub).
-    cut_to H1; try easy.
-    specialize (H1 β _ x' _ ).
-    cut_to H1; try easy.
-    - revert H1.
+    specialize (H2 next_state _).
+    specialize (H2 cost _ _ Q0 α alpha_bound _ _ filt_sub).
+    cut_to H2; try easy.
+    specialize (H2 β _ x' _ ).
+    cut_to H2; try easy.
+    - revert H2.
       simpl.
       apply almost_impl, all_almost; intros ???.
-      specialize (H1 sa).
-      revert H1.
+      specialize (H2 sa).
+      revert H2.
       apply is_lim_seq_ext.
       intros.
       unfold next_state.
@@ -8211,13 +8117,6 @@ Section Jaakkola.
         destruct (EqDecsigT a sa).
         * red in e; congruence.
         * now rewrite IHn.
-    - rewrite <- fixpt at 2.
-      unfold qlearn_XF, next_state, qlearn_XF_single.
-      apply (FiniteType_eq_ext (decA:=EqDecsigT)); intros ?.
-      f_equal.
-      + now apply FiniteExpectation_ext.
-      + f_equal. 
-        now apply FiniteExpectation_ext.
     - intros.
       generalize (indep_next_state k).
       now apply independent_sas_proper.      
