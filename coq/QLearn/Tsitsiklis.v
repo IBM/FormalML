@@ -8150,6 +8150,9 @@ Section Melo.
     RandomVariable dom2 (discrete_sa T2) rv2 ->
     RandomVariable dom2 (discrete_sa (T1 * T2)) (fun ω => (rv1 ω, rv2 ω)).
   Proof.
+    intros.
+    generalize (product_sa_rv rv1 rv2).
+    apply RandomVariable_proper; try easy.
     Admitted.
                    
   Instance melo_cost_rv k sa :
