@@ -6574,3 +6574,13 @@ Qed.
 
 Definition finite_Rsum {B:Type} {decB : EqDec B eq} {finB:FiniteType B} (f:B->R)
   := list_sum (map f (nodup decB fin_elms)).
+
+Lemma max_abs_sqr (a b : R) :
+    Rmax (Rsqr a) (Rsqr b) = Rsqr (Rmax (Rabs a) (Rabs b)).
+  Proof.
+    unfold Rmax.
+    match_destr; match_destr; try now rewrite Rsqr_abs.
+    - apply Rsqr_le_abs_0 in r; lra.
+    - apply Rsqr_le_abs_1 in r; lra.
+  Qed.
+

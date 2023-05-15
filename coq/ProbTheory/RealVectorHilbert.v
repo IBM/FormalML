@@ -1326,6 +1326,28 @@ Section more_lemmas.
       ; apply Rvector_max_abs_nth_le.
   Qed.
 
+  Lemma Rvector_max_abs_sqr {n} (v : vector R n) :
+    Rvector_max_sqr v = Rsqr (Rvector_max_abs v).
+  Proof.
+    unfold Rvector_max_sqr, Rvector_max_abs, Rvector_sqr, Rvector_abs.
+    destruct v; simpl.
+    unfold vector_fold_left, vector_map; simpl.
+    clear e.
+    rewrite <- Rsqr_0 at 1.
+    assert (0 <= 0) by lra.
+    revert H.
+    generalize 0 at 2 3 4.
+    induction x; simpl; trivial.
+    intros.
+    rewrite <- IHx.
+    - f_equal.
+      rewrite max_abs_sqr.
+      rewrite Rabs_right; trivial.
+      lra.
+    - rewrite H.
+      apply Rmax_l.
+  Qed.
+  
 End more_lemmas.
 
 Section rvinner_stuff.
