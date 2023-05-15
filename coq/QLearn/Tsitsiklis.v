@@ -8094,3 +8094,124 @@ Section Jaakkola.
   Qed.
 
 End Jaakkola.
+
+Section Melo.
+  
+  Context {Ts : Type}            
+          {dom : SigmaAlgebra Ts}
+          {prts : ProbSpace dom}
+          {M : MDP}
+
+          {F : nat -> SigmaAlgebra Ts}
+          (sa_seq : nat -> Ts -> sigT M.(act))
+          (sa_seq_rv : forall t,
+              RandomVariable (F t) (discrete_sa (sigT M.(act))) (fun ω => sa_seq t ω))
+          (cost_fun : sigT M.(act) -> M.(state) -> R)
+          (Q0 : Rfct (sigT M.(act)))
+          (α : nat -> Ts -> Rfct (sigT M.(act)))
+
+          (β : R)
+          (alpha_bound : forall t ω sa, 0 <= α t ω sa <= 1)
+          (beta_bound : 0 <= β < 1)
+          (rvα : forall t sa,
+              RandomVariable (F t) borel_sa (fun ω => α t ω sa))
+
+          (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
+          (alpha_lim1: forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty)
+          (alpha_lim2 :
+            exists (C : R),
+            forall sa,
+              almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (α k ω sa)))) (Finite C)))
+          (isfilt : IsFiltration F) 
+          (filt_sub : forall k, sa_sub (F k) dom).
+
+  Instance melo_sa_seq_proj_rv :
+    forall t,
+      RandomVariable (F t) (discrete_sa (M.(state))) (fun ω => projT1 (sa_seq t ω)).
+  Proof.
+    intros.
+    apply (compose_rv (sa_seq t)); trivial.
+    apply discrete_sa_rv.
+  Qed.
+
+  Instance melo_sa_seq_proj_rv2 :
+    forall t,
+      RandomVariable dom (discrete_sa (M.(state))) (fun ω => projT1 (sa_seq t ω)).
+  Proof.
+    intros.
+    apply (RandomVariable_sa_sub (filt_sub t)).
+    typeclasses eauto.
+  Qed.
+
+  Definition melo_cost k (sa : sigT M.(act)) ω :=
+    cost_fun (sa_seq k ω) (projT1 (sa_seq (S k) ω)).
+
+  Instance melo_cost_rv k sa :
+    RandomVariable (F (S k)) borel_sa (melo_cost k sa).
+  Proof.
+  Admitted.
+
+  Instance islp_melo_cost k sa :
+    IsLp prts 2 (melo_cost k sa).
+  Proof.
+  Admitted.
+    
+  Lemma melo_qlearn_Q_single_const
+    (αzeros: forall t ω sa, sa_seq t ω <> sa -> α t ω sa = 0) :
+    let next_state := (fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)) in
+    let X := (qlearn_Q next_state melo_cost Q0 α β) in
+    forall t ω sa,
+      sa_seq t ω <> sa ->
+      X (S t) ω sa = X t ω sa.
+   Proof.
+     intros.
+     simpl.
+     rewrite αzeros; trivial.
+     lra.
+   Qed.
+    
+  Theorem qlearn_single_path_melo
+      (x' : Rfct (sigT M.(act)))
+      (indep_cost: forall k sa,
+          independent_sas prts (pullback_rv_sub dom borel_sa (melo_cost k sa) 
+                                  (RandomVariable_sa_sub (filt_sub (S k)) _))
+            (filt_sub k))
+      (ident_distr_cost: forall k sa,
+          identically_distributed_rvs prts borel_sa
+            (rv1 := (RandomVariable_sa_sub (filt_sub 1%nat) _))
+            (rv2 := (RandomVariable_sa_sub (filt_sub (S k)) _))
+            (melo_cost 0%nat sa)
+            (melo_cost k sa))
+      (indep_next_state:  
+        forall k,
+          independent_sas prts
+            (pullback_rv_sub dom (discrete_sa (state M)) 
+               (fun ω : Ts => projT1 (sa_seq (S k) ω)) (melo_sa_seq_proj_rv2 (S k))) 
+            (filt_sub k))
+      (ident_distr_next_state: forall k,
+          identically_distributed_rvs prts (discrete_sa (state M)) 
+            (fun ω : Ts => projT1 (sa_seq 1%nat ω))
+            (fun ω : Ts => projT1 (sa_seq (S k) ω)))     :
+   
+    let next_state := (fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)) in
+    let X := (qlearn_Q next_state melo_cost Q0 α β) in
+    let XF := (qlearn_XF next_state melo_cost melo_cost_rv islp_melo_cost filt_sub β) in
+    XF x' = x' ->
+    almost prts (fun ω =>
+                   forall sa,
+                     is_lim_seq (fun n => X n ω sa) (x' sa)).
+  Proof.
+    intros.
+    generalize (qlearn (M := M) next_state _); intros.
+    specialize (H0 melo_cost _ _ Q0 α alpha_bound _ _ filt_sub).
+    cut_to H0; try easy.
+    apply (H0 β _ x' _ H beta_bound alpha_lim1 alpha_lim2).
+    - intros.
+      generalize (indep_next_state k).
+      now apply independent_sas_proper.      
+    - intros.
+      generalize (ident_distr_next_state k).
+      now apply identically_distributed_rvs_proper.
+  Qed.
+
+End Melo.
