@@ -5782,11 +5782,7 @@ Section FixedPoint_contract.
          split; [lra | ].
          unfold is_Lipschitz.
          split; [lra | ].
-         unfold ball_x, ball_y; simpl.
-         unfold ball; simpl.
-         unfold Rmax_ball.
          intros.
-         specialize (H0 x2 x1).
          eapply Rle_lt_trans.
          apply H0.
          assert (0 < gamma) by lra.
