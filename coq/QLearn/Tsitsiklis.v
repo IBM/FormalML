@@ -17,8 +17,11 @@ Require Import FiniteTypeVector.
 
 Set Bullet Behavior "Strict Subproofs".
 
+
 Section Stochastic_convergence.
   
+
+
 Context {Ts : Type}  (* (w α : Ts -> nat -> R)  *)
         {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
   
@@ -5747,6 +5750,74 @@ Section MDP.
   Qed.
  *)
   
+Section FixedPoint_contract.
+  Context (A : Type) {finA : FiniteType A}.
+
+  Canonical Rfct_CompleteNormedModule :=
+    CompleteNormedModule.Pack _  (Rfct A) (CompleteNormedModule.Class R_AbsRing _ (NormedModule.class _ (Rfct_NormedModule A)) (Rfct_CompleteSpace_mixin A)) (Rfct A).
+
+  Context (X := Rfct_CompleteNormedModule).
+
+ Lemma f_contract_fixedpoint gamma (F: X -> X) :
+   0 <= gamma < 1 ->
+   (forall x1 y : X, norm (minus (F x1) (F y)) <= gamma * norm (minus x1 y)) -> 
+     exists (xstar : X), F xstar = xstar.
+   Proof.
+     intros.
+     destruct (Req_dec gamma 0).
+     - exists (F zero).
+       rewrite H1 in H0.
+       apply is_Lipschitz_le_zero_const.
+       intros.
+       specialize (H0 y x).
+       now rewrite Rmult_0_l in H0.
+     - generalize (FixedPoint R_AbsRing F (fun _ => True)); intros.
+       cut_to H2; trivial.
+       + destruct H2 as [x [? [? [? ?]]]].
+         now exists x.
+       + now exists (zero).
+       + apply closed_my_complete ; apply closed_true.                
+       + unfold is_contraction.
+         exists gamma.
+         split; [lra | ].
+         unfold is_Lipschitz.
+         split; [lra | ].
+         unfold ball_x, ball_y; simpl.
+         unfold ball; simpl.
+         unfold Rmax_ball.
+         intros.
+         specialize (H0 x1 x2).
+         assert (Rmax_norm A (fun s : A => minus (F x2 s) (F x1 s)) <=
+                   gamma * Rmax_norm A (fun s : A => minus (x2 s) (x1 s))).
+         {
+           clear H2.
+           unfold norm in H0.
+           simpl in H0.
+           assert (Rmax_norm A (minus (F x1) (F x2)) = Rmax_norm A (fun s : A => minus (F x2 s) (F x1 s))).
+           {
+             f_equal.
+             unfold minus, plus, opp.
+             simpl.
+             admit.
+           }
+           assert (Rmax_norm A (minus x1 x2) = Rmax_norm A (fun s : A => minus (x2 s) (x1 s))).
+           {
+             f_equal.
+             unfold minus, plus, opp.
+             simpl.
+             admit.
+           }
+           rewrite <- H2.
+           now rewrite <- H5.
+         }
+         eapply Rle_lt_trans.
+         apply H5.
+         assert (0 < gamma) by lra.
+         now apply Rmult_lt_compat_l.
+   Admitted.
+   
+End FixedPoint_contract.
+
   Lemma max_sqr_bound (ec : Rfct (sigT M.(act))) :
     forall (s : state M),
       Max_{act_list s} (fun a => Rsqr (ec (existT _ s a))) <= Rmax_sq_norm _ ec.
