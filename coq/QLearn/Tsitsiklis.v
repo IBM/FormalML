@@ -8180,8 +8180,17 @@ Section Melo.
   Lemma frf_melo_cost k sa :
     FiniteRangeFunction (melo_cost k sa).
   Proof.
-    unfold melo_cost.
-    Admitted.
+    pose (rv2 := fun ω => (sa_seq k ω, projT1 (sa_seq (S k) ω))).
+    pose (cost2 := fun ab => cost_fun (fst ab) (snd ab)).
+    assert (FiniteRangeFunction (compose cost2 rv2)).
+    {
+      apply FiniteRangeFunction_compose_after.
+      apply FiniteRange_FiniteRangeFunction.
+    }
+    revert X.
+    apply FiniteRangeFunction_ext.
+    reflexivity.
+  Qed.
 
   Instance islp_melo_cost k sa :
     IsLp prts 2 (melo_cost k sa).
