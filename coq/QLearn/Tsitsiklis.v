@@ -8092,6 +8092,48 @@ Section Jaakkola.
       now apply identically_distributed_rvs_proper.
   Qed.
 
+  Fixpoint qlearn_Q_single_path (t : nat) : (Ts -> Rfct (sigT M.(act)))    :=
+           match t with
+           | 0%nat => (fun ω  => Q0)
+           | S t' => let g := qlearn_Q_single_path t' in 
+                     (fun ω sa =>
+                        (g ω sa) +
+                          if (EqDecsigT sa (sa_seq t' ω))
+                          then
+                            (α t' ω sa) * ((cost t' sa ω) + β * (qlearn_Qmin (g ω) (projT1 (sa_seq t ω)))
+                                                                   - (g ω sa))
+
+                          else 0)
+           end.
+
+  Lemma qlearn_q_single_path_qlearn_Q :
+    let next_state := (fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)) in
+    let X := (qlearn_Q next_state cost Q0 α β) in
+    (forall t ω sa, sa_seq t ω <> sa -> α t ω sa = 0) ->
+    forall t ω sa,
+      qlearn_Q_single_path t ω sa =
+        X t ω sa.
+   Proof.
+     intros.
+     revert sa.
+     induction t.
+     - now simpl.
+     - intros.
+       simpl.
+       rewrite <- IHt.
+       f_equal.
+       specialize (H t ω sa).
+       match_destr.
+       + do 4 f_equal.
+         unfold qlearn_Qmin.
+         apply Rmin_list_Proper, refl_refl, map_ext.
+         intros.
+         now rewrite IHt.
+       + symmetry in c.
+         rewrite (H c).
+         lra.
+   Qed.
+
 End Jaakkola.
 
 Section Melo.
@@ -8296,5 +8338,48 @@ Section Melo.
       generalize (ident_distr_next_state k).
       now apply identically_distributed_rvs_proper.
   Qed.
+
+
+  Fixpoint melo_qlearn_Q_single_path (t : nat) : (Ts -> Rfct (sigT M.(act)))    :=
+           match t with
+           | 0%nat => (fun ω  => Q0)
+           | S t' => let g := melo_qlearn_Q_single_path t' in 
+                     (fun ω sa =>
+                        (g ω sa) +
+                          if (EqDecsigT sa (sa_seq t' ω))
+                          then
+                            (α t' ω sa) * ((melo_cost t' sa ω) + β * (qlearn_Qmin (g ω) (projT1 (sa_seq t ω)))
+                                                                   - (g ω sa))
+
+                          else 0)
+           end.
+
+  Lemma melo_qlearn_q_single_path_qlearn_Q :
+    let next_state := (fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)) in
+    let X := (qlearn_Q next_state melo_cost Q0 α β) in
+    (forall t ω sa, sa_seq t ω <> sa -> α t ω sa = 0) ->
+    forall t ω sa,
+      melo_qlearn_Q_single_path t ω sa =
+        X t ω sa.
+   Proof.
+     intros.
+     revert sa.
+     induction t.
+     - now simpl.
+     - intros.
+       simpl.
+       rewrite <- IHt.
+       f_equal.
+       specialize (H t ω sa).
+       match_destr.
+       + do 4 f_equal.
+         unfold qlearn_Qmin.
+         apply Rmin_list_Proper, refl_refl, map_ext.
+         intros.
+         now rewrite IHt.
+       + symmetry in c.
+         rewrite (H c).
+         lra.
+   Qed.
 
 End Melo.
