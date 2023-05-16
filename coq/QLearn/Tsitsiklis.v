@@ -8029,20 +8029,6 @@ Section Jaakkola.
     typeclasses eauto.
   Qed.
 
-  Lemma qlearn_Q_single_const
-    (αzeros: forall t ω sa, sa_seq t ω <> sa -> α t ω sa = 0) :
-    let next_state := (fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)) in
-    let X := (qlearn_Q next_state cost Q0 α β) in
-    forall t ω sa,
-      sa_seq t ω <> sa ->
-      X (S t) ω sa = X t ω sa.
-   Proof.
-     intros.
-     simpl.
-     rewrite αzeros; trivial.
-     lra.
-   Qed.
-
   Lemma FiniteType_eq_ext {A B} {finA:FiniteType A} {decA:EqDec A eq} (f g:A->B) :
     rv_eq f g -> f = g.
   Proof.
@@ -8280,20 +8266,6 @@ Section Melo.
     rewrite rvpower2; try reflexivity.
     apply nnfabs.
  Qed.
-    
-  Lemma melo_qlearn_Q_single_const
-    (αzeros: forall t ω sa, sa_seq t ω <> sa -> α t ω sa = 0) :
-    let next_state := (fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)) in
-    let X := (qlearn_Q next_state melo_cost Q0 α β) in
-    forall t ω sa,
-      sa_seq t ω <> sa ->
-      X (S t) ω sa = X t ω sa.
-   Proof.
-     intros.
-     simpl.
-     rewrite αzeros; trivial.
-     lra.
-   Qed.
     
   Theorem qlearn_single_path_melo
       (x' : Rfct (sigT M.(act)))
