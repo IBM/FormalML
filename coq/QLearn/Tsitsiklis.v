@@ -8145,9 +8145,8 @@ Section Melo.
   Definition melo_cost k (sa : sigT M.(act)) ω :=
     cost_fun (sa_seq k ω) (projT1 (sa_seq (S k) ω)).
 
-  Instance rv_pair {T1 T2} {dom2} (rv1 : Ts -> T1) (rv2 : Ts -> T2) 
-                   {fin1 : FiniteType T1}
-                   {fin2 : FiniteType T1} :
+  Instance rv_countable_discrete_pair {T1 T2} {countable1:Countable T1} {countable2:Countable T2}
+    {dom2} (rv1 : Ts -> T1) (rv2 : Ts -> T2) :
     RandomVariable dom2 (discrete_sa T1) rv1 ->
     RandomVariable dom2 (discrete_sa T2) rv2 ->
     RandomVariable dom2 (discrete_sa (T1 * T2)) (fun ω => (rv1 ω, rv2 ω)).
@@ -8155,9 +8154,19 @@ Section Melo.
     intros.
     generalize (product_sa_rv rv1 rv2).
     apply RandomVariable_proper; try easy.
-    
-  Admitted.
-                   
+    apply countable_discrete_prod_prod.
+  Qed.
+
+  Instance rv_finitetype_discrete_pair {T1 T2} {dec1:EqDec T1 eq} {fin1:FiniteType T1} {dec2:EqDec T2 eq} {fin2:FiniteType T2}
+    {dom2} (rv1 : Ts -> T1) (rv2 : Ts -> T2) :
+    RandomVariable dom2 (discrete_sa T1) rv1 ->
+    RandomVariable dom2 (discrete_sa T2) rv2 ->
+    RandomVariable dom2 (discrete_sa (T1 * T2)) (fun ω => (rv1 ω, rv2 ω)).
+  Proof.
+    apply @rv_countable_discrete_pair
+    ; now apply finite_countable.
+  Qed.
+  
   Instance melo_cost_rv k sa :
     RandomVariable (F (S k)) borel_sa (melo_cost k sa).
   Proof.
@@ -8166,7 +8175,10 @@ Section Melo.
     assert (RandomVariable (F (S k)) borel_sa (compose cost2 rv2)).
     {
       apply compose_rv.
-      - generalize (rv_pair (dom2 := F (S k)) (sa_seq k) (fun ω => projT1 (sa_seq (S k) ω)) ); intros.
+      - generalize (rv_finitetype_discrete_pair
+                      (dec1:=EqDecsigT)
+                      (dec2:=M.(st_eqdec))
+                      (sa_seq k) (fun ω => projT1 (sa_seq (S k) ω)) (dom2 := F (S k))); intros.
         apply H.
         + now apply (RandomVariable_sa_sub (isfilt k)).
         + now apply (compose_rv (sa_seq (S k))).

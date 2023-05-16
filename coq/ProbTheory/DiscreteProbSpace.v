@@ -2072,3 +2072,75 @@ Section countable_products.
 
 End countable_products.
 
+Section discrete_and_ps_prod.
+
+  Lemma countable_discrete_prod_prod {T1 T2} {countable1:Countable T1} {countable2:Countable T2}:
+    sa_equiv (discrete_sa (T1 * T2)) (product_sa (discrete_sa T1) (discrete_sa T2)).
+  Proof.
+    intros ?; split; [intros _| now (intros ?; simpl)].
+    intros ??.
+    unfold pre_event_set_product in H.
+    apply (sa_proper _ (pre_union_of_collection
+              (fun n =>
+                 (pre_union_of_collection (fun m =>
+                                             (fun '(ts1, ts2) =>
+                                                (exists x1 x2, countable_index x1 = n /\
+                                                            countable_index x2 = m /\
+                                                            x (x1, x2) /\
+                                                            ts1 = x1 /\
+                                                            ts2 = x2
+                                             )
+           )))))).
+    { 
+      intros [t1 t2].
+      split.
+      - intros [n[m[x1[x2[?[?[?[??]]]]]]]]; congruence.
+      - intros.
+        exists (countable_index t1), (countable_index t2).
+        exists t1, t2.
+        tauto.
+    }
+    apply sa_countable_union; intros n.
+    apply sa_countable_union; intros m.
+    case_eq (countable_inv (countableA:=countable1) n).
+    - intros x1 eqq1.
+      case_eq (countable_inv (countableA:=countable2) m).
+      + intros x2 eqq2.
+        destruct (sa_pre_dec x (x1, x2)).
+        * {
+            apply H; simpl.
+            exists (fun ts1 => ts1 = x1), (fun ts2 => ts2 = x2).
+            do 2 (split; trivial).
+            intros [??].
+            split.
+            - intros [?[?[?[?[?[??]]]]]]; subst.
+              rewrite countable_inv_index in eqq1; invcs eqq1.
+              rewrite countable_inv_index in eqq2; invcs eqq2.
+              tauto.
+            - intros [??]; subst.
+              exists x1, x2.
+              repeat split; trivial
+              ; now apply countable_inv_sound.
+          }
+        * eapply sa_proper; [| apply sa_none].
+          intros [??].
+          split; [| unfold pre_event_none; tauto].
+          intros [?[?[?[?[?[??]]]]]]; subst.
+          rewrite countable_inv_index in eqq1; invcs eqq1.
+          rewrite countable_inv_index in eqq2; invcs eqq2.
+          tauto.
+      + intros neq.
+        eapply sa_proper; [| apply sa_none].
+        intros [??].
+        split; [| unfold pre_event_none; tauto].
+        intros [?[?[?[??]]]].
+        rewrite <- H1, countable_inv_index in neq; discriminate.
+    - intros neq.
+      eapply sa_proper; [| apply sa_none].
+      intros [??].
+      split; [| unfold pre_event_none; tauto].
+      intros [?[?[?[??]]]].
+      rewrite <- H0, countable_inv_index in neq; discriminate.
+  Qed.
+
+End discrete_and_ps_prod.
