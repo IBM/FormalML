@@ -8170,9 +8170,19 @@ Section Melo.
     typeclasses eauto.
   Qed.
 
-  Definition melo_cost k (sa : sigT M.(act)) ω :=
-    cost_fun (sa_seq k ω) (projT1 (sa_seq (S k) ω)).
+  Instance melo_sa_seq_rv2 :
+    forall t,
+      RandomVariable dom (discrete_sa (sigT M.(act))) (sa_seq t).
+  Proof.
+    intros.
+    apply (RandomVariable_sa_sub (filt_sub t)).
+    typeclasses eauto.
+  Qed.
 
+  Definition melo_cost k (sa : sigT M.(act)) ω :=
+    cost_fun sa (projT1 (sa_seq (S k) ω)).
+
+  (*
   Instance rv_countable_discrete_pair {T1 T2} {countable1:Countable T1} {countable2:Countable T2}
     {dom2} (rv1 : Ts -> T1) (rv2 : Ts -> T2) :
     RandomVariable dom2 (discrete_sa T1) rv1 ->
@@ -8195,22 +8205,34 @@ Section Melo.
     ; now apply finite_countable.
   Qed.
   
-  Instance melo_cost_rv k sa :
-    RandomVariable (F (S k)) borel_sa (melo_cost k sa).
+  Instance rvpair_rv k :
+    RandomVariable (F (S k)) (discrete_sa (sigT M.(act) * M.(state))) (fun ω => (sa_seq k ω, projT1 (sa_seq (S k) ω))).
   Proof.
-    pose (rv2 := fun ω => (sa_seq k ω, projT1 (sa_seq (S k) ω))).
-    pose (cost2 := fun ab => cost_fun (fst ab) (snd ab)).
-    assert (RandomVariable (F (S k)) borel_sa (compose cost2 rv2)).
-    {
-      apply compose_rv.
-      - generalize (rv_finitetype_discrete_pair
+    generalize (rv_finitetype_discrete_pair
                       (dec1:=EqDecsigT)
                       (dec2:=M.(st_eqdec))
                       (sa_seq k) (fun ω => projT1 (sa_seq (S k) ω)) (dom2 := F (S k))); intros.
-        apply H.
-        + now apply (RandomVariable_sa_sub (isfilt k)).
-        + now apply (compose_rv (sa_seq (S k))).
-      - apply discrete_sa_rv.
+    apply H.
+    + now apply (RandomVariable_sa_sub (isfilt k)).
+    + now apply (compose_rv (sa_seq (S k))).
+  Qed.
+  
+  Instance rvpair_rv' k :
+    RandomVariable dom (discrete_sa (sigT M.(act) * M.(state))) (fun ω => (sa_seq k ω, projT1 (sa_seq (S k) ω))).
+  Proof.
+    apply (RandomVariable_sa_sub (filt_sub (S k))).
+    apply rvpair_rv.
+  Qed.
+  *)
+
+  Instance melo_cost_rv k sa :
+    RandomVariable (F (S k)) borel_sa (melo_cost k sa).
+  Proof.
+    pose (rv2 := fun ω => projT1 (sa_seq (S k) ω)).
+    pose (cost2 := fun ns => cost_fun sa ns).
+    assert (RandomVariable (F (S k)) borel_sa (compose cost2 rv2)).
+    {
+      typeclasses eauto.
     }
     revert H.
     now apply RandomVariable_proper.
@@ -8226,8 +8248,8 @@ Section Melo.
   Lemma frf_melo_cost k sa :
     FiniteRangeFunction (melo_cost k sa).
   Proof.
-    pose (rv2 := fun ω => (sa_seq k ω, projT1 (sa_seq (S k) ω))).
-    pose (cost2 := fun ab => cost_fun (fst ab) (snd ab)).
+    pose (rv2 := fun ω => projT1 (sa_seq (S k) ω)).
+    pose (cost2 := fun ns => cost_fun sa ns).
     assert (FiniteRangeFunction (compose cost2 rv2)).
     {
       apply FiniteRangeFunction_compose_after.
@@ -8267,29 +8289,69 @@ Section Melo.
     apply nnfabs.
  Qed.
     
-  Theorem qlearn_single_path_melo
-      (x' : Rfct (sigT M.(act)))
-      (indep_cost: forall k sa,
-          independent_sas prts (pullback_rv_sub dom borel_sa (melo_cost k sa) 
-                                  (RandomVariable_sa_sub (filt_sub (S k)) _))
+  Context
+     (indep_next_state:  
+        forall k,
+          independent_sas prts
+            (pullback_rv_sub dom (discrete_sa (M.(state))) 
+               (fun ω : Ts => projT1 (sa_seq (S k) ω)) (melo_sa_seq_proj_rv2 (S k))) 
             (filt_sub k))
-      (ident_distr_cost: forall k sa,
+      (ident_distr_next_state: forall k,
+          identically_distributed_rvs prts (discrete_sa (M.(state))) 
+            (fun ω : Ts => projT1 (sa_seq 1%nat ω))
+            (fun ω : Ts => projT1 (sa_seq (S k) ω))
+      ).
+
+  Lemma indep_melo_cost:
+    forall k sa,
+      independent_sas prts (pullback_rv_sub dom borel_sa (melo_cost k sa) 
+                              (RandomVariable_sa_sub (filt_sub (S k)) _))
+        (filt_sub k).
+   Proof.
+     intros.
+     unfold melo_cost.
+     pose (rv2 := fun ω => projT1 (sa_seq (S k) ω)).
+     pose (cost2 := fun ns => cost_fun sa ns).
+     assert (RandomVariable dom borel_sa (compose cost2 rv2)).
+     {
+       typeclasses eauto.
+     }
+     assert (independent_sas prts (pullback_rv_sub dom borel_sa (compose cost2 rv2) H)
+                             (filt_sub k)).
+     {
+       specialize (indep_next_state k).
+       revert indep_next_state.
+       apply independent_sas_sub_proper; try easy.
+       unfold rv2.
+       rewrite pullback_sa_compose_equiv.
+       apply pullback_sa_sub_proper; try easy.
+     }
+     revert H0.
+     apply independent_sas_proper; try easy.
+   Qed.
+
+  Lemma ident_distr_melo_cost: forall k sa,
           identically_distributed_rvs prts borel_sa
             (rv1 := (RandomVariable_sa_sub (filt_sub 1%nat) _))
             (rv2 := (RandomVariable_sa_sub (filt_sub (S k)) _))
             (melo_cost 0%nat sa)
-            (melo_cost k sa))
-      (indep_next_state:  
-        forall k,
-          independent_sas prts
-            (pullback_rv_sub dom (discrete_sa (state M)) 
-               (fun ω : Ts => projT1 (sa_seq (S k) ω)) (melo_sa_seq_proj_rv2 (S k))) 
-            (filt_sub k))
-      (ident_distr_next_state: forall k,
-          identically_distributed_rvs prts (discrete_sa (state M)) 
-            (fun ω : Ts => projT1 (sa_seq 1%nat ω))
-            (fun ω : Ts => projT1 (sa_seq (S k) ω)))     :
-   
+            (melo_cost k sa).
+  Proof.
+    intros.
+    unfold melo_cost.
+    pose (rv0 := fun ω => projT1 (sa_seq 1%nat ω)).
+    pose (rv2 := fun ω => projT1 (sa_seq (S k) ω)).
+    pose (cost2 := fun ns => cost_fun sa ns).
+    specialize (ident_distr_next_state k).
+    eapply identically_distributed_rv_compose with (codf := borel_sa) (f := cost2) in ident_distr_next_state.
+    revert ident_distr_next_state.
+    apply identically_distributed_rvs_proper; try easy.
+    Unshelve.
+    apply discrete_sa_rv.
+  Qed.
+
+  Theorem qlearn_single_path_melo
+      (x' : Rfct (sigT M.(act))) :
     let next_state := (fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)) in
     let X := (qlearn_Q next_state melo_cost Q0 α β) in
     let XF := (qlearn_XF next_state melo_cost melo_cost_rv islp_melo_cost filt_sub β) in
@@ -8304,13 +8366,16 @@ Section Melo.
     cut_to H0; try easy.
     apply (H0 β _ x' _ H beta_bound alpha_lim1 alpha_lim2).
     - intros.
+      apply indep_melo_cost.
+    - intros.
       generalize (indep_next_state k).
       now apply independent_sas_proper.      
     - intros.
       generalize (ident_distr_next_state k).
       now apply identically_distributed_rvs_proper.
+    - intros.
+      apply ident_distr_melo_cost.
   Qed.
-
 
   Fixpoint melo_qlearn_Q_single_path (t : nat) : (Ts -> Rfct (sigT M.(act)))    :=
            match t with
