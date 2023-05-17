@@ -6183,14 +6183,6 @@ End FixedPoint_contract.
     apply fin_finite.
   Qed.
 
-  Global Instance HasPreimageSingleton_discrete {B} : HasPreimageSingleton (discrete_sa B).
-  Proof.
-    intros ?????.
-    red in rv.
-    apply (rv (DiscreteProbSpace.discrete_singleton c)).
-  Qed.
-    
-
   Instance isfe_small_mult (f g: Ts -> R)
     {rvf: RandomVariable dom borel_sa f}
     {rvg: RandomVariable dom borel_sa g}

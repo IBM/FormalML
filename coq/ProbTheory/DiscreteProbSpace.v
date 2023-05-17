@@ -98,6 +98,13 @@ Section discrete.
     Definition discrete_singleton (x:A) : event (discrete_sa A)
       := event_singleton x (sa_discrete _).
     
+    Global Instance HasPreimageSingleton_discrete : HasPreimageSingleton (discrete_sa A).
+    Proof.
+      intros ?????.
+      red in rv.
+      apply (rv (discrete_singleton c)).
+    Qed.
+
     Lemma countable_pre_event_is_countable (e:pre_event A) : is_countable e.
     Proof.
       exists (fun n a => countable_index a = n /\ e a).
