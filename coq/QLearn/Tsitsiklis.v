@@ -19,11 +19,10 @@ Set Bullet Behavior "Strict Subproofs".
 
 Section Stochastic_convergence.
   
-
-
 Context {Ts : Type}  (* (w α : Ts -> nat -> R)  *)
         {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
   
+(*
 Lemma isfe_condexp_sqr_bounded (dom2 : SigmaAlgebra Ts) (sub2: sa_sub dom2 dom) (B : R) 
       (w : Ts -> R)
       {rv : RandomVariable dom borel_sa w} :
@@ -46,6 +45,7 @@ Proof.
   apply is_conditional_expectation_FiniteExpectation in H1.
   now apply H1.
 Qed.
+*)
 
 Lemma isfe_almost_condexp_sqr_bounded (dom2 : SigmaAlgebra Ts) (sub2: sa_sub dom2 dom) (B : R) 
       (w : Ts -> R)
@@ -102,6 +102,7 @@ Proof.
   now apply IsFiniteExpectation_rvsqr_lower.
 Qed.
 
+(*
 Lemma condexp_sqr_bounded (dom2 : SigmaAlgebra Ts) (sub2: sa_sub dom2 dom) (B : R) 
       (w : Ts -> R)
       {rv : RandomVariable dom borel_sa w} :
@@ -127,6 +128,7 @@ Lemma condexp_sqr_bounded (dom2 : SigmaAlgebra Ts) (sub2: sa_sub dom2 dom) (B : 
       + intros ?.
         apply Rle_0_sqr.
   Qed.
+*)
 
   Lemma isfe_sqr_X_almost_01 (a : Ts -> R) 
         {rv : RandomVariable dom borel_sa a} 
@@ -150,6 +152,7 @@ Lemma condexp_sqr_bounded (dom2 : SigmaAlgebra Ts) (sub2: sa_sub dom2 dom) (B : 
     - apply IsFiniteExpectation_const.
   Qed.
 
+(*
   Lemma isfe_X_almost_01 (a : Ts -> R) 
         {rv : RandomVariable dom borel_sa a} 
         (apos: almostR2 prts Rle (const 0) a)
@@ -168,6 +171,7 @@ Lemma condexp_sqr_bounded (dom2 : SigmaAlgebra Ts) (sub2: sa_sub dom2 dom) (B : 
       lra.
     - apply IsFiniteExpectation_const.
   Qed.
+*)
 
   Lemma isfe_rvmult_almost_01 (b w : Ts -> R) 
         {rvb : RandomVariable dom borel_sa b}
@@ -2047,162 +2051,14 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
         now rewrite Rplus_0_l.
  Qed.
 
+(*
   Lemma vecrvminus_unfold {n} (x y : Ts -> vector R n) :
     rv_eq (vecrvminus x y) (fun ω => Rvector_minus (x ω) (y ω)).
   Proof.
     intros ?.
     now unfold vecrvminus, Rvector_minus, vecrvplus.
   Qed.
-
-  Lemma Rabs_plus (a b : R) :
-    Rabs (Rabs a + Rabs b) = Rabs a + Rabs b.
-  Proof.
-    apply Rabs_right.
-    apply Rle_ge.
-    apply Rplus_le_le_0_compat; apply Rabs_pos.
-  Qed.
-
-  Lemma powerRZ_up_log_base (base val : R) :
-    base > 1 ->
-    val > 0 ->
-    {k | powerRZ base (k - 1) <= val < powerRZ base k}.
-  Proof.
-    intros.
-    pose (exp := (ln val)/(ln base)).
-    pose (k := up exp).
-    assert (val = Rpower base exp).
-    {
-      unfold exp.
-      rewrite log_power_base; lra.
-    }
-    assert (val < powerRZ base k).
-    {
-      rewrite powerRZ_Rpower; try lra.
-      rewrite H1.
-      apply Rpower_lt; try lra.
-      unfold k.
-      apply archimed.
-    }
-    assert (powerRZ base (k-1) <= val).
-    {
-      rewrite powerRZ_Rpower; try lra.
-      rewrite H1.
-      apply Rle_Rpower; try lra.
-      unfold k.
-      rewrite minus_IZR.
-      generalize (archimed exp); intros.
-      lra.
-    }
-    exists k; lra.
-  Defined.
-
-  Lemma powerRZ_up_log_base_ext (base val : R) 
-    (pf1 pf1':base > 1)
-    (pf2 pf2':val > 0) :
-    ` (powerRZ_up_log_base _ _ pf1 pf2) = ` (powerRZ_up_log_base _ _ pf1' pf2').
-  Proof.
-    now simpl.
-  Qed.    
-
-  Lemma powerRZ_up_log_base_alt (base val : R) :
-    base > 1 ->
-    val > 0 ->
-    {k | powerRZ base (k - 1) < val <= powerRZ base k}.
-  Proof.
-    intros.
-    generalize (powerRZ_up_log_base base val H H0); intros.
-    destruct H1 as [k1 ?].
-    destruct (Req_EM_T (powerRZ base (k1-1)) val).
-    - exists (k1-1)%Z.
-      split; try lra.
-      rewrite <- e.
-      rewrite powerRZ_Rpower; try lra.
-      rewrite powerRZ_Rpower; try lra.      
-      apply Rpower_lt; try lra.
-      rewrite minus_IZR.
-      lra.
-    - exists k1; lra.
-  Qed.
-
-  Lemma powerRZ_up_log_base_alt_ext (base val : R) 
-    (pf1 pf1':base > 1)
-    (pf2 pf2':val > 0) :
-    ` (powerRZ_up_log_base_alt _ _ pf1 pf2) = ` (powerRZ_up_log_base_alt _ _ pf1' pf2').
-  Proof.
-    unfold proj1_sig; repeat match_destr.
-    destruct (Z.lt_trichotomy x x0) as [? | [?|?]]; trivial.
-    - assert (x  <= x0 - 1)%Z by lia.
-      assert (powerRZ base x <= powerRZ base (x0 - 1)%Z).
-      {
-        repeat rewrite powerRZ_Rpower by lra.
-        apply Rle_Rpower; try lra.
-        now apply IZR_le.
-      }
-      lra.
-    - assert (x0  <= x - 1)%Z by lia.
-      assert (powerRZ base x0 <= powerRZ base (x - 1)%Z).
-      {
-        repeat rewrite powerRZ_Rpower by lra.
-        apply Rle_Rpower; try lra.
-        now apply IZR_le.
-      }
-      lra.
-  Qed.    
-
-  Lemma powerRZ_up_log_increasing (base val1 val2 : R)
-        (pfb: base > 1)
-        (pf1: val1 > 0)
-        (pf2: val2 > 0) :
-    val1 <= val2 ->
-    (proj1_sig (powerRZ_up_log_base _ _ pfb pf1) <=
-     proj1_sig (powerRZ_up_log_base _ _ pfb pf2))%Z.
-  Proof.
-    intros.
-    simpl.
-    apply up_le.
-    unfold Rdiv.
-    apply Rmult_le_compat_r.
-    - left.
-      apply Rinv_0_lt_compat.
-      rewrite <- ln_1.
-      apply ln_increasing; lra.
-    - apply ln_le; lra.
-  Qed.
-
-  Lemma powerRZ_up_log_alt_increasing (base val1 val2 : R)
-        (pfb: base > 1)
-        (pf1: val1 > 0)
-        (pf2: val2 > 0) :
-    val1 <= val2 ->
-    (proj1_sig (powerRZ_up_log_base_alt _ _ pfb pf1) <=
-     proj1_sig (powerRZ_up_log_base_alt _ _ pfb pf2))%Z.
-  Proof.
-    intros.
-    unfold proj1_sig.
-    match_destr; match_destr.
-    destruct (Z_le_gt_dec x x0); trivial.
-    elimtype False.
-    assert (x0 <= x - 1)%Z by lia.
-    assert (powerRZ base x0 <= powerRZ base (x-1)%Z).
-    {
-      repeat rewrite powerRZ_Rpower by lra.
-      apply Rle_Rpower; [lra |].
-      now apply IZR_le.
-    }
-    lra.
-  Qed.    
-
-  Definition powerRZ_ge_fun (base val : R) : R.
-  Proof.
-    generalize (powerRZ_up_log_base_alt base val); intros.
-    destruct (Rgt_dec base 1).
-    - destruct (Rgt_dec val 0).
-      + specialize (H r r0).
-        exact (powerRZ base (` H)).
-      + exact 0.
-    - exact 0.
-  Defined.
-
+*)
 
   Lemma powerRZ_ge_fun_rv (base : R) :
     RandomVariable borel_sa borel_sa (fun v => powerRZ_ge_fun base v).
@@ -2225,29 +2081,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
       apply powerRZ_le; try lra.
   Qed.
 
-  Lemma powerRZ_ge (base val : R) :
-    base > 1 ->
-    val <= powerRZ_ge_fun base val.
-  Proof.
-    intros.
-    unfold powerRZ_ge_fun.
-    match_destr; try lra.
-    match_destr; try lra.
-    unfold proj1_sig.
-    match_destr.
-    lra.
-  Qed.
-
-  Lemma powerRZ_ge_scale (base val scal : R) :
-    base > 1 ->
-    scal > 0 ->
-    val <= scal * powerRZ_ge_fun base (val / scal).
-  Proof.
-    intros.
-    generalize (powerRZ_ge base (val / scal) H); intros.
-    apply Rmult_le_compat_l with (r := scal) in H1; try lra.
-    field_simplify in H1; lra.
-  Qed.
 
   Definition rvinv (x : Ts -> R) := rvpower x (const (-1)).
   
@@ -2271,25 +2104,6 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
      rewrite power_1; lra.
    Qed.
      
-  Lemma Rinv_powerRZ (x : R) :
-    0 < x ->
-    Rinv x = powerRZ x (-1)%Z.
-  Proof.
-    intros.
-    replace (-1)%Z with (- (1))%Z by lia.
-    rewrite powerRZ_neg; try lra.
-    now rewrite powerRZ_1.
-  Qed.
-    
-  Lemma Rinv_Rpower (x : R) :
-    0 < x ->
-    Rinv x = Rpower x (-1).
-  Proof.
-    intros.
-    generalize (powerRZ_Rpower x (-1)%Z H); intros.
-    rewrite <- H0.
-    now apply Rinv_powerRZ.
-  Qed.
 
   Lemma lemma3_pre0  (ω : Ts) (ε : posreal)
         (G M : nat -> Ts -> R) :
