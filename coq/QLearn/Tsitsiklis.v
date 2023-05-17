@@ -7004,16 +7004,6 @@ End FixedPoint_contract.
       generalize (sq_sum_le_2sum_sq (f x) (g x)); lra.
   Qed.
 
-  Lemma Rbar_plus_opp_zero (a b : Rbar) :
-    a = b ->
-    Rbar_plus a (Rbar_opp b) = 0.
-  Proof.
-    intros.
-    rewrite H.
-    destruct b; try now simpl.
-    apply Rbar_finite_eq; lra.
-  Qed.
-
     Global Instance Condexp_rv' {dom2 : SigmaAlgebra Ts}
           (sub : sa_sub dom2 dom) (f : Ts -> R) 
          {rv : RandomVariable dom borel_sa f} :
@@ -7284,8 +7274,8 @@ End FixedPoint_contract.
          {
            apply almost_impl; apply all_almost; intros ??.
            unfold Rbar_rvminus, Rbar_rvopp, Rbar_rvplus, const.
+           rewrite <- H12.
            apply Rbar_plus_opp_zero.
-           now rewrite H12.
          }
          simpl in H13.
          

@@ -2031,6 +2031,15 @@ Proof.
 
 End zeroprop.
 
+  Lemma Rbar_plus_opp_zero (a : Rbar) :
+    Rbar_plus a (Rbar_opp a) = 0.
+  Proof.
+    intros.
+    destruct a; try now simpl.
+    apply Rbar_finite_eq; lra.
+  Qed.
+
+
 Lemma ELimSup_ELim_seq_le f : Rbar_le (ELim_seq f) (ELimSup_seq f).
 Proof.
   unfold ELim_seq.
