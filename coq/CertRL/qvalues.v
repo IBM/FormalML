@@ -3,8 +3,10 @@ Require Import Coq.Lists.List LibUtils.
 Require Import micromega.Lra. (*  qlearn. *)
 Require Import micromega.Lia. (*  qlearn. *)
 Require Import ClassicalDescription.
+Require Import Coq.Logic.FunctionalExtensionality.
 Require Import RealAdd LibUtilsListAdd EquivDec.
 Require Import IndefiniteDescription ClassicalDescription.
+Require Import utils.Utils.
 
 Import ListNotations.
 Set Bullet Behavior "Strict Subproofs".
@@ -177,7 +179,97 @@ Theorem isContraction_bellmanQbar_gamma (Hg : 0 < γ) :
        specialize (a0 s0). now exists (existT _ s0 a0).
   Qed.
 
+Lemma bellmanQbar_bellman_max_op_fixpt Q' :
+  bellmanQbar Q' = Q' ->
+  let V' := fun s => let (la,_) := fa M s in
+                Max_{la}(fun a => Q' (existT _ s a)) in
+  bellman_max_op γ V' = V'.
+ Proof.
+   unfold bellmanQbar, bellman_max_op; intros.
+   apply functional_extensionality.
+   intros.
+   destruct (M x).
+   apply Rmax_list_Proper.
+   apply refl_refl.
+   apply map_ext.
+   intros.
+   apply (f_equal (fun v => (v (existT _ x a)))) in H.
+   rewrite <- H.
+   do 2 f_equal.
+   apply expt_value_Proper; trivial.
+   intros ?.
+   unfold act_list.
+   now destruct (M a0).
+ Qed.
 
+Lemma bellmanQbar_bellman_max_op_fixpt' Q' :
+  bellmanQbar Q' = Q' ->
+  let V' := fun s => let (la,_) := fa M s in
+                Max_{la}(fun a => Q' (existT _ s a)) in
+  forall init,                
+    fixpt (bellman_max_op γ) init = V'.
+Proof.
+  intros.
+  generalize (is_contraction_bellman_max_op γ hγ (M := M)); intros.
+  generalize (fixpt_is_unique H0 (fun x => True)); intros.
+  cut_to H1; trivial.
+  - specialize (H1 V').
+    cut_to H1; trivial.
+    specialize (H1 V').
+    generalize (bellmanQbar_bellman_max_op_fixpt Q' H); intros.
+    cut_to H1; trivial.
+    rewrite H1.
+    apply (fixpt_init_unique H0 (fun x => True)); trivial.
+    apply closed_true.
+   - apply closed_true.
+ Qed.
+
+ Theorem max_ltv_eq_fixpt' Q' :
+   bellmanQbar Q' = Q' ->
+   let V' := fun s => let (la,_) := fa M s in
+                      Max_{la}(fun a => Q' (existT _ s a)) in
+   V' = max_ltv γ.
+ Proof.
+   intros.
+   generalize (max_ltv_eq_fixpt γ hγ V'); intros.
+   rewrite <- H0.
+   now rewrite (bellmanQbar_bellman_max_op_fixpt' Q').
+ Qed.
+
+ Definition greedy' Q' :=
+   fun s => 
+        let (la,Hla) := fa M s in
+        let pt := na M s in  
+        @argmax (act M s) la (proj2 (not_nil_exists _) (ex_intro _ pt (Hla pt)))
+          (fun a => Q' (existT _ s a)).
+
+ Lemma greedy_Qbar Q' :
+   bellmanQbar Q' = Q' ->
+   forall (init : Rfct M.(state)) s ,
+     greedy γ init s = greedy' Q' s.
+  Proof.
+    intros.
+    simpl.
+    unfold greedy, greedy'.
+    destruct (M s).
+    f_equal.
+    apply functional_extensionality.    
+    intros.
+    rewrite <- H.
+    unfold bellmanQbar.
+    unfold act_expt_reward.
+    do 2 f_equal.
+    apply expt_value_Proper; trivial.
+    intros ?.
+    generalize (bellmanQbar_bellman_max_op_fixpt Q' H); intros.
+    simpl in H0.
+    replace  (fixpt (bellman_max_op γ) init0) with
+      (fun s : state M => let (la, _) := M s in Max_{ la}(fun a : act M s => Q' (existT (act M) s a))).
+    - unfold act_list.
+      now destruct (M a).
+    - now rewrite (bellmanQbar_bellman_max_op_fixpt' Q').
+  Qed.
+   
 End bellmanQbar.
 
 Section bellmanQ.
