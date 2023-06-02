@@ -262,13 +262,9 @@ Proof.
     do 2 f_equal.
     apply expt_value_Proper; trivial.
     intros ?.
-    generalize (bellmanQbar_bellman_max_op_fixpt Q' H); intros.
-    simpl in H0.
-    replace  (fixpt (bellman_max_op γ) init0) with
-      (fun s : state M => let (la, _) := M s in Max_{ la}(fun a : act M s => Q' (existT (act M) s a))).
-    - unfold act_list.
-      now destruct (M a).
-    - now rewrite (bellmanQbar_bellman_max_op_fixpt' Q').
+    rewrite (bellmanQbar_bellman_max_op_fixpt' Q' H).
+    unfold act_list.
+    now destruct (M a).
   Qed.
 
   Lemma exists_fixpt_policy' Q'  : 
