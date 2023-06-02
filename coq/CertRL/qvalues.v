@@ -245,13 +245,14 @@ Proof.
 
  Lemma greedy_Qbar Q' :
    bellmanQbar Q' = Q' ->
-   forall (init : Rfct M.(state)) s ,
-     greedy γ init s = greedy' Q' s.
+   forall (init : Rfct M.(state)),
+     greedy γ init = greedy' Q'.
   Proof.
     intros.
-    simpl.
+    apply functional_extensionality_dep.
+    intros.
     unfold greedy, greedy'.
-    destruct (M s).
+    destruct (M x).
     f_equal.
     apply functional_extensionality.    
     intros.
@@ -270,17 +271,6 @@ Proof.
     - now rewrite (bellmanQbar_bellman_max_op_fixpt' Q').
   Qed.
 
- Lemma greedy_Qbar' Q' :
-   bellmanQbar Q' = Q' ->
-   forall (init : Rfct M.(state)) ,
-     greedy γ init = greedy' Q'.
-  Proof.
-    intros.
-    apply functional_extensionality_dep.
-    intros.
-    now apply (greedy_Qbar Q').    
-  Qed.
-
   Lemma exists_fixpt_policy' Q'  : 
     bellmanQbar Q' = Q' ->
     let V' := fun s => let (la,_) := fa M s in
@@ -296,7 +286,7 @@ Proof.
   rewrite <- H.
   f_equal.
   subst σ'.
-  now rewrite (greedy_Qbar' Q').
+  now rewrite (greedy_Qbar Q').
 Qed.
 
 End bellmanQbar.
