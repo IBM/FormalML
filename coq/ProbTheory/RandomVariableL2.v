@@ -149,6 +149,51 @@ Section L2.
     ring.
   Qed.
 
+  Lemma isfe_plus_alt
+    (f g : Ts -> R)
+    (rvf : RandomVariable dom borel_sa f)
+    (rvg : RandomVariable dom borel_sa g) :    
+    IsFiniteExpectation prts g ->
+    IsFiniteExpectation prts (rvplus f g) ->
+    IsFiniteExpectation prts f.
+  Proof.
+    intros.
+    assert (rv_eq f
+                  (rvminus (rvplus f g) g)).
+    {
+      intro x.
+      rv_unfold.
+      lra.
+    }
+    rewrite H1.
+    apply IsFiniteExpectation_minus; try typeclasses eauto.
+  Qed.
+          
+  Lemma isfe_variance_l2_alt 
+    (f : Ts -> R)
+    (rv : RandomVariable dom borel_sa f)
+    (isfe : IsFiniteExpectation prts f) :
+    IsFiniteExpectation prts (rvsqr (rvminus f (const (FiniteExpectation prts f)))) ->
+    IsLp prts 2 f.
+  Proof.
+    intros.
+    apply isfe_sqr_islp2.
+    assert (rv_eq (rvsqr (rvminus f (const (FiniteExpectation prts f))))
+                  (rvplus (rvplus (rvsqr f) 
+                                   (rvscale (- 2 * FiniteExpectation prts f)
+                                            f))
+                          (const (Rsqr (FiniteExpectation prts f))))).
+    {
+      intro x.
+      rv_unfold.
+      unfold Rsqr.
+      ring.
+    }
+    rewrite H0 in H.
+    apply isfe_plus_alt in H; try typeclasses eauto.
+    apply isfe_plus_alt in H; trivial; try typeclasses eauto.
+  Qed.    
+
   Lemma variance_bound (x : Ts -> R) (c : R) 
         {rv : RandomVariable dom borel_sa x}
         {isl2 : IsLp prts 2 x} :
