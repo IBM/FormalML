@@ -14,6 +14,7 @@ Require Import RelationClasses.
 Require Import Dvoretzky infprod.
 Require Import Martingale MartingaleStopped.
 Require Import FiniteTypeVector.
+Require Import ProductSpaceDep.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -7227,6 +7228,33 @@ End FixedPoint_contract.
                  (prod_nonnegreal _ _)))
            (prod_nonnegreal _ _)
      end.
+
+   Instance dep_ps_product_ps {X : Type} {Y : Type} (A : SigmaAlgebra X) (B : SigmaAlgebra Y)
+     (psA:ProbSpace A)
+     (psB : forall a : X, ProbSpace B)
+     (psB_rv: forall b : forall a : X, event B, RandomVariable A borel_sa (fun a : X => ps_P (ProbSpace:=psB a) (b a))) :
+     ProbSpace (product_sa A B).
+   Proof.
+     generalize (@dep_product_ps X (const Y) A (const B) psA psB psB_rv); intros HH.
+     generalize (pullback_ps _ (product_sa A B) HH); intros HH2.
+     apply (HH2 (fun '(existT a b) => (a, b))).
+   Admitted.
+(*   
+   (* d assumes that the vector is reversed.  The most recent history is at the beginning *)
+   Program Fixpoint ivector_dep_prod n
+     (d : forall (n:nat), ivector (sigT M.(act)) n -> forall (s:state M), ProbSpace (discrete_sa (M.(act) s)))
+     (p1 : ProbSpace (discrete_sa (M.(state))))
+     (ns : sigT M.(act) -> ProbSpace (discrete_sa (M.(state)))) 
+     (N : nat) : ProbSpace (discrete_sa (ivector (sigT M.(act)) (S n)))
+     := 
+     match n with
+     | 0%nat => _ (* dep_product_ps p1 (fun s => d 0%nat tt s) *)
+     | S n => dep_product_ps (ivector_dep_prod n)
+               (fun '(hd, tl) => (dep_product_ps  (fun s => d _ x s)))
+               _ 
+     end.
+
+   *)
 
    Lemma puterman_5_5_1 (s0 : state M)
      (d : forall (n:nat), vector (sigT M.(act)) n -> forall (s:state M), ProbSpace (discrete_sa (M.(act) s))) :
