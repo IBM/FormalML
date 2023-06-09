@@ -427,3 +427,49 @@ Instance finite_fun_vec_encoder {A B} (finA : FiniteType A) (decA :EqDec A eq):
     iso_b := vector_to_finite_fun finA decA;
     iso_f_b := finite_fun_iso_f_b finA decA ;
     iso_b_f := finite_fun_iso_b_f finA decA }.
+
+
+Fixpoint ivector_iter_prod {A} (elems:list A) n : list (ivector A n)
+  := match n with
+     | 0%nat => tt :: nil
+     | S n => list_prod elems (ivector_iter_prod elems n)
+     end.
+
+Lemma ivector_iter_prod_length {A} (elems:list A) n :
+  length (ivector_iter_prod elems n) = Nat.pow (length elems) n.
+Proof.
+  induction n; simpl; trivial.
+  now rewrite prod_length, IHn.
+Qed.  
+
+Lemma ivector_iter_prod_complete {A} (elems:list A) {n} (v:ivector A n) :
+  (forall i pf, In (ivector_nth i pf v) elems) ->
+  In v (ivector_iter_prod elems n).
+Proof.
+  revert v.
+  induction n; intros; destruct v; simpl.
+  - tauto.
+  - apply in_prod.
+    + apply (H _ (PeanoNat.Nat.lt_0_succ n)).
+    + apply IHn; intros.
+      assert (pf' : S i0 < S n) by lia.
+      specialize (H _ pf').
+      simpl in H.
+      erewrite ivector_nth_prf_irrelevance; eauto.
+Qed.
+
+Program Instance finite_ivector_finite {A} n (finA : FiniteType A) : FiniteType (ivector A n)
+  := {|
+    fin_elms := ivector_iter_prod fin_elms n
+  |}.
+Next Obligation.
+  apply ivector_iter_prod_complete; intros.
+  apply fin_finite.
+Qed.
+
+Instance finite_vector_finite {A} n (finA : FiniteType A) : FiniteType (vector A n).
+Proof.
+  eapply @FiniteType_iso; [| apply (finite_ivector_finite n finA)].
+  apply Isomorphism_symm.
+  apply vec_to_ivec_encoder.
+Qed.
