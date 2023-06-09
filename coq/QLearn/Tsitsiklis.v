@@ -5315,6 +5315,7 @@ End FixedPoint_contract.
   Qed.
 
   Existing Instance st_eqdec.
+
   Instance rv_qmin1 (Q : Ts -> Rfct (sigT M.(act))) (f:Ts -> state M) 
            {dom2 : SigmaAlgebra Ts}
     (rvQ : forall sa, RandomVariable dom2 borel_sa (fun ω => Q ω sa))
@@ -7176,6 +7177,69 @@ End FixedPoint_contract.
          now apply identically_distributed_rvs_proper.
    Qed.
 
+   Program Definition vdrop_last {T} {n} (v:vector T (S n)) : vector T n := removelast v.
+   Next Obligation.
+     rewrite removelast_length.
+     destruct v.
+     simpl.
+     now rewrite e.
+   Qed.
+
+   Definition vlast {T} {n} (v:vector T (S n)) : T := vector_nth n (Nat.lt_succ_diag_r n) v.
+
+   Definition vfirst {T} {n} (v:vector T (S n)) : T := vector_nth 0 (Nat.lt_0_succ n) v.
+   
+   Definition ps_P_nneg {T} {dom : SigmaAlgebra T} (ps : ProbSpace dom) (ev : event dom) :=
+     mknonnegreal (ps_P (ProbSpace := ps) ev) (ps_pos _).
+
+   Fixpoint policy_prob_s
+     (d : forall (n:nat), vector (sigT M.(act)) n -> forall (s:state M), ProbSpace (discrete_sa (M.(act) s)))
+     (p1 : ProbSpace (discrete_sa (M.(state))))
+     (ns : sigT M.(act) -> ProbSpace (discrete_sa (M.(state)))) 
+     (N : nat) : (vector (sigT M.(act)) N) -> state M -> nonnegreal :=
+     match N with
+     | 0 => fun v s => ps_P_nneg p1 (discrete_singleton s)
+     | (S n) => fun v s =>
+         let vn := vlast v in
+         mknonnegreal ((policy_prob_s d p1 ns n (vdrop_last v) (projT1 vn) ) *
+                         (mknonnegreal
+                            ((ps_P_nneg (d n (vdrop_last v) (projT1 vn)) (discrete_singleton (projT2 vn))) *
+                               (ps_P_nneg (ns vn) (discrete_singleton s))) (prod_nonnegreal _ _)))
+                           (prod_nonnegreal _ _)
+     end.
+
+   Fixpoint policy_prob_sa
+     (d : forall (n:nat), vector (sigT M.(act)) n -> forall (s:state M), ProbSpace (discrete_sa (M.(act) s)))
+     (p1 : ProbSpace (discrete_sa (M.(state))))
+     (ns : sigT M.(act) -> ProbSpace (discrete_sa (M.(state)))) 
+     (N : nat) : (vector (sigT M.(act)) N) -> sigT M.(act) -> nonnegreal :=
+     match N with
+     | 0 => fun v sa => mknonnegreal ((ps_P_nneg p1 (discrete_singleton (projT1 sa))) *
+                                        (ps_P_nneg (d 0%nat v (projT1 sa)) (discrete_singleton (projT2 sa))))
+                                     (prod_nonnegreal _ _)
+     | (S n) => fun v sa =>
+         let vn := vlast v in
+         mknonnegreal
+           ((policy_prob_sa d p1 ns n (vdrop_last v) vn ) *
+              (mknonnegreal 
+                 ((ps_P_nneg (ns vn) (discrete_singleton (projT1 sa))) *
+                    (ps_P_nneg (d (S n) v (projT1 sa)) (discrete_singleton (projT2 sa))))
+                 (prod_nonnegreal _ _)))
+           (prod_nonnegreal _ _)
+     end.
+
+   Lemma puterman_5_5_1 (s0 : state M)
+     (d : forall (n:nat), vector (sigT M.(act)) n -> forall (s:state M), ProbSpace (discrete_sa (M.(act) s))) :
+     exists (d' : nat -> forall (s:state M), ProbSpace (discrete_sa (M.(act) s))),
+     forall (p1 : ProbSpace (discrete_sa (M.(state))))
+            (ns : sigT M.(act) -> ProbSpace (discrete_sa (M.(state))))
+            (N : nat)
+            (v : vector (sigT M.(act)) N),
+       (forall s, policy_prob_s d p1 ns N v s = policy_prob_s (fun n v s => d' n s) p1 ns N v s) /\
+       (forall sa, policy_prob_sa d p1 ns N v sa = policy_prob_sa (fun n v s => d' n s) p1 ns N v sa).
+   Proof.
+     Admitted.
+
 End MDP.
 
 Section Jaakkola.
@@ -7196,7 +7260,6 @@ Section Jaakkola.
           (α : nat -> Ts -> Rfct (sigT M.(act)))
 
           (β : R)
-          (alpha_bound : forall t ω sa, 0 <= α t ω sa <= 1)
           (beta_bound : 0 <= β < 1)
           (rvα : forall t sa,
               RandomVariable (F t) borel_sa (fun ω => α t ω sa))
@@ -7255,6 +7318,7 @@ Section Jaakkola.
     
   Theorem qlearn_single_path
       (x' : Rfct (sigT M.(act)))
+      (alpha_bound : forall t ω sa, 0 <= α t ω sa <= 1)
       (indep_next_state:  
         forall k,
           independent_sas prts
@@ -7286,6 +7350,36 @@ Section Jaakkola.
       generalize (ident_distr_next_state k).
       now apply identically_distributed_rvs_proper.
   Qed.
+
+
+
+  Theorem qlearn_single_path_uniform_conv
+      (x' : Rfct (sigT M.(act)))
+      (alpha_bound : forall t ω sa, 0 <= α t ω sa)
+      (indep_next_state:  
+        forall k,
+          independent_sas prts
+            (pullback_rv_sub dom (discrete_sa (state M)) 
+               (fun ω : Ts => projT1 (sa_seq (S k) ω)) (sa_seq_proj_rv2 (S k))) 
+            (filt_sub k))
+      (ident_distr_next_state: forall k,
+          identically_distributed_rvs prts (discrete_sa (state M)) 
+            (fun ω : Ts => projT1 (sa_seq 1%nat ω))
+            (fun ω : Ts => projT1 (sa_seq (S k) ω)))     :
+    (forall sa,
+        is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => Rsqr (α k ω sa)) n) 
+          (fun ω => Lim_seq (sum_n (fun k => Rsqr (α k ω sa))))) ->
+    let next_state := (fun (t : nat) (sa : {x : state M & act M x}) (ω : Ts) => projT1 (sa_seq (S t) ω)) in
+    let X := (qlearn_Q next_state cost Q0 α β) in
+    let XF := (qlearn_XF next_state cost cost_rv islp_cost filt_sub β) in
+    XF x' = x' ->
+    almost prts (fun ω =>
+                   forall sa,
+                     is_lim_seq (fun n => X n ω sa) (x' sa)).
+ Proof.
+   intros.
+  Admitted.   
+   
 
   Fixpoint qlearn_Q_single_path (t : nat) : (Ts -> Rfct (sigT M.(act)))    :=
            match t with
@@ -7629,3 +7723,4 @@ Section Melo.
    Qed.
 
 End Melo.
+
