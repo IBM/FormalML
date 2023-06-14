@@ -113,7 +113,6 @@ Proof.
   - generalize (Nat.add_mod (j2 - j1) j1 (S n) ); intros.
     replace (j2 - j1 + j1) with j2 in H0 by lia.
     rewrite <- H in H0.
-    Search Nat.modulo.
 Admitted.
 
 Lemma nth_root_mod j1 j2 n :
@@ -148,17 +147,6 @@ Fixpoint list_Cplus (l : list C) : C :=
   | a :: l' => Cplus a (list_Cplus l')
   end.
 
-Lemma root_prod_1 j n :
-  list_Cplus
-    (map (fun k => Cmult (Cpow (nth_root j (S n)) k) (Cpow (Cinv (nth_root k (S n))) j)) 
-       (seq 0 (S n))) = INR (S n).
-Proof.
-  replace (map (fun k => Cdiv (Cpow (nth_root j (S n)) k)(Cpow (nth_root k (S n)) j)) 
-             (seq 0 (S n))) with
-          (map (fun k => RtoC R1) (seq 0 (S n))).
-  - induction n.
-    + simpl.
-     Admitted.
 
 Lemma prim_nth_root j n :
   nth_root j (S n) = Cpow (nth_root 1 (S n)) j.
@@ -186,6 +174,12 @@ Proof.
     now unfold snd in H0.
  Qed.
 
+Lemma cos_eq_1 (x : R) :
+  cos x = R1 ->
+  exists k, x = (2 * PI * INR(k))%R.
+Proof.
+  Admitted.
+
 Lemma nth_root_not_1 j n :
   j mod (S n) <> 0 ->
   nth_root j (S n) <> R1.
@@ -195,11 +189,38 @@ Proof.
   unfold RtoC.
   unfold not.
   intros.
-  apply (f_equal (fun c => snd c) ) in H0.
-  unfold snd in H0.
-  apply sin_eq_0_0 in H0.
-  destruct H0.
-  Admitted.
+  replace (S n) with (n + 1) in H0 by lia.
+  inversion H0; clear H0.
+  apply cos_eq_1 in H2.
+  destruct H2.
+  apply (f_equal (fun r => (r /(2 * PI))%R)) in H0.
+  unfold Rdiv in H0.
+  rewrite Rmult_comm in H0.
+  assert ((2 * PI)%R <> R0).
+  {
+    generalize PI_neq0; intros.
+    lra.
+  }
+  do 2 rewrite <- Rmult_assoc in H0.
+  rewrite <- Rinv_l_sym in H0; trivial.
+  rewrite Rmult_1_l in H0.
+  symmetry in H0.
+  rewrite Rmult_comm in H0.
+  rewrite <- Rmult_assoc in H0.
+  rewrite <- Rinv_l_sym in H0; trivial.
+  rewrite Rmult_1_l in H0.
+  replace (n+1) with (S n) in H0 by lia.
+  apply (f_equal (fun r => (r * INR (S n))%R)) in H0.
+  rewrite Rmult_assoc in H0.
+  rewrite <- Rinv_l_sym in H0.
+  - rewrite Rmult_1_r in H0.
+    rewrite <- mult_INR in H0.
+    apply INR_eq in H0.
+    apply (f_equal (fun k => k mod (S n))) in H0.
+    rewrite Nat.mod_mul in H0; try lia.
+  - apply not_0_INR.
+    lia.
+ Qed.
 
 Lemma Cinv_1_r :
   Cinv 1%R = 1%R.
@@ -247,7 +268,14 @@ Lemma C_telescope_mult (c : C) (n : nat) :
   (Cmult (c - R1) (list_Cplus (map (fun j => Cpow c j) (seq 0 (S n)))) = 
     (Cpow c (S n) - 1%R))%C.
 Proof.
-  Admitted.
+  intros.
+  induction n.
+  - simpl.
+    rewrite Cplus_0_r.
+    now do 2 rewrite Cmult_1_r.
+  - Search seq.
+    rewrite seq_S.
+Admitted.
 
 Lemma C_telescope_div (c : C) (n : nat) :
   c <> R1 ->
@@ -301,6 +329,34 @@ Proof.
     field.
     apply S_INR_not_0.
  Qed.
+
+Lemma list_Cplus_app l1 l2 :
+  list_Cplus (l1 ++ l2) = Cplus (list_Cplus l1) (list_Cplus l2).
+Proof.
+  Admitted.
+
+Lemma root_prod_1 j n :
+  list_Cplus
+    (map (fun k => Cmult (Cpow (nth_root j (S n)) k) (Cpow (Cinv (nth_root k (S n))) j)) 
+       (seq 0 (S n))) = INR (S n).
+Proof.
+  replace (map (fun k => Cdiv (Cpow (nth_root j (S n)) k)(Cpow (nth_root k (S n)) j)) 
+             (seq 0 (S n))) with
+          (map (fun k => RtoC R1) (seq 0 (S n))).
+  - induction n.
+    + simpl.
+      rewrite Cmult_1_l.
+      rewrite Cplus_0_r.
+      rewrite nth_root_0.
+      replace R1 with 1%R by lra.
+      rewrite Cinv_1_r.
+      now rewrite Cpow_1_l.
+    + rewrite seq_S.
+      rewrite map_app.
+      rewrite list_Cplus_app.
+      
+      
+     Admitted.
 
 Lemma pow_nth_root j n :
   Cpow (nth_root j (S n)) (S n) = R1.
