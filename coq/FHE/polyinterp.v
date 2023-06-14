@@ -303,7 +303,7 @@ Lemma C_telescope_div (c : C) (n : nat) :
     Cdiv (Cpow c (S n) - 1%R) (c - R1).
 Proof.
   intros.
-  generalize (C_telescope_mult c n H); intros.
+  generalize (C_telescope_mult c n); intros.
   rewrite <- H0.
   unfold Cdiv.
   rewrite Cmult_comm.
@@ -315,14 +315,7 @@ Proof.
     unfold not in H.
     apply H.
     apply (f_equal (fun cc => Cplus cc (RtoC R1))) in H1.
-    unfold Cminus in H1.
-    rewrite <- Cplus_assoc in H1.
-    rewrite Cplus_0_l in H1.
-    rewrite <- H1.
-    replace  (Cplus (Copp (RtoC R1)) (RtoC R1)) with (RtoC R0).
-    + now rewrite Cplus_0_r.
-    + rewrite Cplus_comm.
-      now rewrite Cplus_opp_r.
+    now ring_simplify in H1.
  Qed.
 
 Lemma sum_nth_roots_0 n :
