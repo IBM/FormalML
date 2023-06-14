@@ -109,10 +109,6 @@ Proof.
     Search Nat.modulo.
 Admitted.
 
-Search "mod".
-Search Nat.modulo.
-Print Nat.add_mod.
-        
 Lemma nth_root_mod j1 j2 n :
   j1 mod (S n) = j2 mod (S n) ->
   nth_root j1 (S n) = nth_root j2 (S n).
@@ -215,6 +211,46 @@ Proof.
   rewrite Cpow_sub_r; trivial.
   apply nth_root_not_0.
 Qed.
+
+Lemma C_telescope_mult (c : C) (n : nat) :
+  c <> R1 ->
+  (Cmult (c - R1) (list_Cplus (map (fun j => Cpow c j) (seq 0 (S n)))) = 
+    (Cpow c (S n) - 1%R))%C.
+Proof.
+  Admitted.
+
+Lemma C_telescope_div (c : C) (n : nat) :
+  c <> R1 ->
+  list_Cplus (map (fun j => Cpow c j) (seq 0 (S n))) = 
+    Cdiv (Cpow c (S n) - 1%R) (c - R1).
+Proof.
+  intros.
+  generalize (C_telescope_mult c n H); intros.
+  rewrite <- H0.
+  unfold Cdiv.
+  rewrite Cmult_comm.
+  rewrite Cmult_assoc.
+  rewrite Cinv_l.
+  - now rewrite Cmult_1_l.
+  - unfold not.
+    intros.
+    unfold not in H.
+    apply H.
+    apply (f_equal (fun cc => Cplus cc (RtoC R1))) in H1.
+    unfold Cminus in H1.
+    rewrite <- Cplus_assoc in H1.
+    rewrite Cplus_0_l in H1.
+    rewrite <- H1.
+    replace  (Cplus (Copp (RtoC R1)) (RtoC R1)) with (RtoC R0).
+    + now rewrite Cplus_0_r.
+    + rewrite Cplus_comm.
+      now rewrite Cplus_opp_r.
+ Qed.
+
+Lemma sum_nth_roots_0 n :
+  list_Cplus (map (fun j => Cpow (nth_root 1 (S n)) j) (seq 1 n)) = R0.
+Proof.
+  assert 
 
 Lemma pow_nth_root_prim n :
   Cpow (nth_root 1 (S n)) (S n) = R1.  
