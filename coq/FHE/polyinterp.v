@@ -176,12 +176,29 @@ Proof.
   generalize cos_sin_0; intros.
   specialize (H (2 * PI * INR j / INR (S n))%R).
   replace R0 with 0%R by lra.
-Admitted.
+  unfold not.
+  intros.
+  apply H.
+  split.
+  - apply (f_equal (fun c => fst c)) in H0.
+    now unfold fst in H0.
+  - apply (f_equal (fun c => snd c)) in H0.
+    now unfold snd in H0.
+ Qed.
 
 Lemma nth_root_not_1 j n :
   j mod (S n) <> 0 ->
   nth_root j (S n) <> R1.
 Proof.
+  unfold nth_root.
+  intros.
+  unfold RtoC.
+  unfold not.
+  intros.
+  apply (f_equal (fun c => snd c) ) in H0.
+  unfold snd in H0.
+  apply sin_eq_0_0 in H0.
+  destruct H0.
   Admitted.
 
 Lemma Cinv_1_r :
