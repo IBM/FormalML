@@ -348,23 +348,35 @@ Lemma root_prod_1 j n :
     (map (fun k => Cmult (Cpow (nth_root j (S n)) k) (Cpow (Cinv (nth_root k (S n))) j)) 
        (seq 0 (S n))) = INR (S n).
 Proof.
-  replace (map (fun k => Cdiv (Cpow (nth_root j (S n)) k)(Cpow (nth_root k (S n)) j)) 
+  replace (map (fun k => Cmult (Cpow (nth_root j (S n)) k) (Cpow (Cinv (nth_root k (S n))) j)) 
              (seq 0 (S n))) with
           (map (fun k => RtoC R1) (seq 0 (S n))).
   - induction n.
     + simpl.
-      rewrite Cmult_1_l.
-      rewrite Cplus_0_r.
-      rewrite nth_root_0.
-      replace R1 with 1%R by lra.
-      rewrite Cinv_1_r.
-      now rewrite Cpow_1_l.
+      now rewrite Cplus_0_r.
     + rewrite seq_S.
       rewrite map_app.
       rewrite list_Cplus_app.
-      
-      
-     Admitted.
+      rewrite IHn.
+      replace (S n) with (n + 1) by lia.
+      replace (S (n + 1)) with (n + 2) by lia.
+      simpl.
+      do 2 rewrite plus_INR.
+      simpl.
+      unfold RtoC.
+      rewrite Cplus_0_r.
+      unfold Cplus, fst, snd.
+      f_equal; lra.
+  - apply map_ext.
+    intros.
+    rewrite Cpow_inv.
+    + do 2 rewrite Cpow_nth_root.
+      replace (j * a) with (a * j) by lia.
+      rewrite Cinv_r.
+      * now replace R1 with 1%R by lra.
+      * apply nth_root_not_0.
+    + apply nth_root_not_0.
+  Qed.
 
 Lemma pow_nth_root j n :
   Cpow (nth_root j (S n)) (S n) = R1.
