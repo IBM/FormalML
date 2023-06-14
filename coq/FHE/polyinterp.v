@@ -108,12 +108,20 @@ Lemma minus_mod (j1 j2 n : nat) :
   j1 mod (S n) = j2 mod (S n) ->
   (j2 - j1) mod (S n) = 0.
 Proof.
-  intros.
+  intros eqq1.
   destruct (le_dec j1 j2).
-  - generalize (Nat.add_mod (j2 - j1) j1 (S n) ); intros.
-    replace (j2 - j1 + j1) with j2 in H0 by lia.
-    rewrite <- H in H0.
-Admitted.
+  - generalize (Zdiv.Zminus_mod (Z.of_nat j2) (Z.of_nat j1) (Z.of_nat (S n)))
+    ; intros HH.
+    rewrite <- Nat2Z.inj_sub in HH by trivial.
+    repeat rewrite <- Nat2Z.inj_mod in HH.
+    rewrite <- eqq1 in HH.
+    rewrite Z.sub_diag in HH.
+    rewrite Zdiv.Zmod_0_l in HH.
+    apply (f_equal Z.to_nat) in HH.
+    now rewrite Nat2Z.id in HH.
+  - rewrite Minus.not_le_minus_0_stt by trivial.
+    now apply Nat.mod_0_l.
+Qed.    
 
 Lemma nth_root_mod j1 j2 n :
   j1 mod (S n) = j2 mod (S n) ->
