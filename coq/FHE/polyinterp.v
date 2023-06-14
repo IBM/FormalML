@@ -341,7 +341,13 @@ Proof.
 Lemma list_Cplus_app l1 l2 :
   list_Cplus (l1 ++ l2) = Cplus (list_Cplus l1) (list_Cplus l2).
 Proof.
-  Admitted.
+  induction l1.
+  - simpl.
+    now rewrite Cplus_0_l.
+  - simpl.
+    rewrite IHl1.
+    now rewrite Cplus_assoc.
+ Qed.
 
 Lemma root_prod_1 j n :
   list_Cplus
