@@ -1,4 +1,4 @@
-Require Import Reals.
+Require Import Reals Permutation Morphisms.
 Require Import Coquelicot.Complex.
 Require Import List.
 Require Import Lra Lia.
@@ -186,7 +186,7 @@ Lemma cos_eq_1 (x : R) :
   cos x = R1 ->
   exists k, x = (2 * PI * INR(k))%R.
 Proof.
-  Admitted.
+Admitted.
 
 Lemma nth_root_not_1 j n :
   j mod (S n) <> 0 ->
@@ -271,19 +271,31 @@ Proof.
   apply nth_root_not_0.
 Qed.
 
+Instance list_Cplus_perm_proper : Proper (@Permutation _ ==> eq) list_Cplus.
+Proof.
+  repeat red.
+  apply Permutation_ind_bis; trivial; simpl; intros.
+  - now rewrite H0.
+  - rewrite H0; ring.
+  - now rewrite H0, H2.
+Qed.
+    
 Lemma C_telescope_mult (c : C) (n : nat) :
-  c <> R1 ->
   (Cmult (c - R1) (list_Cplus (map (fun j => Cpow c j) (seq 0 (S n)))) = 
     (Cpow c (S n) - 1%R))%C.
 Proof.
-  intros.
   induction n.
-  - simpl.
-    rewrite Cplus_0_r.
-    now do 2 rewrite Cmult_1_r.
-  - Search seq.
-    rewrite seq_S.
-Admitted.
+  - simpl; ring.
+  - rewrite seq_S.
+    simpl plus.
+    rewrite map_app.
+    unfold map at 2.
+    rewrite <- Permutation_cons_append.
+    unfold list_Cplus; fold list_Cplus.
+    transitivity ((c - R1) * c ^ S n + (c - R1) * list_Cplus (map (fun j : nat => c ^ j) (seq 0 (S n))))%C; [ring |].
+    rewrite IHn.
+    simpl; ring.
+Qed.
 
 Lemma C_telescope_div (c : C) (n : nat) :
   c <> R1 ->
