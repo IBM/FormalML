@@ -32,7 +32,6 @@ Proof.
   now rewrite cos_0, sin_0.
 Qed.
 
-(*
 Lemma nth_root_2PI n j :
   nth_root (j * (S n)) (S n) = R1.
 Proof.
@@ -45,7 +44,7 @@ Proof.
   - field.
     apply S_INR_not_0.
 Qed.
-*)
+
 
 Lemma nth_root_2PI_plus n j k :
   nth_root (j + k * (S n)) (S n) = nth_root j (S n).
@@ -95,6 +94,14 @@ Proof.
   do 2 rewrite Cpow_nth_root.
   f_equal.
   lia.
+Qed.
+
+Lemma nth_root_npow j n :
+  Cpow (nth_root j (S n)) (S n) = RtoC R1.
+Proof.
+  rewrite Cpow_nth_root.
+  replace (S n * j) with (j * S n) by lia.
+  now rewrite nth_root_2PI.
 Qed.
 
 Lemma minus_mod (j1 j2 n : nat) :
@@ -169,6 +176,12 @@ Proof.
   generalize cos_sin_0; intros.
   specialize (H (2 * PI * INR j / INR (S n))%R).
   replace R0 with 0%R by lra.
+Admitted.
+
+Lemma nth_root_not_1 j n :
+  j mod (S n) <> 0 ->
+  nth_root j (S n) <> R1.
+Proof.
   Admitted.
 
 Lemma Cinv_1_r :
@@ -248,9 +261,17 @@ Proof.
  Qed.
 
 Lemma sum_nth_roots_0 n :
-  list_Cplus (map (fun j => Cpow (nth_root 1 (S n)) j) (seq 1 n)) = R0.
+  list_Cplus (map (fun j => Cpow (nth_root 1 (S (S n))) j) (seq 0 (S (S n)))) = R0.
 Proof.
-  assert 
+  rewrite C_telescope_div.
+  - rewrite nth_root_npow.
+    unfold Cminus.
+    rewrite Cplus_opp_r.
+    unfold Cdiv.
+    now rewrite Cmult_0_l.
+  - apply nth_root_not_1.
+    rewrite Nat.mod_1_l; lia.
+ Qed.
 
 Lemma pow_nth_root_prim n :
   Cpow (nth_root 1 (S n)) (S n) = R1.  
