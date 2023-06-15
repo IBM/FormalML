@@ -380,6 +380,18 @@ Lemma cos_eq_1_nneg (x : R) :
   (0 <= x)%R ->
   exists (k:nat), x = (2 * PI * INR(k))%R.
 Proof.
+  intros.
+  generalize (cos_eq_1 x H); intros.
+  destruct H1.
+  rewrite H1 in H0.
+  replace (0%R) with (2 * PI * 0)%R in H0 by lra.
+  apply Rmult_le_reg_l in H0.
+  - apply le_IZR in H0.
+    exists (Z.to_nat x0).
+    rewrite H1.
+    do 2 f_equal.
+    admit.
+  - generalize PI_RGT_0; lra.
  Admitted.
 
 Lemma nth_root_not_1 j n :
