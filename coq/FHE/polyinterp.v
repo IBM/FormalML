@@ -550,6 +550,20 @@ Proof.
     rewrite Nat.mod_1_l; lia.
  Qed.
 
+Lemma sum_nth_roots_0_gen k n :
+  k mod (S (S n)) <> 0 ->
+  list_Cplus (map (fun j => Cpow (nth_root k (S (S n))) j) (seq 0 (S (S n)))) = R0.
+Proof.
+  intros.
+  rewrite C_telescope_div.
+  - rewrite nth_root_npow.
+    unfold Cminus.
+    rewrite Cplus_opp_r.
+    unfold Cdiv.
+    now rewrite Cmult_0_l.
+  - now apply nth_root_not_1.
+Qed.
+
 Lemma pow_nth_root_prim n :
   Cpow (nth_root 1 (S n)) (S n) = R1.  
 Proof.
