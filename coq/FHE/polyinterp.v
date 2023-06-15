@@ -449,6 +449,17 @@ Proof.
     lia.
  Qed.
 
+Lemma nth_root_1 j n :
+  j mod (S n) = 0 ->
+  nth_root j (S n) = R1.
+Proof.
+  intros.
+  rewrite (nth_root_mod j 0 n).
+  - now rewrite nth_root_0.
+  - rewrite H.
+    rewrite Nat.mod_small; lia.
+Qed.
+
 Lemma Cinv_1_r :
   Cinv 1%R = 1%R.
 Proof.
