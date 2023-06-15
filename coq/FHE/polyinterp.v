@@ -393,7 +393,19 @@ Proof.
   intros.
   replace (S n) with (n + 1) in H0 by lia.
   inversion H0; clear H0.
-  apply cos_eq_1 in H2.
+  assert (xnneg :(0 <= 2 * PI * INR j / INR (n + 1))%R).
+  {
+    apply Rmult_le_pos.
+    - generalize (pos_INR j); intros.
+      apply Rmult_le_pos; trivial.
+      generalize PI_RGT_0; intros.
+      lra.
+    - left.
+      apply Rinv_0_lt_compat.
+      apply lt_0_INR.
+      lia.
+  }
+  apply cos_eq_1_nneg in H2; trivial.
   destruct H2.
   apply (f_equal (fun r => (r /(2 * PI))%R)) in H0.
   unfold Rdiv in H0.
@@ -416,17 +428,13 @@ Proof.
   rewrite Rmult_assoc in H0.
   rewrite <- Rinv_l_sym in H0.
   - rewrite Rmult_1_r in H0.
-    do 2 rewrite INR_IZR_INZ in H0.
-    rewrite <- mult_IZR in H0.
-    apply eq_IZR in H0.
-    admit.
-    (*
+    rewrite <- mult_INR in H0.
+    apply INR_eq in H0.
     apply (f_equal (fun k => k mod (S n))) in H0.
     rewrite Nat.mod_mul in H0; try lia.
-    *)
   - apply not_0_INR.
     lia.
- Admitted.
+ Qed.
 
 Lemma Cinv_1_r :
   Cinv 1%R = 1%R.
