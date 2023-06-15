@@ -387,12 +387,13 @@ Proof.
   replace (0%R) with (2 * PI * 0)%R in H0 by lra.
   apply Rmult_le_reg_l in H0.
   - apply le_IZR in H0.
-    exists (Z.to_nat x0).
+    exists (Z.abs_nat x0).
     rewrite H1.
     do 2 f_equal.
-    admit.
+    destruct x0; simpl; trivial; try lia.
+    now rewrite INR_IPR.
   - generalize PI_RGT_0; lra.
- Admitted.
+Qed.
 
 Lemma nth_root_not_1 j n :
   j mod (S n) <> 0 ->
