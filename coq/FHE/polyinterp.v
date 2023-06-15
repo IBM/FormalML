@@ -692,6 +692,42 @@ Proof.
   apply nth_root_mul.
 Qed.
 
+Lemma nth_root_Cmod j n :
+  Cmod (nth_root j (S n)) = 1%R.
+Proof.
+  unfold Cmod, nth_root, fst, snd.
+  rewrite Rplus_comm.
+  rewrite <- sqrt_1.
+  f_equal.
+  do 2 rewrite <- Rsqr_pow2.
+  now rewrite sin2_cos2.
+Qed.
+
+Lemma Cmod_Cconj (c : C) :
+  Cmult c (Cconj c) = Rsqr (Cmod c).
+Proof.
+  destruct c.
+  unfold Cconj, Cmod, Cmult, fst, snd.
+  rewrite Rsqr_sqrt.
+  - unfold RtoC.
+    f_equal; lra.
+  - apply Rplus_le_le_0_compat; apply pow2_ge_0.
+Qed.
+
+Lemma nth_root_conj j n :
+  Cconj (nth_root j (S n)) = Cinv (nth_root j (S n)).
+Proof.
+  generalize (Cmod_Cconj (nth_root j (S n))); intros.
+  rewrite nth_root_Cmod in H.
+  rewrite Rsqr_1 in H.
+  apply (f_equal (fun c => Cmult (/ nth_root j (S n)) c)) in H.
+  rewrite Cmult_1_r in H.
+  rewrite Cmult_assoc in H.
+  rewrite Cinv_l in H.
+  - now rewrite Cmult_1_l in H.
+  - apply nth_root_not_0.
+Qed.
+
 Definition Ceval_Rpoly (p : list R) (c : C) :=
   let cpows := map (fun j => Cpow c j) (seq 0 (length p)) in
   fold_right Cplus 0%R (map (fun '(a, b) => Cmult (RtoC a) b) (combine p cpows)).
