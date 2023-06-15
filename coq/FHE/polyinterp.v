@@ -182,6 +182,19 @@ Proof.
     now unfold snd in H0.
  Qed.
 
+Lemma cos1_sin0 (x : R) :
+  cos x = R1 ->
+  sin x = R0.
+Proof.
+  intros eqq1.
+  generalize (cos2 x).
+  rewrite eqq1; intros eqq2.
+  replace R1 with 1%R in eqq2 by trivial.
+  rewrite Rsqr_1 in eqq2.
+  apply Rsqr_0_uniq.
+  lra.
+Qed.  
+
 Lemma cos_eq_1 (x : R) :
   cos x = R1 ->
   exists k, x = (2 * PI * INR(k))%R.
