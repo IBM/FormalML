@@ -490,6 +490,7 @@ Proof.
   apply nth_root_not_0.
 Qed.
 
+
 Instance list_Cplus_perm_proper : Proper (@Permutation _ ==> eq) list_Cplus.
 Proof.
   repeat red.
@@ -633,6 +634,53 @@ Proof.
   now rewrite Cpow_1_l.
 Qed.
 
+Lemma nth_root_mul j k n :
+  Cmult (nth_root j (S n)) (nth_root k (S n)) = nth_root (j + k) (S n).
+Proof.
+  intros.
+  rewrite (prim_nth_root k _).
+  rewrite (prim_nth_root j _).
+  rewrite (prim_nth_root (j + k) _).
+  rewrite Cpow_add_r; trivial.
+ Qed.
+
+Lemma nth_root_Sn n :
+  nth_root (S n) (S n) = 1%R.
+Proof.
+  rewrite prim_nth_root.
+  now rewrite nth_root_npow.
+Qed.
+
+Lemma nth_root_inv j n :
+  exists (k : nat),
+    Cinv (nth_root j (S n)) = nth_root k (S n).
+Proof.
+  exists (S n - (j mod S n)).
+  generalize (nth_root_diff (j mod S n) (S n) n); intros.
+  rewrite <- H.
+  - rewrite nth_root_Sn.
+    unfold Cdiv.
+    rewrite Cmult_1_l.
+    f_equal.
+    apply (nth_root_mod j (j mod S n) n).
+    rewrite Nat.mod_mod; try lia.
+  - assert (S n <> 0) by lia.
+    generalize (Nat.mod_upper_bound j (S n) H0); intros.
+    lia.
+ Qed.
+    
+Lemma nth_root_div j k n :
+  exists (kk : nat),
+    Cdiv (nth_root j (S n)) (nth_root k (S n)) = nth_root kk (S n).
+Proof.
+  unfold Cdiv.
+  generalize (nth_root_inv k n); intros.
+  destruct H.
+  exists (j + x).
+  rewrite H.
+  apply nth_root_mul.
+Qed.
+
 Definition Ceval_Rpoly (p : list R) (c : C) :=
   let cpows := map (fun j => Cpow c j) (seq 0 (length p)) in
   fold_right Cplus 0%R (map (fun '(a, b) => Cmult (RtoC a) b) (combine p cpows)).
@@ -648,7 +696,4 @@ Fixpoint C_horner_eval_Rpoly (p : list R) (c : C) : C :=
   | nil => R0
   | a :: p' => Cplus a (Cmult c (C_horner_eval_Rpoly p' c))
   end.
-
-
-
 
