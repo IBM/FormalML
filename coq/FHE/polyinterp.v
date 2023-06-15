@@ -320,26 +320,28 @@ Proof.
   {
     unfold not.
     intros.
-    generalize (cos1_sin0 x); intros.
-    apply sin_eq_0_0 in H4; trivial.
+    generalize (cos_eq_1_aux_pos x H3); intros.
     destruct H4.
     rewrite H4 in H0.
+    rewrite Rmult_comm in H0.
     apply Rmult_lt_reg_r in H0; trivial.
     rewrite H4 in H.
-    replace 0%R with (0 * PI)%R in H by lra.
-    apply Rmult_lt_reg_r in H; trivial.
+    replace 0%R with (PI * 0)%R in H by lra.
+    apply Rmult_lt_reg_l in H; trivial.
     assert (x0 = 1)%Z.
     {
-      admit.
+      apply lt_IZR in H.
+      apply lt_IZR in H0.
+      lia.
     }
     rewrite H5 in H4.
-    rewrite Rmult_1_l in H4.
+    rewrite Rmult_1_r in H4.
     rewrite H4 in H3.
     generalize cos_PI; intros.
     lra.
   }
   lra.
-  Admitted.
+ Qed.
 
 Lemma cos_eq_1_alt (x : R) :
   cos x = R1 ->
