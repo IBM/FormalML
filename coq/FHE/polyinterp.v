@@ -277,6 +277,21 @@ Proof.
     lra.
 Qed.
 
+Lemma cos_eq_neg1 (x : R) :
+  cos x = Ropp R1 ->
+  exists k, x = (2 * PI * IZR(k) + PI)%R.
+Proof.
+  intros eqq1.
+  generalize (Rtrigo_facts.cos_pi_plus x); intros eqq2.
+  rewrite eqq1 in eqq2.
+  rewrite Ropp_involutive in eqq2.
+  apply cos_eq_1 in eqq2.
+  destruct eqq2 as [k eqq2].
+  exists (k-1)%Z.
+  rewrite minus_IZR.
+  lra.
+Qed.
+
 Lemma cos_eq_1_1 : forall x:R, (exists k : Z, x = (IZR k * 2 * PI)%R) -> cos x = 1%R.
 Proof.
   assert (forall n, cos (INR n * 2 * PI) = 1%R). {
