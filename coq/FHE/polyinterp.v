@@ -182,6 +182,7 @@ Proof.
     now unfold snd in H0.
  Qed.
 
+
 Lemma cos1_sin0 (x : R) :
   cos x = R1 ->
   sin x = R0.
@@ -276,6 +277,109 @@ Proof.
     lra.
 Qed.
 
+Lemma cos_eq_1_1 : forall x:R, (exists k : Z, x = (IZR k * 2 * PI)%R) -> cos x = 1%R.
+Proof.
+  assert (forall n, cos (INR n * 2 * PI) = 1%R). {
+    intros n;induction n as [|n IHn].
+    { change (INR 0) with 0%R.
+      replace (0 * 2 * PI)%R with 0%R by ring.
+      exact cos_0. }
+    rewrite S_INR.
+    replace ((INR n + 1) * 2 * PI)%R with ((INR n) * 2 * PI + 2 * PI)%R by ring.
+    rewrite cos_plus, IHn, cos_2PI, sin_2PI.
+    ring.
+  }
+  intros x [k Hx].
+  rewrite Hx;clear x Hx.
+  destruct (Z.abs_or_opp_abs k).
+  - replace (IZR k) with (INR (Z.to_nat k)).
+    { apply H. }
+    rewrite INR_IZR_INZ.
+    f_equal.
+    apply Z2Nat.id.
+    lia.
+  - replace (IZR k) with (- INR (Z.to_nat (- k)))%R.
+    { replace (- INR (Z.to_nat (- k)) * 2 * PI)%R with (- (INR (Z.to_nat (- k)) * 2 * PI))%R by ring.
+      rewrite cos_neg.
+      rewrite H;ring. }
+    rewrite INR_IZR_INZ.
+    rewrite <-opp_IZR. f_equal.
+    lia.
+Qed.
+
+Lemma cos_lt_1 (x : R) :
+  (0 < x)%R ->
+  (x < 2*PI)%R ->
+  (cos x < 1)%R.
+Proof. 
+  intros.
+  generalize (COS_bound x); intros.
+  generalize PI_RGT_0; intro pi_gt.
+  destruct H1.
+  assert (cos x <> 1)%R.
+  {
+    unfold not.
+    intros.
+    generalize (cos1_sin0 x); intros.
+    apply sin_eq_0_0 in H4; trivial.
+    destruct H4.
+    rewrite H4 in H0.
+    apply Rmult_lt_reg_r in H0; trivial.
+    rewrite H4 in H.
+    replace 0%R with (0 * PI)%R in H by lra.
+    apply Rmult_lt_reg_r in H; trivial.
+    assert (x0 = 1)%Z.
+    {
+      admit.
+    }
+    rewrite H5 in H4.
+    rewrite Rmult_1_l in H4.
+    rewrite H4 in H3.
+    generalize cos_PI; intros.
+    lra.
+  }
+  lra.
+  Admitted.
+
+Lemma cos_eq_1_alt (x : R) :
+  cos x = R1 ->
+  exists (k:Z), x = (2 * PI * IZR(k))%R.
+Proof.
+  intros Hx.
+  assert (PI2_neq0: (2 * PI <> 0)%R).
+  {
+    generalize PI_neq0.
+    lra.
+  }
+  destruct (euclidian_division x (2*PI) PI2_neq0) as (q & r & EQ & Hr & Hr').
+  exists q.
+  rewrite <- (Rplus_0_r (_*_)). subst.
+  rewrite Rmult_comm.
+  apply Rplus_eq_compat_l.
+  rewrite cos_plus in Hx.
+  assert (H : cos (IZR q * 2 * PI)%R = 1%R) by ( apply cos_eq_1_1; now exists q).
+  rewrite <- Rmult_assoc in Hx.
+  rewrite H, Rmult_1_l in Hx.
+  rewrite sin_eq_0_1 in Hx.
+  - rewrite Rmult_0_l, Rminus_0_r in Hx.
+    rewrite Rabs_right in Hr'.
+    + destruct Hr as [Hr | ->]; trivial.
+      exfalso.
+      generalize (cos_lt_1 r Hr Hr'); intros.
+      lra.
+    + generalize PI_RGT_0; lra.
+  - exists (2*q)%Z.
+    rewrite mult_IZR.
+    lra.
+ Qed.
+
+Lemma cos_eq_1_nneg (x : R) :
+  cos x = R1 ->
+  (0 <= x)%R ->
+  exists (k:nat), x = (2 * PI * INR(k))%R.
+Proof.
+ Admitted.
+
 Lemma nth_root_not_1 j n :
   j mod (S n) <> 0 ->
   nth_root j (S n) <> R1.
@@ -310,13 +414,17 @@ Proof.
   rewrite Rmult_assoc in H0.
   rewrite <- Rinv_l_sym in H0.
   - rewrite Rmult_1_r in H0.
-    rewrite <- mult_INR in H0.
-    apply INR_eq in H0.
+    do 2 rewrite INR_IZR_INZ in H0.
+    rewrite <- mult_IZR in H0.
+    apply eq_IZR in H0.
+    admit.
+    (*
     apply (f_equal (fun k => k mod (S n))) in H0.
     rewrite Nat.mod_mul in H0; try lia.
+    *)
   - apply not_0_INR.
     lia.
- Qed.
+ Admitted.
 
 Lemma Cinv_1_r :
   Cinv 1%R = 1%R.
