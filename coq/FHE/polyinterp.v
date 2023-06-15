@@ -195,11 +195,86 @@ Proof.
   lra.
 Qed.  
 
+Lemma cosneg1_sin0 (x : R) :
+  cos x = Ropp R1 ->
+  sin x = R0.
+Proof.
+  intros eqq1.
+  generalize (cos2 x).
+  rewrite eqq1; intros eqq2.
+  replace R1 with 1%R in eqq2 by trivial.
+  rewrite <- Rsqr_neg in eqq2.
+  rewrite Rsqr_1 in eqq2.
+  apply Rsqr_0_uniq.
+  lra.
+Qed.  
+
+Lemma cos_eq_1_aux_pos (x : R) :
+  cos x = R1 ->
+  exists k, x = (PI * IZR(k))%R.
+Proof.
+  intros eqq1.
+  generalize (cos1_sin0 _ eqq1); intros eqq2.
+  apply sin_eq_0_0 in eqq2.
+  destruct eqq2 as [k eqqk].
+  exists k.
+  lra.
+Qed.
+
+Lemma cos_eq_1_aux_neg (x : R) :
+  cos x = Ropp R1 ->
+  exists k, x = (PI * IZR(k))%R.
+Proof.
+  intros eqq1.
+  generalize (cosneg1_sin0 _ eqq1); intros eqq2.
+  apply sin_eq_0_0 in eqq2.
+  destruct eqq2 as [k eqqk].
+  exists k.
+  lra.
+Qed.
+
 Lemma cos_eq_1 (x : R) :
   cos x = R1 ->
-  exists k, x = (2 * PI * INR(k))%R.
+  exists k, x = (2 * PI * IZR(k))%R.
 Proof.
-Admitted.
+  intros eqq1.
+  destruct (cos_eq_1_aux_pos _ eqq1) as [kk eqq2]; subst.
+  assert (cutter:(forall kk, ((0 <= kk)%Z ->  cos (PI * IZR kk) = R1 -> exists k : Z, (PI * IZR kk)%R = (2 * PI * IZR k)%R)) ->  (forall kk, (cos (PI * IZR kk) = R1 -> (exists k : Z, (PI * IZR kk)%R = (2 * PI * IZR k)%R
+         )))).
+  {
+    clear.
+    intros HH kk eqq1.
+    destruct (Z_le_gt_dec 0 kk); [eauto |].
+    destruct (HH (Z.opp kk)%Z).
+    - lia.
+    - rewrite opp_IZR.
+      replace (PI * - IZR kk)%R with (- (PI * IZR kk))%R by lra.
+      now rewrite cos_neg.
+    - exists (Z.opp x).
+      rewrite opp_IZR in H |- *.
+      lra.
+  }
+
+  apply cutter; trivial; clear.
+  intros kk kk_nneg eqq1.
+  destruct (Zeven_odd_dec kk).
+  - destruct (Zeven_ex _ z); subst.
+    exists x.
+    rewrite mult_IZR.
+    lra.
+  - destruct (Zodd_ex _ z); subst.
+    rewrite plus_IZR, mult_IZR in eqq1.
+    replace ((PI * (2 * IZR x + 1))%R) with
+      (2 * IZR x * PI + PI)%R in eqq1 by lra.
+    rewrite neg_cos in eqq1.
+    assert (eqq2: cos (2 * IZR x * PI)%R = Ropp R1) by lra.
+    generalize (cos_period 0 (Z.to_nat x)); intros HH.
+    rewrite cos_0 in HH.
+    rewrite INR_IZR_INZ in HH.
+    rewrite Z2Nat.id in HH by lia.
+    replace (2 * IZR x * PI)%R with (0 + 2 * IZR x * PI)%R in eqq2 by lra.
+    lra.
+Qed.
 
 Lemma nth_root_not_1 j n :
   j mod (S n) <> 0 ->
