@@ -976,18 +976,31 @@ Qed.
 Definition odd_nth_roots (n : nat) :=
   (map (fun j => nth_root (2*j+1) (2 ^ (S n))) (seq 0 (2^n))).
 
+Definition odd_nth_roots_half (n : nat) :=
+  (map (fun j => nth_root (2*j+1) (2 ^ (S (S n)))) (seq 0 (2^n))).
+
 Definition decode (p : list R) (n : nat) :=
   map (C_horner_eval_Rpoly p) (odd_nth_roots n).
+
+Definition decode_half (p : list R) (n : nat) :=
+  map (C_horner_eval_Rpoly p) (odd_nth_roots_half n).
 
 Definition Cinner_prod (l1 l2 : list C) :=
   list_Cplus (map (fun '(a,b) => Cmult a b) (combine l1 l2)).
 
 Definition encode (cl : list C) (n : nat) :=
   let conjroots := map Cconj (odd_nth_roots n) in
-  map (fun k => let prod := Cinner_prod cl (map (fun x => Cpow x k) conjroots)
-    in Cplus prod (Cconj prod))
-      (seq 0 (2 ^n)).
-         
+  map (fun c => Cplus c (Cconj c))
+    (map (fun k => Cinner_prod cl (map (fun x => Cpow x k) conjroots))
+       (seq 0 (2 ^n))).
+
+Definition encode_half (cl : list C) (n : nat) :=
+  let conjroots := map Cconj (odd_nth_roots_half n) in
+  map (fun c => Cplus c (Cconj c))
+    (map (fun k => Cinner_prod cl (map (fun x => Cpow x k) conjroots))
+       (seq 0 (2 ^n))).
+
+
 
 
 
