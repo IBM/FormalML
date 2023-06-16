@@ -990,15 +990,16 @@ Definition Cinner_prod (l1 l2 : list C) :=
 
 Definition encode (cl : list C) (n : nat) :=
   let conjroots := map Cconj (odd_nth_roots n) in
-  map (fun c => Cplus c (Cconj c))
+  map (fun c => (2 * Re c)%R)
     (map (fun k => Cinner_prod cl (map (fun x => Cpow x k) conjroots))
        (seq 0 (2 ^n))).
 
 Definition encode_half (cl : list C) (n : nat) :=
   let conjroots := map Cconj (odd_nth_roots_half n) in
-  map (fun c => Cplus c (Cconj c))
+  map (fun c => (2 * Re c)%R)
     (map (fun k => Cinner_prod cl (map (fun x => Cpow x k) conjroots))
        (seq 0 (2 ^n))).
+
 
 
 
