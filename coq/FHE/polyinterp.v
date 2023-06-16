@@ -833,6 +833,36 @@ Proof.
   now rewrite nth_root_Sn.
 Qed.
 
+Lemma pow2_inv x y : (x ^ 2)%R = y -> Rabs x = sqrt y.
+Proof.
+  intros eqq1.
+  apply (f_equal sqrt) in eqq1.
+  destruct (Rle_dec 0 x).
+  - intros.
+    rewrite sqrt_pow2 in eqq1 by trivial.
+    rewrite eqq1.
+    rewrite Rabs_right; trivial.
+    generalize (sqrt_pos y); lra.
+  - assert (eqq1':sqrt ((-x) ^2) = sqrt y).
+    {
+      now rewrite <- Rsqr_pow2, <- Rsqr_neg, Rsqr_pow2.
+    } 
+    rewrite sqrt_pow2 in eqq1' by lra.
+    now rewrite Rabs_left by lra.
+Qed.
+
+Lemma Rabs_pm_l x y : Rabs x = y -> x = y \/ (- x)%R = y.
+Proof.
+  unfold Rabs.
+  destruct (Rcase_abs); [right|left]; lra.
+Qed.
+
+Lemma Rabs_pm_r x y : Rabs x = y -> x = y \/ x = (- y)%R.
+Proof.
+  unfold Rabs.
+  destruct (Rcase_abs); [right|left]; lra.
+Qed.
+  
 Lemma Cpow_2 (c : C) :
   Cpow c 2 = 1%R -> c = 1%R \/ c = (-1)%R.
 Proof.
@@ -848,17 +878,16 @@ Proof.
   do 2 rewrite <- Rmult_assoc in H2.
   rewrite <- Rinv_l_sym in H2; try lra.
   rewrite Rmult_1_l, Rmult_0_r in H2.
-  assert (r <> 0)%R.
-  {
-    unfold not; intros.
-    rewrite H in H1.
-    ring_simplify in H1.
-    admit.
-  }
-  replace 0%R with (r * 0)%R in H2 by lra.
-  Search Rmult.
-  
-Admitted.
+  apply Rmult_integral in H2.
+  destruct H2; subst; ring_simplify in H1.
+  - assert (0 <= r0 ^ 2)%R by apply pow2_ge_0.
+    lra.
+  - apply pow2_inv in H1.
+    rewrite sqrt_1 in H1.
+    apply Rabs_pm_r in H1.
+    unfold RtoC.
+    destruct H1; [left|right]; f_equal; lra.
+Qed.
 
 Lemma nth_root_half_pow n :
   nth_root (S n) (2 * (S n)) = (-1)%R.
