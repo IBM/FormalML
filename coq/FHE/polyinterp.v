@@ -460,9 +460,28 @@ Proof.
       rewrite <- Rmult_assoc in H.
       rewrite <- Rinv_l_sym, Rmult_1_l in H; trivial.
       clear H0 H1 H2.
-
-
-      Admitted.
+      repeat rewrite plus_INR in H.
+      simpl in H.
+      assert (possn:(INR n + 1)%R <> 0%R).
+      {
+        generalize (pos_INR n); lra.
+      } 
+      field_simplify in H; try lra.
+      apply (f_equal (Rmult (INR n + 1))) in H.
+      field_simplify in H; try lra.
+      repeat rewrite INR_IZR_INZ in H.
+      repeat rewrite <- mult_IZR in H.
+      repeat rewrite <- plus_IZR in H.
+      apply eq_IZR in H.
+      apply Nat2Z.inj.
+      repeat rewrite Nat2Z.inj_mod.
+      rewrite H.
+      transitivity ((Z.of_nat k + (x * (Z.of_nat (S n)))) mod Z.of_nat (S n))%Z.
+      * f_equal.
+        rewrite Nat2Z.inj_succ.
+        lia.
+      * now rewrite Zdiv.Z_mod_plus_full.
+Qed.
       
 Lemma nth_root_not_1 j n :
   j mod (S n) <> 0 ->
