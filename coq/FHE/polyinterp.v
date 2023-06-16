@@ -751,10 +751,8 @@ Proof.
 Qed.
 
 Lemma nth_root_inv j n :
-  exists (k : nat),
-    Cinv (nth_root j (S n)) = nth_root k (S n).
+  Cinv (nth_root j (S n)) = nth_root (S n - (j mod S n)) (S n).
 Proof.
-  exists (S n - (j mod S n)).
   generalize (nth_root_diff (j mod S n) (S n) n); intros.
   rewrite <- H.
   - rewrite nth_root_Sn.
@@ -769,14 +767,11 @@ Proof.
  Qed.
     
 Lemma nth_root_div j k n :
-  exists (kk : nat),
-    Cdiv (nth_root j (S n)) (nth_root k (S n)) = nth_root kk (S n).
+  Cdiv (nth_root j (S n)) (nth_root k (S n)) = 
+    nth_root (j + (S n - (k mod S n))) (S n).
 Proof.
   unfold Cdiv.
-  generalize (nth_root_inv k n); intros.
-  destruct H.
-  exists (j + x).
-  rewrite H.
+  rewrite nth_root_inv.
   apply nth_root_mul.
 Qed.
 
@@ -890,15 +885,14 @@ Proof.
   intros.
   destruct c.
   unfold Cmult, fst, snd, RtoC in H.
-  replace (1%R) with R1 by lra.
-  inversion H; clear H.
-  ring_simplify in H2.
-  apply (f_equal (fun z => (/2 * z)%R)) in H2.
-  do 2 rewrite <- Rmult_assoc in H2.
-  rewrite <- Rinv_l_sym in H2; try lra.
-  rewrite Rmult_1_l, Rmult_0_r in H2.
-  apply Rmult_integral in H2.
-  destruct H2; subst; ring_simplify in H1.
+  injection H; intros; clear H.
+  ring_simplify in H0.
+  apply (f_equal (fun z => (/2 * z)%R)) in H0.
+  do 2 rewrite <- Rmult_assoc in H0.
+  rewrite <- Rinv_l_sym in H0; try lra.
+  rewrite Rmult_1_l, Rmult_0_r in H0.
+  apply Rmult_integral in H0.
+  destruct H0; subst; ring_simplify in H1.
   - assert (0 <= r0 ^ 2)%R by apply pow2_ge_0.
     lra.
   - apply pow2_inv in H1.
@@ -958,3 +952,42 @@ Proof.
   rewrite H1.
   now rewrite nth_root_half_pow.
 Qed.  
+
+Lemma Cmult_conj (x y : C) :
+  Cmult (Cconj x) (Cconj y) = Cconj (Cmult x y).
+Proof.
+  destruct x; destruct y.
+  unfold Cconj, Cmult, fst, snd.
+  f_equal; lra.
+Qed.  
+
+Lemma Cpow_conj (x : C) (n : nat) :
+  Cconj (Cpow x n) = Cpow (Cconj x) n.
+Proof.
+  induction n.
+  - unfold Cconj.
+    simpl.
+    now replace (- 0)%R with 0%R by lra.
+  - simpl.
+    rewrite <- Cmult_conj.
+    now rewrite IHn.
+Qed.
+
+Definition odd_nth_roots (n : nat) :=
+  (map (fun j => nth_root (2*j+1) (2 ^ (S n))) (seq 0 (2^n))).
+
+Definition decode (p : list R) (n : nat) :=
+  map (C_horner_eval_Rpoly p) (odd_nth_roots n).
+
+Definition Cinner_prod (l1 l2 : list C) :=
+  list_Cplus (map (fun '(a,b) => Cmult a b) (combine l1 l2)).
+
+Definition encode (cl : list C) (n : nat) :=
+  let conjroots := map Cconj (odd_nth_roots n) in
+  map (fun k => let prod := Cinner_prod cl (map (fun x => Cpow x k) conjroots)
+    in Cplus prod (Cconj prod))
+      (seq 0 (2 ^n)).
+         
+
+
+
