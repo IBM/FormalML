@@ -1000,7 +1000,25 @@ Definition encode_half (cl : list C) (n : nat) :=
     (map (fun k => Cinner_prod cl (map (fun x => Cpow x k) conjroots))
        (seq 0 (2 ^n))).
 
+Lemma Cplus_conj (c : C) :
+  let cc := Cplus c (Cconj c) in 
+  Re cc = (2 * Re c)%R /\ Im cc = 0%R.
+Proof.
+  destruct c.
+  simpl.
+  unfold fst, snd.
+  split; lra.
+Qed.
 
+Lemma Cplus_conj_alt (c : C) :
+  let cc := Cplus c (Cconj c) in 
+  cc = (2 * Re c)%R.
+Proof.
+  destruct c.
+  simpl.
+  unfold Cconj, RtoC, Cplus, fst, snd.
+  f_equal; lra.
+Qed.
 
 
 
