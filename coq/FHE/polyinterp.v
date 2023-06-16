@@ -18,6 +18,7 @@ Proof.
   lra.
 Qed.
 
+
 Lemma nth_root_0 n :
   nth_root 0 (S n) = R1.
 Proof.
@@ -148,6 +149,7 @@ Proof.
     rewrite H0.
     now rewrite nth_root_2PI_plus.
  Qed.
+
 
 Fixpoint list_Cplus (l : list C) : C :=
   match l with
@@ -410,6 +412,58 @@ Proof.
   - generalize PI_RGT_0; lra.
 Qed.
 
+Lemma sin_cos_eq x y:
+  sin x = sin y /\ cos x = cos y ->
+  exists (k:Z),
+    x = (y + 2 * PI * IZR(k))%R.
+Proof.
+  intros.
+  generalize (cos_minus x y); intros.
+  destruct H.
+  rewrite H, H1 in H0.
+  generalize (sin2_cos2 y); intros.
+  rewrite Rplus_comm in H0.
+  unfold Rsqr in H2.
+  rewrite H2 in H0.
+  apply cos_eq_1 in H0.
+  destruct H0.
+  exists x0.
+  rewrite <- H0.
+  lra.
+Qed.
+
+Lemma nth_root_eq j k n :
+  j mod (S n) = k mod (S n) <->
+  nth_root j (S n) = nth_root k (S n).
+Proof.
+  split; intros. 
+  - now apply nth_root_mod.
+  - unfold nth_root in H.
+    replace (S n) with (n + 1) in H by lia.
+    inversion H; clear H.
+    generalize (sin_cos_eq (2 * PI * INR j / INR (n + 1)) 
+                 (2 * PI * INR k / INR (n + 1))); intros.
+    destruct H.
+    + split; trivial.
+    + replace  (2 * PI * INR k / INR (n + 1) + 2 * PI * IZR x)%R with
+        (2 * PI * (INR k / INR (n+1) + IZR x))%R in H by lra.
+      replace  (2 * PI * INR j / INR (n + 1))%R with
+         (2 * PI * (INR j / INR (n + 1)))%R in H by lra.
+      apply (f_equal (fun r => (/ (2 * PI)) * r))%R in H.
+      assert (2 * PI <> 0)%R.
+      {
+        generalize PI_neq0.
+        lra.
+      }
+      rewrite <- Rmult_assoc in H.
+      rewrite <- Rinv_l_sym, Rmult_1_l in H; trivial.
+      rewrite <- Rmult_assoc in H.
+      rewrite <- Rinv_l_sym, Rmult_1_l in H; trivial.
+      clear H0 H1 H2.
+
+
+      Admitted.
+      
 Lemma nth_root_not_1 j n :
   j mod (S n) <> 0 ->
   nth_root j (S n) <> R1.
@@ -759,3 +813,100 @@ Fixpoint C_horner_eval_Rpoly (p : list R) (c : C) : C :=
   | a :: p' => Cplus a (Cmult c (C_horner_eval_Rpoly p' c))
   end.
 
+Lemma pow2_S (j:nat) :
+  exists (k : nat), 2^j = S k.
+Proof.
+  exists (2^j-1).
+  induction j.
+  - now simpl.
+  - simpl.
+    rewrite IHj.
+    lia.
+Qed.
+
+Lemma nth_root_half_pow_aux n :
+  Cpow (nth_root (S n) (2 * (S n))) 2 = 1%R.
+Proof.
+  replace (2 * (S n)) with (S (2 * n + 1)) by lia.
+  rewrite Cpow_nth_root.
+  do 2 replace (2 * (S n)) with (S (2 * n + 1)) by lia.
+  now rewrite nth_root_Sn.
+Qed.
+
+Lemma Cpow_2 (c : C) :
+  Cpow c 2 = 1%R -> c = 1%R \/ c = (-1)%R.
+Proof.
+  unfold Cpow.
+  rewrite Cmult_1_r.
+  intros.
+  destruct c.
+  unfold Cmult, fst, snd, RtoC in H.
+  replace (1%R) with R1 by lra.
+  inversion H; clear H.
+  ring_simplify in H2.
+  apply (f_equal (fun z => (/2 * z)%R)) in H2.
+  do 2 rewrite <- Rmult_assoc in H2.
+  rewrite <- Rinv_l_sym in H2; try lra.
+  rewrite Rmult_1_l, Rmult_0_r in H2.
+  assert (r <> 0)%R.
+  {
+    unfold not; intros.
+    rewrite H in H1.
+    ring_simplify in H1.
+    admit.
+  }
+  replace 0%R with (r * 0)%R in H2 by lra.
+  Search Rmult.
+  
+Admitted.
+
+Lemma nth_root_half_pow n :
+  nth_root (S n) (2 * (S n)) = (-1)%R.
+Proof.
+  generalize (nth_root_half_pow_aux n); intros.
+  apply Cpow_2 in H.
+  destruct H; trivial.
+  replace (2 * (S n)) with (S (2 * n + 1)) in H by lia.
+  replace 1%R with R1 in H by lra.
+  generalize (nth_root_not_1 (S n) (2*n+1)); intros.
+  assert (S n mod S (2 * n + 1) <> 0).
+  {
+    rewrite Nat.mod_small; lia.
+  }
+  tauto.
+Qed.
+
+Lemma odd_roots_prim j n :
+  Cpow (nth_root (2 * j + 1) (2 ^ (S n))) (2^n) = (-1)%R.
+Proof.
+  generalize (pow2_S (S n)); intros.
+  destruct H.
+  rewrite H.
+  rewrite Cpow_nth_root.
+  rewrite <- H.
+  assert ((2 ^ n * (2 * j + 1) mod (2 ^ S n)) =
+           (2 ^ n mod (2 ^ S n))).
+  {
+    replace (2 ^n * (2 * j + 1)) with (2 ^ n + j*(2 * 2^n)) by lia.
+    replace (2 ^ (S n)) with (2 * 2^n).
+    - rewrite Nat.mod_add; try lia.
+      assert (2^n <> 0).
+      {
+        apply Nat.pow_nonzero.
+        lia.
+      }
+      lia.
+    - simpl.
+      lia.
+  }
+  rewrite H in H0.
+  apply nth_root_mod in H0.
+  rewrite <- H in H0.
+  rewrite H0.
+  generalize (pow2_S n); intros.
+  destruct H1.
+  simpl.
+  replace (2 ^ n + (2 ^n + 0)) with (2 * 2^n) by lia.
+  rewrite H1.
+  now rewrite nth_root_half_pow.
+Qed.  
