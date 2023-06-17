@@ -990,7 +990,7 @@ Definition Cinner_prod (l1 l2 : list C) :=
 
 Definition encode (cl : list C) (n : nat) :=
   let conjroots := map Cconj (odd_nth_roots n) in
-  map (fun c => ((2 * Re c)/2^n)%R)
+  map (fun c => Cdiv c (2^n)%R)
     (map (fun k => Cinner_prod cl (map (fun x => Cpow x k) conjroots))
        (seq 0 (2 ^n))).
 
@@ -1000,19 +1000,188 @@ Definition encode_half (cl : list C) (n : nat) :=
     (map (fun k => Cinner_prod cl (map (fun x => Cpow x k) conjroots))
        (seq 0 (2 ^n))).
 
-Lemma Cplus_conj (c : C) :
-  let cc := Cplus c (Cconj c) in 
-  Re cc = (2 * Re c)%R /\ Im cc = 0%R.
+Lemma Im_div_real (c : C) (r : R) :
+  r <> 0%R ->
+  Im c = 0%R <-> Im (Cdiv c r) = 0%R.
 Proof.
+  intros.
   destruct c.
+  unfold Cdiv, Cinv, Cmult, Im, fst, snd.
   simpl.
-  unfold fst, snd.
-  split; lra.
+  split; intros.
+  - rewrite H0.
+    now field.
+  - field_simplify in H0; try easy.
+    unfold pow in H0.
+    field_simplify in H0; try easy.
+    unfold Rdiv in H0.
+    apply (f_equal (fun z => (z * r)%R)) in H0.
+    rewrite Rmult_assoc, Rmult_0_l in H0.
+    rewrite <- Rinv_l_sym in H0; trivial.
+    lra.
 Qed.
 
-Lemma Cplus_conj_alt (c : C) :
-  let cc := Cplus c (Cconj c) in 
-  cc = (2 * Re c)%R.
+Lemma Cconj_im_0 (c : C) :
+  Cconj c = c -> Im c = 0%R.
+Proof.
+  destruct c.
+  unfold Cconj; simpl.
+  intros.
+  injection H; intros.
+  lra.
+Qed.
+
+Lemma list_Cplus_conj_rev_0 (cl : list C):
+  length cl < 2 ->
+  map Cconj cl = rev cl ->
+  Im (list_Cplus cl) = 0%R.
+Proof.
+  intros.
+  pose (n := length cl).
+  destruct cl.
+  - now simpl.
+  - destruct cl.
+    + simpl.
+      simpl in H0.
+      inversion H0.
+      rewrite H2.
+      apply Cconj_im_0 in H2.
+      now rewrite Rplus_0_r.
+    + simpl in H.
+      lia.
+Qed.
+
+Lemma list_Cplus_conj_rev_recur (n : nat) :
+  (forall (cl : list C),
+      length cl = n ->
+      map Cconj cl = rev cl ->    
+      Im (list_Cplus cl) = 0%R) ->
+  forall (cl : list C),
+    length cl = n + 2 ->
+    map Cconj cl = rev cl ->    
+    Im (list_Cplus cl) = 0%R.
+Proof.
+  intros.
+  destruct cl; trivial.
+  simpl in H0.
+  assert (lcl: length cl = n+1) by lia.
+  assert(exists (c2 : C) (cl2 : list C),
+            cl = cl2 ++ (c2 :: nil)).
+  {
+    assert (cl <> nil).
+    {
+      unfold not; intros.
+      rewrite H2 in H0.
+      simpl in H0.
+      lia.
+    }
+    destruct (exists_last H2) as [? [??]].
+    exists x0.
+    now exists x.
+  }
+  destruct H2 as [c2 [cl2 ?]].
+  rewrite H2.
+  specialize (H cl2).
+  simpl.
+  rewrite list_Cplus_app.
+  rewrite im_plus.
+  rewrite H2 in H1.
+  simpl in H1.
+  rewrite map_app in H1.
+  rewrite rev_app_distr in H1.
+  simpl in H1.
+  inversion H1.
+  rewrite Cconj_conj in H5.  
+  apply app_inv_tail in H5.
+  rewrite H; trivial.
+  - simpl.
+    lra.
+  - rewrite H2 in H0.
+    rewrite app_length in H0.
+    simpl in H0.
+    lia.
+ Qed.
+
+Lemma list_Cplus_conj_rev (cl : list C):
+  map Cconj cl = rev cl ->
+  Im (list_Cplus cl) = 0%R.
+Proof.
+  intros.
+
+  Admitted.
+
+Lemma map_mult_conj_rev (cl1 cl2 : list C):
+  map Cconj cl1 = rev cl1 ->
+  map Cconj cl2 = rev cl2 ->
+  length cl1 = length cl2 ->
+  let cl := map (fun '(a,b) => Cmult a b) (combine cl1 cl2) in
+  map Cconj cl = rev cl.
+Proof.
+  Admitted.
+
+Lemma map_pow_conj_rev (cl : list C) (n : nat) :
+  map Cconj cl = rev cl ->
+  map Cconj (map (fun c => Cpow c n) cl) = 
+    rev (map (fun c => Cpow c n) cl).
+Proof.
+Admitted.
+
+Lemma odd_nth_roots_conj_rev n :
+  let cl := map Cconj (odd_nth_roots (S n)) in
+  map Cconj cl = rev cl.
+Proof.
+  Admitted.
+
+Lemma encode_real (cl : list C) (n : nat):
+  map Cconj cl = rev cl ->
+  length cl = length (odd_nth_roots (S n)) ->
+  forall (x : C),
+    In x (encode cl (S n)) -> Im x = 0%R.
+Proof.
+  intros.
+  unfold encode in H1.
+  apply in_map_iff in H1.
+  destruct H1 as [? [? ?]].
+  apply in_map_iff in H2.
+  destruct H2 as [? [? ?]].  
+  assert (Im x0 = 0%R).
+  {
+    rewrite <- H2.
+    unfold Cinner_prod.
+    apply list_Cplus_conj_rev.
+    apply map_mult_conj_rev; trivial.
+    - apply map_pow_conj_rev.
+      apply odd_nth_roots_conj_rev.
+    - now do 2 rewrite map_length.
+  }
+  rewrite <- H1.
+  apply Im_div_real; trivial.
+  apply pow_nonzero.
+  lra.
+Qed.
+  
+Lemma encode_decode (cl : list C) (n : nat):
+  cl = map Cconj (rev cl) ->
+  length cl = length (odd_nth_roots (S n)) ->
+  decode (map Re (encode cl n)) n = cl.
+Proof.
+  intros.
+  unfold decode, encode.
+  Admitted.
+
+Lemma encode_half_correct (cl : list C) (n : nat):
+  cl = map Cconj (rev cl) ->
+  encode_half cl n = map Re (encode cl (S n)).
+Proof.
+  intros.
+  unfold encode_half, encode.
+  rewrite map_map.
+  rewrite map_map.
+  rewrite map_map.
+  Admitted.
+
+Lemma Cplus_conj (c : C) :
+  Cplus c (Cconj c) = (2 * Re c)%R.
 Proof.
   destruct c.
   simpl.
@@ -1020,6 +1189,14 @@ Proof.
   f_equal; lra.
 Qed.
 
+(* claim (nxn vandermonde on odd roots) x conjugate transpose = n * I. *)
 
+Lemma mult_conj_root j n :
+  Cmult (nth_root j (S n)) (Cconj (nth_root j (S n))) = 1%R.
+Proof.
+  rewrite nth_root_conj.
+  rewrite Cinv_r; trivial.
+  apply nth_root_not_0.
+Qed.
 
 
