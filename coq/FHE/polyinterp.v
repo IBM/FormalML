@@ -1261,9 +1261,7 @@ Proof.
     - apply (list_Cplus_conj_rev_0 cl0); trivial; lia.
     - apply (list_Cplus_conj_rev_recur n); trivial; lia.
   }
-  unfold P in H0.
-  assert (length cl = length cl) by trivial.
-  now specialize (H0 (length cl) cl H1 H).
+  now apply H0 with (n := length cl).
 Qed.
 
 Lemma map_mult_conj_rev (cl1 cl2 : list C):
