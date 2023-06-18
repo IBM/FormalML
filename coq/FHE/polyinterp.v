@@ -1262,14 +1262,29 @@ Proof.
   - apply (list_Cplus_conj_rev_recur n); trivial; lia.
 Qed.
 
+Lemma combine_app {T} (cl1 cl2 cl1' cl2' : list T) :
+  length cl1 = length cl2 ->
+  length cl1' = length cl2' ->
+  combine (cl1 ++ cl1') (cl2 ++ cl2') = combine cl1 cl2 ++ combine cl1' cl2'.
+Proof.
+  Admitted.
+
 Lemma combine_rev {T} (cl1 cl2 : list T) :
+  length cl1 = length cl2 ->
   combine (rev cl1) (rev cl2) = rev (combine cl1 cl2).
 Proof.
   revert cl2.
-  induction cl1.
-  - now simpl.
-  - intros.
-  Admitted.
+  induction cl1; intros ; simpl; trivial.
+  destruct cl2; simpl.
+  - now rewrite combine_nil.
+  - simpl in H.
+    injection H; intros.
+    rewrite <- IHcl1; trivial.
+    rewrite combine_app.
+    + now simpl.
+    + now do 2 rewrite rev_length.
+    + now simpl.
+ Qed.        
 
 Lemma Cmult_combine_rev (cl1 cl2 : list C) :
   map (fun '(a, b) => (a * b)%C) (combine (rev cl1) (rev cl2)) =
@@ -1295,8 +1310,7 @@ Lemma Cmult_combine_conv (cl1 cl2 : list C) :
     map Cconj (map (fun '(a, b) => (a * b)%C) (combine cl1 cl2)).
 Proof.
   rewrite combine_map.
-  rewrite map_map.
-  rewrite map_map.
+  do 2 rewrite map_map.
   apply map_ext.
   intros.
   destruct a.
