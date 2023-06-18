@@ -961,6 +961,7 @@ Proof.
   f_equal; lra.
 Qed.  
 
+(*
 Lemma Cpow_conj (x : C) (n : nat) :
   Cconj (Cpow x n) = Cpow (Cconj x) n.
 Proof.
@@ -972,6 +973,7 @@ Proof.
     rewrite <- Cmult_conj.
     now rewrite IHn.
 Qed.
+*)
 
 Definition odd_nth_roots (n : nat) :=
   (map (fun j => nth_root (2*j+1) (2 ^ (S n))) (seq 0 (2^n))).
@@ -1254,14 +1256,10 @@ Proof.
   intros.
   pose (P := fun n => forall (cl : list C),
                  length cl = n -> map Cconj cl = rev cl -> Im (list_Cplus cl) = 0%R).
-  assert (forall n, P n).
-  {
-    apply pair_induction; unfold P; intros.
-    - apply (list_Cplus_conj_rev_0 cl0); trivial; lia.
-    - apply (list_Cplus_conj_rev_0 cl0); trivial; lia.
-    - apply (list_Cplus_conj_rev_recur n); trivial; lia.
-  }
-  now apply H0 with (n := length cl).
+  apply (pair_induction P) with (n := length cl); trivial; unfold P; intros.
+  - apply (list_Cplus_conj_rev_0 cl0); trivial; lia.
+  - apply (list_Cplus_conj_rev_0 cl0); trivial; lia.
+  - apply (list_Cplus_conj_rev_recur n); trivial; lia.
 Qed.
 
 Lemma map_mult_conj_rev (cl1 cl2 : list C):
@@ -1278,7 +1276,79 @@ Lemma map_pow_conj_rev (cl : list C) (n : nat) :
   map Cconj (map (fun c => Cpow c n) cl) = 
     rev (map (fun c => Cpow c n) cl).
 Proof.
-Admitted.
+  intros.
+  pose (P := fun n => forall (cl : list C) (k : nat),
+                 length cl = n -> map Cconj cl = rev cl -> 
+                             map Cconj (map (fun c => Cpow c k) cl) = 
+                             rev (map (fun c => Cpow c k) cl)).
+  apply (pair_induction P) with (n := length cl); trivial; unfold P; intros.
+  - apply length_zero_iff_nil in H0.
+    rewrite H0.
+    now simpl.
+  - destruct cl0; simpl in H0; try lia.
+    simpl in H1.
+    assert (length cl0 = 0) by lia.
+    apply length_zero_iff_nil in H2.
+    rewrite H2 in H1.
+    rewrite H2.
+    simpl in H1.
+    injection H1; intros.
+    simpl.
+    rewrite Cpow_conj.
+    now rewrite H3.
+  - destruct cl0; try easy.
+    simpl in H2.
+    injection H2; intros.
+    simpl in H3.
+    case_eq (rev cl0); intros.
+    + generalize (rev_length cl0); intros.
+      rewrite H4, H5 in H6; try easy.
+    + simpl.
+      rewrite H5 in H3.
+      injection H3; intros.
+      apply (f_equal (fun ll => rev ll)) in H5.
+      rewrite rev_involutive in H5.
+      rewrite H5.
+      simpl.
+      rewrite map_map.
+      rewrite map_app.
+      simpl.
+      generalize H7; intros H7'.
+      apply (f_equal (fun cc => Cpow cc k)) in H7.
+      rewrite <- Cpow_conj in H7.
+      rewrite <- H7.
+      rewrite map_app.
+      rewrite rev_app_distr.
+      rewrite map_rev.
+      simpl.
+      rewrite H7.
+      apply (f_equal (fun cc => Cconj cc)) in H7.
+      rewrite Cconj_conj in H7.
+      rewrite <- H7.
+      do 3 f_equal.
+      generalize H5; intros.
+      apply (f_equal (fun ll => length ll)) in H5.
+      rewrite rev_length in H5.
+      simpl in H5.
+      rewrite H4 in H5.
+      injection H5; intros.
+      symmetry in H9.
+      specialize (H0 l k H9).
+      rewrite <- map_rev in H0.
+      rewrite <- H0.
+      * now rewrite map_map.
+      * rewrite H8 in H6.
+        simpl in H6.
+        rewrite map_app in H6.
+        simpl in H6.
+        rewrite <- H7' in H6.
+        rewrite Cconj_conj in H6.
+        apply app_inv_tail in H6.
+        apply (f_equal (fun ll => rev ll)) in H6.
+        rewrite <- H6.
+        rewrite <- map_rev.
+        now rewrite rev_involutive.
+Qed.
 
 Lemma odd_nth_roots_conj_rev n :
   let cl := map Cconj (odd_nth_roots (S n)) in
