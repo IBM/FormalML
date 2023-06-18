@@ -1262,6 +1262,19 @@ Proof.
   - apply (list_Cplus_conj_rev_recur n); trivial; lia.
 Qed.
 
+Lemma Cmult_combine_rev (cl1 cl2 : list C) :
+  map (fun '(a, b) => (a * b)%C) (combine (rev cl1) (rev cl2)) =
+    rev (map (fun '(a, b) => (a * b)%C) (combine cl1 cl2)).
+Proof.
+Admitted.
+
+Lemma Cmult_combine_conv (cl1 cl2 : list C) :
+  map (fun '(a, b) => (a * b)%C) (combine (map Cconj cl1) (map Cconj cl2)) =
+    map Cconj (map (fun '(a, b) => (a * b)%C) (combine cl1 cl2)).
+Proof.
+Admitted.
+
+  
 Lemma map_mult_conj_rev (cl1 cl2 : list C):
   map Cconj cl1 = rev cl1 ->
   map Cconj cl2 = rev cl2 ->
@@ -1276,18 +1289,8 @@ Proof.
     now rewrite H, H0.
   }
   apply (f_equal (fun ll => map (fun '(a, b) => (a * b)%C) ll)) in H2.
-  assert (map (fun '(a, b) => (a * b)%C) (combine (rev cl1) (rev cl2)) =
-            rev (map (fun '(a, b) => (a * b)%C) (combine cl1 cl2))).
-  {
-    admit.
-  }
-  assert (map (fun '(a, b) => (a * b)%C) (combine (map Cconj cl1) (map Cconj cl2)) =
-            map Cconj (map (fun '(a, b) => (a * b)%C) (combine cl1 cl2))).
-  {
-    admit.
-  }
-  now rewrite H3, H4 in H2.
-  Admitted.
+  now rewrite Cmult_combine_rev, Cmult_combine_conv in H2.
+Qed.
 
 Lemma map_pow_conj_rev (cl : list C) (n : nat) :
   map Cconj cl = rev cl ->
