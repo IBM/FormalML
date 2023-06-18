@@ -1267,7 +1267,17 @@ Lemma combine_app {T} (cl1 cl2 cl1' cl2' : list T) :
   length cl1' = length cl2' ->
   combine (cl1 ++ cl1') (cl2 ++ cl2') = combine cl1 cl2 ++ combine cl1' cl2'.
 Proof.
-  Admitted.
+  revert cl2.
+  induction cl1; intros; simpl; trivial.
+  - simpl in H.
+    symmetry in H.
+    apply length_zero_iff_nil in H.
+    rewrite H; now simpl.
+  - destruct cl2; simpl; [now simpl in H|].
+    rewrite IHcl1; trivial.
+    simpl in H.
+    lia.
+ Qed.
 
 Lemma combine_rev {T} (cl1 cl2 : list T) :
   length cl1 = length cl2 ->
