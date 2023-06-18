@@ -1147,6 +1147,17 @@ Proof.
   now rewrite firstn_skipn.
 Qed.
 
+Lemma conj_rev_rev (cl : list C) :
+  map Cconj cl = rev cl ->
+  cl = map Cconj (rev cl).
+Proof.
+  intros.
+  apply (f_equal (fun l => rev l)) in H.
+  rewrite rev_involutive in H.
+  rewrite <- H at 1.
+  now rewrite map_rev.
+Qed.
+  
 Lemma conj_rev_odd cl n :
   length cl = 2 * n + 1 ->
   map Cconj cl = rev cl <->
