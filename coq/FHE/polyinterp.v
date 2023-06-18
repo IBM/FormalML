@@ -1262,11 +1262,19 @@ Proof.
   - apply (list_Cplus_conj_rev_recur n); trivial; lia.
 Qed.
 
+Lemma combine_rev {T} (cl1 cl2 : list T) :
+  combine (rev cl1) (rev cl2) = rev (combine cl1 cl2).
+Proof.
+  Admitted.
+
 Lemma Cmult_combine_rev (cl1 cl2 : list C) :
   map (fun '(a, b) => (a * b)%C) (combine (rev cl1) (rev cl2)) =
     rev (map (fun '(a, b) => (a * b)%C) (combine cl1 cl2)).
 Proof.
-Admitted.
+  rewrite <- map_rev.
+  f_equal.
+  apply combine_rev.
+Qed.
 
 Lemma Cmult_combine_conv (cl1 cl2 : list C) :
   map (fun '(a, b) => (a * b)%C) (combine (map Cconj cl1) (map Cconj cl2)) =
@@ -1291,6 +1299,8 @@ Proof.
   apply (f_equal (fun ll => map (fun '(a, b) => (a * b)%C) ll)) in H2.
   now rewrite Cmult_combine_rev, Cmult_combine_conv in H2.
 Qed.
+
+Search Cconj.
 
 Lemma map_pow_conj_rev (cl : list C) (n : nat) :
   map Cconj cl = rev cl ->
