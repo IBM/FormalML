@@ -1031,6 +1031,113 @@ Proof.
   lra.
 Qed.
 
+Lemma conj_rev_even n cl :
+  length cl = 2 * n ->
+  map Cconj cl = rev cl <->
+    map Cconj (firstn n cl) = firstn n (rev cl).
+Proof.
+  revert cl.
+  induction n.
+  - replace (2 * 0) with 0 by lia.
+    intros.
+    apply length_zero_iff_nil in H.
+    rewrite H.
+    now simpl.
+  - intros.
+    destruct cl; try easy.
+    simpl.
+    intros.
+    replace (n + 0) with n in H by lia.
+    injection H; intros.
+    generalize (rev_length cl); intros.
+    replace (n + S (n + 0)) with (S (2*n)) in H0 by lia.
+    rewrite H0 in H1.
+    case_eq (rev cl); intros.
+    + rewrite H2 in H1; simpl in H1; lia.
+    + simpl.
+      rewrite H2 in H1.
+      simpl in H1.
+      inversion H1.
+      generalize (rev_length l); intros.
+      rewrite H4 in H3.
+      specialize (IHn (rev l) H3).
+      apply (f_equal (fun ll => rev ll)) in H2.
+      simpl in H2.
+      rewrite rev_involutive in H2.
+      rewrite H2.
+      destruct IHn.
+      split; intros; inversion H7; f_equal; rewrite map_app.
+      * do 2 rewrite firstn_app.
+        replace (n - length (rev l)) with (0) by (rewrite rev_length; lia).
+        replace (n - length (map Cconj (rev l))) with (0).
+        -- simpl.
+           rewrite map_app; simpl.
+           f_equal.
+           assert (map Cconj (rev l) = rev (rev l)).
+           {
+             rewrite rev_involutive.
+             rewrite map_app in H10.
+             simpl in H10.
+             rewrite Cconj_conj in H10.
+             now apply app_inv_tail in H10.
+           }
+           rewrite H5; trivial.
+           now f_equal.
+        -- rewrite map_length, rev_length; lia.
+      * simpl.
+        rewrite Cconj_conj.
+        f_equal.
+        do 2 rewrite firstn_app in H10.
+        replace (n - length (rev l)) with (0) in H10 by (rewrite rev_length; lia).
+        replace (n - length l) with (0) in H10 by lia.
+        rewrite map_app in H10.
+        simpl in H10.
+        apply app_inv_tail in H10.
+        rewrite rev_involutive in H6.
+        now apply H6.
+Qed.
+
+Lemma conj_rev_half (cl_half:list C) :
+  let cl := cl_half ++ rev (map Cconj cl_half) in
+  map Cconj cl = rev cl.
+Proof.
+  intros.
+  pose (n := length cl_half).
+  assert (length cl = 2*n).
+  {
+    unfold cl.
+    rewrite app_length.
+    rewrite rev_length.
+    rewrite map_length.
+    lia.
+  }
+  generalize (conj_rev_even n cl H); intros.
+  apply H0.
+  unfold cl.
+  rewrite firstn_app.
+  replace (length cl_half) with n by easy.
+  replace (n - n) with 0 by lia.
+  simpl.
+  rewrite rev_app_distr.
+  rewrite rev_involutive.
+  rewrite firstn_app.
+  replace (n - length (map Cconj cl_half)) with 0.
+  - rewrite map_app.
+    simpl.
+    f_equal.
+    now rewrite firstn_map.
+  - rewrite map_length.
+    lia.
+ Qed.
+
+Lemma conj_rev_odd cl n :
+  length cl = 2 * n + 1 ->
+  map Cconj cl = rev cl <->
+    (map Cconj (firstn n cl) = rev (skipn (S n) cl) /\
+      Im (nth n cl Ci) = 0%R).
+Proof.
+  Admitted.
+
 Lemma list_Cplus_conj_rev_0 (cl : list C):
   length cl < 2 ->
   map Cconj cl = rev cl ->
@@ -1108,7 +1215,9 @@ Lemma list_Cplus_conj_rev (cl : list C):
 Proof.
   intros.
 
-  Admitted.
+Admitted.
+
+  
 
 Lemma map_mult_conj_rev (cl1 cl2 : list C):
   map Cconj cl1 = rev cl1 ->
@@ -1161,7 +1270,7 @@ Proof.
 Qed.
   
 Lemma encode_decode (cl : list C) (n : nat):
-  cl = map Cconj (rev cl) ->
+  map Cconj cl = rev cl ->
   length cl = length (odd_nth_roots (S n)) ->
   decode (map Re (encode cl n)) n = cl.
 Proof.
@@ -1170,8 +1279,8 @@ Proof.
   Admitted.
 
 Lemma encode_half_correct (cl : list C) (n : nat):
-  cl = map Cconj (rev cl) ->
-  encode_half cl n = map Re (encode cl (S n)).
+    map Cconj cl = rev cl ->
+    encode_half cl n = map Re (encode cl (S n)).
 Proof.
   intros.
   unfold encode_half, encode.
