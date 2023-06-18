@@ -1269,6 +1269,24 @@ Lemma map_mult_conj_rev (cl1 cl2 : list C):
   let cl := map (fun '(a,b) => Cmult a b) (combine cl1 cl2) in
   map Cconj cl = rev cl.
 Proof.
+  intros.
+  assert (combine (map Cconj cl1) (map Cconj cl2) =
+            combine (rev cl1) (rev cl2)).
+  {
+    now rewrite H, H0.
+  }
+  apply (f_equal (fun ll => map (fun '(a, b) => (a * b)%C) ll)) in H2.
+  assert (map (fun '(a, b) => (a * b)%C) (combine (rev cl1) (rev cl2)) =
+            rev (map (fun '(a, b) => (a * b)%C) (combine cl1 cl2))).
+  {
+    admit.
+  }
+  assert (map (fun '(a, b) => (a * b)%C) (combine (map Cconj cl1) (map Cconj cl2)) =
+            map Cconj (map (fun '(a, b) => (a * b)%C) (combine cl1 cl2))).
+  {
+    admit.
+  }
+  now rewrite H3, H4 in H2.
   Admitted.
 
 Lemma map_pow_conj_rev (cl : list C) (n : nat) :
