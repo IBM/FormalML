@@ -1130,6 +1130,23 @@ Proof.
     lia.
  Qed.
 
+Lemma conj_rev_half_conv n (cl:list C) :
+  length cl = 2*n ->
+  map Cconj cl = rev cl ->
+  let cl_half := firstn n cl in
+  cl = cl_half ++ rev (map Cconj cl_half) .
+Proof.
+  intros.
+  generalize (conj_rev_even n cl H); intros.
+  apply H1 in H0.
+  unfold cl_half.
+  rewrite H0.
+  rewrite firstn_rev.
+  rewrite rev_involutive.
+  replace (length cl - n) with n by lia.
+  now rewrite firstn_skipn.
+Qed.
+
 Lemma conj_rev_odd cl n :
   length cl = 2 * n + 1 ->
   map Cconj cl = rev cl <->
