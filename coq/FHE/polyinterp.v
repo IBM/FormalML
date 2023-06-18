@@ -1265,6 +1265,10 @@ Qed.
 Lemma combine_rev {T} (cl1 cl2 : list T) :
   combine (rev cl1) (rev cl2) = rev (combine cl1 cl2).
 Proof.
+  revert cl2.
+  induction cl1.
+  - now simpl.
+  - intros.
   Admitted.
 
 Lemma Cmult_combine_rev (cl1 cl2 : list C) :
@@ -1276,12 +1280,28 @@ Proof.
   apply combine_rev.
 Qed.
 
+  Lemma combine_map {A B C D:Type} (f:A->C) (g:B->D) (l1:list A) (l2:list B) :
+    combine (map f l1) (map g l2) = map (fun '(x,y) => (f x, g y)) (combine l1 l2).
+  Proof.
+    revert l2.
+    induction l1; intros l2; simpl; trivial.
+    destruct l2; simpl; trivial.
+    f_equal.
+    auto.
+  Qed.
+
 Lemma Cmult_combine_conv (cl1 cl2 : list C) :
   map (fun '(a, b) => (a * b)%C) (combine (map Cconj cl1) (map Cconj cl2)) =
     map Cconj (map (fun '(a, b) => (a * b)%C) (combine cl1 cl2)).
 Proof.
-Admitted.
-
+  rewrite combine_map.
+  rewrite map_map.
+  rewrite map_map.
+  apply map_ext.
+  intros.
+  destruct a.
+  now rewrite Cmult_conj.
+Qed.
   
 Lemma map_mult_conj_rev (cl1 cl2 : list C):
   map Cconj cl1 = rev cl1 ->
