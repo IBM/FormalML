@@ -1297,12 +1297,14 @@ Proof.
  Qed.        
 
 Lemma Cmult_combine_rev (cl1 cl2 : list C) :
+  length cl1 = length cl2 ->
   map (fun '(a, b) => (a * b)%C) (combine (rev cl1) (rev cl2)) =
     rev (map (fun '(a, b) => (a * b)%C) (combine cl1 cl2)).
 Proof.
+  intros.
   rewrite <- map_rev.
   f_equal.
-  apply combine_rev.
+  now apply combine_rev.
 Qed.
 
   Lemma combine_map {A B C D:Type} (f:A->C) (g:B->D) (l1:list A) (l2:list B) :
@@ -1343,8 +1345,6 @@ Proof.
   apply (f_equal (fun ll => map (fun '(a, b) => (a * b)%C) ll)) in H2.
   now rewrite Cmult_combine_rev, Cmult_combine_conv in H2.
 Qed.
-
-Search Cconj.
 
 Lemma map_pow_conj_rev (cl : list C) (n : nat) :
   map Cconj cl = rev cl ->
