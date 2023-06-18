@@ -1237,15 +1237,34 @@ Proof.
     lia.
  Qed.
 
+Lemma pair_induction (P : nat -> Prop) :
+  P 0 -> P 1 ->
+  (forall n, P n -> P (S n) -> P (S (S n))) ->
+  forall n, P n.
+Proof.
+  intros H0 H1 Hstep n.
+  enough (P n /\ P (S n)) by easy.
+  induction n; intuition.
+Qed.
+
 Lemma list_Cplus_conj_rev (cl : list C):
   map Cconj cl = rev cl ->
   Im (list_Cplus cl) = 0%R.
 Proof.
   intros.
-
-Admitted.
-
-  
+  pose (P := fun n => forall (cl : list C),
+                 length cl = n -> map Cconj cl = rev cl -> Im (list_Cplus cl) = 0%R).
+  assert (forall n, P n).
+  {
+    apply pair_induction; unfold P; intros.
+    - apply (list_Cplus_conj_rev_0 cl0); trivial; lia.
+    - apply (list_Cplus_conj_rev_0 cl0); trivial; lia.
+    - apply (list_Cplus_conj_rev_recur n); trivial; lia.
+  }
+  unfold P in H0.
+  assert (length cl = length cl) by trivial.
+  now specialize (H0 (length cl) cl H1 H).
+Qed.
 
 Lemma map_mult_conj_rev (cl1 cl2 : list C):
   map Cconj cl1 = rev cl1 ->
@@ -1303,7 +1322,7 @@ Lemma encode_decode (cl : list C) (n : nat):
   decode (map Re (encode cl n)) n = cl.
 Proof.
   intros.
-  unfold decode, encode.
+  unfold encode.
   Admitted.
 
 Lemma encode_half_correct (cl : list C) (n : nat):
