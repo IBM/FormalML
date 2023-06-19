@@ -65,25 +65,9 @@ Proof.
   - now rewrite seq_length.
 Qed.
 
-(*Lemma rev_seq0 n :
-  rev (seq 0 n) = map (fun i => (S n - i)) (seq 0 n).
-Proof.
-  apply nth_error_eqs; intros i.
-  rewrite nth_error_map.
-  destruct (lt_dec i (length (seq 0 n))).
-  - rewrite rev_nth_error by trivial.
-    rewrite seq_length in l.
-    repeat rewrite seq_nth_error; trivial
-    ; rewrite seq_length.
-    + simpl; f_equal.
-      destruct i; simpl.
-
-
-*)
 Lemma rev_seq start n :
-  rev (seq start n) = map (fun i => (S n + start - i)) (seq start n).
+  rev (seq start n) = map (fun i => (n + 2 * start - S i)) (seq start n).
 Proof.
-  (*
   apply nth_error_eqs; intros i.
   rewrite nth_error_map.
   destruct (lt_dec i (length (seq start n))).
@@ -91,25 +75,14 @@ Proof.
     rewrite seq_length in l.
     repeat rewrite seq_nth_error; trivial
     ; rewrite seq_length.
-    + simpl; f_equal.
-
-      
+    + simpl; f_equal; lia.
     + lia.
-    
-    
-  rewrite seq_S, rev_app_distr, map_app.
-  rewrite IHn.
-
-  start=2, n=3
-             
-4,3,2
-
-(start+n+1)-i
-*)
-
-
-Admitted.
-
+  - assert (length (seq start n) <= i) by lia.
+    assert (length (rev (seq start n)) <= i) by (rewrite rev_length; lia).
+    apply nth_error_None in H.
+    apply nth_error_None in H0.
+    now rewrite H, H0.
+Qed.
 
 Lemma map_skipn_S_error {A:Type} (l:list A) n a :
   nth_error l n = Some a ->
