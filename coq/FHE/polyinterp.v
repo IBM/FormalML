@@ -1373,10 +1373,27 @@ Proof.
   now rewrite Cpow_conj.
 Qed.
 
+Lemma map_conj_conj_rev (cl : list C) :
+  map Cconj cl = rev cl ->
+  map Cconj (map Cconj cl) = 
+    rev (map Cconj cl).
+Proof.
+  intros.
+  apply (f_equal (fun ll => map Cconj ll)) in H.
+  rewrite map_map in H.
+  rewrite map_rev in H.
+  rewrite <- H.
+  rewrite map_map.
+  now apply map_ext.
+Qed.
+
 Lemma odd_nth_roots_conj_rev n :
   let cl := map Cconj (odd_nth_roots (S n)) in
   map Cconj cl = rev cl.
 Proof.
+  simpl.
+  apply map_conj_conj_rev.
+  unfold odd_nth_roots.
   Admitted.
 
 Lemma encode_real (cl : list C) (n : nat):
