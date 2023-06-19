@@ -1060,20 +1060,6 @@ Proof.
   f_equal; lra.
 Qed.  
 
-(*
-Lemma Cpow_conj (x : C) (n : nat) :
-  Cconj (Cpow x n) = Cpow (Cconj x) n.
-Proof.
-  induction n.
-  - unfold Cconj.
-    simpl.
-    now replace (- 0)%R with 0%R by lra.
-  - simpl.
-    rewrite <- Cmult_conj.
-    now rewrite IHn.
-Qed.
-*)
-
 Definition odd_nth_roots (n : nat) :=
   (map (fun j => nth_root (2*j+1) (2 ^ (S n))) (seq 0 (2^n))).
 
@@ -1454,16 +1440,6 @@ Proof.
   f_equal.
   now apply combine_rev.
 Qed.
-
-  Lemma combine_map {A B C D:Type} (f:A->C) (g:B->D) (l1:list A) (l2:list B) :
-    combine (map f l1) (map g l2) = map (fun '(x,y) => (f x, g y)) (combine l1 l2).
-  Proof.
-    revert l2.
-    induction l1; intros l2; simpl; trivial.
-    destruct l2; simpl; trivial.
-    f_equal.
-    auto.
-  Qed.
 
 Lemma Cmult_combine_conv (cl1 cl2 : list C) :
   map (fun '(a, b) => (a * b)%C) (combine (map Cconj cl1) (map Cconj cl2)) =
