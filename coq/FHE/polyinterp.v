@@ -2,6 +2,7 @@ Require Import Reals Permutation Morphisms.
 Require Import Coquelicot.Complex.
 Require Import List.
 Require Import Lra Lia.
+Require Import Utils.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -1044,71 +1045,142 @@ Proof.
   lra.
 Qed.
 
+Lemma map_inv_rev_even {A} n (l:list A) f (finv: forall x, f (f x) = x):
+  length l = 2 * n ->
+  map f l = rev l <->
+    map f (firstn n l) = rev (skipn n l).
+Proof.
+  intros llen.
+  split; intros HH.
+  - rewrite firstn_skipn_rev.
+    rewrite llen, map_rev, <- skipn_map, map_rev.
+    replace (2 * n - n) with n by lia.
+    now rewrite HH, rev_involutive.
+  - rewrite <- (firstn_skipn n l).
+    rewrite map_app, rev_app_distr.
+    f_equal; trivial.
+    apply (f_equal (@rev _)) in HH.
+    repeat rewrite rev_involutive in HH.
+    rewrite <- HH.
+    rewrite map_rev, map_map.
+    now erewrite map_ext; [rewrite map_id |].
+Qed.
+
+Lemma rev_nth_error {A} (l:list A) (n:nat) :
+  n < length l -> nth_error (rev l) n = nth_error l (length l - S n).
+Proof.
+  revert n.
+  induction l using rev_ind; simpl; [lia |]; intros n nlt.
+  rewrite rev_app_distr, app_length; simpl.
+  destruct n.
+  - simpl.
+    rewrite nth_error_app2 by lia.
+    now replace (length l + 1 - 1 - length l) with 0 by lia.
+  - simpl.
+    rewrite app_length in nlt; simpl in nlt.
+    rewrite IHl by lia.
+    rewrite nth_error_app1 by lia.
+    f_equal.
+    lia.
+Qed.
+
+(*
+Lemma map_skipn_S_error {A:Type} (l:list A) n a :
+  nth_error l (S n) = Some a ->
+  skipn n l = a :: skipn (S n) l.
+Proof.
+  revert n a.
+  induction l; simpl; [congruence |]; intros.
+  destruct n; simpl.
+
+  
+  intros.
+  rewrite <- (rev_involutive l).
+  repeat rewrite skipn_rev.
+  rewrite rev_length.
+  replace ((length l) - n) with (S ((length l) - S n)).
+  - generalize (length l - S n); intros n'.
+    
+  - cut (S n < length l); [lia |].
+    apply nth_error_Some; congruence.
+   
+  revert a l.
+  induction n; simpl; intros; destruct l; try congruence.
+  - destruct l
+  induction l; simpl; [congruence |].
+ *)
+
+(*
+Lemma map_inv_rev_odd {A} n (l:list A) f (finv: forall x, f (f x) = x):
+  length l = 2 * n + 1 ->
+  map f l = rev l <->
+    map f (firstn n l) = rev (skipn (S n) l) /\
+      option_map f (nth_error l n) = (nth_error l n).
+Proof.
+  intros llen.
+  split; intros HH.
+  - rewrite firstn_skipn_rev.
+    rewrite llen, map_rev, <- skipn_map, map_rev.
+    replace (2 * n + 1 - n) with (S n) by lia.
+    split.
+    + now rewrite HH, rev_involutive.
+    + apply (f_equal (map f )) in HH.
+      rewrite map_map in HH.
+      erewrite map_ext in HH; [rewrite map_id in HH|]; trivial.
+      apply (f_equal (fun x => nth_error x n)) in HH.
+      rewrite  map_rev, rev_nth_error in HH by (rewrite map_length, llen; lia).
+      rewrite map_length in HH.
+      replace (length l - S n)%nat with n in HH by lia.
+      now rewrite nth_error_map in HH.
+  - destruct HH as [HH1 HH2].
+    rewrite <- (firstn_skipn (S n) l) at 2.
+    rewrite <- (firstn_skipn n l) at 1.
+    rewrite map_app, rev_app_distr.
+    f_equal; trivial.
+    case_eq (nth_error l (S n)).
+    + intros a ntha.
+      transitivity (map f (a::skipn (S n) l)).
+      *
+
+      
+    + intros HH.
+      apply nth_error_None in HH.
+      assert (n = 0) by lia.
+      subst.
+      destruct l; simpl in *; [lia |].
+      destruct l; simpl in *; [| lia].
+      congruence.
+      
+      
+    destruct l; simpl; [now rewrite skipn_nil |].
+    simpl in HH1.
+    
+    simpl in llen.
+    destruct n.
+    + simpl in *.
+      destruct l; simpl in *; congruence.
+    + rewrite skipn_cons.
+    
+
+    
+    apply (f_equal (@rev _)) in HH.
+    repeat rewrite rev_involutive in HH.
+    rewrite <- HH.
+    rewrite map_rev, map_map.
+    now erewrite map_ext; [rewrite map_id |].
+Qed.
+ *)
+
 Lemma conj_rev_even n cl :
   length cl = 2 * n ->
   map Cconj cl = rev cl <->
     map Cconj (firstn n cl) = firstn n (rev cl).
 Proof.
-  revert cl.
-  induction n.
-  - replace (2 * 0) with 0 by lia.
-    intros.
-    apply length_zero_iff_nil in H.
-    rewrite H.
-    now simpl.
-  - intros.
-    destruct cl; try easy.
-    simpl.
-    intros.
-    replace (n + 0) with n in H by lia.
-    injection H; intros.
-    generalize (rev_length cl); intros.
-    replace (n + S (n + 0)) with (S (2*n)) in H0 by lia.
-    rewrite H0 in H1.
-    case_eq (rev cl); intros.
-    + rewrite H2 in H1; simpl in H1; lia.
-    + simpl.
-      rewrite H2 in H1.
-      simpl in H1.
-      inversion H1.
-      generalize (rev_length l); intros.
-      rewrite H4 in H3.
-      specialize (IHn (rev l) H3).
-      apply (f_equal (fun ll => rev ll)) in H2.
-      simpl in H2.
-      rewrite rev_involutive in H2.
-      rewrite H2.
-      destruct IHn.
-      split; intros; inversion H7; f_equal; rewrite map_app.
-      * do 2 rewrite firstn_app.
-        replace (n - length (rev l)) with (0) by (rewrite rev_length; lia).
-        replace (n - length (map Cconj (rev l))) with (0).
-        -- simpl.
-           rewrite map_app; simpl.
-           f_equal.
-           assert (map Cconj (rev l) = rev (rev l)).
-           {
-             rewrite rev_involutive.
-             rewrite map_app in H10.
-             simpl in H10.
-             rewrite Cconj_conj in H10.
-             now apply app_inv_tail in H10.
-           }
-           rewrite H5; trivial.
-           now f_equal.
-        -- rewrite map_length, rev_length; lia.
-      * simpl.
-        rewrite Cconj_conj.
-        f_equal.
-        do 2 rewrite firstn_app in H10.
-        replace (n - length (rev l)) with (0) in H10 by (rewrite rev_length; lia).
-        replace (n - length l) with (0) in H10 by lia.
-        rewrite map_app in H10.
-        simpl in H10.
-        apply app_inv_tail in H10.
-        rewrite rev_involutive in H6.
-        now apply H6.
-Qed.
+  intros llen.
+  generalize (map_inv_rev_even n cl Cconj (Cconj_conj) llen).
+  rewrite firstn_rev.
+  now replace (length cl - n) with n by lia.
+Qed.  
 
 Lemma conj_rev_half (cl_half:list C) :
   let cl := cl_half ++ rev (map Cconj cl_half) in
@@ -1170,14 +1242,35 @@ Proof.
   rewrite <- H at 1.
   now rewrite map_rev.
 Qed.
-  
+
+
 Lemma conj_rev_odd cl n :
   length cl = 2 * n + 1 ->
   map Cconj cl = rev cl <->
     (map Cconj (firstn n cl) = rev (skipn (S n) cl) /\
       Im (nth n cl Ci) = 0%R).
 Proof.
-  Admitted.
+  intros.
+  rewrite firstn_skipn_rev.
+  rewrite H, map_rev, <- skipn_map, map_rev.
+  replace (2 * n + 1 - n) with (S n) by lia.
+  split.
+  - intros HH.
+    split.
+    + now rewrite HH, rev_involutive.
+    + apply conj_rev_rev in HH.
+      apply (f_equal (fun x => nth n x Ci)) in HH.
+      rewrite  map_rev, rev_nth in HH by (rewrite map_length, H; lia).
+      rewrite map_length in HH.
+      replace (length cl - S n)%nat with n in HH by lia.
+      rewrite (nth_indep (map Cconj cl) _ (Cconj Ci)) in HH by (rewrite map_length, H; lia).
+      rewrite map_nth in HH.
+      cut (Im (nth n cl Ci) = (- Im (nth n cl Ci)))%R; [lra |].
+      now rewrite HH at 1.
+  - intros [HH1 HH2].
+    apply (f_equal (@rev _)) in HH1.
+    repeat rewrite rev_involutive in HH1.
+Admitted.
 
 Lemma list_Cplus_conj_rev_0 (cl : list C):
   length cl < 2 ->
@@ -1260,17 +1353,87 @@ Proof.
   induction n; intuition.
 Qed.
 
+Lemma list_cons_app_hyp_even {A} (P:list A->Prop) (R:A->A->Prop)
+  (Pnil : P nil)
+  (Psmoosh : forall a z l, R a z -> R z a -> P l -> P (a::(l ++ z ::nil)))
+  : forall n (l:list A), length l = 2 * n -> Forall2 R l (rev l) -> P l.
+Proof.
+  induction n; simpl.
+  - intros [|]; simpl; congruence.
+  - intros.
+    destruct l; simpl in *; [lia |].
+    destruct l using rev_ind; simpl in *; [lia |].
+    rewrite app_length in H; simpl in H.
+    assert (eqq1:length l = 2 * n) by lia.
+    specialize (IHn _ eqq1).
+    rewrite rev_app_distr in H0.
+    simpl in H0.
+    invcs H0.
+    apply Forall2_app_tail_inv in H6.
+    destruct H6.
+    auto.
+Qed.
+
+Lemma list_cons_app_hyp_odd {A} (P:list A->Prop) (R:A->A->Prop)
+  (Psingle : forall a, R a a -> P (a :: nil))
+  (Psmoosh : forall a z l, R a z -> R z a -> P l -> P (a::(l ++ z ::nil)))
+  : forall n (l:list A), length l = 2 * n + 1 -> Forall2 R l (rev l) -> P l.
+Proof.
+  induction n; simpl.
+  - intros [|]; simpl; try lia.
+    destruct l; simpl; try lia; intros.
+    invcs H0.
+    auto.
+  - intros.
+    destruct l; simpl in *; [lia |].
+    destruct l using rev_ind; simpl in *; [lia |].
+    rewrite app_length in H; simpl in H.
+    assert (eqq1:length l = 2 * n + 1) by lia.
+    specialize (IHn _ eqq1).
+    rewrite rev_app_distr in H0.
+    simpl in H0.
+    invcs H0.
+    apply Forall2_app_tail_inv in H6.
+    destruct H6.
+    auto.
+Qed.
+
+Lemma list_cons_app_hyp {A} (P:list A->Prop) (R:A->A->Prop)
+  (Pnil : P nil)
+  (Psingle : forall a, R a a -> P (a :: nil))
+  (Psmoosh : forall a z l, R a z -> P l -> P (a::(l ++ z ::nil)))
+  : forall (l:list A), Forall2 R l (rev l) -> P l.
+Proof.
+  intros.
+  destruct (NPeano.Nat.Even_Odd_dec (length l)).
+  - destruct e.
+    eapply list_cons_app_hyp_even; eauto.
+  - destruct o.
+    eapply list_cons_app_hyp_odd; eauto.
+Qed.
+                                   
 Lemma list_Cplus_conj_rev (cl : list C):
   map Cconj cl = rev cl ->
   Im (list_Cplus cl) = 0%R.
 Proof.
-  intros.
-  pose (P := fun n => forall (cl : list C),
-                 length cl = n -> map Cconj cl = rev cl -> Im (list_Cplus cl) = 0%R).
-  apply (pair_induction P) with (n := length cl); trivial; unfold P; intros.
-  - apply (list_Cplus_conj_rev_0 cl0); trivial; lia.
-  - apply (list_Cplus_conj_rev_0 cl0); trivial; lia.
-  - apply (list_Cplus_conj_rev_recur n); trivial; lia.
+  intros HH.
+  apply (list_cons_app_hyp 
+           (fun cl => Im (list_Cplus cl) = 0%R)
+           (fun x y => Cconj x = y)).
+  - trivial.
+  - simpl; intros.
+    rewrite Cconj_im_0; trivial.
+    lra.
+  - intros.
+    simpl.
+    rewrite <- Permutation_cons_append; simpl.
+    unfold Im in *.
+    rewrite H0.
+    rewrite <- H.
+    simpl; lra.
+  - rewrite <- HH.
+    apply Forall2_map_Forall.
+    rewrite Forall_forall; trivial.
 Qed.
 
 Lemma combine_app {T} (cl1 cl2 cl1' cl2' : list T) :
