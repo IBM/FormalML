@@ -6,6 +6,38 @@ Require Import Utils.
 
 Set Bullet Behavior "Strict Subproofs".
 
+Lemma Forall2_nth_error_iff {A B} (P:A->B->Prop) (l1 : list A) (l2: list B) :
+  (forall (i : nat), match nth_error l1 i, nth_error l2 i with
+              | Some a, Some b => P a b
+              | None, None => True
+              | _, _ => False
+              end
+  ) <->
+  Forall2 P l1 l2.
+Proof.
+  split.
+  - revert l2; induction l1; destruct l2; simpl in *; trivial; intros HH.
+    + specialize (HH 0); simpl in HH; contradiction.
+    + specialize (HH 0); simpl in HH; contradiction.
+    + constructor.
+      * now specialize (HH 0); simpl in HH.
+      * apply IHl1; intros i.
+        now specialize (HH (S i)).
+  - induction 1; intros [| i]; simpl; trivial.
+    apply IHForall2.
+Qed.
+
+Lemma nth_error_eqs {A} (l1 l2 : list A) :
+  (forall (i : nat), nth_error l1 i = nth_error l2 i) ->
+  l1 = l2.
+Proof.
+  intros HH.
+  apply Forall2_eq.
+  apply Forall2_nth_error_iff; intros i.
+  rewrite HH.
+  now destruct (nth_error l2 i).
+Qed.
+
 Lemma rev_nth_error {A} (l:list A) (n:nat) :
   n < length l -> nth_error (rev l) n = nth_error l (length l - S n).
 Proof.
@@ -23,6 +55,61 @@ Proof.
     f_equal.
     lia.
 Qed.
+
+Lemma seq_nth_error [len : nat] (start : nat) [n : nat] :
+    n < len -> nth_error (seq start len) n = Some (start + n).
+Proof.
+  intros nlt.
+  rewrite (nth_error_nth' _ 0).
+  - now rewrite seq_nth.
+  - now rewrite seq_length.
+Qed.
+
+(*Lemma rev_seq0 n :
+  rev (seq 0 n) = map (fun i => (S n - i)) (seq 0 n).
+Proof.
+  apply nth_error_eqs; intros i.
+  rewrite nth_error_map.
+  destruct (lt_dec i (length (seq 0 n))).
+  - rewrite rev_nth_error by trivial.
+    rewrite seq_length in l.
+    repeat rewrite seq_nth_error; trivial
+    ; rewrite seq_length.
+    + simpl; f_equal.
+      destruct i; simpl.
+
+
+*)
+Lemma rev_seq start n :
+  rev (seq start n) = map (fun i => (S n + start - i)) (seq start n).
+Proof.
+  (*
+  apply nth_error_eqs; intros i.
+  rewrite nth_error_map.
+  destruct (lt_dec i (length (seq start n))).
+  - rewrite rev_nth_error by trivial.
+    rewrite seq_length in l.
+    repeat rewrite seq_nth_error; trivial
+    ; rewrite seq_length.
+    + simpl; f_equal.
+
+      
+    + lia.
+    
+    
+  rewrite seq_S, rev_app_distr, map_app.
+  rewrite IHn.
+
+  start=2, n=3
+             
+4,3,2
+
+(start+n+1)-i
+*)
+
+
+Admitted.
+
 
 Lemma map_skipn_S_error {A:Type} (l:list A) n a :
   nth_error l n = Some a ->
@@ -1132,7 +1219,7 @@ Proof.
   - rewrite <- (firstn_skipn n l).
     rewrite map_app, rev_app_distr.
     f_equal; trivial.
-    apply (f_equal (@rev _)) in HH.
+    apply (f_equal (rev (A:=_))) in HH.
     repeat rewrite rev_involutive in HH.
     rewrite <- HH.
     rewrite map_rev, map_map.
@@ -1499,7 +1586,7 @@ Proof.
   rewrite map_map.
   now apply map_ext.
 Qed.
-
+  
 Lemma odd_nth_roots_conj_rev n :
   let cl := map Cconj (odd_nth_roots (S n)) in
   map Cconj cl = rev cl.
@@ -1507,7 +1594,16 @@ Proof.
   simpl.
   apply map_conj_conj_rev.
   unfold odd_nth_roots.
-  Admitted.
+  rewrite <- map_rev.
+  rewrite rev_seq.
+  repeat rewrite map_map.
+  apply map_ext_in; intros.
+  rewrite plus_0_r.
+  apply in_seq in H.
+  destruct H as [_ alt].
+  rewrite plus_0_l in alt.
+
+Admitted.
 
 Lemma encode_real (cl : list C) (n : nat):
   map Cconj cl = rev cl ->
@@ -1599,6 +1695,60 @@ Proof.
   ring.
 Qed.
 
+Hint Rewrite Nat2Z.inj_mul : of_nat_re.
+Hint Rewrite Nat2Z.inj_add : of_nat_re.
+Hint Rewrite Nat2Z.inj_sub  : of_nat_re.
+Hint Rewrite Nat2Z.inj_mod : of_nat_re.
+Hint Rewrite Nat2Z.inj_pow : of_nat_re.
+Hint Rewrite Nat2Z.inj_div : of_nat_re.
+Hint Rewrite Nat2Z.inj_0 : of_nat_re.
+
+Lemma of_nat_1 : Z.of_nat 1 = 1%Z.
+Proof.
+  lia.
+Qed.
+
+Lemma of_nat_2 : Z.of_nat 2 = 2%Z.
+Proof.
+  lia.
+Qed.
+
+Hint Rewrite of_nat_1 : of_nat_re.
+Hint Rewrite of_nat_2 : of_nat_re.
+
+
+Lemma mod_odd_even x y :
+  y <> 0 ->
+  Nat.Odd x -> Nat.Even y -> Nat.Odd (x mod y).
+Proof.
+  intros.
+  rewrite Nat.mod_eq; trivial.
+  generalize (Nat.Even_mul_l y (x / y) H1); intros HH2.
+  apply Nat.odd_spec.
+  rewrite Nat.odd_sub.
+  - apply Nat.odd_spec in H0.
+    rewrite H0.
+    apply Nat.even_spec in HH2.
+    now rewrite <- Nat.negb_even, HH2.
+  - now apply Nat.mul_div_le.
+Qed.
+
+Lemma mod_even_even x y :
+  y <> 0 -> 
+  Nat.Even x -> Nat.Even y -> Nat.Even (x mod y).
+Proof.
+  intros.
+  rewrite Nat.mod_eq; trivial.
+  generalize (Nat.Even_mul_l y (x / y) H1); intros HH2.
+  apply Nat.even_spec.
+  rewrite Nat.even_sub.
+  - apply Nat.even_spec in H0.
+    rewrite H0.
+    apply Nat.even_spec in HH2.
+    now rewrite HH2.
+  - now apply Nat.mul_div_le.
+Qed.
+
 Lemma odd_nth_root_div_pow_sum_0 j k n :
   (2*j+1) mod (2^(S n)) <> (2*k+1) mod (2 ^ (S n)) ->
   let w := Cdiv (nth_root (2*j+1) (2 ^ (S n))) (nth_root (2*k+1) (2 ^ (S n))) in
@@ -1615,7 +1765,27 @@ Proof.
     rewrite nth_root_div.
     apply nth_root_not_1.
     rewrite <- H1.
-    admit.
+    intros HH.
+    apply (f_equal Z.of_nat) in HH.
+
+    autorewrite with of_nat_re in HH.
+    + rewrite <- Zdiv.Zplus_mod_idemp_r in HH.
+      rewrite <- Zdiv.Zminus_mod_idemp_l in HH.
+      rewrite Zdiv.Z_mod_same_full in HH.
+      rewrite Zdiv.Zminus_mod_idemp_r in HH.
+      rewrite Zdiv.Zplus_mod_idemp_r in HH.
+      apply H.
+      apply Nat2Z.inj.
+      autorewrite with of_nat_re.
+      apply (f_equal (fun x => (x + (2 * Z.of_nat k + 1)) mod 2 ^ Z.of_nat (S n)))%Z in HH.
+      rewrite Zplus_0_l in HH.
+      rewrite <- HH.
+      rewrite Zdiv.Zplus_mod_idemp_l.
+      f_equal.
+      lia.
+    + apply Nat.lt_le_incl.
+      apply Nat.mod_upper_bound.
+      lia.
   - unfold w.
     rewrite H1.
     rewrite nth_root_div.
@@ -1625,7 +1795,20 @@ Proof.
     assert (exists (k2 : nat),
                (2 ^ S n - (2 * k + 1) mod 2^ S n = 2*k2 + 1)).
     {
-      admit.
+      assert (odd1:Nat.Odd ((2 * k + 1) mod 2 ^ S n)).
+      {
+        apply mod_odd_even; trivial; red; eauto.
+        exists (2 ^ n).
+        simpl; lia.
+      } 
+      apply Nat.odd_spec in odd1.
+      apply Nat.odd_spec.
+      rewrite Nat.odd_sub.
+      - rewrite odd1.
+        now rewrite Nat.odd_pow by congruence.
+      - apply Nat.lt_le_incl.
+        apply Nat.mod_upper_bound.
+        lia.
     }
     destruct H2.
     rewrite H2.
@@ -1634,7 +1817,8 @@ Proof.
       ((j + x1 + 1) * (2 ^ S n)).
     + apply Nat.mod_mul; lia.
     + simpl; lia.
-  Admitted.
+Qed.
+
 
 Lemma sum_pow_div (c1 c2 : C) n :
   c1 = c2 ->
