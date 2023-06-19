@@ -1477,16 +1477,16 @@ Proof.
   intros.
   destruct (pow2_S n).
   rewrite H0.
+  destruct (pow2_S (S n)).
+  assert (nz:2 ^ (S n) <> 0) by lia.
   apply C_telescope_pow_0.
   - unfold w.
-    destruct (pow2_S (S n)).
     rewrite H1.
     rewrite nth_root_div.
     apply nth_root_not_1.
     rewrite <- H1.
     admit.
   - unfold w.
-    destruct (pow2_S (S n)).
     rewrite H1.
     rewrite nth_root_div.
     rewrite Cpow_nth_root.
