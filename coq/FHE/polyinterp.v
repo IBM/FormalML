@@ -635,19 +635,30 @@ Proof.
     apply H.
     apply (f_equal (fun cc => Cplus cc (RtoC R1))) in H1.
     now ring_simplify in H1.
- Qed.
+Qed.
 
+Lemma C_telescope_pow_0 (c : C) (n : nat) :
+  c <> R1 ->
+  Cpow c (S n) = 1%R ->
+  list_Cplus (map (fun j => Cpow c j) (seq 0 (S n))) = 0%R.
+Proof.
+  intros.
+  rewrite C_telescope_div; trivial.
+  rewrite H0.
+  field.
+  simpl.
+  unfold not; intros.
+  apply (f_equal (fun cc => (cc + 1%R)%C)) in H1.
+  now ring_simplify in H1.
+Qed.
+  
 Lemma sum_nth_roots_0 n :
   list_Cplus (map (fun j => Cpow (nth_root 1 (S (S n))) j) (seq 0 (S (S n)))) = R0.
 Proof.
-  rewrite C_telescope_div.
-  - rewrite nth_root_npow.
-    unfold Cminus.
-    rewrite Cplus_opp_r.
-    unfold Cdiv.
-    now rewrite Cmult_0_l.
+  apply C_telescope_pow_0.
   - apply nth_root_not_1.
     rewrite Nat.mod_1_l; lia.
+  - now rewrite nth_root_npow.
  Qed.
 
 Lemma sum_nth_roots_0_gen k n :
@@ -1456,4 +1467,83 @@ Proof.
   rewrite <- H.
   rewrite nth_root_half.
   ring.
+Qed.
+
+Lemma odd_nth_root_div_pow_sum_0 j k n :
+  (2*j+1) mod (2^(S n)) <> (2*k+1) mod (2 ^ (S n)) ->
+  let w := Cdiv (nth_root (2*j+1) (2 ^ (S n))) (nth_root (2*k+1) (2 ^ (S n))) in
+  list_Cplus (map (fun j => Cpow w j) (seq 0 (2^n))) = 0%R.
+Proof.
+  intros.
+  destruct (pow2_S n).
+  rewrite H0.
+  apply C_telescope_pow_0.
+  - unfold w.
+    destruct (pow2_S (S n)).
+    rewrite H1.
+    rewrite nth_root_div.
+    apply nth_root_not_1.
+    rewrite <- H1.
+    admit.
+  - unfold w.
+    destruct (pow2_S (S n)).
+    rewrite H1.
+    rewrite nth_root_div.
+    rewrite Cpow_nth_root.
+    apply nth_root_1.
+    rewrite <- H0, <- H1.
+    assert (exists (k:nat),
+               (2 * j + 1 + (2 ^ S n - (2 * k + 1) mod 2 ^ S n)) = 2*k).
+    {
+      admit.
+    }
+    destruct H2.
+    assert ((2 ^ n * (2 * j + 1 + (2 ^ S n - (2 * k + 1) mod 2 ^ S n))) = k * 2^(S n)).
+    {
+      admit.
+    }
+    rewrite H3.
+    apply Nat.mod_mul.
+    lia.
+  Admitted.
+
+Lemma sum_pow_div (c1 c2 : C) n :
+  c1 = c2 ->
+  c2 <> 0%R ->
+  list_Cplus (map (fun j => Cpow (Cdiv c1 c2) j) (seq 0 n)) = INR (n).
+Proof.
+  intros.
+  replace (map (fun j => Cpow (Cdiv c1 c2) j) (seq 0 n)) with
+    (map (fun (j:nat) => RtoC 1%R) (seq 0 n)).
+  - induction n.
+    + easy.
+    + rewrite seq_S.
+      rewrite map_app.
+      rewrite list_Cplus_app.
+      rewrite IHn.
+      rewrite S_INR.
+      simpl.
+      rewrite Cplus_0_r.
+      now rewrite RtoC_plus.
+  - apply map_ext.
+    intros.
+    rewrite H.
+    unfold Cdiv.
+    rewrite Cinv_r; trivial.
+    now rewrite Cpow_1_l.
+Qed.
+  
+Lemma odd_nth_root_div_pow_sum_1 j k n :
+  j mod (2^(S n)) = k mod (2 ^ (S n)) ->
+  let w := Cdiv (nth_root j (2 ^ (S n))) (nth_root k (2 ^ (S n))) in
+  list_Cplus (map (fun j => Cpow w j) (seq 0 (2^n))) = INR (2^n).
+Proof.
+  intros.
+  unfold w.
+  destruct (pow2_S (S n)).
+  rewrite H0.
+  apply sum_pow_div.
+  - apply nth_root_mod.
+    now rewrite <- H0.
+  - apply nth_root_not_0.
 Qed.
