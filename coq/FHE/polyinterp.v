@@ -1492,15 +1492,18 @@ Proof.
     rewrite Cpow_nth_root.
     apply nth_root_1.
     rewrite <- H0, <- H1.
-    assert (exists (m:nat),
-               ((2 ^ n * (2 * j + 1 + (2 ^ S n - (2 * k + 1) mod 2 ^ S n))) = m * 2^(S n))).
+    assert (exists (k2 : nat),
+               (2 ^ S n - (2 * k + 1) mod 2^ S n = 2*k2 + 1)).
     {
       admit.
     }
     destruct H2.
     rewrite H2.
-    apply Nat.mod_mul.
-    lia.
+    replace (2 * j + 1 + (2 *x1 + 1)) with (2 * (j + x1 + 1)) by lia.
+    replace (2 ^ n * (2 * (j + x1 + 1))) with
+      ((j + x1 + 1) * (2 ^ S n)).
+    + apply Nat.mod_mul; lia.
+    + simpl; lia.
   Admitted.
 
 Lemma sum_pow_div (c1 c2 : C) n :
