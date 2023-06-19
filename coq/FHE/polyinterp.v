@@ -1492,17 +1492,13 @@ Proof.
     rewrite Cpow_nth_root.
     apply nth_root_1.
     rewrite <- H0, <- H1.
-    assert (exists (k:nat),
-               (2 * j + 1 + (2 ^ S n - (2 * k + 1) mod 2 ^ S n)) = 2*k).
+    assert (exists (m:nat),
+               ((2 ^ n * (2 * j + 1 + (2 ^ S n - (2 * k + 1) mod 2 ^ S n))) = m * 2^(S n))).
     {
       admit.
     }
     destruct H2.
-    assert ((2 ^ n * (2 * j + 1 + (2 ^ S n - (2 * k + 1) mod 2 ^ S n))) = k * 2^(S n)).
-    {
-      admit.
-    }
-    rewrite H3.
+    rewrite H2.
     apply Nat.mod_mul.
     lia.
   Admitted.
