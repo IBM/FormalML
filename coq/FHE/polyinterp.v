@@ -1136,16 +1136,16 @@ Definition Cinner_prod (l1 l2 : list C) :=
   list_Cplus (map (fun '(a,b) => Cmult a b) (combine l1 l2)).
 
 Definition encode (cl : list C) (n : nat) :=
-  let conjroots := map Cconj (odd_nth_roots n) in
-  map (fun c => Cdiv c (2^n)%R)
+  let conjroots := map Cconj (odd_nth_roots (S n)) in
+  map (fun c => Cdiv c (2^(S n))%R)
     (map (fun k => Cinner_prod cl (map (fun x => Cpow x k) conjroots))
-       (seq 0 (2 ^n))).
+       (seq 0 (2 ^(S n)))).
 
 Definition encode_half (cl : list C) (n : nat) :=
   let conjroots := map Cconj (odd_nth_roots_half n) in
-  map (fun c => ((2 * Re c)/2^(S n))%R)
-    (map (fun k => Cinner_prod cl (map (fun x => Cpow x k) conjroots))
-       (seq 0 (2 ^n))).
+  map (fun c => Rdiv c (2^(S n))%R)
+    (map (fun k => (2 * (Re (Cinner_prod (firstn (2^n) cl) (map (fun x => Cpow x k) conjroots))))%R)
+       (seq 0 (2 ^(S n)))).
 
 Lemma Im_div_real (c : C) (r : R) :
   r <> 0%R ->
@@ -1339,6 +1339,59 @@ Proof.
   now rewrite firstn_skipn.
 Qed.
 
+Lemma list_Cplus_rev (cl : list C) :
+  list_Cplus (rev cl) = list_Cplus cl.
+Proof.
+  apply list_Cplus_perm_proper.
+  apply Permutation_sym.
+  apply Permutation_rev.
+Qed.
+
+Lemma list_Cplus_conj (cl : list C) :
+  list_Cplus (map Cconj cl) = Cconj (list_Cplus cl).
+Proof.
+  induction cl.
+  - unfold Cconj, fst, snd; simpl.
+    unfold RtoC; f_equal; lra.
+  - simpl.
+    rewrite Cplus_conj.
+    now f_equal.
+Qed.
+
+Lemma conj_rev_half_sum n (cl : list C) :
+  length cl = 2*n ->
+  map Cconj cl = rev cl ->
+  let sum_cl_half := list_Cplus (firstn n cl) in
+  list_Cplus cl = (sum_cl_half + Cconj sum_cl_half)%C.
+Proof.
+  intros.
+  rewrite (conj_rev_half_conv n cl); trivial.
+  rewrite list_Cplus_app.
+  unfold sum_cl_half.
+  f_equal.
+  rewrite list_Cplus_rev.
+  now rewrite list_Cplus_conj.
+Qed.
+
+Lemma Cplus_conj (c : C) :
+  Cplus c (Cconj c) = (2 * Re c)%R.
+Proof.
+  destruct c.
+  unfold Cplus, Cconj, RtoC, Re, fst, snd.
+  f_equal; lra.
+Qed.
+
+Lemma conj_rev_half_sum_alt n (cl : list C) :
+  length cl = 2*n ->
+  map Cconj cl = rev cl ->
+  let sum_cl_half := list_Cplus (firstn n cl) in
+  list_Cplus cl = (2*(Re sum_cl_half))%R.
+Proof.
+  intros.
+  rewrite (conj_rev_half_sum n); trivial.
+  now rewrite Cplus_conj.
+Qed.
+
 Lemma conj_rev_rev (cl : list C) :
   map Cconj cl = rev cl ->
   cl = map Cconj (rev cl).
@@ -1349,7 +1402,6 @@ Proof.
   rewrite <- H at 1.
   now rewrite map_rev.
 Qed.
-
 
 Lemma list_Cplus_conj_rev_0 (cl : list C):
   length cl < 2 ->
@@ -1581,16 +1633,27 @@ Proof.
   rewrite nth_root_inv.
   f_equal.
   rewrite <- H.
-  assert (2 * a + 1 < 2 * (2 ^ S n)) by lia.
   replace (2 ^ (S (S n))) with (2 * 2 ^ (S n)) by (simpl; lia).
   rewrite Nat.mod_small; lia.
+Qed.
+
+Lemma Cinner_prod_conj_rev (cl1 cl2 : list C) :
+  length (cl1) = length cl2 ->
+  map Cconj cl1 = rev cl1 ->
+  map Cconj cl2 = rev cl2 ->    
+  Im (Cinner_prod cl1 cl2) = 0%R.
+Proof.
+  intros.
+  unfold Cinner_prod.
+  apply list_Cplus_conj_rev.
+  apply map_mult_conj_rev; trivial.
 Qed.
 
 Lemma encode_real (cl : list C) (n : nat):
   map Cconj cl = rev cl ->
   length cl = length (odd_nth_roots (S n)) ->
   forall (x : C),
-    In x (encode cl (S n)) -> Im x = 0%R.
+    In x (encode cl n) -> Im x = 0%R.
 Proof.
   intros.
   unfold encode in H1.
@@ -1601,19 +1664,185 @@ Proof.
   assert (Im x0 = 0%R).
   {
     rewrite <- H2.
-    unfold Cinner_prod.
-    apply list_Cplus_conj_rev.
-    apply map_mult_conj_rev; trivial.
+    apply Cinner_prod_conj_rev; trivial.
+    - now do 2 rewrite map_length.
     - apply map_pow_conj_rev.
       apply odd_nth_roots_conj_rev.
-    - now do 2 rewrite map_length.
   }
   rewrite <- H1.
   apply Im_div_real; trivial.
   apply pow_nonzero.
   lra.
 Qed.
-  
+
+Lemma Re_Im (c : C) :
+  Im c = 0%R <-> c = RtoC (Re c).
+Proof.
+  destruct c.
+  unfold RtoC, Im, Re, fst, snd.
+  split; intros.
+  - now rewrite H.
+  - now inversion H.
+Qed.
+
+Lemma clist_real (cl : list C) :
+  (forall (x : C),
+      In x cl -> Im x = 0%R) ->
+  cl = map RtoC (map Re cl).
+Proof.
+  intros.
+  rewrite <- List.map_id at 1.
+  rewrite map_map.
+  apply map_ext_in.
+  intros.
+  specialize (H a H0).
+  now apply Re_Im.
+Qed.
+
+Lemma encode_real_alt (cl : list C) (n : nat):
+  map Cconj cl = rev cl ->
+  length cl = length (odd_nth_roots (S n)) ->
+  encode cl n = map RtoC (map Re (encode cl n)).
+Proof.
+  intros.
+  apply clist_real.
+  now apply encode_real.
+Qed.
+
+Lemma Re_Cmult_R_C (r : R) (c : C) :
+  Re (Cmult r c) = Rmult r (Re c).
+Proof.
+  destruct c; simpl.
+  ring.
+Qed.
+
+Lemma Re_Cmult_list_Cplus (r : R) (cl : list C) :
+  RtoC (Re (Cmult r (list_Cplus cl))) =
+    Cmult r (list_Cplus (map RtoC (map Re cl))).
+Proof.
+  intros.
+  induction cl.
+  - simpl.
+    unfold Cmult, Re, RtoC, fst, snd.
+    f_equal; lra.
+  - simpl.
+    rewrite Rmult_0_l.
+    rewrite Rminus_0_r.
+    rewrite Cmult_plus_distr_l.
+    rewrite <- IHcl.
+    rewrite <- RtoC_mult.
+    rewrite <- RtoC_plus.
+    f_equal.
+    rewrite Rmult_plus_distr_l.
+    f_equal.
+    now rewrite Re_Cmult_R_C.
+Qed.
+
+Lemma map_commute {A} (l : list A) (f g : A -> A) :
+  (forall a, f (g a) = g (f a)) ->
+  map f (map g l) = map g (map f l).
+Proof.
+  intros.
+  do 2 rewrite map_map.
+  apply map_ext.
+  apply H.
+Qed.
+
+Lemma double_Re_commute (c : C) :
+  (2 * (Re c))%R = Re (2%R * c)%C.
+Proof.
+  destruct c.
+  unfold RtoC, Re, fst, snd.
+  simpl.
+  now ring.
+Qed.
+
+Lemma div_Re_commute (c : C) (r : R) :
+  (r <> 0)%R ->
+  (Re c / r)%R = Re (c / r)%C.
+Proof.
+  intros.
+  destruct c.
+  unfold RtoC, Re, fst, snd.
+  simpl.
+  now field.
+Qed.
+
+Lemma firstn_seq n1 n2 start:
+  n1 <= n2 ->
+  firstn n1 (seq start n2) = seq start n1.
+Proof.
+  intros.
+  induction n1.
+  - now simpl.
+  - rewrite seq_S.
+    assert (n1 < n2) by lia.
+    replace n2 with (n1 + (n2 - n1)) by lia.
+    rewrite seq_app.
+    replace (S n1) with (n1 + 1) by lia.
+    replace n1 with (length (seq start n1)) at 1.
+    rewrite firstn_app_2.
+    + f_equal.
+      simpl.
+      match_case; intros.
+      * generalize (seq_not_nil (start + n1) (n2 - n1)); intros.
+        cut_to H2; try lia.
+        congruence.
+      * 
+      
+    
+  Admitted.
+
+Lemma encode_half_correct (cl : list C) (n : nat):
+    length cl = 2^S n ->
+    map Cconj cl = rev cl ->
+    encode_half cl n = map Re (encode cl n).
+Proof.
+  intros.
+  unfold encode_half, encode.
+  rewrite map_map.
+  rewrite map_map.
+  rewrite map_map.
+  apply map_ext.
+  intros.
+  rewrite double_Re_commute.
+  rewrite <- div_Re_commute; [| apply pow_nonzero; lra].
+  f_equal.
+  unfold Cinner_prod.
+  symmetry.
+  rewrite (conj_rev_half_sum_alt (2 ^ n)).
+  - rewrite double_Re_commute.
+    rewrite re_RtoC.
+    do 3 f_equal.
+    rewrite firstn_map.
+    f_equal.
+    rewrite combine_firstn.
+    f_equal.
+    rewrite firstn_map.
+    f_equal.
+    unfold odd_nth_roots, odd_nth_roots_half.
+    do 2 rewrite firstn_map.
+    do 2 f_equal.
+    apply firstn_seq.
+    simpl; lia.
+  - rewrite map_length.
+    rewrite combine_length.
+    do 2 rewrite map_length.
+    unfold odd_nth_roots.
+    rewrite map_length.
+    rewrite seq_length.
+    rewrite H.
+    apply Nat.min_id.
+  - apply map_mult_conj_rev; trivial.
+    + apply map_pow_conj_rev.
+      apply odd_nth_roots_conj_rev.
+    + rewrite map_length.
+      rewrite map_length.
+      unfold odd_nth_roots.
+      rewrite map_length.
+      now rewrite seq_length.
+ Qed.
+
 Lemma encode_decode (cl : list C) (n : nat):
   map Cconj cl = rev cl ->
   length cl = length (odd_nth_roots (S n)) ->
@@ -1623,25 +1852,6 @@ Proof.
   unfold encode.
   Admitted.
 
-Lemma encode_half_correct (cl : list C) (n : nat):
-    map Cconj cl = rev cl ->
-    encode_half cl n = map Re (encode cl (S n)).
-Proof.
-  intros.
-  unfold encode_half, encode.
-  rewrite map_map.
-  rewrite map_map.
-  rewrite map_map.
-  Admitted.
-
-Lemma Cplus_conj (c : C) :
-  Cplus c (Cconj c) = (2 * Re c)%R.
-Proof.
-  destruct c.
-  simpl.
-  unfold Cconj, RtoC, Cplus, fst, snd.
-  f_equal; lra.
-Qed.
 
 (* claim (nxn vandermonde on odd roots) x conjugate transpose = n * I. *)
 
