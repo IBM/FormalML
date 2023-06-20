@@ -1841,7 +1841,20 @@ Proof.
       unfold odd_nth_roots.
       rewrite map_length.
       now rewrite seq_length.
- Qed.
+Qed.
+
+Lemma encode_half_correct_alt (cl : list C) (n : nat):
+  length cl = 2^S n ->
+  map Cconj cl = rev cl ->
+  map RtoC (encode_half cl n) = encode cl n.
+Proof.
+  intros.
+  generalize (encode_half_correct cl n H H0); intros.
+  rewrite (encode_real_alt cl n H0).
+  - now f_equal.
+  - unfold odd_nth_roots.
+    now rewrite map_length, seq_length.
+Qed.
 
 Lemma encode_decode (cl : list C) (n : nat):
   map Cconj cl = rev cl ->
