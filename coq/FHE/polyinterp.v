@@ -1569,14 +1569,22 @@ Proof.
   unfold odd_nth_roots.
   rewrite <- map_rev.
   rewrite rev_seq.
-  repeat rewrite map_map.
+  do 2 rewrite map_map.
   apply map_ext_in; intros.
   rewrite plus_0_r.
   apply in_seq in H.
   destruct H as [_ alt].
   rewrite plus_0_l in alt.
-
-Admitted.
+  destruct (pow2_S (S (S n))); intros.
+  rewrite H.
+  rewrite nth_root_conj.
+  rewrite nth_root_inv.
+  f_equal.
+  rewrite <- H.
+  assert (2 * a + 1 < 2 * (2 ^ S n)) by lia.
+  replace (2 ^ (S (S n))) with (2 * 2 ^ (S n)) by (simpl; lia).
+  rewrite Nat.mod_small; lia.
+Qed.
 
 Lemma encode_real (cl : list C) (n : nat):
   map Cconj cl = rev cl ->
