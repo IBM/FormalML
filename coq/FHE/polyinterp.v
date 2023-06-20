@@ -152,6 +152,57 @@ Proof.
     eapply list_cons_app_hyp_odd; eauto.
 Qed.
 
+Lemma nth_error_firstn_in {A} (l:list A) n i :
+  i < n ->
+  nth_error (firstn n l) i = nth_error l i.
+Proof.
+  revert n l.
+  induction i; simpl; intros
+  ; destruct n; destruct l; simpl; trivial; try lia.
+  apply IHi; lia.
+Qed.
+
+Lemma nth_error_skipn {A} (l:list A) n i :
+  nth_error (skipn n l) i = nth_error l (n + i).
+Proof.
+  revert l i.
+  induction n; simpl; trivial; intros.
+  destruct l; trivial.
+  now rewrite nth_error_nil.
+Qed.
+
+Lemma firstn_seq n1 n2 start :
+  n1 <= n2 ->
+  firstn n1 (seq start n2) = seq start n1.
+Proof.
+  intros.
+  apply  nth_error_eqs; intros i.
+  destruct (lt_dec i n1).
+  - rewrite nth_error_firstn_in; trivial.
+    rewrite seq_nth_error by lia.
+    now rewrite seq_nth_error.
+  - destruct (nth_error_None (firstn n1 (seq start n2)) i) as [_ eqq1].
+    destruct (nth_error_None (seq start n1) i) as [_ eqq2].
+    rewrite eqq1, eqq2; trivial.
+    + rewrite seq_length; lia.
+    + rewrite firstn_length; lia.
+Qed.
+
+Lemma skipn_seq n1 n2 start :
+  skipn n1 (seq start n2) = seq (start+n1) (n2-n1).
+Proof.
+  intros.
+  apply  nth_error_eqs; intros i.
+  rewrite nth_error_skipn.
+  destruct (lt_dec (n1 + i) n2).
+  - rewrite seq_nth_error by lia.
+    rewrite seq_nth_error by lia.
+    f_equal; lia.
+  - destruct (nth_error_None ((seq start n2)) (n1 + i)) as [_ eqq1].
+    destruct (nth_error_None (seq (start + n1) (n2 - n1)) i) as [_ eqq2].
+    rewrite eqq1, eqq2; trivial
+    ; rewrite seq_length; lia.
+Qed.
 
 (* represent complex number as pair *)
 Definition nth_root (j n : nat) : C :=
@@ -1767,31 +1818,6 @@ Proof.
   simpl.
   now field.
 Qed.
-
-Lemma firstn_seq n1 n2 start:
-  n1 <= n2 ->
-  firstn n1 (seq start n2) = seq start n1.
-Proof.
-  intros.
-  induction n1.
-  - now simpl.
-  - rewrite seq_S.
-    assert (n1 < n2) by lia.
-    replace n2 with (n1 + (n2 - n1)) by lia.
-    rewrite seq_app.
-    replace (S n1) with (n1 + 1) by lia.
-    replace n1 with (length (seq start n1)) at 1.
-    rewrite firstn_app_2.
-    + f_equal.
-      simpl.
-      match_case; intros.
-      * generalize (seq_not_nil (start + n1) (n2 - n1)); intros.
-        cut_to H2; try lia.
-        congruence.
-      * 
-      
-    
-  Admitted.
 
 Lemma encode_half_correct (cl : list C) (n : nat):
     length cl = 2^S n ->
