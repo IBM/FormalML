@@ -162,6 +162,16 @@ Proof.
   apply IHi; lia.
 Qed.
 
+Lemma nth_error_firstn_nin {A} (l:list A) n i :
+  i >= n ->
+  nth_error (firstn n l) i = None.
+Proof.
+  intros.
+  apply nth_error_None.
+  rewrite firstn_length.
+  lia.
+Qed.
+
 Lemma nth_error_skipn {A} (l:list A) n i :
   nth_error (skipn n l) i = nth_error l (n + i).
 Proof.
