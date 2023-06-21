@@ -1238,10 +1238,10 @@ Definition odd_nth_roots_half (n : nat) :=
   (map (fun j => nth_root (2*j+1) (2 ^ (S (S n)))) (seq 0 (2^n))).
 
 Definition decode (p : list R) (n : nat) :=
-  map (C_horner_eval_Rpoly p) (odd_nth_roots n).
+  map (C_horner_eval_Rpoly p) (odd_nth_roots (S n)).
 
 Definition decode_eval (p : list R) (n : nat) :=
-  map (Ceval_Rpoly p) (odd_nth_roots n).
+  map (Ceval_Rpoly p) (odd_nth_roots (S n)).
 
 Definition decode_half (p : list R) (n : nat) :=
   map (C_horner_eval_Rpoly p) (odd_nth_roots_half n).
