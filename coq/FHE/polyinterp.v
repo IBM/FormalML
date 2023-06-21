@@ -1955,6 +1955,9 @@ Proof.
   rewrite map_map.
   rewrite map_map.
   unfold Ceval_Rpoly.
+  rewrite map_length.
+  rewrite seq_length.
+  
 Admitted.  
 
 Lemma encode_decode (cl : list C) (n : nat):
