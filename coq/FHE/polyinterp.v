@@ -359,7 +359,6 @@ Proof.
     now rewrite nth_root_2PI_plus.
  Qed.
 
-
 Fixpoint list_Cplus (l : list C) : C :=
   match l with
   | nil => R0
@@ -395,6 +394,14 @@ Proof.
   ring.
 Qed.  
 
+Lemma list_Cplus_Re (l : list C) :
+  Re (list_Cplus l) = list_sum (map Re l).
+Proof.
+  induction l.
+  - now simpl.
+  - simpl.
+    now rewrite <- IHl.
+Qed.
 
 Lemma prim_nth_root j n :
   nth_root j (S n) = Cpow (nth_root 1 (S n)) j.
@@ -1062,7 +1069,7 @@ Qed.
 
 Definition Ceval_Rpoly (p : list R) (c : C) :=
   let cpows := map (fun j => Cpow c j) (seq 0 (length p)) in
-  fold_right Cplus 0%R (map (fun '(a, b) => Cmult (RtoC a) b) (combine p cpows)).
+  list_Cplus (map (fun '(a, b) => Cmult (RtoC a) b) (combine p cpows)).
 
 Fixpoint C_horner_eval (p : list C) (c : C) : C :=
   match p with
@@ -1075,6 +1082,19 @@ Fixpoint C_horner_eval_Rpoly (p : list R) (c : C) : C :=
   | nil => R0
   | a :: p' => Cplus a (Cmult c (C_horner_eval_Rpoly p' c))
   end.
+
+Lemma Ceval_horner_Rpoly (p : list R) (c : C) :
+  Ceval_Rpoly p c = C_horner_eval_Rpoly p c.
+Proof.
+  induction p.
+  - now simpl.
+  - unfold Ceval_Rpoly.
+    simpl.
+    rewrite Cmult_1_r.
+    f_equal.
+    rewrite <- IHp.
+    unfold Ceval_Rpoly.
+    Admitted.
 
 Lemma pow2_S (j:nat) :
   exists (k : nat), 2^j = S k.
