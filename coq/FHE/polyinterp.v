@@ -366,6 +366,35 @@ Fixpoint list_Cplus (l : list C) : C :=
   | a :: l' => Cplus a (list_Cplus l')
   end.
 
+Lemma list_Cplus_mult_l c l :
+  (list_Cplus (map (fun a => c * a) l) = c * list_Cplus l)%C.
+Proof.
+  induction l; simpl.
+  - ring. 
+  - rewrite IHl.
+    ring.
+Qed.
+
+Lemma barry_please_rename c p :
+list_Cplus
+    (map (fun '(a0, b) => (a0 * b)%C)
+       (combine p (map (fun j : nat => (c ^ j)%C) (seq 1 (length p))))) =
+  (c *
+   list_Cplus
+     (map (fun '(a0, b) => a0 * b)
+        (combine p (map (fun j : nat => c ^ j) (seq 0 (length p))))))%C.
+Proof.
+  rewrite <- list_Cplus_mult_l.
+  rewrite <- seq_shift.
+  rewrite map_map.
+  rewrite <- (map_id p) at 1 3.
+  repeat rewrite combine_map.
+  repeat rewrite map_map.
+  f_equal.
+  apply map_ext; intros [??]; simpl.
+  ring.
+Qed.  
+
 
 Lemma prim_nth_root j n :
   nth_root j (S n) = Cpow (nth_root 1 (S n)) j.
@@ -1988,7 +2017,7 @@ Proof.
     now rewrite HH2.
   - now apply Nat.mul_div_le.
 Qed.
-
+    
 Lemma odd_nth_root_div_pow_sum_0 j k n :
   (2*j+1) mod (2^(S n)) <> (2*k+1) mod (2 ^ (S n)) ->
   let w := Cdiv (nth_root (2*j+1) (2 ^ (S n))) (nth_root (2*k+1) (2 ^ (S n))) in
