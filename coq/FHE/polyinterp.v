@@ -374,13 +374,13 @@ Proof.
     ring.
 Qed.
 
-Lemma barry_please_rename c p :
+Lemma list_cplus_mult_seq_comm c (p : list R) :
 list_Cplus
-    (map (fun '(a0, b) => (a0 * b)%C)
+    (map (fun '(a0, b) => (RtoC a0 * b)%C)
        (combine p (map (fun j : nat => (c ^ j)%C) (seq 1 (length p))))) =
   (c *
    list_Cplus
-     (map (fun '(a0, b) => a0 * b)
+     (map (fun '(a0, b) => RtoC a0 * b)
         (combine p (map (fun j : nat => c ^ j) (seq 0 (length p))))))%C.
 Proof.
   rewrite <- list_Cplus_mult_l.
@@ -1094,7 +1094,8 @@ Proof.
     f_equal.
     rewrite <- IHp.
     unfold Ceval_Rpoly.
-    Admitted.
+    now rewrite list_cplus_mult_seq_comm.
+Qed.
 
 Lemma pow2_S (j:nat) :
   exists (k : nat), 2^j = S k.
@@ -1238,6 +1239,9 @@ Definition odd_nth_roots_half (n : nat) :=
 
 Definition decode (p : list R) (n : nat) :=
   map (C_horner_eval_Rpoly p) (odd_nth_roots n).
+
+Definition decode_eval (p : list R) (n : nat) :=
+  map (Ceval_Rpoly p) (odd_nth_roots n).
 
 Definition decode_half (p : list R) (n : nat) :=
   map (C_horner_eval_Rpoly p) (odd_nth_roots_half n).
@@ -1941,15 +1945,30 @@ Proof.
     now rewrite map_length, seq_length.
 Qed.
 
+Lemma encode_decode_eval (cl : list C) (n : nat):
+  map Cconj cl = rev cl ->
+  length cl = length (odd_nth_roots (S n)) ->
+  decode_eval (map Re (encode cl n)) n = cl.
+Proof.
+  intros.
+  unfold encode, decode_eval.
+  rewrite map_map.
+  rewrite map_map.
+  unfold Ceval_Rpoly.
+Admitted.  
+
 Lemma encode_decode (cl : list C) (n : nat):
   map Cconj cl = rev cl ->
   length cl = length (odd_nth_roots (S n)) ->
   decode (map Re (encode cl n)) n = cl.
 Proof.
   intros.
-  unfold encode.
-  Admitted.
-
+  rewrite <- encode_decode_eval with (n := n); trivial.
+  unfold decode, decode_eval.
+  apply map_ext.
+  intros.
+  now rewrite Ceval_horner_Rpoly. 
+Qed.
 
 (* claim (nxn vandermonde on odd roots) x conjugate transpose = n * I. *)
 
