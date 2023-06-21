@@ -8,7 +8,7 @@ Set Bullet Behavior "Strict Subproofs".
 
 Lemma Forall2_nth_error_iff {A B} (P:A->B->Prop) (l1 : list A) (l2: list B) :
   (forall (i : nat), match nth_error l1 i, nth_error l2 i with
-              | Some a, Some b => P a b
+             | Some a, Some b => P a b
               | None, None => True
               | _, _ => False
               end
@@ -392,7 +392,7 @@ Proof.
   f_equal.
   apply map_ext; intros [??]; simpl.
   ring.
-Qed.  
+Qed.
 
 Lemma list_Cplus_Re (l : list C) :
   Re (list_Cplus l) = list_sum (map Re l).
@@ -1957,7 +1957,29 @@ Proof.
   unfold Ceval_Rpoly.
   rewrite map_length.
   rewrite seq_length.
-  
+  etransitivity.
+  - apply map_ext; intros.
+    apply list_Cplus_perm_proper.
+    rewrite combine_map.
+    rewrite combine_self.
+    repeat rewrite map_map.
+    reflexivity.
+  - apply nth_error_eqs; intros.
+    destruct (lt_dec i (length cl)).
+    + rewrite nth_error_map.
+      unfold odd_nth_roots at 2.
+      rewrite nth_error_map.
+      rewrite seq_nth_error.
+      * unfold option_map.
+        admit.
+      * unfold odd_nth_roots in H0.
+        rewrite map_length, seq_length in H0.
+        congruence.
+    + assert (length cl <= i) by lia.
+      apply nth_error_None in H1.
+      rewrite H1.
+      apply nth_error_None.
+      rewrite map_length, <- H0; lia.
 Admitted.  
 
 Lemma encode_decode (cl : list C) (n : nat):
