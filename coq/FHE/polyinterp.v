@@ -1067,6 +1067,10 @@ Proof.
   - apply nth_root_not_0.
 Qed.
 
+Definition Ceval_poly (p : list C) (c : C) :=
+  let cpows := map (fun j => Cpow c j) (seq 0 (length p)) in
+  list_Cplus (map (fun '(a, b) => Cmult a b) (combine p cpows)).
+
 Definition Ceval_Rpoly (p : list R) (c : C) :=
   let cpows := map (fun j => Cpow c j) (seq 0 (length p)) in
   list_Cplus (map (fun '(a, b) => Cmult (RtoC a) b) (combine p cpows)).
@@ -1242,6 +1246,9 @@ Definition decode (p : list R) (n : nat) :=
 
 Definition decode_eval (p : list R) (n : nat) :=
   map (Ceval_Rpoly p) (odd_nth_roots (S n)).
+
+Definition decode_Ceval (p : list C) (n : nat) :=
+  map (Ceval_poly p) (odd_nth_roots (S n)).
 
 Definition decode_half (p : list R) (n : nat) :=
   map (C_horner_eval_Rpoly p) (odd_nth_roots_half n).
@@ -1945,6 +1952,174 @@ Proof.
     now rewrite map_length, seq_length.
 Qed.
 
+Definition peval_mat (l : list C) :=
+  let n := length l in
+  map (fun c => map (fun k => Cpow c k) (seq 0 n)) l.
+
+Definition conj_mat (m : list (list C)) :=
+  map (fun cl => map Cconj cl) m.
+
+Definition transpose_mat (m : list (list C)) :=
+  let n := length m in
+  map (fun k =>
+         map (fun cl => nth k cl (RtoC 0%R)) m)
+    (seq 0 n).
+
+Definition mat_vec_mult (m : list (list C)) (v : list C) :=
+  map (fun ml => Cinner_prod ml v) m.
+
+Definition vec_mat_mult (v : list C) (m : list (list C)) :=
+  map (fun cl => Cinner_prod v cl) (transpose_mat m).
+
+Definition mat_mat_mult (m1 m2 : list (list C)) :=
+  map (fun v => mat_vec_mult m1 v) (transpose_mat m2).
+
+Lemma mmv_mult_assoc_row (m2: list (list C)) (r1 v : list C) :
+  length r1 = length m2 ->
+  (forall r2, In r2 m2 -> length r2 = length v) ->
+  Cinner_prod r1 (mat_vec_mult m2 v) =
+    Cinner_prod (vec_mat_mult r1 m2) v.
+Proof.
+  intros.
+  unfold mat_vec_mult, vec_mat_mult.
+  unfold Cinner_prod.
+  f_equal.
+
+  Admitted.
+
+Lemma mmv_mult_assoc (m1 m2: list (list C)) (v : list C) :
+  (forall r1, In r1 m1 -> length r1 = length m2) ->
+  (forall r2, In r2 m2 -> length r2 = length v) ->
+  mat_vec_mult m1 (mat_vec_mult m2 v) =
+    mat_vec_mult (mat_mat_mult m1 m2) v.
+Proof.
+  intros.
+  unfold mat_mat_mult.
+  unfold mat_vec_mult at 1.
+  replace (map (fun ml => Cinner_prod ml (mat_vec_mult m2 v)) m1) with
+    (map (fun r1 =>    
+           Cinner_prod (vec_mat_mult r1 m2) v) m1).
+  - unfold vec_mat_mult, mat_vec_mult.
+    unfold Cinner_prod.
+    admit.
+  - apply map_ext_in.
+    intros.
+    rewrite mmv_mult_assoc_row; trivial.
+    now specialize (H a H1).
+
+Admitted.
+
+Lemma map_Cmult_combine_comm l1 l2 :
+  map (fun '(a0, b) => (a0 * b)%C) (combine l1 l2) =
+  map (fun '(a0, b) => (a0 * b)%C) (combine l2 l1).
+Proof.
+  rewrite combine_swap.
+  rewrite map_map.
+  apply map_ext.
+  intros.
+  destruct a.
+  unfold fst, snd.
+  now rewrite Cmult_comm.
+Qed.
+
+Lemma peval_mat_decode_Ceval (p : list C) n :
+  length p = length (odd_nth_roots (S n)) ->
+  decode_Ceval p n =
+    mat_vec_mult (peval_mat (odd_nth_roots (S n))) p.
+Proof.
+  intros.
+  unfold decode_Ceval, mat_vec_mult, peval_mat, Ceval_poly.
+  rewrite map_map.
+  apply map_ext.
+  intros.
+  unfold Cinner_prod.
+  apply list_Cplus_perm_proper, refl_refl.
+  rewrite map_Cmult_combine_comm.
+  now rewrite <- H.
+Qed.
+
+Lemma map_Cinv_l (lc : list C) (c : C) :
+  c <> 0%R ->
+  map (fun x => (x / c * c)%C) lc = lc.
+Proof.
+  intros.
+  replace lc with (map (fun (x : C) => x) lc) at 2.
+  - apply map_ext.
+    intros.
+    unfold Cdiv.
+    rewrite <- Cmult_assoc.
+    rewrite Cinv_l; trivial.
+    now rewrite Cmult_1_r.
+  - now rewrite map_id.
+Qed.
+
+Lemma nth_map_seq {A} (f : nat -> A) (d : A) (a m : nat) :
+  In a (seq 0 m) ->
+  nth a (map f (seq 0 m)) d = f a.
+Proof.
+  intros.
+  induction m.
+  - now simpl in H.
+  - rewrite seq_S.
+    rewrite map_app.
+    destruct (lt_dec a m).
+    + simpl.
+      rewrite app_nth1.
+      * rewrite IHm; trivial.
+        rewrite in_seq; lia.
+      * now rewrite map_length, seq_length.
+    + rewrite in_seq in H.
+      assert (a = m) by lia.
+      rewrite H0.
+      simpl.
+      rewrite app_nth2.
+      * rewrite map_length, seq_length.
+        now replace (m - m) with 0 by lia.
+      * rewrite map_length, seq_length; lia.
+Qed.
+
+Lemma conj_trans_mat_encode (cl : list C) n :
+  length cl = length (odd_nth_roots (S n)) ->
+  map (fun c => Cmult c (2^(S n))%R) (encode cl n) =
+    mat_vec_mult (conj_mat (transpose_mat (peval_mat (odd_nth_roots (S n)))))
+      cl.
+  Proof.
+    intros.
+    unfold encode.
+    rewrite map_map.
+    assert (length (odd_nth_roots (S n)) = 2^(S n)).
+    {
+      unfold odd_nth_roots.
+      now rewrite map_length, seq_length.
+    }
+    rewrite map_Cinv_l.
+    - unfold mat_vec_mult, conj_mat.
+      rewrite map_map.
+      unfold transpose_mat.
+      rewrite map_map.
+      unfold peval_mat.
+      rewrite map_length.
+      rewrite H0.
+      apply map_ext_in.
+      intros.
+      unfold Cinner_prod.
+      apply list_Cplus_perm_proper, refl_refl.
+      rewrite map_Cmult_combine_comm.
+      do 2 f_equal.
+      do 3 rewrite map_map.
+      apply map_ext.
+      intros.
+      rewrite <- Cpow_conj.
+      f_equal.
+      now rewrite nth_map_seq.
+    - unfold RtoC.
+      unfold not; intros.
+      replace (S n) with (n + 1) in H1 by lia.
+      injection H1; intros.
+      generalize (pow_nonzero 2 (n+1)); intros.
+      cut_to H3; lra.
+ Qed.
+
 Lemma encode_decode_eval (cl : list C) (n : nat):
   map Cconj cl = rev cl ->
   length cl = length (odd_nth_roots (S n)) ->
@@ -2193,3 +2368,43 @@ Proof.
     now rewrite <- H0.
   - apply nth_root_not_0.
 Qed.
+
+Lemma conj_transpose (m : list (list C)) :
+  conj_mat (transpose_mat m) = transpose_mat (conj_mat m).
+Proof.
+  unfold conj_mat, transpose_mat.
+  rewrite map_map, map_length.
+  apply map_ext; intros.
+  do 2 rewrite map_map.
+  apply map_ext; intros.
+  replace (RtoC 0%R) with (Cconj 0%R) at 2.
+  - now rewrite map_nth.
+  - unfold Cconj, RtoC, fst, snd.
+    f_equal; lra.
+ Qed.
+
+Lemma transpose_involutive (m : list (list C)) :
+  transpose_mat (transpose_mat m) = m.
+Proof.
+  unfold transpose_mat.
+  rewrite map_length.
+  rewrite seq_length.
+  
+  Admitted.
+
+Lemma deocde_mat_encode_mat (cl : list C) (n : nat):
+  length cl = length (odd_nth_roots (S n)) ->
+  let pmat := (peval_mat (odd_nth_roots (S n))) in
+  mat_vec_mult (mat_mat_mult pmat (conj_mat (transpose_mat pmat))) cl =
+    map (fun c => Cmult c (2^(S n))%R) cl.
+Proof.
+  intros.
+  unfold mat_vec_mult, mat_mat_mult.
+  rewrite conj_transpose.
+  rewrite transpose_involutive.
+  rewrite map_map.
+  unfold mat_vec_mult.
+  unfold pmat.
+  Admitted.
+  
+                             
