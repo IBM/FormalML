@@ -2392,6 +2392,44 @@ Proof.
   
   Admitted.
 
+Lemma deocde_mat_encode_mat_on_diag (n : nat):
+  let pmat := (peval_mat (odd_nth_roots (S n))) in
+  let prod := mat_mat_mult pmat (conj_mat (transpose_mat pmat)) in
+  forall n,
+    n < length prod ->
+    nth n (nth n prod nil) 0%R = RtoC (2^S n)%R.
+Proof.
+  intros.
+  unfold prod, mat_mat_mult.
+  rewrite conj_transpose.
+  rewrite transpose_involutive.
+  unfold mat_vec_mult.
+  unfold pmat, peval_mat, conj_mat.
+  do 2 rewrite map_map.
+    
+Admitted.
+  
+Lemma deocde_mat_encode_mat_off_diag (n : nat):
+  let pmat := (peval_mat (odd_nth_roots (S n))) in
+  let prod := mat_mat_mult pmat (conj_mat (transpose_mat pmat)) in
+  forall i j,
+    i < length prod ->
+    j < length prod ->
+    i <> j ->
+    nth i (nth j prod nil) 0%R = 0%R.
+Proof.
+  intros.
+  unfold prod, mat_mat_mult.
+  rewrite conj_transpose.
+  rewrite transpose_involutive.
+  unfold mat_vec_mult.
+  unfold pmat, peval_mat, conj_mat.
+  do 2 rewrite map_map.
+  
+
+Admitted.
+
+
 Lemma deocde_mat_encode_mat (cl : list C) (n : nat):
   length cl = length (odd_nth_roots (S n)) ->
   let pmat := (peval_mat (odd_nth_roots (S n))) in
