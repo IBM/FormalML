@@ -1984,6 +1984,8 @@ Proof.
   unfold mat_vec_mult, vec_mat_mult.
   unfold Cinner_prod.
   f_equal.
+  
+  
 
   Admitted.
 
@@ -2001,6 +2003,7 @@ Proof.
            Cinner_prod (vec_mat_mult r1 m2) v) m1).
   - unfold vec_mat_mult, mat_vec_mult.
     unfold Cinner_prod.
+    rewrite map_map.
     admit.
   - apply map_ext_in.
     intros.
