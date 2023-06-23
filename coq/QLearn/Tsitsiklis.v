@@ -7238,11 +7238,9 @@ End FixedPoint_contract.
      generalize (@dep_product_ps X (const Y) A (const B) psA psB psB_rv); intros HH.
      generalize (pullback_ps _ (product_sa A B) HH); intros HH2.
      apply (HH2 (fun '(existT a b) => (a, b))).
-     Search dep_product_sa.
      generalize dep_product_sa_sa; intros.
      unfold product_sa, dep_product_sa.
      intros ?.
-     Search generated_sa.
      
    Admitted.
 (*   
