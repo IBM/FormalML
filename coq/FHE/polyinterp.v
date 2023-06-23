@@ -214,6 +214,19 @@ Proof.
     ; rewrite seq_length; lia.
 Qed.
 
+Lemma combine_nth_error [A B : Type] (l : list A) (l' : list B) (n : nat) :
+  length l = length l' -> nth_error (combine l l') n = match nth_error l n, nth_error l' n with
+                                                      | Some x, Some y => Some (x,y)
+                                                      | _, _ => None
+                                                      end.
+Proof.
+  revert l l'.
+  induction n; destruct l; destruct l'; simpl; try congruence.
+  intros.
+  apply IHn; congruence.
+Qed.
+
+
 (* represent complex number as pair *)
 Definition nth_root (j n : nat) : C :=
   let c := (2*PI*INR(j)/INR(n))%R in 
@@ -1984,9 +1997,6 @@ Proof.
   unfold mat_vec_mult, vec_mat_mult.
   unfold Cinner_prod.
   f_equal.
-  
-  
-
   Admitted.
 
 Lemma mmv_mult_assoc (m1 m2: list (list C)) (v : list C) :
