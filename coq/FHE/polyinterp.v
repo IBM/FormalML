@@ -3,6 +3,7 @@ Require Import Coquelicot.Complex.
 Require Import List.
 Require Import Lra Lia.
 Require Import Utils.
+Require Import Vector.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -1251,6 +1252,9 @@ Qed.
 Definition odd_nth_roots (n : nat) :=
   (map (fun j => nth_root (2*j+1) (2 ^ (S n))) (seq 0 (2^n))).
 
+Definition V_odd_nth_roots (n : nat) : Vector C (2^n) :=
+  fun j => nth_root (2 * (proj1_sig j) + 1) (2 ^ (S n)).
+
 Definition odd_nth_roots_half (n : nat) :=
   (map (fun j => nth_root (2*j+1) (2 ^ (S (S n)))) (seq 0 (2^n))).
 
@@ -1969,8 +1973,17 @@ Definition peval_mat (l : list C) :=
   let n := length l in
   map (fun c => map (fun k => Cpow c k) (seq 0 n)) l.
 
+Definition V_peval_mat {n} (roots : Vector C n) : Matrix C n n :=
+  (fun n1 n2 => Cpow (roots n1) (proj1_sig n2)).
+
 Definition conj_mat (m : list (list C)) :=
   map (fun cl => map Cconj cl) m.
+
+Definition V_conj_mat {n1 n2} (m : Matrix C n1 n2) :=
+  fun n1' n2' => Cconj (m n1' n2').
+
+Definition V_inv_mat {n1 n2} (m : Matrix C n1 n2) :=
+  fun n1' n2' => Cinv (m n1' n2').
 
 Definition transpose_mat (m : list (list C)) :=
   let n := length m in
@@ -1981,11 +1994,26 @@ Definition transpose_mat (m : list (list C)) :=
 Definition mat_vec_mult (m : list (list C)) (v : list C) :=
   map (fun ml => Cinner_prod ml v) m.
 
+Definition vector_sum {n} (v : Vector C n) :=
+  vector_fold_right Cplus 0%R v.
+
+Definition V_inner_prod {n} (v1 v2 : Vector C n) :=
+  vector_sum (fun n' => Cmult (v1 n') (v2 n')).
+
+Definition V_mat_vec_mult {n1 n2} (m  : Matrix C n1 n2) (v : Vector C n2) :=
+  fun n' => V_inner_prod (m n') v.
+    
 Definition vec_mat_mult (v : list C) (m : list (list C)) :=
   map (fun cl => Cinner_prod v cl) (transpose_mat m).
 
+Definition V_vec_mat_mult {n1 n2} (v : Vector C n1) (m : Matrix C n1 n2) :=
+  fun n' => V_inner_prod v ((transpose m) n').
+
 Definition mat_mat_mult (m1 m2 : list (list C)) :=
   map (fun v => mat_vec_mult m1 v) (transpose_mat m2).
+
+Definition V_mat_mat_mult {n1 n2 n3} (m1: Matrix C n1 n2) (m2 : Matrix C n2 n3) :=
+  (fun n1' n3' => V_inner_prod (m1 n1') ((transpose m2) n3')).
 
 Lemma mmv_mult_assoc_row (m2: list (list C)) (r1 v : list C) :
   length r1 = length m2 ->
@@ -1997,7 +2025,95 @@ Proof.
   unfold mat_vec_mult, vec_mat_mult.
   unfold Cinner_prod.
   f_equal.
+Admitted.
+
+Definition Vscale {n} (r : C) (v : Vector C n) :=
+  fun n' => Cmult r (v n').
+
+Definition Vscale_r {n} (r : C) (v : Vector C n) :=
+  fun n' => Cmult (v n') r.
+
+Lemma vector_sum_scale {n} (c : C) (v : Vector C n) :
+  Cmult c (vector_sum v) = vector_sum (Vscale c v).
+Proof.
+  unfold vector_sum, Vscale.
+  induction n.
+  - unfold vector_fold_right, vector_fold_right_dep, vector_fold_right_bounded_dep.
+    simpl.
+    now rewrite Cmult_0_r.
+  - rewrite vector_fold_right_Sn.
+    rewrite Cmult_plus_distr_l.
+    rewrite IHn.
+    now rewrite vector_fold_right_Sn.
+Qed.
+
+Lemma vector_sum_scale_r {n} (v : Vector C n) (c : C) :
+  Cmult (vector_sum v) c = vector_sum (Vscale_r c v).
+Proof.
+  unfold vector_sum, Vscale.
+  induction n.
+  - unfold vector_fold_right, vector_fold_right_dep, vector_fold_right_bounded_dep.
+    simpl.
+    now rewrite Cmult_0_l.
+  - rewrite vector_fold_right_Sn.
+    rewrite Cmult_plus_distr_r.
+    rewrite IHn.
+    now rewrite vector_fold_right_Sn.
+Qed.
+
+Definition vmap' {A B} {n} (f:A->B) (v:Vector A n) : Vector B n
+  := fun n' => f (v n').
+
+Definition mmap' {A B} {m n} (f:A->B) (mat:Matrix A m n) : Matrix B m n
+    := fun n1' n2' => f (mat n1' n2').
+
+Lemma vector_sum_const {n} (c : C) :
+  vector_sum (ConstVector n c) = Cmult (RtoC (INR n)) c.
+Proof.
+  unfold vector_sum, ConstVector.
+  induction n.
+  - unfold vector_fold_right, vector_fold_right_dep, vector_fold_right_bounded_dep.
+    simpl.
+    now rewrite Cmult_0_l.
+  - rewrite vector_fold_right_Sn.
+    unfold vlast, vdrop_last.
+    rewrite S_INR.
+    replace  ((INR n + 1)%R * c)%C with
+      (c + (INR n) * c)%C.
+    + f_equal.
+      rewrite <- IHn.
+      f_equal.
+      apply FunctionalExtensionality.functional_extensionality.        
+      intros.
+      now destruct x.
+    + unfold RtoC.
+      destruct c.
+      unfold Cplus, Cmult, fst, snd.
+      f_equal; lra.
+ Qed.
+
+Lemma vector_sum_sum {n1 n2} (m : Matrix C n1 n2) :
+  vector_sum (fun n' => vector_sum (m n')) =
+  vector_sum (fun n'' => vector_sum ((transpose m) n'')).
+Proof.
+  unfold transpose.
+  unfold vector_sum.
+Admitted.
+
+Lemma V_mmv_mult_assoc {n1 n2 n3} 
+  (m1 : Matrix C n1 n2)
+  (m2: Matrix C n2 n3)
+  (v : Vector C n3) :
+  V_mat_vec_mult m1 (V_mat_vec_mult m2 v) =
+    V_mat_vec_mult (V_mat_mat_mult m1 m2) v.
+Proof.
+  intros.
+  unfold V_mat_vec_mult, V_mat_mat_mult.
+  unfold V_inner_prod, transpose.
+  apply FunctionalExtensionality.functional_extensionality.  
+  intros.
   Admitted.
+
 
 Lemma mmv_mult_assoc (m1 m2: list (list C)) (v : list C) :
   (forall r1, In r1 m1 -> length r1 = length m2) ->
@@ -2394,7 +2510,14 @@ Proof.
   - now rewrite map_nth.
   - unfold Cconj, RtoC, fst, snd.
     f_equal; lra.
- Qed.
+Qed.
+
+Lemma V_conj_transpose {n} (m : Matrix C n n) :
+  V_conj_mat (transpose m) = transpose (V_conj_mat m).
+Proof.
+  unfold V_conj_mat, transpose.
+  easy.
+Qed.
 
 Lemma transpose_involutive (m : list (list C)) :
   transpose_mat (transpose_mat m) = m.
@@ -2402,14 +2525,33 @@ Proof.
   unfold transpose_mat.
   rewrite map_length.
   rewrite seq_length.
-  
+  apply nth_error_eqs; intros.
+  rewrite nth_error_map.
+  destruct (lt_dec i (length m)).
+  - rewrite seq_nth_error; trivial.
+    unfold option_map.
+    rewrite nth_error_nth' with (d := nil); trivial.
+    f_equal.
+    rewrite map_map.
+    
+    admit.
+  - unfold option_map.
+    assert (length m <= i) by lia.
+    apply nth_error_None in H.
+    rewrite H.
+    assert (i >= length (seq 0 (length m))).
+    {
+      rewrite seq_length; lia.
+    }
+    apply nth_error_None in H0.
+    now rewrite H0.
   Admitted.
 
 Lemma deocde_mat_encode_mat_on_diag (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   let prod := mat_mat_mult pmat (conj_mat (transpose_mat pmat)) in
   forall n,
-    n < length prod ->
+(*    n < length prod -> *)
     nth n (nth n prod nil) 0%R = RtoC (2^S n)%R.
 Proof.
   intros.
@@ -2422,12 +2564,111 @@ Proof.
     
 Admitted.
   
+Lemma V_transpose_involutive {T} {n1 n2} (m : Matrix T n1 n2) :
+  transpose (transpose m) = m.
+Proof.
+  now unfold transpose.
+Qed.
+
+Lemma nth_root_conj_alt j n :
+  Cconj (nth_root j (S n)) = nth_root (S n - j mod (S n)) (S n).
+Proof.
+  rewrite nth_root_conj.
+  now rewrite nth_root_inv.
+Qed.
+
+Lemma vector_sum_list_Cplus {n} (v : Vector C n) :
+  vector_sum v = list_Cplus (vector_to_list v).
+Proof.
+  Admitted.
+
+Lemma V_telescope_pow_0 (c : C) (n : nat) :
+  c <> R1 ->
+  Cpow c (S n) = 1%R ->
+  vector_sum (fun (j : { j | j < S n}) => Cpow c (proj1_sig j)) = 0%R.
+Proof.
+  intros.
+  generalize (C_telescope_pow_0 c n H H0); intros.
+  rewrite <- H1.
+
+Admitted.
+
+Lemma V_deocde_mat_encode_mat_off_diag (n : nat):
+  let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
+  let prod := V_mat_mat_mult pmat (V_conj_mat (transpose pmat)) in
+  forall i j,
+    i <> j ->
+    prod i j = 0%R.
+Proof.
+  intros.
+  unfold prod.
+  rewrite V_conj_transpose.
+  unfold V_mat_mat_mult, V_conj_mat.
+  rewrite V_transpose_involutive.
+  unfold pmat.
+  unfold V_inner_prod.
+  unfold V_peval_mat.
+  unfold V_odd_nth_roots.
+  destruct i.
+  destruct j.
+  unfold proj1_sig.
+  generalize (V_telescope_pow_0  (Cmult (nth_root (2 * x + 1) (2 ^ S (S n)))
+                                        (Cconj (nth_root (2 * x0 + 1) (2 ^ S (S n)))))
+                                 (2 ^ (S n))
+             ); intros.
+  rewrite <- H0.
+  - admit.
+  - admit.
+  - admit.
+  Admitted.
+
+Lemma root_conj_power_inv i j n :
+  Cmult (Cpow (nth_root i (S n)) j) 
+        (Cconj (Cpow (nth_root i (S n)) j)) = 1%R.
+Proof.
+  Search nth_root.
+  rewrite Cpow_nth_root.
+  now rewrite mult_conj_root.
+Qed.
+
+Lemma V_deocde_mat_encode_mat_on_diag (n : nat):
+  let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
+  let prod := V_mat_mat_mult pmat (V_conj_mat (transpose pmat)) in
+  forall n0,
+    prod n0 n0 = RtoC (2^S n)%R.
+Proof.
+  intros.
+  unfold prod.
+  rewrite V_conj_transpose.
+  unfold V_mat_mat_mult, V_conj_mat.
+  rewrite V_transpose_involutive.
+  unfold pmat.
+  unfold V_inner_prod.
+  replace  (fun n' : {n' : nat | n' < 2 ^ S n} =>
+     (V_peval_mat (V_odd_nth_roots (S n)) n0 n' *
+        Cconj (V_peval_mat (V_odd_nth_roots (S n)) n0 n'))%C) with
+   (ConstVector (2 ^ S n) (RtoC 1%R)).
+  - rewrite vector_sum_const.
+    rewrite Cmult_1_r.
+    f_equal.
+    now rewrite pow_INR.
+  - apply FunctionalExtensionality.functional_extensionality.
+    intros.
+    unfold ConstVector.
+    unfold V_peval_mat.
+    unfold V_odd_nth_roots.
+    destruct (pow2_S (S (S n))).
+    rewrite H.
+    now rewrite root_conj_power_inv.
+ Qed.
+
 Lemma deocde_mat_encode_mat_off_diag (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   let prod := mat_mat_mult pmat (conj_mat (transpose_mat pmat)) in
   forall i j,
-    i < length prod ->
+(*    i < length prod ->
     j < length prod ->
+*)
     i <> j ->
     nth i (nth j prod nil) 0%R = 0%R.
 Proof.
