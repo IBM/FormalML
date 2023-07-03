@@ -2582,6 +2582,14 @@ Lemma vector_sum_list_Cplus {n} (v : Vector C n) :
 Proof.
   Admitted.
 
+Lemma list_Cplus_vector_sum (l : list C) :
+  list_Cplus l = vector_sum (list_to_vector l).
+Proof.
+  unfold list_to_vector.
+  unfold vector_sum.
+Admitted.    
+
+
 Lemma V_telescope_pow_0 (c : C) (n : nat) :
   c <> R1 ->
   Cpow c (S n) = 1%R ->
@@ -2590,14 +2598,31 @@ Proof.
   intros.
   generalize (C_telescope_pow_0 c n H H0); intros.
   rewrite <- H1.
+  rewrite vector_sum_list_Cplus.
+  apply list_Cplus_perm_proper.
+  unfold vector_to_list.
 
 Admitted.
+
+Lemma nat_mod_mul a b c :
+  (a * c) <> 0 ->
+  b mod c = 0 ->
+  (a * b) mod (a * c) = 0.
+Proof.
+  intros.
+  generalize (Nat.div_mod_eq b c); intros.
+  rewrite H0 in H1.
+  replace (c * (b / c) + 0) with (c * (b / c)) in H1 by lia.
+  rewrite H1.
+  replace (a * (c * (b / c))) with ((b/c) * (a * c)) by lia.
+  now rewrite Nat.mod_mul.
+Qed.
 
 Lemma V_deocde_mat_encode_mat_off_diag (n : nat):
   let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
   let prod := V_mat_mat_mult pmat (V_conj_mat (transpose pmat)) in
   forall i j,
-    i <> j ->
+    proj1_sig i <> proj1_sig j ->
     prod i j = 0%R.
 Proof.
   intros.
@@ -2611,15 +2636,86 @@ Proof.
   unfold V_odd_nth_roots.
   destruct i.
   destruct j.
-  unfold proj1_sig.
-  generalize (V_telescope_pow_0  (Cmult (nth_root (2 * x + 1) (2 ^ S (S n)))
-                                        (Cconj (nth_root (2 * x0 + 1) (2 ^ S (S n)))))
-                                 (2 ^ (S n))
+  unfold proj1_sig in *.
+  destruct (pow2_S (S n)).
+  rewrite H0.
+  destruct (pow2_S (S (S n))).
+  rewrite H1.
+  generalize (V_telescope_pow_0  (Cmult (nth_root (2 * x + 1) (S x2))
+                                        (Cconj (nth_root (2 * x0 + 1) (S x2))))
+                                 x1
              ); intros.
-  rewrite <- H0.
-  - admit.
-  - admit.
-  - admit.
+  rewrite <- H2.
+  - f_equal.
+    apply FunctionalExtensionality.functional_extensionality.
+    intros.
+    destruct x3.
+    simpl.
+    now rewrite Cpow_mult_l, Cpow_conj.
+  - rewrite nth_root_conj_alt.
+    rewrite nth_root_mul.
+    apply nth_root_not_1.
+    rewrite <- H1.
+    assert (2 * x + 1 < 2 ^ (S (S n))).
+    {
+      simpl.
+      simpl in l.
+      lia.
+    }
+    assert (2 * x0 + 1 < 2 ^ (S (S n))).
+    {
+      simpl.
+      simpl in l0.
+      lia.
+    }
+    intros HH.
+    apply (f_equal Z.of_nat) in HH.
+    autorewrite with of_nat_re in HH; [|rewrite Nat.mod_small; lia].
+    admit.
+
+  - rewrite nth_root_conj_alt.
+    rewrite nth_root_mul.
+    generalize nth_root_1; intros.
+    rewrite Cpow_nth_root.
+    apply nth_root_1.
+    rewrite <- H0, <- H1.
+    replace (2 ^ (S (S n))) with ((2 ^ S n)*2) by (simpl;lia).
+    rewrite nat_mod_mul; try lia.
+    rewrite Nat.add_mod; try lia.
+    assert ((2 * x + 1) mod 2 = 1).
+    {
+      rewrite Nat.add_mod; try lia.
+      replace (2 * x) with (x * 2) by lia.
+      rewrite Nat.mod_mul; try lia.
+      now simpl.
+    }
+    rewrite H4.
+    assert (exists (k : nat),
+               (2 ^ S n * 2 - (2 * x0 + 1) mod (2^ S n * 2) = 2 * k + 1)).
+    {
+      assert (odd1:Nat.Odd ((2 * x0 + 1) mod (2 ^ S n * 2))).
+      {
+        apply mod_odd_even; trivial; red; eauto; try lia.
+        exists (2 ^ S n).
+        simpl; lia.
+      } 
+      apply Nat.odd_spec in odd1.
+      apply Nat.odd_spec.
+      rewrite Nat.odd_sub.
+      - rewrite odd1.
+        rewrite Nat.odd_mul.
+        now rewrite Nat.odd_pow by congruence.
+      - apply Nat.lt_le_incl.
+        apply Nat.mod_upper_bound.
+        lia.
+    }
+    destruct H5.
+    rewrite H5.
+    replace (2 * x3 + 1) with (1 + x3 * 2) by lia.
+    replace ((1 + x3 * 2) mod 2) with 1; [now simpl | ].
+    rewrite Nat.add_mod; try lia.
+    rewrite Nat.mod_mul; try lia.
+    simpl; lia.
   Admitted.
 
 Lemma root_conj_power_inv i j n :
