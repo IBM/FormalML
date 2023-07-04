@@ -2824,10 +2824,60 @@ Proof.
   unfold pmat.
   Admitted.
   
-Lemma vector_sum_all_but_1_0 n i c :
-  vector_sum (fun (n' : {n' : nat | n' < n}) => if eq_nat_decide i (proj1_sig n') then c else 0%R) = c.
-  Proof.
-    Admitted.
+Lemma vector_sum_all_but_1_0 n (i : {i : nat | i < n}) c :
+  vector_sum (fun (n' : {n' : nat | n' < n}) => if eq_nat_decide (proj1_sig i) (proj1_sig n') then c else 0%R) = c.
+Proof.
+  unfold vector_sum.
+  induction n.
+  - unfold vector_fold_right.
+    unfold vector_fold_right_dep.
+    unfold vector_fold_right_bounded_dep.
+    simpl.
+    destruct i.
+    lia.
+  - rewrite vector_fold_right_Sn.
+    destruct (Compare_dec.lt_dec (proj1_sig i) n).
+    + unfold vlast, proj1_sig.
+      destruct i.
+      unfold proj1_sig in l.
+      match_destr.
+      * apply eq_nat_eq in e.
+        lia.
+      * specialize (IHn (exist _ x l)).
+        rewrite Cplus_0_l.
+        unfold vdrop_last.
+        rewrite <- IHn at 1.
+        apply vector_fold_right_ext.
+        unfold vec_eq.
+        intros.
+        now destruct i.
+    + unfold vlast, proj1_sig.
+      destruct i.
+      unfold proj1_sig in n0.
+      assert (x = n) by lia.
+      rewrite H.
+      unfold vdrop_last.
+      match_destr.
+      * replace (vector_fold_right Cplus 0%R
+                   (fun H0 : {n' : nat | n' < n} =>
+                      let (x0, _) := H0 in if eq_nat_decide n x0 then c else 0%R))%C
+          with (RtoC (0%R)).
+        -- now rewrite Cplus_0_r.
+        -- assert (RtoC (0%R) = vector_sum (ConstVector n (RtoC (0%R)))).
+           {
+             rewrite vector_sum_const.
+             now rewrite Cmult_0_r.
+           }
+           rewrite H0 at 1.
+           unfold vector_sum, ConstVector.
+           apply vector_fold_right_ext.
+           unfold vec_eq.
+           intros.
+           destruct i.
+           match_destr.
+           apply eq_nat_eq in e0; lia.
+      * now generalize (eq_nat_refl n); intros.
+ Qed.
 
 Lemma V_deocde_mat_encode_mat_assoc_l (n : nat) (cl : Vector C (2^(S n))) :
   let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
@@ -2842,7 +2892,7 @@ Proof.
   intros.
   unfold V_mat_vec_mult, Vscale.
   unfold V_inner_prod.
-  generalize (vector_sum_all_but_1_0  (2 ^ S n) (proj1_sig x) ((RtoC (2 ^ S n)%R) * cl x)); intros.
+  generalize (vector_sum_all_but_1_0  (2 ^ S n) x ((RtoC (2 ^ S n)%R) * cl x)); intros.
   rewrite <- H1.
   f_equal.
   apply FunctionalExtensionality.functional_extensionality.
