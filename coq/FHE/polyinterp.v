@@ -2949,15 +2949,21 @@ Proof.
   destruct (eq_nat_decide (proj1_sig x) (proj1_sig x0)).
   - apply eq_nat_eq in e.
   specialize (H x).
-    assert (x0 = x).
-    {
-      admit.
-    }
-    rewrite H1.
-    apply (f_equal (fun z => (z * cl x)%C)) in H.
-    replace (2 ^ S n)%R with (2 * 2^n)%R by now simpl.
-    rewrite <- H.
+  assert (x0 = x).
+  {
+    clear H pmat prod H0 cl.
+    destruct x.
+    destruct x0.
+    unfold proj1_sig in e.
+    subst.
     f_equal.
+    apply Classical_Prop.proof_irrelevance.
+  }
+  rewrite H1.
+  apply (f_equal (fun z => (z * cl x)%C)) in H.
+  replace (2 ^ S n)%R with (2 * 2^n)%R by now simpl.
+  rewrite <- H.
+  f_equal.
   - specialize (H0 x x0).
     cut_to H0.
     + apply (f_equal (fun z => (z * cl x0)%C)) in H0.
@@ -2966,8 +2972,7 @@ Proof.
       f_equal.
     + unfold not; intros.
       now apply eq_eq_nat in H1.
-Admitted.
-
+Qed.
 
 Lemma V_deocde_mat_encode_mat (n : nat) (cl : Vector C (2^(S n))) :
   let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
