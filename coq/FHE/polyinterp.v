@@ -2671,8 +2671,37 @@ Proof.
     intros HH.
     apply (f_equal Z.of_nat) in HH.
     autorewrite with of_nat_re in HH; [|rewrite Nat.mod_small; lia].
-    admit.
-
+    rewrite <- Zdiv.Zplus_mod_idemp_r in HH.
+    rewrite <- Zdiv.Zminus_mod_idemp_l in HH.
+    rewrite Zdiv.Z_mod_same_full in HH.
+    rewrite Zdiv.Zminus_mod_idemp_r in HH.
+    rewrite Zdiv.Zplus_mod_idemp_r in HH.
+    apply H.
+    apply Nat2Z.inj.
+    autorewrite with of_nat_re.
+    replace (2 * Z.of_nat x + 1 + (0 - (2 * Z.of_nat x0 + 1)))%Z with
+      (2 * Z.of_nat x - 2 * Z.of_nat x0)%Z in HH by lia.
+    apply (f_equal (fun x => (x + (2 * Z.of_nat x0)) mod 2 ^ Z.of_nat (S (S n))))%Z in HH.
+    rewrite Zplus_0_l in HH.
+    rewrite Zdiv.Zplus_mod_idemp_l in HH.
+    replace (2 * Z.of_nat x - 2 * Z.of_nat x0 + 2 * Z.of_nat x0)%Z with
+      (2 * Z.of_nat x)%Z in HH by lia.
+    rewrite Z.mod_small in HH.
+    + rewrite Z.mod_small in HH; try lia.
+      split; try lia.
+      apply inj_lt in l0.
+      rewrite Nat2Z.inj_pow in l0.
+      replace (2 ^ Z.of_nat (S (S n)))%Z with
+        (2 * 2 ^ Z.of_nat (S n))%Z; try lia.
+      rewrite (Nat2Z.inj_succ (S n)).
+      rewrite Z.pow_succ_r; lia.
+    + split; try lia.
+      apply inj_lt in l.
+      rewrite Nat2Z.inj_pow in l.
+      replace (2 ^ Z.of_nat (S (S n)))%Z with
+        (2 * 2 ^ Z.of_nat (S n))%Z; try lia.
+      rewrite (Nat2Z.inj_succ (S n)).
+      rewrite Z.pow_succ_r; lia.
   - rewrite nth_root_conj_alt.
     rewrite nth_root_mul.
     generalize nth_root_1; intros.
@@ -2716,7 +2745,7 @@ Proof.
     rewrite Nat.add_mod; try lia.
     rewrite Nat.mod_mul; try lia.
     simpl; lia.
-  Admitted.
+ Qed.
 
 Lemma root_conj_power_inv i j n :
   Cmult (Cpow (nth_root i (S n)) j) 
