@@ -2015,6 +2015,7 @@ Definition mat_mat_mult (m1 m2 : list (list C)) :=
 Definition V_mat_mat_mult {n1 n2 n3} (m1: Matrix C n1 n2) (m2 : Matrix C n2 n3) :=
   (fun n1' n3' => V_inner_prod (m1 n1') ((transpose m2) n3')).
 
+(*
 Lemma mmv_mult_assoc_row (m2: list (list C)) (r1 v : list C) :
   length r1 = length m2 ->
   (forall r2, In r2 m2 -> length r2 = length v) ->
@@ -2026,6 +2027,7 @@ Proof.
   unfold Cinner_prod.
   f_equal.
 Admitted.
+*)
 
 Definition Vscale {n} (r : C) (v : Vector C n) :=
   fun n' => Cmult r (v n').
@@ -2092,6 +2094,7 @@ Proof.
       f_equal; lra.
  Qed.
 
+(*
 Lemma vector_sum_sum {n1 n2} (m : Matrix C n1 n2) :
   vector_sum (fun n' => vector_sum (m n')) =
   vector_sum (fun n'' => vector_sum ((transpose m) n'')).
@@ -2099,6 +2102,7 @@ Proof.
   unfold transpose.
   unfold vector_sum.
 Admitted.
+*)
 
 Lemma V_mmv_mult_assoc {n1 n2 n3} 
   (m1 : Matrix C n1 n2)
@@ -2115,6 +2119,7 @@ Proof.
   Admitted.
 
 
+(*
 Lemma mmv_mult_assoc (m1 m2: list (list C)) (v : list C) :
   (forall r1, In r1 m1 -> length r1 = length m2) ->
   (forall r2, In r2 m2 -> length r2 = length v) ->
@@ -2137,6 +2142,7 @@ Proof.
     now specialize (H a H1).
 
 Admitted.
+*)
 
 Lemma map_Cmult_combine_comm l1 l2 :
   map (fun '(a0, b) => (a0 * b)%C) (combine l1 l2) =
@@ -2249,6 +2255,7 @@ Lemma conj_trans_mat_encode (cl : list C) n :
       cut_to H3; lra.
  Qed.
 
+(*
 Lemma encode_decode_eval (cl : list C) (n : nat):
   map Cconj cl = rev cl ->
   length cl = length (odd_nth_roots (S n)) ->
@@ -2285,7 +2292,7 @@ Proof.
       apply nth_error_None.
       rewrite map_length, <- H0; lia.
 Admitted.  
-
+  
 Lemma encode_decode (cl : list C) (n : nat):
   map Cconj cl = rev cl ->
   length cl = length (odd_nth_roots (S n)) ->
@@ -2298,6 +2305,8 @@ Proof.
   intros.
   now rewrite Ceval_horner_Rpoly. 
 Qed.
+ *)
+
 
 (* claim (nxn vandermonde on odd roots) x conjugate transpose = n * I. *)
 
@@ -2519,6 +2528,7 @@ Proof.
   easy.
 Qed.
 
+(*
 Lemma transpose_involutive (m : list (list C)) :
   transpose_mat (transpose_mat m) = m.
 Proof.
@@ -2546,7 +2556,9 @@ Proof.
     apply nth_error_None in H0.
     now rewrite H0.
   Admitted.
+*)
 
+(*
 Lemma deocde_mat_encode_mat_on_diag (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   let prod := mat_mat_mult pmat (conj_mat (transpose_mat pmat)) in
@@ -2563,6 +2575,7 @@ Proof.
   do 2 rewrite map_map.
     
 Admitted.
+*)
   
 Lemma V_transpose_involutive {T} {n1 n2} (m : Matrix T n1 n2) :
   transpose (transpose m) = m.
@@ -2580,15 +2593,27 @@ Qed.
 Lemma vector_sum_list_Cplus {n} (v : Vector C n) :
   vector_sum v = list_Cplus (vector_to_list v).
 Proof.
-  Admitted.
+  unfold vector_sum, vector_to_list.
+  induction n.
+  - unfold vector_fold_right.
+    unfold vector_fold_right_dep.
+    unfold vector_fold_right_bounded_dep.
+    now simpl.
+  - rewrite vector_fold_right_Sn.
+    rewrite vector_fold_right_Sn.    
+    simpl.
+    f_equal.
+    now rewrite IHn.
+ Qed.
 
+(*
 Lemma list_Cplus_vector_sum (l : list C) :
   list_Cplus l = vector_sum (list_to_vector l).
 Proof.
   unfold list_to_vector.
   unfold vector_sum.
 Admitted.    
-
+*)
 
 Lemma V_telescope_pow_0 (c : C) (n : nat) :
   c <> R1 ->
@@ -2808,6 +2833,7 @@ Proof.
     now rewrite root_conj_power_inv.
  Qed.
 
+(*
 Lemma decode_mat_encode_mat_off_diag (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   let prod := mat_mat_mult pmat (conj_mat (transpose_mat pmat)) in
@@ -2844,6 +2870,7 @@ Proof.
   unfold mat_vec_mult.
   unfold pmat.
   Admitted.
+*)
   
 Lemma vector_sum_all_but_1_0 n (i : {i : nat | i < n}) c :
   vector_sum (fun (n' : {n' : nat | n' < n}) => if eq_nat_decide (proj1_sig i) (proj1_sig n') then c else 0%R) = c.
