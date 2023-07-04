@@ -2601,8 +2601,29 @@ Proof.
   rewrite vector_sum_list_Cplus.
   apply list_Cplus_perm_proper.
   unfold vector_to_list.
-
-Admitted.
+  assert (vector_fold_right cons nil
+            (fun j : {j : nat | j < S n} => (c ^ proj1_sig j)%C) =
+            (rev (map (fun j : nat => (c ^ j)%C) (seq 0 (S n))))).
+  {
+    clear H0 H1.
+    induction n.
+    - unfold vector_fold_right.
+      unfold vector_fold_right_dep.
+      unfold vector_fold_right_bounded_dep.
+      now simpl.
+    - rewrite vector_fold_right_Sn.
+      rewrite seq_S.
+      rewrite map_app.
+      rewrite rev_app_distr.
+      rewrite <- IHn.
+      simpl.
+      unfold vlast, proj1_sig.
+      f_equal.
+  }
+  rewrite H2.
+  symmetry.
+  apply Permutation_rev.
+Qed.
 
 Lemma nat_mod_mul a b c :
   (a * c) <> 0 ->
