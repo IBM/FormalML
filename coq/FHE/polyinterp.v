@@ -2618,7 +2618,7 @@ Proof.
   now rewrite Nat.mod_mul.
 Qed.
 
-Lemma V_deocde_mat_encode_mat_off_diag (n : nat):
+Lemma V_decode_mat_encode_mat_off_diag (n : nat):
   let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
   let prod := V_mat_mat_mult pmat (V_conj_mat (transpose pmat)) in
   forall i j,
@@ -2756,7 +2756,7 @@ Proof.
   now rewrite mult_conj_root.
 Qed.
 
-Lemma V_deocde_mat_encode_mat_on_diag (n : nat):
+Lemma V_decode_mat_encode_mat_on_diag (n : nat):
   let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
   let prod := V_mat_mat_mult pmat (V_conj_mat (transpose pmat)) in
   forall n0,
@@ -2787,7 +2787,7 @@ Proof.
     now rewrite root_conj_power_inv.
  Qed.
 
-Lemma deocde_mat_encode_mat_off_diag (n : nat):
+Lemma decode_mat_encode_mat_off_diag (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   let prod := mat_mat_mult pmat (conj_mat (transpose_mat pmat)) in
   forall i j,
@@ -2824,4 +2824,61 @@ Proof.
   unfold pmat.
   Admitted.
   
+Lemma vector_sum_all_but_1_0 n i c :
+  vector_sum (fun (n' : {n' : nat | n' < n}) => if eq_nat_decide i (proj1_sig n') then c else 0%R) = c.
+  Proof.
+    Admitted.
+
+Lemma V_deocde_mat_encode_mat_assoc_l (n : nat) (cl : Vector C (2^(S n))) :
+  let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
+  let prod := V_mat_mat_mult pmat (V_conj_mat (transpose pmat)) in
+  V_mat_vec_mult prod cl = Vscale (RtoC (2^S n)%R) cl.
+Proof.
+  generalize (V_decode_mat_encode_mat_on_diag n); intros.
+  generalize (V_decode_mat_encode_mat_off_diag n); intros.  
+  simpl in H; simpl in H0.
+  unfold prod, pmat.
+  apply FunctionalExtensionality.functional_extensionality.
+  intros.
+  unfold V_mat_vec_mult, Vscale.
+  unfold V_inner_prod.
+  generalize (vector_sum_all_but_1_0  (2 ^ S n) (proj1_sig x) ((RtoC (2 ^ S n)%R) * cl x)); intros.
+  rewrite <- H1.
+  f_equal.
+  apply FunctionalExtensionality.functional_extensionality.
+  intros.
+  clear H1.
+  destruct (eq_nat_decide (proj1_sig x) (proj1_sig x0)).
+  - apply eq_nat_eq in e.
+  specialize (H x).
+    assert (x0 = x).
+    {
+      admit.
+    }
+    rewrite H1.
+    apply (f_equal (fun z => (z * cl x)%C)) in H.
+    replace (2 ^ S n)%R with (2 * 2^n)%R by now simpl.
+    rewrite <- H.
+    f_equal.
+  - specialize (H0 x x0).
+    cut_to H0.
+    + apply (f_equal (fun z => (z * cl x0)%C)) in H0.
+      rewrite Cmult_0_l in H0.
+      rewrite <- H0.
+      f_equal.
+    + unfold not; intros.
+      now apply eq_eq_nat in H1.
+Admitted.
+
+
+Lemma V_deocde_mat_encode_mat (n : nat) (cl : Vector C (2^(S n))) :
+  let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
+  let encmat := (V_conj_mat (transpose pmat)) in
+  V_mat_vec_mult pmat (V_mat_vec_mult encmat cl) = Vscale (RtoC (2^S n)%R) cl.
+Proof.
+  generalize (V_deocde_mat_encode_mat_assoc_l n cl); intros.
+  rewrite <- H.
+  now rewrite V_mmv_mult_assoc.
+Qed.
+
                              
