@@ -2109,12 +2109,7 @@ Proof.
   - induction n2.
     + now do 2 rewrite vector_fold_right_Cplus_0.
     + rewrite vector_fold_right_Cplus_0.
-      rewrite vector_fold_right_Sn.
-      unfold vlast.
-      rewrite vector_fold_right_Cplus_0.
-      rewrite Cplus_0_l.
-      unfold vdrop_last.
-      generalize (@vector_sum_const n2 (RtoC 0%R)); intros.
+      generalize (@vector_sum_const (S n2) (RtoC 0%R)); intros.
       rewrite Cmult_0_r in H.
       rewrite <- H at 1.
       unfold vector_sum.
@@ -2133,7 +2128,9 @@ Proof.
       intros ?.
       rewrite vector_fold_right_Cplus_0.
       now unfold ConstVector.
-    + admit.
+    + do 2 rewrite vector_fold_right_Sn.
+      unfold vlast.
+      admit.
 Admitted.
 
 
