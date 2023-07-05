@@ -2035,13 +2035,19 @@ Definition Vscale {n} (r : C) (v : Vector C n) :=
 Definition Vscale_r {n} (r : C) (v : Vector C n) :=
   fun n' => Cmult (v n') r.
 
+Lemma vector_fold_right_Cplus_0 ( v : Vector C 0) :
+   vector_fold_right Cplus 0%R v = 0%R.
+Proof.
+  unfold vector_fold_right, vector_fold_right_dep, vector_fold_right_bounded_dep.
+  now simpl.
+Qed.
+
 Lemma vector_sum_scale {n} (c : C) (v : Vector C n) :
   Cmult c (vector_sum v) = vector_sum (Vscale c v).
 Proof.
   unfold vector_sum, Vscale.
   induction n.
-  - unfold vector_fold_right, vector_fold_right_dep, vector_fold_right_bounded_dep.
-    simpl.
+  - do 2 rewrite vector_fold_right_Cplus_0.
     now rewrite Cmult_0_r.
   - rewrite vector_fold_right_Sn.
     rewrite Cmult_plus_distr_l.
@@ -2074,8 +2080,7 @@ Lemma vector_sum_const {n} (c : C) :
 Proof.
   unfold vector_sum, ConstVector.
   induction n.
-  - unfold vector_fold_right, vector_fold_right_dep, vector_fold_right_bounded_dep.
-    simpl.
+  - rewrite vector_fold_right_Cplus_0.
     now rewrite Cmult_0_l.
   - rewrite vector_fold_right_Sn.
     unfold vlast, vdrop_last.
@@ -2094,15 +2099,43 @@ Proof.
       f_equal; lra.
  Qed.
 
-(*
-Lemma vector_sum_sum {n1 n2} (m : Matrix C n1 n2) :
+Lemma vector_sum_sum_transpose {n1 n2} (m : Matrix C n1 n2) :
   vector_sum (fun n' => vector_sum (m n')) =
   vector_sum (fun n'' => vector_sum ((transpose m) n'')).
 Proof.
   unfold transpose.
   unfold vector_sum.
+  induction n1.
+  - induction n2.
+    + now do 2 rewrite vector_fold_right_Cplus_0.
+    + rewrite vector_fold_right_Cplus_0.
+      rewrite vector_fold_right_Sn.
+      unfold vlast.
+      rewrite vector_fold_right_Cplus_0.
+      rewrite Cplus_0_l.
+      unfold vdrop_last.
+      generalize (@vector_sum_const n2 (RtoC 0%R)); intros.
+      rewrite Cmult_0_r in H.
+      rewrite <- H at 1.
+      unfold vector_sum.
+      apply vector_fold_right_ext.
+      intros ?.
+      destruct i.
+      rewrite vector_fold_right_Cplus_0.
+      now unfold ConstVector.
+  - induction n2.
+    + rewrite vector_fold_right_Cplus_0.
+      generalize (@vector_sum_const (S n1) (RtoC 0%R)); intros.
+      rewrite Cmult_0_r in H.
+      rewrite <- H at 2.
+      unfold vector_sum.
+      apply vector_fold_right_ext.
+      intros ?.
+      rewrite vector_fold_right_Cplus_0.
+      now unfold ConstVector.
+    + admit.
 Admitted.
-*)
+
 
 Lemma V_mmv_mult_assoc {n1 n2 n3} 
   (m1 : Matrix C n1 n2)
