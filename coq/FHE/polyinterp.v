@@ -2958,6 +2958,19 @@ Proof.
       * now generalize (eq_nat_refl n); intros.
  Qed.
 
+Lemma ind_eq {n} (i j : {n' : nat | n' < n}) :
+  proj1_sig i = proj1_sig j ->
+  i = j.
+Proof.
+  intros.
+  destruct i.
+  destruct j.
+  unfold proj1_sig in H.
+  subst.
+  f_equal.
+  apply Classical_Prop.proof_irrelevance.
+Qed.
+
 Lemma V_deocde_mat_encode_mat_assoc_l (n : nat) (cl : Vector C (2^(S n))) :
   let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
   let prod := V_mat_mat_mult pmat (V_conj_mat (transpose pmat)) in
@@ -2980,17 +2993,8 @@ Proof.
   destruct (eq_nat_decide (proj1_sig x) (proj1_sig x0)).
   - apply eq_nat_eq in e.
   specialize (H x).
-  assert (x0 = x).
-  {
-    clear H pmat prod H0 cl.
-    destruct x.
-    destruct x0.
-    unfold proj1_sig in e.
-    subst.
-    f_equal.
-    apply Classical_Prop.proof_irrelevance.
-  }
-  rewrite H1.
+  generalize (ind_eq x x0 e); intros.
+  rewrite <- H1.
   apply (f_equal (fun z => (z * cl x)%C)) in H.
   replace (2 ^ S n)%R with (2 * 2^n)%R by now simpl.
   rewrite <- H.
@@ -3010,9 +3014,69 @@ Lemma V_deocde_mat_encode_mat (n : nat) (cl : Vector C (2^(S n))) :
   let encmat := (V_conj_mat (transpose pmat)) in
   V_mat_vec_mult pmat (V_mat_vec_mult encmat cl) = Vscale (RtoC (2^S n)%R) cl.
 Proof.
+  unfold Vector in cl.
   generalize (V_deocde_mat_encode_mat_assoc_l n cl); intros.
   rewrite <- H.
   now rewrite V_mmv_mult_assoc.
 Qed.
 
-                             
+Program Definition ind_reflect {n} (n' : {n' : nat | n' < n}) : {n' : nat | n' < n} :=
+  (exist _ (n - 1 - (proj1_sig n')) _).
+Next Obligation.
+  lia.
+Qed.
+
+Lemma ind_reflect_involutive {n} (i : {i' : nat | i' < n}) :
+  ind_reflect (ind_reflect i) = i.
+Proof.
+  unfold ind_reflect.
+  apply ind_eq.
+  destruct i.
+  unfold proj1_sig; lia.
+Qed.
+
+Definition vector_rev_conj {n} (v : Vector C n) :=
+  forall i,
+    v i = Cconj (v (ind_reflect i)).
+
+Lemma vector_rev_conj_plus {n} (v1 v2 : Vector C n) :
+  vector_rev_conj v1 ->
+  vector_rev_conj v2 ->
+  vector_rev_conj (vmap' (fun '(a,b) => Cplus a b) (vector_zip v1 v2)).
+Proof.
+  unfold vector_rev_conj; intros.
+  unfold vector_zip, vmap'.
+  rewrite H, H0.
+  now rewrite Complex.Cplus_conj.
+Qed.
+
+Lemma vector_rev_conj_mult {n} (v1 v2 : Vector C n) :
+  vector_rev_conj v1 ->
+  vector_rev_conj v2 ->
+  vector_rev_conj (vmap' (fun '(a,b) => Cmult a b) (vector_zip v1 v2)).
+Proof.
+  unfold vector_rev_conj; intros.
+  unfold vector_zip, vmap'.
+  rewrite H, H0.
+  now rewrite Cmult_conj.
+Qed.
+
+Lemma vector_rev_conj_scale {n} (r : R) (v : Vector C n) :
+  vector_rev_conj v ->
+  vector_rev_conj (Vscale (RtoC r) v).
+Proof.
+  unfold vector_rev_conj; intros.
+  unfold Vscale.
+  rewrite H.
+  rewrite <- Cmult_conj.
+  f_equal.
+  unfold Cconj, fst, snd, RtoC.
+  f_equal; lra.
+Qed.
+
+Lemma vector_rev_conj_const_R n (r : R) :
+  vector_rev_conj (ConstVector n (RtoC r)).
+Proof.
+  unfold vector_rev_conj, ConstVector, RtoC, Cconj, fst, snd; intros.
+  f_equal; lra.
+Qed.
