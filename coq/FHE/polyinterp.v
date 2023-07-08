@@ -3175,6 +3175,21 @@ Proof.
   apply (vector_rev_conj_conj (vmap' (fun c => Cpow c (proj1_sig i)) (V_odd_nth_roots (S n)))).
   apply vector_rev_conj_Cpow, vector_rev_conj_odd_nth_roots.
 Qed.
+
+Lemma V_mat_encode_real_alt (n : nat) (cl : Vector C (2^(S n))) :
+  let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
+  let encmat := (V_conj_mat (transpose pmat)) in
+  vector_rev_conj cl ->
+  V_mat_vec_mult encmat cl = vmap' RtoC (vmap' Re (V_mat_vec_mult encmat cl)).
+Proof.
+  intros.
+  apply vec_eq_eq; intros ?.
+  apply Re_Im.
+  now apply V_mat_encode_real.
+Qed.
   
+
+
+
                                                  
   
