@@ -3097,6 +3097,7 @@ Lemma vector_rev_conj_sum {n} (v : Vector C n) :
   Im (vector_sum v) = 0%R.
 Proof.
   unfold vector_rev_conj, vector_sum; intros.
+  
 Admitted.
 
 Lemma vector_rev_conj_inner {n} (v1 v2 : Vector C n) :
@@ -3157,7 +3158,9 @@ Proof.
   rewrite nth_root_conj_alt.
   f_equal.
   rewrite <- H.
-  Admitted.
+  replace (2^S (S n)) with (2 * 2^S n) by (simpl; lia).
+  rewrite Nat.mod_small; lia.
+Qed.
 
 Lemma V_mat_encode_real (n : nat) (cl : Vector C (2^(S n))) :
   let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
