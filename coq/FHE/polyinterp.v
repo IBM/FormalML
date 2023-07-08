@@ -3029,6 +3029,9 @@ Proof.
   unfold proj1_sig; lia.
 Qed.
 
+Definition vector_rev {n} (v : Vector C n) :=
+  fun i => v (ind_reflect i).
+
 Definition vector_rev_conj {n} (v : Vector C n) :=
   forall i,
     v i = Cconj (v (ind_reflect i)).
@@ -3092,13 +3095,45 @@ Proof.
   now rewrite Cpow_conj.
 Qed.
 
+Lemma map_Cconj_vector_to_list {n} (v : Vector C n) :
+  map Cconj (vector_to_list v) = vector_to_list (vmap' Cconj v).
+Proof.
+  unfold vector_to_list.
+  induction n.
+  - unfold vector_fold_right, vector_fold_right_dep, vector_fold_right_bounded_dep.
+    now simpl.
+  - do 2 rewrite vector_fold_right_Sn.
+    rewrite map_cons.
+    rewrite IHn.
+    f_equal.
+ Qed.
+
+Lemma rev_vector_to_list {n} (v : Vector C n) :
+  rev (vector_to_list v) = vector_to_list (vector_rev v).
+Proof.
+  unfold vector_rev.
+  
+Admitted.
+
 Lemma vector_rev_conj_sum {n} (v : Vector C n) :
   vector_rev_conj v ->
   Im (vector_sum v) = 0%R.
 Proof.
-  unfold vector_rev_conj, vector_sum; intros.
-  
-Admitted.
+  rewrite vector_sum_list_Cplus.
+  intros.
+  apply list_Cplus_conj_rev.
+  rewrite map_Cconj_vector_to_list.
+  rewrite rev_vector_to_list.
+  f_equal.
+  apply vec_eq_eq; intros ?.
+  assert (vector_rev_conj (vmap' Cconj v)).
+  {
+    now apply vector_rev_conj_conj.
+  }
+  rewrite H0.
+  unfold vmap'.
+  now rewrite Cconj_conj.
+Qed.
 
 Lemma vector_rev_conj_inner {n} (v1 v2 : Vector C n) :
   vector_rev_conj v1 ->
