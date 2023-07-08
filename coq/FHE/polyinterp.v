@@ -2987,21 +2987,20 @@ Proof.
   generalize (vector_sum_all_but_1_0  (2 ^ S n) x ((RtoC (2 ^ S n)%R) * cl x)); intros.
   rewrite <- H1.
   f_equal.
-  apply FunctionalExtensionality.functional_extensionality.
-  intros.
+  apply vec_eq_eq; intros ?.
   clear H1.
-  destruct (eq_nat_decide (proj1_sig x) (proj1_sig x0)).
+  destruct (eq_nat_decide (proj1_sig x) (proj1_sig i)).
   - apply eq_nat_eq in e.
   specialize (H x).
-  generalize (ind_eq x x0 e); intros.
+  generalize (ind_eq x i e); intros.
   rewrite <- H1.
   apply (f_equal (fun z => (z * cl x)%C)) in H.
   replace (2 ^ S n)%R with (2 * 2^n)%R by now simpl.
   rewrite <- H.
   f_equal.
-  - specialize (H0 x x0).
+  - specialize (H0 x i).
     cut_to H0.
-    + apply (f_equal (fun z => (z * cl x0)%C)) in H0.
+    + apply (f_equal (fun z => (z * cl i)%C)) in H0.
       rewrite Cmult_0_l in H0.
       rewrite <- H0.
       f_equal.
@@ -3086,8 +3085,7 @@ Lemma vector_cplus_comm  {n} (v1 v2 : Vector C n) :
   (vmap' (fun '(a,b) => Cplus a b) (vector_zip v2 v1)).
 Proof.
   unfold vmap', vector_zip.
-  apply FunctionalExtensionality.functional_extensionality.
-  intros.
+  apply vec_eq_eq; intros ?.
   apply Cplus_comm.
 Qed.
 
@@ -3096,8 +3094,7 @@ Lemma vector_cmult_comm  {n} (v1 v2 : Vector C n) :
   (vmap' (fun '(a,b) => Cmult a b) (vector_zip v2 v1)).
 Proof.
   unfold vmap', vector_zip.
-  apply FunctionalExtensionality.functional_extensionality.
-  intros.
+  apply vec_eq_eq; intros ?.
   apply Cmult_comm.
 Qed.
 
@@ -3106,8 +3103,7 @@ Lemma vector_cplus_assoc  {n} (v1 v2 v3 : Vector C n) :
   vmap' (fun '(a,b) => Cplus a b) (vector_zip (vmap' (fun '(a,b) => Cplus a b) (vector_zip v1 v2)) v3).
 Proof.
   unfold vmap', vector_zip.
-  apply FunctionalExtensionality.functional_extensionality.
-  intros.
+  apply vec_eq_eq; intros ?.
   apply Cplus_assoc.
 Qed.
 
@@ -3116,8 +3112,7 @@ Lemma vector_cmult_assoc  {n} (v1 v2 v3 : Vector C n) :
   vmap' (fun '(a,b) => Cmult a b) (vector_zip (vmap' (fun '(a,b) => Cmult a b) (vector_zip v1 v2)) v3).
 Proof.
   unfold vmap', vector_zip.
-  apply FunctionalExtensionality.functional_extensionality.
-  intros.
+  apply vec_eq_eq; intros ?.
   apply Cmult_assoc.
 Qed.
 
