@@ -2588,7 +2588,7 @@ Proof.
 *)
 
 (*
-Lemma deocde_mat_encode_mat_on_diag (n : nat):
+Lemma decode_mat_encode_mat_on_diag (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   let prod := mat_mat_mult pmat (conj_mat (transpose_mat pmat)) in
   forall n,
@@ -2883,7 +2883,7 @@ Proof.
 Admitted.
 
 
-Lemma deocde_mat_encode_mat (cl : list C) (n : nat):
+Lemma decode_mat_encode_mat (cl : list C) (n : nat):
   length cl = length (odd_nth_roots (S n)) ->
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   mat_vec_mult (mat_mat_mult pmat (conj_mat (transpose_mat pmat))) cl =
@@ -2967,7 +2967,7 @@ Proof.
   apply Classical_Prop.proof_irrelevance.
 Qed.
 
-Lemma V_deocde_mat_encode_mat_assoc_l (n : nat) (cl : Vector C (2^(S n))) :
+Lemma V_decode_mat_encode_mat_assoc_l (n : nat) (cl : Vector C (2^(S n))) :
   let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
   let prod := V_mat_mat_mult pmat (V_conj_mat (transpose pmat)) in
   V_mat_vec_mult prod cl = Vscale (RtoC (2^S n)%R) cl.
@@ -3003,13 +3003,13 @@ Proof.
       now apply eq_eq_nat in H1.
 Qed.
 
-Lemma V_deocde_mat_encode_mat (n : nat) (cl : Vector C (2^(S n))) :
+Lemma V_decode_mat_encode_mat (n : nat) (cl : Vector C (2^(S n))) :
   let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
   let encmat := (V_conj_mat (transpose pmat)) in
   V_mat_vec_mult pmat (V_mat_vec_mult encmat cl) = Vscale (RtoC (2^S n)%R) cl.
 Proof.
   unfold Vector in cl.
-  generalize (V_deocde_mat_encode_mat_assoc_l n cl); intros.
+  generalize (V_decode_mat_encode_mat_assoc_l n cl); intros.
   rewrite <- H.
   now rewrite V_mmv_mult_assoc.
 Qed.
@@ -3075,6 +3075,40 @@ Proof.
   f_equal; lra.
 Qed.
 
+Lemma vector_rev_conj_conj {n} (v : Vector C n) :
+  vector_rev_conj v ->
+  vector_rev_conj (vmap' Cconj v).
+Proof.
+  unfold vector_rev_conj, vmap'; intros.
+  now rewrite H.
+Qed.
+
+Lemma vector_rev_conj_Cpow {n} i (v : Vector C n) :
+  vector_rev_conj v ->
+  vector_rev_conj (vmap' (fun c => Cpow c i) v).
+Proof.
+  unfold vector_rev_conj, vmap'; intros.
+  rewrite H.
+  now rewrite Cpow_conj.
+Qed.
+
+Lemma vector_rev_conj_sum {n} (v : Vector C n) :
+  vector_rev_conj v ->
+  Im (vector_sum v) = 0%R.
+Proof.
+  unfold vector_rev_conj, vector_sum; intros.
+Admitted.
+
+Lemma vector_rev_conj_inner {n} (v1 v2 : Vector C n) :
+  vector_rev_conj v1 ->
+  vector_rev_conj v2 ->  
+  Im (V_inner_prod v1 v2) = 0%R.
+Proof.
+  intros.
+  apply vector_rev_conj_sum.
+  now apply vector_rev_conj_mult.
+Qed.
+
 Lemma vector_cplus_comm  {n} (v1 v2 : Vector C n) :
   (vmap' (fun '(a,b) => Cplus a b) (vector_zip v1 v2)) =
   (vmap' (fun '(a,b) => Cplus a b) (vector_zip v2 v1)).
@@ -3111,4 +3145,35 @@ Proof.
   apply Cmult_assoc.
 Qed.
 
+Lemma vector_rev_conj_odd_nth_roots (n : nat) :
+  vector_rev_conj (V_odd_nth_roots (S n)).
+Proof.
+  unfold vector_rev_conj, V_odd_nth_roots.
+  intros.
+  destruct i.
+  unfold ind_reflect, proj1_sig.
+  destruct (pow2_S (S (S n))).
+  rewrite H.
+  rewrite nth_root_conj_alt.
+  f_equal.
+  rewrite <- H.
+  Admitted.
 
+Lemma V_mat_encode_real (n : nat) (cl : Vector C (2^(S n))) :
+  let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
+  let encmat := (V_conj_mat (transpose pmat)) in
+  vector_rev_conj cl ->
+  forall i,
+    Im ((V_mat_vec_mult encmat cl) i) = 0%R.
+Proof.
+  unfold V_mat_vec_mult, transpose, V_peval_mat, V_conj_mat.
+  intros.
+  apply vector_rev_conj_inner; trivial.
+  generalize (vector_rev_conj_conj (vmap' (fun c => Cpow c (proj1_sig i)) (V_odd_nth_roots (S n)))); intros.
+  apply H0.
+  apply vector_rev_conj_Cpow.
+  apply vector_rev_conj_odd_nth_roots.
+Qed.
+  
+                                                 
+  
