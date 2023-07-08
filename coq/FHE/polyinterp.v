@@ -2090,8 +2090,7 @@ Proof.
     + f_equal.
       rewrite <- IHn.
       f_equal.
-      apply FunctionalExtensionality.functional_extensionality.        
-      intros.
+      apply vec_eq_eq; intros x.
       now destruct x.
     + unfold RtoC.
       destruct c.
@@ -2145,8 +2144,7 @@ Proof.
   intros.
   unfold V_mat_vec_mult, V_mat_mat_mult.
   unfold V_inner_prod, transpose.
-  apply FunctionalExtensionality.functional_extensionality.  
-  intros.
+  apply vec_eq_eq; intros ?.
   Admitted.
 
 
@@ -2724,9 +2722,7 @@ Proof.
              ); intros.
   rewrite <- H2.
   - f_equal.
-    apply FunctionalExtensionality.functional_extensionality.
-    intros.
-    destruct x3.
+    apply vec_eq_eq; intros x3.
     simpl.
     now rewrite Cpow_mult_l, Cpow_conj.
   - rewrite nth_root_conj_alt.
@@ -2854,8 +2850,8 @@ Proof.
     rewrite Cmult_1_r.
     f_equal.
     now rewrite pow_INR.
-  - apply FunctionalExtensionality.functional_extensionality.
-    intros.
+  - apply vec_eq_eq.
+    intros ?.
     unfold ConstVector.
     unfold V_peval_mat.
     unfold V_odd_nth_roots.
@@ -2980,8 +2976,7 @@ Proof.
   generalize (V_decode_mat_encode_mat_off_diag n); intros.  
   simpl in H; simpl in H0.
   unfold prod, pmat.
-  apply FunctionalExtensionality.functional_extensionality.
-  intros.
+  apply vec_eq_eq; intros x.
   unfold V_mat_vec_mult, Vscale.
   unfold V_inner_prod.
   generalize (vector_sum_all_but_1_0  (2 ^ S n) x ((RtoC (2 ^ S n)%R) * cl x)); intros.
