@@ -3110,7 +3110,7 @@ Proof.
   now apply vector_rev_conj_mult.
 Qed.
 
-Lemma vector_cplus_comm  {n} (v1 v2 : Vector C n) :
+Lemma vector_cplus_comm {n} (v1 v2 : Vector C n) :
   (vmap' (fun '(a,b) => Cplus a b) (vector_zip v1 v2)) =
   (vmap' (fun '(a,b) => Cplus a b) (vector_zip v2 v1)).
 Proof.
@@ -3119,7 +3119,7 @@ Proof.
   apply Cplus_comm.
 Qed.
 
-Lemma vector_cmult_comm  {n} (v1 v2 : Vector C n) :
+Lemma vector_cmult_comm {n} (v1 v2 : Vector C n) :
   (vmap' (fun '(a,b) => Cmult a b) (vector_zip v1 v2)) =
   (vmap' (fun '(a,b) => Cmult a b) (vector_zip v2 v1)).
 Proof.
@@ -3128,7 +3128,7 @@ Proof.
   apply Cmult_comm.
 Qed.
 
-Lemma vector_cplus_assoc  {n} (v1 v2 v3 : Vector C n) :
+Lemma vector_cplus_assoc {n} (v1 v2 v3 : Vector C n) :
   vmap' (fun '(a,b) => Cplus a b) (vector_zip v1 (vmap' (fun '(a,b) => Cplus a b) (vector_zip v2 v3))) =
   vmap' (fun '(a,b) => Cplus a b) (vector_zip (vmap' (fun '(a,b) => Cplus a b) (vector_zip v1 v2)) v3).
 Proof.
@@ -3137,7 +3137,7 @@ Proof.
   apply Cplus_assoc.
 Qed.
 
-Lemma vector_cmult_assoc  {n} (v1 v2 v3 : Vector C n) :
+Lemma vector_cmult_assoc {n} (v1 v2 v3 : Vector C n) :
   vmap' (fun '(a,b) => Cmult a b) (vector_zip v1 (vmap' (fun '(a,b) => Cmult a b) (vector_zip v2 v3))) =
   vmap' (fun '(a,b) => Cmult a b) (vector_zip (vmap' (fun '(a,b) => Cmult a b) (vector_zip v1 v2)) v3).
 Proof.
@@ -3172,10 +3172,8 @@ Proof.
   unfold V_mat_vec_mult, transpose, V_peval_mat, V_conj_mat.
   intros.
   apply vector_rev_conj_inner; trivial.
-  generalize (vector_rev_conj_conj (vmap' (fun c => Cpow c (proj1_sig i)) (V_odd_nth_roots (S n)))); intros.
-  apply H0.
-  apply vector_rev_conj_Cpow.
-  apply vector_rev_conj_odd_nth_roots.
+  apply (vector_rev_conj_conj (vmap' (fun c => Cpow c (proj1_sig i)) (V_odd_nth_roots (S n)))).
+  apply vector_rev_conj_Cpow, vector_rev_conj_odd_nth_roots.
 Qed.
   
                                                  
