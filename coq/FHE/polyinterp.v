@@ -3029,7 +3029,7 @@ Proof.
   unfold proj1_sig; lia.
 Qed.
 
-Definition vector_rev {n} (v : Vector C n) :=
+Definition vector_rev {n} {T}  (v : Vector T n) :=
   fun i => v (ind_reflect i).
 
 Definition vector_rev_conj {n} (v : Vector C n) :=
@@ -3108,7 +3108,7 @@ Proof.
     f_equal.
  Qed.
 
-Lemma rev_vector_to_list {n} (v : Vector C n) :
+Lemma rev_vector_to_list {n} {T} (v : Vector T n) :
   rev (vector_to_list v) = vector_to_list (vector_rev v).
 Proof.
   unfold vector_rev.
