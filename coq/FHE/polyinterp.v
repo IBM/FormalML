@@ -1241,14 +1241,6 @@ Proof.
   now rewrite nth_root_half_pow.
 Qed.  
 
-Lemma Cmult_conj (x y : C) :
-  Cmult (Cconj x) (Cconj y) = Cconj (Cmult x y).
-Proof.
-  destruct x; destruct y.
-  unfold Cconj, Cmult, fst, snd.
-  f_equal; lra.
-Qed.  
-
 Definition odd_nth_roots (n : nat) :=
   (map (fun j => nth_root (2*j+1) (2 ^ (S n))) (seq 0 (2^n))).
 
@@ -2647,6 +2639,14 @@ Lemma list_Cplus_vector_sum (l : list C) :
 Proof.
   unfold list_to_vector.
   unfold vector_sum.
+  induction l.
+  - unfold vector_fold_right, vector_fold_right_dep, vector_fold_right_bounded_dep.
+    now simpl.
+  - simpl.
+    rewrite IHl.
+    unfold list_fold_right_dep.
+    unfold list_fold_right1_dep.
+    Search vcons.
 Admitted.    
 *)
 
@@ -3076,7 +3076,7 @@ Proof.
     destruct (pow2_S (S (S n))).
     rewrite H1.
     rewrite <- Cpow_conj.
-    rewrite <- Complex.Cmult_conj.
+    rewrite <- Cmult_conj.
     f_equal.
     do 2 rewrite Cpow_nth_root.
     rewrite nth_root_mul.
@@ -3155,7 +3155,7 @@ Proof.
   unfold vector_rev_conj; intros.
   unfold Vscale.
   rewrite H.
-  rewrite <- Cmult_conj.
+  rewrite Cmult_conj.
   f_equal.
   unfold Cconj, fst, snd, RtoC.
   f_equal; lra.
@@ -3319,7 +3319,3 @@ Proof.
 Qed.
   
 
-
-
-                                                 
-  
