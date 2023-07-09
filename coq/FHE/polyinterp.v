@@ -1255,6 +1255,12 @@ Definition odd_nth_roots (n : nat) :=
 Definition V_odd_nth_roots (n : nat) : Vector C (2^n) :=
   fun j => nth_root (2 * (proj1_sig j) + 1) (2 ^ (S n)).
 
+Definition V_even_nth_roots (n : nat) : Vector C (2^n) :=
+  fun j => nth_root (2 * (proj1_sig j)) (2 ^ (S n)).
+
+Definition V_nth_roots_half (n : nat) : Vector C (2^n) :=
+  fun j => nth_root (proj1_sig j) (2 ^ (S n)).
+
 Definition odd_nth_roots_half (n : nat) :=
   (map (fun j => nth_root (2*j+1) (2 ^ (S (S n)))) (seq 0 (2^n))).
 
@@ -2954,7 +2960,7 @@ Proof.
       * now generalize (eq_nat_refl n); intros.
  Qed.
 
-Lemma ind_eq {n} (i j : {n' : nat | n' < n}) :
+Lemma index_eq {n} (i j : {n' : nat | n' < n}) :
   proj1_sig i = proj1_sig j ->
   i = j.
 Proof.
@@ -2963,8 +2969,7 @@ Proof.
   destruct j.
   unfold proj1_sig in H.
   subst.
-  f_equal.
-  apply Classical_Prop.proof_irrelevance.
+  apply index_pf_irrel.
 Qed.
 
 Lemma V_decode_mat_encode_mat_assoc_l (n : nat) (cl : Vector C (2^(S n))) :
@@ -2987,7 +2992,7 @@ Proof.
   destruct (eq_nat_decide (proj1_sig x) (proj1_sig i)).
   - apply eq_nat_eq in e.
   specialize (H x).
-  generalize (ind_eq x i e); intros.
+  generalize (index_eq x i e); intros.
   rewrite <- H1.
   apply (f_equal (fun z => (z * cl x)%C)) in H.
   replace (2 ^ S n)%R with (2 * 2^n)%R by now simpl.
@@ -3014,27 +3019,112 @@ Proof.
   now rewrite V_mmv_mult_assoc.
 Qed.
 
-Program Definition ind_reflect {n} (n' : {n' : nat | n' < n}) : {n' : nat | n' < n} :=
+Definition diag_matrix {n} (v : Vector C n) : Matrix C n n :=
+  (fun i j => if eq_nat_decide (proj1_sig j) (proj1_sig i) then (v i) else 0%R).
+
+(* shows evaluation can be done by modified FFT of half size*)
+Lemma V_peval_mat_prod (n : nat) :
+  V_peval_mat (V_odd_nth_roots (S n)) =
+    V_mat_mat_mult (V_peval_mat (V_even_nth_roots (S n)))
+      (diag_matrix (V_nth_roots_half (S n))).
+Proof.
+  apply vec_eq_eq; intros ?.
+  apply vec_eq_eq; intros ?.  
+  unfold V_peval_mat, diag_matrix, V_mat_mat_mult.
+  unfold V_inner_prod, transpose.
+  generalize (vector_sum_all_but_1_0  (2 ^ S n) i0  (V_odd_nth_roots (S n) i ^ proj1_sig i0)%C); intros.
+  rewrite <- H.
+  f_equal.
+  apply vec_eq_eq; intros ?.
+  match_destr.
+  - unfold V_odd_nth_roots, V_even_nth_roots, V_nth_roots_half.
+    destruct (pow2_S (S (S n))).
+    rewrite H0.
+    do 2 rewrite Cpow_nth_root.
+    rewrite nth_root_mul.
+    f_equal.
+    replace (proj1_sig i1) with (proj1_sig i0); try lia.
+    now apply eq_nat_eq.
+  - now rewrite Cmult_0_r.
+Qed.
+
+(* shows enconding can be done by modified IFFT of half size*)
+Lemma V_encode_mat_prod (n : nat) :
+  let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
+  let encmat := (V_conj_mat (transpose pmat)) in
+  encmat = 
+    V_mat_mat_mult
+      (diag_matrix (vmap' Cconj (V_nth_roots_half (S n))))
+      (V_peval_mat (vmap' Cconj (V_even_nth_roots (S n)))).
+Proof.
+  apply vec_eq_eq; intros ?.
+  apply vec_eq_eq; intros ?.  
+  unfold V_peval_mat, diag_matrix, V_mat_mat_mult, V_conj_mat.
+  unfold V_inner_prod, transpose.
+  generalize (vector_sum_all_but_1_0  (2 ^ S n) i  (Cconj (V_odd_nth_roots (S n) i0 ^ proj1_sig i))); intros.
+  rewrite <- H.
+  f_equal.
+  apply vec_eq_eq; intros ?.
+  match_destr.
+  - assert (eq_nat (proj1_sig i1) (proj1_sig i)).
+    {
+      apply eq_nat_eq in e.
+      apply eq_eq_nat; lia.
+    }
+    match_destr; try congruence.
+    unfold vmap', V_odd_nth_roots, V_even_nth_roots, V_nth_roots_half.
+    destruct (pow2_S (S (S n))).
+    rewrite H1.
+    rewrite <- Cpow_conj.
+    rewrite <- Complex.Cmult_conj.
+    f_equal.
+    do 2 rewrite Cpow_nth_root.
+    rewrite nth_root_mul.
+    f_equal.
+    replace (proj1_sig i1) with (proj1_sig i); try lia.
+    now apply eq_nat_eq.
+  - assert (~ eq_nat (proj1_sig i1) (proj1_sig i)).
+    {
+      unfold not; intros.
+      apply eq_nat_eq in H0.
+      rewrite H0 in n0.
+      now generalize (eq_nat_refl (proj1_sig i)).
+    }
+    match_destr; try congruence.
+    now rewrite Cmult_0_l.
+Qed.
+
+Lemma nth_root_even_half (i n : nat) :
+  nth_root (2 * i) (2 * (S n)) = nth_root i (S n).
+Proof.
+  unfold nth_root.
+  do 2 rewrite mult_INR.
+  generalize (S_INR_not_0 n); intros.
+  generalize (S_INR_not_0 1); intros.
+  do 2 f_equal; field; split; lra.
+Qed.
+
+Program Definition index_reflect {n} (n' : {n' : nat | n' < n}) : {n' : nat | n' < n} :=
   (exist _ (n - 1 - (proj1_sig n')) _).
 Next Obligation.
   lia.
 Qed.
 
-Lemma ind_reflect_involutive {n} (i : {i' : nat | i' < n}) :
-  ind_reflect (ind_reflect i) = i.
+Lemma index_reflect_involutive {n} (i : {i' : nat | i' < n}) :
+  index_reflect (index_reflect i) = i.
 Proof.
-  unfold ind_reflect.
-  apply ind_eq.
+  unfold index_reflect.
+  apply index_eq.
   destruct i.
   unfold proj1_sig; lia.
 Qed.
 
 Definition vector_rev {n} {T}  (v : Vector T n) :=
-  fun i => v (ind_reflect i).
+  fun i => v (index_reflect i).
 
 Definition vector_rev_conj {n} (v : Vector C n) :=
   forall i,
-    v i = Cconj (v (ind_reflect i)).
+    v i = Cconj (v (index_reflect i)).
 
 Lemma vector_rev_conj_plus {n} (v1 v2 : Vector C n) :
   vector_rev_conj v1 ->
@@ -3112,6 +3202,11 @@ Lemma rev_vector_to_list {n} {T} (v : Vector T n) :
   rev (vector_to_list v) = vector_to_list (vector_rev v).
 Proof.
   unfold vector_rev.
+  unfold vector_to_list.
+  induction n.
+  - unfold vector_fold_right, vector_fold_right_dep, vector_fold_right_bounded_dep.
+    now simpl.
+  - do 2 rewrite vector_fold_right_Sn.
   
 Admitted.
 
@@ -3187,7 +3282,7 @@ Proof.
   unfold vector_rev_conj, V_odd_nth_roots.
   intros.
   destruct i.
-  unfold ind_reflect, proj1_sig.
+  unfold index_reflect, proj1_sig.
   destruct (pow2_S (S (S n))).
   rewrite H.
   rewrite nth_root_conj_alt.
