@@ -10,6 +10,7 @@ depends: [
   "ocaml" {>= "4.07.0"}
   "coq" {>= "8.12.1"}
   "coq-mathcomp-ssreflect"
+  "coq-mathcomp-algebra"
   "coq-coquelicot"
   "coq-flocq" {>= "4.0.0" }
   "coq-interval"
