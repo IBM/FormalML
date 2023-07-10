@@ -25,7 +25,7 @@ jobs:
     - name: ls
       run: ls -la .
     - name: pin coq-interval until a new release comes out that supports mathcomp 2.0
-      run: su coq -c 'opam pin add coq-interval https://gitlab.inria.fr/coqinterval/interval.git#849f9ff447fd3481dde0340a4fda04f695562073'
+      run: su coq -c 'opam pin add -n coq-interval https://gitlab.inria.fr/coqinterval/interval.git#849f9ff447fd3481dde0340a4fda04f695562073'
     - name: Install Opam dependencies
       run: su coq -c 'eval $(opam env) && opam install --deps-only --with-test --with-doc -y -j 2 ./Formal_ML.opam'
     - name: Build using Make
