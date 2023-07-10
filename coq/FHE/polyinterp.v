@@ -39,6 +39,19 @@ Proof.
   now destruct (nth_error l2 i).
 Qed.
 
+Lemma nth_error_eqs_len {A} (l1 l2 : list A) :
+  length l1 = length l2 ->
+  (forall (i : nat), i < length l1 -> nth_error l1 i = nth_error l2 i) ->
+  l1 = l2.
+Proof.
+  intros eqq1 HH.
+  apply nth_error_eqs; intros.
+  destruct (lt_dec i (length l1)); auto 2.
+  destruct (nth_error_None l2 i) as [_ eqq2].
+  rewrite eqq2 by lia.
+  apply nth_error_None; lia.
+Qed.
+
 Lemma rev_nth_error {A} (l:list A) (n:nat) :
   n < length l -> nth_error (rev l) n = nth_error l (length l - S n).
 Proof.
@@ -69,20 +82,17 @@ Qed.
 Lemma rev_seq start n :
   rev (seq start n) = map (fun i => (n + 2 * start - S i)) (seq start n).
 Proof.
-  apply nth_error_eqs; intros i.
-  rewrite nth_error_map.
-  destruct (lt_dec i (length (seq start n))).
-  - rewrite rev_nth_error by trivial.
-    rewrite seq_length in l.
+  apply nth_error_eqs_len.
+  - now rewrite rev_length, map_length.
+  - intros i ilt.
+    rewrite rev_length in ilt.
+    rewrite rev_nth_error by trivial.
+    rewrite seq_length in ilt.
+    rewrite nth_error_map.
     repeat rewrite seq_nth_error; trivial
     ; rewrite seq_length.
     + simpl; f_equal; lia.
     + lia.
-  - assert (length (seq start n) <= i) by lia.
-    assert (length (rev (seq start n)) <= i) by (rewrite rev_length; lia).
-    apply nth_error_None in H.
-    apply nth_error_None in H0.
-    now rewrite H, H0.
 Qed.
 
 Lemma map_skipn_S_error {A:Type} (l:list A) n a :
@@ -187,32 +197,26 @@ Lemma firstn_seq n1 n2 start :
   firstn n1 (seq start n2) = seq start n1.
 Proof.
   intros.
-  apply  nth_error_eqs; intros i.
-  destruct (lt_dec i n1).
-  - rewrite nth_error_firstn_in; trivial.
-    rewrite seq_nth_error by lia.
-    now rewrite seq_nth_error.
-  - destruct (nth_error_None (firstn n1 (seq start n2)) i) as [_ eqq1].
-    destruct (nth_error_None (seq start n1) i) as [_ eqq2].
-    rewrite eqq1, eqq2; trivial.
-    + rewrite seq_length; lia.
-    + rewrite firstn_length; lia.
+  apply  nth_error_eqs_len.
+  - rewrite firstn_length; repeat rewrite seq_length.
+    lia.
+  - intros i ilt.
+    rewrite firstn_length, seq_length in ilt.
+    rewrite nth_error_firstn_in by lia.
+    now repeat rewrite seq_nth_error by lia.
 Qed.
 
 Lemma skipn_seq n1 n2 start :
   skipn n1 (seq start n2) = seq (start+n1) (n2-n1).
 Proof.
   intros.
-  apply  nth_error_eqs; intros i.
-  rewrite nth_error_skipn.
-  destruct (lt_dec (n1 + i) n2).
-  - rewrite seq_nth_error by lia.
-    rewrite seq_nth_error by lia.
+  apply  nth_error_eqs_len.
+  - now rewrite skipn_length; repeat rewrite seq_length.
+  - intros i ilt.
+    rewrite skipn_length in ilt; repeat rewrite seq_length in ilt.
+    rewrite nth_error_skipn.
+    repeat rewrite seq_nth_error by lia.
     f_equal; lia.
-  - destruct (nth_error_None ((seq start n2)) (n1 + i)) as [_ eqq1].
-    destruct (nth_error_None (seq (start + n1) (n2 - n1)) i) as [_ eqq2].
-    rewrite eqq1, eqq2; trivial
-    ; rewrite seq_length; lia.
 Qed.
 
 Lemma combine_nth_error [A B : Type] (l : list A) (l' : list B) (n : nat) :
@@ -3125,7 +3129,7 @@ Definition vector_rev {n} {T}  (v : Vector T n) :=
 Definition vector_rev_conj {n} (v : Vector C n) :=
   forall i,
     v i = Cconj (v (index_reflect i)).
-
+  
 Lemma vector_rev_conj_plus {n} (v1 v2 : Vector C n) :
   vector_rev_conj v1 ->
   vector_rev_conj v2 ->
