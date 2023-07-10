@@ -203,7 +203,7 @@ Qed.
 
   Lemma IsL1_Finite (rv_X:Ts->R)
 (*         {rrv:RandomVariable dom borel_sa rv_X} *)
-        {lp:IsLp 1 rv_X} : IsFiniteExpectation prts rv_X.
+        {lp : IsLp 1 rv_X} : IsFiniteExpectation prts rv_X.
   Proof.
     red.
     red in lp.
@@ -212,7 +212,7 @@ Qed.
   Qed.
 
   Lemma IsL1_abs_Finite (rv_X:Ts->R)
-        {lp:IsLp 1 rv_X} : IsFiniteExpectation prts (rvabs rv_X).
+        {lp : IsLp 1 rv_X} : IsFiniteExpectation prts (rvabs rv_X).
   Proof.
     red.
     red in lp.
@@ -244,7 +244,7 @@ Qed.
     Lemma IsLp_down_le m n (rv_X:Ts->R)
         {rrv:RandomVariable dom borel_sa rv_X}
         (pfle:0 <= n <= m)
-        {lp:IsLp m rv_X} : IsLp n rv_X.
+        {lp : IsLp m rv_X} : IsLp n rv_X.
     Proof.
       red in lp; red.
       apply (@IsLp_bounded _ _
@@ -413,11 +413,12 @@ Qed.
   Proof.
     lra.
   Qed.
+
   
   Lemma IsLp_Finite n (rv_X:Ts->R)
         {rrv:RandomVariable dom borel_sa rv_X}
         (nbig:1<=n)
-        {lp:IsLp n rv_X} : IsFiniteExpectation prts rv_X.
+        {lp : IsLp n rv_X} : IsFiniteExpectation prts rv_X.
   Proof.
     apply IsL1_Finite; trivial.
     eapply IsLp_down_le; try eapply lp; trivial; lra.
@@ -426,7 +427,7 @@ Qed.
   Lemma IsLSp_abs_Finite n (rv_X:Ts->R)
         {rrv:RandomVariable dom borel_sa rv_X}
         (nbig:1<=n)
-        {lp:IsLp n rv_X} : IsFiniteExpectation prts (rvabs rv_X).
+        {lp : IsLp n rv_X} : IsFiniteExpectation prts (rvabs rv_X).
   Proof.
     apply IsL1_abs_Finite; trivial.
     apply (IsLp_down_le n 1); trivial.
@@ -480,7 +481,7 @@ Qed.
       := LpRRV_lp _.
 
 
-    Definition pack_LpRRV (rv_X:Ts -> R) {rv:RandomVariable dom borel_sa rv_X} {lp:IsLp p rv_X}
+    Definition pack_LpRRV (rv_X:Ts -> R) {rv:RandomVariable dom borel_sa rv_X} {lp : IsLp p rv_X}
       := LpRRV_of rv_X rv lp.
     
     Definition LpRRV_seq (rv1 rv2:LpRRV) (* strict equality *)
@@ -2911,7 +2912,7 @@ Section complete.
   Lemma IsLp_Rbar_down_le m n (rv_X:Ts->Rbar)
         {rrv:RandomVariable dom Rbar_borel_sa rv_X}
         (pfle:0 <= n <= m)
-        {lp:IsLp_Rbar prts m rv_X} : IsLp_Rbar prts n rv_X.
+        {lp : IsLp_Rbar prts m rv_X} : IsLp_Rbar prts n rv_X.
   Proof.
     apply Rbar_IsLp_bounded with (rv_X2 := fun omega => Rbar_max 1 (Rbar_power (Rbar_abs (rv_X omega)) m)).
     - intros a.
@@ -3027,7 +3028,7 @@ Section complete.
    Qed.
 
   Lemma IsL1_Rbar_abs_Finite (rv_X:Ts->Rbar)
-        {lp:IsLp_Rbar prts 1 rv_X} : is_finite (Rbar_NonnegExpectation (Rbar_rvabs rv_X)).
+        {lp : IsLp_Rbar prts 1 rv_X} : is_finite (Rbar_NonnegExpectation (Rbar_rvabs rv_X)).
   Proof.
     red in lp.
     assert (rv_eq (fun omega => Rbar_power (Rbar_abs (rv_X omega)) 1)
@@ -3049,7 +3050,7 @@ Section complete.
 
   Lemma IsL1_Rbar_Finite (rv_X:Ts->Rbar)
         {rv:RandomVariable dom Rbar_borel_sa rv_X}
-        {lp:IsLp_Rbar prts 1 rv_X} : Rbar_IsFiniteExpectation prts rv_X.
+        {lp : IsLp_Rbar prts 1 rv_X} : Rbar_IsFiniteExpectation prts rv_X.
   Proof.
     apply finiteExp_Rbar_rvabs; trivial.
     now apply IsL1_Rbar_abs_Finite.
@@ -4647,13 +4648,13 @@ Section sa_sub.
              (x: LpRRV (prob_space_sa_sub prts sub) p) : LpRRV prts p
     := pack_LpRRV _ x
                   (rv:=RandomVariable_sa_sub sub x)
-                  (lp:=(proj2 (IsLp_prob_space_sa_sub p x)) _).
+                  (lp := (proj2 (IsLp_prob_space_sa_sub p x)) _).
 
   Definition LpRRV_sa_sub_f p
              (x:LpRRV prts p)
              {rv:RandomVariable dom2 borel_sa x}
     : LpRRV (prob_space_sa_sub prts sub) p
-    := pack_LpRRV _ x (lp:=(proj1 (IsLp_prob_space_sa_sub p x)) _).
+    := pack_LpRRV _ x (lp := (proj1 (IsLp_prob_space_sa_sub p x)) _).
 
   Lemma LpRRV_sa_sub_b_f p (x:LpRRV prts p)
         {rv:RandomVariable dom2 borel_sa x} :

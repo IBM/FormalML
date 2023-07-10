@@ -34,7 +34,7 @@ Section L2.
 
   Global Instance IsL2_Finite (rv_X:Ts->R)
         {rrv:RandomVariable dom borel_sa rv_X}
-        {lp:IsLp prts 2 rv_X} : IsFiniteExpectation prts rv_X.
+        {lp : IsLp prts 2 rv_X} : IsFiniteExpectation prts rv_X.
   Proof.
     apply IsLp_Finite in lp; trivial.
     apply big2.

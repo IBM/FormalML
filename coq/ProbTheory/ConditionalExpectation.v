@@ -7819,10 +7819,10 @@ Section lp_cond_exp.
                             (rv:=LpRRV_rv _ f)
                             (isfe:=IsLp_Finite prts p f pbig
                                                (rrv:=LpRRV_rv _ _)
-                                               (lp:=LpRRV_lp _ _)
+                                               (lp := LpRRV_lp _ _)
                                                   ))
                      (rv:=(FiniteCondexp_rv prts sub f))
-                     (lp:=FiniteCondexp_Lp prts sub pbig f).
+                     (lp := FiniteCondexp_Lp prts sub pbig f).
 
     Global Instance LpRRV_condexp_sproper : Proper (LpRRV_seq ==> LpRRV_seq) LpRRVcondexp.
     Proof.
@@ -7845,7 +7845,7 @@ Section lp_cond_exp.
       Expectation (LpRRVindicator prts pbig (dec_event_sa_sub dec) f) =
       Expectation (LpRRVindicator (prob_space_sa_sub prts sub) pbig dec (LpRRVcondexp f)).
     Proof.
-      generalize (FiniteCondexp_cond_exp_event prts sub f (isfe:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _)) dec); intros HH.
+      generalize (FiniteCondexp_cond_exp_event prts sub f (isfe:=IsLp_Finite _ _ _ pbig (lp := LpRRV_lp _ _)) dec); intros HH.
       unfold LpRRVindicator; simpl.
       etransitivity; [etransitivity; try eapply HH |].
       - eapply Expectation_ext; intros ?.
@@ -7922,7 +7922,7 @@ Section lp_cond_exp.
   Proof.
     red.
     unfold LpRRVcondexp; simpl.
-    generalize (FiniteCondexp_scale prts sub c f (isfe:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _))).
+    generalize (FiniteCondexp_scale prts sub c f (isfe:=IsLp_Finite _ _ _ pbig (lp := LpRRV_lp _ _))).
     apply almost_impl; apply all_almost; intros ??.
     rewrite <- H.
     now apply FiniteConditionalExpectation_ext.
@@ -7935,7 +7935,7 @@ Section lp_cond_exp.
   Proof.
     red.
     unfold LpRRVcondexp; simpl.
-    generalize (FiniteCondexp_opp prts sub f (isfe:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _))).
+    generalize (FiniteCondexp_opp prts sub f (isfe:=IsLp_Finite _ _ _ pbig (lp := LpRRV_lp _ _))).
     apply almost_impl; apply all_almost; intros ??.
     rewrite <- H.
     now apply FiniteConditionalExpectation_ext.
@@ -7949,8 +7949,8 @@ Section lp_cond_exp.
     red.
     unfold LpRRVcondexp; simpl.
     generalize (FiniteCondexp_plus prts sub f1 f2
-                                   (isfe1:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _))
-                                   (isfe2:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _))).
+                                   (isfe1:=IsLp_Finite _ _ _ pbig (lp := LpRRV_lp _ _))
+                                   (isfe2:=IsLp_Finite _ _ _ pbig (lp := LpRRV_lp _ _))).
     apply almost_impl; apply all_almost; intros ??.
     rewrite <- H.
     now apply FiniteConditionalExpectation_ext.
@@ -7964,8 +7964,8 @@ Section lp_cond_exp.
     red.
     unfold LpRRVcondexp; simpl.
     generalize (FiniteCondexp_minus prts sub f1 f2
-                                   (isfe1:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _))
-                                   (isfe2:=IsLp_Finite _ _ _ pbig (lp:=LpRRV_lp _ _))).
+                                   (isfe1:=IsLp_Finite _ _ _ pbig (lp := LpRRV_lp _ _))
+                                   (isfe2:=IsLp_Finite _ _ _ pbig (lp := LpRRV_lp _ _))).
     apply almost_impl; apply all_almost; intros ??.
     rewrite <- H.
     now apply FiniteConditionalExpectation_ext.

@@ -87,7 +87,7 @@ Section Lp.
 
   Lemma IsL1_Finite (rv_X:Ts->R)
         {rrv:RandomVariable dom borel_sa rv_X}
-        {lp:IsLp 1 rv_X} : IsFiniteExpectation prts rv_X.
+        {lp : IsLp 1 rv_X} : IsFiniteExpectation prts rv_X.
   Proof.
     red.
     red in lp.
@@ -96,7 +96,7 @@ Section Lp.
   Qed.
 
   Lemma IsL1_abs_Finite (rv_X:Ts->R)
-        {lp:IsLp 1 rv_X} : IsFiniteExpectation prts (rvabs rv_X).
+        {lp : IsLp 1 rv_X} : IsFiniteExpectation prts (rvabs rv_X).
   Proof.
     red.
     red in lp.
@@ -162,7 +162,7 @@ Section Lp.
   
   Lemma IsLp_down n (rv_X:Ts->R)
         {rrv:RandomVariable dom borel_sa rv_X}
-        {lp:IsLp (S n) rv_X} : IsLp n rv_X.
+        {lp : IsLp (S n) rv_X} : IsLp n rv_X.
   Proof.
     red in lp.
     rewrite rvpowS in lp.
@@ -179,7 +179,7 @@ Section Lp.
   Lemma IsLp_down_le m n (rv_X:Ts->R)
         {rrv:RandomVariable dom borel_sa rv_X}
         (pfle:(n <= m)%nat)
-        {lp:IsLp m rv_X} : IsLp n rv_X.
+        {lp : IsLp m rv_X} : IsLp n rv_X.
   Proof.
     eapply (Nat.left_induction (fun x => IsLp x rv_X)); try eassumption.
     - intros ???; subst.
@@ -191,7 +191,7 @@ Section Lp.
   Lemma IsLp_Finite n (rv_X:Ts->R)
         {rrv:RandomVariable dom borel_sa rv_X}
         (nzero:(1 <= n)%nat)
-        {lp:IsLp n rv_X} : IsFiniteExpectation prts rv_X.
+        {lp : IsLp n rv_X} : IsFiniteExpectation prts rv_X.
   Proof.
     apply IsL1_Finite; trivial.
     now apply (IsLp_down_le n 1).
@@ -199,7 +199,7 @@ Section Lp.
 
   Global Instance IsLSp_Finite n (rv_X:Ts->R)
          {rrv:RandomVariable dom borel_sa rv_X}
-         {lp:IsLp (S n) rv_X} : IsFiniteExpectation prts rv_X | 2.
+         {lp : IsLp (S n) rv_X} : IsFiniteExpectation prts rv_X | 2.
   Proof.
     eapply IsLp_Finite; try eassumption.
     lia.
@@ -207,7 +207,7 @@ Section Lp.
 
   Lemma IsLSp_abs_Finite n (rv_X:Ts->R)
         {rrv:RandomVariable dom borel_sa rv_X}
-        {lp:IsLp (S n) rv_X} : IsFiniteExpectation prts (rvabs rv_X).
+        {lp : IsLp (S n) rv_X} : IsFiniteExpectation prts (rvabs rv_X).
   Proof.
     apply IsL1_abs_Finite; trivial.
     apply (IsLp_down_le (S n) 1); trivial.
@@ -585,7 +585,7 @@ Section Lp.
       := LpRRV_lp _.
 
 
-    Definition pack_LpRRV (rv_X:Ts -> R) {rv:RandomVariable dom borel_sa rv_X} {lp:IsLp p rv_X}
+    Definition pack_LpRRV (rv_X:Ts -> R) {rv:RandomVariable dom borel_sa rv_X} {lp : IsLp p rv_X}
       := LpRRV_of rv_X rv lp.
     
     Definition LpRRV_eq (rv1 rv2:LpRRV)
@@ -609,7 +609,7 @@ Section Lp.
     Definition LpRRVzero : LpRRV := LpRRVconst 0.
 
     Definition LpRRVplus (rv1 rv2:LpRRV) : LpRRV
-      := pack_LpRRV (rvplus rv1  rv2) (lp:=IsLp_plus _ _ _).
+      := pack_LpRRV (rvplus rv1  rv2) (lp := IsLp_plus _ _ _).
 
     Global Instance LpRRV_plus_proper : Proper (LpRRV_eq ==> LpRRV_eq ==> LpRRV_eq) LpRRVplus.
     Proof.
@@ -646,7 +646,7 @@ Section Lp.
     Qed.
     
     Definition LpRRVminus (rv1 rv2:LpRRV) : LpRRV
-      := pack_LpRRV (rvminus rv1 rv2)  (lp:=IsLp_minus _ _ _).
+      := pack_LpRRV (rvminus rv1 rv2)  (lp := IsLp_minus _ _ _).
 
     Lemma LpRRVminus_plus (rv1 rv2:LpRRV) :
       LpRRV_eq 

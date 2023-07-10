@@ -390,7 +390,7 @@ Section Linf.
   Lemma Linfty_Lp_le (p:posreal) (rv_X : Ts -> R) 
     {rv : RandomVariable dom borel_sa rv_X} 
     {isl:IsLinfty rv_X} :
-    LpRRVnorm (p:=p) prts (pack_LpRRV prts rv_X (lp:=Linfty_Lp p _)) <= Linfty_norm rv_X.
+    LpRRVnorm (p:=p) prts (pack_LpRRV prts rv_X (lp := Linfty_Lp p _)) <= Linfty_norm rv_X.
   Proof.      
     generalize (Linfty_norm_nneg rv_X); intros.
     apply power_incr_inv with (n:=p); trivial.
