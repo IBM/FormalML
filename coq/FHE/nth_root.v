@@ -651,6 +651,17 @@ Proof.
   now rewrite Theory.invr1.
 Qed.
 
+Lemma Cmult_Cinv_r (x : R[i]) :
+  x <> C0 ->
+  Cmult x (Cinv x) = C1.
+Proof.
+  intros.
+  unfold Cmult, Cinv, C1.
+(*
+  rewrite divff.
+*)
+  Admitted.
+
 Lemma Cpow_sub_r (c : R[i]) (n m : nat):
   m <= n ->
   c <> C0 ->
@@ -669,14 +680,23 @@ Proof.
   rewrite <- H1.
   unfold Cdiv, Cmult.
   rewrite <- mulrA.
-  Search (mul _ (inv _)).
-  generalize @divff; intros.
-  rewrite mulA.
-  rewrite <- Cmult_assoc.
-  rewrite Cinv_r.
-  - now rewrite Cmult_1_r.
-  - now apply Cpow_nz.
- Qed.
+  assert (Cpow c m <> C0).
+  {
+    rewrite Cpow_exp.
+    generalize Theory.expf_neq0; intros.
+    assert (is_true (negb (eqtype.eq_op c C0))).
+    {
+      admit.
+    }
+    generalize (Theory.expf_neq0 m H3); intros.
+    admit.
+  }
+  generalize (Cmult_Cinv_r (Cpow c m) H2); intros.
+  unfold Cmult, Cinv in H3.
+  rewrite H3.
+  unfold C1.
+  now rewrite mulr1.
+ Admitted.
 
 Lemma nth_root_diff j k n :
   j <= k ->
@@ -690,15 +710,14 @@ Proof.
   apply nth_root_not_0.
 Qed.
 
-
 Lemma nth_root_inv j n :
   Cinv (nth_root j (S n)) = nth_root (S n - (j mod S n)) (S n).
 Proof.
   generalize (nth_root_diff (j mod S n) (S n) n); intros.
   rewrite <- H.
   - rewrite nth_root_Sn.
-    unfold Cdiv.
-    rewrite Cmult_1_l.
+    unfold Cdiv, Cinv.
+    rewrite mul1r.
     f_equal.
     apply (nth_root_mod j (j mod S n) n).
     rewrite Nat.mod_mod; try lia.
