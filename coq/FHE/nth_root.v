@@ -959,3 +959,27 @@ Proof.
   rewrite Cinv_r; trivial.
   apply nth_root_not_0.
 Qed.
+
+Lemma nth_root_half n :
+  nth_root (2 ^n) (2 ^ (S n)) = opp C1.
+Proof.
+  destruct (pow2_S (S n)).
+  generalize (odd_roots_prim 0 n); intros.
+  replace (2 * 0 +1) with 1 in H by lia.
+  rewrite H in H0.
+  rewrite Cpow_nth_root in H0.
+  rewrite <- H in H0.
+  now replace (2^n * (2 * 0 + 1)) with (2 ^ n) in H0 by lia.
+Qed.
+
+Lemma nth_root_opp j n :
+  add (nth_root j (2 ^ (S n))) (nth_root (j + 2^n) (2 ^ (S n))) = C0.
+Proof.
+  destruct (pow2_S (S n)).
+  rewrite H.
+  rewrite <- nth_root_mul.
+  rewrite <- H.
+  rewrite nth_root_half.
+  unfold Cmult.
+  Search opp.
+  Admitted.
