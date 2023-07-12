@@ -820,6 +820,13 @@ Proof.
   - apply nth_root_not_0.
 Qed.
 
+Lemma nth_root_conj_alt j n :
+  Cconj (nth_root j (S n)) = nth_root (S n - j mod (S n)) (S n).
+Proof.
+  rewrite nth_root_conj.
+  now rewrite nth_root_inv.
+Qed.
+
 Lemma nth_root_half_pow_aux n :
   Cpow (nth_root (S n) (2 * (S n))) 2 = C1.
 Proof.
@@ -982,3 +989,4 @@ Proof.
   rewrite nth_root_half.
   unfold Cmult.
 Admitted.
+
