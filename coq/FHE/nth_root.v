@@ -651,7 +651,7 @@ Proof.
   now rewrite Theory.invr1.
 Qed.
 
-Lemma Cmult_Cinv_r (x : R[i]) :
+Lemma Cinv_r (x : R[i]) :
   x <> C0 ->
   Cmult x (Cinv x) = C1.
 Proof.
@@ -661,6 +661,18 @@ Proof.
   rewrite divff.
 *)
   Admitted.
+
+Lemma Cinv_l (x : R[i]) :
+  x <> C0 ->
+  Cmult (Cinv x) x = C1.
+Proof.
+  intros.
+  unfold Cmult, Cinv, C1.
+(*
+  rewrite divff.
+*)
+  Admitted.
+
 
 Lemma Cpow_sub_r (c : R[i]) (n m : nat):
   m <= n ->
@@ -691,7 +703,7 @@ Proof.
     generalize (Theory.expf_neq0 m H3); intros.
     admit.
   }
-  generalize (Cmult_Cinv_r (Cpow c m) H2); intros.
+  generalize (Cinv_r (Cpow c m) H2); intros.
   unfold Cmult, Cinv in H3.
   rewrite H3.
   unfold C1.
@@ -736,6 +748,7 @@ Proof.
 Qed.
 
 Definition Cconj (x : R[i]) := conjc x.
+Definition Cmod (x : R[i]) := let: a +i* b := x in sqrt (exp a 2 + exp b 2).
 
 Lemma nth_root_Cmod j n :
   Cmod (nth_root j (S n)) = 1%R.
@@ -744,17 +757,21 @@ Proof.
   rewrite Rplus_comm.
   rewrite <- sqrt_1.
   f_equal.
+  do 2 rewrite <- RpowE.
   do 2 rewrite <- Rsqr_pow2.
   now rewrite sin2_cos2.
 Qed.
 
 Lemma Cmod_Cconj (c : R[i]) :
-  Cmult c (Cconj c) = Rsqr (Cmod c).
+  Cmult c (Cconj c) = RtoC (Rsqr (Cmod c)).
 Proof.
+  unfold Cconj, Cmod, Cmult, fst, snd, RtoC.
   destruct c.
-  unfold Cconj, Cmod, Cmult, fst, snd.
+  do 2 rewrite <- RpowE.    
   rewrite Rsqr_sqrt.
   - unfold RtoC.
+    unfold mul, Ring.mul; simpl.
+    unfold add, mul, opp; simpl.
     f_equal; lra.
   - apply Rplus_le_le_0_compat; apply pow2_ge_0.
 Qed.
@@ -765,11 +782,11 @@ Proof.
   generalize (Cmod_Cconj (nth_root j (S n))); intros.
   rewrite nth_root_Cmod in H.
   rewrite Rsqr_1 in H.
-  apply (f_equal (fun c => Cmult (/ nth_root j (S n)) c)) in H.
-  rewrite Cmult_1_r in H.
-  rewrite Cmult_assoc in H.
+  apply (f_equal (fun c => Cmult (Cinv (nth_root j (S n))) c)) in H.
+  unfold Cmult, RtoC in H.
+  rewrite mulr1 in H.
+  rewrite mulrA in H.
   rewrite Cinv_l in H.
-  - now rewrite Cmult_1_l in H.
+  - now rewrite mul1r in H.
   - apply nth_root_not_0.
 Qed.
-
