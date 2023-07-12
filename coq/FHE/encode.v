@@ -72,4 +72,10 @@ Proof.
   unfold vector_sum, ConstVector.
 Admitted.
 
+Lemma conj_transpose {n} (m : 'M[R[i]]_(n,n)) :
+  conj_mat (m^T) = (conj_mat m)^T.
+Proof.
+  unfold conj_mat.
+  Admitted.
+
 
