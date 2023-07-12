@@ -59,6 +59,7 @@ Lemma vector_sum_scale {n} (c : R[i])  (v : 'rV[R[i]]_n) :
 Proof.
   unfold vector_sum.
   unfold Vscale.
+  rewrite Theory.mulr_sumr.
   Admitted.
 
 Definition ConstVector n (c : R[i]) : 'rV[R[i]]_n:= const_mx c.
