@@ -55,11 +55,16 @@ Proof.
   unfold vector_sum.
   unfold Vscale.
   rewrite Theory.mulr_sumr.
-  Admitted.
+  f_equal.
+  apply FunctionalExtensionality.functional_extensionality.
+  intros.
+  f_equal.
+  now rewrite mxE.
+Qed.
 
 Definition ConstVector n (c : R[i]) : 'rV[R[i]]_n:= const_mx c.
 
-Definition RtoC (x : R) := Complex x R0.
+Definition RtoC (x : R):R[i] := Complex x R0.
 
 Lemma vector_sum_const {n} (c : R[i]) :
   vector_sum (ConstVector n c) = mul (n%:R) c.
