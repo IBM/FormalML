@@ -55,10 +55,9 @@ Proof.
   unfold vector_sum.
   unfold Vscale.
   rewrite Theory.mulr_sumr.
-  f_equal.
-  apply FunctionalExtensionality.functional_extensionality.
-  intros.
-  f_equal.
+  erewrite eq_big_seq; [reflexivity |].
+  simpl.
+  apply ssrbool.in1W; intros.
   now rewrite mxE.
 Qed.
 
