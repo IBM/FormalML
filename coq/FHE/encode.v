@@ -2,14 +2,9 @@ Require Import Reals Lra Lia List.
 From mathcomp Require Import ssreflect fintype bigop ssrnat matrix Rstruct complex.
 From mathcomp Require Import ssralg.
 Import ssralg.GRing.
-
+Require Import nth_root.
 
 Set Bullet Behavior "Strict Subproofs".
-
-(* represent complex number as pair *)
-Definition nth_root (j n : nat) : R[i] :=
-  let c := (2*PI*INR(j)/INR(n))%R in 
-  ((cos c) +i* (sin c))%C.
 
 Local Open Scope ring_scope.
 
