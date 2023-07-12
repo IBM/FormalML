@@ -72,6 +72,7 @@ Proof.
 Definition nth_roots (n:nat) :=
   map (fun j => nth_root j n) (seq 0 n).
 
+(*
 Fixpoint Cpow (x : R[i]) (n : nat) : R[i] :=
   match n with
   | 0 => C1
@@ -94,23 +95,31 @@ Proof.
     rewrite IHn.
     now unfold mul, Ring.mul; simpl.
 Qed.
+ *)
 
-Lemma de_moive (x : R) (n : nat) :
+Definition Cpow (x : R[i]) (n : nat) : R[i] := exp x n.
+Lemma Cpow_exp (x : R[i]) (n : nat) :
+  Cpow x n = exp x n.
+Proof.
+  now unfold Cpow.
+Qed.
+
+Lemma de_moivre (x : R) (n : nat) :
   exp (cos x +i* sin x) n = (cos ((INR n) * x) +i* sin ((INR n) * x)).
 Proof.
-  rewrite <- Cpow_exp.
+  rewrite <- iter_mulr_1.
   induction n.
   - simpl.
     rewrite Rmult_0_l.
     now rewrite cos_0; rewrite sin_0.
-  - unfold Cpow.
-    replace (INR (S n) * x)%R with (x + (INR n) * x)%R.
-    + unfold Cpow in IHn.
+  - replace (INR (S n) * x)%R with (x + (INR n) * x)%R.
+    + simpl.
+      simpl in IHn.
       rewrite IHn.
-      simpl.
-      unfold add, Zmodule.add; simpl.
       unfold mul; simpl.
+      unfold add; simpl.
       unfold opp; simpl.
+      unfold mul; simpl.
       rewrite cos_plus, sin_plus.
       f_equal.
       lra.
@@ -120,9 +129,8 @@ Proof.
 Lemma Cpow_nth_root j n e :
   Cpow (nth_root j (S n)) e = nth_root (e * j) (S n).
 Proof.
-  unfold nth_root.
-  rewrite Cpow_exp.
-  rewrite de_moive.
+  unfold nth_root, Cpow.
+  rewrite de_moivre.
   rewrite mult_INR.
   do 2 f_equal; field; apply S_INR_not_0.
 Qed.
@@ -591,9 +599,8 @@ Qed.
 Lemma pow_nth_root_prim n :
   Cpow (nth_root 1 (S n)) (S n) = RtoC R1.  
 Proof.
-  unfold nth_root.
-  rewrite Cpow_exp.
-  rewrite de_moive.
+  unfold nth_root, Cpow.
+  rewrite de_moivre.
   replace (INR (S n) * (2 * PI * INR 1 / INR (S n)))%R with (2 * PI)%R.
   - now rewrite cos_2PI, sin_2PI.
   - replace (INR 1) with R1 by now unfold INR.
@@ -611,9 +618,9 @@ Qed.
 Lemma pow_nth_root j n :
   Cpow (nth_root j (S n)) (S n) = RtoC R1.
 Proof.
-  rewrite Cpow_exp.
+  unfold Cpow.
   rewrite prim_nth_root.
-  rewrite Cpow_exp.
+  unfold Cpow.
   rewrite <- exprM.
   rewrite ssrnat.mulnC.
   rewrite exprM.
@@ -628,8 +635,7 @@ Proof.
   rewrite (prim_nth_root k _).
   rewrite (prim_nth_root j _).
   rewrite (prim_nth_root (j + k) _).
-  do 3 rewrite Cpow_exp.
-  unfold Cmult.
+  unfold Cpow, Cmult.
   now rewrite <- exprD.
  Qed.
 
@@ -682,8 +688,7 @@ Proof.
   intros.
   assert (Cmult (Cpow c (n - m)) (Cpow c m) = Cpow c n).
   {
-    do 3 rewrite Cpow_exp.
-    unfold Cmult.
+    unfold Cpow, Cmult.
     rewrite <- exprD.
     f_equal.
     unfold ssrnat.addn, ssrnat.addn_rec.
@@ -694,7 +699,7 @@ Proof.
   rewrite <- mulrA.
   assert (Cpow c m <> C0).
   {
-    rewrite Cpow_exp.
+    unfold Cpow.
     generalize Theory.expf_neq0; intros.
     assert (is_true (negb (eqtype.eq_op c C0))).
     {
@@ -790,3 +795,138 @@ Proof.
   - now rewrite mul1r in H.
   - apply nth_root_not_0.
 Qed.
+
+Lemma nth_root_half_pow_aux n :
+  Cpow (nth_root (S n) (2 * (S n))) 2 = C1.
+Proof.
+  replace (2 * (S n)) with (S (2 * n + 1)) by lia.
+  rewrite Cpow_nth_root.
+  do 2 replace (2 * (S n)) with (S (2 * n + 1)) by lia.
+  now rewrite nth_root_Sn.
+Qed.
+
+Lemma pow2_inv x y : (x ^ 2)%R = y -> Rabs x = sqrt y.
+Proof.
+  intros eqq1.
+  apply (f_equal sqrt) in eqq1.
+  destruct (Rle_dec 0 x).
+  - intros.
+    rewrite sqrt_pow2 in eqq1 by trivial.
+    rewrite eqq1.
+    rewrite Rabs_right; trivial.
+    generalize (sqrt_pos y); lra.
+  - assert (eqq1':sqrt ((-x) ^2) = sqrt y).
+    {
+      now rewrite <- Rsqr_pow2, <- Rsqr_neg, Rsqr_pow2.
+    } 
+    rewrite sqrt_pow2 in eqq1' by lra.
+    now rewrite Rabs_left by lra.
+Qed.
+
+
+Lemma Rabs_pm_l x y : Rabs x = y -> x = y \/ (- x)%R = y.
+Proof.
+  unfold Rabs.
+  destruct (Rcase_abs); [right|left]; lra.
+Qed.
+
+Lemma Rabs_pm_r x y : Rabs x = y -> x = y \/ x = (- y)%R.
+Proof.
+  unfold Rabs.
+  destruct (Rcase_abs); [right|left]; lra.
+Qed.
+
+Lemma Cpow_2 (c : R[i]) :
+  Cpow c 2 = C1 -> c = C1 \/ c = opp C1.
+Proof.
+  unfold Cpow.
+  rewrite expr2.
+  intros.
+  destruct c.
+  unfold mul in H; simpl in H.
+  unfold add in H; simpl in H.
+  unfold mul, opp in H; simpl in H.
+  unfold C1, RtoC in H.
+  injection H; intros; clear H.
+  ring_simplify in H0.
+  apply (f_equal (fun z => (/2 * z)%R)) in H0.
+  do 2 rewrite <- Rmult_assoc in H0.
+  rewrite <- Rinv_l_sym in H0; try lra.
+  rewrite Rmult_1_l, Rmult_0_r in H0.
+  apply Rmult_integral in H0.
+  destruct H0; subst; ring_simplify in H1.
+  - assert (0 <= Im ^ 2)%R by apply pow2_ge_0.
+    lra.
+  - apply pow2_inv in H1.
+    rewrite sqrt_1 in H1.
+    apply Rabs_pm_r in H1.
+    unfold C1, RtoC.
+    unfold opp; simpl.
+    unfold opp; simpl.
+    destruct H1; [left|right]; f_equal; lra.
+Qed.
+
+Lemma nth_root_half_pow n :
+  nth_root (S n) (2 * (S n)) = opp C1.
+Proof.
+  generalize (nth_root_half_pow_aux n); intros.
+  apply Cpow_2 in H.
+  destruct H; trivial.
+  replace (2 * (S n)) with (S (2 * n + 1)) in H by lia.
+  replace 1%R with R1 in H by lra.
+  generalize (nth_root_not_1 (S n) (2*n+1)); intros.
+  assert (S n mod S (2 * n + 1) <> 0).
+  {
+    rewrite Nat.mod_small; lia.
+  }
+  tauto.
+Qed.
+
+Lemma pow2_S (j:nat) :
+  exists (k : nat), 2^j = S k.
+Proof.
+  exists (2^j-1).
+  induction j.
+  - now simpl.
+  - simpl.
+    rewrite IHj.
+    lia.
+Qed.
+
+Lemma odd_roots_prim j n :
+  Cpow (nth_root (2 * j + 1) (2 ^ (S n))) (2^n) = opp C1.
+Proof.
+  generalize (pow2_S (S n)); intros.
+  destruct H.
+  rewrite H.
+  rewrite Cpow_nth_root.
+  rewrite <- H.
+  assert ((2 ^ n * (2 * j + 1) mod (2 ^ S n)) =
+           (2 ^ n mod (2 ^ S n))).
+  {
+    replace (2 ^n * (2 * j + 1)) with (2 ^ n + j*(2 * 2^n)) by lia.
+    replace (2 ^ (S n)) with (2 * 2^n).
+    - rewrite Nat.mod_add; try lia.
+      assert (2^n <> 0).
+      {
+        apply Nat.pow_nonzero.
+        lia.
+      }
+      lia.
+    - simpl.
+      lia.
+  }
+  rewrite H in H0.
+  apply nth_root_mod in H0.
+  rewrite <- H in H0.
+  rewrite H0.
+  generalize (pow2_S n); intros.
+  destruct H1.
+  simpl.
+  replace (2 ^ n + (2 ^n + 0)) with (2 * 2^n) by lia.
+  rewrite H1.
+  now rewrite nth_root_half_pow.
+Qed.  
+
+  
+
