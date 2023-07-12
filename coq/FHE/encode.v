@@ -83,3 +83,10 @@ Proof.
   now rewrite map_trmx.
 Qed.
 
+Lemma RtoCnat_eq n : RtoC (INR n) = n%:R.
+Proof.
+  unfold RtoC.
+  induction n.
+  - now rewrite Theory.mulr0n.
+  - rewrite Theory.mulrSr S_INR -IHn /add/= add0r//.
+Qed.
