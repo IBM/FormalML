@@ -735,6 +735,8 @@ Proof.
   apply nth_root_mul.
 Qed.
 
+Definition Cconj (x : R[i]) := conjc x.
+
 Lemma nth_root_Cmod j n :
   Cmod (nth_root j (S n)) = 1%R.
 Proof.
@@ -746,7 +748,7 @@ Proof.
   now rewrite sin2_cos2.
 Qed.
 
-Lemma Cmod_Cconj (c : C) :
+Lemma Cmod_Cconj (c : R[i]) :
   Cmult c (Cconj c) = Rsqr (Cmod c).
 Proof.
   destruct c.
@@ -770,3 +772,4 @@ Proof.
   - now rewrite Cmult_1_l in H.
   - apply nth_root_not_0.
 Qed.
+
