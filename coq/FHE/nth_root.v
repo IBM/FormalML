@@ -981,5 +981,4 @@ Proof.
   rewrite <- H.
   rewrite nth_root_half.
   unfold Cmult.
-  Search opp.
-  Admitted.
+Admitted.

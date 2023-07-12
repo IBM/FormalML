@@ -34,16 +34,16 @@ Definition peval_mat {n} (roots : 'rV[R[i]]_n) : 'M[R[i]]_(n,n) :=
   \matrix_(i < n, j < n) (exp (roots I0 i) j).
 
 Definition conj_mat {n1 n2} (m : 'M[R[i]]_(n1,n2)) :=
-  \matrix_(i < n1, j< n2) (conjc (m i j)).
+  map_mx conjc m.
 
 Definition inv_mat {n1 n2} (m : 'M[R[i]]_(n1,n2)) :=
-  \matrix_(i < n1, j< n2) (inv (m i j)).
+  map_mx inv m.
 
 Definition Vscale {n} (c : R[i]) (v : 'rV[R[i]]_n) :=
-  \row_(j < n) (mul c (v I0 j)).
+  map_mx (mul c) v.
 
 Definition Vscale_r {n} (c : R[i]) (v : 'rV[R[i]]_n) :=
-  \row_(j < n) (mul (v I0 j) c).
+  map_mx (fun x => mul x c) v.
 
 Definition vector_sum {n} (v : 'rV[R[i]]_n) :=
   \sum_(j < n) (v I0 j).
@@ -61,21 +61,25 @@ Proof.
   unfold Vscale.
   Admitted.
 
-Definition ConstVector n (c : R[i]) :=
-  \row_(j < n) c.
+Definition ConstVector n (c : R[i]) : 'rV[R[i]]_n:= const_mx c.
 
 Definition RtoC (x : R) := Complex x R0.
 
 Lemma vector_sum_const {n} (c : R[i]) :
-  vector_sum (ConstVector n c) = mul (RtoC (INR n)) c.
+  vector_sum (ConstVector n c) = mul (n%:R) c.
 Proof.
   unfold vector_sum, ConstVector.
-Admitted.
+  rewrite (eq_big_seq  (fun _ => c)).
+  - rewrite big_const_ord iter_addr_0.
+    now rewrite Theory.mulr_natl.
+  - simpl.
+    apply ssrbool.in1W; intros.
+    now rewrite mxE.
+Qed.
 
 Lemma conj_transpose {n} (m : 'M[R[i]]_(n,n)) :
   conj_mat (m^T) = (conj_mat m)^T.
 Proof.
-  unfold conj_mat.
-  Admitted.
-
+  now rewrite map_trmx.
+Qed.
 
