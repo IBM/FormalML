@@ -1,5 +1,5 @@
 Require Import Reals Lra Lia List.
-From mathcomp Require Import Rstruct complex.
+From mathcomp Require Import ssrbool choice Rstruct complex.
 Import ssralg.GRing.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -775,7 +775,9 @@ Proof.
 Qed.
 
 Definition Cconj (x : R[i]) := conjc x.
-Definition Cmod (x : R[i]) := let: a +i* b := x in sqrt (exp a 2 + exp b 2).
+
+Definition Cmod (x : R[i]) := (* ComplexField.Normc.normc. *)
+  let: a +i* b := x in sqrt (exp a 2 + exp b 2).
 
 Lemma nth_root_Cmod j n :
   Cmod (nth_root j (S n)) = 1%R.
@@ -950,5 +952,10 @@ Proof.
   now rewrite nth_root_half_pow.
 Qed.  
 
-  
-
+Lemma mult_conj_root j n :
+  Cmult (nth_root j (S n)) (Cconj (nth_root j (S n))) = C1.
+Proof.
+  rewrite nth_root_conj.
+  rewrite Cinv_r; trivial.
+  apply nth_root_not_0.
+Qed.
