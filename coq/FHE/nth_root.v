@@ -663,10 +663,15 @@ Lemma Cinv_r (x : R[i]) :
 Proof.
   intros.
   unfold Cmult, Cinv, C1.
-(*
-  rewrite divff.
-*)
-  Admitted.
+  etransitivity; [etransitivity |]; [| apply (@divff _ x) |]; try reflexivity.
+  match goal with
+    | [|- context [negb ?x] ] => case_eq x
+  end; intros HH; simpl; trivial.
+  elim H.
+  vm_compute in HH.
+  destruct x.
+  now destruct (Req_EM_T Re R0); destruct (Req_EM_T Im R0); subst; try discriminate.
+Qed.  
 
 Lemma Cinv_l (x : R[i]) :
   x <> C0 ->
@@ -674,10 +679,9 @@ Lemma Cinv_l (x : R[i]) :
 Proof.
   intros.
   unfold Cmult, Cinv, C1.
-(*
-  rewrite divff.
-*)
-  Admitted.
+  etransitivity; [etransitivity |]; [| apply (@mulrC _ (inv x) x) |]; try reflexivity.
+  now apply Cinv_r.
+Qed.  
 
 
 Lemma Cpow_sub_r (c : R[i]) (n m : nat):
@@ -703,17 +707,35 @@ Proof.
     generalize Theory.expf_neq0; intros.
     assert (is_true (negb (eqtype.eq_op c C0))).
     {
-      admit.
+      vm_compute.
+      destruct c.
+      now destruct (Req_EM_T Re R0); destruct (Req_EM_T Im R0); subst; try discriminate.
     }
     generalize (Theory.expf_neq0 m H3); intros.
-    admit.
+    vm_compute in H4.
+    vm_compute.
+    destruct ((fix Ffix (x : nat) : R[i] :=
+                match x with
+                | 0 => R1 +i* R0
+                | 1 => c
+                | S (S _ as x0) =>
+                    match c with
+                    | Re +i* Im =>
+                        match Ffix x0 with
+                        | Re0 +i* Im0 => (Re * Re0 + - (Im * Im0))%R +i* (Re * Im0 + Im * Re0)%R
+                        end
+                    end
+                end) m).
+    intros HH.
+    inversion HH; subst.
+    destruct (Req_EM_T R0 R0); destruct (Req_EM_T R0 R0); subst; congruence.
   }
   generalize (Cinv_r (Cpow c m) H2); intros.
   unfold Cmult, Cinv in H3.
   rewrite H3.
   unfold C1.
   now rewrite mulr1.
- Admitted.
+Qed.
 
 Lemma nth_root_diff j k n :
   j <= k ->
