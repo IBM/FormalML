@@ -1,5 +1,5 @@
 Require Import Reals Lra Lia List.
-From mathcomp Require Import ssrbool choice Rstruct complex.
+From mathcomp Require Import Rstruct complex.
 Import ssralg.GRing.
 
 Set Bullet Behavior "Strict Subproofs".
@@ -993,4 +993,14 @@ Proof.
   rewrite addNr.
   reflexivity.
 Qed.
+
+Import ssralg.
+
+(* testing notations *)
+Definition C0': R[i] := 0.
+Definition C1': R[i] := 1.
+Definition Cplus' (x y : R[i]) := x + y.
+Definition Cmult' (x y : R[i]) := x * y.
+Definition Cexp' (x : R[i]) (n : nat) := x ^+ n.
+Definition Cinv' (x : R[i]) := x^-1.
 
