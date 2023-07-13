@@ -31,9 +31,6 @@ Definition peval_mat {n} (roots : 'rV[R[i]]_n) : 'M[R[i]]_(n,n) :=
 Definition conj_mat {n1 n2} (m : 'M[R[i]]_(n1,n2)) :=
   map_mx conjc m.
 
-Definition inv_mat {n1 n2} (m : 'M[R[i]]_(n1,n2)) :=
-  map_mx inv m.
-
 Definition Vscale {n} (c : R[i]) (v : 'rV[R[i]]_n) :=
   map_mx (mul c) v.
 
@@ -44,7 +41,7 @@ Definition vector_sum {n} (v : 'rV[R[i]]_n) :=
   \sum_(j < n) (v I0 j).
 
 Definition inner_prod {n} (v1 v2 : 'rV[R[i]]_n) :=
-  v1 *m (v2^T).
+  (v1 *m (v2^T)) I0 I0.
 
 Definition H_inner_prod {n} (v1 v2 : 'rV[R[i]]_n) :=
   inner_prod v1 (conj_mat v2).
@@ -65,8 +62,7 @@ Lemma V_scale_l_r {n} (c : R[i])  (v : 'rV[R[i]]_n) :
   Vscale c v = Vscale_r c v.
 Proof.
   unfold Vscale, Vscale_r.
-  apply eq_map_mx.
-  unfold ssrfun.eqfun; intros.
+  apply eq_map_mx; intros ?.
   apply mulrC.
 Qed.
 
@@ -89,8 +85,7 @@ Proof.
   rewrite (eq_big_seq  (fun _ => c)).
   - rewrite big_const_ord iter_addr_0.
     now rewrite Theory.mulr_natl.
-  - simpl.
-    apply ssrbool.in1W; intros.
+  - apply ssrbool.in1W; intros.
     now rewrite mxE.
 Qed.
 
@@ -114,7 +109,93 @@ Definition C1': R[i] := 1.
 Definition Cplus' (x y : R[i]) := x + y.
 Definition Cmult' (x y : R[i]) := x * y.
 Definition Cexp' (x : R[i]) (n : nat) := x ^+ n.
+Definition Cdiv' (x y : R[i]) := x / y.
 Definition Cinv' (x : R[i]) := x^-1.
+
+Lemma peval_row (n : nat) :
+  forall n0,
+    row n0 (peval_mat (odd_nth_roots (S n))) =
+      \row_(j < 2^(S n)) (odd_nth_roots (S n) I0 n0) ^+ j.
+Proof.
+  intros.
+  unfold row.
+  simpl.
+  unfold peval_mat.
+  apply eq_mx; intros ??.
+  now rewrite mxE.
+Qed.
+
+Lemma pow_nth_root j n e :
+  (nth_root j (S n)) ^+ e = nth_root (e * j) (S n).
+Proof.
+  unfold nth_root.
+  rewrite de_moivre.
+  rewrite mult_INR.
+  do 2 f_equal; field; apply S_INR_not_0.
+Qed.
+
+Lemma pow2_S (j:nat) :
+  exists (k : nat), 2^j = S k.
+Proof.
+  exists (2^j-1)%nat.
+  induction j.
+  - now simpl.
+  - simpl.
+    rewrite expnS.
+    rewrite IHj.
+    Admitted.
+
+Lemma nth_root_conj' j n :
+  conjc (nth_root j (S n)) = inv (nth_root j (S n)).
+Proof.
+  apply (nth_root_conj j n).
+Qed.
+
+Lemma mult_conj_root' j n :
+  (nth_root j (S n)) * (conjc (nth_root j (S n))) = 1.
+Proof.
+  apply mult_conj_root.
+Qed.
+
+Lemma decode_mat_encode_mat_on_diag_row (n : nat):
+  let pmat := (peval_mat (odd_nth_roots (S n))) in
+  forall n0,
+    H_inner_prod (row n0 pmat) (row n0 pmat) = (2^S n)%:R.
+Proof.
+  intros.
+  unfold H_inner_prod, inner_prod, pmat.
+  rewrite mxE.
+  rewrite (eq_big_seq  (fun _ => 1)).
+  - now rewrite big_const_ord iter_addr_0.
+  - apply ssrbool.in1W; intros.
+    rewrite peval_row.
+    unfold odd_nth_roots.
+    do 5 rewrite mxE.
+    destruct (pow2_S (S (S n))).
+    rewrite H.
+    rewrite pow_nth_root.
+    apply mult_conj_root.
+Qed.
+
+Lemma H_inner_prod_mat n (M : 'M[R[i]]_(n,n)) :
+  forall i j,
+    (M *m (conj_mat (M ^T))) i j =
+      H_inner_prod (row i M) (row j M).
+Proof.
+  Admitted.
+
+
+Lemma decode_mat_encode_mat_on_diag (n : nat):
+  let pmat := (peval_mat (odd_nth_roots (S n))) in
+  let prod := pmat *m (conj_mat (pmat^T)) in
+  forall n0,
+    prod n0 n0 = (2^S n)%:R.
+Proof.
+  intros.
+  unfold prod, pmat, peval_mat.
+  rewrite H_inner_prod_mat.
+  apply decode_mat_encode_mat_on_diag_row.
+Qed.
 
 Lemma telescope_pow_0 (c : C) (n : nat) :
   c <> (one C) ->
@@ -123,4 +204,23 @@ Lemma telescope_pow_0 (c : C) (n : nat) :
 Proof.
 Admitted.
 
+Lemma decode_mat_encode_mat_off_diag_row (n : nat):
+  let pmat := (peval_mat (odd_nth_roots (S n))) in
+  forall n1 n2,
+    n1 <> n2 ->
+    H_inner_prod (row n1 pmat) (row n2 pmat) = 0.
+Proof.
+  Admitted.
 
+Lemma decode_mat_encode_mat_off_diag (n : nat):
+  let pmat := (peval_mat (odd_nth_roots (S n))) in
+  let prod := pmat *m (conj_mat (pmat^T)) in
+  forall n1 n2,
+    n1 <> n2 ->
+    prod n1 n2 = 0.
+Proof.
+  intros.
+  unfold prod, pmat, peval_mat.
+  rewrite H_inner_prod_mat.
+  now apply decode_mat_encode_mat_off_diag_row.
+Qed.
