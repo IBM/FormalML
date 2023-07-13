@@ -236,6 +236,8 @@ Proof.
     rewrite nth_root_conj_alt in H2.
     rewrite nth_root_mul in H2.
     apply nth_root_1_iff in H2.
+    rewrite <- H3 in H2.
+    clear H0 H1 H3 pmat x x0.
     admit.
   - destruct (pow2_S (S (S n))).
     rewrite H2.
@@ -243,6 +245,9 @@ Proof.
     rewrite nth_root_mul.
     rewrite Cpow_nth_root.
     apply nth_root_1_iff.
+    rewrite <- H2.
+    rewrite <- H0.
+    clear H0 H1 H2 pmat x x0.
   Admitted.
 
 Lemma decode_mat_encode_mat_off_diag (n : nat):
