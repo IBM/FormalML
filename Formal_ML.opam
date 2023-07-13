@@ -12,6 +12,7 @@ depends: [
   "coq-mathcomp-ssreflect"
   "coq-mathcomp-algebra"
   "coq-mathcomp-algebra-tactics"
+  "coq-mathcomp-real-closed"
   "coq-mathcomp-analysis"
   "coq-coquelicot"
   "coq-flocq" {>= "4.0.0" }
