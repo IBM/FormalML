@@ -987,6 +987,10 @@ Proof.
   rewrite <- nth_root_mul.
   rewrite <- H.
   rewrite nth_root_half.
-  unfold Cmult.
-Admitted.
+  unfold Cmult, C0, C1.
+  rewrite mulrN1.  
+  rewrite addrC.
+  rewrite addNr.
+  reflexivity.
+Qed.
 
