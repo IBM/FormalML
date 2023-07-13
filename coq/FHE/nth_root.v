@@ -2,6 +2,7 @@ Require Import Reals Lra Lia List.
 From mathcomp Require Import Rstruct complex.
 Import ssralg.GRing.
 
+
 Set Bullet Behavior "Strict Subproofs".
 
 Lemma S_INR_not_0 n :
@@ -25,8 +26,6 @@ Definition RtoC (x : R) := Complex x R0.
 Definition C1 := Complex R1 R0.
 Definition C0 := Complex R0 R0.
 Definition C := ComplexField.complex_ringType R_fieldType.
-Definition Cplus (x y : R[i]) := add x y.
-Definition Cmult (x y : R[i]) := mul x y.
 
 
 Lemma nth_root_0 n :
@@ -127,16 +126,16 @@ Proof.
   Qed.
 
 Lemma Cpow_nth_root j n e :
-  Cpow (nth_root j (S n)) e = nth_root (e * j) (S n).
+  exp (nth_root j (S n)) e = nth_root (e * j) (S n).
 Proof.
-  unfold nth_root, Cpow.
+  unfold nth_root.
   rewrite de_moivre.
   rewrite mult_INR.
   do 2 f_equal; field; apply S_INR_not_0.
 Qed.
 
 Lemma Cpow_nth_root_comm j n e :
-  Cpow (nth_root j (S n)) e = Cpow (nth_root e (S n)) j.
+  exp (nth_root j (S n)) e = exp (nth_root e (S n)) j.
 Proof.
   do 2 rewrite Cpow_nth_root.
   f_equal.
@@ -144,7 +143,7 @@ Proof.
 Qed.
 
 Lemma nth_root_npow j n :
-  Cpow (nth_root j (S n)) (S n) = RtoC R1.
+  exp (nth_root j (S n)) (S n) = RtoC R1.
 Proof.
   rewrite Cpow_nth_root.
   replace (S n * j) with (j * S n) by lia.
@@ -197,7 +196,7 @@ Proof.
  Qed.
 
 Lemma prim_nth_root j n :
-  nth_root j (S n) = Cpow (nth_root 1 (S n)) j.
+  nth_root j (S n) = exp (nth_root 1 (S n)) j.
 Proof.
   rewrite Cpow_nth_root.
   f_equal.
@@ -597,9 +596,9 @@ Proof.
 Qed.
 
 Lemma pow_nth_root_prim n :
-  Cpow (nth_root 1 (S n)) (S n) = RtoC R1.  
+  exp (nth_root 1 (S n)) (S n) = RtoC R1.  
 Proof.
-  unfold nth_root, Cpow.
+  unfold nth_root.
   rewrite de_moivre.
   replace (INR (S n) * (2 * PI * INR 1 / INR (S n)))%R with (2 * PI)%R.
   - now rewrite cos_2PI, sin_2PI.
@@ -616,11 +615,9 @@ Proof.
 Qed.
 
 Lemma pow_nth_root j n :
-  Cpow (nth_root j (S n)) (S n) = RtoC R1.
+  exp (nth_root j (S n)) (S n) = RtoC R1.
 Proof.
-  unfold Cpow.
   rewrite prim_nth_root.
-  unfold Cpow.
   rewrite <- exprM.
   rewrite ssrnat.mulnC.
   rewrite exprM.
@@ -629,13 +626,12 @@ Proof.
 Qed.
 
 Lemma nth_root_mul j k n :
-  Cmult (nth_root j (S n)) (nth_root k (S n)) = nth_root (j + k) (S n).
+  mul (nth_root j (S n)) (nth_root k (S n)) = nth_root (j + k) (S n).
 Proof.
   intros.
   rewrite (prim_nth_root k _).
   rewrite (prim_nth_root j _).
   rewrite (prim_nth_root (j + k) _).
-  unfold Cpow, Cmult.
   now rewrite <- exprD.
  Qed.
 
@@ -646,23 +642,21 @@ Proof.
   now rewrite nth_root_npow.
 Qed.
 
-Definition Cinv (x : R[i]) := inv x.
 Definition Cdiv (x y : R[i]) := mul x (inv y).
 
 Lemma Cinv_1_r :
-  Cinv C1 = RtoC 1%R.
+  inv C1 = RtoC 1%R.
 Proof.
-  unfold Cinv.
   unfold RtoC.
   now rewrite Theory.invr1.
 Qed.
 
 Lemma Cinv_r (x : R[i]) :
   x <> C0 ->
-  Cmult x (Cinv x) = C1.
+  mul x (inv x) = C1.
 Proof.
   intros.
-  unfold Cmult, Cinv, C1.
+  unfold C1.
   etransitivity; [etransitivity |]; [| apply (@divff _ x) |]; try reflexivity.
   match goal with
     | [|- context [negb ?x] ] => case_eq x
@@ -675,10 +669,10 @@ Qed.
 
 Lemma Cinv_l (x : R[i]) :
   x <> C0 ->
-  Cmult (Cinv x) x = C1.
+  mul (inv x) x = C1.
 Proof.
   intros.
-  unfold Cmult, Cinv, C1.
+  unfold C1.
   etransitivity; [etransitivity |]; [| apply (@mulrC _ (inv x) x) |]; try reflexivity.
   now apply Cinv_r.
 Qed.  
@@ -687,23 +681,21 @@ Qed.
 Lemma Cpow_sub_r (c : R[i]) (n m : nat):
   m <= n ->
   c <> C0 ->
-  Cpow c (n - m) = Cdiv (Cpow c n) (Cpow  c m).
+  exp c (n - m) = Cdiv (exp c n) (exp  c m).
 Proof.
   intros.
-  assert (Cmult (Cpow c (n - m)) (Cpow c m) = Cpow c n).
+  assert (mul (exp c (n - m)) (exp c m) = exp c n).
   {
-    unfold Cpow, Cmult.
     rewrite <- exprD.
     f_equal.
     unfold ssrnat.addn, ssrnat.addn_rec.
     lia.
   }
   rewrite <- H1.
-  unfold Cdiv, Cmult.
+  unfold Cdiv.
   rewrite <- mulrA.
-  assert (Cpow c m <> C0).
+  assert (exp c m <> C0).
   {
-    unfold Cpow.
     generalize Theory.expf_neq0; intros.
     assert (is_true (negb (eqtype.eq_op c C0))).
     {
@@ -730,8 +722,7 @@ Proof.
     inversion HH; subst.
     destruct (Req_EM_T R0 R0); destruct (Req_EM_T R0 R0); subst; congruence.
   }
-  generalize (Cinv_r (Cpow c m) H2); intros.
-  unfold Cmult, Cinv in H3.
+  generalize (Cinv_r (exp c m) H2); intros.
   rewrite H3.
   unfold C1.
   now rewrite mulr1.
@@ -750,12 +741,12 @@ Proof.
 Qed.
 
 Lemma nth_root_inv j n :
-  Cinv (nth_root j (S n)) = nth_root (S n - (j mod S n)) (S n).
+  inv (nth_root j (S n)) = nth_root (S n - (j mod S n)) (S n).
 Proof.
   generalize (nth_root_diff (j mod S n) (S n) n); intros.
   rewrite <- H.
   - rewrite nth_root_Sn.
-    unfold Cdiv, Cinv.
+    unfold Cdiv.
     rewrite mul1r.
     f_equal.
     apply (nth_root_mod j (j mod S n) n).
@@ -774,8 +765,6 @@ Proof.
   apply nth_root_mul.
 Qed.
 
-Definition Cconj (x : R[i]) := conjc x.
-
 Definition Cmod (x : R[i]) := (* ComplexField.Normc.normc. *)
   let: a +i* b := x in sqrt (exp a 2 + exp b 2).
 
@@ -792,9 +781,9 @@ Proof.
 Qed.
 
 Lemma Cmod_Cconj (c : R[i]) :
-  Cmult c (Cconj c) = RtoC (Rsqr (Cmod c)).
+  mul c (conjc c) = RtoC (Rsqr (Cmod c)).
 Proof.
-  unfold Cconj, Cmod, Cmult, fst, snd, RtoC.
+  unfold Cmod, fst, snd, RtoC.
   destruct c.
   do 2 rewrite <- RpowE.    
   rewrite Rsqr_sqrt.
@@ -806,13 +795,13 @@ Proof.
 Qed.
 
 Lemma nth_root_conj j n :
-  Cconj (nth_root j (S n)) = Cinv (nth_root j (S n)).
+  conjc (nth_root j (S n)) = inv (nth_root j (S n)).
 Proof.
   generalize (Cmod_Cconj (nth_root j (S n))); intros.
   rewrite nth_root_Cmod in H.
   rewrite Rsqr_1 in H.
-  apply (f_equal (fun c => Cmult (Cinv (nth_root j (S n))) c)) in H.
-  unfold Cmult, RtoC in H.
+  apply (f_equal (fun c => mul (inv (nth_root j (S n))) c)) in H.
+  unfold RtoC in H.
   rewrite mulr1 in H.
   rewrite mulrA in H.
   rewrite Cinv_l in H.
@@ -821,14 +810,14 @@ Proof.
 Qed.
 
 Lemma nth_root_conj_alt j n :
-  Cconj (nth_root j (S n)) = nth_root (S n - j mod (S n)) (S n).
+  conjc (nth_root j (S n)) = nth_root (S n - j mod (S n)) (S n).
 Proof.
   rewrite nth_root_conj.
   now rewrite nth_root_inv.
 Qed.
 
 Lemma nth_root_half_pow_aux n :
-  Cpow (nth_root (S n) (2 * (S n))) 2 = C1.
+  exp (nth_root (S n) (2 * (S n))) 2 = C1.
 Proof.
   replace (2 * (S n)) with (S (2 * n + 1)) by lia.
   rewrite Cpow_nth_root.
@@ -868,9 +857,8 @@ Proof.
 Qed.
 
 Lemma Cpow_2 (c : R[i]) :
-  Cpow c 2 = C1 -> c = C1 \/ c = opp C1.
+  exp c 2 = C1 -> c = C1 \/ c = opp C1.
 Proof.
-  unfold Cpow.
   rewrite expr2.
   intros.
   destruct c.
@@ -925,7 +913,7 @@ Proof.
 Qed.
 
 Lemma odd_roots_prim j n :
-  Cpow (nth_root (2 * j + 1) (2 ^ (S n))) (2^n) = opp C1.
+  exp (nth_root (2 * j + 1) (2 ^ (S n))) (2^n) = opp C1.
 Proof.
   generalize (pow2_S (S n)); intros.
   destruct H.
@@ -960,7 +948,7 @@ Proof.
 Qed.  
 
 Lemma mult_conj_root j n :
-  Cmult (nth_root j (S n)) (Cconj (nth_root j (S n))) = C1.
+  mul (nth_root j (S n)) (conjc (nth_root j (S n))) = C1.
 Proof.
   rewrite nth_root_conj.
   rewrite Cinv_r; trivial.
@@ -987,7 +975,7 @@ Proof.
   rewrite <- nth_root_mul.
   rewrite <- H.
   rewrite nth_root_half.
-  unfold Cmult, C0, C1.
+  unfold C0, C1.
   rewrite mulrN1.  
   rewrite addrC.
   rewrite addNr.
