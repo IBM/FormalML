@@ -1002,5 +1002,6 @@ Definition C1': R[i] := 1.
 Definition Cplus' (x y : R[i]) := x + y.
 Definition Cmult' (x y : R[i]) := x * y.
 Definition Cexp' (x : R[i]) (n : nat) := x ^+ n.
+Definition Cdiv' (x y : R[i]) := x / y.
 Definition Cinv' (x : R[i]) := x^-1.
 

@@ -164,6 +164,8 @@ Lemma H_inner_prod_mat n (M : 'M[R[i]]_(n,n)) :
     (M *m (conj_mat (M ^T))) i j =
       H_inner_prod (row i M) (row j M).
 Proof.
+  intros.
+  unfold H_inner_prod, inner_prod.
   Admitted.
 
 Lemma decode_mat_encode_mat_on_diag (n : nat):
@@ -252,15 +254,10 @@ Lemma decode_mat_encode_mat (n : nat) (cl : 'cV[R[i]]_(2^(S n))) :
   let encmat := conj_mat (pmat^T) in
   pmat *m (encmat *m cl) = (2^S n)%:R *: cl.
 Proof.
-(*
-  rewrite <- mulcA.
-  unfold Vector in cl.
-  generalize (V_decode_mat_encode_mat_assoc_l n cl); intros.
-  rewrite <- H.
-  now rewrite V_mmv_mult_assoc.
+  simpl.
+  rewrite mulmxA.
+  apply decode_mat_encode_mat_assoc_l.
 Qed.
- *)
-Admitted.
 
 (*
 
