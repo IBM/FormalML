@@ -166,7 +166,14 @@ Lemma H_inner_prod_mat n (M : 'M[R[i]]_(n,n)) :
 Proof.
   intros.
   unfold H_inner_prod, inner_prod.
-  Admitted.
+  rewrite mxE.
+  rewrite mxE.  
+  simpl.
+  apply eq_big_seq.
+  intros ??.
+  unfold row.
+  now do 6 rewrite mxE.
+Qed.
 
 Lemma decode_mat_encode_mat_on_diag (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
