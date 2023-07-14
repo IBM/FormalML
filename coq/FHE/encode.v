@@ -1,6 +1,6 @@
 Require Import Reals Lra Lia List.
-From mathcomp Require Import ssreflect fintype bigop ssrnat matrix Rstruct complex.
-From mathcomp Require Import ssralg common.
+From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix Rstruct complex.
+From mathcomp Require Import ssralg.
 Import ssralg.GRing.
 Require Import nth_root.
 
@@ -173,9 +173,92 @@ Proof.
   apply decode_mat_encode_mat_on_diag_row.
 Qed.
 
+Fixpoint list_Cplus (l : list R[i]) : R[i] :=
+  match l with
+  | nil => 0
+  | a :: l' => add a (list_Cplus l')
+  end.
+
+Lemma list_Cplus_mult_l c l :
+  (list_Cplus (map (fun a => c * a) l) = c * list_Cplus l)%C.
+Proof.
+  induction l; simpl.
+  - now rewrite mulr0.
+  - rewrite IHl.
+    now rewrite mulrDr.
+Qed.
+
+Lemma C_telescope_mult (c : R[i]) (n : nat) :
+  (mul (c - 1) (list_Cplus (map (fun j => exp c j) (seq 0 (S n)))) = 
+    (exp c (S n) - 1))%C.
+Proof.
+  induction n.
+  - simpl.
+    rewrite expr0; rewrite expr1.
+    now rewrite addr0; rewrite mulr1.
+  - rewrite seq_S.
+    simpl plus.
+    rewrite map_app.
+    unfold map at 2.
+(*
+    rewrite <- Permutation_cons_append.
+    unfold list_Cplus; fold list_Cplus.
+    transitivity ((c - R1) * c ^ S n + (c - R1) * list_Cplus (map (fun j : nat => c ^ j) (seq 0 (S n))))%C; [ring |].
+    rewrite IHn.
+    simpl; ring.
+Qed.
+ *)
+    Admitted.
+
+Lemma sub_x_x (x : R[i]) :
+  x - x = 0.
+Proof.
+  destruct x.
+  vm_compute.
+  f_equal; lra.
+Qed.
+
+Lemma C_telescope_div (c : R[i]) (n : nat) :
+  c <> 1 ->
+  list_Cplus (map (fun j => exp c j) (seq 0 (S n))) = 
+    Cdiv (exp c (S n) - 1) (c - 1).
+Proof.
+  intros.
+  generalize (C_telescope_mult c n); intros.
+  rewrite <- H0.
+  unfold Cdiv.
+  rewrite mulrC.
+  rewrite mulrA.
+  rewrite Cinv_l.
+  - now rewrite mul1r.
+  - unfold not.
+    intros.
+    clear H0.
+    replace C0 with (zero C) in H1 by reflexivity.
+    apply (f_equal (fun cc => add cc 1)) in H1.
+    rewrite add0r in H1.
+    rewrite <- addrA in H1.
+    rewrite (addrC _ 1) in H1.
+    rewrite sub_x_x in H1.
+    now rewrite addr0 in H1.
+Qed.
+
+Lemma C_telescope_pow_0 (c : R[i]) (n : nat) :
+  c <> 1 ->
+  c ^+ (S n) = 1 ->
+  list_Cplus (map (fun j => exp c j) (seq 0 (S n))) = 0.
+Proof.
+  intros.
+  rewrite C_telescope_div; trivial.
+  rewrite H0.
+  rewrite sub_x_x.
+  unfold Cdiv.
+  now rewrite mul0r.
+Qed.
+
 Lemma telescope_pow_0 (c : R[i]) (n : nat) :
   c <> 1 ->
-  c ^+ (S n) = 1%R ->
+  c ^+ (S n) = 1 ->
   \sum_(j < S n) (c ^+ j) = C0.
 Proof.
 Admitted.
@@ -202,7 +285,6 @@ Proof.
     rewrite <- IHn.
     now rewrite <- mul_conj.
 Qed.
-
 
 Lemma decode_mat_encode_mat_off_diag_row (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
@@ -508,11 +590,14 @@ Proof.
 Admitted.
 *)
 
-(*
 Lemma vector_rev_conj_sum {n} (v : 'rV[R[i]]_n) :
   vector_rev_conj v ->
   Im (vector_sum v) = 0%R.
 Proof.
+  intros.
+  unfold vector_sum.
+  Admitted.
+(*
   intros.
   
   rewrite vector_sum_list_Cplus.
@@ -530,79 +615,53 @@ Proof.
   unfold vmap'.
   now rewrite Cconj_conj.
 Qed.
+*)
 
-Lemma vector_rev_conj_inner {n} (v1 v2 : Vector C n) :
+Lemma vector_rev_conj_inner {n} (v1 v2 : 'rV[R[i]]_n) :
   vector_rev_conj v1 ->
   vector_rev_conj v2 ->  
-  Im (V_inner_prod v1 v2) = 0%R.
+  Im (inner_prod v1 v2) = 0%R.
 Proof.
   intros.
+  unfold inner_prod.
+  Admitted.
+(*
+  
   apply vector_rev_conj_sum.
   now apply vector_rev_conj_mult.
 Qed.
-
-Lemma vector_cplus_comm {n} (v1 v2 : Vector C n) :
-  (vmap' (fun '(a,b) => Cplus a b) (vector_zip v1 v2)) =
-  (vmap' (fun '(a,b) => Cplus a b) (vector_zip v2 v1)).
-Proof.
-  unfold vmap', vector_zip.
-  apply vec_eq_eq; intros ?.
-  apply Cplus_comm.
-Qed.
-
-Lemma vector_cmult_comm {n} (v1 v2 : Vector C n) :
-  (vmap' (fun '(a,b) => Cmult a b) (vector_zip v1 v2)) =
-  (vmap' (fun '(a,b) => Cmult a b) (vector_zip v2 v1)).
-Proof.
-  unfold vmap', vector_zip.
-  apply vec_eq_eq; intros ?.
-  apply Cmult_comm.
-Qed.
-
-Lemma vector_cplus_assoc {n} (v1 v2 v3 : Vector C n) :
-  vmap' (fun '(a,b) => Cplus a b) (vector_zip v1 (vmap' (fun '(a,b) => Cplus a b) (vector_zip v2 v3))) =
-  vmap' (fun '(a,b) => Cplus a b) (vector_zip (vmap' (fun '(a,b) => Cplus a b) (vector_zip v1 v2)) v3).
-Proof.
-  unfold vmap', vector_zip.
-  apply vec_eq_eq; intros ?.
-  apply Cplus_assoc.
-Qed.
-
-Lemma vector_cmult_assoc {n} (v1 v2 v3 : Vector C n) :
-  vmap' (fun '(a,b) => Cmult a b) (vector_zip v1 (vmap' (fun '(a,b) => Cmult a b) (vector_zip v2 v3))) =
-  vmap' (fun '(a,b) => Cmult a b) (vector_zip (vmap' (fun '(a,b) => Cmult a b) (vector_zip v1 v2)) v3).
-Proof.
-  unfold vmap', vector_zip.
-  apply vec_eq_eq; intros ?.
-  apply Cmult_assoc.
-Qed.
+*)
 
 Lemma vector_rev_conj_odd_nth_roots (n : nat) :
-  vector_rev_conj (V_odd_nth_roots (S n)).
+  vector_rev_conj (odd_nth_roots (S n)).
 Proof.
-  unfold vector_rev_conj, V_odd_nth_roots.
+  unfold vector_rev_conj, odd_nth_roots.
   intros.
-  destruct i.
-  unfold index_reflect, proj1_sig.
+  do 2 rewrite mxE.
   destruct (pow2_S (S (S n))).
   rewrite H.
   rewrite nth_root_conj_alt.
   f_equal.
   rewrite <- H.
-  replace (2^S (S n)) with (2 * 2^S n) by (simpl; lia).
-  rewrite Nat.mod_small; lia.
-Qed.
+  replace (2^S (S n)) with (2 * 2^S n)%nat.
+  - rewrite Nat.mod_small.
+    + admit.
+    + admit.
+  - admit.
+Admitted.
 
-Lemma V_mat_encode_real (n : nat) (cl : Vector C (2^(S n))) :
-  let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
-  let encmat := (V_conj_mat (transpose pmat)) in
-  vector_rev_conj cl ->
+(*
+Lemma mat_encode_real (n : nat) (cl : 'cV[R[i]]_(2^(S n))) :
+  let pmat := (peval_mat (odd_nth_roots (S n))) in
+  let encmat := (conj_mat (pmat^T)) in 
+  vector_rev_conj (cl^T) ->
   forall i,
-    Im ((V_mat_vec_mult encmat cl) i) = 0%R.
+    Im ((encmat *m cl) i I0) = 0.
 Proof.
-  unfold V_mat_vec_mult, transpose, V_peval_mat, V_conj_mat.
+  unfold peval_mat.
   intros.
-  apply vector_rev_conj_inner; trivial.
+  rewrite mxE.
+  generalize vector_rev_conj_inner; intros.
   apply (vector_rev_conj_conj (vmap' (fun c => Cpow c (proj1_sig i)) (V_odd_nth_roots (S n)))).
   apply vector_rev_conj_Cpow, vector_rev_conj_odd_nth_roots.
 Qed.
