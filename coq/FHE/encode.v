@@ -195,7 +195,7 @@ Proof.
 Qed.
 
 Lemma telescope_mult_bigop_aux (c : R[i]) (n : nat) :
-  mul (c - 1) (\sum_(0 <= j < S n) (c ^+ j)) = 
+  (c - 1) * (\sum_(0 <= j < S n) (c ^+ j)) = 
   \sum_(0 <= j < S n) ((c^+(S j)) - (c ^+ j)).
 Proof.
   rewrite big_distrr.
@@ -209,8 +209,8 @@ Proof.
 Qed.
 
 Lemma telescope_mult_bigop (c : R[i]) (n : nat) :
-  (mul (c - 1) (\sum_(0 <= j < S n) (c ^+ j)) = 
-     (exp c (S n) - 1))%C.
+  (c - 1) * (\sum_(0 <= j < S n) (c ^+ j)) = 
+     c ^+ (S n) - 1.
 Proof.
   rewrite telescope_mult_bigop_aux.
   rewrite telescope_bigop_minus.
@@ -220,7 +220,7 @@ Qed.
 Lemma telescope_div (c : R[i]) (n : nat) :
   c <> 1 ->
   \sum_(0 <= j < S n) (c ^+ j) = 
-    Cdiv (c ^+ (S n) - 1) (c - 1).
+    (c ^+ (S n) - 1) / (c - 1).
 Proof.
   intros.
   generalize (telescope_mult_bigop c n); intros.
@@ -487,7 +487,6 @@ Proof.
   do 2 rewrite mxE.
   rewrite H.
   rewrite H0.
-  Search conjc.
   now rewrite add_conj.
 Qed.
 
@@ -551,6 +550,39 @@ Proof.
   now rewrite exp_conj.
 Qed.
 
+Lemma Cconj_im_0 (c : C) :
+  conjc c = c -> Im c = 0%R.
+Proof.
+  destruct c.
+  unfold conjc; simpl.
+  intros.
+  injection H; intros.
+  apply (f_equal (fun z => z + Im)) in H0.
+  unfold add, opp in H0; simpl in H0.
+  unfold zero; simpl.
+  lra.
+Qed.
+
+Lemma vector_rev_sum_rev {n} (v : 'rV[R[i]]_n) :
+  vector_rev_conj v ->
+  forall i,
+    Im ((v I0 i) + (v I0 (reflect_ordinal i))) = 0.
+Proof.
+  intros.
+  unfold vector_rev_conj in H.
+  rewrite H.
+  destruct (v I0 (reflect_ordinal i)).
+  vm_compute.
+  lra.
+Qed.
+
+Lemma vector_sum_rev {n} (v : 'rV[R[i]]_n) :
+  vector_sum v = vector_sum (vector_rev v).
+Proof.
+  unfold vector_sum, vector_rev.
+  Admitted.
+    
+
 (*
 Lemma map_Cconj_vector_to_list {n} (v : Vector C n) :
   map Cconj (vector_to_list v) = vector_to_list (vmap' Cconj v).
@@ -585,6 +617,8 @@ Lemma vector_rev_conj_sum {n} (v : 'rV[R[i]]_n) :
 Proof.
   intros.
   unfold vector_sum.
+  revert H.
+  
   Admitted.
 (*
   intros.
