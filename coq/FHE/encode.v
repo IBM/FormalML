@@ -198,8 +198,15 @@ Lemma telescope_mult_bigop_aux (c : R[i]) (n : nat) :
   mul (c - 1) (\sum_(0 <= j < S n) (c ^+ j)) = 
   \sum_(0 <= j < S n) ((c^+(S j)) - (c ^+ j)).
 Proof.
-  Search bigop.
-  Admitted.
+  rewrite big_distrr.
+  simpl.
+  apply eq_big_seq; intros ??.
+  rewrite mulrBl.
+  rewrite mul1r.
+  f_equal.
+  rewrite exprSr.
+  now rewrite mulrC.
+Qed.
 
 Lemma telescope_mult_bigop (c : R[i]) (n : nat) :
   (mul (c - 1) (\sum_(0 <= j < S n) (c ^+ j)) = 
