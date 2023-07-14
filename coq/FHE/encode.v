@@ -315,6 +315,7 @@ Proof.
     rewrite <- H2.
     rewrite <- H0.
     clear H0 H1 H2 pmat x x0.
+    admit.
   Admitted.
 
 Lemma decode_encode_scalar_mx (n : nat):
@@ -592,11 +593,21 @@ Qed.
 Lemma vector_rev_conj_inner {n} (v1 v2 : 'rV[R[i]]_n) :
   vector_rev_conj v1 ->
   vector_rev_conj v2 ->  
-  Im (inner_prod v1 v2) = 0%R.
+  Im (inner_prod v1 v2) = 0.
 Proof.
   intros.
   rewrite inner_product_as_sum vector_rev_conj_sum//.
   now apply vector_rev_conj_mult.
+Qed.
+
+Lemma vector_rev_conj_H_inner {n} (v1 v2 : 'rV[R[i]]_n) :
+  vector_rev_conj v1 ->
+  vector_rev_conj v2 ->  
+  Im (H_inner_prod v1 v2) = 0.
+Proof.
+  intros.
+  apply vector_rev_conj_inner; trivial.
+  now apply vector_rev_conj_conj.
 Qed.
 
 Lemma vector_rev_conj_odd_nth_roots (n : nat) :
@@ -616,6 +627,16 @@ Proof.
   destruct i.
   simpl.
   lia.
+Qed.
+
+Lemma vector_rev_conj_inner_conj_l {n} (v1 v2 : 'rV[R[i]]_n) :
+  vector_rev_conj v1 ->
+  vector_rev_conj v2 ->
+  Im (inner_prod (conj_mat v1) v2) = 0.
+Proof.
+  intros.
+  apply vector_rev_conj_inner; trivial.
+  now apply vector_rev_conj_conj.
 Qed.
 
 Lemma mat_encode_real (n : nat) (cl : 'cV[R[i]]_(2^(S n))) :
