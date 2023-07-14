@@ -1,4 +1,4 @@
-Require Import Reals Lra Lia List Permutation.
+Require Import Reals Lra Lia List.
 From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix Rstruct complex.
 From mathcomp Require Import ssralg.
 Import ssralg.GRing.
@@ -177,23 +177,6 @@ Proof.
   apply sub_x_x.
 Qed.
 
-Lemma telescope_bigop_minus (f : nat -> R[i]) (n : nat) :
-  \sum_(0 <= j < S n) (f (S j) - f j) =
-    f (S n) - f 0%nat.
-Proof.
-  induction n.
-  - now rewrite big_nat1.
-  - rewrite big_nat_recr; try lia.
-    simpl.
-    rewrite IHn.
-    rewrite addrC.
-    rewrite addrA.
-    f_equal.
-    rewrite <- addrA.
-    rewrite sub_x_x_l.
-    now rewrite addr0.
-Qed.
-
 Lemma telescope_mult_bigop_aux (c : R[i]) (n : nat) :
   (c - 1) * (\sum_(0 <= j < S n) (c ^+ j)) = 
   \sum_(0 <= j < S n) ((c^+(S j)) - (c ^+ j)).
@@ -213,8 +196,9 @@ Lemma telescope_mult_bigop (c : R[i]) (n : nat) :
      c ^+ (S n) - 1.
 Proof.
   rewrite telescope_mult_bigop_aux.
-  rewrite telescope_bigop_minus.
-  now rewrite expr0.
+  rewrite telescope_sumr.
+  + now rewrite expr0.
+  + lia.
 Qed.
 
 Lemma telescope_div (c : R[i]) (n : nat) :
