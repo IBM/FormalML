@@ -269,45 +269,35 @@ Proof.
   intros.
   apply matrixP; intros ??.
   do 2 rewrite mxE.
-  case_eq (eqtype.eq_op x y); intros.
-  - rewrite H.
+  destruct (@eqtype.eqP _ x y); intros.
+  - rewrite e.
     simpl.
     generalize (decode_mat_encode_mat_on_diag_row n); intros.
-    rewrite mulr1n.
-    assert (x = y).
-    {
-      admit.
-    }
+    rewrite eqtype.eq_refl mulr1n.
     unfold pmat in *.
-    specialize (H0 y).
-    unfold H_inner_prod, inner_prod in H0.
-    rewrite mxE in H0.
-    rewrite <- H0.
+    specialize (H y).
+    unfold H_inner_prod, inner_prod in H.
+    rewrite mxE in H.
+    rewrite <- H.
     simpl.
-    erewrite eq_big_seq; [reflexivity |].
-    apply ssrbool.in1W; intros.
-    repeat rewrite mxE.
-    now rewrite H1.
-  - rewrite H.
-    simpl.
-    generalize (decode_mat_encode_mat_off_diag_row n); intros.    
-    unfold pmat in *.
-    specialize (H0 x y).
-    assert (x <> y).
-    {
-      admit.
-    }
-    specialize (H0 H1).
-    unfold H_inner_prod, inner_prod in H0.
-    rewrite mxE in H0.
-    simpl in H0.
-    unfold row in H0.
-    replace ((2 ^ n.+1)%:R *+ 0) with C0 by reflexivity.
-    rewrite <- H0.
     erewrite eq_big_seq; [reflexivity |].
     apply ssrbool.in1W; intros.
     now repeat rewrite mxE.
-  Admitted.
+  - simpl.
+    generalize (decode_mat_encode_mat_off_diag_row n x y n0); intros.
+    unfold H_inner_prod, inner_prod in H.
+    rewrite mxE/=/row in H.
+    (* I am sure there is a better way to do this *)
+    repeat rewrite /eqtype.eq_op/=.
+    destruct (@eqnP x y); simpl in *.
+    + elim n0.
+      now apply ord_inj.
+    + replace ((2 ^ n.+1)%:R *+ 0) with C0 by reflexivity.
+      rewrite <- H.
+      erewrite eq_big_seq; [reflexivity |].
+      apply ssrbool.in1W; intros.
+      now repeat rewrite mxE.
+Qed.
     
 Lemma decode_mat_encode_mat (n : nat) (cl : 'cV[R[i]]_(2^(S n))) :
   let pmat := peval_mat (odd_nth_roots (S n)) in
