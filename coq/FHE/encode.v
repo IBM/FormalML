@@ -382,7 +382,7 @@ Proof.
   f_equal.
   lia.
 Qed.
-(*
+
 (* shows enconding can be done by modified IFFT of half size*)
 Lemma encode_mat_prod (n : nat) :
   let pmat := peval_mat (odd_nth_roots (S n)) in
@@ -392,43 +392,21 @@ Lemma encode_mat_prod (n : nat) :
     *m
        peval_mat (map_mx conjc (even_nth_roots (S n))).
 Proof.
-  apply vec_eq_eq; intros ?.
-  apply vec_eq_eq; intros ?.  
-  unfold V_peval_mat, diag_matrix, V_mat_mat_mult, V_conj_mat.
-  unfold V_inner_prod, transpose.
-  generalize (vector_sum_all_but_1_0  (2 ^ S n) i  (Cconj (V_odd_nth_roots (S n) i0 ^ proj1_sig i))); intros.
-  rewrite <- H.
+  apply matrixP; intros ??.
+  unfold nth_roots_half, conj_mat, peval_mat, even_nth_roots.
+  rewrite mul_diag_mx.
+  repeat rewrite mxE.
+  destruct (pow2_S (S (S n))).
+  rewrite H.
+  rewrite pow_nth_root.
+  rewrite <- exp_conj.
+  rewrite mul_conj.
   f_equal.
-  apply vec_eq_eq; intros ?.
-  match_destr.
-  - assert (eq_nat (proj1_sig i1) (proj1_sig i)).
-    {
-      apply eq_nat_eq in e.
-      apply eq_eq_nat; lia.
-    }
-    match_destr; try congruence.
-    unfold vmap', V_odd_nth_roots, V_even_nth_roots, V_nth_roots_half.
-    destruct (pow2_S (S (S n))).
-    rewrite H1.
-    rewrite <- Cpow_conj.
-    rewrite <- Cmult_conj.
-    f_equal.
-    do 2 rewrite Cpow_nth_root.
-    rewrite nth_root_mul.
-    f_equal.
-    replace (proj1_sig i1) with (proj1_sig i); try lia.
-    now apply eq_nat_eq.
-  - assert (~ eq_nat (proj1_sig i1) (proj1_sig i)).
-    {
-      unfold not; intros.
-      apply eq_nat_eq in H0.
-      rewrite H0 in n0.
-      now generalize (eq_nat_refl (proj1_sig i)).
-    }
-    match_destr; try congruence.
-    now rewrite Cmult_0_l.
+  rewrite pow_nth_root.
+  rewrite nth_root_mul.
+  f_equal.
+  lia.
 Qed.
- *)
 
 Definition vector_rev {n} {T}  (v : 'rV[T]_n) :=
   \row_(i < n) v I0 (rev_ord i).
