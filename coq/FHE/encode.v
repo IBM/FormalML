@@ -366,41 +366,31 @@ Proof.
   now rewrite mul_scalar_mx.
 Qed.
 
-(*
 (* shows evaluation can be done by modified FFT of half size*)
-Lemma V_peval_mat_prod (n : nat) :
-  V_peval_mat (V_odd_nth_roots (S n)) =
-    V_mat_mat_mult (V_peval_mat (V_even_nth_roots (S n)))
-      (diag_matrix (V_nth_roots_half (S n))).
+Lemma peval_mat_prod (n : nat) :
+  peval_mat (odd_nth_roots (S n)) =
+    peval_mat (even_nth_roots (S n)) *m diag_mx (nth_roots_half (S n)).
 Proof.
-  apply vec_eq_eq; intros ?.
-  apply vec_eq_eq; intros ?.  
-  unfold V_peval_mat, diag_matrix, V_mat_mat_mult.
-  unfold V_inner_prod, transpose.
-  generalize (vector_sum_all_but_1_0  (2 ^ S n) i0  (V_odd_nth_roots (S n) i ^ proj1_sig i0)%C); intros.
-  rewrite <- H.
+  apply matrixP; intros ??.
+  unfold nth_roots_half, even_nth_roots, peval_mat.
+  rewrite mul_mx_diag.
+  repeat rewrite mxE.
+  destruct (pow2_S (S (S n))).
+  rewrite H.
+  do 2 rewrite pow_nth_root.
+  rewrite nth_root_mul.
   f_equal.
-  apply vec_eq_eq; intros ?.
-  match_destr.
-  - unfold V_odd_nth_roots, V_even_nth_roots, V_nth_roots_half.
-    destruct (pow2_S (S (S n))).
-    rewrite H0.
-    do 2 rewrite Cpow_nth_root.
-    rewrite nth_root_mul.
-    f_equal.
-    replace (proj1_sig i1) with (proj1_sig i0); try lia.
-    now apply eq_nat_eq.
-  - now rewrite Cmult_0_r.
+  lia.
 Qed.
-
+(*
 (* shows enconding can be done by modified IFFT of half size*)
-Lemma V_encode_mat_prod (n : nat) :
-  let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
-  let encmat := (V_conj_mat (transpose pmat)) in
+Lemma encode_mat_prod (n : nat) :
+  let pmat := peval_mat (odd_nth_roots (S n)) in
+  let encmat := (conj_mat (pmat^T)) in
   encmat = 
-    V_mat_mat_mult
-      (diag_matrix (vmap' Cconj (V_nth_roots_half (S n))))
-      (V_peval_mat (vmap' Cconj (V_even_nth_roots (S n)))).
+    diag_mx (map_mx conjc (nth_roots_half (S n))) 
+    *m
+       peval_mat (map_mx conjc (even_nth_roots (S n))).
 Proof.
   apply vec_eq_eq; intros ?.
   apply vec_eq_eq; intros ?.  
@@ -609,7 +599,6 @@ Proof.
     rewrite /add /zero/=.
     lra.
   }
-
   rewrite -vector_sum_add vector_sum_reals//.
   now apply vector_rev_sum_rev.
 Qed.  
@@ -643,14 +632,14 @@ Proof.
   rewrite nth_root_conj_alt.
   f_equal.
   rewrite <- H.
-  replace (2^S (S n)) with (2 * 2^S n)%nat.
-  - rewrite Nat.mod_small.
-    + admit.
-    + admit.
-  - admit.
-Admitted.
+  rewrite (expnS _ (S n)).
+  unfold rev_ord; simpl.
+  rewrite Nat.mod_small; try lia.
+  destruct i.
+  simpl.
+  lia.
+Qed.
 
-(*
 Lemma mat_encode_real (n : nat) (cl : 'cV[R[i]]_(2^(S n))) :
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   let encmat := (conj_mat (pmat^T)) in 
@@ -658,10 +647,44 @@ Lemma mat_encode_real (n : nat) (cl : 'cV[R[i]]_(2^(S n))) :
   forall i,
     Im ((encmat *m cl) i I0) = 0.
 Proof.
-  unfold peval_mat.
   intros.
   rewrite mxE.
-  generalize vector_rev_conj_inner; intros.
+  generalize (vector_rev_conj_inner (row i encmat) (cl^T)); intros.
+  unfold inner_prod in H0.
+  unfold row in H0.
+  rewrite mxE in H0.
+  rewrite <- H0; trivial.
+  - simpl.
+    f_equal.
+    apply eq_big_seq, ssrbool.in1W => x.
+    now repeat rewrite mxE.
+  - unfold encmat.
+    unfold vector_rev_conj; intros.
+    unfold conj_mat, pmat.
+    repeat rewrite mxE.
+    rewrite conjcK.
+    unfold rev_ord; simpl.
+    destruct (pow2_S (S (S n))).
+    rewrite H1.
+    do 2 rewrite pow_nth_root.
+    rewrite nth_root_conj.
+    rewrite nth_root_inv.
+    f_equal.
+    rewrite <- H1.
+    unfold rev_ord.
+    simpl.
+    rewrite (expnS _ (S n)).
+    rewrite Nat.mod_small.
+    + destruct i; destruct i0; simpl.
+      admit.
+    + destruct i; destruct i0; simpl.
+      admit.
+ Admitted.
+(*
+    
+    
+
+  generalize (vector_rev_conj_inner n); intros.
   apply (vector_rev_conj_conj (vmap' (fun c => Cpow c (proj1_sig i)) (V_odd_nth_roots (S n)))).
   apply vector_rev_conj_Cpow, vector_rev_conj_odd_nth_roots.
 Qed.
@@ -677,25 +700,8 @@ Proof.
   apply Re_Im.
   now apply V_mat_encode_real.
 Qed.
-
-Definition vector_Cplus {n} (v1 v2 : Vector C n) :=
-  (vmap' (fun '(a,b) => Cplus a b) (vector_zip v1 v2)).
-  
-Definition vector_Czero n := ConstVector n (RtoC (0%R)).
-
-Definition vector_norm {n} (v : Vector C n) := V_inner_prod v (vmap' Cconj v).
-
-Definition vector_proj {n} (v1 v2 : Vector C n) := Cdiv (V_inner_prod v1 (vmap' Cconj v2)) (vector_norm v2).
-
-Lemma vector_Cplus_0_r {n} (v : Vector C n) :
-  vector_Cplus v (vector_Czero n) = v.
-Proof.
-  apply vec_eq_eq; intros ?.
-  unfold vector_Cplus, vector_Czero, vmap', ConstVector.
-  simpl.
-  now rewrite Cplus_0_r.
-Qed.
-
+*)
+(*
 Lemma nth_root_odd_project  (n : nat) (cl : Vector C (2^(S n))) :
   cl = fold_right vector_Cplus (vector_Czero (2^(S n)))
          (map (fun e => 
