@@ -273,6 +273,21 @@ Proof.
     now rewrite <- mul_conj.
 Qed.
 
+Lemma modulo_modn n m : (n mod m)%nat = div.modn n m.
+Proof.
+  unfold Nat.modulo.
+  destruct m; simpl; trivial.
+  generalize (Nat.divmod_spec n m 0 m (le_refl _)); intros HH.
+  simpl in HH.
+  destruct (Nat.divmod n m 0 m); simpl in *.
+  rewrite !plusE !multE !minusE in HH*.
+  rewrite !muln0 subnn !addn0 in HH.
+  destruct HH; subst.
+  replace (n0 + m * n0 + (m - n1))%nat with (n0 * m.+1 + (m - n1))%nat by lia.
+  rewrite div.modnMDl div.modn_small//.
+  lia.
+Qed.
+
 Lemma decode_encode_off_diag (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   forall n1 n2,
@@ -305,7 +320,27 @@ Proof.
     apply nth_root_1_iff in H2.
     rewrite <- H3 in H2.
     clear H0 H1 H3 pmat x x0.
-    admit.
+    destruct n1 as [x xlt]; destruct n2 as [y ylt]; simpl in *.
+    assert (neq:x <> y).
+    {
+      intros HH.
+      apply H; subst.
+      f_equal; apply eqtype.bool_irrelevance.
+    }
+    clear H.
+    rewrite !modulo_modn !plusE !minusE in H2.
+    apply (f_equal ssrint.Posz) in H2.
+    revert H2.
+    rewrite -intdiv.modz_nat ssrint.PoszD -ssrint.subzn.
+    + rewrite -intdiv.modz_nat.
+      rewrite -intdiv.modzDm.
+      rewrite !addn1 intdiv.modzDl intdiv.modzNm.
+      rewrite !intdiv.modzDm.
+      destruct (@leP x y).
+      * admit.
+      * rewrite intdiv.modz_small/=; [lia |].
+        rewrite expnSr; lia.
+    + lia.
   - destruct (pow2_S (S (S n))).
     rewrite H2.
     rewrite nth_root_conj_alt.
