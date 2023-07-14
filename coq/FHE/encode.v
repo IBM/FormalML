@@ -162,43 +162,6 @@ Proof.
   now do 6 rewrite mxE.
 Qed.
 
-Fixpoint list_Cplus (l : list R[i]) : R[i] :=
-  match l with
-  | nil => 0
-  | a :: l' => add a (list_Cplus l')
-  end.
-
-Lemma list_Cplus_mult_l c l :
-  (list_Cplus (map (fun a => c * a) l) = c * list_Cplus l)%C.
-Proof.
-  induction l; simpl.
-  - now rewrite mulr0.
-  - rewrite IHl.
-    now rewrite mulrDr.
-Qed.
-
-Lemma C_telescope_mult (c : R[i]) (n : nat) :
-  (mul (c - 1) (list_Cplus (map (fun j => exp c j) (seq 0 (S n)))) = 
-    (exp c (S n) - 1))%C.
-Proof.
-  induction n.
-  - simpl.
-    rewrite expr0; rewrite expr1.
-    now rewrite addr0; rewrite mulr1.
-  - rewrite seq_S.
-    simpl plus.
-    rewrite map_app.
-    unfold map at 2.
-(*
-    rewrite <- Permutation_cons_append.
-    unfold list_Cplus; fold list_Cplus.
-    transitivity ((c - R1) * c ^ S n + (c - R1) * list_Cplus (map (fun j : nat => c ^ j) (seq 0 (S n))))%C; [ring |].
-    rewrite IHn.
-    simpl; ring.
-Qed.
- *)
-    Admitted.
-
 Lemma sub_x_x (x : R[i]) :
   x - x = 0.
 Proof.
@@ -207,13 +170,52 @@ Proof.
   f_equal; lra.
 Qed.
 
-Lemma C_telescope_div (c : R[i]) (n : nat) :
+Lemma sub_x_x_l (x : R[i]) :
+  -x + x = 0.
+Proof.
+  rewrite addrC.
+  apply sub_x_x.
+Qed.
+
+Lemma telescope_bigop_minus (f : nat -> R[i]) (n : nat) :
+  \sum_(0 <= j < S n) (f (S j) - f j) =
+    f (S n) - f 0%nat.
+Proof.
+  induction n.
+  - now rewrite big_nat1.
+  - rewrite big_nat_recr; try lia.
+    simpl.
+    rewrite IHn.
+    rewrite addrC.
+    rewrite addrA.
+    f_equal.
+    rewrite <- addrA.
+    rewrite sub_x_x_l.
+    now rewrite addr0.
+Qed.
+ 
+Lemma telescope_mult_bigop_aux (c : R[i]) (n : nat) :
+  mul (c - 1) (\sum_(0 <= j < S n) (c ^+ j)) = 
+  \sum_(0 <= j < S n) ((c^+(S j)) - (c ^+ j)).
+Proof.
+  Admitted.
+
+Lemma telescope_mult_bigop (c : R[i]) (n : nat) :
+  (mul (c - 1) (\sum_(0 <= j < S n) (c ^+ j)) = 
+     (exp c (S n) - 1))%C.
+Proof.
+  rewrite telescope_mult_bigop_aux.
+  rewrite telescope_bigop_minus.
+  now rewrite expr0.
+Qed.
+
+Lemma telescope_div (c : R[i]) (n : nat) :
   c <> 1 ->
-  list_Cplus (map (fun j => exp c j) (seq 0 (S n))) = 
-    Cdiv (exp c (S n) - 1) (c - 1).
+  \sum_(0 <= j < S n) (c ^+ j) = 
+    Cdiv (c ^+ (S n) - 1) (c - 1).
 Proof.
   intros.
-  generalize (C_telescope_mult c n); intros.
+  generalize (telescope_mult_bigop c n); intros.
   rewrite <- H0.
   unfold Cdiv.
   rewrite mulrC.
@@ -232,25 +234,25 @@ Proof.
     now rewrite addr0 in H1.
 Qed.
 
-Lemma C_telescope_pow_0 (c : R[i]) (n : nat) :
+Lemma telescope_pow_0 (c : R[i]) (n : nat) :
   c <> 1 ->
   c ^+ (S n) = 1 ->
-  list_Cplus (map (fun j => exp c j) (seq 0 (S n))) = 0.
+  \sum_(0 <= j < S n) (c ^+ j) = C0.
 Proof.
   intros.
-  rewrite C_telescope_div; trivial.
+  rewrite telescope_div; trivial.
   rewrite H0.
   rewrite sub_x_x.
   unfold Cdiv.
   now rewrite mul0r.
 Qed.
 
-Lemma telescope_pow_0 (c : R[i]) (n : nat) :
+Lemma telescope_pow_0_alt (c : R[i]) (n : nat) :
   c <> 1 ->
   c ^+ (S n) = 1 ->
   \sum_(j < S n) (c ^+ j) = C0.
 Proof.
-Admitted.
+  Admitted.
 
 Lemma mul_conj (c1 c2 : R[i]) :
   (conjc c1) * (conjc c2) = conjc (c1 * c2).
@@ -288,7 +290,7 @@ Proof.
   simpl.
   destruct (pow2_S (S n)).
   unfold odd_nth_roots.
-  generalize (telescope_pow_0 ((nth_root (2*n1+1) (2^S(S n))) * 
+  generalize (telescope_pow_0_alt ((nth_root (2*n1+1) (2^S(S n))) * 
                                  (conjc (nth_root (2*n2+1) (2^S(S n))))) x); intros.
   rewrite <- H1.
   - rewrite <- H0.
