@@ -440,18 +440,12 @@ Proof.
 Qed.
  *)
 
-Program Definition reflect_ordinal {n} (i:ordinal n) : ordinal n :=
-  @Ordinal n (n-(S i)) _.
-Next Obligation.
-  intros ?[??]; lia.
-Qed.
-
 Definition vector_rev {n} {T}  (v : 'rV[T]_n) :=
-  \row_(i < n) v I0 (reflect_ordinal i).
+  \row_(i < n) v I0 (rev_ord i).
 
 Definition vector_rev_conj {n} (v : 'rV[R[i]]_n) :=
   forall i,
-    v I0 i = conjc (v I0 (reflect_ordinal i)).
+    v I0 i = conjc (v I0 (rev_ord i)).
   
 Lemma add_conj (c1 c2 : R[i]) :
   (conjc c1) + (conjc c2) = conjc (c1 + c2).
@@ -547,82 +541,78 @@ Proof.
   lra.
 Qed.
 
+
 Lemma vector_rev_sum_rev {n} (v : 'rV[R[i]]_n) :
   vector_rev_conj v ->
   forall i,
-    Im ((v I0 i) + (v I0 (reflect_ordinal i))) = 0.
+    Im ((v + vector_rev v) I0 i) = 0.
 Proof.
   intros.
-  unfold vector_rev_conj in H.
-  rewrite H.
-  destruct (v I0 (reflect_ordinal i)).
-  vm_compute.
-  lra.
+  rewrite /vector_rev !mxE H rev_ordK.
+  apply Cconj_im_0.
+  rewrite -add_conj conjcK addrC//.
+Qed.
+
+Lemma vector_rev_reflect {n} (v : 'rV[R[i]]_n) i :
+  vector_rev v I0 i = v I0 (rev_ord i).
+Proof.
+  rewrite mxE//.
 Qed.
 
 Lemma vector_sum_rev {n} (v : 'rV[R[i]]_n) :
   vector_sum v = vector_sum (vector_rev v).
 Proof.
   unfold vector_sum, vector_rev.
-  Admitted.
-    
+  rewrite (reindex_inj rev_ord_inj)/=.
+  apply eq_big_seq, ssrbool.in1W => x.
+  rewrite mxE//.
+Qed.
 
-(*
-Lemma map_Cconj_vector_to_list {n} (v : Vector C n) :
-  map Cconj (vector_to_list v) = vector_to_list (vmap' Cconj v).
+Lemma vector_sum_add {n} (a b : 'rV[R[i]]_n) :
+  vector_sum (a + b) = vector_sum a + vector_sum b.
 Proof.
-  unfold vector_to_list.
-  induction n.
-  - unfold vector_fold_right, vector_fold_right_dep, vector_fold_right_bounded_dep.
-    now simpl.
-  - do 2 rewrite vector_fold_right_Sn.
-    rewrite map_cons.
-    rewrite IHn.
-    f_equal.
- Qed.
+  unfold vector_sum.
+  cut (\sum_(j < n) (a I0 j + b I0 j) = \sum_(j < n) a I0 j + \sum_(j < n) b I0 j).
+  {
+    intros HH.
+    rewrite -HH/=.
+    apply eq_big_seq, ssrbool.in1W => x.
+    rewrite mxE//.
+  } 
+  rewrite big_split //.
+Qed.
 
-
-Lemma rev_vector_to_list {n} {T} (v : Vector T n) :
-  rev (vector_to_list v) = vector_to_list (vector_rev v).
+Lemma Im_add (a b:R[i]) : Im (a + b) = Im a + Im b.
 Proof.
-  unfold vector_rev.
-  unfold vector_to_list.
-  induction n.
-  - unfold vector_fold_right, vector_fold_right_dep, vector_fold_right_bounded_dep.
-    now simpl.
-  - do 2 rewrite vector_fold_right_Sn.
-  
-Admitted.
-*)
+  now destruct a; destruct b; simpl.
+Qed.
+
+Lemma vector_sum_reals {n} (v : 'rV[R[i]]_n) :
+  (forall i, Im (v I0 i) = 0) -> 
+  Im (vector_sum v) = 0.
+Proof.
+  unfold vector_sum.
+  apply big_rec; simpl; trivial.
+  intros.
+  rewrite Im_add H1 H0// addr0//.
+Qed.
 
 Lemma vector_rev_conj_sum {n} (v : 'rV[R[i]]_n) :
   vector_rev_conj v ->
   Im (vector_sum v) = 0%R.
 Proof.
   intros.
-  unfold vector_sum.
-  revert H.
-  
-  Admitted.
-(*
-  intros.
-  
-  rewrite vector_sum_list_Cplus.
-
-  apply list_Cplus_conj_rev.
-  rewrite map_Cconj_vector_to_list.
-  rewrite rev_vector_to_list.
-  f_equal.
-  apply vec_eq_eq; intros ?.
-  assert (vector_rev_conj (vmap' Cconj v)).
+  cut (Im (vector_sum v + vector_sum (vector_rev v)) = 0).
   {
-    now apply vector_rev_conj_conj.
+    rewrite -vector_sum_rev.
+    destruct (vector_sum v); simpl.
+    rewrite /add /zero/=.
+    lra.
   }
-  rewrite H0.
-  unfold vmap'.
-  now rewrite Cconj_conj.
-Qed.
-*)
+
+  rewrite -vector_sum_add vector_sum_reals//.
+  now apply vector_rev_sum_rev.
+Qed.  
 
 Lemma vector_rev_conj_inner {n} (v1 v2 : 'rV[R[i]]_n) :
   vector_rev_conj v1 ->
