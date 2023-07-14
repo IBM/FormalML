@@ -617,7 +617,10 @@ Qed.
 Lemma inner_product_as_sum {n} (v1 v2 : 'rV[R[i]]_n) :
   inner_prod v1 v2 = vector_sum (map2_mx (fun a b => a * b) v1 v2).
 Proof.
-Admitted.
+  rewrite /inner_prod /mulmx/= mxE /vector_sum/=.
+  apply eq_big_seq, ssrbool.in1W => x.
+  rewrite /map2_mx /trmx !mxE//.
+Qed.
 
 Lemma vector_rev_conj_inner {n} (v1 v2 : 'rV[R[i]]_n) :
   vector_rev_conj v1 ->
