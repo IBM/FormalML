@@ -306,15 +306,13 @@ Proof.
                                  (conjc (nth_root (2*n2+1) (2^S(S n))))) x); intros.
   rewrite <- H1.
   - rewrite <- H0.
-    apply f_equal.
-    apply FunctionalExtensionality.functional_extensionality; intros.
-    apply f_equal.
-    do 8 rewrite mxE.
+    erewrite eq_big_seq; [reflexivity |].
+    simpl.
+    apply ssrbool.in1W; intros.
+    repeat rewrite mxE.
     rewrite exprMn_comm.
-    + f_equal.
-      now rewrite exp_conj.
-    + unfold comm.
-      now rewrite mulrC.
+    + rewrite exp_conj//.
+    + rewrite /comm mulrC//.
   - unfold not; intros.
     destruct (pow2_S (S (S n))).
     rewrite H3 in H2.
