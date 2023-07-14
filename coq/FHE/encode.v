@@ -193,11 +193,12 @@ Proof.
     rewrite sub_x_x_l.
     now rewrite addr0.
 Qed.
- 
+
 Lemma telescope_mult_bigop_aux (c : R[i]) (n : nat) :
   mul (c - 1) (\sum_(0 <= j < S n) (c ^+ j)) = 
   \sum_(0 <= j < S n) ((c^+(S j)) - (c ^+ j)).
 Proof.
+  Search bigop.
   Admitted.
 
 Lemma telescope_mult_bigop (c : R[i]) (n : nat) :
@@ -234,7 +235,7 @@ Proof.
     now rewrite addr0 in H1.
 Qed.
 
-Lemma telescope_pow_0 (c : R[i]) (n : nat) :
+Lemma telescope_pow_0_nat (c : R[i]) (n : nat) :
   c <> 1 ->
   c ^+ (S n) = 1 ->
   \sum_(0 <= j < S n) (c ^+ j) = C0.
@@ -247,12 +248,16 @@ Proof.
   now rewrite mul0r.
 Qed.
 
-Lemma telescope_pow_0_alt (c : R[i]) (n : nat) :
+Lemma telescope_pow_0_ord (c : R[i]) (n : nat) :
   c <> 1 ->
   c ^+ (S n) = 1 ->
   \sum_(j < S n) (c ^+ j) = C0.
 Proof.
-  Admitted.
+  intros.
+  rewrite <- (telescope_pow_0_nat c n); trivial.
+  simpl.
+  now rewrite big_mkord.
+Qed.
 
 Lemma mul_conj (c1 c2 : R[i]) :
   (conjc c1) * (conjc c2) = conjc (c1 * c2).
@@ -290,7 +295,7 @@ Proof.
   simpl.
   destruct (pow2_S (S n)).
   unfold odd_nth_roots.
-  generalize (telescope_pow_0_alt ((nth_root (2*n1+1) (2^S(S n))) * 
+  generalize (telescope_pow_0_ord ((nth_root (2*n1+1) (2^S(S n))) * 
                                  (conjc (nth_root (2*n2+1) (2^S(S n))))) x); intros.
   rewrite <- H1.
   - rewrite <- H0.
