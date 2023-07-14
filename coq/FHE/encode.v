@@ -1,4 +1,4 @@
-Require Import Reals Lra Lia List.
+Require Import Reals Lra Lia List Permutation.
 From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix Rstruct complex.
 From mathcomp Require Import ssralg.
 Import ssralg.GRing.
@@ -127,7 +127,7 @@ Proof.
     lia.
 Qed.
 
-Lemma decode_mat_encode_mat_on_diag_row (n : nat):
+Lemma decode_encode_on_diag (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   forall n0,
     H_inner_prod (row n0 pmat) (row n0 pmat) = (2^S n)%:R.
@@ -160,17 +160,6 @@ Proof.
   intros ??.
   unfold row.
   now do 6 rewrite mxE.
-Qed.
-
-Lemma decode_mat_encode_mat_on_diag (n : nat):
-  let pmat := (peval_mat (odd_nth_roots (S n))) in
-  let prod := pmat *m (conj_mat (pmat^T)) in
-  forall n0,
-    prod n0 n0 = (2^S n)%:R.
-Proof.
-  intros.
-  rewrite H_inner_prod_mat.
-  apply decode_mat_encode_mat_on_diag_row.
 Qed.
 
 Fixpoint list_Cplus (l : list R[i]) : R[i] :=
@@ -286,7 +275,7 @@ Proof.
     now rewrite <- mul_conj.
 Qed.
 
-Lemma decode_mat_encode_mat_off_diag_row (n : nat):
+Lemma decode_encode_off_diag (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   forall n1 n2,
     n1 <> n2 ->
@@ -332,19 +321,7 @@ Proof.
     clear H0 H1 H2 pmat x x0.
   Admitted.
 
-Lemma decode_mat_encode_mat_off_diag (n : nat):
-  let pmat := (peval_mat (odd_nth_roots (S n))) in
-  let prod := pmat *m (conj_mat (pmat^T)) in
-  forall n1 n2,
-    n1 <> n2 ->
-    prod n1 n2 = 0.
-Proof.
-  intros.
-  rewrite H_inner_prod_mat.
-  now apply decode_mat_encode_mat_off_diag_row.
-Qed.
-
-Lemma decode_mat_encode_mat_diag_mat (n : nat):
+Lemma decode_encode_scalar_mx (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   pmat *m (conj_mat (pmat^T)) = scalar_mx (2^S n)%:R.
 Proof.
@@ -354,7 +331,7 @@ Proof.
   destruct (@eqtype.eqP _ x y); intros.
   - rewrite e.
     simpl.
-    generalize (decode_mat_encode_mat_on_diag_row n); intros.
+    generalize (decode_encode_on_diag n); intros.
     rewrite eqtype.eq_refl mulr1n.
     unfold pmat in *.
     specialize (H y).
@@ -366,7 +343,7 @@ Proof.
     apply ssrbool.in1W; intros.
     now repeat rewrite mxE.
   - simpl.
-    generalize (decode_mat_encode_mat_off_diag_row n x y n0); intros.
+    generalize (decode_encode_off_diag n x y n0); intros.
     unfold H_inner_prod, inner_prod in H.
     rewrite mxE/=/row in H.
     (* I am sure there is a better way to do this *)
@@ -388,7 +365,7 @@ Lemma decode_mat_encode_mat (n : nat) (cl : 'cV[R[i]]_(2^(S n))) :
 Proof.
   simpl.
   rewrite mulmxA.
-  generalize (decode_mat_encode_mat_diag_mat n); intros.
+  generalize (decode_encode_scalar_mx n); intros.
   rewrite H.
   now rewrite mul_scalar_mx.
 Qed.
