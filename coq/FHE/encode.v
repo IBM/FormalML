@@ -614,20 +614,20 @@ Proof.
   now apply vector_rev_sum_rev.
 Qed.  
 
+Lemma inner_product_as_sum {n} (v1 v2 : 'rV[R[i]]_n) :
+  inner_prod v1 v2 = vector_sum (map2_mx (fun a b => a * b) v1 v2).
+Proof.
+Admitted.
+
 Lemma vector_rev_conj_inner {n} (v1 v2 : 'rV[R[i]]_n) :
   vector_rev_conj v1 ->
   vector_rev_conj v2 ->  
   Im (inner_prod v1 v2) = 0%R.
 Proof.
   intros.
-  unfold inner_prod.
-  Admitted.
-(*
-  
-  apply vector_rev_conj_sum.
+  rewrite inner_product_as_sum vector_rev_conj_sum//.
   now apply vector_rev_conj_mult.
 Qed.
-*)
 
 Lemma vector_rev_conj_odd_nth_roots (n : nat) :
   vector_rev_conj (odd_nth_roots (S n)).
