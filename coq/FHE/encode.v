@@ -369,7 +369,9 @@ Proof.
     + rewrite div.modnDm.
       replace (1 + 1)%nat with 2%nat by lia.
       rewrite div.modnn; lia.
-    + admit.
+    + replace ( div.modn (2 * y + 1) (2 ^ n.+1 * 2)) with (2 * y + 1)%nat.
+      * admit.
+      * rewrite div.modn_small; lia.
   Admitted.
 
 Lemma decode_encode_scalar_mx (n : nat):
@@ -764,11 +766,13 @@ Next Obligation.
   lia.
 Qed.
 
-Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) :=
+Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R]_(2^(S n)) :=
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   let encmat := (conj_mat (pmat^T)) in 
   (inv (2 ^+ S n)) *:
     (map_mx (fun c => Re c) (encmat *m (vector_reflect_conj cl))).
+
+
 
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
   (H_inner_prod v1 v2) / (H_inner_prod v2 v2).
