@@ -782,8 +782,18 @@ Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R]_(2^(S n)) :=
 Definition mx_round {n m} (mat : 'M[R]_(n,m)) : 'M[Z]_(n,m) :=
   map_mx (fun r => up r) mat.
 
+Definition CKKS_poly_encode_Z {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[Z]_(2^(S n)) :=
+  mx_round (CKKS_poly_encode cl).
+
+(*
+From mathcomp Require Import poly.
+Definition col_to_poly {n} (cl : 'cV[Z]_n) :=
+  \poly_(j < n) (cl j I0).
+*)
+
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
   (H_inner_prod v1 v2) / (H_inner_prod v2 v2).
+
 
 (*
 Lemma nth_root_odd_project  (n : nat) (cl : Vector C (2^(S n))) :
