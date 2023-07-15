@@ -766,6 +766,13 @@ Next Obligation.
   lia.
 Qed.
 
+Lemma vector_reflect_conj_rev_conj {n} (cl : 'cV[R[i]]_(2^n)) :
+  vector_rev_conj (vector_reflect_conj cl)^T.
+Proof.
+  unfold vector_rev_conj, vector_reflect_conj.
+  intros.
+  Admitted.
+
 Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R]_(2^(S n)) :=
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   let encmat := (conj_mat (pmat^T)) in 
