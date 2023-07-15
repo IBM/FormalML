@@ -370,9 +370,9 @@ Proof.
       replace (1 + 1)%nat with 2%nat by lia.
       rewrite div.modnn; lia.
     + replace ( div.modn (2 * y + 1) (2 ^ n.+1 * 2)) with (2 * y + 1)%nat.
-      * admit.
+      * rewrite div.modnB; try lia.
       * rewrite div.modn_small; lia.
-  Admitted.
+  Qed.
 
 Lemma decode_encode_scalar_mx (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
