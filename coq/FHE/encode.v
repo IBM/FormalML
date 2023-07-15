@@ -722,7 +722,7 @@ Proof.
     unfold zero; simpl; lra.
 Qed.
 
-Lemma V_mat_encode_real_alt {n} (cl : 'cV[R[i]]_(2^(S n))) :
+Lemma mat_encode_real_alt {n} (cl : 'cV[R[i]]_(2^(S n))) :
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   let encmat := (conj_mat (pmat^T)) in 
   vector_rev_conj (cl^T) ->
