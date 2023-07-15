@@ -690,6 +690,17 @@ Proof.
     now repeat rewrite mxE.
 Qed.
 
+Lemma encode_mat_pow_odd_roots (n:nat) :
+  let pmat := (peval_mat (odd_nth_roots (S n))) in
+  forall i,
+    row i pmat^T = (map_mx (fun c => c ^+ i) (odd_nth_roots (S n))).
+Proof.
+  intros.
+  unfold odd_nth_roots, pmat, peval_mat.
+  apply matrixP; intros ??.
+  now repeat rewrite mxE.
+Qed.  
+
 Lemma mat_encode_real {n} (cl : 'cV[R[i]]_(2^(S n))) :
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   let encmat := (conj_mat (pmat^T)) in 
@@ -703,12 +714,9 @@ Proof.
   unfold encmat, conj_mat.
   rewrite <- map_row.
   apply vector_rev_conj_conj; simpl.
-  replace (row i0 pmat^T) with (map_mx (fun c => c ^+ i0) (odd_nth_roots (S n))).
-  - apply vector_rev_conj_Cpow.
-    apply vector_rev_conj_odd_nth_roots.
-  - unfold odd_nth_roots, pmat, peval_mat.
-    apply matrixP; intros ??.
-    now repeat rewrite mxE.
+  rewrite encode_mat_pow_odd_roots.
+  apply vector_rev_conj_Cpow.
+  apply vector_rev_conj_odd_nth_roots.
 Qed.
 
 Lemma Re_Im_0 (c : R[i]) :
@@ -737,11 +745,30 @@ Proof.
   {
     destruct I0; destruct y.
     assert (m = m0) by lia.
-    admit.
+    subst.
+    f_equal.
+    apply eqtype.bool_irrelevance.    
   }
   rewrite <- H1, H0.
   now repeat rewrite mxE.
-Admitted.
+Qed.
+
+Definition vector_rev_col {n} {T}  (v : 'cV[T]_n) :=
+  \col_(i < n) v (rev_ord i) I0.
+
+Program Definition vector_reflect_conj {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R[i]]_(2^(S n)) :=
+  col_mx cl (conj_mat (vector_rev_col cl)).
+Next Obligation.
+  intros.
+  rewrite expnS.
+  lia.
+Qed.
+
+Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) :=
+  let pmat := (peval_mat (odd_nth_roots (S n))) in
+  let encmat := (conj_mat (pmat^T)) in 
+  (inv (2 ^+ S n)) *:
+    (map_mx (fun c => Re c) (encmat *m (vector_reflect_conj cl))).
 
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
   (H_inner_prod v1 v2) / (H_inner_prod v2 v2).
