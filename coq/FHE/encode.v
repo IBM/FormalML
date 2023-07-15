@@ -336,10 +336,10 @@ Proof.
       rewrite -intdiv.modzDm.
       rewrite !addn1 intdiv.modzDl intdiv.modzNm.
       rewrite !intdiv.modzDm.
+      rewrite expnSr.
       destruct (@leP x y).
-      * admit.
-      * rewrite intdiv.modz_small/=; [lia |].
-        rewrite expnSr; lia.
+      * rewrite -intdiv.modzDl intdiv.modz_small/=; lia.
+      * rewrite intdiv.modz_small/=; lia.
     + lia.
   - destruct (pow2_S (S (S n))).
     rewrite H2.
@@ -350,7 +350,26 @@ Proof.
     rewrite <- H2.
     rewrite <- H0.
     clear H0 H1 H2 pmat x x0.
-    admit.
+    destruct n1 as [x xlt]; destruct n2 as [y ylt]; simpl in *.
+    assert (neq:x <> y).
+    {
+      intros HH.
+      apply H; subst.
+      f_equal; apply eqtype.bool_irrelevance.
+    }
+    clear H.
+    rewrite !modulo_modn !plusE !minusE.
+    replace (expn 2 (S (S n))) with (expn 2 (S n) * 2)%nat by (rewrite (expnS _ (S n)); lia).
+    rewrite <- div.muln_modr.
+    rewrite -div.modnDm.
+    replace (2 * x)%nat with (x * 2)%nat by lia.
+    rewrite div.modnMDl.
+    replace (div.modn (2 ^ n.+1 * 2 - div.modn (2 * y + 1) (2 ^ n.+1 * 2)) 2) with
+      (div.modn 1 2).
+    + rewrite div.modnDm.
+      replace (1 + 1)%nat with 2%nat by lia.
+      rewrite div.modnn; lia.
+    + admit.
   Admitted.
 
 Lemma decode_encode_scalar_mx (n : nat):
@@ -635,16 +654,6 @@ Proof.
   now apply vector_rev_conj_mult.
 Qed.
 
-Lemma vector_rev_conj_H_inner {n} (v1 v2 : 'rV[R[i]]_n) :
-  vector_rev_conj v1 ->
-  vector_rev_conj v2 ->  
-  Im (H_inner_prod v1 v2) = 0.
-Proof.
-  intros.
-  apply vector_rev_conj_inner; trivial.
-  now apply vector_rev_conj_conj.
-Qed.
-
 Lemma vector_rev_conj_odd_nth_roots (n : nat) :
   vector_rev_conj (odd_nth_roots (S n)).
 Proof.
@@ -664,17 +673,24 @@ Proof.
   lia.
 Qed.
 
-Lemma vector_rev_conj_inner_conj_l {n} (v1 v2 : 'rV[R[i]]_n) :
-  vector_rev_conj v1 ->
-  vector_rev_conj v2 ->
-  Im (inner_prod (conj_mat v1) v2) = 0.
+Lemma mv_rev_conj_real (n1 n2 : nat) (mat : 'M[R[i]]_(n1,n2)) (cl : 'cV[R[i]]_n2) :
+  vector_rev_conj (cl^T) ->
+  (forall i, vector_rev_conj (row i mat)) ->
+  forall i,
+    Im ((mat *m cl) i I0) = 0.
 Proof.
   intros.
-  apply vector_rev_conj_inner; trivial.
-  now apply vector_rev_conj_conj.
+  replace ((mat *m cl) i I0) with (((row i mat) *m cl) I0 I0).
+  - generalize (vector_rev_conj_inner (row i mat) (cl^T)); intros HH.
+    unfold inner_prod in HH.
+    rewrite trmxK in HH.
+    now apply HH.
+  - repeat rewrite mxE.
+    apply eq_big_seq; intros ??.
+    now repeat rewrite mxE.
 Qed.
 
-Lemma mat_encode_real (n : nat) (cl : 'cV[R[i]]_(2^(S n))) :
+Lemma mat_encode_real {n} (cl : 'cV[R[i]]_(2^(S n))) :
   let pmat := (peval_mat (odd_nth_roots (S n))) in
   let encmat := (conj_mat (pmat^T)) in 
   vector_rev_conj (cl^T) ->
@@ -682,65 +698,60 @@ Lemma mat_encode_real (n : nat) (cl : 'cV[R[i]]_(2^(S n))) :
     Im ((encmat *m cl) i I0) = 0.
 Proof.
   intros.
-  rewrite mxE.
-  generalize (vector_rev_conj_inner (row i encmat) (cl^T)); intros.
-  unfold inner_prod in H0.
-  unfold row in H0.
-  rewrite mxE in H0.
-  rewrite <- H0; trivial.
-  - simpl.
-    f_equal.
-    apply eq_big_seq, ssrbool.in1W => x.
+  apply mv_rev_conj_real; trivial.
+  intros.
+  unfold encmat, conj_mat.
+  rewrite <- map_row.
+  apply vector_rev_conj_conj; simpl.
+  replace (row i0 pmat^T) with (map_mx (fun c => c ^+ i0) (odd_nth_roots (S n))).
+  - apply vector_rev_conj_Cpow.
+    apply vector_rev_conj_odd_nth_roots.
+  - unfold odd_nth_roots, pmat, peval_mat.
+    apply matrixP; intros ??.
     now repeat rewrite mxE.
-  - unfold encmat.
-    unfold vector_rev_conj; intros.
-    unfold conj_mat, pmat.
-    repeat rewrite mxE.
-    rewrite conjcK.
-    unfold rev_ord; simpl.
-    destruct (pow2_S (S (S n))).
-    rewrite H1.
-    do 2 rewrite pow_nth_root.
-    rewrite nth_root_conj.
-    rewrite nth_root_inv.
-    f_equal.
-    rewrite <- H1.
-    unfold rev_ord.
-    simpl.
-    rewrite (expnS _ (S n)).
-    rewrite Nat.mod_small.
-    + destruct i; destruct i0; simpl.
-      admit.
-    + destruct i; destruct i0; simpl.
-      admit.
- Admitted.
-(*
-    
-    
-
-  generalize (vector_rev_conj_inner n); intros.
-  apply (vector_rev_conj_conj (vmap' (fun c => Cpow c (proj1_sig i)) (V_odd_nth_roots (S n)))).
-  apply vector_rev_conj_Cpow, vector_rev_conj_odd_nth_roots.
 Qed.
 
-Lemma V_mat_encode_real_alt (n : nat) (cl : Vector C (2^(S n))) :
-  let pmat := (V_peval_mat (V_odd_nth_roots (S n))) in
-  let encmat := (V_conj_mat (transpose pmat)) in
-  vector_rev_conj cl ->
-  V_mat_vec_mult encmat cl = vmap' RtoC (vmap' Re (V_mat_vec_mult encmat cl)).
+Lemma Re_Im_0 (c : R[i]) :
+  Im c = 0 <-> c = RtoC (Re c).
+Proof.
+  destruct c.
+  unfold RtoC; simpl.
+  split; intros.
+  - now rewrite H.
+  - inversion H.
+    unfold zero; simpl; lra.
+Qed.
+
+Lemma V_mat_encode_real_alt {n} (cl : 'cV[R[i]]_(2^(S n))) :
+  let pmat := (peval_mat (odd_nth_roots (S n))) in
+  let encmat := (conj_mat (pmat^T)) in 
+  vector_rev_conj (cl^T) ->
+  encmat *m cl = map_mx (fun c => RtoC (Re c)) (encmat *m cl).
 Proof.
   intros.
-  apply vec_eq_eq; intros ?.
-  apply Re_Im.
-  now apply V_mat_encode_real.
-Qed.
-*)
+  apply matrixP; intros ??.
+  generalize (mat_encode_real cl H x); intros.
+  apply Re_Im_0 in H0.
+  unfold encmat, pmat.
+  assert (I0 = y).
+  {
+    destruct I0; destruct y.
+    assert (m = m0) by lia.
+    admit.
+  }
+  rewrite <- H1, H0.
+  now repeat rewrite mxE.
+Admitted.
+
+Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
+  (H_inner_prod v1 v2) / (H_inner_prod v2 v2).
+
 (*
 Lemma nth_root_odd_project  (n : nat) (cl : Vector C (2^(S n))) :
   cl = fold_right vector_Cplus (vector_Czero (2^(S n)))
          (map (fun e => 
                  let b := vmap' (fun c => Cpow c e) (V_odd_nth_roots (S n)) in
-                 Vscale (vector_proj cl b) b) 
+                 Vscale (vector_proj_coef cl b) b) 
               (seq 0 (2^(S n)))).
 Proof.
   induction n.
