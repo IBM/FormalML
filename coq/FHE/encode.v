@@ -783,16 +783,16 @@ Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R]_(2^(S n)) :=
   (inv (2 ^+ S n)) *:
     (map_mx (fun c => Re c) (encmat *m (vector_reflect_conj cl))).
 
+From mathcomp Require Import poly mxpoly eqtype polydiv ssrint.
+
+Definition col_to_poly {n} (cl : 'cV[R]_n) := rVpoly (cl^T).
+Definition col_to_poly2 {n} (cl : 'cV[int]_n) := rVpoly (cl^T).
+
 Definition mx_round {n m} (mat : 'M[R]_(n,m)) : 'M[Z]_(n,m) :=
   map_mx (fun r => up r) mat.
 
 Definition CKKS_poly_encode_Z {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[Z]_(2^(S n)) :=
   mx_round (CKKS_poly_encode cl).
-
-From mathcomp Require Import poly mxpoly eqtype polydiv ssrint.
-
-Definition col_to_poly {n} (cl : 'cV[R]_n) := rVpoly (cl^T).
-Definition col_to_poly2 {n} (cl : 'cV[int]_n) := rVpoly (cl^T).
 
 (* this is multiplication for vectors mod monic p *)
 Definition rv_mul_mod {n} (a b : 'rV[R]_n) (p : {poly R}) : 'rV[R]_n :=
