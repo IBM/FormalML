@@ -785,10 +785,30 @@ Definition mx_round {n m} (mat : 'M[R]_(n,m)) : 'M[Z]_(n,m) :=
 Definition CKKS_poly_encode_Z {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[Z]_(2^(S n)) :=
   mx_round (CKKS_poly_encode cl).
 
+From mathcomp Require Import poly mxpoly eqtype polydiv.
+
+Definition col_to_poly {n} (cl : 'cV[R]_n) := rVpoly (cl^T).
+
+(* this is multiplication for vectors mod monic p *)
+Definition rv_mul_mod {n} (a b : 'rV[R]_n) (p : {poly R}) : 'rV[R]_n :=
+  poly_rV (rVpoly(a) * rVpoly b %% p).
+
+(* poly rem x^n+1 *)
+Definition rv_mul_mod_xn_1 {n} (a b : 'rV[R]_n) (n : nat) : 'rV[R]_n :=
+  let prod := (rVpoly a * rVpoly b) in
+  poly_rV (take_poly n prod - drop_poly n prod).
+
 (*
-From mathcomp Require Import poly.
-Definition col_to_poly {n} (cl : 'cV[Z]_n) :=
-  \poly_(j < n) (cl j I0).
+Program Fixpoint poly_rem_xn_1 (n : nat) (a : {poly R}) {struct (size a)} :=
+  let a1 := take_poly n a in
+  let a2 := drop_poly n a in
+  if a2 == 0 then a1 else
+    a1 - poly_rem_xn_1 n a2.
+*)  
+
+(*
+Definition col_to_poly {n} (rv : 'rV[Z]_n) :=
+  \poly_(k < n) (if insub k is Some i then rv I0 i else 0).
 *)
 
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
