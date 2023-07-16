@@ -783,15 +783,15 @@ Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R]_(2^(S n)) :=
   (inv (2 ^+ S n)) *:
     (map_mx (fun c => Re c) (encmat *m (vector_reflect_conj cl))).
 
-From mathcomp Require Import poly mxpoly eqtype polydiv ssrint.
+From mathcomp Require Import poly mxpoly polydiv ssrint.
 
 Definition col_to_poly {n} (cl : 'cV[R]_n) := rVpoly (cl^T).
 Definition col_to_poly2 {n} (cl : 'cV[int]_n) := rVpoly (cl^T).
 
-Definition mx_round {n m} (mat : 'M[R]_(n,m)) : 'M[Z]_(n,m) :=
-  map_mx (fun r => up r) mat.
+Definition mx_round {n m} (mat : 'M[R]_(n,m)) : 'M[int]_(n,m) :=
+  map_mx (fun r => ssrZ.int_of_Z (up r)) mat.
 
-Definition CKKS_poly_encode_Z {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[Z]_(2^(S n)) :=
+Definition CKKS_poly_encode_Z {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[int]_(2^(S n)) :=
   mx_round (CKKS_poly_encode cl).
 
 (* this is multiplication for vectors mod monic p *)
@@ -810,11 +810,6 @@ Program Fixpoint poly_rem_xn_1 (n : nat) (a : {poly R}) {measure size} :=
   let a2 := drop_poly (S n) a in
   if a2 == 0 then a1 else
     a1 - poly_rem_xn_1 n a2.
-*)
-
-(*
-Definition col_to_poly {n} (rv : 'rV[Z]_n) :=
-  \poly_(k < n) (if insub k is Some i then rv I0 i else 0).
 *)
 
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
