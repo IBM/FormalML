@@ -771,6 +771,10 @@ Lemma vector_reflect_conj_rev_conj {n} (cl : 'cV[R[i]]_(2^n)) :
 Proof.
   unfold vector_rev_conj, vector_reflect_conj.
   intros.
+  unfold eq_rect.
+  destruct (vector_reflect_conj_obligation_1 n).
+  unfold conj_mat, vector_rev_col.
+  repeat rewrite mxE.
   Admitted.
 
 Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R]_(2^(S n)) :=
@@ -785,9 +789,10 @@ Definition mx_round {n m} (mat : 'M[R]_(n,m)) : 'M[Z]_(n,m) :=
 Definition CKKS_poly_encode_Z {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[Z]_(2^(S n)) :=
   mx_round (CKKS_poly_encode cl).
 
-From mathcomp Require Import poly mxpoly eqtype polydiv.
+From mathcomp Require Import poly mxpoly eqtype polydiv ssrint.
 
 Definition col_to_poly {n} (cl : 'cV[R]_n) := rVpoly (cl^T).
+Definition col_to_poly2 {n} (cl : 'cV[int]_n) := rVpoly (cl^T).
 
 (* this is multiplication for vectors mod monic p *)
 Definition rv_mul_mod {n} (a b : 'rV[R]_n) (p : {poly R}) : 'rV[R]_n :=
@@ -799,12 +804,13 @@ Definition rv_mul_mod_xn_1 {n} (a b : 'rV[R]_n) (n : nat) : 'rV[R]_n :=
   poly_rV (take_poly n prod - drop_poly n prod).
 
 (*
-Program Fixpoint poly_rem_xn_1 (n : nat) (a : {poly R}) {struct (size a)} :=
-  let a1 := take_poly n a in
-  let a2 := drop_poly n a in
+Require Import Program.
+Program Fixpoint poly_rem_xn_1 (n : nat) (a : {poly R}) {measure size} :=
+  let a1 := take_poly (S n) a in
+  let a2 := drop_poly (S n) a in
   if a2 == 0 then a1 else
     a1 - poly_rem_xn_1 n a2.
-*)  
+*)
 
 (*
 Definition col_to_poly {n} (rv : 'rV[Z]_n) :=
