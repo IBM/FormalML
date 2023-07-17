@@ -817,12 +817,13 @@ Definition red_poly (pol : {poly int}) p' :=
 Definition mx_round {n m} (mat : 'M[R]_(n,m)) : 'M[int]_(n,m) :=
   map_mx (fun r => ssrZ.int_of_Z (up r)) mat.
 
+
 (* 0 <= rand < 1 *)
-(*
+From mathcomp Require Import order.
+
 Definition ran_round (x rand : R) :=
   let hi := up x in
-  if (is_true (Rlt_dec (Rminus (IZR hi) x) rand)) then hi else (hi-1)%Z.
-*)
+  if (Order.lt (Rminus (IZR hi) x) rand)%R then hi else (Zminus hi 1).
 
 Definition CKKS_poly_encode_Z {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[int]_(2^(S n)) :=
   mx_round (CKKS_poly_encode cl).
@@ -836,14 +837,21 @@ Definition rv_mul_mod_xn_1 {n} (a b : 'rV[R]_n) (n : nat) : 'rV[R]_n :=
   let prod := (rVpoly a * rVpoly b) in
   poly_rV (take_poly n prod - drop_poly n prod).
 
-(*
 Require Import Program.
-Program Fixpoint poly_rem_xn_1 (n : nat) (a : {poly R}) {measure size} :=
+From mathcomp Require Import eqtype.
+
+Program Fixpoint poly_rem_xn_1 (n : nat) (a : {poly R}) {measure (seq.size a)} :=
   let a1 := take_poly (S n) a in
   let a2 := drop_poly (S n) a in
   if a2 == 0 then a1 else
     a1 - poly_rem_xn_1 n a2.
-*)
+Next Obligation.
+Admitted.
+(* Defined. *)
+
+Lemma poly_rem_xn_1_le n a : is_true (seq.size (poly_rem_xn_1 n a) <= seq.size a).
+Proof.
+Admitted.
 
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
   (H_inner_prod v1 v2) / (H_inner_prod v2 v2).
