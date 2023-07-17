@@ -775,7 +775,28 @@ Proof.
   destruct (vector_reflect_conj_obligation_1 n).
   unfold conj_mat, vector_rev_col.
   repeat rewrite mxE.
-  Admitted.
+  destruct (splitP i); destruct (splitP (rev_ord i)); unfold rev_ord in *; simpl in *.
+  - destruct i; destruct j; destruct j0; simpl in *; lia.
+  - rewrite !mxE/= conjcK.
+    f_equal.
+    destruct j.
+    cut (m = 2 ^ n - k.+1)%nat.
+    {
+      intros; subst.
+      f_equal; apply eqtype.bool_irrelevance.
+    } 
+    destruct i; simpl in *; subst; lia.
+  - rewrite !mxE/=.
+    do 2 f_equal.
+    destruct j.
+    cut (2 ^ n - k.+1 = m)%nat.
+    {
+      intros; subst.
+      f_equal; apply eqtype.bool_irrelevance.
+    } 
+    destruct i; simpl in *; subst; lia.
+  - destruct i; destruct k; destruct k0; simpl in *; lia.
+Qed.
 
 Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R]_(2^(S n)) :=
   let pmat := (peval_mat (odd_nth_roots (S n))) in
