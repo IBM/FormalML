@@ -837,14 +837,16 @@ Definition rv_mul_mod_xn_1 {n} (a b : 'rV[R]_n) (n : nat) : 'rV[R]_n :=
   let prod := (rVpoly a * rVpoly b) in
   poly_rV (take_poly n prod - drop_poly n prod).
 
-Require Import Program.
+Require Import Recdef.
 
-Program Fixpoint poly_rem_xn_1 (n : nat) (a : {poly R}) {measure (seq.size a)} :=
+Function poly_rem_xn_1 (n : nat) (a : {poly R}) {measure seq.size a} : {poly R} :=
   let a1 := take_poly (S n) a in
   let a2 := drop_poly (S n) a in
   if a2 == 0 then a1 else
     a1 - poly_rem_xn_1 n a2.
-Next Obligation.
+Proof.
+  intros.
+  
   
 Admitted.
 (* Defined. *)
