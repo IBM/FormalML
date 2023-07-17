@@ -804,7 +804,7 @@ Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R]_(2^(S n)) :=
   (inv (2 ^+ S n)) *:
     (map_mx (fun c => Re c) (encmat *m (vector_reflect_conj cl))).
 
-From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype.
+From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool.
 
 Definition int_to_zmodp (i : int) (p : nat) : 'Z_p := i %:~R.
 
@@ -858,8 +858,11 @@ Lemma poly_rem_xn_1_le n a : is_true (seq.size (poly_rem_xn_1 n a) <= n.+1).
 Proof.
   functional induction poly_rem_xn_1 n a.
   - rewrite size_take_poly//. 
-  - 
-Admitted.
+  - eapply leq_trans.
+    apply size_add.
+    generalize (size_take_poly n.+1 a); intros.
+    rewrite size_opp geq_max IHp H//.
+ Qed.
 
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
   (H_inner_prod v1 v2) / (H_inner_prod v2 v2).
