@@ -840,19 +840,25 @@ Definition rv_mul_mod_xn_1 {n} (a b : 'rV[R]_n) (n : nat) : 'rV[R]_n :=
 Require Import Recdef.
 
 Function poly_rem_xn_1 (n : nat) (a : {poly R}) {measure seq.size a} : {poly R} :=
-  let a1 := take_poly (S n) a in
-  let a2 := drop_poly (S n) a in
+  let a1 := take_poly n.+1 a in
+  let a2 := drop_poly n.+1 a in
   if a2 == 0 then a1 else
     a1 - poly_rem_xn_1 n a2.
 Proof.
   intros.
-  
-  
-Admitted.
-(* Defined. *)
+  rewrite size_drop_poly.
+  enough (seq.size a <> 0)%nat by lia.
+  intros eqq.
+  rewrite drop_poly_eq0 in teq.
+  - rewrite eq_refl// in teq.
+  - rewrite eqq//.
+Defined.
 
-Lemma poly_rem_xn_1_le n a : is_true (seq.size (poly_rem_xn_1 n a) <= n).
+Lemma poly_rem_xn_1_le n a : is_true (seq.size (poly_rem_xn_1 n a) <= n.+1).
 Proof.
+  functional induction poly_rem_xn_1 n a.
+  - rewrite size_take_poly//. 
+  - 
 Admitted.
 
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
