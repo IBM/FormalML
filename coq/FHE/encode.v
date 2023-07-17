@@ -804,7 +804,7 @@ Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R]_(2^(S n)) :=
   (inv (2 ^+ S n)) *:
     (map_mx (fun c => Re c) (encmat *m (vector_reflect_conj cl))).
 
-From mathcomp Require Import poly mxpoly polydiv ssrint zmodp.
+From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype.
 
 Definition int_to_zmodp (i : int) (p : nat) : 'Z_p := i %:~R.
 
@@ -818,9 +818,9 @@ Definition mx_round {n m} (mat : 'M[R]_(n,m)) : 'M[int]_(n,m) :=
   map_mx (fun r => ssrZ.int_of_Z (up r)) mat.
 
 
-(* 0 <= rand < 1 *)
 From mathcomp Require Import order.
 
+(* 0 <= rand < 1 *)
 Definition ran_round (x rand : R) :=
   let hi := up x in
   if (Order.lt (Rminus (IZR hi) x) rand)%R then hi else (Zminus hi 1).
@@ -838,7 +838,6 @@ Definition rv_mul_mod_xn_1 {n} (a b : 'rV[R]_n) (n : nat) : 'rV[R]_n :=
   poly_rV (take_poly n prod - drop_poly n prod).
 
 Require Import Program.
-From mathcomp Require Import eqtype.
 
 Program Fixpoint poly_rem_xn_1 (n : nat) (a : {poly R}) {measure (seq.size a)} :=
   let a1 := take_poly (S n) a in
@@ -846,10 +845,11 @@ Program Fixpoint poly_rem_xn_1 (n : nat) (a : {poly R}) {measure (seq.size a)} :
   if a2 == 0 then a1 else
     a1 - poly_rem_xn_1 n a2.
 Next Obligation.
+  
 Admitted.
 (* Defined. *)
 
-Lemma poly_rem_xn_1_le n a : is_true (seq.size (poly_rem_xn_1 n a) <= seq.size a).
+Lemma poly_rem_xn_1_le n a : is_true (seq.size (poly_rem_xn_1 n a) <= n).
 Proof.
 Admitted.
 
