@@ -804,6 +804,7 @@ Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R]_(2^(S n)) :=
   (inv (2 ^+ S n)) *:
     (map_mx (fun c => Re c) (encmat *m (vector_reflect_conj cl))).
 
+From mathcomp Require Import ring_quotient.
 From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool.
 
 Definition int_to_zmodp (i : int) (p : nat) : 'Z_p := i %:~R.
@@ -839,7 +840,7 @@ Definition rv_mul_mod_xn_1 {n} (a b : 'rV[R]_n) (n : nat) : 'rV[R]_n :=
 
 Require Import Recdef.
 
-Function poly_rem_xn_1 (n : nat) (a : {poly R}) {measure seq.size a} : {poly R} :=
+Function poly_rem_xn_1 (n : nat) (a : {poly int}) {measure seq.size a} : {poly int} :=
   let a1 := take_poly n.+1 a in
   let a2 := drop_poly n.+1 a in
   if a2 == 0 then a1 else
@@ -867,6 +868,35 @@ Proof.
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
   (H_inner_prod v1 v2) / (H_inner_prod v2 v2).
 
+Definition equiv_xn_1 (n : nat): rel {poly int} :=
+  fun p => fun q => poly_rem_xn_1 n (p - q) == 0.
+
+Definition qringT (n : nat) :=
+  ringQuotType (equiv_xn_1 n) 0 (@opp _) (@add _) 1 (@mul _).
+
+Definition ideal_xn_1_pred (n : nat) : pred {poly int} :=
+  fun p => poly_rem_xn_1 n p == 0.
+
+Definition qpred (n:nat) : zmodPred (ideal_xn_1_pred n).
+Admitted.
+
+Definition qideal (n : nat) := idealr (ideal_xn_1_pred n).
+
+(*
+Program Definition qpoly (n : nat) := {ideal_quot _}.
+Next Obligation.
+  exact (fun n => qringT n).
+
+*)
+
+
+Import Quotient.
+Search "Quot".
+Print Notation "{ poly _ }".
+(*
+Definition qring (n : nat) := { 'quot' (qideal n) _ }.
+  RingQuotient _ (equiv_xn_1 n) 0 (@opp _) (@add _) 1 (@mul _).
+*)
 
 (*
 Lemma nth_root_odd_project  (n : nat) (cl : Vector C (2^(S n))) :
