@@ -908,6 +908,7 @@ Definition princ_ideal_pred (p : {poly int}) : pred {poly int} :=
   fun q => q %% p == 0.
 
 Lemma princ_ideal_proper (p : {poly int}) :
+  lead_coef p \is a unit ->
   seq.size p > 1 ->
   proper_ideal (princ_ideal_pred p).
 Proof.
@@ -917,36 +918,48 @@ Proof.
     + rewrite poly1_neq0//.
     + rewrite size_poly1//.
   - intros ???.
-    unfold in_mem, mem in H0; simpl in H0.
-    Search modp.
+    unfold in_mem, mem in H1; simpl in H1.
+    rewrite <- Pdiv.IdomainUnit.modp_mul; trivial.
+    (* rewrite H1. *)
+    replace (@modp int_idomainType x p) with (zero (poly_ringType (IntegralDomain.unitRingType int_idomainType))).
+    + rewrite mulr0 mod0p//.
+    + admit.
 Admitted.
 
-Lemma princ_ideal_zmod (p : {poly int}) : zmodPred (princ_ideal_pred p).
+Lemma princ_ideal_zmod (p : {poly int}) :
+  lead_coef p \is a unit ->  
+  zmodPred (princ_ideal_pred p).
 Proof.
+  constructor.
+  - constructor; [constructor |].
+    constructor.
+    + unfold in_mem, mem; simpl.
+      unfold princ_ideal_pred.
+      rewrite mod0p//.
+    + intros ????.
+      unfold in_mem, mem in *; simpl in *.
+      unfold princ_ideal_pred in *.
+      rewrite Pdiv.IdomainUnit.modpD; trivial.
+      admit.
+  - unfold Pred.Exports.oppr_closed.
+    intros ??.
+    unfold in_mem, mem in *; simpl in *.    
+    unfold princ_ideal_pred in *.
 Admitted.
 
-Definition princ_ideal  (p : {poly int}) (pn:seq.size p > 1) : idealr (princ_ideal_pred p)
-  := MkIdeal (princ_ideal_zmod p) (princ_ideal_proper p pn).
+Definition princ_ideal (p : {poly int}) (lc:lead_coef p \is a unit) (pn:seq.size p > 1) : idealr (princ_ideal_pred p)
+  := MkIdeal (princ_ideal_zmod p lc) (princ_ideal_proper p lc pn).
 
-(*Definition princ_ideal_opp (p : {poly int}) (pn:seq.size p > 1) :
+(*
+Definition princ_ideal_opp (p : {poly int}) (pn:seq.size p > 1) :
   opp (princ_ideal_pred p).
  *)
 
 (*
-Definition qring (n : nat) := { ideal_quot  (DefaultKeying.default_keyed_pred (ideal_xn_1_pred n)) }.
+Definition qring (p : {poly int}) (lc:lead_coef p \is a unit) (pn:seq.size p > 1):=
+  { ideal_quot  (DefaultKeying.default_keyed_pred (princ_ideal_pred p) ) }.
 *)
 
-(*
-Program Definition qpoly (n : nat) := {ideal_quot _}.
-Next Obligation.
-  exact (fun n => qringT n).
-
-*)
-
-(*
-Definition qring (n : nat) := { 'quot' (qideal n) _ }.
-  RingQuotient _ (equiv_xn_1 n) 0 (@opp _) (@add _) 1 (@mul _).
-*)
 
 (*
 Lemma nth_root_odd_project  (n : nat) (cl : Vector C (2^(S n))) :
