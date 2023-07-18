@@ -920,18 +920,22 @@ Proof.
     unfold in_mem, mem in H0; simpl in H0.
     Search modp.
 Admitted.
-  
 
-Definition qideal (n : nat) : idealr (ideal_xn_1_pred n)
-  := MkIdeal (ideal_xn_1_pred_zmod n) (ideal_xn_1_pred_proper n).
+Lemma princ_ideal_zmod (p : {poly int}) : zmodPred (princ_ideal_pred p).
+Proof.
+Admitted.
 
+Definition princ_ideal  (p : {poly int}) (pn:seq.size p > 1) : idealr (princ_ideal_pred p)
+  := MkIdeal (princ_ideal_zmod p) (princ_ideal_proper p pn).
 
-Search Zmodule.sort.
-Definition ideal_xn_1_pred_opp n : opp (Zmodule.sort int_ZmodType) (ideal_xn_1_pred n).
-*)
+(*Definition princ_ideal_opp (p : {poly int}) (pn:seq.size p > 1) :
+  opp (princ_ideal_pred p).
+ *)
 
+(*
 Definition qring (n : nat) := { ideal_quot  (DefaultKeying.default_keyed_pred (ideal_xn_1_pred n)) }.
 *)
+
 (*
 Program Definition qpoly (n : nat) := {ideal_quot _}.
 Next Obligation.
