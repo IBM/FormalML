@@ -870,25 +870,65 @@ Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
 Definition equiv_xn_1 (n : nat): rel {poly int} :=
   fun p => fun q => poly_rem_xn_1 n (p - q) == 0.
 
-Definition qringT (n : nat) :=
+Definition poly_rem_xn_1_ringT (n : nat) :=
   ringQuotType (equiv_xn_1 n) 0 (@opp _) (@add _) 1 (@mul _).
 
 Definition ideal_xn_1_pred (n : nat) : pred (poly_zmodType int_Ring) :=
   fun p => poly_rem_xn_1 n p == 0.
 
-Lemma ideal_xn_1_pred_zmod n : zmodPred (ideal_xn_1_pred n).
+Lemma poly_rem_xn_1_1 n :
+  poly_rem_xn_1 n 1 = 1.
 Proof.
-Admitted.
+  functional induction poly_rem_xn_1 n 1.
+Admitted.  
 
 Lemma ideal_xn_1_pred_proper n : proper_ideal (ideal_xn_1_pred n).
 Proof.
+  unfold proper_ideal.
+  split.
+  - unfold in_mem, mem; simpl.
+    unfold ideal_xn_1_pred.
+    rewrite poly_rem_xn_1_1.
+    admit.
+  - intros ???.
+    unfold in_mem, mem in *.
+    simpl in *.
+    unfold ideal_xn_1_pred in *.
+    admit.
+ Admitted.
+
+Lemma ideal_xn_1_pred_zmod n : zmodPred (ideal_xn_1_pred n).
+Proof.
+  apply Pred.Zmod.
+  - admit.
+  - admit.
 Admitted.
+
+Definition princ_ideal_pred (p : {poly int}) : pred {poly int} :=
+  fun q => q %% p == 0.
+
+Lemma princ_ideal_proper (p : {poly int}) :
+  seq.size p > 1 ->
+  proper_ideal (princ_ideal_pred p).
+Proof.
+  intros.
+  unfold proper_ideal, princ_ideal_pred, in_mem, mem; split; simpl.
+  - rewrite modp_small.
+    + rewrite poly1_neq0//.
+    + rewrite size_poly1//.
+  - intros ???.
+    unfold in_mem, mem in H0; simpl in H0.
+    Search modp.
+Admitted.
+  
 
 Definition qideal (n : nat) : idealr (ideal_xn_1_pred n)
   := MkIdeal (ideal_xn_1_pred_zmod n) (ideal_xn_1_pred_proper n).
 
-(*
-Definition ideal_xn_1_pred_opp n : opp (int_Ring) (ideal_xn_1_pred n).
+
+Search Zmodule.sort.
+Definition ideal_xn_1_pred_opp n : opp (Zmodule.sort int_ZmodType) (ideal_xn_1_pred n).
+*)
 
 Definition qring (n : nat) := { ideal_quot  (DefaultKeying.default_keyed_pred (ideal_xn_1_pred n)) }.
 *)
