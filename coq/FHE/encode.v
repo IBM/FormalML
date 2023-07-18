@@ -889,10 +889,6 @@ Next Obligation.
 
 *)
 
-
-Import Quotient.
-Search "Quot".
-Print Notation "{ poly _ }".
 (*
 Definition qring (n : nat) := { 'quot' (qideal n) _ }.
   RingQuotient _ (equiv_xn_1 n) 0 (@opp _) (@add _) 1 (@mul _).
