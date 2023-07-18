@@ -860,9 +860,8 @@ Proof.
   functional induction poly_rem_xn_1 n a.
   - rewrite size_take_poly//. 
   - eapply leq_trans.
-    apply size_add.
-    generalize (size_take_poly n.+1 a); intros.
-    rewrite size_opp geq_max IHp H//.
+    + apply size_add.
+    + rewrite size_opp geq_max IHp size_take_poly//.
  Qed.
 
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
@@ -874,14 +873,25 @@ Definition equiv_xn_1 (n : nat): rel {poly int} :=
 Definition qringT (n : nat) :=
   ringQuotType (equiv_xn_1 n) 0 (@opp _) (@add _) 1 (@mul _).
 
-Definition ideal_xn_1_pred (n : nat) : pred {poly int} :=
+Definition ideal_xn_1_pred (n : nat) : pred (poly_zmodType int_Ring) :=
   fun p => poly_rem_xn_1 n p == 0.
 
-Definition qpred (n:nat) : zmodPred (ideal_xn_1_pred n).
+Lemma ideal_xn_1_pred_zmod n : zmodPred (ideal_xn_1_pred n).
+Proof.
 Admitted.
 
-Definition qideal (n : nat) := idealr (ideal_xn_1_pred n).
+Lemma ideal_xn_1_pred_proper n : proper_ideal (ideal_xn_1_pred n).
+Proof.
+Admitted.
 
+Definition qideal (n : nat) : idealr (ideal_xn_1_pred n)
+  := MkIdeal (ideal_xn_1_pred_zmod n) (ideal_xn_1_pred_proper n).
+
+(*
+Definition ideal_xn_1_pred_opp n : opp (int_Ring) (ideal_xn_1_pred n).
+
+Definition qring (n : nat) := { ideal_quot  (DefaultKeying.default_keyed_pred (ideal_xn_1_pred n)) }.
+*)
 (*
 Program Definition qpoly (n : nat) := {ideal_quot _}.
 Next Obligation.
