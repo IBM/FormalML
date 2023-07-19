@@ -962,8 +962,8 @@ Proof.
   - rewrite H mulr0 mod0p //.
   - rewrite lead_coefDl.
     + rewrite lead_coefXn /in_mem /mem //.
-    + rewrite size_polyXn size_polyC.
-Admitted.
+    + rewrite size_polyXn size_polyC//.
+Qed.
 
 Lemma ideal_xn_1_pred_proper n : proper_ideal (ideal_xn_1_pred n).
 Proof.
@@ -976,10 +976,31 @@ Qed.
 
 Lemma ideal_xn_1_pred_zmod n : zmodPred (ideal_xn_1_pred n).
 Proof.
-  apply Pred.Zmod.
-  - admit.
-  - admit.
+  constructor.
+  - constructor; [constructor|].
+    constructor.
+    + rewrite /in_mem //= /ideal_xn_1_pred.
+      rewrite poly_rem_xn_1_pmod mod0p//.
+    + rewrite /in_mem //= /prop_in2 /ideal_xn_1_pred => a b.
+      rewrite poly_rem_xn_1_pmod.
+      rewrite /in_mem /mem Pdiv.IdomainUnit.modpD // /=.
+      do 2 rewrite poly_rem_xn_1_pmod.
+      * move => /eqP-> /eqP->.
+        rewrite addr0//.
+      * rewrite lead_coefDl.
+        -- rewrite lead_coefXn /in_mem /mem //.
+        -- rewrite size_polyXn.
+           rewrite size_poly1; lia.
+  - rewrite /Pred.Exports.oppr_closed /mem /= /ideal_xn_1_pred => a.
+    rewrite /in_mem /= => /eqP-eqq1.
+    rewrite poly_rem_xn_1_pmod Pdiv.IdomainUnit.modpN.
+    rewrite poly_rem_xn_1_pmod in eqq1.
+    + rewrite eqq1 oppr0 //.
+    + admit.
 Admitted.
+
+Definition ideal_xn_1_idealr n : idealr (ideal_xn_1_pred n)
+  := MkIdeal (ideal_xn_1_pred_zmod n) (ideal_xn_1_pred_proper n).
 
 Section polyops.
 
