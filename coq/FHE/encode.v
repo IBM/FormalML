@@ -907,6 +907,8 @@ Admitted.
 Definition princ_ideal_pred (p : {poly int}) : pred {poly int} :=
   fun q => q %% p == 0.
 
+From Coq Require Import ssrfun.
+
 Lemma princ_ideal_proper (p : {poly int}) :
   lead_coef p \is a unit ->
   seq.size p > 1 ->
@@ -917,14 +919,12 @@ Proof.
   - rewrite modp_small.
     + rewrite poly1_neq0//.
     + rewrite size_poly1//.
-  - intros ???.
-    unfold in_mem, mem in H1; simpl in H1.
-    rewrite <- Pdiv.IdomainUnit.modp_mul; trivial.
-    (* rewrite H1. *)
-    replace (@modp int_idomainType x p) with (zero (poly_ringType (IntegralDomain.unitRingType int_idomainType))).
-    + rewrite mulr0 mod0p//.
-    + admit.
-Admitted.
+  - intros ??.
+    rewrite -Pdiv.IdomainUnit.modp_mul// /in_mem/=.
+    (* why doesn't rewrite work? *)
+    case eqP=> eqq ?; try congruence.
+    rewrite eqq mulr0 mod0p//.
+Qed.
 
 Lemma princ_ideal_zmod (p : {poly int}) :
   lead_coef p \is a unit ->  
@@ -947,8 +947,13 @@ Proof.
     unfold princ_ideal_pred in *.
 Admitted.
 
-Definition princ_ideal (p : {poly int}) (lc:lead_coef p \is a unit) (pn:seq.size p > 1) : idealr (princ_ideal_pred p)
+Definition princ_ideal (p : {poly int}) (lc:lead_coef p \is a unit) (pn:seq.size p > 1) :
+  idealr (princ_ideal_pred p)
   := MkIdeal (princ_ideal_zmod p lc) (princ_ideal_proper p lc pn).
+
+Definition qring (p: {poly int}) lc pn (kI : keyed_pred (princ_ideal p lc pn)) 
+  := { ideal_quot kI }.
+
 
 (*
 Definition princ_ideal_opp (p : {poly int}) (pn:seq.size p > 1) :
