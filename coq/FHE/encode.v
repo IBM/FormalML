@@ -834,6 +834,7 @@ Proof.
   rewrite size_addl size_polyXn// (leq_ltn_trans (size_polyC_leq1 b))//.
 Qed.
 
+
 Lemma poly_rem_xn (n : nat) (c : int) (a : {poly int}) :
   let p := 'X^n.+1 + polyC c in
   a %% p = take_poly n.+1 a + (-c)*: (drop_poly n.+1 a %% p).
@@ -955,6 +956,13 @@ Lemma poly_rem_xn_1_eq0_mul n a b :
   poly_rem_xn_1 n b = 0 ->
   poly_rem_xn_1 n (a * b) = 0.
 Proof.
+  do 2 rewrite  poly_rem_xn_1_pmod.
+  intros.
+  rewrite -Pdiv.IdomainUnit.modp_mul.
+  - rewrite H mulr0 mod0p //.
+  - rewrite lead_coefDl.
+    + rewrite lead_coefXn /in_mem /mem //.
+    + rewrite size_polyXn size_polyC.
 Admitted.
 
 Lemma ideal_xn_1_pred_proper n : proper_ideal (ideal_xn_1_pred n).
