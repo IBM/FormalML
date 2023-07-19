@@ -859,9 +859,7 @@ Lemma poly_rem_xn_1_le n a : is_true (seq.size (poly_rem_xn_1 n a) <= n.+1).
 Proof.
   functional induction poly_rem_xn_1 n a.
   - rewrite size_take_poly//. 
-  - eapply leq_trans.
-    + apply size_add.
-    + rewrite size_opp geq_max IHp size_take_poly//.
+  - rewrite (leq_trans (size_add _ _)) // size_opp geq_max IHp size_take_poly//.
  Qed.
 
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
