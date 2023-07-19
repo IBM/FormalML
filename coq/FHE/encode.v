@@ -906,7 +906,8 @@ Proof.
 Lemma poly_size_0 {R : ringType} :
   seq.size (zero (poly_zmodType R)) = 0%nat.
 Proof.
-  Admitted.
+  rewrite /zero /= size_polyC eqxx//.
+Qed.
 
 Lemma drop_poly_eq0_iff {R : ringType} (m : nat) (p : {poly R}) :
   seq.size p <= m <-> drop_poly (R:=R) m p = 0.
