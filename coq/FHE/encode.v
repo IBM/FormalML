@@ -134,9 +134,7 @@ Proof.
   rewrite mxE.
   under eq_big_seq.
   - apply ssrbool.in1W; intros.
-    rewrite peval_row.
-    unfold odd_nth_roots.
-    rewrite !mxE.
+    rewrite peval_row /odd_nth_roots !mxE.
     destruct (pow2_S (S (S n))).
     rewrite H pow_nth_root mult_conj_root.
     over.
@@ -908,7 +906,11 @@ Proof.
 Lemma poly_rem_xn_1_pmod n a :
   poly_rem_xn_1 n a = a %% ('X^n.+1 + 1%:P).
 Proof.
-  Admitted.
+  functional induction poly_rem_xn_1 n a.
+  - rewrite Pdiv.IdomainMonic.take_poly_modp.
+    admit.
+  - admit.
+Admitted.
 
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
   (H_inner_prod v1 v2) / (H_inner_prod v2 v2).
@@ -929,46 +931,10 @@ Proof.
   rewrite size_poly1//.
 Qed.
 
-(*
-  [forall (i:(ordinal n) | true), a`_i == 0].
-  (\meet_ ( 0 <= i < n ) (a`_i == 0)).
-*) 
-
-(*
-Lemma drop_poly_eq0s n (a:{poly int}) :
-  drop_poly n a = 0 <->
-    (forall i, i <= n -> a`_i == 0).
-Proof.
-  rewrite /drop_poly.
-  split.
-  - intros.
-    
-  
-  
-Lemma drop_poly_eq0mul n (a b:{poly int}) :
-  drop_poly n.+1 a = 0 ->
-  drop_poly n.+1 (b * a) = 0.
-Proof.
-  
-  rewrite /drop_poly.
-  
-  
-*)
 Lemma poly_rem_xn_1_eq0_mul n a b :
   poly_rem_xn_1 n b = 0 ->
   poly_rem_xn_1 n (a * b) = 0.
 Proof.
-(*  revert a.
-  functional induction poly_rem_xn_1 n b => b.
-  - rewrite poly_rem_xn_1_equation => HH.
-
-    
-    admit.
-  - 
-    
-
-  rewrite /poly_rem_xn_1.
-*)
 Admitted.
 
 Lemma ideal_xn_1_pred_proper n : proper_ideal (ideal_xn_1_pred n).
@@ -1021,7 +987,7 @@ Proof.
     + rewrite /in_mem //= /princ_ideal_pred mod0p//.
     + rewrite /in_mem //= /prop_in2 /princ_ideal_pred => a b.
       rewrite /in_mem /mem Pdiv.IdomainUnit.modpD // /=.
-      * move=> /eqP-> /eqP->.
+      * move => /eqP-> /eqP->.
         rewrite addr0//.
       * now destruct (andP (valP p)).
   - rewrite /Pred.Exports.oppr_closed /mem /= /princ_ideal_pred => a.
