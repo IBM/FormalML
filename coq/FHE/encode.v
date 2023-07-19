@@ -939,10 +939,10 @@ Proof.
       case eqP=> eqq1 ?; try congruence.
       case eqP=> eqq2 ?; try congruence.
       rewrite eqq1 eqq2 addr0//.
-  - rewrite /Pred.Exports.oppr_closed /mem//= /princ_ideal_pred => a//.
-    rewrite /in_mem //=.
+  - rewrite /Pred.Exports.oppr_closed /mem /= /princ_ideal_pred => a.
+    rewrite /in_mem /=.
     case eqP=> eqq1 ?; try congruence.
-    rewrite Pdiv.IdomainUnit.modpN// eqq1 oppr0 //.
+    rewrite Pdiv.IdomainUnit.modpN // eqq1 oppr0 //.
 Qed.
 
 Definition princ_ideal (p : {poly int}) (lc:lead_coef p \is a unit) (pn:seq.size p > 1) :
@@ -951,6 +951,13 @@ Definition princ_ideal (p : {poly int}) (lc:lead_coef p \is a unit) (pn:seq.size
 
 Definition qring (p: {poly int}) lc pn (kI : keyed_pred (princ_ideal p lc pn)) 
   := { ideal_quot kI }.
+
+Section example.
+  Context (p: {poly int}) lc pn (kI : keyed_pred (princ_ideal p lc pn)).
+
+  Definition foo_add (a b : qring p lc pn kI) := a + b.
+  Definition foo_mul (a b : qring p lc pn kI) := a * b.
+End example.
 
 
 (*
