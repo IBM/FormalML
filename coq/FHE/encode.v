@@ -881,9 +881,7 @@ Proof.
       rewrite -(Pdiv.IdomainUnit.modpP H H1)//.
       rewrite size_Xn_addC size_opp ltnS.
       generalize (size_polyC_leq1 c); intros.
-      eapply leq_trans.
-      apply H2.
-      lia.
+      rewrite (leq_trans H2)//.
     }
     rewrite H1 mulrC -Pdiv.IdomainUnit.modpZl; trivial.
     f_equal.
