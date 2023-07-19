@@ -957,8 +957,8 @@ Proof.
       rewrite size_poly1 H0 //.
   - intros ??.
     rewrite -Pdiv.IdomainUnit.modp_mul// /in_mem/=.
-    case eqP=> eqq ?; try congruence.
-    rewrite eqq mulr0 mod0p//.
+    move => /eqP->.
+    rewrite mulr0 mod0p//.
     now destruct (andP (valP p)).
 Qed.
 
@@ -971,13 +971,11 @@ Proof.
     + rewrite /in_mem //= /princ_ideal_pred mod0p//.
     + rewrite /in_mem //= /prop_in2 /princ_ideal_pred => a b.
       rewrite /in_mem /mem Pdiv.IdomainUnit.modpD // /=.
-      case eqP=> eqq1 ?; try congruence.
-      case eqP=> eqq2 ?; try congruence.
-      rewrite eqq1 eqq2 addr0//.
-      now destruct (andP (valP p)).
+      * move=> /eqP-> /eqP->.
+        rewrite addr0//.
+      * now destruct (andP (valP p)).
   - rewrite /Pred.Exports.oppr_closed /mem /= /princ_ideal_pred => a.
-    rewrite /in_mem /=.
-    case eqP=> eqq1 ?; try congruence.
+    rewrite /in_mem /= => /eqP-eqq1.
     destruct (andP (valP p)).
     rewrite Pdiv.IdomainUnit.modpN // eqq1 oppr0 //.
 Qed.
