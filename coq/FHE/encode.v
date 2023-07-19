@@ -905,6 +905,11 @@ Proof.
   - rewrite (leq_trans (size_add _ _)) // size_opp geq_max IHp size_take_poly//.
  Qed.
 
+Lemma poly_rem_xn_1_pmod n a :
+  poly_rem_xn_1 n a = a %% ('X^n.+1 + 1%:P).
+Proof.
+  Admitted.
+
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
   (H_inner_prod v1 v2) / (H_inner_prod v2 v2).
 
@@ -924,6 +929,7 @@ Proof.
   rewrite size_poly1//.
 Qed.
 
+Lemma 
 Lemma ideal_xn_1_pred_proper n : proper_ideal (ideal_xn_1_pred n).
 Proof.
   unfold proper_ideal.
