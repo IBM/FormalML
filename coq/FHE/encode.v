@@ -929,21 +929,56 @@ Proof.
   rewrite size_poly1//.
 Qed.
 
-Lemma 
+(*
+  [forall (i:(ordinal n) | true), a`_i == 0].
+  (\meet_ ( 0 <= i < n ) (a`_i == 0)).
+*) 
+
+(*
+Lemma drop_poly_eq0s n (a:{poly int}) :
+  drop_poly n a = 0 <->
+    (forall i, i <= n -> a`_i == 0).
+Proof.
+  rewrite /drop_poly.
+  split.
+  - intros.
+    
+  
+  
+Lemma drop_poly_eq0mul n (a b:{poly int}) :
+  drop_poly n.+1 a = 0 ->
+  drop_poly n.+1 (b * a) = 0.
+Proof.
+  
+  rewrite /drop_poly.
+  
+  
+*)
+Lemma poly_rem_xn_1_eq0_mul n a b :
+  poly_rem_xn_1 n b = 0 ->
+  poly_rem_xn_1 n (a * b) = 0.
+Proof.
+(*  revert a.
+  functional induction poly_rem_xn_1 n b => b.
+  - rewrite poly_rem_xn_1_equation => HH.
+
+    
+    admit.
+  - 
+    
+
+  rewrite /poly_rem_xn_1.
+*)
+Admitted.
+
 Lemma ideal_xn_1_pred_proper n : proper_ideal (ideal_xn_1_pred n).
 Proof.
-  unfold proper_ideal.
+  rewrite /proper_ideal /in_mem /mem/= /ideal_xn_1_pred.
   split.
-  - unfold in_mem, mem; simpl.
-    unfold ideal_xn_1_pred.
-    rewrite poly_rem_xn_1_1.
-    admit.
-  - intros ???.
-    unfold in_mem, mem in *.
-    simpl in *.
-    unfold ideal_xn_1_pred in *.
-    admit.
- Admitted.
+  - rewrite poly_rem_xn_1_1.
+    apply oner_neq0.
+  - rewrite /prop_in1/= /in_mem /= => a b /eqP /poly_rem_xn_1_eq0_mul->//.
+Qed.
 
 Lemma ideal_xn_1_pred_zmod n : zmodPred (ideal_xn_1_pred n).
 Proof.
