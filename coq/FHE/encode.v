@@ -931,9 +931,8 @@ Proof.
     apply e.
   - rewrite poly_rem_xn.
     f_equal.
-    rewrite IHp.
-    admit.
-Admitted.
+    rewrite IHp scaleN1r//.
+Qed.
 
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
   (H_inner_prod v1 v2) / (H_inner_prod v2 v2).
