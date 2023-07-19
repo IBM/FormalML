@@ -62,12 +62,9 @@ Definition RtoC (x : R):R[i] := Complex x R0.
 Lemma vector_sum_const {n} (c : R[i]) :
   vector_sum (ConstVector n c) = mul (n%:R) c.
 Proof.
-  unfold vector_sum, ConstVector.
-  rewrite (eq_big_seq  (fun _ => c)).
-  - rewrite big_const_ord iter_addr_0.
-    now rewrite Theory.mulr_natl.
-  - apply ssrbool.in1W; intros.
-    now rewrite mxE.
+  rewrite /vector_sum /ConstVector.
+  (under eq_big_seq => - do (apply ssrbool.in1W => ?; rewrite mxE)).
+  rewrite big_const_ord iter_addr_0 Theory.mulr_natl//.
 Qed.
 
 Lemma conj_transpose {n} (m : 'M[R[i]]_(n,n)) :
