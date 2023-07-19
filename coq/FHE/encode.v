@@ -975,6 +975,7 @@ Section example.
 
 End example.
 
+End polyops.
 
 (*
 Definition princ_ideal_opp (p : {poly iT}) (pn:seq.size p > 1) :
