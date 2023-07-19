@@ -841,15 +841,8 @@ Definition rv_mul_mod_xn_1 {n} (a b : 'rV[R]_n) (n : nat) : 'rV[R]_n :=
 Lemma size_Xn_addC [R : ringType] (n :nat) (b : R) :
     seq.size ('X^n.+1 + b%:P) = n.+2.
 Proof.
-  rewrite size_addl.
-  + apply size_polyXn.
-  + rewrite size_polyXn.
-    generalize (size_polyC_leq1 b); intros.
-    assert (seq.size b%:P < 2) by lia.
-    eapply leq_trans.
-    apply H0.
-    lia.
- Qed.
+  rewrite size_addl size_polyXn// (leq_ltn_trans (size_polyC_leq1 b))//.
+Qed.
 
 Lemma poly_rem_xn (n : nat) (c : int) (a : {poly int}) :
   let p := 'X^n.+1 + polyC c in
@@ -886,8 +879,8 @@ Proof.
     f_equal.
     rewrite -mul_polyC.
     f_equal.
-    admit.
- Admitted.
+    rewrite polyCN //.
+Qed.
 
 Require Import Recdef.
 Function poly_rem_xn_1 (n : nat) (a : {poly int}) {measure seq.size a} : {poly int} :=
