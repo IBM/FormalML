@@ -132,16 +132,15 @@ Proof.
   intros.
   unfold H_inner_prod, inner_prod, pmat.
   rewrite mxE.
-  rewrite (eq_big_seq  (fun _ => 1)).
-  - now rewrite big_const_ord iter_addr_0.
+  under eq_big_seq.
   - apply ssrbool.in1W; intros.
     rewrite peval_row.
     unfold odd_nth_roots.
-    do 5 rewrite mxE.
+    rewrite !mxE.
     destruct (pow2_S (S (S n))).
-    rewrite H.
-    rewrite pow_nth_root.
-    apply mult_conj_root.
+    rewrite H pow_nth_root mult_conj_root.
+    over.
+  - rewrite big_const_ord iter_addr_0//.
 Qed.
 
 Lemma H_inner_prod_mat n (M : 'M[R[i]]_(n,n)) :
@@ -149,14 +148,10 @@ Lemma H_inner_prod_mat n (M : 'M[R[i]]_(n,n)) :
     (M *m (conj_mat (M ^T))) i j =
       H_inner_prod (row i M) (row j M).
 Proof.
-  intros.
-  unfold H_inner_prod, inner_prod.
-  do 2 rewrite mxE.
-  simpl.
-  apply eq_big_seq.
-  intros ??.
-  unfold row.
-  now do 6 rewrite mxE.
+  rewrite /H_inner_prod /inner_prod => i j.
+  rewrite !mxE //=.
+  apply eq_big_seq => ??.
+  rewrite !mxE//.
 Qed.
 
 Lemma sub_x_x (x : R[i]) :
