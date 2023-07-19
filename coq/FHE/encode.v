@@ -903,13 +903,35 @@ Proof.
   - rewrite (leq_trans (size_add _ _)) // size_opp geq_max IHp size_take_poly//.
  Qed.
 
+Lemma poly_size_0 {R : ringType} :
+  seq.size (zero (poly_zmodType R)) = 0%nat.
+Proof.
+  Admitted.
+
+Lemma drop_poly_eq0_iff {R : ringType} (m : nat) (p : {poly R}) :
+  seq.size p <= m <-> drop_poly (R:=R) m p = 0.
+Proof.
+  split; intros.
+  - now apply drop_poly_eq0.
+  - generalize (size_drop_poly m p); intros.
+    rewrite H poly_size_0 in H0.
+    lia.
+ Qed.
+
 Lemma poly_rem_xn_1_pmod n a :
   poly_rem_xn_1 n a = a %% ('X^n.+1 + 1%:P).
 Proof.
   functional induction poly_rem_xn_1 n a.
-  - rewrite Pdiv.IdomainMonic.take_poly_modp.
+  - move => /eqP in e.
+    apply drop_poly_eq0_iff in e.
+    rewrite take_poly_id //.
+    rewrite modp_small; trivial.
+    rewrite size_Xn_addC.
+    apply e.
+  - rewrite poly_rem_xn.
+    f_equal.
+    rewrite IHp.
     admit.
-  - admit.
 Admitted.
 
 Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
