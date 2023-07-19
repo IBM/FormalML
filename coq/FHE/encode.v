@@ -904,31 +904,36 @@ Proof.
   - admit.
 Admitted.
 
-Definition princ_ideal_pred (p : {poly int}) : pred {poly int} :=
+From mathcomp Require Import generic_quotient.
+
+Section polyops.
+
+  Context {iT:idomainType}.
+  
+  Definition monic_poly := {p:{poly iT} | (lead_coef p \is a unit) && (seq.size p > 1)}.
+
+  Definition princ_ideal_pred (p : {poly iT}) : pred {poly iT} :=
   fun q => q %% p == 0.
 
-From Coq Require Import ssrfun.
-
-Lemma princ_ideal_proper (p : {poly int}) :
-  lead_coef p \is a unit ->
-  seq.size p > 1 ->
-  proper_ideal (princ_ideal_pred p).
+Lemma princ_ideal_proper (p : monic_poly) :
+  proper_ideal (princ_ideal_pred (val p)).
 Proof.
   intros.
   unfold proper_ideal, princ_ideal_pred, in_mem, mem; split; simpl.
   - rewrite modp_small.
     + rewrite poly1_neq0//.
-    + rewrite size_poly1//.
+    + destruct (andP (valP p)).
+      rewrite size_poly1 H0 //.
   - intros ??.
     rewrite -Pdiv.IdomainUnit.modp_mul// /in_mem/=.
     (* why doesn't rewrite work? *)
     case eqP=> eqq ?; try congruence.
     rewrite eqq mulr0 mod0p//.
+    now destruct (andP (valP p)).
 Qed.
 
-Lemma princ_ideal_zmod (p : {poly int}) :
-  lead_coef p \is a unit ->  
-  zmodPred (princ_ideal_pred p).
+Lemma princ_ideal_zmod (p : monic_poly) :
+  zmodPred (princ_ideal_pred (val p)).
 Proof.
   constructor.
   - constructor; [constructor |].
@@ -939,34 +944,45 @@ Proof.
       case eqP=> eqq1 ?; try congruence.
       case eqP=> eqq2 ?; try congruence.
       rewrite eqq1 eqq2 addr0//.
+      now destruct (andP (valP p)).
   - rewrite /Pred.Exports.oppr_closed /mem /= /princ_ideal_pred => a.
     rewrite /in_mem /=.
     case eqP=> eqq1 ?; try congruence.
+    destruct (andP (valP p)).
     rewrite Pdiv.IdomainUnit.modpN // eqq1 oppr0 //.
 Qed.
 
-Definition princ_ideal (p : {poly int}) (lc:lead_coef p \is a unit) (pn:seq.size p > 1) :
-  idealr (princ_ideal_pred p)
-  := MkIdeal (princ_ideal_zmod p lc) (princ_ideal_proper p lc pn).
+Definition princ_ideal (p : monic_poly) :
+  idealr (princ_ideal_pred (val p))
+  := MkIdeal (princ_ideal_zmod p) (princ_ideal_proper p).
 
-Definition qring (p: {poly int}) lc pn 
-  := { ideal_quot (KeyedPred (princ_ideal p lc pn)) }.
+
+Definition qring (p : monic_poly) 
+  := { ideal_quot (KeyedPred (princ_ideal p)) }.
 
 Section example.
-  Context (p: {poly int}) (lc:lead_coef p \is a unit)  (pn:seq.size p > 1) .
+  Context (p: monic_poly).
 
-  Definition foo_add (a b : qring p lc pn) := a + b.
-  Definition foo_mul (a b : qring p lc pn) := a * b.
+  Definition foo_add (a b : qring p) := a + b.
+  Definition foo_mul (a b : qring p) := a * b.
+
+  Local Open Scope quotient_scope.
+  
+  Definition lift (a : {poly iT}) : qring p
+    := lift_cst (qring p) a.
+
+  Example something (a b : {poly iT}) := a == b %[mod (qring p)].
+
 End example.
 
 
 (*
-Definition princ_ideal_opp (p : {poly int}) (pn:seq.size p > 1) :
+Definition princ_ideal_opp (p : {poly iT}) (pn:seq.size p > 1) :
   opp (princ_ideal_pred p).
  *)
 
 (*
-Definition qring (p : {poly int}) (lc:lead_coef p \is a unit) (pn:seq.size p > 1):=
+Definition qring (p : {poly iT}) (lc:lead_coef p \is a unit) (pn:seq.size p > 1):=
   { ideal_quot  (DefaultKeying.default_keyed_pred (princ_ideal_pred p) ) }.
 *)
 
