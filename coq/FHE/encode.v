@@ -949,14 +949,14 @@ Definition princ_ideal (p : {poly int}) (lc:lead_coef p \is a unit) (pn:seq.size
   idealr (princ_ideal_pred p)
   := MkIdeal (princ_ideal_zmod p lc) (princ_ideal_proper p lc pn).
 
-Definition qring (p: {poly int}) lc pn (kI : keyed_pred (princ_ideal p lc pn)) 
-  := { ideal_quot kI }.
+Definition qring (p: {poly int}) lc pn 
+  := { ideal_quot (KeyedPred (princ_ideal p lc pn)) }.
 
 Section example.
-  Context (p: {poly int}) lc pn (kI : keyed_pred (princ_ideal p lc pn)).
+  Context (p: {poly int}) (lc:lead_coef p \is a unit)  (pn:seq.size p > 1) .
 
-  Definition foo_add (a b : qring p lc pn kI) := a + b.
-  Definition foo_mul (a b : qring p lc pn kI) := a * b.
+  Definition foo_add (a b : qring p lc pn) := a + b.
+  Definition foo_mul (a b : qring p lc pn) := a * b.
 End example.
 
 
