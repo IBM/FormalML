@@ -804,7 +804,7 @@ Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R]_(2^(S n)) :=
   (inv (2 ^+ S n)) *:
     (map_mx (fun c => Re c) (encmat *m (vector_reflect_conj cl))).
 
-From mathcomp Require Import ring_quotient.
+From mathcomp Require Import generic_quotient ring_quotient.
 From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool.
 
 Definition int_to_zmodp (i : int) (p : nat) : 'Z_p := i %:~R.
@@ -838,8 +838,61 @@ Definition rv_mul_mod_xn_1 {n} (a b : 'rV[R]_n) (n : nat) : 'rV[R]_n :=
   let prod := (rVpoly a * rVpoly b) in
   poly_rV (take_poly n prod - drop_poly n prod).
 
-Require Import Recdef.
+Lemma size_Xn_addC [R : ringType] (n :nat) (b : R) :
+    seq.size ('X^n.+1 + b%:P) = n.+2.
+Proof.
+  rewrite size_addl.
+  + apply size_polyXn.
+  + rewrite size_polyXn.
+    generalize (size_polyC_leq1 b); intros.
+    assert (seq.size b%:P < 2) by lia.
+    eapply leq_trans.
+    apply H0.
+    lia.
+ Qed.
 
+Lemma poly_rem_xn (n : nat) (c : int) (a : {poly int}) :
+  let p := 'X^n.+1 + polyC c in
+  a %% p = take_poly n.+1 a + (-c)*: (drop_poly n.+1 a %% p).
+Proof.
+  simpl.
+  assert (lead_coef ('X^n.+1 + c%:P) \is a unit).
+  {
+    rewrite lead_coefDl.
+    + rewrite lead_coefXn /in_mem /mem //.
+    + rewrite size_polyXn.
+      generalize (size_polyC_leq1 c); lia.
+  }
+  generalize (size_Xn_addC n c); intros.
+  rewrite -{1}(poly_take_drop n.+1 a).
+  rewrite Pdiv.IdomainUnit.modpD; trivial.
+  f_equal.
+  - rewrite modp_small; trivial.
+    rewrite H0.
+    generalize (size_take_poly n.+1 a); intros.
+    apply H1.
+  - rewrite -Pdiv.IdomainUnit.modp_mul; trivial.
+    assert ('X^n.+1 %% ('X^n.+1 + c%:P) = -c%:P).
+    {
+      assert ('X^n.+1 = 1 * ('X^n.+1 + c%:P) -c%:P).
+      {
+        rewrite mul1r -addrA subrr addr0//.
+      }
+      rewrite -(Pdiv.IdomainUnit.modpP H H1)//.
+      rewrite size_Xn_addC size_opp ltnS.
+      generalize (size_polyC_leq1 c); intros.
+      eapply leq_trans.
+      apply H2.
+      lia.
+    }
+    rewrite H1 mulrC -Pdiv.IdomainUnit.modpZl; trivial.
+    f_equal.
+    rewrite -mul_polyC.
+    f_equal.
+    admit.
+ Admitted.
+
+Require Import Recdef.
 Function poly_rem_xn_1 (n : nat) (a : {poly int}) {measure seq.size a} : {poly int} :=
   let a1 := take_poly n.+1 a in
   let a2 := drop_poly n.+1 a in
@@ -902,8 +955,6 @@ Proof.
   - admit.
 Admitted.
 
-From mathcomp Require Import generic_quotient.
-
 Section polyops.
 
   Context {iT:idomainType}.
@@ -924,7 +975,6 @@ Proof.
       rewrite size_poly1 H0 //.
   - intros ??.
     rewrite -Pdiv.IdomainUnit.modp_mul// /in_mem/=.
-    (* why doesn't rewrite work? *)
     case eqP=> eqq ?; try congruence.
     rewrite eqq mulr0 mod0p//.
     now destruct (andP (valP p)).
@@ -934,7 +984,7 @@ Lemma princ_ideal_zmod (p : monic_poly) :
   zmodPred (princ_ideal_pred (val p)).
 Proof.
   constructor.
-  - constructor; [constructor |].
+  - constructor; [constructor|].
     constructor.
     + rewrite /in_mem //= /princ_ideal_pred mod0p//.
     + rewrite /in_mem //= /prop_in2 /princ_ideal_pred => a b.
@@ -954,7 +1004,6 @@ Definition princ_ideal (p : monic_poly) :
   idealr (princ_ideal_pred (val p))
   := MkIdeal (princ_ideal_zmod p) (princ_ideal_proper p).
 
-
 Definition qring (p : monic_poly) 
   := { ideal_quot (KeyedPred (princ_ideal p)) }.
 
@@ -964,10 +1013,10 @@ Section example.
   Definition foo_add (a b : qring p) := a + b.
   Definition foo_mul (a b : qring p) := a * b.
 
-  Local Open Scope quotient_scope.
-  
   Definition lift (a : {poly iT}) : qring p
     := lift_cst (qring p) a.
+
+  Local Open Scope quotient_scope.
 
   Example something (a b : {poly iT}) := a == b %[mod (qring p)].
 
