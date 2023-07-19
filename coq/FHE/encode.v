@@ -890,6 +890,14 @@ Proof.
   - rewrite eqq//.
 Defined.
 
+Lemma poly_rem_xn_id n (a:{poly int}) : seq.size a <= n.+1 ->
+  poly_rem_xn_1 n a = a.
+Proof.
+  functional induction poly_rem_xn_1 n a => slt.
+  - rewrite take_poly_id//.
+  - rewrite drop_poly_eq0// eqxx// in y.
+Qed.    
+
 Lemma poly_rem_xn_1_le n a : is_true (seq.size (poly_rem_xn_1 n a) <= n.+1).
 Proof.
   functional induction poly_rem_xn_1 n a.
@@ -912,8 +920,9 @@ Definition ideal_xn_1_pred (n : nat) : pred (poly_zmodType int_Ring) :=
 Lemma poly_rem_xn_1_1 n :
   poly_rem_xn_1 n 1 = 1.
 Proof.
-  functional induction poly_rem_xn_1 n 1.
-Admitted.  
+  apply poly_rem_xn_id.
+  rewrite size_poly1//.
+Qed.
 
 Lemma ideal_xn_1_pred_proper n : proper_ideal (ideal_xn_1_pred n).
 Proof.
