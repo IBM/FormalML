@@ -834,19 +834,20 @@ Proof.
   rewrite size_addl size_polyXn// (leq_ltn_trans (size_polyC_leq1 b))//.
 Qed.
 
+Lemma lead_coef_xn (n : nat) (c : int) : lead_coef ('X^n.+1 + c%:P) \is a unit.
+Proof.
+  rewrite lead_coefDl.
+  + rewrite lead_coefXn /in_mem /mem //.
+  + rewrite size_polyXn.
+    generalize (size_polyC_leq1 c); lia.
+Qed.
 
 Lemma poly_rem_xn (n : nat) (c : int) (a : {poly int}) :
   let p := 'X^n.+1 + polyC c in
   a %% p = take_poly n.+1 a + (-c)*: (drop_poly n.+1 a %% p).
 Proof.
   simpl.
-  assert (lead_coef ('X^n.+1 + c%:P) \is a unit).
-  {
-    rewrite lead_coefDl.
-    + rewrite lead_coefXn /in_mem /mem //.
-    + rewrite size_polyXn.
-      generalize (size_polyC_leq1 c); lia.
-  }
+  have H := lead_coef_xn n c.
   generalize (size_Xn_addC n c); intros.
   rewrite -{1}(poly_take_drop n.+1 a).
   rewrite Pdiv.IdomainUnit.modpD; trivial.
@@ -866,11 +867,7 @@ Proof.
       rewrite size_Xn_addC size_opp ltnS.
       rewrite (leq_trans (size_polyC_leq1 c))//.
     }
-    rewrite H1 mulrC -Pdiv.IdomainUnit.modpZl; trivial.
-    f_equal.
-    rewrite -mul_polyC.
-    f_equal.
-    rewrite polyCN //.
+    rewrite H1 mulrC -Pdiv.IdomainUnit.modpZl // -mul_polyC polyCN //.
 Qed.
 
 Require Import Recdef.
@@ -996,8 +993,8 @@ Proof.
     rewrite poly_rem_xn_1_pmod Pdiv.IdomainUnit.modpN.
     rewrite poly_rem_xn_1_pmod in eqq1.
     + rewrite eqq1 oppr0 //.
-    + admit.
-Admitted.
+    + apply lead_coef_xn.
+Qed.
 
 Definition ideal_xn_1_idealr n : idealr (ideal_xn_1_pred n)
   := MkIdeal (ideal_xn_1_pred_zmod n) (ideal_xn_1_pred_proper n).
