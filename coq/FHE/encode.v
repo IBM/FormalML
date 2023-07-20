@@ -819,6 +819,9 @@ Definition ran_round (x rand : R) :=
 Definition CKKS_poly_encode_Z {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[int]_(2^(S n)) :=
   mx_round (CKKS_poly_encode cl).
 
+Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
+  (H_inner_prod v1 v2) / (H_inner_prod v2 v2).
+
 (* this is multiplication for vectors mod monic p *)
 Definition rv_mul_mod {n} (a b : 'rV[R]_n) (p : {poly R}) : 'rV[R]_n :=
   poly_rV (rVpoly(a) * rVpoly b %% p).
@@ -834,15 +837,16 @@ Proof.
   rewrite size_addl size_polyXn// (leq_ltn_trans (size_polyC_leq1 b))//.
 Qed.
 
-Lemma lead_coef_xn (n : nat) (c : int) : lead_coef ('X^n.+1 + c%:P) \is a unit.
+Lemma lead_coef_xn [R : unitRingType] (n : nat) (c : R) :
+  lead_coef ('X^n.+1 + c%:P) \is a unit.
 Proof.
   rewrite lead_coefDl.
-  + rewrite lead_coefXn /in_mem /mem //.
-  + rewrite size_polyXn.
+  - rewrite lead_coefXn unitr1 //.
+  - rewrite size_polyXn.
     generalize (size_polyC_leq1 c); lia.
 Qed.
 
-Lemma poly_rem_xn (n : nat) (c : int) (a : {poly int}) :
+Lemma poly_rem_xn [R : idomainType] (n : nat) (c : R) (a : {poly R}) :
   let p := 'X^n.+1 + polyC c in
   a %% p = take_poly n.+1 a + (-c)*: (drop_poly n.+1 a %% p).
 Proof.
@@ -871,7 +875,7 @@ Proof.
 Qed.
 
 Require Import Recdef.
-Function poly_rem_xn_1 (n : nat) (a : {poly int}) {measure seq.size a} : {poly int} :=
+Function poly_rem_xn_1 [R : ringType] (n : nat) (a : {poly R}) {measure seq.size a} : {poly R} :=
   let a1 := take_poly n.+1 a in
   let a2 := drop_poly n.+1 a in
   if a2 == 0 then a1 else
@@ -886,17 +890,17 @@ Proof.
   - rewrite eqq//.
 Defined.
 
-Lemma poly_rem_xn_id n (a:{poly int}) : seq.size a <= n.+1 ->
-  poly_rem_xn_1 n a = a.
+Lemma poly_rem_xn_id [R : ringType] n (a:{poly R}) : seq.size a <= n.+1 ->
+  poly_rem_xn_1 R n a = a.
 Proof.
-  functional induction poly_rem_xn_1 n a => slt.
+  functional induction poly_rem_xn_1 R n a => slt.
   - rewrite take_poly_id//.
   - rewrite drop_poly_eq0// eqxx// in y.
 Qed.    
 
-Lemma poly_rem_xn_1_le n a : is_true (seq.size (poly_rem_xn_1 n a) <= n.+1).
+Lemma poly_rem_xn_1_le R n a : is_true (seq.size (poly_rem_xn_1 R n a) <= n.+1).
 Proof.
-  functional induction poly_rem_xn_1 n a.
+  functional induction poly_rem_xn_1 R n a.
   - rewrite size_take_poly//. 
   - rewrite (leq_trans (size_add _ _)) // size_opp geq_max IHp size_take_poly//.
  Qed.
@@ -908,7 +912,7 @@ Proof.
 Qed.
 
 Lemma drop_poly_eq0_iff {R : ringType} (m : nat) (p : {poly R}) :
-  seq.size p <= m <-> drop_poly (R:=R) m p = 0.
+  seq.size p <= m <-> drop_poly m p = 0.
 Proof.
   split; intros.
   - now apply drop_poly_eq0.
@@ -917,10 +921,10 @@ Proof.
     lia.
  Qed.
 
-Lemma poly_rem_xn_1_pmod n a :
-  poly_rem_xn_1 n a = a %% ('X^n.+1 + 1%:P).
+Lemma poly_rem_xn_1_pmod [R :idomainType] n a :
+  poly_rem_xn_1 R n a = a %% ('X^n.+1 + 1%:P).
 Proof.
-  functional induction poly_rem_xn_1 n a.
+  functional induction poly_rem_xn_1 R n a.
   - move => /eqP in e.
     apply drop_poly_eq0_iff in e.
     rewrite take_poly_id //.
@@ -930,39 +934,33 @@ Proof.
   - rewrite poly_rem_xn IHp scaleN1r//.
 Qed.
 
-Definition vector_proj_coef {n} (v1 v2 : 'rV[R[i]]_n) :=
-  (H_inner_prod v1 v2) / (H_inner_prod v2 v2).
+Definition equiv_xn_1 [R : ringType] (n : nat): rel {poly R} :=
+  fun p => fun q => poly_rem_xn_1 R n (p - q) == 0.
 
-Definition equiv_xn_1 (n : nat): rel {poly int} :=
-  fun p => fun q => poly_rem_xn_1 n (p - q) == 0.
+Definition ideal_xn_1_pred [R : ringType] (n : nat) : pred (poly_zmodType R) :=
+  fun p => poly_rem_xn_1 R n p == 0.
 
-Definition poly_rem_xn_1_ringT (n : nat) :=
-  ringQuotType (equiv_xn_1 n) 0 (@opp _) (@add _) 1 (@mul _).
-
-Definition ideal_xn_1_pred (n : nat) : pred (poly_zmodType int_Ring) :=
-  fun p => poly_rem_xn_1 n p == 0.
-
-Lemma poly_rem_xn_1_1 n :
-  poly_rem_xn_1 n 1 = 1.
+Lemma  poly_rem_xn_1_1 [R : ringType] n :
+  poly_rem_xn_1 R n 1 = 1.
 Proof.
   apply poly_rem_xn_id.
   rewrite size_poly1//.
 Qed.
 
-Lemma poly_rem_xn_1_eq0_mul n a b :
-  poly_rem_xn_1 n b = 0 ->
-  poly_rem_xn_1 n (a * b) = 0.
+Lemma poly_rem_xn_1_eq0_mul [R : idomainType] n a b :
+  poly_rem_xn_1 R n b = 0 ->
+  poly_rem_xn_1 R n (a * b) = 0.
 Proof.
   do 2 rewrite  poly_rem_xn_1_pmod.
   intros.
   rewrite -Pdiv.IdomainUnit.modp_mul.
   - rewrite H mulr0 mod0p //.
   - rewrite lead_coefDl.
-    + rewrite lead_coefXn /in_mem /mem //.
-    + rewrite size_polyXn size_polyC//.
+    + rewrite lead_coefXn unitr1 //.
+    + rewrite size_polyXn size_polyC; lia.
 Qed.
 
-Lemma ideal_xn_1_pred_proper n : proper_ideal (ideal_xn_1_pred n).
+Lemma ideal_xn_1_pred_proper [R : idomainType] n : proper_ideal (ideal_xn_1_pred (R:=R) n).
 Proof.
   rewrite /proper_ideal /in_mem /mem/= /ideal_xn_1_pred.
   split.
@@ -971,7 +969,7 @@ Proof.
   - rewrite /prop_in1/= /in_mem /= => a b /eqP /poly_rem_xn_1_eq0_mul->//.
 Qed.
 
-Lemma ideal_xn_1_pred_zmod n : zmodPred (ideal_xn_1_pred n).
+Lemma ideal_xn_1_pred_zmod [R : idomainType] n : zmodPred (ideal_xn_1_pred (R :=R) n).
 Proof.
   constructor.
   - constructor; [constructor|].
@@ -985,7 +983,7 @@ Proof.
       * move => /eqP-> /eqP->.
         rewrite addr0//.
       * rewrite lead_coefDl.
-        -- rewrite lead_coefXn /in_mem /mem //.
+        -- rewrite lead_coefXn unitr1 //.
         -- rewrite size_polyXn.
            rewrite size_poly1; lia.
   - rewrite /Pred.Exports.oppr_closed /mem /= /ideal_xn_1_pred => a.
@@ -996,7 +994,7 @@ Proof.
     + apply lead_coef_xn.
 Qed.
 
-Definition ideal_xn_1_idealr n : idealr (ideal_xn_1_pred n)
+Definition ideal_xn_1_idealr [R : idomainType] n : idealr (ideal_xn_1_pred (R := R) n)
   := MkIdeal (ideal_xn_1_pred_zmod n) (ideal_xn_1_pred_proper n).
 
 Section polyops.
@@ -1055,10 +1053,13 @@ Section example.
   Definition foo_add (a b : qring p) := a + b.
   Definition foo_mul (a b : qring p) := a * b.
 
+  Local Open Scope quotient_scope.
+
   Definition lift (a : {poly iT}) : qring p
     := lift_cst (qring p) a.
 
-  Local Open Scope quotient_scope.
+  Definition proj (a : {poly iT}) := (\pi_(qring p) a).
+  Definition proj2 (a : {poly iT}) : qring p := (\pi  a).
 
   Example something (a b : {poly iT}) := a == b %[mod (qring p)].
 
