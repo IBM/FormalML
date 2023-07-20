@@ -1029,41 +1029,14 @@ Lemma rmodp_monic_scale [R : comRingType] (c : R) (p d : {poly R}) :
   d \is monic ->
   Pdiv.CommonRing.rmodp (c *: p) d = c *: (Pdiv.CommonRing.rmodp p d). 
 Proof.
-  intro monic.
-  generalize (Pdiv.RingMonic.rdivp_eq monic p); intros.
-  assert (c *: p = (c *: Pdiv.CommonRing.rdivp (R:=R) p d) * d + (c *: Pdiv.CommonRing.rmodp (R:=R) p d)).
-  {
-    apply (f_equal (fun (r : {poly R}) => c *: r)) in H.
-    rewrite H.
-    (*
-    rewrite opprD.
-    f_equal.
-    rewrite mulNr //.
-    *)
-    admit.
-  }
-  generalize (Pdiv.RingMonic.rmodp_addl_mul_small monic (c *: Pdiv.CommonRing.rdivp (R:=R) p d)); intros.
-  generalize (Pdiv.CommonRing.ltn_rmodpN0 p (monic_neq0 monic)); intros.
-  assert (seq.size (c *: (Pdiv.CommonRing.rmodp (R:=R) p d)) < seq.size d).
-  {
-    generalize (size_scale_leq c (Pdiv.CommonRing.rmodp (R:=R) p d)); intros.
-    Search "_trans".
-    admit.
+  move => monic.
+  have sz:seq.size (c *: (Pdiv.CommonRing.rmodp (R:=R) p d)) < seq.size d
+    by rewrite (leq_ltn_trans (size_scale_leq c (Pdiv.CommonRing.rmodp (R:=R) p d)))//
+         Pdiv.CommonRing.ltn_rmodpN0// monic_neq0//.
 
-(*
-    eapply leq_trans.
-    apply H3.
-    apply (size_scale_leq c).
-    Search seq.size.
-*)
-
-  }
-  specialize (H1 _ H3).
-  (*
-  rewrite <- H0 in H1.
-  apply H1.
-  *)
-Admitted.
+  rewrite -(Pdiv.RingMonic.rmodp_addl_mul_small monic (c *: Pdiv.CommonRing.rdivp (R:=R) p d) sz)
+             {1}(Pdiv.RingMonic.rdivp_eq monic p) scalerDr scalerAl//.
+Qed.
 
 Lemma poly_rem_xn_1_pmod_alt [R : comRingType] n (a : {poly R}) :
   poly_rem_xn_1 n a = Pdiv.CommonRing.rmodp a ('X^n.+1 + 1%:P).
