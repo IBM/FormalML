@@ -995,7 +995,11 @@ Qed.
 Lemma Xn_add_c_monic [R : ringType] n (c: R) :
   'X^n.+1 + c%:P \is monic.
 Proof.
-Admitted.
+  rewrite monicE lead_coefDl.
+  - rewrite lead_coefXn //.
+  - rewrite size_polyXn.
+    generalize (size_polyC_leq1 c); lia.
+ Qed.
 
 Lemma poly_rem_xn_1_pmod_alt [R : comRingType] n (a : {poly R}) :
   poly_rem_xn_1 n a = Pdiv.CommonRing.rmodp a ('X^n.+1 + 1%:P).
@@ -1017,9 +1021,9 @@ Proof.
   do 2 rewrite poly_rem_xn_1_pmod_alt; intros.
   rewrite -Pdiv.RingMonic.rmodp_mulmr.
   - rewrite H mulr0.
-    admit.
+    apply Pdiv.Ring.rmod0p.
   - apply Xn_add_c_monic.
-  Admitted.
+ Qed.
 
 Lemma poly_rem_xn_1_eq0_add  [R : comRingType] n (a b: {poly R}) :
   poly_rem_xn_1 n a = 0 ->
@@ -1038,8 +1042,8 @@ Lemma poly_rem_xn_1_eq0_opp [R : comRingType] n (a: {poly R}) :
 Proof.
   replace (-a) with (-1 * a).
   - apply poly_rem_xn_1_eq0_mul.
-  -   
-Admitted.
+  - apply Theory.mulN1r.
+Qed.
 
 Lemma ideal_xn_1_pred_proper [R : comRingType] n : proper_ideal (ideal_xn_1_pred (R:=R) n).
 Proof.
