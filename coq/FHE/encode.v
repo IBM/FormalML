@@ -1000,7 +1000,7 @@ Proof.
   rewrite size_poly0//.
 Qed.
 
-Lemma rmodp_monic_op [R : comRingType] (p d : {poly R}) :
+Lemma rmodp_monic_opp [R : comRingType] (p d : {poly R}) :
   d \is monic ->
   Pdiv.CommonRing.rmodp (- p) d = -(Pdiv.CommonRing.rmodp p d). 
 Proof.
@@ -1038,7 +1038,7 @@ Proof.
   - rewrite poly_rem_xn_alt.
     f_equal.
     rewrite IHp.
-    rewrite -rmodp_monic_op.
+    rewrite -rmodp_monic_opp.
     + f_equal.
       rewrite scaleN1r //.
     + apply  Xn_add_c_monic.
@@ -1108,26 +1108,31 @@ Definition foo1_add [R : comRingType] n (a b : qring_xn (R:=R) n) := a + b.
 
 Section polyops.
 
-  Context {iT:idomainType}.
+  Context {iT:comRingType}.
   
-  Definition monic_poly := {p:{poly iT} | (lead_coef p \is a unit) && (seq.size p > 1)}.
+  Definition monic_poly := {p:{poly iT} | (p \is monic) && (seq.size p > 1)}.
 
+  Import Pdiv.
+  Import CommonRing.
   Definition princ_ideal_pred (p : {poly iT}) : pred {poly iT} :=
+    fun q => rmodp q p == 0.
+(*
   fun q => q %% p == 0.
+*)
 
 Lemma princ_ideal_proper (p : monic_poly) :
   proper_ideal (princ_ideal_pred (val p)).
 Proof.
   intros.
   unfold proper_ideal, princ_ideal_pred, in_mem, mem; split; simpl.
-  - rewrite modp_small.
+  - rewrite rmodp_small.
     + rewrite poly1_neq0//.
     + destruct (andP (valP p)).
       rewrite size_poly1 H0 //.
   - intros ??.
-    rewrite -Pdiv.IdomainUnit.modp_mul// /in_mem/=.
+    rewrite -RingMonic.rmodp_mulmr // /in_mem/=.
     move => /eqP->.
-    rewrite mulr0 mod0p//.
+    rewrite mulr0 rmod0p//.
     now destruct (andP (valP p)).
 Qed.
 
@@ -1137,16 +1142,16 @@ Proof.
   constructor.
   - constructor; [constructor|].
     constructor.
-    + rewrite /in_mem //= /princ_ideal_pred mod0p//.
+    + rewrite /in_mem //= /princ_ideal_pred rmod0p//.
     + rewrite /in_mem //= /prop_in2 /princ_ideal_pred => a b.
-      rewrite /in_mem /mem Pdiv.IdomainUnit.modpD // /=.
+      rewrite /in_mem /mem /= RingMonic.rmodpD // /=.
       * move => /eqP-> /eqP->.
         rewrite addr0//.
       * now destruct (andP (valP p)).
   - rewrite /Pred.Exports.oppr_closed /mem /= /princ_ideal_pred => a.
     rewrite /in_mem /= => /eqP-eqq1.
     destruct (andP (valP p)).
-    rewrite Pdiv.IdomainUnit.modpN // eqq1 oppr0 //.
+    rewrite rmodp_monic_opp // eqq1 oppr0 //.    
 Qed.
 
 Definition princ_ideal (p : monic_poly) :
