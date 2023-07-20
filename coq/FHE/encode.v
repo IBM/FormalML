@@ -949,10 +949,19 @@ Proof.
   rewrite size_poly1//.
 Qed.
 
-Lemma poly_rem_xn_1_eq0_mul [R : idomainType] n (a b: {poly R}) :
+Lemma  poly_rem_xn_0_0 [R : ringType] n :
+  poly_rem_xn_1 (R:=R) n 0 = 0.
+Proof.
+  apply poly_rem_xn_id.
+  rewrite size_poly0//.
+Qed.
+
+Lemma poly_rem_xn_1_eq0_mul [R : comRingType] n (a b: {poly R}) :
   poly_rem_xn_1 n b = 0 ->
   poly_rem_xn_1 n (a * b) = 0.
 Proof.
+  Admitted.
+(*
   do 2 rewrite  poly_rem_xn_1_pmod.
   intros.
   rewrite -Pdiv.IdomainUnit.modp_mul.
@@ -961,8 +970,23 @@ Proof.
     + rewrite lead_coefXn unitr1 //.
     + rewrite size_polyXn size_polyC; lia.
 Qed.
+*)
 
-Lemma ideal_xn_1_pred_proper [R : idomainType] n : proper_ideal (ideal_xn_1_pred (R:=R) n).
+Lemma poly_rem_xn_1_eq0_add  [R : comRingType] n (a b: {poly R}) :
+  poly_rem_xn_1 n a = 0 ->
+  poly_rem_xn_1 n b = 0 ->
+  poly_rem_xn_1 n (a + b) = 0.
+Proof.
+  Admitted.
+
+Lemma poly_rem_xn_1_eq0_opp [R : comRingType] n (a: {poly R}) :
+  poly_rem_xn_1 n a = 0 ->
+  poly_rem_xn_1 n (- a) = 0.
+Proof.
+
+Admitted.
+
+Lemma ideal_xn_1_pred_proper [R : comRingType] n : proper_ideal (ideal_xn_1_pred (R:=R) n).
 Proof.
   rewrite /proper_ideal /in_mem /mem/= /ideal_xn_1_pred.
   split.
@@ -971,33 +995,25 @@ Proof.
   - rewrite /prop_in1/= /in_mem /= => a b /eqP /poly_rem_xn_1_eq0_mul->//.
 Qed.
 
-Lemma ideal_xn_1_pred_zmod [R : idomainType] n : zmodPred (ideal_xn_1_pred (R :=R) n).
+Lemma ideal_xn_1_pred_zmod [R : comRingType] n : zmodPred (ideal_xn_1_pred (R :=R) n).
 Proof.
   constructor.
   - constructor; [constructor|].
     constructor.
-    + rewrite /in_mem //= /ideal_xn_1_pred.
-      rewrite poly_rem_xn_1_pmod mod0p//.
+    + rewrite /in_mem //= /ideal_xn_1_pred poly_rem_xn_0_0 //.
     + rewrite /in_mem //= /prop_in2 /ideal_xn_1_pred => a b.
-      rewrite poly_rem_xn_1_pmod.
-      rewrite /in_mem /mem Pdiv.IdomainUnit.modpD // /=.
-      do 2 rewrite poly_rem_xn_1_pmod.
-      * move => /eqP-> /eqP->.
-        rewrite addr0//.
-      * rewrite lead_coefDl.
-        -- rewrite lead_coefXn unitr1 //.
-        -- rewrite size_polyXn.
-           rewrite size_poly1; lia.
+      rewrite /in_mem /mem /= => /eqP-eqq1 /eqP-eqq2.
+      rewrite poly_rem_xn_1_eq0_add //.
   - rewrite /Pred.Exports.oppr_closed /mem /= /ideal_xn_1_pred => a.
     rewrite /in_mem /= => /eqP-eqq1.
-    rewrite poly_rem_xn_1_pmod Pdiv.IdomainUnit.modpN.
-    rewrite poly_rem_xn_1_pmod in eqq1.
-    + rewrite eqq1 oppr0 //.
-    + apply lead_coef_xn.
+    rewrite poly_rem_xn_1_eq0_opp //.
 Qed.
 
-Definition ideal_xn_1_idealr [R : idomainType] n : idealr (ideal_xn_1_pred (R := R) n)
+Definition ideal_xn_1_idealr [R : comRingType] n : idealr (ideal_xn_1_pred (R := R) n)
   := MkIdeal (ideal_xn_1_pred_zmod n) (ideal_xn_1_pred_proper n).
+
+Definition qring_xn [R : comRingType] n
+  := { ideal_quot (KeyedPred (ideal_xn_1_idealr (R := R) n)) }.
 
 Section polyops.
 
