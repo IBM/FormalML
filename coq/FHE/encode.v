@@ -890,17 +890,19 @@ Proof.
   - rewrite eqq//.
 Defined.
 
+Arguments poly_rem_xn_1 [R] n a : rename.
+
 Lemma poly_rem_xn_id [R : ringType] n (a:{poly R}) : seq.size a <= n.+1 ->
-  poly_rem_xn_1 R n a = a.
+  poly_rem_xn_1 n a = a.
 Proof.
-  functional induction poly_rem_xn_1 R n a => slt.
+  functional induction poly_rem_xn_1 n a => slt.
   - rewrite take_poly_id//.
   - rewrite drop_poly_eq0// eqxx// in y.
 Qed.    
 
-Lemma poly_rem_xn_1_le R n a : is_true (seq.size (poly_rem_xn_1 R n a) <= n.+1).
+Lemma poly_rem_xn_1_le [R : ringType] n (a:{poly R}) : is_true (seq.size (poly_rem_xn_1 n a) <= n.+1).
 Proof.
-  functional induction poly_rem_xn_1 R n a.
+  functional induction poly_rem_xn_1 n a.
   - rewrite size_take_poly//. 
   - rewrite (leq_trans (size_add _ _)) // size_opp geq_max IHp size_take_poly//.
  Qed.
@@ -921,10 +923,10 @@ Proof.
     lia.
  Qed.
 
-Lemma poly_rem_xn_1_pmod [R :idomainType] n a :
-  poly_rem_xn_1 R n a = a %% ('X^n.+1 + 1%:P).
+Lemma poly_rem_xn_1_pmod [R : idomainType] n (a : {poly R}) :
+  poly_rem_xn_1 n a = a %% ('X^n.+1 + 1%:P).
 Proof.
-  functional induction poly_rem_xn_1 R n a.
+  functional induction poly_rem_xn_1 n a.
   - move => /eqP in e.
     apply drop_poly_eq0_iff in e.
     rewrite take_poly_id //.
@@ -935,21 +937,21 @@ Proof.
 Qed.
 
 Definition equiv_xn_1 [R : ringType] (n : nat): rel {poly R} :=
-  fun p => fun q => poly_rem_xn_1 R n (p - q) == 0.
+  fun p => fun q => poly_rem_xn_1 n (p - q) == 0.
 
 Definition ideal_xn_1_pred [R : ringType] (n : nat) : pred (poly_zmodType R) :=
-  fun p => poly_rem_xn_1 R n p == 0.
+  fun p => poly_rem_xn_1 n p == 0.
 
 Lemma  poly_rem_xn_1_1 [R : ringType] n :
-  poly_rem_xn_1 R n 1 = 1.
+  poly_rem_xn_1 (R:=R) n 1 = 1.
 Proof.
   apply poly_rem_xn_id.
   rewrite size_poly1//.
 Qed.
 
-Lemma poly_rem_xn_1_eq0_mul [R : idomainType] n a b :
-  poly_rem_xn_1 R n b = 0 ->
-  poly_rem_xn_1 R n (a * b) = 0.
+Lemma poly_rem_xn_1_eq0_mul [R : idomainType] n (a b: {poly R}) :
+  poly_rem_xn_1 n b = 0 ->
+  poly_rem_xn_1 n (a * b) = 0.
 Proof.
   do 2 rewrite  poly_rem_xn_1_pmod.
   intros.
