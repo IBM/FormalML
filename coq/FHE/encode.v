@@ -875,40 +875,67 @@ Proof.
 Qed.
 
 From mathcomp Require Import polydiv.
-Lemma poly_rem_xn_alt [R : comRingType] (n : nat) (c : R) (a : {poly R}) :
+
+Lemma Xn_add_c_monic [R : ringType] n (c: R) :
+  'X^n.+1 + c%:P \is monic.
+Proof.
+  rewrite monicE lead_coefDl.
+  - rewrite lead_coefXn //.
+  - rewrite size_polyXn.
+    generalize (size_polyC_leq1 c); lia.
+ Qed.
+
+Lemma modpZl_unit [R: comUnitRingType] (c : R) (p d : {poly R}):
+  d \is monic ->
+  c \is a unit ->
+  Pdiv.CommonRing.rmodp (c *: p) d =
+    c *: (Pdiv.CommonRing.rmodp p d).
+Proof.
+  Admitted.
+                                                   
+Lemma poly_rem_xn_alt [R : comUnitRingType] (n : nat) (c : R) (a : {poly R}) :
+  - c \is a unit ->
   let p := 'X^n.+1 + polyC c in
   Pdiv.CommonRing.rmodp a p = 
     take_poly n.+1 a + 
       (-c)*: (Pdiv.CommonRing.rmodp (drop_poly n.+1 a) p).
 Proof.
   simpl.
-Admitted.
-
-(*
-  have H := lead_coef_xn n c.
+  have H := Xn_add_c_monic n c.
   generalize (size_Xn_addC n c); intros.
   rewrite -{1}(poly_take_drop n.+1 a).
-  rewrite Pdiv.IdomainUnit.modpD; trivial.
+  rewrite Pdiv.RingMonic.rmodpD; trivial.
   f_equal.
-  - rewrite modp_small; trivial.
+  - rewrite Pdiv.CommonRing.rmodp_small; trivial.
     rewrite H0.
     generalize (size_take_poly n.+1 a); intros.
-    apply H1.
-  - rewrite -Pdiv.IdomainUnit.modp_mul; trivial.
-    assert ('X^n.+1 %% ('X^n.+1 + c%:P) = -c%:P).
+    apply H2.
+  - rewrite -Pdiv.RingMonic.rmodp_mulmr; trivial.
+    assert (Pdiv.CommonRing.rmodp ('X^n.+1) ('X^n.+1 + c%:P) = -c%:P).
     {
       assert ('X^n.+1 = 1 * ('X^n.+1 + c%:P) -c%:P).
       {
         rewrite mul1r -addrA subrr addr0//.
       }
-      rewrite -(Pdiv.IdomainUnit.modpP H H1)//.
+
+      rewrite {1}H2.
+      rewrite Pdiv.RingMonic.rmodp_addl_mul_small; trivial.
       rewrite size_Xn_addC size_opp ltnS.
       rewrite (leq_trans (size_polyC_leq1 c))//.
     }
-    rewrite H1 mulrC -Pdiv.IdomainUnit.modpZl // -mul_polyC polyCN //.
+    rewrite H2 mulrC -modpZl_unit; trivial.
+    rewrite -mul_polyC polyCN //.
 Qed.
-*)
 
+Lemma poly_rem_xn_alt_1 [R : comUnitRingType] (n : nat) (a : {poly R}) :
+  let p := 'X^n.+1 + polyC 1 in
+  Pdiv.CommonRing.rmodp a p = 
+    take_poly n.+1 a + 
+      (-1)*: (Pdiv.CommonRing.rmodp (drop_poly n.+1 a) p).
+Proof.
+  apply poly_rem_xn_alt.
+  apply Theory.unitrN1.
+Qed.
 
 Require Import Recdef.
 Function poly_rem_xn_1 [R : ringType] (n : nat) (a : {poly R}) {measure seq.size a} : {poly R} :=
@@ -992,16 +1019,7 @@ Proof.
   rewrite size_poly0//.
 Qed.
 
-Lemma Xn_add_c_monic [R : ringType] n (c: R) :
-  'X^n.+1 + c%:P \is monic.
-Proof.
-  rewrite monicE lead_coefDl.
-  - rewrite lead_coefXn //.
-  - rewrite size_polyXn.
-    generalize (size_polyC_leq1 c); lia.
- Qed.
-
-Lemma poly_rem_xn_1_pmod_alt [R : comRingType] n (a : {poly R}) :
+Lemma poly_rem_xn_1_pmod_alt [R : comUnitRingType] n (a : {poly R}) :
   poly_rem_xn_1 n a = Pdiv.CommonRing.rmodp a ('X^n.+1 + 1%:P).
 Proof.
   functional induction poly_rem_xn_1 n a.
@@ -1011,10 +1029,10 @@ Proof.
     rewrite Pdiv.Ring.rmodp_small; trivial.
     rewrite size_Xn_addC.
     apply e.
-  - rewrite poly_rem_xn_alt IHp scaleN1r//.
+  - rewrite poly_rem_xn_alt_1 IHp scaleN1r//.
 Qed.  
 
-Lemma poly_rem_xn_1_eq0_mul [R : comRingType] n (a b: {poly R}) :
+Lemma poly_rem_xn_1_eq0_mul [R : comUnitRingType] n (a b: {poly R}) :
   poly_rem_xn_1 n b = 0 ->
   poly_rem_xn_1 n (a * b) = 0.
 Proof.
@@ -1025,7 +1043,7 @@ Proof.
   - apply Xn_add_c_monic.
  Qed.
 
-Lemma poly_rem_xn_1_eq0_add  [R : comRingType] n (a b: {poly R}) :
+Lemma poly_rem_xn_1_eq0_add  [R : comUnitRingType] n (a b: {poly R}) :
   poly_rem_xn_1 n a = 0 ->
   poly_rem_xn_1 n b = 0 ->
   poly_rem_xn_1 n (a + b) = 0.
@@ -1036,7 +1054,7 @@ Proof.
   - apply Xn_add_c_monic.
  Qed.
 
-Lemma poly_rem_xn_1_eq0_opp [R : comRingType] n (a: {poly R}) :
+Lemma poly_rem_xn_1_eq0_opp [R : comUnitRingType] n (a: {poly R}) :
   poly_rem_xn_1 n a = 0 ->
   poly_rem_xn_1 n (- a) = 0.
 Proof.
@@ -1045,7 +1063,7 @@ Proof.
   - apply Theory.mulN1r.
 Qed.
 
-Lemma ideal_xn_1_pred_proper [R : comRingType] n : proper_ideal (ideal_xn_1_pred (R:=R) n).
+Lemma ideal_xn_1_pred_proper [R : comUnitRingType] n : proper_ideal (ideal_xn_1_pred (R:=R) n).
 Proof.
   rewrite /proper_ideal /in_mem /mem/= /ideal_xn_1_pred.
   split.
@@ -1054,7 +1072,7 @@ Proof.
   - rewrite /prop_in1/= /in_mem /= => a b /eqP /poly_rem_xn_1_eq0_mul->//.
 Qed.
 
-Lemma ideal_xn_1_pred_zmod [R : comRingType] n : zmodPred (ideal_xn_1_pred (R :=R) n).
+Lemma ideal_xn_1_pred_zmod [R : comUnitRingType] n : zmodPred (ideal_xn_1_pred (R :=R) n).
 Proof.
   constructor.
   - constructor; [constructor|].
@@ -1068,10 +1086,10 @@ Proof.
     rewrite poly_rem_xn_1_eq0_opp //.
 Qed.
 
-Definition ideal_xn_1_idealr [R : comRingType] n : idealr (ideal_xn_1_pred (R := R) n)
+Definition ideal_xn_1_idealr [R : comUnitRingType] n : idealr (ideal_xn_1_pred (R := R) n)
   := MkIdeal (ideal_xn_1_pred_zmod n) (ideal_xn_1_pred_proper n).
 
-Definition qring_xn [R : comRingType] n
+Definition qring_xn [R : comUnitRingType] n
   := { ideal_quot (KeyedPred (ideal_xn_1_idealr (R := R) n)) }.
 
 Section polyops.
