@@ -1184,7 +1184,7 @@ Proof.
   now destruct H.
 Qed.
 
-Lemma RtoC_rmorphism :
+Lemma RtoC_is_rmorphism :
   rmorphism RtoC.
 Proof.
   constructor.
@@ -1206,14 +1206,17 @@ Proof.
       f_equal.
 Qed.        
 
-Lemma map_RtoC_rmorphism :
+Canonical RtoC_rmorphism := RMorphism RtoC_is_rmorphism.
+
+Lemma map_RtoC_is_rmorphism :
   rmorphism (fun (p : {poly R}) => map_poly RtoC p).
 Proof.
-  generalize map_poly_rmorphism; intros.
-  generalize RtoC_rmorphism; intros.
-Admitted.
+  apply map_poly_is_rmorphism.
+Qed.
 
-Lemma ev_C_morph (x:R[i]) :
+Canonical map_RtoC_rmorphism := RMorphism  map_RtoC_is_rmorphism.
+
+Lemma ev_C_is_morph (x:R[i]) :
   rmorphism (fun (p : {poly R}) => horner_eval x (map_poly RtoC p)).
 Proof.
   assert (rmorphism (fun (p : {poly R}) => map_poly RtoC p)).
