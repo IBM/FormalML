@@ -1220,10 +1220,17 @@ Lemma ev_C_is_morph (x:R[i]) :
   rmorphism (fun (p : {poly R}) => horner_eval x (map_poly RtoC p)).
 Proof.
   generalize (comp_rmorphism); intros.
-  Search "is_rmorphism".
 
 Admitted.
 
+(*
+Require Import qpoly.
+
+Definition cyclotomic n : {poly int} := ('X^n.+1 + 1%:P).
+Definition qpoly_add n (p q : {qpoly (cyclotomic n)}) := p + q.
+Definition qpoly_mul n (p q : {qpoly (cyclotomic n)}) := p * q.
+Definition qpoly_inj n (p : {poly int}) := in_qpoly (cyclotomic n) p.
+*)
 
 (*
 Lemma nth_root_odd_project  (n : nat) (cl : Vector C (2^(S n))) :
