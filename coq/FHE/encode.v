@@ -1029,13 +1029,13 @@ Lemma rmodp_monic_scale [R : comRingType] (c : R) (p d : {poly R}) :
   d \is monic ->
   Pdiv.CommonRing.rmodp (c *: p) d = c *: (Pdiv.CommonRing.rmodp p d). 
 Proof.
-  move => monic.
-  have sz:seq.size (c *: (Pdiv.CommonRing.rmodp (R:=R) p d)) < seq.size d
+  move=> monic.
+  have sz: seq.size (c *: (Pdiv.CommonRing.rmodp (R:=R) p d)) < seq.size d
     by rewrite (leq_ltn_trans (size_scale_leq c (Pdiv.CommonRing.rmodp (R:=R) p d)))//
          Pdiv.CommonRing.ltn_rmodpN0// monic_neq0//.
 
-  rewrite -(Pdiv.RingMonic.rmodp_addl_mul_small monic (c *: Pdiv.CommonRing.rdivp (R:=R) p d) sz)
-             {1}(Pdiv.RingMonic.rdivp_eq monic p) scalerDr scalerAl//.
+  rewrite -(Pdiv.RingMonic.rmodp_addl_mul_small monic (c *: Pdiv.CommonRing.rdivp (R:=R) p d) sz).
+  by rewrite {1}(Pdiv.RingMonic.rdivp_eq monic p) scalerDr scalerAl.
 Qed.
 
 Lemma poly_rem_xn_1_pmod_alt [R : comRingType] n (a : {poly R}) :
