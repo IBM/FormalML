@@ -1,6 +1,6 @@
 Require Import Reals Lra Lia List.
 From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix Rstruct complex.
-From mathcomp Require Import ssralg.
+From mathcomp Require Import ssralg ssrfun.
 Import ssralg.GRing.
 Require Import nth_root.
 
@@ -999,7 +999,7 @@ Proof.
   apply poly_rem_xn_id.
   rewrite size_poly0//.
 Qed.
-  
+
 Lemma rmodp_monic_scale [R : ringType] (c : R) (p d : {poly R}) :
   d \is monic ->
   Pdiv.CommonRing.rmodp (c *: p) d = c *: (Pdiv.CommonRing.rmodp p d). 
@@ -1177,15 +1177,55 @@ End example.
 
 End polyops.
 
-(*
-Definition princ_ideal_opp (p : {poly iT}) (pn:seq.size p > 1) :
-  opp (princ_ideal_pred p).
- *)
+Lemma ev_morph [R : comRingType] (x:R) :
+  rmorphism (horner_eval x).
+Proof.
+  generalize (horner_eval_is_lrmorphism x); intros.
+  now destruct H.
+Qed.
 
-(*
-Definition qring (p : {poly iT}) (lc:lead_coef p \is a unit) (pn:seq.size p > 1):=
-  { ideal_quot  (DefaultKeying.default_keyed_pred (princ_ideal_pred p) ) }.
-*)
+Lemma RtoC_rmorphism :
+  rmorphism RtoC.
+Proof.
+  constructor.
+  - unfold additive.
+    unfold morphism_2; intros.
+    unfold RtoC, add; simpl.
+    f_equal.
+    rewrite addrN //.
+  - unfold multiplicative.
+    unfold morphism_2.
+    split.
+    + intros.
+      unfold RtoC, mul; simpl.
+      f_equal.
+      * rewrite mulr0 oppr0 addr0 //.
+      * rewrite mulr0 mul0r addr0 //.
+    + unfold RtoC, one; simpl.
+      unfold one; unfold real_complex_def; simpl.
+      f_equal.
+Qed.        
+
+Lemma map_RtoC_rmorphism :
+  rmorphism (fun (p : {poly R}) => map_poly RtoC p).
+Proof.
+  generalize map_poly_rmorphism; intros.
+  generalize RtoC_rmorphism; intros.
+Admitted.
+
+Lemma ev_C_morph (x:R[i]) :
+  rmorphism (fun (p : {poly R}) => horner_eval x (map_poly RtoC p)).
+Proof.
+  assert (rmorphism (fun (p : {poly R}) => map_poly RtoC p)).
+  {
+    generalize map_poly_rmorphism; intros.
+    admit.
+  }
+  generalize (horner_eval_rmorphism); intros.
+  generalize (comp_rmorphism); intros.
+  generalize (pi_rmorphism); intros.
+  Search "rmorphism".
+Admitted.
 
 
 (*

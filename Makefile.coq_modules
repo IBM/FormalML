@@ -120,7 +120,12 @@ QLEARN = \
 	Tsitsiklis
 
 FHE = \
-      nth_root
+      nth_root \
+      encode \
+      more_thm \
+      qpoly \
+      digitn \
+      fft
 
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	$(addprefix CertRL/LM/,$(ELFIC_UTILS)) \
