@@ -1000,7 +1000,7 @@ Proof.
   rewrite size_poly0//.
 Qed.
   
-Lemma rmodp_monic_scale [R : comRingType] (c : R) (p d : {poly R}) :
+Lemma rmodp_monic_scale [R : ringType] (c : R) (p d : {poly R}) :
   d \is monic ->
   Pdiv.CommonRing.rmodp (c *: p) d = c *: (Pdiv.CommonRing.rmodp p d). 
 Proof.
@@ -1013,7 +1013,7 @@ Proof.
   by rewrite {1}(Pdiv.RingMonic.rdivp_eq monic p) scalerDr scalerAl.
 Qed.
 
-Lemma rmodp_monic_opp [R : comRingType] (p d : {poly R}) :
+Lemma rmodp_monic_opp [R : ringType] (p d : {poly R}) :
   d \is monic ->
   Pdiv.CommonRing.rmodp (- p) d = -(Pdiv.CommonRing.rmodp p d). 
 Proof.
