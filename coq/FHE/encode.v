@@ -1177,13 +1177,6 @@ End example.
 
 End polyops.
 
-Lemma ev_morph [R : comRingType] (x:R) :
-  rmorphism (horner_eval x).
-Proof.
-  generalize (horner_eval_is_lrmorphism x); intros.
-  now destruct H.
-Qed.
-
 Lemma RtoC_is_rmorphism :
   rmorphism RtoC.
 Proof.
@@ -1215,11 +1208,14 @@ Proof.
 Qed.
 
 Canonical map_RtoC_rmorphism := RMorphism map_RtoC_is_rmorphism.
+Definition p : {poly R} := 1.
+Print p.
+Print p.
 
 Lemma ev_C_is_morph (x:R[i]) :
   rmorphism (fun (p : {poly R}) => horner_eval x (map_poly RtoC p)).
 Proof.
-  generalize (comp_rmorphism); intros.
+  generalize (comp_rmorphism (horner_eval_rmorphism x) map_RtoC_rmorphism); intros.
 
 Admitted.
 
