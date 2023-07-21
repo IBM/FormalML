@@ -999,31 +999,6 @@ Proof.
   apply poly_rem_xn_id.
   rewrite size_poly0//.
 Qed.
-
-Lemma rmodp_monic_opp [R : comRingType] (p d : {poly R}) :
-  d \is monic ->
-  Pdiv.CommonRing.rmodp (- p) d = -(Pdiv.CommonRing.rmodp p d). 
-Proof.
-  intro monic.
-  generalize (Pdiv.RingMonic.rdivp_eq monic p); intros.
-  assert (-p = (-Pdiv.CommonRing.rdivp (R:=R) p d) * d + (- Pdiv.CommonRing.rmodp (R:=R) p d)).
-  {
-    apply (f_equal (fun (r : {poly R}) => - r)) in H.
-    rewrite H.
-    rewrite opprD.
-    f_equal.
-    rewrite mulNr //.
-  }
-  generalize (Pdiv.RingMonic.rmodp_addl_mul_small monic (- Pdiv.CommonRing.rdivp (R:=R) p d)); intros.
-  generalize (Pdiv.CommonRing.ltn_rmodpN0 p (monic_neq0 monic)); intros.
-  assert (seq.size (-(Pdiv.CommonRing.rmodp (R:=R) p d)) < seq.size d).
-  {
-    rewrite size_opp //.
-  }
-  specialize (H1 _ H3).
-  rewrite <- H0 in H1.
-  apply H1.
-Qed.
   
 Lemma rmodp_monic_scale [R : comRingType] (c : R) (p d : {poly R}) :
   d \is monic ->
@@ -1036,6 +1011,14 @@ Proof.
 
   rewrite -(Pdiv.RingMonic.rmodp_addl_mul_small monic (c *: Pdiv.CommonRing.rdivp (R:=R) p d) sz).
   by rewrite {1}(Pdiv.RingMonic.rdivp_eq monic p) scalerDr scalerAl.
+Qed.
+
+Lemma rmodp_monic_opp [R : comRingType] (p d : {poly R}) :
+  d \is monic ->
+  Pdiv.CommonRing.rmodp (- p) d = -(Pdiv.CommonRing.rmodp p d). 
+Proof.
+  rewrite -!scaleN1r.
+  by apply rmodp_monic_scale.
 Qed.
 
 Lemma poly_rem_xn_1_pmod_alt [R : comRingType] n (a : {poly R}) :
