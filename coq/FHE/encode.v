@@ -1208,16 +1208,21 @@ Proof.
 Qed.
 
 Canonical map_RtoC_rmorphism := RMorphism map_RtoC_is_rmorphism.
-Definition p : {poly R} := 1.
-Print p.
-Print p.
 
-Lemma ev_C_is_morph (x:R[i]) :
+Lemma ev_C_is_rmorphism (x:R[i]) :
   rmorphism (fun (p : {poly R}) => horner_eval x (map_poly RtoC p)).
 Proof.
-  generalize (comp_rmorphism (horner_eval_rmorphism x) map_RtoC_rmorphism); intros.
-
-Admitted.
+  destruct map_RtoC_is_rmorphism.
+  destruct (horner_eval_is_lrmorphism x) as [[??] ?].
+  constructor.
+  - unfold additive.
+    unfold morphism_2; intros.
+    rewrite base base0 //.
+  - unfold multiplicative; split.
+    + unfold morphism_2; intros.
+      rewrite mixin mixin0 //.
+    + rewrite mixin mixin0 //.
+Qed.
 
 (*
 Require Import qpoly.
