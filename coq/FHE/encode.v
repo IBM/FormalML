@@ -1209,25 +1209,19 @@ Qed.
 Canonical RtoC_rmorphism := RMorphism RtoC_is_rmorphism.
 
 Lemma map_RtoC_is_rmorphism :
-  rmorphism (fun (p : {poly R}) => map_poly RtoC p).
+  rmorphism (map_poly RtoC).
 Proof.
   apply map_poly_is_rmorphism.
 Qed.
 
-Canonical map_RtoC_rmorphism := RMorphism  map_RtoC_is_rmorphism.
+Canonical map_RtoC_rmorphism := RMorphism map_RtoC_is_rmorphism.
 
 Lemma ev_C_is_morph (x:R[i]) :
   rmorphism (fun (p : {poly R}) => horner_eval x (map_poly RtoC p)).
 Proof.
-  assert (rmorphism (fun (p : {poly R}) => map_poly RtoC p)).
-  {
-    generalize map_poly_rmorphism; intros.
-    admit.
-  }
-  generalize (horner_eval_rmorphism); intros.
   generalize (comp_rmorphism); intros.
-  generalize (pi_rmorphism); intros.
-  Search "rmorphism".
+  Search "is_rmorphism".
+
 Admitted.
 
 
