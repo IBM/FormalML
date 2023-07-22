@@ -1174,9 +1174,20 @@ Section example.
   Example something (a b : {poly T}) := a == b %[mod (qring p)].
 
 End example.
+(*
+Require Import qpoly.
+Section qpoly.
+ Context {T:comRingType}.  
+Definition cyclotomic n : {poly T} := ('X^n.+1 + 1%:P).
+Definition qpoly_add n (p q : {qpoly (cyclotomic n)}) := p + q.
+Definition qpoly_mul n (p q : {qpoly (cyclotomic n)}) := p * q.
+Definition qpoly_inj n (p : {poly T}) := in_qpoly (cyclotomic n) p.
+End qpoly.
+*)
 
 End polyops.
 
+Section rmorphism.
 Lemma RtoC_is_rmorphism :
   rmorphism RtoC.
 Proof.
@@ -1219,18 +1230,61 @@ Proof.
       rewrite mixin mixin0 //.
     + rewrite mixin mixin0 //.
 Qed.
+End rmorphism.
 
-(*
-Require Import qpoly.
-Section qpoly.
- Context {T:comRingType}.  
-Definition cyclotomic n : {poly T} := ('X^n.+1 + 1%:P).
-Definition qpoly_add n (p q : {qpoly (cyclotomic n)}) := p + q.
-Definition qpoly_mul n (p q : {qpoly (cyclotomic n)}) := p * q.
-Definition qpoly_inj n (p : {poly T}) := in_qpoly (cyclotomic n) p.
-End qpoly.
-*)
+Section matrixRing.
+  Context {T:comRingType}.
+  Variable (n m : nat).
 
+  Definition MR_mul (A B : 'M[T]_(n,m)) := map2_mx (fun (a b : T) => a * b) A B.
+  Definition MR1 : 'M[T]_(n,m) := const_mx 1.
+  Definition MR0: 'M[T]_(n,m) := const_mx 0.
+  Lemma MR_mulC : commutative MR_mul.
+  Proof.
+    intros ??.
+    unfold MR_mul, map2_mx.
+    apply eq_mx; intros ??.
+    rewrite mulrC //.
+  Qed.
+  Lemma MR_mulA : associative MR_mul.
+  Proof.
+    by move=> A B C; apply/matrixP=> i j; rewrite !mxE Monoid.mulmA.
+  Qed.
+
+  Lemma MR_mul1z : left_id MR1 MR_mul.
+  Proof.
+    intros ?.
+    unfold MR_mul, MR1.
+    unfold map2_mx, const_mx.
+    apply matrixP; intros ??.
+    rewrite !mxE mul1r //.
+  Qed.
+
+  Lemma MR_mulz1 : right_id MR1 MR_mul.
+  Proof.
+    intros ?.
+    unfold MR_mul, MR1.
+    unfold map2_mx, const_mx.
+    apply matrixP; intros ??.
+    rewrite !mxE mulr1 //.
+  Qed.
+
+  Lemma MR_mul_addr : right_distributive MR_mul (@addmx T n m).
+  Proof.
+    move=> A B C; apply/matrixP=> i j.
+    unfold MR_mul, addmx, map2_mx.
+    rewrite !mxE mulrDr //.
+  Qed.
+
+  Lemma MR_mul_addl : left_distributive MR_mul (@addmx T n m).
+  Proof.
+    move=> A B C; apply/matrixP=> i j.
+    unfold MR_mul, addmx, map2_mx.
+    rewrite !mxE mulrDl //.
+  Qed.
+
+End matrixRing.
+  
 (*
 Lemma nth_root_odd_project  (n : nat) (cl : Vector C (2^(S n))) :
   cl = fold_right vector_Cplus (vector_Czero (2^(S n)))
