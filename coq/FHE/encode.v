@@ -1104,13 +1104,13 @@ Definition foo1_add [R : comRingType] n (a b : qring_xn (R:=R) n) := a + b.
 
 Section polyops.
 
-  Context {iT:comRingType}.
+  Context {T:comRingType}.
   
-  Definition monic_poly := {p:{poly iT} | (p \is monic) && (seq.size p > 1)}.
+  Definition monic_poly := {p:{poly T} | (p \is monic) && (seq.size p > 1)}.
 
   Import Pdiv.
   Import CommonRing.
-  Definition princ_ideal_pred (p : {poly iT}) : pred {poly iT} :=
+  Definition princ_ideal_pred (p : {poly T}) : pred {poly T} :=
     fun q => rmodp q p == 0.
 (*
   fun q => q %% p == 0.
@@ -1165,13 +1165,13 @@ Section example.
 
   Local Open Scope quotient_scope.
 
-  Definition lift (a : {poly iT}) : qring p
+  Definition lift (a : {poly T}) : qring p
     := lift_cst (qring p) a.
 
-  Definition proj (a : {poly iT}) := (\pi_(qring p) a).
-  Definition proj2 (a : {poly iT}) : qring p := (\pi  a).
+  Definition proj (a : {poly T}) := (\pi_(qring p) a).
+  Definition proj2 (a : {poly T}) : qring p := (\pi  a).
 
-  Example something (a b : {poly iT}) := a == b %[mod (qring p)].
+  Example something (a b : {poly T}) := a == b %[mod (qring p)].
 
 End example.
 
@@ -1181,21 +1181,18 @@ Lemma RtoC_is_rmorphism :
   rmorphism RtoC.
 Proof.
   constructor.
-  - unfold additive.
-    unfold morphism_2; intros.
+  - intros ??.
     unfold RtoC, add; simpl.
     f_equal.
     rewrite addrN //.
-  - unfold multiplicative.
-    unfold morphism_2.
-    split.
-    + intros.
+  - split.
+    + intros ??.
       unfold RtoC, mul; simpl.
       f_equal.
       * rewrite mulr0 oppr0 addr0 //.
       * rewrite mulr0 mul0r addr0 //.
     + unfold RtoC, one; simpl.
-      unfold one; unfold real_complex_def; simpl.
+      unfold one, real_complex_def; simpl.
       f_equal.
 Qed.        
 
@@ -1215,22 +1212,23 @@ Proof.
   destruct map_RtoC_is_rmorphism.
   destruct (horner_eval_is_lrmorphism x) as [[??] ?].
   constructor.
-  - unfold additive.
-    unfold morphism_2; intros.
+  - intros ??.
     rewrite base base0 //.
-  - unfold multiplicative; split.
-    + unfold morphism_2; intros.
+  - split.
+    + intros ??.
       rewrite mixin mixin0 //.
     + rewrite mixin mixin0 //.
 Qed.
 
 (*
 Require Import qpoly.
-
-Definition cyclotomic n : {poly int} := ('X^n.+1 + 1%:P).
+Section qpoly.
+ Context {T:comRingType}.  
+Definition cyclotomic n : {poly T} := ('X^n.+1 + 1%:P).
 Definition qpoly_add n (p q : {qpoly (cyclotomic n)}) := p + q.
 Definition qpoly_mul n (p q : {qpoly (cyclotomic n)}) := p * q.
-Definition qpoly_inj n (p : {poly int}) := in_qpoly (cyclotomic n) p.
+Definition qpoly_inj n (p : {poly T}) := in_qpoly (cyclotomic n) p.
+End qpoly.
 *)
 
 (*
