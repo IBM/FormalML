@@ -1269,6 +1269,24 @@ Section matrixRing.
     rewrite !mxE mulr1 //.
   Qed.
 
+  Fact mul_0MR : left_zero MR0 MR_mul.
+  Proof.
+    intros ?.
+    unfold MR_mul, MR1.
+    unfold map2_mx, const_mx.
+    apply matrixP; intros ??.
+    rewrite !mxE mul0r //.
+  Qed.
+  
+  Fact mul_MR0 : right_zero MR0 MR_mul.
+  Proof.
+    intros ?.
+    unfold MR_mul, MR1.
+    unfold map2_mx, const_mx.
+    apply matrixP; intros ??.
+    rewrite !mxE mulr0 //.
+  Qed.
+
   Lemma MR_mul_addr : right_distributive MR_mul (@addmx T n m).
   Proof.
     move=> A B C; apply/matrixP=> i j.
@@ -1282,6 +1300,11 @@ Section matrixRing.
     unfold MR_mul, addmx, map2_mx.
     rewrite !mxE mulrDl //.
   Qed.
+  
+  Fact MR1_neq0 : MR1 != MR0.
+  Proof.
+    unfold MR1, MR0, const_mx.
+    Admitted.
 
 End matrixRing.
   
