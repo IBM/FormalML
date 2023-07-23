@@ -1232,6 +1232,7 @@ Proof.
 Qed.
 End rmorphism.
 
+Module matrix_ring.
 Section matrixRing.
   Section base_ring.
     Context {T:ringType}.
@@ -1304,7 +1305,6 @@ Section matrixRing.
       apply/eqP/oner_neq0.
     Qed.
 
-
     Definition MR_ringMixin :=
       RingMixin MR_mulA MR_mul1z MR_mulz1 MR_mul_addl MR_mul_addr MR1_neq0.
     
@@ -1327,28 +1327,27 @@ Section matrixRing.
     Canonical MR_comRingType := Eval hnf in ComRingType (@MR_ringType T n m) MR_mulC.
   End com_ring.
 
-(*  Section unit_ring.
+  Section unit_ring.
     Context {T:unitRingType}.
     Variable (n m : nat).
-
+    
     Definition MR_inv (x:'M[T]_(S n,S m)) : 'M[T]_(S n,S m)
       := map_mx inv x.
 
-    Definition MR_unit : pred 'M[T]_(S n,S m)
-      := qualify x fun x => x == (@MR1 T n m).
-    Canonical MR_unit_qual := qualify 
     
-    Lemma MR_mulVr [x : 'M[T]_(S n,S m)] : x \is a MR_unit -> MR_inv x * x = 1.
+    (* Print UnitRing.EtaMixin. *)
     
-    Definition MR_unitRingMixin :=
-      @UnitRingMixin _ (fun x => x == 1) _ _ _ _ .
-    Canonical MR_unitRingType := Eval hnf in UnitRingType (@MR_ringType T n m) MR_mulC.
+    (*
+    Definition MR_unitRingMixin := UnitRingMixin _ _ _ _
+    Canonical MR_unitRingType := Eval hnf in UnitRingType (@MR_ringType T n m) MR_unitRingMixin.
 *)
 
 
 
 
   End matrixRing.
+End matrix_ring.
+
   
   (*
 Lemma nth_root_odd_project  (n : nat) (cl : Vector C (2^(S n))) :
