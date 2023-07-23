@@ -1233,94 +1233,124 @@ Qed.
 End rmorphism.
 
 Section matrixRing.
-  Context {T:comRingType}.
-  Variable (n m : nat).
+  Section base_ring.
+    Context {T:ringType}.
+    Variable (n m : nat).
+    
+    Definition MR_mul (A B : 'M[T]_(S n, S m)) := map2_mx (fun (a b : T) => a * b) A B.
+    Definition MR1 : 'M[T]_(S n,S m) := const_mx 1.
+    Definition MR0: 'M[T]_(S n,S m) := const_mx 0.
+    Lemma MR_mulA : associative MR_mul.
+    Proof.
+      by move=> A B C; apply/matrixP=> i j; rewrite !mxE Monoid.mulmA.
+    Qed.
 
-  Definition MR_mul (A B : 'M[T]_(S n, S m)) := map2_mx (fun (a b : T) => a * b) A B.
-  Definition MR1 : 'M[T]_(S n,S m) := const_mx 1.
-  Definition MR0: 'M[T]_(S n,S m) := const_mx 0.
-  Lemma MR_mulC : commutative MR_mul.
-  Proof.
-    intros ??.
-    unfold MR_mul, map2_mx.
-    apply eq_mx; intros ??.
-    rewrite mulrC //.
-  Qed.
-  Lemma MR_mulA : associative MR_mul.
-  Proof.
-    by move=> A B C; apply/matrixP=> i j; rewrite !mxE Monoid.mulmA.
-  Qed.
+    Lemma MR_mul1z : left_id MR1 MR_mul.
+    Proof.
+      intros ?.
+      unfold MR_mul, MR1.
+      unfold map2_mx, const_mx.
+      apply matrixP; intros ??.
+      rewrite !mxE mul1r //.
+    Qed.
 
-  Lemma MR_mul1z : left_id MR1 MR_mul.
-  Proof.
-    intros ?.
-    unfold MR_mul, MR1.
-    unfold map2_mx, const_mx.
-    apply matrixP; intros ??.
-    rewrite !mxE mul1r //.
-  Qed.
+    Lemma MR_mulz1 : right_id MR1 MR_mul.
+    Proof.
+      intros ?.
+      unfold MR_mul, MR1.
+      unfold map2_mx, const_mx.
+      apply matrixP; intros ??.
+      rewrite !mxE mulr1 //.
+    Qed.
 
-  Lemma MR_mulz1 : right_id MR1 MR_mul.
-  Proof.
-    intros ?.
-    unfold MR_mul, MR1.
-    unfold map2_mx, const_mx.
-    apply matrixP; intros ??.
-    rewrite !mxE mulr1 //.
-  Qed.
+    Fact mul_0MR : left_zero MR0 MR_mul.
+    Proof.
+      intros ?.
+      unfold MR_mul, MR1.
+      unfold map2_mx, const_mx.
+      apply matrixP; intros ??.
+      rewrite !mxE mul0r //.
+    Qed.
+    
+    Fact mul_MR0 : right_zero MR0 MR_mul.
+    Proof.
+      intros ?.
+      unfold MR_mul, MR1.
+      unfold map2_mx, const_mx.
+      apply matrixP; intros ??.
+      rewrite !mxE mulr0 //.
+    Qed.
 
-  Fact mul_0MR : left_zero MR0 MR_mul.
-  Proof.
-    intros ?.
-    unfold MR_mul, MR1.
-    unfold map2_mx, const_mx.
-    apply matrixP; intros ??.
-    rewrite !mxE mul0r //.
-  Qed.
+    Lemma MR_mul_addr : right_distributive MR_mul (@addmx T (S n) (S m)).
+    Proof.
+      move=> A B C; apply/matrixP=> i j.
+      unfold MR_mul, addmx, map2_mx.
+      rewrite !mxE mulrDr //.
+    Qed.
+
+    Lemma MR_mul_addl : left_distributive MR_mul (@addmx T (S n) (S m)).
+    Proof.
+      move=> A B C; apply/matrixP=> i j.
+      unfold MR_mul, addmx, map2_mx.
+      rewrite !mxE mulrDl //.
+    Qed.
+    
+    Fact MR1_neq0 : MR1 != MR0.
+    Proof.
+      unfold MR1, MR0, const_mx.
+      apply /eqP/matrixP.
+      move/(_ ord0 ord0).
+      rewrite !mxE.
+      apply/eqP/oner_neq0.
+    Qed.
+
+
+    Definition MR_ringMixin :=
+      RingMixin MR_mulA MR_mul1z MR_mulz1 MR_mul_addl MR_mul_addr MR1_neq0.
+    
+    Canonical MR_ringType := Eval hnf in RingType 'M[T]_(S n,S m) MR_ringMixin.
+  End base_ring.
+
+  Section com_ring.
+
+    Context {T:comRingType}.
+    Variable (n m : nat).
+    
+    Lemma MR_mulC : commutative (@MR_mul T n m).
+    Proof.
+      intros ??.
+      unfold MR_mul, map2_mx.
+      apply eq_mx; intros ??.
+      rewrite mulrC //.
+    Qed.
+
+    Canonical MR_comRingType := Eval hnf in ComRingType (@MR_ringType T n m) MR_mulC.
+  End com_ring.
+
+(*  Section unit_ring.
+    Context {T:unitRingType}.
+    Variable (n m : nat).
+
+    Definition MR_inv (x:'M[T]_(S n,S m)) : 'M[T]_(S n,S m)
+      := map_mx inv x.
+
+    Definition MR_unit : pred 'M[T]_(S n,S m)
+      := qualify x fun x => x == (@MR1 T n m).
+    Canonical MR_unit_qual := qualify 
+    
+    Lemma MR_mulVr [x : 'M[T]_(S n,S m)] : x \is a MR_unit -> MR_inv x * x = 1.
+    
+    Definition MR_unitRingMixin :=
+      @UnitRingMixin _ (fun x => x == 1) _ _ _ _ .
+    Canonical MR_unitRingType := Eval hnf in UnitRingType (@MR_ringType T n m) MR_mulC.
+*)
+
+
+
+
+  End matrixRing.
   
-  Fact mul_MR0 : right_zero MR0 MR_mul.
-  Proof.
-    intros ?.
-    unfold MR_mul, MR1.
-    unfold map2_mx, const_mx.
-    apply matrixP; intros ??.
-    rewrite !mxE mulr0 //.
-  Qed.
-
-  Lemma MR_mul_addr : right_distributive MR_mul (@addmx T (S n) (S m)).
-  Proof.
-    move=> A B C; apply/matrixP=> i j.
-    unfold MR_mul, addmx, map2_mx.
-    rewrite !mxE mulrDr //.
-  Qed.
-
-  Lemma MR_mul_addl : left_distributive MR_mul (@addmx T (S n) (S m)).
-  Proof.
-    move=> A B C; apply/matrixP=> i j.
-    unfold MR_mul, addmx, map2_mx.
-    rewrite !mxE mulrDl //.
-  Qed.
-  
-  Fact MR1_neq0 : MR1 != MR0.
-  Proof.
-    unfold MR1, MR0, const_mx.
-    apply /eqP/matrixP.
-    move/(_ ord0 ord0).
-    rewrite !mxE.
-    apply/eqP/oner_neq0.
-  Qed.
-
-
-  Definition MR_ringMixin :=
-    ComRingMixin MR_mulA MR_mulC MR_mul1z MR_mul_addl
-      MR1_neq0.
-  
-  Canonical MR_ringType := Eval hnf in RingType 'M[T]_(S n,S m) MR_ringMixin.
-  Canonical MR_comRingType := Eval hnf in ComRingType MR_ringType MR_mulC.
-  
-End matrixRing.
-  
-(*
+  (*
 Lemma nth_root_odd_project  (n : nat) (cl : Vector C (2^(S n))) :
   cl = fold_right vector_Cplus (vector_Czero (2^(S n)))
          (map (fun e => 
