@@ -1236,9 +1236,9 @@ Section matrixRing.
   Context {T:comRingType}.
   Variable (n m : nat).
 
-  Definition MR_mul (A B : 'M[T]_(n,m)) := map2_mx (fun (a b : T) => a * b) A B.
-  Definition MR1 : 'M[T]_(n,m) := const_mx 1.
-  Definition MR0: 'M[T]_(n,m) := const_mx 0.
+  Definition MR_mul (A B : 'M[T]_(S n, S m)) := map2_mx (fun (a b : T) => a * b) A B.
+  Definition MR1 : 'M[T]_(S n,S m) := const_mx 1.
+  Definition MR0: 'M[T]_(S n,S m) := const_mx 0.
   Lemma MR_mulC : commutative MR_mul.
   Proof.
     intros ??.
@@ -1287,14 +1287,14 @@ Section matrixRing.
     rewrite !mxE mulr0 //.
   Qed.
 
-  Lemma MR_mul_addr : right_distributive MR_mul (@addmx T n m).
+  Lemma MR_mul_addr : right_distributive MR_mul (@addmx T (S n) (S m)).
   Proof.
     move=> A B C; apply/matrixP=> i j.
     unfold MR_mul, addmx, map2_mx.
     rewrite !mxE mulrDr //.
   Qed.
 
-  Lemma MR_mul_addl : left_distributive MR_mul (@addmx T n m).
+  Lemma MR_mul_addl : left_distributive MR_mul (@addmx T (S n) (S m)).
   Proof.
     move=> A B C; apply/matrixP=> i j.
     unfold MR_mul, addmx, map2_mx.
@@ -1304,8 +1304,12 @@ Section matrixRing.
   Fact MR1_neq0 : MR1 != MR0.
   Proof.
     unfold MR1, MR0, const_mx.
-    Admitted.
-
+    apply /eqP/matrixP.
+    move/(_ ord0 ord0).
+    rewrite !mxE.
+    apply/eqP/oner_neq0.
+  Qed.
+  
 End matrixRing.
   
 (*
