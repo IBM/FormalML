@@ -1309,6 +1309,14 @@ Section matrixRing.
     rewrite !mxE.
     apply/eqP/oner_neq0.
   Qed.
+
+
+  Definition MR_ringMixin :=
+    ComRingMixin MR_mulA MR_mulC MR_mul1z MR_mul_addl
+      MR1_neq0.
+  
+  Canonical MR_ringType := Eval hnf in RingType 'M[T]_(S n,S m) MR_ringMixin.
+  Canonical MR_comRingType := Eval hnf in ComRingType MR_ringType MR_mulC.
   
 End matrixRing.
   
