@@ -1424,13 +1424,16 @@ Proof.
   constructor.
   - constructor; [constructor|].
     constructor.
-    + rewrite /in_mem //=.
-      unfold mx_eval_ker_pred, mx_eval.
-      unfold map_mx.
+    + rewrite /in_mem //= /mx_eval_ker_pred /mx_eval /map_mx.
+      apply/eqP/matrixP=>a b.
+      rewrite !mxE.
       admit.
     + rewrite /in_mem //= /prop_in2 /mx_eval_ker_pred => a b.
       rewrite /in_mem /mem /= .
+      pose (mx_eval_rmorphism vals).
       destruct (mx_eval_is_rmorphism vals).
+      rewrite raddfD.
+      
       generalize base; intros base'.
       specialize (base a (-b)).
       simpl in base.
