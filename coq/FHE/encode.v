@@ -1418,7 +1418,6 @@ Proof.
     by rewrite mulr0.
  Qed.
 
-(*
 Lemma mx_eval_ker_zmod {n} (vals : 'rV[R[i]]_(n.+1)) :
   zmodPred (mx_eval_ker_pred vals).
 Proof.
@@ -1427,9 +1426,36 @@ Proof.
     constructor.
     + rewrite /in_mem //=.
       unfold mx_eval_ker_pred, mx_eval.
-      /princ_ideal_pred rmod0p//.
-    + rewrite /in_mem //= /prop_in2 /princ_ideal_pred => a b.
-      rewrite /in_mem /mem /= RingMonic.rmodpD // /=.
+      unfold map_mx.
+      admit.
+    + rewrite /in_mem //= /prop_in2 /mx_eval_ker_pred => a b.
+      rewrite /in_mem /mem /= .
+      destruct (mx_eval_is_rmorphism vals).
+      generalize base; intros base'.
+      specialize (base a (-b)).
+      simpl in base.
+      rewrite opprK in base.
+      rewrite base.
+      move => /eqP->.
+      specialize (base' 0 b).
+      simpl in base'.
+      Search (0 - _).
+      rewrite sub0r in base'.
+*      
+
+
+      rewrite /eqP.
+      move => /epP -> /eqP->.
+      Search (- - _).
+      Search (opp (opp _)).
+      
+
+      intros add mult.
+      intros.
+      specialize (add a (- b)).
+      simpl in add.
+      
+      RingMonic.rmodpD // /=.
       * move => /eqP-> /eqP->.
         rewrite addr0//.
       * now destruct (andP (valP p)).
@@ -1438,7 +1464,9 @@ Proof.
     destruct (andP (valP p)).
     rewrite rmodp_monic_opp // eqq1 oppr0 //.    
 Qed.
+*)
 
+(*
 Definition princ_ideal (p : monic_poly) :
   idealr (princ_ideal_pred (val p))
   := MkIdeal (princ_ideal_zmod p) (princ_ideal_proper p).
