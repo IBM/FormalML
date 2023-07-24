@@ -1342,29 +1342,15 @@ Section matrixRing.
     Definition MR_inv (x:'M[T]_(S n,S m)) : 'M[T]_(S n,S m)
       := map_mx inv x.
 
-(*
     Definition MR_unit : pred 'M[T]_(S n,S m) :=
       Admitted.
-*)
 
-
-
-
-
-
-
-
-
-
-(*
     Lemma MR_mulVr : {in unit, left_inverse 1 inv  *%R}.
     Lemma MR_mulrV : {in unit, right_inverse 1 inv  *%R}.
-
 
     Lemma MR_unitP (x y : 'M[T]_(S n,S m)) :
       MR_mul _ _ y x = MR1 _ _ /\ MR_mul _ _ x y = MR1 _ _ -> MR_unit x.
 
-*)    
     (* (inv_out : {in [predC unit], inv =1 id}). *)
 
     (*
@@ -1382,15 +1368,15 @@ Section matrixRing.
   End matrixRing.
 End matrix_ring.
 
-Section eval_ring.
+Section eval_vectors.
   
 Import matrix_ring.
 
-Definition mx_eval {n m} (p : {poly R}) 
-   (vals : 'M[R[i]]_(n.+1,m.+1)) :=
-  MR_embed n m (map_mx (fun x => horner_eval x (map_poly RtoC p)) vals).
+Definition mx_eval {n} (p : {poly R}) 
+   (vals : 'rV[R[i]]_(n.+1)) :=
+  MR_embed _ _ (map_mx (fun x => horner_eval x (map_poly RtoC p)) vals).
 
-Lemma mx_eval_is_rmorphism {n m} (vals : 'M[R[i]]_(n.+1,m.+1)) :
+Lemma mx_eval_is_rmorphism {n} (vals : 'rV[R[i]]_(n.+1)) :
   rmorphism (fun p => mx_eval p vals).
 Proof.
   constructor.
@@ -1416,6 +1402,6 @@ Proof.
       apply (ev_C_is_rmorphism (vals x y)).            
 Qed.
 
-End eval_ring.
+End eval_vectors.
 
 
