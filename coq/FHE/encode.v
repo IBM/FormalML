@@ -1343,7 +1343,7 @@ Section matrixRing.
 *)
 
 
-
+    End unit_ring.
 
   End matrixRing.
 End matrix_ring.
