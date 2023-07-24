@@ -1408,6 +1408,53 @@ Proof.
   apply mx_eval_is_rmorphism.
 Qed.  
 
+Definition mx_eval_ker_pred {n} (vals : 'rV[R[i]]_(n.+1)) : pred {poly R} :=
+    fun p => mx_eval p vals == 0.
+
+Lemma mx_eval_ker_proper {n} (vals : 'rV[R[i]]_(n.+1)) :
+  proper_ideal (mx_eval_ker_pred vals).
+Proof.
+  intros.
+  unfold proper_ideal, mx_eval_ker_pred, in_mem, mem; split; simpl.
+  - rewrite mx_eval_1.
+    apply oner_neq0.
+  - intros ???.
+    unfold in_mem in H.
+    simpl in H.
+    destruct (mx_eval_is_rmorphism vals).
+    rewrite mixin.
+    revert H.
+    move => /eqP->.
+    rewrite mulr0 //.
+ Qed.
+
+(*
+Lemma mx_eval_ker_zmod {n} (vals : 'rV[R[i]]_(n.+1)) :
+  zmodPred (mx_eval_ker_pred vals).
+Proof.
+  constructor.
+  - constructor; [constructor|].
+    constructor.
+    + rewrite /in_mem //=.
+      unfold mx_eval_ker_pred, mx_eval.
+      /princ_ideal_pred rmod0p//.
+    + rewrite /in_mem //= /prop_in2 /princ_ideal_pred => a b.
+      rewrite /in_mem /mem /= RingMonic.rmodpD // /=.
+      * move => /eqP-> /eqP->.
+        rewrite addr0//.
+      * now destruct (andP (valP p)).
+  - rewrite /Pred.Exports.oppr_closed /mem /= /princ_ideal_pred => a.
+    rewrite /in_mem /= => /eqP-eqq1.
+    destruct (andP (valP p)).
+    rewrite rmodp_monic_opp // eqq1 oppr0 //.    
+Qed.
+
+Definition princ_ideal (p : monic_poly) :
+  idealr (princ_ideal_pred (val p))
+  := MkIdeal (princ_ideal_zmod p) (princ_ideal_proper p).
+  
+*)
+
 End eval_vectors.
 
 
