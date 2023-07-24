@@ -1314,7 +1314,6 @@ Section matrixRing.
     Canonical MR_ringType := Eval hnf in RingType 'M[T]_(S n,S m) MR_ringMixin.
   End base_ring.
 
-  Search "ker".
   Section com_ring.
 
     Context {T:comRingType}.
@@ -1427,54 +1426,30 @@ Proof.
     + rewrite /in_mem //= /mx_eval_ker_pred /mx_eval /map_mx.
       apply/eqP/matrixP=>a b.
       rewrite !mxE.
+      unfold horner_eval, map_poly.
+      generalize (hornerC (RtoC 0) (vals a b)); intros.
       admit.
     + rewrite /in_mem //= /prop_in2 /mx_eval_ker_pred => a b.
       rewrite /in_mem /mem /= .
       pose (mx_eval_rmorphism vals).
-      destruct (mx_eval_is_rmorphism vals).
-      rewrite raddfD.
-      
-      generalize base; intros base'.
-      specialize (base a (-b)).
-      simpl in base.
-      rewrite opprK in base.
-      rewrite base.
-      move => /eqP->.
-      specialize (base' 0 b).
-      simpl in base'.
-      Search (0 - _).
-      rewrite sub0r in base'.
-*      
-
-
-      rewrite /eqP.
-      move => /epP -> /eqP->.
-      Search (- - _).
-      Search (opp (opp _)).
-      
-
-      intros add mult.
-      intros.
-      specialize (add a (- b)).
-      simpl in add.
-      
-      RingMonic.rmodpD // /=.
-      * move => /eqP-> /eqP->.
-        rewrite addr0//.
-      * now destruct (andP (valP p)).
-  - rewrite /Pred.Exports.oppr_closed /mem /= /princ_ideal_pred => a.
+      generalize (raddfD (mx_eval_rmorphism vals) a b); intros.
+      simpl in H; rewrite H.
+      revert H0 H1.
+      move => /eqP -> /eqP->.
+      rewrite add0r //.
+  - rewrite /Pred.Exports.oppr_closed /mem /= /mx_eval_ker_pred => a.
     rewrite /in_mem /= => /eqP-eqq1.
-    destruct (andP (valP p)).
-    rewrite rmodp_monic_opp // eqq1 oppr0 //.    
-Qed.
-*)
+    generalize (raddfN (mx_eval_rmorphism vals) a); intros.
+    simpl in H.
+    rewrite H eqq1 oppr0 //.
+ Admitted.
 
-(*
-Definition princ_ideal (p : monic_poly) :
-  idealr (princ_ideal_pred (val p))
-  := MkIdeal (princ_ideal_zmod p) (princ_ideal_proper p).
-  
-*)
+Definition mx_eval_ker_ideal {n} (vals : 'rV[R[i]]_(n.+1)) :
+  idealr (mx_eval_ker_pred vals)
+  := MkIdeal (mx_eval_ker_zmod vals) (mx_eval_ker_proper vals).
+
+Definition mx_eval_ker_quo_ring {n} (vals : 'rV[R[i]]_(n.+1))
+  := { ideal_quot (KeyedPred (mx_eval_ker_ideal vals)) }.
 
 End eval_vectors.
 
