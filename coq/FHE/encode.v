@@ -1369,96 +1369,112 @@ End matrix_ring.
 
 Section eval_vectors.
   
-Import matrix_ring.
+  Import matrix_ring.
 
-Definition mx_eval {n} (p : {poly R}) (vals : 'rV[R[i]]_(n.+1)) : MR_comRingType 0 n :=
-  (map_mx (fun x => horner_eval x (map_poly RtoC p)) vals).
+  Context {n} (vals : 'rV[R[i]]_(n.+1)).
 
-Lemma mx_eval_is_rmorphism {n} (vals : 'rV[R[i]]_(n.+1)) :
-  rmorphism (fun p => mx_eval p vals).
-Proof.
-  constructor.
-  - move=> x y.
-    apply matrixP=> a b.
-    rewrite !mxE.
-    by apply ev_C_is_rmorphism.
-  - split.
-    + move=> x y.
+  Definition mx_eval (p : {poly R}) : MR_comRingType 0 n :=
+    (map_mx (fun x => horner_eval x (map_poly RtoC p)) vals).
+
+  Lemma mx_eval_is_rmorphism :
+    rmorphism (fun p => mx_eval p).
+  Proof.
+    constructor.
+    - move=> x y.
       apply matrixP=> a b.
       rewrite !mxE.
       by apply ev_C_is_rmorphism.
-    + apply matrixP=> a b.
-      rewrite !mxE.
-      by apply ev_C_is_rmorphism.
-Qed.
+    - split.
+      + move=> x y.
+        apply matrixP=> a b.
+        rewrite !mxE.
+        by apply ev_C_is_rmorphism.
+      + apply matrixP=> a b.
+        rewrite !mxE.
+        by apply ev_C_is_rmorphism.
+  Qed.
 
-Definition mx_eval_rmorphism {n} (vals : 'rV[R[i]]_(n.+1))
-  : {rmorphism poly_ringType R_ringType -> MR_comRingType 0 n}
-  := RMorphism (mx_eval_is_rmorphism vals).
+  Canonical mx_eval_rmorphism 
+    : {rmorphism poly_ringType R_ringType -> MR_comRingType 0 n}
+    := RMorphism (mx_eval_is_rmorphism).
 
-Lemma mx_eval_1 {n} (vals : 'rV[R[i]]_(n.+1)) :
-  mx_eval 1 vals = 1.
-Proof.
-  apply mx_eval_is_rmorphism.
-Qed.
+  Lemma mx_eval_1 :
+    mx_eval 1 = 1.
+  Proof.
+    apply mx_eval_is_rmorphism.
+  Qed.
 
-Definition mx_eval_ker_pred {n} (vals : 'rV[R[i]]_(n.+1)) : pred {poly R} :=
-    fun p => mx_eval p vals == 0.
+  Definition mx_eval_ker_pred : pred {poly R} :=
+    fun p => mx_eval p == 0.
 
-Lemma mx_eval_ker_proper {n} (vals : 'rV[R[i]]_(n.+1)) :
-  proper_ideal (mx_eval_ker_pred vals).
-Proof.
-  split.
-  - by rewrite /mx_eval_ker_pred /in_mem /mem /= mx_eval_1 oner_neq0.
-  - move => a b.
-    rewrite /in_mem /=.
-    rewrite /mx_eval_ker_pred.
-    case: (mx_eval_is_rmorphism vals) => _ -> /eqP->.
-    by rewrite mulr0.
- Qed.
+  Lemma mx_eval_ker_proper :
+    proper_ideal (mx_eval_ker_pred).
+  Proof.
+    split.
+    - by rewrite /mx_eval_ker_pred /in_mem /mem /= mx_eval_1 oner_neq0.
+    - move => a b.
+      rewrite /in_mem /=.
+      rewrite /mx_eval_ker_pred.
+      case: (mx_eval_is_rmorphism) => _ -> /eqP->.
+      by rewrite mulr0.
+  Qed.
 
-Lemma mx_eval_ker_zmod {n} (vals : 'rV[R[i]]_(n.+1)) :
-  zmodPred (mx_eval_ker_pred vals).
-Proof.
-  constructor.
-  - constructor; [constructor|].
+  Lemma mx_eval_ker_zmod :
+    zmodPred (mx_eval_ker_pred).
+  Proof.
     constructor.
-    + rewrite /in_mem //= /mx_eval_ker_pred /mx_eval /map_mx.
-      apply/eqP/matrixP=>a b.
-      rewrite !mxE.
-      unfold horner_eval, map_poly.
-      generalize (hornerC (RtoC 0) (vals a b)); intros.
-      rewrite poly_size_0.
-      rewrite (eq_poly (fun _ => 0)).
-      * rewrite -{2}(horner0 (vals a b)).
-        f_equal.
-        apply /polyP => i /=.
-        rewrite coef_poly coefC /=.
-        by case: (i == 0)%nat.
-      * move=> i ilt.
-        rewrite coefC.
-        by case: (i == 0)%nat.
-    + rewrite /in_mem //= /prop_in2 /mx_eval_ker_pred => a b.
-      rewrite /in_mem /mem /= .
-      pose (mx_eval_rmorphism vals).
-      generalize (raddfD (mx_eval_rmorphism vals) a b); intros.
-      simpl in H; rewrite H.
-      revert H0 H1.
-      move => /eqP -> /eqP->.
-      rewrite add0r //.
-  - rewrite /Pred.Exports.oppr_closed /mem /= /mx_eval_ker_pred => a.
-    rewrite /in_mem /= => /eqP-eqq1.
-    generalize (raddfN (mx_eval_rmorphism vals) a); intros.
-    simpl in H.
-    rewrite H eqq1 oppr0 //.
-Qed.
+    - constructor; [constructor|].
+      constructor.
+      + rewrite /in_mem //= /mx_eval_ker_pred /mx_eval /map_mx.
+        apply/eqP/matrixP=>a b.
+        rewrite !mxE.
+        unfold horner_eval, map_poly.
+        generalize (hornerC (RtoC 0) (vals a b)); intros.
+        rewrite poly_size_0.
+        rewrite (eq_poly (fun _ => 0)).
+        * rewrite -{2}(horner0 (vals a b)).
+          f_equal.
+          apply /polyP => i /=.
+          rewrite coef_poly coefC /=.
+          by case: (i == 0)%nat.
+        * move=> i ilt.
+          rewrite coefC.
+          by case: (i == 0)%nat.
+      + rewrite /in_mem //= /prop_in2 /mx_eval_ker_pred => a b.
+        rewrite /in_mem /mem /= .
+        generalize (raddfD (mx_eval_rmorphism) a b); intros.
+        simpl in H; rewrite H.
+        revert H0 H1.
+        move => /eqP -> /eqP->.
+        rewrite add0r //.
+    - rewrite /Pred.Exports.oppr_closed /mem /= /mx_eval_ker_pred => a.
+      rewrite /in_mem /= => /eqP-eqq1.
+      generalize (raddfN (mx_eval_rmorphism) a); intros.
+      simpl in H.
+      rewrite H eqq1 oppr0 //.
+  Qed.
 
-Definition mx_eval_ker_ideal {n} (vals : 'rV[R[i]]_(n.+1)) :
-  idealr (mx_eval_ker_pred vals)
-  := MkIdeal (mx_eval_ker_zmod vals) (mx_eval_ker_proper vals).
+  Definition mx_eval_ker_is_ideal :
+    idealr mx_eval_ker_pred
+    := MkIdeal mx_eval_ker_zmod mx_eval_ker_proper.
 
-Definition mx_eval_ker_quo_ring {n} (vals : 'rV[R[i]]_(n.+1))
-  := { ideal_quot (KeyedPred (mx_eval_ker_ideal vals)) }.
+  Canonical mx_eval_ker_ideal := KeyedPred (mx_eval_ker_is_ideal).
+
+  Definition mx_eval_ker_quot_ring
+    := { ideal_quot mx_eval_ker_ideal }.
+
+  Local Open Scope quotient_scope.
+
+  Definition mx_eval_quot : mx_eval_ker_quot_ring -> MR_comRingType 0 n
+    := lift_fun1 mx_eval_ker_quot_ring mx_eval.
+  
+
+  Lemma pi_max_eval_quot : {mono (\pi_mx_eval_ker_quot_ring) : x / mx_eval x >-> mx_eval_quot x}.
+  Proof.
+    move => x.
+    rewrite /mx_eval_quot -eq_lock.
+    case piP => a eqq.
+  Admitted.  
 
 End eval_vectors.
 
