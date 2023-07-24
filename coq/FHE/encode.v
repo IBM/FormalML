@@ -1402,6 +1402,12 @@ Proof.
       apply (ev_C_is_rmorphism (vals x y)).            
 Qed.
 
+Lemma mx_eval_1 {n} (vals : 'rV[R[i]]_(n.+1)) :
+  mx_eval 1 vals = 1.
+Proof.
+  apply mx_eval_is_rmorphism.
+Qed.  
+
 End eval_vectors.
 
 
