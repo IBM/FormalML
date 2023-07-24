@@ -1429,8 +1429,15 @@ Proof.
       unfold horner_eval, map_poly.
       generalize (hornerC (RtoC 0) (vals a b)); intros.
       rewrite poly_size_0.
-      simpl.
-      admit.      
+      rewrite (eq_poly (fun _ => 0)).
+      * rewrite -{2}(horner0 (vals a b)).
+        f_equal.
+        apply /polyP => i /=.
+        rewrite coef_poly coefC /=.
+        by case: (i == 0)%nat.
+      * move=> i ilt.
+        rewrite coefC.
+        by case: (i == 0)%nat.
     + rewrite /in_mem //= /prop_in2 /mx_eval_ker_pred => a b.
       rewrite /in_mem /mem /= .
       pose (mx_eval_rmorphism vals).
@@ -1444,7 +1451,7 @@ Proof.
     generalize (raddfN (mx_eval_rmorphism vals) a); intros.
     simpl in H.
     rewrite H eqq1 oppr0 //.
- Admitted.
+Qed.
 
 Definition mx_eval_ker_ideal {n} (vals : 'rV[R[i]]_(n.+1)) :
   idealr (mx_eval_ker_pred vals)
