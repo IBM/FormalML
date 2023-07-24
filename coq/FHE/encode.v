@@ -1428,7 +1428,9 @@ Proof.
       rewrite !mxE.
       unfold horner_eval, map_poly.
       generalize (hornerC (RtoC 0) (vals a b)); intros.
-      admit.
+      rewrite poly_size_0.
+      simpl.
+      admit.      
     + rewrite /in_mem //= /prop_in2 /mx_eval_ker_pred => a b.
       rewrite /in_mem /mem /= .
       pose (mx_eval_rmorphism vals).
