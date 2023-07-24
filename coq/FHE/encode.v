@@ -1330,7 +1330,7 @@ Section matrixRing.
 
     Canonical MR_comRingType := Eval hnf in ComRingType (@MR_ringType T n m) MR_mulC.
 
-    Definition MR_embed (val : 'M[T]_(S n,S m)) : MR_comRingType := val.
+(*    Definition MR_embed (val : 'M[T]_(S n,S m)) : MR_comRingType := val. *)
 
   End com_ring.
 
@@ -1372,41 +1372,36 @@ Section eval_vectors.
   
 Import matrix_ring.
 
-Definition mx_eval {n} (p : {poly R}) 
-   (vals : 'rV[R[i]]_(n.+1)) :=
-  MR_embed _ _ (map_mx (fun x => horner_eval x (map_poly RtoC p)) vals).
+Definition mx_eval {n} (p : {poly R}) (vals : 'rV[R[i]]_(n.+1)) : MR_comRingType 0 n :=
+  (map_mx (fun x => horner_eval x (map_poly RtoC p)) vals).
 
 Lemma mx_eval_is_rmorphism {n} (vals : 'rV[R[i]]_(n.+1)) :
   rmorphism (fun p => mx_eval p vals).
 Proof.
   constructor.
-  - unfold additive, mx_eval, MR_embed.
-    intros ??.
-    unfold map_mx.
-    apply matrixP.
-    intros ??.
+  - move=> x y.
+    apply matrixP=> a b.
     rewrite !mxE.
-    apply (ev_C_is_rmorphism (vals x0 y0)).
-  - unfold multiplicative, mx_eval, MR_embed.
-    split.
-    + intros ??.
-      unfold map_mx.
-      apply matrixP.
-      intros ??.
+    by apply ev_C_is_rmorphism.
+  - split.
+    + move=> x y.
+      apply matrixP=> a b.
       rewrite !mxE.
-      apply (ev_C_is_rmorphism (vals x0 y0)).      
-    + unfold map_mx.
-      apply matrixP.
-      intros ??.
+      by apply ev_C_is_rmorphism.
+    + apply matrixP=> a b.
       rewrite !mxE.
-      apply (ev_C_is_rmorphism (vals x y)).            
+      by apply ev_C_is_rmorphism.
 Qed.
+
+Definition mx_eval_rmorphism {n} (vals : 'rV[R[i]]_(n.+1))
+  : {rmorphism poly_ringType R_ringType -> MR_comRingType 0 n}
+  := RMorphism (mx_eval_is_rmorphism vals).
 
 Lemma mx_eval_1 {n} (vals : 'rV[R[i]]_(n.+1)) :
   mx_eval 1 vals = 1.
 Proof.
   apply mx_eval_is_rmorphism.
-Qed.  
+Qed.
 
 Definition mx_eval_ker_pred {n} (vals : 'rV[R[i]]_(n.+1)) : pred {poly R} :=
     fun p => mx_eval p vals == 0.
@@ -1414,18 +1409,13 @@ Definition mx_eval_ker_pred {n} (vals : 'rV[R[i]]_(n.+1)) : pred {poly R} :=
 Lemma mx_eval_ker_proper {n} (vals : 'rV[R[i]]_(n.+1)) :
   proper_ideal (mx_eval_ker_pred vals).
 Proof.
-  intros.
-  unfold proper_ideal, mx_eval_ker_pred, in_mem, mem; split; simpl.
-  - rewrite mx_eval_1.
-    apply oner_neq0.
-  - intros ???.
-    unfold in_mem in H.
-    simpl in H.
-    destruct (mx_eval_is_rmorphism vals).
-    rewrite mixin.
-    revert H.
-    move => /eqP->.
-    rewrite mulr0 //.
+  split.
+  - by rewrite /mx_eval_ker_pred /in_mem /mem /= mx_eval_1 oner_neq0.
+  - move => a b.
+    rewrite /in_mem /=.
+    rewrite /mx_eval_ker_pred.
+    case: (mx_eval_is_rmorphism vals) => _ -> /eqP->.
+    by rewrite mulr0.
  Qed.
 
 (*
