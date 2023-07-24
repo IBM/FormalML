@@ -1230,12 +1230,15 @@ Proof.
       rewrite mixin mixin0 //.
     + rewrite mixin mixin0 //.
 Qed.
+
+
 End rmorphism.
 
 Module matrix_ring.
 Section matrixRing.
   Section base_ring.
     Context {T:ringType}.
+
     Variable (n m : nat).
     
     Definition MR_mul (A B : 'M[T]_(S n, S m)) := map2_mx (fun (a b : T) => a * b) A B.
@@ -1311,6 +1314,7 @@ Section matrixRing.
     Canonical MR_ringType := Eval hnf in RingType 'M[T]_(S n,S m) MR_ringMixin.
   End base_ring.
 
+  Search "ker".
   Section com_ring.
 
     Context {T:comRingType}.
@@ -1325,8 +1329,12 @@ Section matrixRing.
     Qed.
 
     Canonical MR_comRingType := Eval hnf in ComRingType (@MR_ringType T n m) MR_mulC.
+
+    Definition MR_embed (val : 'M[T]_(S n,S m)) : MR_comRingType := val.
+
   End com_ring.
 
+(*
   Section unit_ring.
     Context {T:unitRingType}.
     Variable (n m : nat).
@@ -1334,38 +1342,80 @@ Section matrixRing.
     Definition MR_inv (x:'M[T]_(S n,S m)) : 'M[T]_(S n,S m)
       := map_mx inv x.
 
-    
-    (* Print UnitRing.EtaMixin. *)
+(*
+    Definition MR_unit : pred 'M[T]_(S n,S m) :=
+      Admitted.
+*)
+
+
+
+
+
+
+
+
+
+
+(*
+    Lemma MR_mulVr : {in unit, left_inverse 1 inv  *%R}.
+    Lemma MR_mulrV : {in unit, right_inverse 1 inv  *%R}.
+
+
+    Lemma MR_unitP (x y : 'M[T]_(S n,S m)) :
+      MR_mul _ _ y x = MR1 _ _ /\ MR_mul _ _ x y = MR1 _ _ -> MR_unit x.
+
+*)    
+    (* (inv_out : {in [predC unit], inv =1 id}). *)
+
+    (*
+    Print UnitRing.EtaMixin.
+    *)
     
     (*
     Definition MR_unitRingMixin := UnitRingMixin _ _ _ _
     Canonical MR_unitRingType := Eval hnf in UnitRingType (@MR_ringType T n m) MR_unitRingMixin.
+    *)
+
+  End unit_ring.
 *)
-
-
-    End unit_ring.
 
   End matrixRing.
 End matrix_ring.
 
+Section eval_ring.
   
-  (*
-Lemma nth_root_odd_project  (n : nat) (cl : Vector C (2^(S n))) :
-  cl = fold_right vector_Cplus (vector_Czero (2^(S n)))
-         (map (fun e => 
-                 let b := vmap' (fun c => Cpow c e) (V_odd_nth_roots (S n)) in
-                 Vscale (vector_proj_coef cl b) b) 
-              (seq 0 (2^(S n)))).
+Import matrix_ring.
+
+Definition mx_eval {n m} (p : {poly R}) 
+   (vals : 'M[R[i]]_(n.+1,m.+1)) :=
+  MR_embed n m (map_mx (fun x => horner_eval x (map_poly RtoC p)) vals).
+
+Lemma mx_eval_is_rmorphism {n m} (vals : 'M[R[i]]_(n.+1,m.+1)) :
+  rmorphism (fun p => mx_eval p vals).
 Proof.
-  induction n.
-  - simpl.
-    unfold vmap', Vscale.
-    rewrite vector_Cplus_0_r.
-    unfold vector_Cplus, vmap', vector_zip.
-    apply vec_eq_eq; intros ?.
-    Admitted.
-    
-  
-*)       
-    
+  constructor.
+  - unfold additive, mx_eval, MR_embed.
+    intros ??.
+    unfold map_mx.
+    apply matrixP.
+    intros ??.
+    rewrite !mxE.
+    apply (ev_C_is_rmorphism (vals x0 y0)).
+  - unfold multiplicative, mx_eval, MR_embed.
+    split.
+    + intros ??.
+      unfold map_mx.
+      apply matrixP.
+      intros ??.
+      rewrite !mxE.
+      apply (ev_C_is_rmorphism (vals x0 y0)).      
+    + unfold map_mx.
+      apply matrixP.
+      intros ??.
+      rewrite !mxE.
+      apply (ev_C_is_rmorphism (vals x y)).            
+Qed.
+
+End eval_ring.
+
 
