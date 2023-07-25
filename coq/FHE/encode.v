@@ -1467,13 +1467,13 @@ Section eval_vectors.
 
   Definition mx_eval_quot : mx_eval_ker_quot_ring -> MR_comRingType 0 n
     := lift_fun1 mx_eval_ker_quot_ring mx_eval.
-  
 
   Lemma pi_max_eval_quot : {mono (\pi_mx_eval_ker_quot_ring) : x / mx_eval x >-> mx_eval_quot x}.
   Proof.
     move => x.
     rewrite /mx_eval_quot -eq_lock.
-    case piP => a eqq.
+    case piP => a /= /EquivQuot.eqmodP.
+    rewrite /Quotient.equiv_equiv /= /Quotient.equiv /=.
   Admitted.  
 
 End eval_vectors.
