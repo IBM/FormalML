@@ -1560,6 +1560,33 @@ Proof.
   lia.
 Qed.
 
+Lemma odd_nth_roots_minpoly_mult n (p : {poly R[i]}) :
+  Pdiv.Ring.rmodp p ('X^(2^n) + 1%:P) = 0 ->
+  forall i, root p (odd_nth_roots n I0 i).
+Proof.
+intros.
+move=> /Pdiv.Ring.rmodp_eq0P in H.
+rewrite Pdiv.ComRing.rdvdp_eq in H.
+destruct (pow2_S n).
+generalize (Xn_add_c_monic (R:=ComplexField.complex_comRingType R_fieldType) x 1); intros.
+rewrite monicE in H1.
+move=> /eqP in H1.
+rewrite -H0 in H1.
+rewrite H1 in H.
+rewrite Theory.expr1n in H.
+move=> /eqP in H.
+rewrite Theory.scale1r in H.
+rewrite H.
+unfold root.
+apply /eqP.
+rewrite hornerM.
+generalize (odd_nth_roots_minpoly n i); intros.
+unfold root in H2.
+move=> /eqP in H2.
+rewrite H2.
+rewrite mulr0 //.
+Qed.
+
 Lemma odd_nth_roots_quot n (p : {poly R}) :
   mx_eval_ker_pred (odd_nth_roots' n) p <->
     princ_ideal_pred ('X^(2^n) + 1%:P) p.
