@@ -1468,15 +1468,23 @@ Section eval_vectors.
   Definition mx_eval_quot : mx_eval_ker_quot_ring -> MR_comRingType 0 n
     := lift_fun1 mx_eval_ker_quot_ring mx_eval.
 
-  Lemma pi_max_eval_quot : {mono (\pi_mx_eval_ker_quot_ring) : x / mx_eval x >-> mx_eval_quot x}.
+  Lemma pi_mx_eval_quot : {mono (\pi_mx_eval_ker_quot_ring) : x / mx_eval x >-> mx_eval_quot x}.
   Proof.
     move => x.
     rewrite /mx_eval_quot -eq_lock.
-    case piP => a /= /EquivQuot.eqmodP.
-    rewrite /Quotient.equiv_equiv /Quotient.equiv /in_mem /mem /=.
-    
+    case piP => a /EquivQuot.eqmodP.
+    rewrite /Quotient.equiv_equiv /Quotient.equiv /in_mem /mem /= /mx_eval_ker_pred.
+    destruct mx_eval_is_rmorphism.
+    rewrite base => eqq.
+    move=> /eqP in eqq.
+    apply (f_equal (fun z => z + mx_eval a)) in eqq.
+    by rewrite -addrA add0r (addrC _ (mx_eval a)) addrN addr0 in eqq.
+  Qed.
 
-  Admitted.  
+  (*
+  Lemma mx_eval_quot_is_rmorphism :
+    rmorphism (fun (p : mx_eval_ker_quot_ring) => mx_eval_quot p).
+  *)
 
 End eval_vectors.
 
