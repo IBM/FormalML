@@ -1470,7 +1470,7 @@ Section eval_vectors.
 
   Lemma pi_mx_eval_quot : {mono (\pi_mx_eval_ker_quot_ring) : x / mx_eval x >-> mx_eval_quot x}.
   Proof.
-    move => x.
+    move=> x.
     rewrite /mx_eval_quot -eq_lock.
     case piP => a /EquivQuot.eqmodP.
     rewrite /Quotient.equiv_equiv /Quotient.equiv /in_mem /mem /= /mx_eval_ker_pred.
@@ -1481,11 +1481,69 @@ Section eval_vectors.
     by rewrite -addrA add0r (addrC _ (mx_eval a)) addrN addr0 in eqq.
   Qed.
 
-  (*
-  Lemma mx_eval_quot_is_rmorphism :
-    rmorphism (fun (p : mx_eval_ker_quot_ring) => mx_eval_quot p).
-  *)
+  Lemma mx_eval_quot_is_rmorphism : rmorphism mx_eval_quot.
+  Proof.
+    unfold mx_eval_quot.
+    constructor.
+    - intros ??.
+      rewrite -!eq_lock.
+      
+      generalize (pi_mx_eval_quot (repr (x - y))); intros.
+        admit.
+      - split.
+        + intros ??.
+          rewrite -!eq_lock.
+          simpl.
+          apply matrixP.
+          intros ??.
+          rewrite !mxE.
+          admit.
+        + rewrite -eq_lock.
+          rewrite -!pi_mx_eval_quot.
+          unfold mx_eval_quot.
+          apply matrixP.
+          intros ??.
+          rewrite !mxE.
+  Admitted.
+
+  Lemma mx_eval_quot_is_injective (x y : mx_eval_ker_quot_ring) :
+    mx_eval_quot x = mx_eval_quot y -> x = y.
+  Proof.
+    intros.
+    rewrite /mx_eval_quot -!eq_lock in H.
+    
+    Admitted.
 
 End eval_vectors.
 
+Definition pow2_S' j : {k : nat | (2^j)%nat = S k}.
+Proof.
+  generalize (pow2_S j); intros.
+  now apply boolp.constructive_indefinite_description in H.
+Qed.
 
+Definition odd_nth_roots' n :=
+  \row_(j < (S (proj1_sig (pow2_S' (2^n)))))
+    (nth_root (2 * j + 1) (2 ^ (S n))).
+
+Lemma odd_nth_roots_quot n (p : {poly R}) :
+  mx_eval_ker_pred (odd_nth_roots' n) p <->
+    princ_ideal_pred ('X^(2^n) + 1%:P) p.
+Proof.
+  generalize odd_roots_prim; intros.
+  unfold mx_eval_ker_pred, princ_ideal_pred.
+  unfold mx_eval, odd_nth_roots'.
+  unfold map_mx.
+  split; intros.
+  - unfold zero in H0;  simpl in H0.
+    unfold const_mx in H0.
+    
+    admit.
+  - unfold zero;  simpl.
+    unfold const_mx.
+    admit.
+  
+  Admitted.
+  
+
+  
