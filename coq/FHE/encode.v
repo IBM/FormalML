@@ -1560,7 +1560,7 @@ Proof.
   lia.
 Qed.
 
-Lemma odd_nth_roots_minpoly_mult n (p : {poly R[i]}) :
+Lemma minpoly_mult_odd_nth_roots n (p : {poly R[i]}) :
   Pdiv.Ring.rmodp p ('X^(2^n) + 1%:P) = 0 ->
   forall i, root p (odd_nth_roots n I0 i).
 Proof.
@@ -1587,17 +1587,60 @@ rewrite H2.
 rewrite mulr0 //.
 Qed.
 
+Definition rvec_to_list {n T} (vec : 'rV[T]_n) : list T.
+Admitted.
+
+Lemma monic_divides_same_deg (p q : {poly R[i]}) :
+  p \is monic ->
+  q \is monic ->
+  seq.size p = seq.size q ->
+  Pdiv.Ring.rdvdp (R:=ComplexField.complex_unitRingType R_realFieldType)
+                  p q ->
+  p = q.
+Admitted.
+
+Lemma odd_nth_roots_minpoly_mult n (p : {poly R[i]}) :
+  (forall i, root p (odd_nth_roots n I0 i)) ->
+  Pdiv.Ring.rmodp p ('X^(2^n) + 1%:P) = 0 .
+Proof.
+  intros roots.
+  pose (rs := rvec_to_list (odd_nth_roots n)). 
+  assert (seq.all (root p) rs).
+  {
+    admit.
+  }
+  assert (uniq_roots rs).
+  {
+    admit.
+  }
+  generalize (Pdiv.UnitRing.uniq_roots_rdvdp H H0); intros.
+  assert (seq.all (root ('X^(2^n) + 1%:P)) rs).
+  {
+    admit.
+  }
+  generalize (Pdiv.UnitRing.uniq_roots_rdvdp H2 H0); intros.
+  generalize (monic_divides_same_deg  (\prod_(z <- rs) ('X - z%:P)) ('X^(2 ^ n) + 1%:P)); intros.
+  assert  (\prod_(z <- rs) ('X - z%:P) = 'X^(2 ^ n) + 1%:P).
+  {
+    admit.
+  }
+  rewrite H5 in H1.
+  unfold Pdiv.Ring.rdvdp in H1.
+  by move=> /eqP in H1.
+  Admitted.
+
 Lemma odd_nth_roots_quot n (p : {poly R}) :
   mx_eval_ker_pred (odd_nth_roots' n) p <->
     princ_ideal_pred ('X^(2^n) + 1%:P) p.
 Proof.
-  generalize (odd_nth_roots_minpoly n); intros.
+  generalize (odd_nth_roots_minpoly_mult n); intros.
+  generalize (minpoly_mult_odd_nth_roots); intros.  
   unfold mx_eval_ker_pred, princ_ideal_pred.
   unfold mx_eval, odd_nth_roots'.
   unfold map_mx.
   split; intros.
-  - unfold zero in H0;  simpl in H0.
-    unfold const_mx in H0.
+  - unfold zero in H1;  simpl in H1.
+    unfold const_mx in H1.
     
     admit.
   - unfold zero;  simpl.
