@@ -1473,7 +1473,9 @@ Section eval_vectors.
     move => x.
     rewrite /mx_eval_quot -eq_lock.
     case piP => a /= /EquivQuot.eqmodP.
-    rewrite /Quotient.equiv_equiv /= /Quotient.equiv /=.
+    rewrite /Quotient.equiv_equiv /Quotient.equiv /in_mem /mem /=.
+    
+
   Admitted.  
 
 End eval_vectors.
