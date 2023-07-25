@@ -1526,11 +1526,45 @@ Definition odd_nth_roots' n :=
   \row_(j < (S (proj1_sig (pow2_S' (2^n)))))
     (nth_root (2 * j + 1) (2 ^ (S n))).
 
+Lemma odd_nth_roots_minpoly n :
+  forall i,
+    root ('X^(2^n) + 1%:P) (odd_nth_roots n I0 i).
+Proof.
+  move=> i.
+  rewrite /odd_nth_roots mxE /root hornerD hornerXn hornerC.
+  generalize (odd_roots_prim i n); intros.
+  apply (f_equal (fun z => C1 + z)) in H.
+  rewrite addrN in H.
+  rewrite addrC in H.
+  apply /eqP.
+  unfold zero in *; simpl in *.
+  unfold real_complex_def in *.
+  unfold zero in *; simpl in *.
+  rewrite <- H.
+  f_equal.
+  assert ((2 ^ n)%N = Nat.pow 2 n).
+  {
+    clear H i.
+    induction n.
+    - simpl.
+      rewrite expn0 //.
+    - rewrite expnS.
+      simpl.
+      lia.
+  }
+  rewrite -! H0.
+  f_equal.
+  f_equal.
+  rewrite expnS.
+  rewrite H0.
+  lia.
+Qed.
+
 Lemma odd_nth_roots_quot n (p : {poly R}) :
   mx_eval_ker_pred (odd_nth_roots' n) p <->
     princ_ideal_pred ('X^(2^n) + 1%:P) p.
 Proof.
-  generalize odd_roots_prim; intros.
+  generalize (odd_nth_roots_minpoly n); intros.
   unfold mx_eval_ker_pred, princ_ideal_pred.
   unfold mx_eval, odd_nth_roots'.
   unfold map_mx.
