@@ -1567,6 +1567,82 @@ rewrite H1.
 rewrite mulr0 //.
 Qed.
 
+Lemma monic_decomp n (p : {poly R[i]}) :
+  p \is monic ->
+  seq.size p = n.+1 ->
+  p = 'X^n + take_poly n p.
+Proof.
+  intros.
+  generalize (poly_take_drop n p); intro pdecomp.
+  assert (drop_poly n p = 1).
+  {
+    generalize (size_drop_poly n p); intros.
+    rewrite H0 in H1.
+    replace (n.+1 - n)%N with (1)%N in H1 by lia.
+    generalize (coef_drop_poly n p 0); intros.
+    replace (0 + n)%N with n in H2 by lia.
+    rewrite monicE in H.
+    unfold lead_coef in H.
+    rewrite H0 in H.
+    replace (n.+1.-1) with n in H by lia.
+    move=> /eqP in H.
+    rewrite H in H2.
+    generalize (size_poly1P (drop_poly n p)); intros.
+    move=> /eqP in H1.
+    admit.
+  }
+  rewrite H1 mul1r addrC in pdecomp.
+  by symmetry.
+  
+  Admitted.
+
+Lemma monic_dif_same_deg (p q : {poly R[i]}) :
+  p \is monic ->
+  q \is monic ->
+  seq.size p = seq.size q ->
+  seq.size (q - p) < seq.size p.
+Proof.
+  intros.
+  pose (n := seq.size p).
+  pose (n1 := (n-1)%nat).
+  assert (n = S n1).
+  {
+    admit.
+  }
+  assert (seq.size p = S n1).
+  {
+    admit.
+  }
+  assert (seq.size q = S n1).
+  {
+    admit.
+  }
+  generalize (monic_decomp n1 p H H3); intros.
+  generalize (monic_decomp n1 q H0 H4); intros.
+  pose (q1 := take_poly n1 q).
+  pose (p1 := take_poly n1 p).
+  assert (q - p = q1 - p1).
+  {
+    unfold q1, p1.
+    rewrite H5 H6.
+    rewrite -addrA.
+    f_equal.
+(*
+    by rewrite addrC opprB -addrA addrC -addrA (addrC _ 'X^n) addrN addr0.
+  }
+  assert (seq.size q1 < seq.size q).
+  {
+    assert (q1 = take_poly (n-1) q).
+  admit.
+  }
+  assert (seq.size (-p1) < seq.size p).
+  {
+    admit.
+  }
+
+ *)
+Admitted.  
+  
 Lemma monic_divides_same_deg (p q : {poly R[i]}) :
   p \is monic ->
   q \is monic ->
@@ -1577,26 +1653,20 @@ Lemma monic_divides_same_deg (p q : {poly R[i]}) :
 Proof.
   intros.
   generalize (Pdiv.RingMonic.rdivp_eq H q); intros.
+  generalize (monic_dif_same_deg _ _ H H0 H1); intros.
+  generalize (Pdiv.RingMonic.redivp_eq H 1 H4); intros.
+  rewrite mul1r (addrC q _) addrA addrN add0r in H5.
+  assert (Pdiv.CommonRing.rdivp (R:=ComplexField.complex_ringType R_fieldType) q p = 1).
+  {
+    unfold Pdiv.CommonRing.rdivp.
+    by rewrite H5 /=.
+  }
+  rewrite H6 mul1r in H3.
   unfold Pdiv.Ring.rdvdp in H2.
   move=> /eqP in H2.
   rewrite H2 addr0 in H3.
-  assert (Pdiv.CommonRing.rdivp (R:=ComplexField.complex_ringType R_fieldType) q p != 0).
-  {
-    admit.
-  }
-  generalize (size_monicM H H4); intros.
-  rewrite mulrC in H5.
-  rewrite -H3 -H1 in H5.
-  assert (seq.size (Pdiv.CommonRing.rdivp (R:=ComplexField.complex_ringType R_fieldType) q p) <= 1%N) by lia.
-  generalize (size1_polyC H6); intros.
-  assert (Pdiv.CommonRing.rdivp (R:=ComplexField.complex_ringType R_fieldType) q p = 1).
-  {
-    
-    admit.
-  }
-  rewrite H8 mul1r in H3.
-  by symmetry.
-Admitted.
+  by symmetry.  
+Qed.
 
 Lemma seq_all_odd_roots n (p : {poly R[i]}) :
   let rs := MatrixFormula.seq_of_rV (odd_nth_roots n) in
