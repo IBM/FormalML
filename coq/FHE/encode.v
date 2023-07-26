@@ -294,7 +294,7 @@ Proof.
   generalize (telescope_pow_0_ord ((nth_root (2*n1+1) (2^S(S n))) * 
                                  (conjc (nth_root (2*n2+1) (2^S(S n))))) x); intros.
   rewrite <- H0.
-  - rewrite <- i.
+  - rewrite <- (eqP i).
     erewrite eq_big_seq; [reflexivity |].
     simpl.
     apply ssrbool.in1W; intros.
@@ -304,12 +304,12 @@ Proof.
     + rewrite /comm mulrC//.
   - unfold not; intros.
     destruct (pow2_S (S (S n))).
-    rewrite H3 in H2.
-    rewrite nth_root_conj_alt in H2.
-    rewrite nth_root_mul in H2.
-    apply nth_root_1_iff in H2.
-    rewrite <- H3 in H2.
-    clear H0 H1 H3 pmat x x0.
+    rewrite (eqP i0) in H1.
+    rewrite nth_root_conj_alt in H1.
+    rewrite nth_root_mul in H1.
+    apply nth_root_1_iff in H1.
+    rewrite -(eqP i0) in H1.
+    clear H0 i i0 pmat x x0.
     destruct n1 as [x xlt]; destruct n2 as [y ylt]; simpl in *.
     assert (neq:x <> y).
     {
@@ -318,9 +318,9 @@ Proof.
       f_equal; apply eqtype.bool_irrelevance.
     }
     clear H.
-    rewrite !modulo_modn !plusE !minusE in H2.
-    apply (f_equal ssrint.Posz) in H2.
-    revert H2.
+    rewrite !modulo_modn !plusE !minusE in H1.
+    apply (f_equal ssrint.Posz) in H1.
+    revert H1.
     rewrite -intdiv.modz_nat ssrint.PoszD -ssrint.subzn.
     + rewrite -intdiv.modz_nat.
       rewrite -intdiv.modzDm.
@@ -332,14 +332,14 @@ Proof.
       * rewrite intdiv.modz_small/=; lia.
     + lia.
   - destruct (pow2_S (S (S n))).
-    rewrite H2.
+    rewrite (eqP i0).
     rewrite nth_root_conj_alt.
     rewrite nth_root_mul.
     rewrite Cpow_nth_root.
     apply nth_root_1_iff.
-    rewrite <- H2.
-    rewrite <- H0.
-    clear H0 H1 H2 pmat x x0.
+    rewrite -(eqP i0).
+    rewrite - (eqP i).
+    clear H0 i i0 pmat x x0.
     destruct n1 as [x xlt]; destruct n2 as [y ylt]; simpl in *.
     assert (neq:x <> y).
     {
@@ -423,7 +423,7 @@ Proof.
   rewrite mul_mx_diag.
   repeat rewrite mxE.
   destruct (pow2_S (S (S n))).
-  rewrite H.
+  rewrite (eqP i).
   do 2 rewrite pow_nth_root.
   rewrite nth_root_mul.
   f_equal.
@@ -444,7 +444,7 @@ Proof.
   rewrite mul_diag_mx.
   repeat rewrite mxE.
   destruct (pow2_S (S (S n))).
-  rewrite H.
+  rewrite (eqP i).
   rewrite pow_nth_root.
   rewrite <- exp_conj.
   rewrite mul_conj.
@@ -482,7 +482,6 @@ Proof.
   rewrite H0.
   now rewrite add_conj.
 Qed.
-
 
 Lemma vector_rev_conj_mult {n} (v1 v2 : 'rV[R[i]]_n) :
   vector_rev_conj v1 ->
@@ -653,10 +652,10 @@ Proof.
   intros.
   do 2 rewrite mxE.
   destruct (pow2_S (S (S n))).
-  rewrite H.
+  rewrite (eqP i0).
   rewrite nth_root_conj_alt.
   f_equal.
-  rewrite <- H.
+  rewrite -(eqP i0).
   rewrite (expnS _ (S n)).
   unfold rev_ord; simpl.
   rewrite Nat.mod_small; try lia.
@@ -1550,10 +1549,10 @@ move=> /Pdiv.Ring.rmodp_eq0P in H.
 rewrite Pdiv.ComRing.rdvdp_eq in H.
 destruct (pow2_S n).
 generalize (Xn_add_c_monic (R:=ComplexField.complex_comRingType R_fieldType) x 1); intros.
-rewrite monicE in H1.
-move=> /eqP in H1.
-rewrite -H0 in H1.
-rewrite H1 in H.
+rewrite monicE in H0.
+move=> /eqP in H0.
+rewrite -(eqP i0) in H0.
+rewrite H0 in H.
 rewrite Theory.expr1n in H.
 move=> /eqP in H.
 rewrite Theory.scale1r in H.
@@ -1562,12 +1561,11 @@ unfold root.
 apply /eqP.
 rewrite hornerM.
 generalize (odd_nth_roots_minpoly n i); intros.
-unfold root in H2.
-move=> /eqP in H2.
-rewrite H2.
+unfold root in H1.
+move=> /eqP in H1.
+rewrite H1.
 rewrite mulr0 //.
 Qed.
-
 
 Lemma monic_divides_same_deg (p q : {poly R[i]}) :
   p \is monic ->
@@ -1599,7 +1597,6 @@ Proof.
   rewrite H8 mul1r in H3.
   by symmetry.
 Admitted.
-
 
 Lemma seq_all_odd_roots n (p : {poly R[i]}) :
   let rs := MatrixFormula.seq_of_rV (odd_nth_roots n) in
@@ -1641,18 +1638,28 @@ Proof.
 *)
   Admitted.
 
+(*
+Lemma odd_nth_roots_minpoly_mult_R n (p : {poly R}) :
+  (forall i, root (map_poly RtoC p) (odd_nth_roots n I0 i)) ->
+  Pdiv.Ring.rmodp p ('X^(2^n) + 1%:P) = 0 .
+Proof.
+  Admitted.
+*)
+
+(*
 Lemma odd_nth_roots_quot n (p : {poly R}) :
-  mx_eval_ker_pred (odd_nth_roots' n) p <->
+  mx_eval_ker_pred (odd_nth_roots n) p <->
     princ_ideal_pred ('X^(2^n) + 1%:P) p.
 Proof.
-  generalize (odd_nth_roots_minpoly_mult n); intros.
-  generalize (minpoly_mult_odd_nth_roots); intros.  
   unfold mx_eval_ker_pred, princ_ideal_pred.
-  unfold mx_eval, odd_nth_roots'.
-  unfold map_mx.
   split; intros.
-  - unfold zero in H1;  simpl in H1.
-    unfold const_mx in H1.
+  - apply /eqP.
+    apply odd_nth_roots_minpoly_mult_R.
+    intros.
+    move=> /eqP in H.    
+    apply matrixP in H.
+    specialize (H I0 i).    
+
     
     admit.
   - unfold zero;  simpl.
@@ -1660,11 +1667,13 @@ Proof.
     admit.
   
   Admitted.
+ *)
 
+(*
 Lemma odd_nth_rootsE (n : nat) : odd_nth_roots' n = odd_nth_roots n.
   \row_(j < 2^n) (nth_root (2 * j + 1) (2 ^ (S n))).
 
 Definition odd_nth_roots' n :=
   \row_(j < (S (proj1_sig (pow2_S' (2^n)))))
     (nth_root (2 * j + 1) (2 ^ (S n))).
-
+*)
