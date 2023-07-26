@@ -1567,33 +1567,61 @@ rewrite H1.
 rewrite mulr0 //.
 Qed.
 
-Lemma monic_decomp n (p : {poly R[i]}) :
-  p \is monic ->
-  seq.size p = n.+1 ->
-  p = 'X^n + take_poly n p.
+Lemma drop_poly_diff [S : ringType] n (p q : {poly S}) :
+  drop_poly n p = drop_poly n q ->
+  seq.size (p - q) <= n.
 Proof.
   intros.
-  generalize (poly_take_drop n p); intro pdecomp.
-  assert (drop_poly n p = 1).
-  {
-    generalize (size_drop_poly n p); intros.
-    rewrite H0 in H1.
-    replace (n.+1 - n)%N with (1)%N in H1 by lia.
-    generalize (coef_drop_poly n p 0); intros.
-    replace (0 + n)%N with n in H2 by lia.
-    rewrite monicE in H.
-    unfold lead_coef in H.
-    rewrite H0 in H.
-    replace (n.+1.-1) with n in H by lia.
-    move=> /eqP in H.
-    rewrite H in H2.
-    generalize (size_poly1P (drop_poly n p)); intros.
-    move=> /eqP in H1.
-    admit.
-  }
-  rewrite H1 mul1r addrC in pdecomp.
-  by symmetry.
-  
+  generalize (poly_take_drop n p); intro p_decomp.
+  generalize (poly_take_drop n q); intro q_decomp.
+  rewrite -p_decomp -q_decomp H opprD.
+  replace (@add (poly_zmodType S)
+                (@add (poly_zmodType S) (@take_poly S n p)
+                   (@mul (poly_ringType S) (@drop_poly S n q)
+                      (@exp (poly_ringType S) (polyX S) n)))
+                (@add (poly_zmodType S) (@opp (poly_zmodType S) (@take_poly S n q))
+                   (@opp (poly_zmodType S)
+                      (@mul (poly_ringType S) (@drop_poly S n q)
+                         (@exp (poly_ringType S) (polyX S) n))))) with
+    ((take_poly n p) - (take_poly n q)).
+  - eapply leq_trans.
+    apply size_add.
+    generalize (size_take_poly n p); intros.
+    rewrite size_opp.
+    generalize (size_take_poly n q); intros.
+    rewrite geq_max.
+    by rewrite H0 H1.
+  - rewrite -addrA.
+    f_equal.
+    rewrite addrC -addrA.
+    rewrite (addrC _ (drop_poly n q * 'X^n)).
+    by rewrite addrN addr0.
+ Qed.
+
+Lemma monic_size_pos [S : ringType] (p : {poly S}) :
+  p \is monic ->
+  seq.size p > 0.
+Admitted.
+
+Lemma monic_drop_n_1 n (p : {poly R[i]}) :
+  p \is monic ->
+  seq.size p = n.+1 ->
+  drop_poly n p = 1.
+Proof.
+  intros.
+  generalize (size_drop_poly n p); intros.
+  rewrite H0 in H1.
+  replace (n.+1 - n)%N with (1)%N in H1 by lia.
+  generalize (coef_drop_poly n p 0); intros.
+  replace (0 + n)%N with n in H2 by lia.
+  rewrite monicE in H.
+  unfold lead_coef in H.
+  rewrite H0 in H.
+  replace (n.+1.-1) with n in H by lia.
+  move=> /eqP in H.
+  rewrite H in H2.
+  generalize (size_poly1P (drop_poly n p)); intros.
+  move=> /eqP in H1.
   Admitted.
 
 Lemma monic_dif_same_deg (p q : {poly R[i]}) :
@@ -1607,41 +1635,17 @@ Proof.
   pose (n1 := (n-1)%nat).
   assert (n = S n1).
   {
-    admit.
+    generalize (monic_size_pos p H); intros.
+    lia.
   }
-  assert (seq.size p = S n1).
-  {
-    admit.
-  }
-  assert (seq.size q = S n1).
-  {
-    admit.
-  }
-  generalize (monic_decomp n1 p H H3); intros.
-  generalize (monic_decomp n1 q H0 H4); intros.
-  pose (q1 := take_poly n1 q).
-  pose (p1 := take_poly n1 p).
-  assert (q - p = q1 - p1).
-  {
-    unfold q1, p1.
-    rewrite H5 H6.
-    rewrite -addrA.
-    f_equal.
-(*
-    by rewrite addrC opprB -addrA addrC -addrA (addrC _ 'X^n) addrN addr0.
-  }
-  assert (seq.size q1 < seq.size q).
-  {
-    assert (q1 = take_poly (n-1) q).
-  admit.
-  }
-  assert (seq.size (-p1) < seq.size p).
-  {
-    admit.
-  }
-
- *)
-Admitted.  
+  unfold n in H2.
+  rewrite H2.
+  generalize (drop_poly_diff n1 q p); intros.
+  apply H3.
+  rewrite monic_drop_n_1; trivial.
+  - rewrite monic_drop_n_1; trivial.
+  - rewrite -H1 H2 //.
+ Qed.
   
 Lemma monic_divides_same_deg (p q : {poly R[i]}) :
   p \is monic ->
