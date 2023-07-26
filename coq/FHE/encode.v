@@ -1601,27 +1601,27 @@ Proof.
 Lemma monic_size_pos [S : ringType] (p : {poly S}) :
   p \is monic ->
   seq.size p > 0.
+Proof.
+  intros.
+  rewrite monicE in H.
+  generalize (size_poly0 S); intros.
+  generalize (lead_coef0 S); intros.
+
 Admitted.
 
-Lemma monic_drop_n_1 n (p : {poly R[i]}) :
+Lemma monic_drop_n_1 [S : ringType] n (p : {poly S}) :
   p \is monic ->
   seq.size p = n.+1 ->
   drop_poly n p = 1.
 Proof.
   intros.
-  generalize (size_drop_poly n p); intros.
-  rewrite H0 in H1.
-  replace (n.+1 - n)%N with (1)%N in H1 by lia.
-  generalize (coef_drop_poly n p 0); intros.
-  replace (0 + n)%N with n in H2 by lia.
+  generalize (poly_take_drop n p); intros pdecomp.
   rewrite monicE in H.
-  unfold lead_coef in H.
-  rewrite H0 in H.
-  replace (n.+1.-1) with n in H by lia.
-  move=> /eqP in H.
-  rewrite H in H2.
+  rewrite <- pdecomp in H.
+  rewrite lead_coefDr in H.
   generalize (size_poly1P (drop_poly n p)); intros.
-  move=> /eqP in H1.
+  - admit.
+  - admit.
   Admitted.
 
 Lemma monic_dif_same_deg (p q : {poly R[i]}) :
