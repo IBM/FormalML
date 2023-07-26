@@ -1,6 +1,9 @@
 Require Import Reals Lra Lia List.
 From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix Rstruct complex.
 From mathcomp Require Import ssralg ssrfun.
+From mathcomp Require Import generic_quotient ring_quotient.
+From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool.
+
 Import ssralg.GRing.
 Require Import nth_root.
 
@@ -23,10 +26,8 @@ Proof.
   easy.
 Qed.
 
-Definition I0 := Ordinal lt_0_1.
-
 Definition peval_mat {n} (roots : 'rV[R[i]]_n) : 'M[R[i]]_(n,n) :=
-  \matrix_(i < n, j < n) (exp (roots I0 i) j).
+  \matrix_(i < n, j < n) (exp (roots 0 i) j).
 
 Definition conj_mat {n1 n2} (m : 'M[R[i]]_(n1,n2)) :=
   map_mx conjc m.
@@ -35,10 +36,10 @@ Definition Vscale {n} (c : R[i]) (v : 'rV[R[i]]_n) :=
   c *: v.
 
 Definition vector_sum {n} (v : 'rV[R[i]]_n) :=
-  \sum_(j < n) (v I0 j).
+  \sum_(j < n) (v 0 j).
 
 Definition inner_prod {n} (v1 v2 : 'rV[R[i]]_n) :=
-  (v1 *m (v2^T)) I0 I0.
+  (v1 *m (v2^T)) 0 0.
 
 Definition H_inner_prod {n} (v1 v2 : 'rV[R[i]]_n) :=
   inner_prod v1 (conj_mat v2).
@@ -93,7 +94,7 @@ Definition Cinv' (x : R[i]) := x^-1.
 Lemma peval_row (n : nat) :
   forall n0,
     row n0 (peval_mat (odd_nth_roots (S n))) =
-      \row_(j < 2^(S n)) (odd_nth_roots (S n) I0 n0) ^+ j.
+      \row_(j < 2^(S n)) (odd_nth_roots (S n) 0 n0) ^+ j.
 Proof.
   intros.
   unfold row.
@@ -113,14 +114,13 @@ Proof.
 Qed.
 
 Lemma pow2_S (j:nat) :
-  exists (k : nat), 2^j = S k.
+  { k : nat | (2^j)%nat == S k}.
 Proof.
   exists (2^j-1)%nat.
   induction j.
   - now simpl.
   - simpl.
-    rewrite expnS.
-    rewrite IHj.
+    rewrite expnS (eqP IHj).
     lia.
 Qed.
 
@@ -136,7 +136,7 @@ Proof.
   - apply ssrbool.in1W; intros.
     rewrite peval_row /odd_nth_roots !mxE.
     destruct (pow2_S (S (S n))).
-    rewrite H pow_nth_root mult_conj_root.
+    rewrite (eqP i) pow_nth_root mult_conj_root.
     over.
   - rewrite big_const_ord iter_addr_0//.
 Qed.
@@ -293,8 +293,8 @@ Proof.
   unfold odd_nth_roots.
   generalize (telescope_pow_0_ord ((nth_root (2*n1+1) (2^S(S n))) * 
                                  (conjc (nth_root (2*n2+1) (2^S(S n))))) x); intros.
-  rewrite <- H1.
-  - rewrite <- H0.
+  rewrite <- H0.
+  - rewrite <- i.
     erewrite eq_big_seq; [reflexivity |].
     simpl.
     apply ssrbool.in1W; intros.
@@ -456,11 +456,11 @@ Proof.
 Qed.
 
 Definition vector_rev {n} {T}  (v : 'rV[T]_n) :=
-  \row_(i < n) v I0 (rev_ord i).
+  \row_(i < n) v 0 (rev_ord i).
 
 Definition vector_rev_conj {n} (v : 'rV[R[i]]_n) :=
   forall i,
-    v I0 i = conjc (v I0 (rev_ord i)).
+    v 0 i = conjc (v 0 (rev_ord i)).
   
 Lemma add_conj (c1 c2 : R[i]) :
   (conjc c1) + (conjc c2) = conjc (c1 + c2).
@@ -560,7 +560,7 @@ Qed.
 Lemma vector_rev_sum_rev {n} (v : 'rV[R[i]]_n) :
   vector_rev_conj v ->
   forall i,
-    Im ((v + vector_rev v) I0 i) = 0.
+    Im ((v + vector_rev v) 0 i) = 0.
 Proof.
   intros.
   rewrite /vector_rev !mxE H rev_ordK.
@@ -569,7 +569,7 @@ Proof.
 Qed.
 
 Lemma vector_rev_reflect {n} (v : 'rV[R[i]]_n) i :
-  vector_rev v I0 i = v I0 (rev_ord i).
+  vector_rev v 0 i = v 0 (rev_ord i).
 Proof.
   rewrite mxE//.
 Qed.
@@ -587,7 +587,7 @@ Lemma vector_sum_add {n} (a b : 'rV[R[i]]_n) :
   vector_sum (a + b) = vector_sum a + vector_sum b.
 Proof.
   unfold vector_sum.
-  cut (\sum_(j < n) (a I0 j + b I0 j) = \sum_(j < n) a I0 j + \sum_(j < n) b I0 j).
+  cut (\sum_(j < n) (a 0 j + b 0 j) = \sum_(j < n) a 0 j + \sum_(j < n) b 0 j).
   {
     intros HH.
     rewrite -HH/=.
@@ -603,7 +603,7 @@ Proof.
 Qed.
 
 Lemma vector_sum_reals {n} (v : 'rV[R[i]]_n) :
-  (forall i, Im (v I0 i) = 0) -> 
+  (forall i, Im (v 0 i) = 0) -> 
   Im (vector_sum v) = 0.
 Proof.
   unfold vector_sum.
@@ -669,10 +669,10 @@ Lemma mv_rev_conj_real (n1 n2 : nat) (mat : 'M[R[i]]_(n1,n2)) (cl : 'cV[R[i]]_n2
   vector_rev_conj (cl^T) ->
   (forall i, vector_rev_conj (row i mat)) ->
   forall i,
-    Im ((mat *m cl) i I0) = 0.
+    Im ((mat *m cl) i 0) = 0.
 Proof.
   intros.
-  replace ((mat *m cl) i I0) with (((row i mat) *m cl) I0 I0).
+  replace ((mat *m cl) i 0) with (((row i mat) *m cl) 0 0).
   - generalize (vector_rev_conj_inner (row i mat) (cl^T)); intros HH.
     unfold inner_prod in HH.
     rewrite trmxK in HH.
@@ -698,7 +698,7 @@ Lemma mat_encode_real {n} (cl : 'cV[R[i]]_(2^(S n))) :
   let encmat := (conj_mat (pmat^T)) in 
   vector_rev_conj (cl^T) ->
   forall i,
-    Im ((encmat *m cl) i I0) = 0.
+    Im ((encmat *m cl) i 0) = 0.
 Proof.
   intros.
   apply mv_rev_conj_real; trivial.
@@ -729,24 +729,14 @@ Lemma mat_encode_real_alt {n} (cl : 'cV[R[i]]_(2^(S n))) :
   encmat *m cl = map_mx (fun c => RtoC (Re c)) (encmat *m cl).
 Proof.
   intros.
-  apply matrixP; intros ??.
-  generalize (mat_encode_real cl H x); intros.
-  apply Re_Im_0 in H0.
-  unfold encmat, pmat.
-  assert (I0 = y).
-  {
-    destruct I0; destruct y.
-    assert (m = m0) by lia.
-    subst.
-    f_equal.
-    apply eqtype.bool_irrelevance.    
-  }
-  rewrite <- H1, H0.
-  now repeat rewrite mxE.
+  apply matrixP => x y.
+  generalize (mat_encode_real cl H x) => HH.
+  apply Re_Im_0 in HH.
+  by rewrite ord1 {}HH !mxE.
 Qed.
 
 Definition vector_rev_col {n} {T}  (v : 'cV[T]_n) :=
-  \col_(i < n) v (rev_ord i) I0.
+  \col_(i < n) v (rev_ord i) 0.
 
 Program Definition vector_reflect_conj {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R[i]]_(2^(S n)) :=
   col_mx cl (conj_mat (vector_rev_col cl)).
@@ -793,9 +783,6 @@ Definition CKKS_poly_encode {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[R]_(2^(S n)) :=
   let encmat := (conj_mat (pmat^T)) in 
   (inv (2 ^+ S n)) *:
     (map_mx (fun c => Re c) (encmat *m (vector_reflect_conj cl))).
-
-From mathcomp Require Import generic_quotient ring_quotient.
-From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool.
 
 Definition int_to_zmodp (i : int) (p : nat) : 'Z_p := i %:~R.
 
@@ -1516,19 +1503,13 @@ Section eval_vectors.
 
 End eval_vectors.
 
-Definition pow2_S' j : {k : nat | (2^j)%nat = S k}.
-Proof.
-  generalize (pow2_S j); intros.
-  now apply boolp.constructive_indefinite_description in H.
-Qed.
-
 Definition odd_nth_roots' n :=
-  \row_(j < (S (proj1_sig (pow2_S' (2^n)))))
+  \row_(j < (S (proj1_sig (pow2_S (2^n)))))
     (nth_root (2 * j + 1) (2 ^ (S n))).
 
 Lemma odd_nth_roots_minpoly n :
   forall i,
-    root ('X^(2^n) + 1%:P) (odd_nth_roots n I0 i).
+    root ('X^(2^n) + 1%:P) (odd_nth_roots n 0 i).
 Proof.
   move=> i.
   rewrite /odd_nth_roots mxE /root hornerD hornerXn hornerC.
@@ -1562,7 +1543,7 @@ Qed.
 
 Lemma minpoly_mult_odd_nth_roots n (p : {poly R[i]}) :
   Pdiv.Ring.rmodp p ('X^(2^n) + 1%:P) = 0 ->
-  forall i, root p (odd_nth_roots n I0 i).
+  forall i, root p (odd_nth_roots n 0 i).
 Proof.
 intros.
 move=> /Pdiv.Ring.rmodp_eq0P in H.
@@ -1587,8 +1568,6 @@ rewrite H2.
 rewrite mulr0 //.
 Qed.
 
-Definition rvec_to_list {n T} (vec : 'rV[T]_n) : list T.
-Admitted.
 
 Lemma monic_divides_same_deg (p q : {poly R[i]}) :
   p \is monic ->
@@ -1621,29 +1600,32 @@ Proof.
   by symmetry.
 Admitted.
 
+
 Lemma seq_all_odd_roots n (p : {poly R[i]}) :
-  let rs := rvec_to_list (odd_nth_roots n) in
-  (forall i, root p (odd_nth_roots n I0 i)) ->
-  seq.all (root p) (rvec_to_list (odd_nth_roots n)).
+  let rs := MatrixFormula.seq_of_rV (odd_nth_roots n) in
+  (forall i, root p (odd_nth_roots n 0 i)) ->
+  seq.all (root p) (MatrixFormula.seq_of_rV (odd_nth_roots n)).
 Proof.
-  Admitted.
+  intros.
+  apply/tuple.all_tnthP => /= i.
+  rewrite finfun.tnth_fgraph /= finfun.ffunE.
+  by apply H.
+Qed.
+
+Lemma odd_roots_uniq n (p : {poly R[i]}) :
+  let rs := MatrixFormula.seq_of_rV (odd_nth_roots n) in
+  uniq_roots (MatrixFormula.seq_of_rV (odd_nth_roots n)).
+Proof.
+Admitted.
 
 Lemma odd_nth_roots_minpoly_mult n (p : {poly R[i]}) :
-  (forall i, root p (odd_nth_roots n I0 i)) ->
+  (forall i, root p (odd_nth_roots n 0 i)) ->
   Pdiv.Ring.rmodp p ('X^(2^n) + 1%:P) = 0 .
 Proof.
   intros roots.
-  pose (rs := rvec_to_list (odd_nth_roots n)). 
-  assert (seq.all (root p) rs).
-  {
-    admit.
-  }
-  assert (uniq_roots rs).
-  {
-    admit.
-  }
-  generalize (Pdiv.UnitRing.uniq_roots_rdvdp H H0); intros.
-  assert (seq.all (root ('X^(2^n) + 1%:P)) rs).
+  move: (seq_all_odd_roots n p roots) (odd_roots_uniq n p) => allroot uniqroot.
+  generalize (Pdiv.UnitRing.uniq_roots_rdvdp allroot uniqroot); intros.
+(*  assert (seq.all (root ('X^(2^n) + 1%:P)) rs).
   {
     admit.
   }
@@ -1656,6 +1638,7 @@ Proof.
   rewrite H5 in H1.
   unfold Pdiv.Ring.rdvdp in H1.
   by move=> /eqP in H1.
+*)
   Admitted.
 
 Lemma odd_nth_roots_quot n (p : {poly R}) :
@@ -1677,6 +1660,11 @@ Proof.
     admit.
   
   Admitted.
-  
 
-  
+Lemma odd_nth_rootsE (n : nat) : odd_nth_roots' n = odd_nth_roots n.
+  \row_(j < 2^n) (nth_root (2 * j + 1) (2 ^ (S n))).
+
+Definition odd_nth_roots' n :=
+  \row_(j < (S (proj1_sig (pow2_S' (2^n)))))
+    (nth_root (2 * j + 1) (2 ^ (S n))).
+
