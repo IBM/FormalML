@@ -1597,7 +1597,36 @@ Lemma monic_divides_same_deg (p q : {poly R[i]}) :
   Pdiv.Ring.rdvdp (R:=ComplexField.complex_unitRingType R_realFieldType)
                   p q ->
   p = q.
+Proof.
+  intros.
+  generalize (Pdiv.RingMonic.rdivp_eq H q); intros.
+  unfold Pdiv.Ring.rdvdp in H2.
+  move=> /eqP in H2.
+  rewrite H2 addr0 in H3.
+  assert (Pdiv.CommonRing.rdivp (R:=ComplexField.complex_ringType R_fieldType) q p != 0).
+  {
+    admit.
+  }
+  generalize (size_monicM H H4); intros.
+  rewrite mulrC in H5.
+  rewrite -H3 -H1 in H5.
+  assert (seq.size (Pdiv.CommonRing.rdivp (R:=ComplexField.complex_ringType R_fieldType) q p) <= 1%N) by lia.
+  generalize (size1_polyC H6); intros.
+  assert (Pdiv.CommonRing.rdivp (R:=ComplexField.complex_ringType R_fieldType) q p = 1).
+  {
+    
+    admit.
+  }
+  rewrite H8 mul1r in H3.
+  by symmetry.
 Admitted.
+
+Lemma seq_all_odd_roots n (p : {poly R[i]}) :
+  let rs := rvec_to_list (odd_nth_roots n) in
+  (forall i, root p (odd_nth_roots n I0 i)) ->
+  seq.all (root p) (rvec_to_list (odd_nth_roots n)).
+Proof.
+  Admitted.
 
 Lemma odd_nth_roots_minpoly_mult n (p : {poly R[i]}) :
   (forall i, root p (odd_nth_roots n I0 i)) ->
