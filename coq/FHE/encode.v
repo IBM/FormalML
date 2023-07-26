@@ -122,7 +122,7 @@ Proof.
   - simpl.
     rewrite expnS (eqP IHj).
     lia.
-Qed.
+Defined.
 
 Lemma decode_encode_on_diag (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
@@ -1503,7 +1503,7 @@ Section eval_vectors.
 End eval_vectors.
 
 Definition odd_nth_roots' n :=
-  \row_(j < (S (proj1_sig (pow2_S (2^n)))))
+  \row_(j < (S (proj1_sig (pow2_S n))))
     (nth_root (2 * j + 1) (2 ^ (S n))).
 
 Lemma odd_nth_roots_minpoly n :
@@ -1609,10 +1609,26 @@ Proof.
   by apply H.
 Qed.
 
-Lemma odd_roots_uniq n (p : {poly R[i]}) :
+Lemma odd_roots_uniq' n :
+  forall i j,
+    odd_nth_roots n 0 i = odd_nth_roots n 0 j ->
+    i = j.
+Proof.
+  unfold odd_nth_roots.
+  intros.
+  rewrite !mxE in H.
+  destruct (pow2_S (S n)).
+  rewrite (eqP i0) in H.
+  apply nth_root_eq in H.
+  rewrite -(eqP i0) in H.
+  Admitted.
+
+Lemma odd_roots_uniq n :
   let rs := MatrixFormula.seq_of_rV (odd_nth_roots n) in
   uniq_roots (MatrixFormula.seq_of_rV (odd_nth_roots n)).
 Proof.
+  rewrite uniq_rootsE /=.
+  
 Admitted.
 
 Lemma odd_nth_roots_minpoly_mult n (p : {poly R[i]}) :
@@ -1620,35 +1636,80 @@ Lemma odd_nth_roots_minpoly_mult n (p : {poly R[i]}) :
   Pdiv.Ring.rmodp p ('X^(2^n) + 1%:P) = 0 .
 Proof.
   intros roots.
-  move: (seq_all_odd_roots n p roots) (odd_roots_uniq n p) => allroot uniqroot.
+  move: (seq_all_odd_roots n p roots) (odd_roots_uniq n) => allroot uniqroot.
   generalize (Pdiv.UnitRing.uniq_roots_rdvdp allroot uniqroot); intros.
-(*  assert (seq.all (root ('X^(2^n) + 1%:P)) rs).
-  {
-    admit.
-  }
-  generalize (Pdiv.UnitRing.uniq_roots_rdvdp H2 H0); intros.
-  generalize (monic_divides_same_deg  (\prod_(z <- rs) ('X - z%:P)) ('X^(2 ^ n) + 1%:P)); intros.
+  pose (rs := MatrixFormula.seq_of_rV (odd_nth_roots n)).
   assert  (\prod_(z <- rs) ('X - z%:P) = 'X^(2 ^ n) + 1%:P).
   {
-    admit.
+   apply monic_divides_same_deg.
+   - apply monic_prod_XsubC.
+   - destruct (pow2_S n).
+     rewrite (eqP i).
+     apply Xn_add_c_monic.
+   - rewrite size_prod_XsubC.
+     destruct (pow2_S n).
+     rewrite (eqP i).
+     rewrite size_Xn_addC.
+     rewrite -(eqP i).
+     by rewrite MatrixFormula.size_seq_of_rV.
+   - generalize (seq_all_odd_roots n _ (odd_nth_roots_minpoly n)); intros allroot2.
+     apply (Pdiv.UnitRing.uniq_roots_rdvdp allroot2 uniqroot).
   }
-  rewrite H5 in H1.
-  unfold Pdiv.Ring.rdvdp in H1.
-  by move=> /eqP in H1.
-*)
-  Admitted.
+  rewrite H0 in H.
+  unfold Pdiv.Ring.rdvdp in H.
+  by move=> /eqP in H.
+ Qed.
 
-(*
-Lemma odd_nth_roots_minpoly_mult_R n (p : {poly R}) :
-  (forall i, root (map_poly RtoC p) (odd_nth_roots n I0 i)) ->
-  Pdiv.Ring.rmodp p ('X^(2^n) + 1%:P) = 0 .
+Lemma rmodp_R (p q : {poly R}) :
+  Pdiv.Ring.rmodp p q = 0 <-> Pdiv.Ring.rmodp (map_poly RtoC p) (map_poly RtoC q) = 0.
 Proof.
   Admitted.
-*)
 
-(*
+Lemma map_poly_add_RtoC (p q : {poly R}) :
+  map_poly RtoC (p + q) = (map_poly RtoC p) + (map_poly RtoC q).
+Proof.
+  generalize (map_poly_is_additive RtoC_rmorphism p (-q)); intros.
+  generalize (map_poly_is_additive RtoC_rmorphism 0 q); intros.  
+  rewrite map_poly0 in H0.
+  rewrite !add0r in H0.
+  rewrite H0 in H.
+  rewrite !opprK in H.
+  apply H.
+Qed.
+
+Lemma map_RtoC_Xnpoly n :  
+  map_poly (aR:=R_ringType) (rR:=ComplexField.complex_ringType R_fieldType) RtoC
+    ('X^(2 ^ n) + 1%:P) = 'X^(2 ^ n) + 1%:P.
+Proof.
+  rewrite map_poly_add_RtoC map_polyXn.
+  f_equal.
+  by rewrite (map_polyC RtoC_rmorphism 1).
+Qed.
+
+Lemma odd_nth_roots_minpoly_mult_R n (p : {poly R}) :
+  (forall i, root (map_poly RtoC p) (odd_nth_roots n 0 i)) ->
+  Pdiv.Ring.rmodp p ('X^(2^n) + 1%:P) = 0.
+Proof.
+  intros.
+  generalize (odd_nth_roots_minpoly_mult n (map_poly RtoC p) H); intros.
+  rewrite rmodp_R.
+  rewrite <- H0.
+  f_equal.
+  apply map_RtoC_Xnpoly.
+Qed.
+
+Lemma minpoly_mult_odd_nth_roots_R n (p : {poly R}) :
+  Pdiv.Ring.rmodp p ('X^(2^n) + 1%:P) = 0 ->
+  forall i, root (map_poly RtoC p) (odd_nth_roots n 0 i).
+Proof.
+  intros.
+  rewrite rmodp_R in H.
+  rewrite map_RtoC_Xnpoly in H.
+  by  generalize (minpoly_mult_odd_nth_roots n (map_poly RtoC p) H).
+Qed.  
+
 Lemma odd_nth_roots_quot n (p : {poly R}) :
-  mx_eval_ker_pred (odd_nth_roots n) p <->
+  mx_eval_ker_pred (odd_nth_roots' n) p <->
     princ_ideal_pred ('X^(2^n) + 1%:P) p.
 Proof.
   unfold mx_eval_ker_pred, princ_ideal_pred.
@@ -1658,22 +1719,19 @@ Proof.
     intros.
     move=> /eqP in H.    
     apply matrixP in H.
-    specialize (H I0 i).    
-
-    
+    unfold odd_nth_roots' in H.
+    unfold odd_nth_roots.
+    unfold root.
+    unfold pow2_S in H.
     admit.
   - unfold zero;  simpl.
     unfold const_mx.
-    admit.
-  
+    apply /eqP.
+    apply matrixP.
+    intros ??.
+    rewrite !mxE.
+    move=> /eqP in H.
+    generalize (minpoly_mult_odd_nth_roots_R n p H); intros.
+    unfold pow2_S in y.
+    
   Admitted.
- *)
-
-(*
-Lemma odd_nth_rootsE (n : nat) : odd_nth_roots' n = odd_nth_roots n.
-  \row_(j < 2^n) (nth_root (2 * j + 1) (2 ^ (S n))).
-
-Definition odd_nth_roots' n :=
-  \row_(j < (S (proj1_sig (pow2_S' (2^n)))))
-    (nth_root (2 * j + 1) (2 ^ (S n))).
-*)
