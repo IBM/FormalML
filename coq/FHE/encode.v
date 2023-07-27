@@ -1817,31 +1817,34 @@ Proof.
   by move=> /eqP in H.
  Qed.
 
+Lemma map_RtoC_size (p : {poly R}) :
+  seq.size p = seq.size (map_poly RtoC p).
+Proof.
+  by rewrite (size_map_poly RtoC_rmorphism p).
+Qed.
+
+Lemma map_RtoC_lead_coef (p : {poly R}) :
+  lead_coef (map_poly RtoC p) = RtoC (lead_coef p).
+Proof.
+  by rewrite (lead_coef_map RtoC_rmorphism p). 
+Qed.
+
 Lemma rmodp_R (p q : {poly R}) :
   q \is monic -> 
   Pdiv.Ring.rmodp p q = 0 <-> Pdiv.Ring.rmodp (map_poly RtoC p) (map_poly RtoC q) = 0.
 Proof.
-  intros.
-  generalize (Pdiv.RingMonic.rdivp_eq H p); intros.
-Admitted.
-(*       
-  rewrite H0 addr0 in H1.
-  assert ((map_poly RtoC q) \is monic).
+  intros qmon.
+  generalize (Pdiv.RingMonic.rdivp_eq qmon p); intros.
+  assert (qcmon: (map_poly RtoC q) \is monic).
   {
+    generalize (map_monic RtoC_rmorphism q); intros.
     admit.
   }
+  generalize (Pdiv.RingMonic.rdivp_eq qcmon (map_poly RtoC p)); intros rdivp.
+  generalize (Pdiv.RingMonic.redivp_eq qcmon (map_poly RtoC p)); intros redivp.
 
-  assert (seq.size (zero  (poly_zmodType (ComplexField.complex_ringType R_fieldType))) < seq.size
-         (map_poly (aR:=R_ringType) (rR:=ComplexField.complex_ringType R_fieldType)
-            RtoC q) ).
-  {
-    admit.
-  }
-  generalize (Pdiv.RingMonic.redivp_eq H2 (map_poly RtoC (Pdiv.CommonRing.rdivp (R:=R_ringType) p q))H3); intros.
-  rewrite addr0 in H4.
-  simpl in H4.
-  unfold Pdiv.Ring.rmodp.
-*)
+  split; intros.
+Admitted.
 
 Lemma map_poly_add_RtoC (p q : {poly R}) :
   map_poly RtoC (p + q) = (map_poly RtoC p) + (map_poly RtoC q).
@@ -1937,16 +1940,37 @@ Section norms.
 
   Definition cabs (x : R[i]):R := ComplexField.Normc.normc x.
 
-  Definition norm1 {n} (v : 'rV[R[i]]_n) := \sum_(j < n) cabs (v 0 j).
+  Definition norm1 {n} (v : 'rV[R[i]]_n):R := \sum_(j < n) cabs (v 0 j).
 
-  Definition norm_inf {n} (v : 'rV[R[i]]_n) := \big[Order.max/0]_(j < n) cabs (v 0 j).
+  Definition norm_inf {n} (v : 'rV[R[i]]_n):R := \big[Order.max/0]_(j < n) cabs (v 0 j).
 
-  Definition coef_norm1 (p : {poly R}) := \sum_(j < seq.size p) Rabs (p`_ j).
+  Definition coef_norm1 (p : {poly R}):R := \sum_(j < seq.size p) Rabs (p`_ j).
 
-  Definition coef_maxnorm (p : {poly R}) := \big[Order.max/0]_(j < seq.size p) Rabs (p`_ j).
+  Definition coef_maxnorm (p : {poly R}):R := \big[Order.max/0]_(j < seq.size p) Rabs (p`_ j).
 
-  Definition canon_norm1 {n} (p : {poly R}) := norm1 (mx_eval (odd_nth_roots' n) p).
-  Definition canon_norm_inf {n} (p : {poly R}) := norm_inf (mx_eval (odd_nth_roots' n) p).
+  Definition canon_norm1 n (p : {poly R}):R := norm1 (mx_eval (odd_nth_roots' n) p).
+  Definition canon_norm_inf n (p : {poly R}):R := norm_inf (mx_eval (odd_nth_roots' n) p).
+
+  (* following 4 lemmas show canon_norm_inf is a norm on quotient by x^+(2^n) + 1 *)
+  Lemma canon_norm_inf_scale n (r : R) (p : {poly R}) :
+    canon_norm_inf n (r *: p) = Rabs r * canon_norm_inf n p.
+  Proof.
+    Admitted.
+
+  Lemma canon_norm_inf_nneg n (p : {poly R}) :
+    Order.le R0 (canon_norm_inf n p).
+  Proof.
+    Admitted.
+  
+  Lemma canon_norm_inf_triang n (p q : {poly R}) :
+    Order.le (canon_norm_inf n (p + q)) (canon_norm_inf n p + canon_norm_inf n q).
+  Proof.
+    Admitted.
+      
+(* following only holds on quotient ring by x^+(2^n) + 1 
+  Lemma canon_norm_inf_pos_def n p :
+    canon_norm_inf n p = 0 -> p = 0.
+*)
 
   Lemma cabs_conj (x : R[i]) :
     ComplexField.Normc.normc x = ComplexField.Normc.normc (conjc x).
