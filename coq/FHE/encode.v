@@ -1632,15 +1632,12 @@ Lemma monic_drop_n_1 [S : ringType] n (p : {poly S}) :
   seq.size p = n.+1 ->
   drop_poly n p = 1.
 Proof.
-  intros.
-  generalize (poly_take_drop n p); intros pdecomp.
-  rewrite monicE in H.
-  rewrite <- pdecomp in H.
-  rewrite lead_coefDr in H.
-  generalize (size_poly1P (drop_poly n p)); intros.
-  - admit.
-  - admit.
-  Admitted.
+  rewrite monicE /lead_coef.
+  rewrite /drop_poly poly_def => /[swap] -> /=.
+  replace (n.+1 - n)%nat with 1%nat by lia.
+  rewrite big_ord1 add0n => /eqP->.
+  by rewrite expr0 alg_polyC.
+Qed.
 
 Lemma monic_dif_same_deg (p q : {poly R[i]}) :
   p \is monic ->
