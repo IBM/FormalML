@@ -1467,38 +1467,57 @@ Section eval_vectors.
     by rewrite -addrA add0r (addrC _ (mx_eval a)) addrN addr0 in eqq.
   Qed.
 
+  Lemma mx_eval_quot1 : mx_eval_quot 1 = 1.
+  Proof.
+    rewrite -[1]reprK.
+    rewrite pi_mx_eval_quot.
+    rewrite -[1]reprK.
+    case: piP => y /eqquotP.
+    rewrite /mx_eval_ker_pred /in_mem/mem/= => /eqP.
+  Admitted.
+
+
   Lemma mx_eval_quot_is_rmorphism : rmorphism mx_eval_quot.
   Proof.
-    unfold mx_eval_quot.
-    constructor.
-    - intros ??.
-      rewrite -!eq_lock.
-      
-      generalize (pi_mx_eval_quot (repr (x - y))); intros.
+    split => [x|].
+    - apply quotP=> y <-.
+      revert x.
+      apply quotP => x <-.
+      rewrite !reprK.
+      rewrite !pi_mx_eval_quot.
+      rewrite /mx_eval_quot -!eq_lock.
+      rewrite -pi_is_additive.
+      case: piP => y' /eqquotP.
+      rewrite /Quotient.equiv/=.
+      rewrite /mx_eval_ker_pred /in_mem/mem/= => /eqP.
+      admit.
+    - constructor.
+      + move => x.
+        apply quotP=> y <-.
+        revert x.
+        apply quotP => x <-.
+        rewrite !reprK.
+        rewrite !pi_mx_eval_quot.
+        rewrite /mx_eval_quot -!eq_lock.
+        rewrite -pi_is_multiplicative.
+        case: piP => y' /eqquotP.
+        rewrite /Quotient.equiv/=.
+        rewrite /mx_eval_ker_pred /in_mem/mem/= => /eqP.
         admit.
-      - split.
-        + intros ??.
-          rewrite -!eq_lock.
-          simpl.
-          apply matrixP.
-          intros ??.
-          rewrite !mxE.
-          admit.
-        + rewrite -eq_lock.
-          rewrite -!pi_mx_eval_quot.
-          unfold mx_eval_quot.
-          apply matrixP.
-          intros ??.
-          rewrite !mxE.
+      + by apply mx_eval_quot1.
   Admitted.
 
   Lemma mx_eval_quot_is_injective (x y : mx_eval_ker_quot_ring) :
     mx_eval_quot x = mx_eval_quot y -> x = y.
   Proof.
-    intros.
-    rewrite /mx_eval_quot -!eq_lock in H.
-    
-    Admitted.
+    rewrite /mx_eval_quot -!eq_lock.
+    rewrite -{2}[x]reprK -{2}[y]reprK.
+    move: (repr x) (repr y) => {x} {y} x y eqq.
+    apply/eqquotP.
+    rewrite /Quotient.equiv/=.
+    rewrite /mx_eval_ker_pred /in_mem/mem/=.
+    apply/eqP.
+  Admitted.
 
 End eval_vectors.
 
