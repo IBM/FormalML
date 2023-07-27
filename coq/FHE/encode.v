@@ -1612,36 +1612,27 @@ rewrite H1.
 rewrite mulr0 //.
 Qed.
 
+Lemma drop_poly_opp [S : ringType] n (p : {poly S}) :
+  drop_poly n (- p) = - drop_poly n p.
+Proof.
+  rewrite -!scaleN1r.
+  apply drop_polyZ.
+Qed.
+
 Lemma drop_poly_diff [S : ringType] n (p q : {poly S}) :
   drop_poly n p = drop_poly n q ->
   seq.size (p - q) <= n.
 Proof.
   intros.
-  generalize (poly_take_drop n p); intro p_decomp.
-  generalize (poly_take_drop n q); intro q_decomp.
-  rewrite -p_decomp -q_decomp H opprD.
-  replace (@add (poly_zmodType S)
-                (@add (poly_zmodType S) (@take_poly S n p)
-                   (@mul (poly_ringType S) (@drop_poly S n q)
-                      (@exp (poly_ringType S) (polyX S) n)))
-                (@add (poly_zmodType S) (@opp (poly_zmodType S) (@take_poly S n q))
-                   (@opp (poly_zmodType S)
-                      (@mul (poly_ringType S) (@drop_poly S n q)
-                         (@exp (poly_ringType S) (polyX S) n))))) with
-    ((take_poly n p) - (take_poly n q)).
-  - eapply leq_trans.
-    apply size_add.
-    generalize (size_take_poly n p); intros.
-    rewrite size_opp.
-    generalize (size_take_poly n q); intros.
-    rewrite geq_max.
-    by rewrite H0 H1.
-  - rewrite -addrA.
-    f_equal.
-    rewrite addrC -addrA.
-    rewrite (addrC _ (drop_poly n q * 'X^n)).
-    by rewrite addrN addr0.
- Qed.
+  assert (drop_poly n (p - q) = 0).
+  {
+    by rewrite drop_polyD drop_poly_opp -H addrN.
+  }
+  generalize (poly_take_drop n (p - q)); intro decomp.  
+  rewrite H0 mul0r addr0 in decomp.
+  rewrite -decomp.
+  apply size_take_poly.
+Qed.
 
 Lemma monic_size_pos [S : ringType] (p : {poly S}) :
   p \is monic ->
@@ -1864,7 +1855,7 @@ Proof.
     unfold odd_nth_roots' in H.
     unfold odd_nth_roots.
     unfold root.
-    unfold pow2_S in H.
+(*    specialize (H 0 i). *)
     admit.
   - unfold zero;  simpl.
     unfold const_mx.
@@ -1875,5 +1866,5 @@ Proof.
     move=> /eqP in H.
     generalize (minpoly_mult_odd_nth_roots_R n p H); intros.
     unfold pow2_S in y.
-    
+(*    specialize (H0 y). *)
   Admitted.
