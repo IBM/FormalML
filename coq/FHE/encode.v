@@ -1474,8 +1474,9 @@ Section eval_vectors.
     rewrite -[1]reprK.
     case: piP => y /eqquotP.
     rewrite /mx_eval_ker_pred /in_mem/mem/= => /eqP.
+    destruct mx_eval_is_rmorphism as [? [??]].
+    unfold additive in base.
   Admitted.
-
 
   Lemma mx_eval_quot_is_rmorphism : rmorphism mx_eval_quot.
   Proof.
@@ -1488,9 +1489,22 @@ Section eval_vectors.
       rewrite /mx_eval_quot -!eq_lock.
       rewrite -pi_is_additive.
       case: piP => y' /eqquotP.
-      rewrite /Quotient.equiv/=.
       rewrite /mx_eval_ker_pred /in_mem/mem/= => /eqP.
-      admit.
+      generalize (raddfD (mx_eval_rmorphism)); intros mx_eval_add.
+      generalize (raddfN (mx_eval_rmorphism)); intros mx_eval_opp.
+      generalize (mx_eval_add (x-y) (-y')); intros add1.
+      simpl in add1; rewrite add1.
+      specialize (mx_eval_add x (-y)); simpl in mx_eval_add.
+      rewrite mx_eval_add.
+      generalize (mx_eval_opp y); intro opp1.
+      simpl in opp1; rewrite opp1.
+      specialize (mx_eval_opp y'); simpl in mx_eval_opp.
+      rewrite mx_eval_opp.
+      intro HH.
+      apply (f_equal (fun z => z + mx_eval y')) in HH.
+      rewrite add0r -!addrA in HH.
+      rewrite (addrC _ (mx_eval y')) addrN addr0 in HH.
+      by rewrite -HH.
     - constructor.
       + move => x.
         apply quotP=> y <-.
@@ -1501,11 +1515,19 @@ Section eval_vectors.
         rewrite /mx_eval_quot -!eq_lock.
         rewrite -pi_is_multiplicative.
         case: piP => y' /eqquotP.
-        rewrite /Quotient.equiv/=.
         rewrite /mx_eval_ker_pred /in_mem/mem/= => /eqP.
-        admit.
+        destruct mx_eval_is_rmorphism as [? [??]].
+        specialize (base (x * y) y'); simpl in base.
+        rewrite base.
+        specialize (m x y); simpl in m.
+        rewrite m.
+        intro HH.
+        apply (f_equal (fun z => z + mx_eval y')) in HH.
+        rewrite add0r -!addrA in HH.
+        rewrite (addrC _ (mx_eval y')) addrN addr0 in HH.
+        by rewrite -HH.
       + by apply mx_eval_quot1.
-  Admitted.
+  Qed.
 
   Lemma mx_eval_quot_is_injective (x y : mx_eval_ker_quot_ring) :
     mx_eval_quot x = mx_eval_quot y -> x = y.
@@ -1517,7 +1539,11 @@ Section eval_vectors.
     rewrite /Quotient.equiv/=.
     rewrite /mx_eval_ker_pred /in_mem/mem/=.
     apply/eqP.
-  Admitted.
+    destruct mx_eval_is_rmorphism.
+    specialize (base x y).
+    simpl in base.
+    by rewrite eqq addrN in base.
+ Qed.
 
 End eval_vectors.
 
@@ -1750,9 +1776,30 @@ Proof.
  Qed.
 
 Lemma rmodp_R (p q : {poly R}) :
+  q \is monic -> 
   Pdiv.Ring.rmodp p q = 0 <-> Pdiv.Ring.rmodp (map_poly RtoC p) (map_poly RtoC q) = 0.
 Proof.
-  Admitted.
+  intros.
+  generalize (Pdiv.RingMonic.rdivp_eq H p); intros.
+Admitted.
+(*       
+  rewrite H0 addr0 in H1.
+  assert ((map_poly RtoC q) \is monic).
+  {
+    admit.
+  }
+
+  assert (seq.size (zero  (poly_zmodType (ComplexField.complex_ringType R_fieldType))) < seq.size
+         (map_poly (aR:=R_ringType) (rR:=ComplexField.complex_ringType R_fieldType)
+            RtoC q) ).
+  {
+    admit.
+  }
+  generalize (Pdiv.RingMonic.redivp_eq H2 (map_poly RtoC (Pdiv.CommonRing.rdivp (R:=R_ringType) p q))H3); intros.
+  rewrite addr0 in H4.
+  simpl in H4.
+  unfold Pdiv.Ring.rmodp.
+*)
 
 Lemma map_poly_add_RtoC (p q : {poly R}) :
   map_poly RtoC (p + q) = (map_poly RtoC p) + (map_poly RtoC q).
@@ -1782,9 +1829,12 @@ Proof.
   intros.
   generalize (odd_nth_roots_minpoly_mult n (map_poly RtoC p) H); intros.
   rewrite rmodp_R.
-  rewrite <- H0.
-  f_equal.
-  apply map_RtoC_Xnpoly.
+  - rewrite <- H0.
+    f_equal.
+    apply map_RtoC_Xnpoly.
+  - destruct (pow2_S n).
+    rewrite (eqP i).
+    apply Xn_add_c_monic.
 Qed.
 
 Lemma minpoly_mult_odd_nth_roots_R n (p : {poly R}) :
@@ -1793,8 +1843,11 @@ Lemma minpoly_mult_odd_nth_roots_R n (p : {poly R}) :
 Proof.
   intros.
   rewrite rmodp_R in H.
-  rewrite map_RtoC_Xnpoly in H.
-  by  generalize (minpoly_mult_odd_nth_roots n (map_poly RtoC p) H).
+  - rewrite map_RtoC_Xnpoly in H.
+    by  generalize (minpoly_mult_odd_nth_roots n (map_poly RtoC p) H).
+  - destruct (pow2_S n).
+    rewrite (eqP i0).
+    apply Xn_add_c_monic.
 Qed.  
 
 Lemma odd_nth_roots_quot n (p : {poly R}) :
