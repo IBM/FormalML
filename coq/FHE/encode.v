@@ -1674,8 +1674,7 @@ Proof.
   pose (n1 := (n-1)%nat).
   assert (n = S n1).
   {
-    generalize (monic_size_pos p H); intros.
-    lia.
+    generalize (monic_size_pos p H); lia.
   }
   unfold n in H2.
   rewrite H2.
@@ -1899,3 +1898,21 @@ Proof.
     rewrite mxE in H0.
     apply H0.
  Qed.
+
+
+Section norms.
+
+  Definition cabs (x : R[i]):R := ComplexField.Normc.normc x.
+
+  Definition norm1 {n} (v : 'rV[R[i]]_n) := \sum_(j < n) cabs (v 0 j).
+
+  Definition norm_inf {n} (v : 'rV[R[i]]_n) := \big[Order.max/0]_(j < n) cabs (v 0 j).
+
+  Definition coef_norm1 (p : {poly R}) := \sum_(j < seq.size p) Rabs (p`_ j).
+
+  Definition coef_maxnorm (p : {poly R}) := \big[Order.max/0]_(j < seq.size p) Rabs (p`_ j).
+
+  Definition canon_norm1 {n} (p : {poly R}) := norm1 (mx_eval (odd_nth_roots' n) p).
+  Definition canon_norm_inf {n} (p : {poly R}) := norm_inf (mx_eval (odd_nth_roots' n) p).
+  
+End norms.
