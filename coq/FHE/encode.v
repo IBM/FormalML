@@ -1362,6 +1362,13 @@ Section eval_vectors.
   Definition mx_eval (p : {poly R}) : MR_comRingType 0 n :=
     (map_mx (fun x => horner_eval x (map_poly RtoC p)) vals).
 
+  Lemma mx_evalC c : mx_eval c%:P = const_mx (RtoC c).
+  Proof.
+    apply matrixP=> a b.
+    rewrite !mxE horner_evalE.
+    by rewrite (map_polyC RtoC_rmorphism) /= hornerC.
+  Qed.
+  
   Lemma mx_eval_is_rmorphism :
     rmorphism (fun p => mx_eval p).
   Proof.
@@ -1375,9 +1382,7 @@ Section eval_vectors.
         apply matrixP=> a b.
         rewrite !mxE.
         by apply ev_C_is_rmorphism.
-      + apply matrixP=> a b.
-        rewrite !mxE.
-        by apply ev_C_is_rmorphism.
+      + by rewrite mx_evalC.
   Qed.
 
   Canonical mx_eval_rmorphism 
@@ -1467,16 +1472,18 @@ Section eval_vectors.
     by rewrite -addrA add0r (addrC _ (mx_eval a)) addrN addr0 in eqq.
   Qed.
 
+  Lemma mx_eval_quotC c :
+    mx_eval_quot (\pi_({ideal_quot mx_eval_ker_ideal}) c%:P) = const_mx (RtoC c).
+  Proof.
+    by rewrite pi_mx_eval_quot mx_evalC.
+  Qed.
+
   Lemma mx_eval_quot1 : mx_eval_quot 1 = 1.
   Proof.
-    rewrite -[1]reprK.
-    rewrite pi_mx_eval_quot.
-    rewrite -[1]reprK.
-    case: piP => y /eqquotP.
-    rewrite /mx_eval_ker_pred /in_mem/mem/= => /eqP.
-    destruct mx_eval_is_rmorphism as [? [??]].
-    unfold additive in base.
-  Admitted.
+    rewrite /one /= /Quotient.one /= /one /= /locked.
+    destruct master_key.
+    by rewrite mx_eval_quotC.
+  Qed.
 
   Lemma mx_eval_quot_is_rmorphism : rmorphism mx_eval_quot.
   Proof.
