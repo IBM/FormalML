@@ -1204,17 +1204,18 @@ Qed.
 Canonical map_RtoC_rmorphism := RMorphism map_RtoC_is_rmorphism.
 
 Lemma ev_C_is_rmorphism (x:R[i]) :
-  rmorphism (fun (p : {poly R}) => horner_eval x (map_poly RtoC p)).
+  rmorphism (fun (p : {poly R}) => (map_poly RtoC p).[x]).
 Proof.
+
   destruct map_RtoC_is_rmorphism.
   destruct (horner_eval_is_lrmorphism x) as [[??] ?].
   constructor.
   - intros ??.
-    rewrite base base0 //.
+    rewrite  -horner_evalE base base0 //.
   - split.
     + intros ??.
-      rewrite mixin mixin0 //.
-    + rewrite mixin mixin0 //.
+      rewrite -horner_evalE mixin mixin0 //.
+    + rewrite -horner_evalE mixin mixin0 //.
 Qed.
 
 
