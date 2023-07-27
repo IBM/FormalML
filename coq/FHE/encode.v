@@ -1729,8 +1729,19 @@ Proof.
   rewrite -(eqP i0) in H.
   destruct i.
   destruct j.
-  
-  Admitted.
+  rewrite !Nat.mod_small in H.
+  - simpl in H.
+    assert (m = m0) by lia.
+    subst.
+    f_equal.
+    apply Classical_Prop.proof_irrelevance.
+  - simpl.
+    rewrite expnS.
+    lia.
+  - simpl.
+    rewrite expnS.
+    lia.
+Qed.
 
 Lemma odd_roots_uniq n :
   let rs := MatrixFormula.seq_of_rV (odd_nth_roots n) in
