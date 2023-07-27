@@ -1319,37 +1319,70 @@ Section matrixRing.
 
   End com_ring.
 
-(*
   Section unit_ring.
     Context {T:unitRingType}.
     Variable (n m : nat).
     
+    Definition MR_unit : pred 'M[T]_(S n,S m)
+      := [pred m : 'M[T]_(S n,S m) | [forall i, [forall j, (m i j) \is a unit]]].
+
     Definition MR_inv (x:'M[T]_(S n,S m)) : 'M[T]_(S n,S m)
-      := map_mx inv x.
+      := if MR_unit x then map_mx inv x else x.
 
-    Definition MR_unit : pred 'M[T]_(S n,S m) :=
-      Admitted.
+    Lemma MR_mulVr : ({in MR_unit, left_inverse 1 MR_inv (@mul (MR_ringType _ _))}).
+    Proof.
+      move=> M.
+      rewrite /MR_inv.
+      rewrite -topredE /= => eqq1.
+      rewrite eqq1.
+      apply/matrixP => x y.
+      rewrite !mxE.
+      apply mulVr.
+      move: eqq1.
+      rewrite/MR_unit simpl_predE.
+      by move/forallP /(_ x)/forallP/(_ y).
+    Qed.
 
-    Lemma MR_mulVr : {in unit, left_inverse 1 inv  *%R}.
-    Lemma MR_mulrV : {in unit, right_inverse 1 inv  *%R}.
+    Lemma MR_mulrV : ({in MR_unit, right_inverse 1 MR_inv (@mul (MR_ringType _ _))}).
+    Proof.
+      move=> M.
+      rewrite /MR_inv.
+      rewrite -topredE /= => eqq1.
+      rewrite eqq1.
+      apply/matrixP => x y.
+      rewrite !mxE.
+      apply mulrV.
+      move: eqq1.
+      rewrite/MR_unit simpl_predE.
+      by move/forallP /(_ x)/forallP/(_ y).
+    Qed.
 
-    Lemma MR_unitP (x y : 'M[T]_(S n,S m)) :
-      MR_mul _ _ y x = MR1 _ _ /\ MR_mul _ _ x y = MR1 _ _ -> MR_unit x.
-
-    (* (inv_out : {in [predC unit], inv =1 id}). *)
-
-    (*
-    Print UnitRing.EtaMixin.
-    *)
+    Lemma MR_unitP (x y : MR_ringType n m) : y * x = 1 /\ x * y = 1 -> MR_unit x.
+    Proof.
+      move=>[/matrixP-linv /matrixP-rinv].
+      rewrite/MR_unit/simpl_predE.
+      apply/forallP => i.
+      apply/forallP => j.
+      apply/unitrP.
+      exists (y i j).
+      move: linv  => /(_ i j).
+      move: rinv  => /(_ i j).
+      by rewrite !mxE => -> ->.
+    Qed.
     
-    (*
-    Definition MR_unitRingMixin := UnitRingMixin _ _ _ _
+    Lemma MR_inv0id : {in [predC MR_unit], MR_inv =1 id}.
+    Proof.
+      move => x.
+      by rewrite -topredE /= -topredE /= /MR_inv => /Bool.negb_true_iff->.
+    Qed.
+
+    Definition MR_unitRingMixin : UnitRing.mixin_of (Ring.Pack (Ring.class (MR_ringType n m)))
+      := @UnitRingMixin (MR_ringType _ _) MR_unit MR_inv MR_mulVr MR_mulrV MR_unitP MR_inv0id.
+
     Canonical MR_unitRingType := Eval hnf in UnitRingType (@MR_ringType T n m) MR_unitRingMixin.
-    *)
 
   End unit_ring.
-*)
-
+  
   End matrixRing.
 End matrix_ring.
 
