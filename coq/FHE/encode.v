@@ -1814,13 +1814,7 @@ Admitted.
 Lemma map_poly_add_RtoC (p q : {poly R}) :
   map_poly RtoC (p + q) = (map_poly RtoC p) + (map_poly RtoC q).
 Proof.
-  generalize (map_poly_is_additive RtoC_rmorphism p (-q)); intros.
-  generalize (map_poly_is_additive RtoC_rmorphism 0 q); intros.  
-  rewrite map_poly0 in H0.
-  rewrite !add0r in H0.
-  rewrite H0 in H.
-  rewrite !opprK in H.
-  apply H.
+  apply (raddfD map_RtoC_rmorphism).
 Qed.
 
 Lemma map_RtoC_Xnpoly n :  
