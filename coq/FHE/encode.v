@@ -1727,6 +1727,9 @@ Proof.
   rewrite (eqP i0) in H.
   apply nth_root_eq in H.
   rewrite -(eqP i0) in H.
+  destruct i.
+  destruct j.
+  
   Admitted.
 
 Lemma odd_roots_uniq n :
@@ -1855,8 +1858,17 @@ Proof.
     unfold odd_nth_roots' in H.
     unfold odd_nth_roots.
     unfold root.
-(*    specialize (H 0 i). *)
-    admit.
+    destruct i.
+    assert (m < (sval (pow2_S n)).+1) by (simpl; lia).
+    specialize (H 0 (Ordinal H0)).
+    simpl in H.
+    rewrite !mxE in H.
+    rewrite !mxE.
+    unfold horner_eval in H.
+    replace  (2 * Ordinal (n:=2 ^ n) (m:=m) i + 1)%N with
+      (2 * Ordinal (n:=(2 ^ n - 1).+1) (m:=m) H0 + 1)%N.
+    + by rewrite H.
+    + f_equal.
   - unfold zero;  simpl.
     unfold const_mx.
     apply /eqP.
@@ -1866,5 +1878,14 @@ Proof.
     move=> /eqP in H.
     generalize (minpoly_mult_odd_nth_roots_R n p H); intros.
     unfold pow2_S in y.
-(*    specialize (H0 y). *)
-  Admitted.
+    destruct y as [y' ?].
+    assert (y' < 2^n) by lia.
+    specialize (H0 (Ordinal H1)).
+    unfold root in H0.
+    move=> /eqP in H0.
+    simpl in H0.
+    unfold horner_eval.
+    unfold odd_nth_roots in H0.
+    rewrite mxE in H0.
+    apply H0.
+ Qed.
