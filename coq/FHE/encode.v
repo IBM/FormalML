@@ -2050,12 +2050,10 @@ Section norms.
 
   Lemma normc_conj_poly (p : {poly R}) (x : R[i]) :
     let pc := map_poly RtoC p in 
-    normc (horner_eval x pc) = normc (horner_eval (conjc x) pc).
+    normc (pc.[x]) = normc (pc.[conjc x]).
   Proof.
     simpl.
-    rewrite !horner_evalE.
-    rewrite -rpoly_eval_conj.
-    unfold normc; apply normc_conj.
+    by rewrite -rpoly_eval_conj normc_conj.
   Qed.
 
 End norms.
