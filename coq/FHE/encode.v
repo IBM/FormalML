@@ -1947,5 +1947,57 @@ Section norms.
 
   Definition canon_norm1 {n} (p : {poly R}) := norm1 (mx_eval (odd_nth_roots' n) p).
   Definition canon_norm_inf {n} (p : {poly R}) := norm_inf (mx_eval (odd_nth_roots' n) p).
-  
+
+  Lemma cabs_conj (x : R[i]) :
+    ComplexField.Normc.normc x = ComplexField.Normc.normc (conjc x).
+  Proof.
+    destruct x.
+    simpl.
+    do 2 f_equal.
+    by rewrite sqrrN.
+  Qed.
+
+  Lemma cabs_conj_mul (x y : R[i]) :
+    cabs (x * y) = cabs (x * (conjc y)).
+  Proof.
+    unfold cabs; simpl.
+    do 2 rewrite ComplexField.Normc.normcM.
+    by rewrite (cabs_conj y).
+  Qed.
+    
+  Lemma cabs_conj_add (r : R) (x y : R[i]) :
+    cabs (x + y) = cabs (conjc x + conjc y).
+  Proof.
+    rewrite add_conj.
+    by unfold cabs; apply cabs_conj.
+  Qed.
+
+  Lemma cabs_conj_exp (x : R[i]) n :
+    cabs (x ^+ n) = cabs ((conjc x) ^+ n).
+  Proof.
+    rewrite -exp_conj.
+    by unfold cabs; apply cabs_conj.
+  Qed.
+
+  Lemma rpoly_eval_conj (p : {poly R}) (x : R[i]) :
+    let pc := map_poly RtoC p in 
+    conjc (horner_eval x pc) = horner_eval (conjc x) pc.
+  Proof.
+    simpl.
+    generalize (horner_eval_is_lrmorphism x); intros.
+    generalize (horner_eval_is_lrmorphism (conjc x)); intros.    
+    destruct H.
+    destruct H0.
+    
+    Admitted.
+
+  Lemma cabs_conj_poly (p : {poly R}) (x : R[i]) :
+    let pc := map_poly RtoC p in 
+    cabs (horner_eval x pc) = cabs (horner_eval (conjc x) pc).
+  Proof.
+    simpl.
+    rewrite -rpoly_eval_conj.
+    unfold cabs; apply cabs_conj.
+  Qed.
+
 End norms.
