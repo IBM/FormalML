@@ -1979,23 +1979,49 @@ Section norms.
     by unfold cabs; apply cabs_conj.
   Qed.
 
+  Lemma RtoC1 : RtoC 1 = 1.
+  Proof.
+    by [].
+  Qed.
+
+  Lemma R00 : R0 = 0.
+  Proof.
+    by [].
+  Qed.
+  
+  Lemma RtoC0E x : (RtoC x == 0) = (x == 0).
+  Proof.
+    by rewrite /RtoC !eqE /= !eqE /= R00 /= eqxx !andbT.
+  Qed.
+
+
+  Lemma conjc_RtoC a : ((RtoC a)^* )%C = RtoC a.
+  Proof.
+    by rewrite /RtoC /= oppr0.
+  Qed.    
+  
   Lemma rpoly_eval_conj (p : {poly R}) (x : R[i]) :
     let pc := map_poly RtoC p in 
-    conjc (horner_eval x pc) = horner_eval (conjc x) pc.
+    conjc (pc.[x]) = pc.[conjc x].
   Proof.
-    simpl.
-    generalize (horner_eval_is_lrmorphism x); intros.
-    generalize (horner_eval_is_lrmorphism (conjc x)); intros.    
-    destruct H.
-    destruct H0.
-    
-    Admitted.
+    case: p => l llast.
+    rewrite /horner /= !map_polyE /=.
+    have llast2: seq.last (RtoC 1) (seq.map RtoC l) != 0
+      by rewrite seq.last_map RtoC0E.
+    rewrite RtoC1 in llast2.
+    rewrite !(PolyK llast2) => {llast llast2}.
+    elim: l => /=.
+    - by rewrite oppr0.
+    - move=> a l <-.
+      by rewrite -add_conj -mul_conj conjc_RtoC.
+  Qed.
 
   Lemma cabs_conj_poly (p : {poly R}) (x : R[i]) :
     let pc := map_poly RtoC p in 
     cabs (horner_eval x pc) = cabs (horner_eval (conjc x) pc).
   Proof.
     simpl.
+    rewrite !horner_evalE.
     rewrite -rpoly_eval_conj.
     unfold cabs; apply cabs_conj.
   Qed.
