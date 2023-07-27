@@ -1727,26 +1727,20 @@ Lemma odd_roots_uniq' n :
     odd_nth_roots n 0 i = odd_nth_roots n 0 j ->
     i = j.
 Proof.
-  unfold odd_nth_roots.
-  intros.
-  rewrite !mxE in H.
-  destruct (pow2_S (S n)).
-  rewrite (eqP i0) in H.
-  apply nth_root_eq in H.
-  rewrite -(eqP i0) in H.
-  destruct i.
-  destruct j.
-  rewrite !Nat.mod_small in H.
-  - simpl in H.
-    assert (m = m0) by lia.
-    subst.
-    f_equal.
-    apply Classical_Prop.proof_irrelevance.
-  - simpl.
-    rewrite expnS.
+  rewrite /odd_nth_roots => i j.
+  rewrite !mxE.
+  destruct (pow2_S (S n)) as [? eqq1].
+  rewrite (eqP eqq1) => /nth_root_eq.
+  rewrite -(eqP eqq1).
+  rewrite !Nat.mod_small /=.
+  - move/addIn => eqq2.
+    apply/ord_inj.
     lia.
-  - simpl.
-    rewrite expnS.
+  - rewrite expnS.
+    destruct i; destruct j; simpl in *.
+    lia.
+  - rewrite expnS.
+    destruct i; destruct j; simpl in *.
     lia.
 Qed.
 
@@ -1754,9 +1748,13 @@ Lemma odd_roots_uniq n :
   let rs := MatrixFormula.seq_of_rV (odd_nth_roots n) in
   uniq_roots (MatrixFormula.seq_of_rV (odd_nth_roots n)).
 Proof.
-  rewrite uniq_rootsE /=.
-  
-Admitted.
+  rewrite uniq_rootsE /= /odd_nth_roots.
+  rewrite /MatrixFormula.seq_of_rV.
+  apply /tuple.tuple_uniqP => i j.
+  rewrite !finfun.tnth_fgraph !finfun.ffunE => eqq1.
+  apply odd_roots_uniq' in eqq1.
+  by apply enum_val_inj.
+Qed.
 
 Lemma odd_nth_roots_minpoly_mult n (p : {poly R[i]}) :
   (forall i, root p (odd_nth_roots n 0 i)) ->
