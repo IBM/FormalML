@@ -1837,8 +1837,7 @@ Proof.
   generalize (Pdiv.RingMonic.rdivp_eq qmon p); intros.
   assert (qcmon: (map_poly RtoC q) \is monic).
   {
-    generalize (map_monic RtoC_rmorphism q); intros.
-    admit.
+    by rewrite (map_monic RtoC_rmorphism q).
   }
   generalize (Pdiv.RingMonic.rdivp_eq qcmon (map_poly RtoC p)); intros rdivp.
   generalize (Pdiv.RingMonic.redivp_eq qcmon (map_poly RtoC p)); intros redivp.
@@ -1938,11 +1937,13 @@ Proof.
 
 Section norms.
 
-  Definition cabs (x : R[i]):R := ComplexField.Normc.normc x.
+  Implicit Types x y : R[i].
 
-  Definition norm1 {n} (v : 'rV[R[i]]_n):R := \sum_(j < n) cabs (v 0 j).
+  Notation normc := ComplexField.Normc.normc.
 
-  Definition norm_inf {n} (v : 'rV[R[i]]_n):R := \big[Order.max/0]_(j < n) cabs (v 0 j).
+  Definition norm1 {n} (v : 'rV[R[i]]_n):R := \sum_(j < n) normc (v 0 j).
+
+  Definition norm_inf {n} (v : 'rV[R[i]]_n):R := \big[Order.max/0]_(j < n) normc (v 0 j).
 
   Definition coef_norm1 (p : {poly R}):R := \sum_(j < seq.size p) Rabs (p`_ j).
 
@@ -1972,35 +1973,34 @@ Section norms.
     canon_norm_inf n p = 0 -> p = 0.
 *)
 
-  Lemma cabs_conj (x : R[i]) :
+
+  Lemma normc_conj (x : R[i]) :
     ComplexField.Normc.normc x = ComplexField.Normc.normc (conjc x).
   Proof.
+    generalize normcJ.
     destruct x.
     simpl.
     do 2 f_equal.
     by rewrite sqrrN.
   Qed.
 
-  Lemma cabs_conj_mul (x y : R[i]) :
-    cabs (x * y) = cabs (x * (conjc y)).
+  Lemma normc_conj_mul (x y : R[i]) :
+    normc (x * y) = normc (x * (conjc y)).
   Proof.
-    unfold cabs; simpl.
     do 2 rewrite ComplexField.Normc.normcM.
-    by rewrite (cabs_conj y).
+    by rewrite (normc_conj y).
   Qed.
     
-  Lemma cabs_conj_add (r : R) (x y : R[i]) :
-    cabs (x + y) = cabs (conjc x + conjc y).
+  Lemma normc_conj_add (r : R) (x y : R[i]) :
+    normc (x + y) = normc (conjc x + conjc y).
   Proof.
-    rewrite add_conj.
-    by unfold cabs; apply cabs_conj.
+    by rewrite add_conj normc_conj.
   Qed.
 
-  Lemma cabs_conj_exp (x : R[i]) n :
-    cabs (x ^+ n) = cabs ((conjc x) ^+ n).
+  Lemma normc_conj_exp (x : R[i]) n :
+    normc (x ^+ n) = normc ((conjc x) ^+ n).
   Proof.
-    rewrite -exp_conj.
-    by unfold cabs; apply cabs_conj.
+    by rewrite -exp_conj normc_conj.
   Qed.
 
   Lemma RtoC1 : RtoC 1 = 1.
@@ -2013,12 +2013,20 @@ Section norms.
     by [].
   Qed.
   
-  Lemma RtoC0E x : (RtoC x == 0) = (x == 0).
+  Lemma RtoC0E (c:R) : (RtoC c == 0) = (c == 0).
   Proof.
-    by rewrite /RtoC !eqE /= !eqE /= R00 /= eqxx !andbT.
+    by rewrite /RtoC !eqE /= !eqE /= R00 eqxx !andbT.
   Qed.
 
+  Lemma RtoC_real a : RtoC a \is ssrnum.Num.real.
+  Proof.
+    by rewrite complex_real.
+  Qed.
 
+(*  Lemma conjc_id (a:R[i]) :  (a^* = a)%C <-> (a \is ssrnum.Num.real).
+  Proof.
+  Admitted.
+*)
   Lemma conjc_RtoC a : ((RtoC a)^* )%C = RtoC a.
   Proof.
     by rewrite /RtoC /= oppr0.
@@ -2030,24 +2038,23 @@ Section norms.
   Proof.
     case: p => l llast.
     rewrite /horner /= !map_polyE /=.
-    have llast2: seq.last (RtoC 1) (seq.map RtoC l) != 0
+    have/PolyK->: seq.last (RtoC 1) (seq.map RtoC l) != 0
       by rewrite seq.last_map RtoC0E.
-    rewrite RtoC1 in llast2.
-    rewrite !(PolyK llast2) => {llast llast2}.
+    move => {llast}.
     elim: l => /=.
     - by rewrite oppr0.
     - move=> a l <-.
       by rewrite -add_conj -mul_conj conjc_RtoC.
   Qed.
 
-  Lemma cabs_conj_poly (p : {poly R}) (x : R[i]) :
+  Lemma normc_conj_poly (p : {poly R}) (x : R[i]) :
     let pc := map_poly RtoC p in 
-    cabs (horner_eval x pc) = cabs (horner_eval (conjc x) pc).
+    normc (horner_eval x pc) = normc (horner_eval (conjc x) pc).
   Proof.
     simpl.
     rewrite !horner_evalE.
     rewrite -rpoly_eval_conj.
-    unfold cabs; apply cabs_conj.
+    unfold normc; apply normc_conj.
   Qed.
 
 End norms.
