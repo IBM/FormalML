@@ -1621,12 +1621,11 @@ Lemma monic_size_pos [S : ringType] (p : {poly S}) :
   p \is monic ->
   seq.size p > 0.
 Proof.
-  intros.
-  rewrite monicE in H.
-  generalize (size_poly0 S); intros.
-  generalize (lead_coef0 S); intros.
-
-Admitted.
+  case: ltP => // n0lt.
+  have: seq.size p == 0%nat by lia.
+  rewrite size_poly_eq0 => eqq1 /monic_neq0.
+  by rewrite eqq1.
+Qed.
 
 Lemma monic_drop_n_1 [S : ringType] n (p : {poly S}) :
   p \is monic ->
