@@ -1960,10 +1960,13 @@ Section norms.
     Admitted.
 
   Lemma canon_norm_inf_nneg n (p : {poly R}) :
-    Order.le R0 (canon_norm_inf n p).
+    Order.le (@zero R_ringType) (canon_norm_inf n p).
   Proof.
-    Admitted.
-  
+    rewrite /canon_norm_inf /norm_inf.
+    apply big_rec => //= i x _ xn.
+    by rewrite Order.TotalTheory.le_maxr xn orbT.
+  Qed.    
+
   Lemma canon_norm_inf_triang n (p q : {poly R}) :
     Order.le (canon_norm_inf n (p + q)) (canon_norm_inf n p + canon_norm_inf n q).
   Proof.
@@ -2013,7 +2016,7 @@ Section norms.
   Proof.
     by [].
   Qed.
-  
+
   Lemma RtoC0E (c:R) : (RtoC c == 0) = (c == 0).
   Proof.
     by rewrite /RtoC !eqE /= !eqE /= R00 eqxx !andbT.
