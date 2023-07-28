@@ -26,6 +26,13 @@ Proof.
   easy.
 Qed.
 
+Lemma poly_size_eq0 {R:ringType} (p:{poly R}) :
+  seq.size p == 0%nat = (p == 0).
+Proof.
+  rewrite -size_poly_leq0.
+  lia.
+Qed.
+
 Definition peval_mat {n} (roots : 'rV[R[i]]_n) : 'M[R[i]]_(n,n) :=
   \matrix_(i < n, j < n) (exp (roots 0 i) j).
 
@@ -2239,7 +2246,7 @@ Section norms.
   Proof.
     by rewrite /RtoC /= oppr0.
   Qed.    
-  
+    
   Lemma rpoly_eval_conj (p : {poly R}) (x : R[i]) :
     let pc := map_poly RtoC p in 
     conjc (pc.[x]) = pc.[conjc x].
@@ -2264,3 +2271,4 @@ Section norms.
   Qed.
 
 End norms.
+
