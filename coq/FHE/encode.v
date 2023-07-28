@@ -1404,12 +1404,12 @@ Section eval_vectors.
   Context {n} (vals : 'rV[R[i]]_(n.+1)).
 
   Definition mx_eval (p : {poly R}) : MR_comRingType 0 n :=
-    (map_mx (fun x => horner_eval x (map_poly RtoC p)) vals).
+    (map_mx (fun x => (map_poly RtoC p).[x]) vals).
 
   Lemma mx_evalC c : mx_eval c%:P = const_mx (RtoC c).
   Proof.
     apply matrixP=> a b.
-    rewrite !mxE horner_evalE.
+    rewrite !mxE.
     by rewrite (map_polyC RtoC_rmorphism) /= hornerC.
   Qed.
   
@@ -1928,7 +1928,6 @@ Proof.
     simpl in H.
     rewrite !mxE in H.
     rewrite !mxE.
-    unfold horner_eval in H.
     replace  (2 * Ordinal (n:=2 ^ n) (m:=m) i + 1)%N with
       (2 * Ordinal (n:=(2 ^ n - 1).+1) (m:=m) H0 + 1)%N.
     + by rewrite H.
@@ -1948,7 +1947,6 @@ Proof.
     unfold root in H0.
     move=> /eqP in H0.
     simpl in H0.
-    unfold horner_eval.
     unfold odd_nth_roots in H0.
     rewrite mxE in H0.
     apply H0.
@@ -2159,7 +2157,7 @@ Section norms.
   Lemma mx_evalZ {n} (v : 'rV[R[i]]_n.+1) (r:R) p : mx_eval v (r *: p) = (RtoC r) *: (mx_eval v p).
   Proof.
     apply matrixP => a b.
-    rewrite !mxE !horner_evalE /scale /= scale_polyE.
+    rewrite !mxE /scale /= scale_polyE.
     rewrite rmorphismMP /=.
     rewrite (map_polyC RtoC_rmorphism) /=.
     rewrite -hornerZ /=.
