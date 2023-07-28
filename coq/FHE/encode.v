@@ -2015,6 +2015,13 @@ Section norms.
     by rewrite Order.TotalTheory.le_maxr xn orbT.
   Qed.
 
+  Lemma normc_triang (x y : R[i]) :
+    Order.le (normc (x + y)) (normc x + normc y).
+  Proof.
+    generalize (ComplexField.lec_normD x y); intros.    
+    rewrite /ComplexField.lec /= addr0 in H.
+    Admitted.  
+
   Lemma norm_inf_triang {n} (v1 v2 : 'rV[R[i]]_n) :
     Order.le (norm_inf (v1 + v2)) (norm_inf v1 + norm_inf v2).
   Proof.
@@ -2023,7 +2030,7 @@ Section norms.
     - admit.
     - intros i x _ xn.
       rewrite Order.TotalTheory.le_maxl.
-      generalize (ComplexField.lec_normD (v1 0 i) (v2 0 i)); intros.
+      generalize (normc_triang (v1 0 i) (v2 0 i)); intros.
       rewrite mxE.
     Admitted.
 
