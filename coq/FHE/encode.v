@@ -2024,10 +2024,59 @@ Section norms.
     by destruct H.
   Qed.
 
-  Lemma bigmaxr_le {n} (v : 'rV[R[i]]_n) f i:
-    Rleb (f (v 0 i)) (\big[Order.max/0]_(j < n) f (v 0 j)).
+  Lemma bigmaxr_le_init {n} (v : 'rV[R[i]]_n) init (f:R[i]->R):
+    Order.le init (\big[Order.max/init]_(j < n) f (v 0 j)).
   Proof.
-  Admitted.
+    rewrite BigOp.bigopE.
+    unlock reducebig.
+    elim: (index_enum _) => /=.
+    - by exact: Order.POrderTheory.lexx.
+    - move=> a l.
+      rewrite Order.TotalTheory.le_maxr => ->.
+      by rewrite orbT.
+  Qed.
+
+  Lemma omax_l {disp : Datatypes.unit} {T : porderType disp} (x y:T) :  Order.le x (Order.max x y).
+  Proof.
+    rewrite Order.POrderTheory.maxEle.
+    by case_eq (Order.le x y).
+  Qed.
+
+  Lemma omax_r {disp : Datatypes.unit} {T : orderType disp} (x y:T) :  Order.le y (Order.max x y).
+  Proof.
+    rewrite Order.POrderTheory.maxElt.
+    case_eq (Order.lt x y) => //.
+    rewrite (Order.TotalTheory.leNgt y x).
+    by move/negbT.
+  Qed.
+
+  Lemma omax_l_real (x y:R) :  Rleb x (Order.max x y).
+  Proof.
+    by exact: (omax_l x y).
+  Qed.
+
+  Lemma omax_r_real (x y:R) :  Rleb y (Order.max x y).
+  Proof.
+    by exact: (omax_r x y).
+  Qed.
+
+  Lemma bigmaxr_le {n} (v : 'rV[R[i]]_n) init f i:
+    Rleb (f (v 0 i)) (\big[Order.max/init]_(j < n) f (v 0 j)).
+  Proof.
+    rewrite BigOp.bigopE.
+    unlock reducebig.
+    move: (mem_index_enum i).
+    elim: (index_enum _) => /= [| a l IHl].
+    - by rewrite seq.in_nil.
+    - rewrite seq.in_cons => /orP [/eqP->| ].
+      + by exact: omax_l_real.
+      + move=> inn.
+        move: (IHl inn) => /RlebP=>le1.
+        apply/RlebP.
+        eapply Rle_trans; try apply le1.
+        apply/RlebP.
+        apply omax_r_real.
+  Qed.
   
   Lemma bigmax_normc_nneg {n} (v : 'rV[R[i]]_n):
     Rleb 0 (\big[Order.max/0]_(j < n) normc (v 0 j)).
@@ -2075,7 +2124,7 @@ Section norms.
     rewrite /norm_inf => HH.
     apply /matrixP => a b.
     move: (ord1 a)->.
-    move: (bigmaxr_le v (@normc _) b).
+    move: (bigmaxr_le v 0 (@normc _) b).
     rewrite {}HH.
     move/RlebP => HH.
     rewrite [v 0 b]ComplexField.eq0_normC ?mxE//.
