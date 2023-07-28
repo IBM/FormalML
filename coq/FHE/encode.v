@@ -60,6 +60,8 @@ Definition ConstVector n (c : R[i]) : 'rV[R[i]]_n:= const_mx c.
 
 Definition RtoC (x : R):R[i] := Complex x R0.
 
+(* Coercion RtoC : R >-> complex. *)
+
 Lemma vector_sum_const {n} (c : R[i]) :
   vector_sum (ConstVector n c) = mul (n%:R) c.
 Proof.
@@ -1218,6 +1220,7 @@ Proof.
     + rewrite -horner_evalE mixin mixin0 //.
 Qed.
 
+Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
 
 End rmorphism.
 
@@ -1940,6 +1943,8 @@ Proof.
 
 Section norms.
 
+  Import matrix_ring.
+  
   Implicit Types x y : R[i].
 
   Notation normc := ComplexField.Normc.normc.
@@ -1963,22 +1968,52 @@ Section norms.
   Lemma normc_nneg (x : R[i]) :
     Order.le R0 (normc x).
   Proof.
-    unfold normc.
-    destruct x.
-    rewrite R00.
-  Admitted.
+    rewrite /normc.
+    case: x => r i.
+    apply ssrnum.Num.Theory.sqrtr_ge0.
+  Qed.
 
-  Lemma norm_inf_scale {n} (c : R[i]) (v : 'rV[R[i]]_n) :
+  Lemma normc_nnegR (x : R[i]) :
+    Rle R0 (normc x).
+  Proof.
+    move: (normc_nneg x).
+    rewrite /Order.le /=.
+    by move/RlebP.
+  Qed.
+
+  Lemma maxrM (c a b : R) : Rle 0 c -> Order.max (c * a) (c * b)  = c * Order.max a b.
+  Proof.
+    rewrite /Order.max /Order.lt /=.
+    (repeat case: RltbP); try lra; intros.
+    - destruct H.
+      + apply Rmult_lt_reg_l in p => //.
+      + subst.
+        by rewrite !mul0r.
+    - destruct H.
+      + elim n.
+        by apply Rmult_lt_compat_l.
+      + subst.
+        by rewrite !mul0r.
+  Qed.
+
+  Lemma norm_infZ {n} (c : R[i]) (v : 'rV[R[i]]_n) :
     norm_inf (c *: v) = (normc c) * norm_inf v.
   Proof.
-    unfold norm_inf.
-    Admitted.
+    rewrite /norm_inf.
+    apply (big_rec2 (fun a b => a = normc c * b)).
+    - by rewrite mulr0.
+    - move=> i a b _ ->.
+      rewrite mxE ComplexField.Normc.normcM maxrM //.
+      apply normc_nnegR.
+  Qed.
 
   Lemma norm_inf_nneg {n} (v : 'rV[R[i]]_n) :
-    Order.le R0 (norm_inf v).
+    Order.le (@zero R_ringType) (norm_inf v).
   Proof.
-    unfold norm_inf.
-   Admitted.
+    rewrite /norm_inf.
+    apply big_rec => //= i x _ xn.
+    by rewrite Order.TotalTheory.le_maxr xn orbT.
+  Qed.
 
   Lemma norm_inf_triang {n} (v1 v2 : 'rV[R[i]]_n) :
     Order.le (norm_inf (v1 + v2)) (norm_inf v1 + norm_inf v2).
@@ -1997,33 +2032,29 @@ Section norms.
     by rewrite ssrnum.Num.Theory.sqrtr_sqr.
   Qed.
 
+
+  Lemma mx_evalZ {n} (v : 'rV[R[i]]_n.+1) (r:R) p : mx_eval v (r *: p) = (RtoC r) *: (mx_eval v p).
+  Proof.
+    apply matrixP => a b.
+    rewrite !mxE !horner_evalE /scale /= scale_polyE.
+    rewrite rmorphismMP /=.
+    rewrite (map_polyC RtoC_rmorphism) /=.
+    rewrite -hornerZ /=.
+    by rewrite /scale /= scale_polyE.
+  Qed.
+
   (* following 4 lemmas show canon_norm_inf is a norm on quotient by x^+(2^n) + 1 *)
-  Lemma canon_norm_inf_scale n (r : R) (p : {poly R}) :
+  Lemma canon_norm_infZ n (r : R) (p : {poly R}) :
     canon_norm_inf n (r *: p) = Rabs r * canon_norm_inf n p.
   Proof.
-    assert  (mx_eval (odd_nth_roots' n) (r *: p) = (RtoC r) *: (mx_eval (odd_nth_roots' n) p)).
-    {
-      unfold mx_eval.
-      apply matrixP.
-      intros ??.
-      rewrite !mxE.
-      destruct (horner_eval_is_lrmorphism  (nth_root (2 * y + 1) (2 ^ n.+1))) as [[??] ?].
-      specialize (mixin0 (RtoC r)); simpl in mixin0.
-      rewrite -mixin0.
-      f_equal.
-      rewrite !map_polyE.
-      admit.
-    }
-    by rewrite /canon_norm_inf H norm_inf_scale normc_Rabs.
-    Admitted.
+    by rewrite /canon_norm_inf !mx_evalZ norm_infZ normc_Rabs.
+  Qed.
 
   Lemma canon_norm_inf_nneg n (p : {poly R}) :
     Order.le (@zero R_ringType) (canon_norm_inf n p).
   Proof.
-    rewrite /canon_norm_inf /norm_inf.
-    apply big_rec => //= i x _ xn.
-    by rewrite Order.TotalTheory.le_maxr xn orbT.
-  Qed.    
+    apply norm_inf_nneg.
+  Qed.
 
   Lemma canon_norm_inf_triang n (p q : {poly R}) :
     Order.le (canon_norm_inf n (p + q)) (canon_norm_inf n p + canon_norm_inf n q).
@@ -2039,7 +2070,6 @@ Section norms.
   Lemma canon_norm_inf_pos_def n p :
     canon_norm_inf n p = 0 -> p = 0.
 *)
-
 
   Lemma normc_conj (x : R[i]) :
     ComplexField.Normc.normc x = ComplexField.Normc.normc (conjc x).
