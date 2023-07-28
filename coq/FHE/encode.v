@@ -2020,25 +2020,36 @@ Section norms.
   Proof.
     generalize (ComplexField.lec_normD x y); intros.    
     rewrite /ComplexField.lec /= addr0 in H.
-    Admitted.  
+    move => /andP in H.
+    by destruct H.
+  Qed.
+
+  Lemma bigmaxr_le {n} (v : 'rV[R[i]]_n) f i:
+    Rleb (f (v 0 i)) (\big[Order.max/0]_(j < n) f (v 0 j)).
+  Proof.
+  Admitted.
 
   Lemma norm_inf_triang {n} (v1 v2 : 'rV[R[i]]_n) :
     (norm_inf (v1 + v2) <= norm_inf v1 + norm_inf v2)%O.
   Proof.
     rewrite /norm_inf.
     apply big_rec.
-    - admit.
+    - unfold Order.le; simpl.
+      apply /RlebP.
+      erewrite <- addr0 at 1.
+      apply Rplus_le_compat; admit.
     - intros i x _ xn.
       rewrite Order.TotalTheory.le_maxl.
       generalize (normc_triang (v1 0 i) (v2 0 i)); intros.
       rewrite mxE.
       apply /andP; split; trivial.
+      unfold Order.le in *; simpl in *.
+      apply /RlebP.
+      move => /RlebP in H.
+      eapply Rle_trans.
+      apply H.
+      apply Rplus_le_compat; apply /RlebP; apply bigmaxr_le.
     Admitted.
-
-  Lemma bigmaxr_le {n} (v : 'rV[R[i]]_n) f i:
-    Rleb (f (v 0 i)) (\big[Order.max/0]_(j < n) f (v 0 j)).
-  Proof.
-  Admitted.
 
   Lemma norm_inf_pos_def {n} (v : 'rV[R[i]]_n) :
     norm_inf v = 0 -> v = 0.
