@@ -2024,6 +2024,7 @@ Section norms.
     - intros i x _ xn.
       rewrite Order.TotalTheory.le_maxl.
       generalize (ComplexField.lec_normD (v1 0 i) (v2 0 i)); intros.
+      rewrite mxE.
     Admitted.
 
   Lemma bigmaxr_le {n} (v : 'rV[R[i]]_n) f i:
