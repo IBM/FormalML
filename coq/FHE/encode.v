@@ -2032,6 +2032,7 @@ Section norms.
       rewrite Order.TotalTheory.le_maxl.
       generalize (normc_triang (v1 0 i) (v2 0 i)); intros.
       rewrite mxE.
+      apply /andP; split; trivial.
     Admitted.
 
   Lemma bigmaxr_le {n} (v : 'rV[R[i]]_n) f i:
