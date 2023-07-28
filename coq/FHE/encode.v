@@ -2032,7 +2032,20 @@ Section norms.
   Lemma bigmax_normc_nneg {n} (v : 'rV[R[i]]_n):
     Rleb 0 (\big[Order.max/0]_(j < n) normc (v 0 j)).
   Proof.
-    Admitted.
+    apply big_rec.
+    - apply /RlebP.
+      unfold zero; simpl.
+      lra.
+    - intros.
+      assert  ((zero R_ringType) <= Order.max (normc (R:=R_rcfType) (v 0 i)) x)%O.
+      {
+        rewrite Order.TotalTheory.le_maxr.      
+        apply /orP.
+        left.
+        apply normc_nneg.
+      }
+      by rewrite /Order.le /= in H1.
+   Qed.
 
   Lemma norm_inf_triang {n} (v1 v2 : 'rV[R[i]]_n) :
     (norm_inf (v1 + v2) <= norm_inf v1 + norm_inf v2)%O.
