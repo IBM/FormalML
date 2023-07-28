@@ -1966,7 +1966,7 @@ Section norms.
   Qed.
 
   Lemma normc_nneg (x : R[i]) :
-    Order.le R0 (normc x).
+    (R0  <= normc x)%O.
   Proof.
     rewrite /normc.
     case: x => r i.
@@ -2008,7 +2008,7 @@ Section norms.
   Qed.
 
   Lemma norm_inf_nneg {n} (v : 'rV[R[i]]_n) :
-    Order.le (@zero R_ringType) (norm_inf v).
+    (@zero R_ringType <= norm_inf v)%O.
   Proof.
     rewrite /norm_inf.
     apply big_rec => //= i x _ xn.
@@ -2016,14 +2016,14 @@ Section norms.
   Qed.
 
   Lemma normc_triang (x y : R[i]) :
-    Order.le (normc (x + y)) (normc x + normc y).
+    (normc (x + y) <= normc x + normc y)%O.
   Proof.
     generalize (ComplexField.lec_normD x y); intros.    
     rewrite /ComplexField.lec /= addr0 in H.
     Admitted.  
 
   Lemma norm_inf_triang {n} (v1 v2 : 'rV[R[i]]_n) :
-    Order.le (norm_inf (v1 + v2)) (norm_inf v1 + norm_inf v2).
+    (norm_inf (v1 + v2) <= norm_inf v1 + norm_inf v2)%O.
   Proof.
     rewrite /norm_inf.
     apply big_rec.
@@ -2081,13 +2081,13 @@ Section norms.
   Qed.
 
   Lemma canon_norm_inf_nneg n (p : {poly R}) :
-    Order.le (@zero R_ringType) (canon_norm_inf n p).
+    (@zero R_ringType <= canon_norm_inf n p)%O.
   Proof.
     apply norm_inf_nneg.
   Qed.
 
   Lemma canon_norm_inf_triang n (p q : {poly R}) :
-    Order.le (canon_norm_inf n (p + q)) (canon_norm_inf n p + canon_norm_inf n q).
+    (canon_norm_inf n (p + q) <= canon_norm_inf n p + canon_norm_inf n q)%O.
   Proof.
     unfold canon_norm_inf.
     generalize (raddfD (mx_eval_rmorphism (odd_nth_roots' n))); intros.
