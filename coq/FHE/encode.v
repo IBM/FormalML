@@ -1843,6 +1843,8 @@ Proof.
   generalize (Pdiv.RingMonic.rdivp_eq qcmon (map_poly RtoC p)); intros rdivp.
   generalize (Pdiv.RingMonic.redivp_eq qcmon (map_poly RtoC p)); intros redivp.
 
+  generalize (Pdiv.Ring.comm_redivpP); intros.
+
   split; intros.
 Admitted.
 
@@ -1953,10 +1955,66 @@ Section norms.
   Definition canon_norm1 n (p : {poly R}):R := norm1 (mx_eval (odd_nth_roots' n) p).
   Definition canon_norm_inf n (p : {poly R}):R := norm_inf (mx_eval (odd_nth_roots' n) p).
 
+  Lemma R00 : R0 = 0.
+  Proof.
+    by [].
+  Qed.
+
+  Lemma normc_nneg (x : R[i]) :
+    Order.le R0 (normc x).
+  Proof.
+    unfold normc.
+    destruct x.
+    rewrite R00.
+  Admitted.
+
+  Lemma norm_inf_scale {n} (c : R[i]) (v : 'rV[R[i]]_n) :
+    norm_inf (c *: v) = (normc c) * norm_inf v.
+  Proof.
+    unfold norm_inf.
+    Admitted.
+
+  Lemma norm_inf_nneg {n} (v : 'rV[R[i]]_n) :
+    Order.le R0 (norm_inf v).
+  Proof.
+    unfold norm_inf.
+   Admitted.
+
+  Lemma norm_inf_triang {n} (v1 v2 : 'rV[R[i]]_n) :
+    Order.le (norm_inf (v1 + v2)) (norm_inf v1 + norm_inf v2).
+  Proof.
+    Admitted.
+
+  Lemma norm_inf_pos_def {n} (v : 'rV[R[i]]_n) :
+    norm_inf v = 0 -> v = 0.
+  Proof.
+    Admitted.
+
+  Lemma normc_Rabs (r : R) :
+    normc (RtoC r) = Rabs r.
+  Proof.
+    rewrite /normc /RtoC R00 (expr2 0) mulr0 addr0.
+    by rewrite ssrnum.Num.Theory.sqrtr_sqr.
+  Qed.
+
   (* following 4 lemmas show canon_norm_inf is a norm on quotient by x^+(2^n) + 1 *)
   Lemma canon_norm_inf_scale n (r : R) (p : {poly R}) :
     canon_norm_inf n (r *: p) = Rabs r * canon_norm_inf n p.
   Proof.
+    assert  (mx_eval (odd_nth_roots' n) (r *: p) = (RtoC r) *: (mx_eval (odd_nth_roots' n) p)).
+    {
+      unfold mx_eval.
+      apply matrixP.
+      intros ??.
+      rewrite !mxE.
+      destruct (horner_eval_is_lrmorphism  (nth_root (2 * y + 1) (2 ^ n.+1))) as [[??] ?].
+      specialize (mixin0 (RtoC r)); simpl in mixin0.
+      rewrite -mixin0.
+      f_equal.
+      rewrite !map_polyE.
+      admit.
+    }
+    by rewrite /canon_norm_inf H norm_inf_scale normc_Rabs.
     Admitted.
 
   Lemma canon_norm_inf_nneg n (p : {poly R}) :
@@ -1970,7 +2028,12 @@ Section norms.
   Lemma canon_norm_inf_triang n (p q : {poly R}) :
     Order.le (canon_norm_inf n (p + q)) (canon_norm_inf n p + canon_norm_inf n q).
   Proof.
-    Admitted.
+    unfold canon_norm_inf.
+    generalize (raddfD (mx_eval_rmorphism (odd_nth_roots' n))); intros.
+    specialize (H p q); simpl in H.
+    rewrite H.
+    apply norm_inf_triang.
+  Qed.
       
 (* following only holds on quotient ring by x^+(2^n) + 1 
   Lemma canon_norm_inf_pos_def n p :
@@ -2008,11 +2071,6 @@ Section norms.
   Qed.
 
   Lemma RtoC1 : RtoC 1 = 1.
-  Proof.
-    by [].
-  Qed.
-
-  Lemma R00 : R0 = 0.
   Proof.
     by [].
   Qed.
