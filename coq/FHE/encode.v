@@ -2020,10 +2020,27 @@ Section norms.
   Proof.
     Admitted.
 
+  Lemma bigmaxr_le {n} (v : 'rV[R[i]]_n) f i:
+    Rleb (f (v 0 i)) (\big[Order.max/0]_(j < n) f (v 0 j)).
+  Proof.
+  Admitted.
+
   Lemma norm_inf_pos_def {n} (v : 'rV[R[i]]_n) :
     norm_inf v = 0 -> v = 0.
   Proof.
-    Admitted.
+    rewrite /norm_inf => HH.
+    apply /matrixP => a b.
+    move: (ord1 a)->.
+    move: (bigmaxr_le v (@normc _) b).
+    rewrite {}HH.
+    move/RlebP => HH.
+    rewrite [v 0 b]ComplexField.eq0_normC ?mxE//.
+    move: (normc_nnegR (v 0 b)) => HH2.
+    rewrite R00 in HH2.
+    rewrite /zero /=.
+    f_equal.
+    now apply Rle_antisym.
+  Qed.
 
   Lemma normc_Rabs (r : R) :
     normc (RtoC r) = Rabs r.
