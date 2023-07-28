@@ -1833,10 +1833,9 @@ Proof.
   by rewrite (lead_coef_map RtoC_rmorphism p). 
 Qed.
 
-Lemma rmodp_RtoC_hom (p q : {poly R}) :
-  Pdiv.Ring.rmodp (map_poly RtoC p) (map_poly RtoC q) = map_poly RtoC (Pdiv.Ring.rmodp p q).
+Lemma rmodp_RtoC_morph : {morph (map_poly RtoC) : p q / Pdiv.Ring.rmodp p q }.
 Proof.
-  rewrite /Pdiv.Ring.rmodp.
+  rewrite /Pdiv.Ring.rmodp => p q.
   by rewrite redivp_map.
 Qed.
 
@@ -1860,7 +1859,7 @@ Qed.
 Lemma rmodp_R (p q : {poly R}) :
   Pdiv.Ring.rmodp p q = 0 <-> Pdiv.Ring.rmodp (map_poly RtoC p) (map_poly RtoC q) = 0.
 Proof.
-  rewrite rmodp_RtoC_hom.
+  rewrite -rmodp_RtoC_morph.
   symmetry.
   apply map_poly_RtoC_eq0E.
 Qed.
