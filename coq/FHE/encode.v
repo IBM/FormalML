@@ -1463,7 +1463,7 @@ Section eval_vectors.
       + rewrite /in_mem //= /mx_eval_ker_pred /mx_eval /map_mx.
         apply/eqP/matrixP=>a b.
         rewrite !mxE.
-        unfold horner_eval, map_poly.
+        unfold map_poly.
         generalize (hornerC (RtoC 0) (vals a b)); intros.
         rewrite poly_size_0.
         rewrite (eq_poly (fun _ => 0)).
