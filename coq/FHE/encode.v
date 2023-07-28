@@ -1833,23 +1833,37 @@ Proof.
   by rewrite (lead_coef_map RtoC_rmorphism p). 
 Qed.
 
+Lemma rmodp_RtoC_hom (p q : {poly R}) :
+  Pdiv.Ring.rmodp (map_poly RtoC p) (map_poly RtoC q) = map_poly RtoC (Pdiv.Ring.rmodp p q).
+Proof.
+  rewrite /Pdiv.Ring.rmodp.
+  by rewrite redivp_map.
+Qed.
+
+Lemma RtoC_inj : injective RtoC.
+Proof.
+  rewrite /RtoC=>a b.
+  by move=> [].
+Qed.
+
+Lemma map_poly_RtoC_eq0E p : map_poly RtoC p = 0 <-> (p = 0).
+Proof.
+  split.
+  - rewrite -(map_poly0 RtoC).
+    move/map_inj_poly.
+    apply => //.
+    by apply RtoC_inj.
+  - move=> ->.
+    by rewrite map_poly0.
+Qed.    
+
 Lemma rmodp_R (p q : {poly R}) :
-  q \is monic -> 
   Pdiv.Ring.rmodp p q = 0 <-> Pdiv.Ring.rmodp (map_poly RtoC p) (map_poly RtoC q) = 0.
 Proof.
-  intros qmon.
-  generalize (Pdiv.RingMonic.rdivp_eq qmon p); intros.
-  assert (qcmon: (map_poly RtoC q) \is monic).
-  {
-    by rewrite (map_monic RtoC_rmorphism q).
-  }
-  generalize (Pdiv.RingMonic.rdivp_eq qcmon (map_poly RtoC p)); intros rdivp.
-  generalize (Pdiv.RingMonic.redivp_eq qcmon (map_poly RtoC p)); intros redivp.
-
-  generalize (Pdiv.Ring.comm_redivpP); intros.
-
-  split; intros.
-Admitted.
+  rewrite rmodp_RtoC_hom.
+  symmetry.
+  apply map_poly_RtoC_eq0E.
+Qed.
 
 Lemma map_poly_add_RtoC (p q : {poly R}) :
   map_poly RtoC (p + q) = (map_poly RtoC p) + (map_poly RtoC q).
@@ -1873,12 +1887,9 @@ Proof.
   intros.
   generalize (odd_nth_roots_minpoly_mult n (map_poly RtoC p) H); intros.
   rewrite rmodp_R.
-  - rewrite <- H0.
-    f_equal.
-    apply map_RtoC_Xnpoly.
-  - destruct (pow2_S n).
-    rewrite (eqP i).
-    apply Xn_add_c_monic.
+  rewrite <- H0.
+  f_equal.
+  apply map_RtoC_Xnpoly.
 Qed.
 
 Lemma minpoly_mult_odd_nth_roots_R n (p : {poly R}) :
@@ -1887,11 +1898,8 @@ Lemma minpoly_mult_odd_nth_roots_R n (p : {poly R}) :
 Proof.
   intros.
   rewrite rmodp_R in H.
-  - rewrite map_RtoC_Xnpoly in H.
-    by  generalize (minpoly_mult_odd_nth_roots n (map_poly RtoC p) H).
-  - destruct (pow2_S n).
-    rewrite (eqP i0).
-    apply Xn_add_c_monic.
+  rewrite map_RtoC_Xnpoly in H.
+  by  generalize (minpoly_mult_odd_nth_roots n (map_poly RtoC p) H).
 Qed.  
 
 Lemma odd_nth_roots_quot n (p : {poly R}) :
