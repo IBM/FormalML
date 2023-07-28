@@ -2018,6 +2018,12 @@ Section norms.
   Lemma norm_inf_triang {n} (v1 v2 : 'rV[R[i]]_n) :
     Order.le (norm_inf (v1 + v2)) (norm_inf v1 + norm_inf v2).
   Proof.
+    rewrite /norm_inf.
+    apply big_rec.
+    - admit.
+    - intros i x _ xn.
+      rewrite Order.TotalTheory.le_maxl.
+      generalize (ComplexField.lec_normD (v1 0 i) (v2 0 i)); intros.
     Admitted.
 
   Lemma bigmaxr_le {n} (v : 'rV[R[i]]_n) f i:
@@ -2048,7 +2054,6 @@ Section norms.
     rewrite /normc /RtoC R00 (expr2 0) mulr0 addr0.
     by rewrite ssrnum.Num.Theory.sqrtr_sqr.
   Qed.
-
 
   Lemma mx_evalZ {n} (v : 'rV[R[i]]_n.+1) (r:R) p : mx_eval v (r *: p) = (RtoC r) *: (mx_eval v p).
   Proof.
