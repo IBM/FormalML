@@ -2236,10 +2236,17 @@ Section norms.
     by rewrite complex_real.
   Qed.
 
-(*  Lemma conjc_id (a:R[i]) :  (a^* = a)%C <-> (a \is ssrnum.Num.real).
+  Lemma conjc_id (a:R[i]) :  (a^* = a)%C <-> (a \is ssrnum.Num.real).
   Proof.
-  Admitted.
-*)
+    split.
+    - move/Cconj_im_0 => eqq.
+      apply/ssrnum.Num.Theory.Creal_ImP.
+      by rewrite -complexIm /= eqq.
+    - rewrite /in_mem/mem /= /Order.le /=.
+      case: a => ra ia /= /orP-[/andP-[/eqP-> _]|/andP-[/eqP<- _]]
+                ; by rewrite oppr0.
+  Qed.      
+
   Lemma conjc_RtoC a : ((RtoC a)^* )%C = RtoC a.
   Proof.
     by rewrite /RtoC /= oppr0.
