@@ -2293,17 +2293,14 @@ Section unity.
     }
     destruct (@prim_order_exists _ (2^(n.+1)) z).
     - destruct (pow2_S (n.+1)).
-      move => /eqP in i.
+      move=> /eqP in i.
       by rewrite i.
     - by apply /unity_rootP.
     - assert (exists (k:nat), x = expn 2 k).
       {
-        move => /prime.dvdn_pfactor in i0.
-        assert (prime.prime 2).
-        {
-          by apply (@prime.pdiv_prime 2).
-        }
-        destruct (i0 H1).
+        move=> /prime.dvdn_pfactor in i0.
+        destruct i0.
+           by apply (@prime.pdiv_prime 2).
         by exists x0.
       }
       destruct H1.
