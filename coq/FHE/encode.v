@@ -2320,12 +2320,12 @@ Section unity.
             lia.
           }
           rewrite H2 exprM (prim_expr_order i) Theory.expr1n in zpowm1.
-          admit.
+          tauto.
         }
         lia.
       }
       by rewrite H1 in i.
-  Admitted.
+  Qed.
 
   End unity.
       
