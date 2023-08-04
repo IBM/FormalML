@@ -2282,14 +2282,15 @@ Section unity.
   Variable (z : T).
 
   Lemma two_pow_prim_root (n:N) :
+    (one T) <> -(one T) ->
     z ^+ (2^n) = -1 ->
     primitive_root_of_unity (2^(n.+1)) z.
   Proof.
-    intros.
+    intros onem1 zpowm1.
     assert (root_of_unity (2^(n.+1)) z).
     {
       apply /unity_rootP.
-      by rewrite expnSr exprM H expr2 mulrNN mulr1.
+      by rewrite expnSr exprM zpowm1 expr2 mulrNN mulr1.
     }
     destruct (@prim_order_exists _ (2^(n.+1)) z).
     - destruct (pow2_S (n.+1)).
@@ -2303,11 +2304,11 @@ Section unity.
            by apply (@prime.pdiv_prime 2).
         by exists x0.
       }
-      destruct H1.
-      rewrite H1 in i.
+      destruct H0.
+      rewrite H0 in i.
       assert (x0 = n.+1).
       {
-        rewrite H1 in i0.
+        rewrite H0 in i0.
         rewrite div.dvdn_Pexp2l in i0; try lia.
         assert (x0 < n.+1 -> false).
         {
@@ -2318,12 +2319,12 @@ Section unity.
             f_equal.
             lia.
           }
-          rewrite H3 exprM (prim_expr_order i) Theory.expr1n in H.
+          rewrite H2 exprM (prim_expr_order i) Theory.expr1n in zpowm1.
           admit.
         }
         lia.
       }
-      by rewrite H2 in i.
+      by rewrite H1 in i.
   Admitted.
 
   End unity.
