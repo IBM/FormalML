@@ -2322,5 +2322,22 @@ Section unity.
       by rewrite HH in i.
   Qed.
 
+  Lemma char_2_opp_eq :
+    (one T = - (one T)) <-> 2%N \in [char T].
+  Proof.
+    split;intros.
+    - apply (f_equal (fun (z : T) => 1 + z)) in H.
+      rewrite addrN in H.
+      unfold char.
+      unfold mem, in_mem; simpl.
+      rewrite -H.
+      by rewrite mulr2n.
+    - unfold mem, in_mem in H; simpl in H.
+      move=> /eqP in H.
+      apply (f_equal (fun (z : T) => z - 1)) in H.
+      rewrite add0r in H.
+      by rewrite mulr2n -addrA addrN addr0 in H.
+  Qed.
+
   End unity.
       
