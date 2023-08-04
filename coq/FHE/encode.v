@@ -2316,9 +2316,9 @@ Section unity.
           f_equal.
           lia.
         }
-          rewrite HH exprM (prim_expr_order i) Theory.expr1n in zpowm1.
-          tauto.
-        }
+        rewrite HH exprM (prim_expr_order i) Theory.expr1n in zpowm1.
+        tauto.
+      }
       by rewrite HH in i.
   Qed.
 
