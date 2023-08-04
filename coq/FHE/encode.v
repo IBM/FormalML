@@ -2277,3 +2277,57 @@ Section norms.
 
 End norms.
 
+Section unity.
+  Variable (T : comRingType).
+  Variable (z : T).
+
+  Lemma two_pow_prim_root (n:N) :
+    z ^+ (2^n) = -1 ->
+    primitive_root_of_unity (2^(n.+1)) z.
+  Proof.
+    intros.
+    assert (root_of_unity (2^(n.+1)) z).
+    {
+      apply /unity_rootP.
+      by rewrite expnSr exprM H expr2 mulrNN mulr1.
+    }
+    destruct (@prim_order_exists _ (2^(n.+1)) z).
+    - destruct (pow2_S (n.+1)).
+      move => /eqP in i.
+      by rewrite i.
+    - by apply /unity_rootP.
+    - assert (exists (k:nat), x = expn 2 k).
+      {
+        move => /prime.dvdn_pfactor in i0.
+        assert (prime.prime 2).
+        {
+          by apply (@prime.pdiv_prime 2).
+        }
+        destruct (i0 H1).
+        by exists x0.
+      }
+      destruct H1.
+      rewrite H1 in i.
+      assert (x0 = n.+1).
+      {
+        rewrite H1 in i0.
+        rewrite div.dvdn_Pexp2l in i0; try lia.
+        assert (x0 < n.+1 -> false).
+        {
+          intros.
+          assert (expn 2 n = muln (expn 2 x0) (expn 2 (n - x0))).
+          {
+            rewrite -expnD.
+            f_equal.
+            lia.
+          }
+          rewrite H3 exprM (prim_expr_order i) Theory.expr1n in H.
+          admit.
+        }
+        lia.
+      }
+      by rewrite H2 in i.
+  Admitted.
+
+  End unity.
+      
