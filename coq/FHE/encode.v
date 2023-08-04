@@ -2301,30 +2301,25 @@ Section unity.
       {
         move=> /prime.dvdn_pfactor in i0.
         destruct i0.
-           by apply (@prime.pdiv_prime 2).
+          by reflexivity.
         by exists x0.
       }
-      destruct H0.
-      rewrite H0 in i.
-      assert (x0 = n.+1).
+      move: H0 i0 i => [x0 ->] i0 i.
+      have HH: x0 = n.+1.
       {
-        rewrite H0 in i0.
-        rewrite div.dvdn_Pexp2l in i0; try lia.
-        assert (x0 < n.+1 -> false).
+        move: i0.
+        rewrite div.dvdn_Pexp2l; try lia.
+        rewrite leq_eqVlt => /orP-[/eqP//|x0lt].
+        assert (HH:expn 2 n = muln (expn 2 x0) (expn 2 (n - x0))).
         {
-          intros.
-          assert (expn 2 n = muln (expn 2 x0) (expn 2 (n - x0))).
-          {
-            rewrite -expnD.
-            f_equal.
-            lia.
-          }
-          rewrite H2 exprM (prim_expr_order i) Theory.expr1n in zpowm1.
+          rewrite -expnD.
+          f_equal.
+          lia.
+        }
+          rewrite HH exprM (prim_expr_order i) Theory.expr1n in zpowm1.
           tauto.
         }
-        lia.
-      }
-      by rewrite H1 in i.
+      by rewrite HH in i.
   Qed.
 
   End unity.
