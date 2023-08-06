@@ -59,7 +59,7 @@ Proof.
     f_equal.
     rewrite -mulrA divff.
     + by rewrite mulr1.
-    + apply S_INR_n0.
+    + by apply S_INR_n0.
 Qed.
 
 Lemma nth_root_2PI_plus n j k :
@@ -77,7 +77,7 @@ Proof.
     f_equal.
     rewrite -mulrA divff.
     + by rewrite mulr1.
-    + apply (S_INR_n0 n).
+    + by apply S_INR_n0.
 Qed.
 
 Definition nth_roots (n:nat) :=
@@ -483,6 +483,24 @@ Proof.
   lra.
 Qed.
 
+Lemma Pi2_neq0 :
+  (2 * PI <> 0)%R.
+Proof.
+  generalize PI_neq0.
+  unfold mul, one, zero, natmul, add; simpl.
+  lra.
+Qed.
+
+From mathcomp Require Import lra.
+
+Lemma Pi2_neq0_alt :
+  is_true (2 * PI != 0).
+Proof.
+  generalize Pi2_neq0.
+  intros.
+  by case eqP.
+Qed.
+
 Lemma nth_root_eq j k n :
   j mod (S n) = k mod (S n) <->
   nth_root j (S n) = nth_root k (S n).
@@ -490,36 +508,28 @@ Proof.
   split; intros. 
   - now apply nth_root_mod.
   - unfold nth_root in H.
-(*    replace (S n) with (n + 1) in H by lia. *)
+    replace (S n) with (addn n 1) in H by lia.
     inversion H; clear H.
-    generalize (sin_cos_eq (2 * PI * INR j / INR (n + 1)) 
-                 (2 * PI * INR k / INR (n + 1))); intros.
+    pose (jj := (2 * PI * INR j)/ (INR (addn n 1))).
+    pose (kk := (2 * PI * INR k)/ (INR (addn n 1))).    
+    generalize (sin_cos_eq jj kk); intros.
     destruct H.
     + split; trivial.
-    + replace  (2 * PI * INR k / INR (n + 1) + 2 * PI * IZR x)%R with
-        (2 * PI * (INR k / INR (n+1) + IZR x))%R in H by lra.
-      replace  (2 * PI * INR j / INR (n + 1))%R with
-         (2 * PI * (INR j / INR (n + 1)))%R in H by lra.
-      apply (f_equal (fun r => (/ (2 * PI)) * r))%R in H.
-      assert (2 * PI <> 0)%R.
-      {
-        generalize PI_neq0.
-        lra.
-      }
-      rewrite <- Rmult_assoc in H.
-      rewrite <- Rinv_l_sym, Rmult_1_l in H; trivial.
-      rewrite <- Rmult_assoc in H.
-      rewrite <- Rinv_l_sym, Rmult_1_l in H; trivial.
-      clear H0 H1 H2.
-      repeat rewrite plus_INR in H.
-      simpl in H.
-      assert (possn:(INR n + 1)%R <> 0%R).
-      {
-        generalize (pos_INR n); lra.
-      } 
-      field_simplify in H; try lra.
-      apply (f_equal (Rmult (INR n + 1))) in H.
-      field_simplify in H; try lra.
+    + unfold jj, kk in H.
+      clear H1 H2 jj kk.
+      replace  (2 * PI * INR k / INR (addn n 1) + 2 * PI * IZR x)%R with
+        (2 * PI * (INR k / INR (addn n 1) + IZR x))%R in H by lra.
+      replace  (2 * PI * INR j / INR (addn n 1))%R with
+         (2 * PI * (INR j / INR (addn n 1)))%R in H by lra.
+      apply (f_equal (fun r => (inv (2 * PI)) * r))%R in H.
+      generalize Pi2_neq0_alt; intros.
+      rewrite mulrDr -(mulrA _ (INR k) _) !(mulrA _ (2 * PI) _) (mulrC _ (2 * PI)) divff in H; trivial.
+      rewrite !mul1r in H.
+      apply (f_equal (fun r => r * (INR (addn n 1)))) in H.
+      replace (addn n 1) with (S n) in H by lia.
+      generalize (S_INR_n0 n); intros.
+      rewrite mulrDl -!mulrA !(mulrC _ (INR (S n))) divff in H; trivial.
+      rewrite !mulr1 mulrC in H.
       repeat rewrite INR_IZR_INZ in H.
       repeat rewrite <- mult_IZR in H.
       repeat rewrite <- plus_IZR in H.
@@ -527,13 +537,10 @@ Proof.
       apply Nat2Z.inj.
       repeat rewrite Nat2Z.inj_mod.
       rewrite H.
-      transitivity ((Z.of_nat k + (x * (Z.of_nat (S n)))) mod Z.of_nat (S n))%Z.
-      * f_equal.
-        rewrite Nat2Z.inj_succ.
-        lia.
-      * now rewrite Zdiv.Z_mod_plus_full.
+      transitivity (Z.modulo (Z.add (Z.of_nat k) (Z.mul x (Z.of_nat (S n)))) (Z.of_nat (S n))).
+      * by f_equal.
+      * by rewrite Zdiv.Z_mod_plus_full.
 Qed.
-
 
 Lemma nth_root_not_1 j n :
   j mod (S n) <> 0 ->
