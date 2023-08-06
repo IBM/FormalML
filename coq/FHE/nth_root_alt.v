@@ -534,8 +534,7 @@ Proof.
       repeat rewrite <- plus_IZR in H.
       apply eq_IZR in H.
       apply Nat2Z.inj.
-      repeat rewrite Nat2Z.inj_mod.
-      rewrite H.
+      rewrite !Nat2Z.inj_mod H.
       transitivity (Z.modulo (Z.add (Z.of_nat k) (Z.mul x (Z.of_nat (S n)))) (Z.of_nat (S n))).
       * by f_equal.
       * by rewrite Zdiv.Z_mod_plus_full.
