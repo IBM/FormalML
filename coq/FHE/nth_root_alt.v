@@ -906,24 +906,25 @@ Proof.
   ring_simplify in H0.
   apply (f_equal (fun z => (Rinv 2 * z)%R)) in H0.
   do 2 rewrite <- Rmult_assoc in H0.
-Admitted.
-
+  unfold mul in H0; simpl in H0.
+  rewrite <- Rinv_l_sym in H0.
+  - rewrite Rmult_1_l Rmult_0_r in H0.
+    apply Rmult_integral in H0.
+    destruct H0; subst; ring_simplify in H1.
+    + generalize (pow2_ge_0 Im); intros.
+      admit.
+    + admit.
 (*
-  rewrite <- Rinv_l_sym in H0; try lra.
-  rewrite Rmult_1_l, Rmult_0_r in H0.
-  apply Rmult_integral in H0.
-  destruct H0; subst; ring_simplify in H1.
-  - assert (0 <= Im ^ 2)%R by apply pow2_ge_0.
-    lra.
-  - apply pow2_inv in H1.
+apply pow2_inv in H1.
     rewrite sqrt_1 in H1.
     apply Rabs_pm_r in H1.
     unfold C1, RtoC.
     unfold opp; simpl.
     unfold opp; simpl.
     destruct H1; [left|right]; f_equal; lra.
-Qed.
-*)
+ *)
+  - admit.
+Admitted.
 
 Lemma nth_root_half_pow n :
   nth_root (S n) (2 * (S n)) = opp C1.
@@ -940,10 +941,11 @@ Proof.
   tauto.
 Qed.
 
-
 Lemma pow2_S (j:nat) :
   exists (k : nat), expn 2 j = S k.
 Proof.
+Admitted.
+(*
   exists (addn (expn 2 j) (oppn 1%N)).
   induction j.
   - now simpl.
@@ -951,6 +953,7 @@ Proof.
     rewrite IHj.
     lia.
 Qed.
+*)
 
 Lemma odd_roots_prim j n :
   exp (nth_root (2 * j + 1) (2 ^ (S n))) (2^n) = opp C1.
@@ -960,6 +963,7 @@ Proof.
   rewrite H.
   rewrite Cpow_nth_root.
   rewrite <- H.
+(*
   assert ((2 ^ n * (2 * j + 1) mod (2 ^ S n)) =
            (2 ^ n mod (2 ^ S n))).
   {
@@ -986,13 +990,15 @@ Proof.
   rewrite H1.
   now rewrite nth_root_half_pow.
 Qed.  
+ *)
+  Admitted.
 
 Lemma mult_conj_root j n :
   mul (nth_root j (S n)) (conjc (nth_root j (S n))) = C1.
 Proof.
   rewrite nth_root_conj.
   rewrite Cinv_r; trivial.
-  apply nth_root_not_0.
+  by apply nth_root_not_0.
 Qed.
 
 Lemma nth_root_half n :
@@ -1000,11 +1006,9 @@ Lemma nth_root_half n :
 Proof.
   destruct (pow2_S (S n)).
   generalize (odd_roots_prim 0 n); intros.
-  replace (2 * 0 +1) with 1 in H by lia.
-  rewrite H in H0.
-  rewrite Cpow_nth_root in H0.
-  rewrite <- H in H0.
-  now replace (2^n * (2 * 0 + 1)) with (2 ^ n) in H0 by lia.
+  replace (2 * 0 +1)%N with 1%N in H by lia.
+  rewrite H Cpow_nth_root -H in H0.
+  by replace (2^n * (2 * 0 + 1))%N with (2 ^ n)%N in H0 by lia.
 Qed.
 
 Lemma nth_root_opp j n :
