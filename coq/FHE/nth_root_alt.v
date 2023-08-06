@@ -529,8 +529,7 @@ Proof.
       replace (addn n 1) with (S n) in H by lia.
       generalize (S_INR_n0 n); intros.
       rewrite mulrDl -!mulrA !(mulrC _ (INR (S n))) divff in H; trivial.
-      rewrite !mulr1 mulrC in H.
-      repeat rewrite INR_IZR_INZ in H.
+      rewrite !mulr1 mulrC !INR_IZR_INZ in H.
       repeat rewrite <- mult_IZR in H.
       repeat rewrite <- plus_IZR in H.
       apply eq_IZR in H.
