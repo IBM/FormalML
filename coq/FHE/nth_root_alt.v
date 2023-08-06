@@ -53,10 +53,8 @@ Proof.
     rewrite -mulrA divff.
     + by rewrite mulr1.
     + generalize (S_INR_not_0 n); intros.
-      rewrite /eqP.
-      
-      admit.
-Admitted.
+      by case eqP.
+Qed.
 
 Lemma nth_root_2PI_plus n j k :
   nth_root (j + k * (S n)) (S n) = nth_root j (S n).
