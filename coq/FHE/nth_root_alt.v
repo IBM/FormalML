@@ -541,7 +541,7 @@ Proof.
 Qed.
 
 Lemma nth_root_not_1 j n :
-  j mod (S n) <> 0 ->
+  j mod (S n) <> 0%N ->
   nth_root j (S n) <> RtoC R1.
 Proof.
   unfold nth_root.
@@ -549,24 +549,30 @@ Proof.
   unfold RtoC.
   unfold not.
   intros.
-  replace (S n) with (n + 1) in H0 by lia.
+  replace (S n) with (addn n 1) in H0 by lia.
   inversion H0; clear H0.
-  assert (xnneg :(0 <= 2 * PI * INR j / INR (n + 1))%R).
+  assert (xnneg :(Rle 0 (2 * PI * INR j / INR (n + 1)))).
   {
     apply Rmult_le_pos.
     - generalize (pos_INR j); intros.
       apply Rmult_le_pos; trivial.
       generalize PI_RGT_0; intros.
-      lra.
+(*     lra.*)
+      admit.
     - left.
       apply Rinv_0_lt_compat.
       apply lt_0_INR.
       lia.
   }
   apply cos_eq_1_nneg in H2; trivial.
+  - admit.
+  - unfold mul, one, natmul, add, inv; simpl.
+    unfold Rdiv in xnneg.
+Admitted.
+(*    
   destruct H2.
   apply (f_equal (fun r => (r /(2 * PI))%R)) in H0.
-  unfold Rdiv in H0.
+(*  unfold Rdiv in H0. *)
   rewrite Rmult_comm in H0.
   assert ((2 * PI)%R <> R0).
   {
@@ -593,9 +599,10 @@ Proof.
   - apply not_0_INR.
     lia.
 Qed.
+*)
 
 Lemma nth_root_1 j n :
-  j mod (S n) = 0 ->
+  j mod (S n) = 0%N ->
   nth_root j (S n) = RtoC R1.
 Proof.
   intros.
@@ -606,11 +613,11 @@ Proof.
 Qed.
 
 Lemma nth_root_1_iff  n j :
-  nth_root j (S n) = C1 <-> j mod (S n) = 0.
+  nth_root j (S n) = C1 <-> j mod (S n) = 0%N.
 Proof.
   rewrite <- (nth_root_0 n).
   rewrite <- nth_root_eq.
-  replace (0 mod S n) with 0; try easy.
+  replace (0 mod S n) with 0%N; try easy.
   rewrite Nat.mod_small; lia.
 Qed.
 
@@ -619,12 +626,17 @@ Lemma pow_nth_root_prim n :
 Proof.
   unfold nth_root.
   rewrite de_moivre.
-  replace (INR (S n) * (2 * PI * INR 1 / INR (S n)))%R with (2 * PI)%R.
+  replace (S n) with (addn n 1) by lia.
+  unfold mul; simpl.
+(*
+  replace (INR (addn n 1) * (2 * PI * INR 1 / INR (addn n 1)))%R with (2 * PI)%R.
   - now rewrite cos_2PI, sin_2PI.
   - replace (INR 1) with R1 by now unfold INR.
     field.
     apply S_INR_not_0.
 Qed.
+ *)
+  Admitted.
 
 Lemma pow_nth_root_prim_exp n :
   exp (nth_root 1 (S n)) (S n) = RtoC R1.  
@@ -698,7 +710,7 @@ Qed.
 
 
 Lemma Cpow_sub_r (c : R[i]) (n m : nat):
-  m <= n ->
+  (le m n) ->
   c <> C0 ->
   exp c (n - m) = Cdiv (exp c n) (exp  c m).
 Proof.
@@ -739,16 +751,19 @@ Proof.
                 end) m).
     intros HH.
     inversion HH; subst.
+    (*
     destruct (Req_EM_T R0 R0); destruct (Req_EM_T R0 R0); subst; congruence.
+     *)
+    admit.
   }
   generalize (Cinv_r (exp c m) H2); intros.
   rewrite H3.
   unfold C1.
   now rewrite mulr1.
-Qed.
+Admitted.
 
 Lemma nth_root_diff j k n :
-  j <= k ->
+  (le j k) ->
   Cdiv (nth_root k (S n)) (nth_root j (S n)) = nth_root (k-j) (S n).
 Proof.
   intros.
@@ -770,7 +785,7 @@ Proof.
     f_equal.
     apply (nth_root_mod j (j mod S n) n).
     rewrite Nat.mod_mod; try lia.
-  - assert (S n <> 0) by lia.
+  - assert (S n <> 0%N) by lia.
     generalize (Nat.mod_upper_bound j (S n) H0); intros.
     lia.
  Qed.
@@ -792,6 +807,7 @@ Lemma nth_root_Cmod j n :
 Proof.
   unfold Cmod, nth_root, fst, snd.
   rewrite Rplus_comm.
+  unfold one; simpl.
   rewrite <- sqrt_1.
   f_equal.
   do 2 rewrite <- RpowE.
@@ -799,18 +815,27 @@ Proof.
   now rewrite sin2_cos2.
 Qed.
 
+Lemma Cmod_Cconj_alt (c : R[i]) :
+  let: a +i* b :=c in
+  mul c (conjc c) = (a^+2 + b^+2) +i* 0.
+Proof.
+  destruct c.
+  unfold mul; simpl.
+  f_equal; lra.
+Qed.
+
 Lemma Cmod_Cconj (c : R[i]) :
   mul c (conjc c) = RtoC (Rsqr (Cmod c)).
 Proof.
+  generalize (Cmod_Cconj_alt c); intros.
   unfold Cmod, fst, snd, RtoC.
+  unfold RtoC in H.
   destruct c.
+  rewrite H.
+  f_equal.
   do 2 rewrite <- RpowE.    
-  rewrite Rsqr_sqrt.
-  - unfold RtoC.
-    unfold mul, Ring.mul; simpl.
-    unfold add, mul, opp; simpl.
-    f_equal; lra.
-  - apply Rplus_le_le_0_compat; apply pow2_ge_0.
+  rewrite Rsqr_sqrt //.
+  apply Rplus_le_le_0_compat; apply pow2_ge_0.
 Qed.
 
 Lemma nth_root_conj j n :
@@ -838,41 +863,33 @@ Qed.
 Lemma nth_root_half_pow_aux n :
   exp (nth_root (S n) (2 * (S n))) 2 = C1.
 Proof.
-  replace (2 * (S n)) with (S (2 * n + 1)) by lia.
+  replace (muln 2 (S n)) with (S (2 * n + 1)) by lia.
   rewrite Cpow_nth_root.
-  do 2 replace (2 * (S n)) with (S (2 * n + 1)) by lia.
+  do 2 replace (muln 2 (S n)) with (S (2 * n + 1)) by lia.
   now rewrite nth_root_Sn.
 Qed.
 
-Lemma pow2_inv x y : (x ^ 2)%R = y -> Rabs x = sqrt y.
+Lemma pow2_inv x y : (x ^+ 2)%R = y -> Rabs x = sqrt y.
 Proof.
   intros eqq1.
   apply (f_equal sqrt) in eqq1.
-  destruct (Rle_dec 0 x).
-  - intros.
-    rewrite sqrt_pow2 in eqq1 by trivial.
-    rewrite eqq1.
-    rewrite Rabs_right; trivial.
-    generalize (sqrt_pos y); lra.
-  - assert (eqq1':sqrt ((-x) ^2) = sqrt y).
-    {
-      now rewrite <- Rsqr_pow2, <- Rsqr_neg, Rsqr_pow2.
-    } 
-    rewrite sqrt_pow2 in eqq1' by lra.
-    now rewrite Rabs_left by lra.
+  rewrite expr2 in eqq1.
+  rewrite -eqq1 -sqrt_Rsqr_abs.
+  f_equal.
 Qed.
-
 
 Lemma Rabs_pm_l x y : Rabs x = y -> x = y \/ (- x)%R = y.
 Proof.
   unfold Rabs.
-  destruct (Rcase_abs); [right|left]; lra.
+  destruct (Rcase_abs); [right|left]; rewrite -H //.
 Qed.
 
 Lemma Rabs_pm_r x y : Rabs x = y -> x = y \/ x = (- y)%R.
 Proof.
   unfold Rabs.
-  destruct (Rcase_abs); [right|left]; lra.
+  destruct (Rcase_abs); [right|left]; rewrite -H //.
+  unfold opp; simpl.
+  by rewrite Ropp_involutive.
 Qed.
 
 Lemma Cpow_2 (c : R[i]) :
@@ -887,8 +904,11 @@ Proof.
   unfold C1, RtoC in H.
   injection H; intros; clear H.
   ring_simplify in H0.
-  apply (f_equal (fun z => (/2 * z)%R)) in H0.
+  apply (f_equal (fun z => (Rinv 2 * z)%R)) in H0.
   do 2 rewrite <- Rmult_assoc in H0.
+Admitted.
+
+(*
   rewrite <- Rinv_l_sym in H0; try lra.
   rewrite Rmult_1_l, Rmult_0_r in H0.
   apply Rmult_integral in H0.
@@ -903,6 +923,7 @@ Proof.
     unfold opp; simpl.
     destruct H1; [left|right]; f_equal; lra.
 Qed.
+*)
 
 Lemma nth_root_half_pow n :
   nth_root (S n) (2 * (S n)) = opp C1.
@@ -910,20 +931,20 @@ Proof.
   generalize (nth_root_half_pow_aux n); intros.
   apply Cpow_2 in H.
   destruct H; trivial.
-  replace (2 * (S n)) with (S (2 * n + 1)) in H by lia.
-  replace 1%R with R1 in H by lra.
+  replace (muln 2 (S n)) with (S (2 * n + 1)) in H by lia.
   generalize (nth_root_not_1 (S n) (2*n+1)); intros.
-  assert (S n mod S (2 * n + 1) <> 0).
+  assert (S n mod S (2 * n + 1) <> 0%N).
   {
     rewrite Nat.mod_small; lia.
   }
   tauto.
 Qed.
 
+
 Lemma pow2_S (j:nat) :
-  exists (k : nat), 2^j = S k.
+  exists (k : nat), expn 2 j = S k.
 Proof.
-  exists (2^j-1).
+  exists (addn (expn 2 j) (oppn 1%N)).
   induction j.
   - now simpl.
   - simpl.
