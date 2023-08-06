@@ -13,6 +13,13 @@ Proof.
   lra.
 Qed.
 
+Lemma S_INR_n0 n : is_true (INR (S n) != (zero R_ringType)).
+Proof.
+  intros.
+  move: (S_INR_not_0 n) => HH.
+  by case eqP.
+Qed.
+
 (* represent complex number as pair *)
 Definition nth_root (j n : nat) : R[i] :=
   let c := (2*PI*INR(j)/INR(n))%R in 
@@ -52,8 +59,7 @@ Proof.
     f_equal.
     rewrite -mulrA divff.
     + by rewrite mulr1.
-    + generalize (S_INR_not_0 n); intros.
-      by case eqP.
+    + apply S_INR_n0.
 Qed.
 
 Lemma nth_root_2PI_plus n j k :
@@ -71,8 +77,8 @@ Proof.
     f_equal.
     rewrite -mulrA divff.
     + by rewrite mulr1.
-    + generalize (S_INR_not_0 n); intros.
-Admitted.
+    + apply (S_INR_n0 n).
+Qed.
 
 Definition nth_roots (n:nat) :=
   map (fun j => nth_root j n) (seq 0 n).
