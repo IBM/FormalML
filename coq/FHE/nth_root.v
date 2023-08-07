@@ -87,13 +87,9 @@ Qed.
 Definition nth_roots (n:nat) :=
   map (fun j => nth_root j n) (seq 0 n).
 
+(*
 Definition Cpow (x : R[i]) (n : nat) : R[i] := exp x n.
-
-Lemma Cpow_exp (x : R[i]) (n : nat) :
-  Cpow x n = exp x n.
-Proof.
-  now unfold Cpow.
-Qed.
+*)
 
 Lemma de_moivre (x : R) (n : nat) :
   exp (cos x +i* sin x) n = (cos ((INR n) * x)%R +i* sin ((INR n) * x)%R).
@@ -604,7 +600,7 @@ Qed.
 Lemma pow_nth_root_prim_exp n :
   exp (nth_root 1 (S n)) (S n) = RtoC R1.  
 Proof.
-  rewrite <- Cpow_exp.
+(*  rewrite <- Cpow_exp. *)
   apply pow_nth_root_prim.
 Qed.
 
