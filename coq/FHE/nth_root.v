@@ -128,7 +128,7 @@ Lemma Cpow_nth_root_comm j n e :
 Proof.
   do 2 rewrite Cpow_nth_root.
   f_equal.
-  apply ssrnat.mulnC.
+  apply mulnC.
 Qed.
 
 Lemma nth_root_npow j n :
@@ -598,7 +598,7 @@ Qed.
 Lemma pow_nth_root j n :
   exp (nth_root j (S n)) (S n) = RtoC R1.
 Proof.
-  by rewrite prim_nth_root -exprM ssrnat.mulnC exprM pow_nth_root_prim_exp expr1n.
+  by rewrite prim_nth_root -exprM mulnC exprM pow_nth_root_prim_exp expr1n.
 Qed.
 
 Lemma nth_root_mul j k n :
@@ -631,14 +631,9 @@ Lemma Cinv_r (x : R[i]) :
   x * (inv x) = 1.
 Proof.
   intros.
-  etransitivity; [etransitivity |]; [| apply (@divff _ x) |]; try reflexivity.
-  match goal with
-    | [|- context [negb ?x] ] => case_eq x
-  end; intros HH; simpl; trivial.
-  elim H.
-  vm_compute in HH.
-  destruct x.
-  now destruct (Req_EM_T Re R0); destruct (Req_EM_T Im R0); subst; try discriminate.
+  rewrite divff //.
+  move :H.
+  by case eqP.
 Qed.  
 
 Lemma Cinv_l (x : R[i]) :
@@ -646,10 +641,8 @@ Lemma Cinv_l (x : R[i]) :
   (inv x) * x = 1.
 Proof.
   intros.
-  etransitivity; [etransitivity |]; [| apply (@mulrC _ (inv x) x) |]; try reflexivity.
-  now apply Cinv_r.
+  rewrite mulrC Cinv_r //.
 Qed.  
-
 
 Lemma Cpow_sub_r (c : R[i]) (n m : nat):
   (le m n) ->
@@ -888,8 +881,7 @@ Qed.
 Lemma mult_conj_root j n :
   (nth_root j (S n)) * (conjc (nth_root j (S n))) = 1.
 Proof.
-  rewrite nth_root_conj.
-  rewrite Cinv_r; trivial.
+  rewrite nth_root_conj Cinv_r //.
   by apply nth_root_not_0.
 Qed.
 
@@ -907,15 +899,7 @@ Lemma nth_root_opp j n :
   (nth_root j (2 ^ (S n))) + (nth_root (j + 2^n) (2 ^ (S n))) = 0.
 Proof.
   destruct (pow2_S (S n)).
-  rewrite H.
-  rewrite <- nth_root_mul.
-  rewrite <- H.
-  rewrite nth_root_half.
-  unfold C0, C1.
-  rewrite mulrN1.  
-  rewrite addrC.
-  rewrite addNr.
-  reflexivity.
+  by rewrite H -nth_root_mul -H nth_root_half mulrN1 addrC addNr.
 Qed.
 
 (* testing notations *)
