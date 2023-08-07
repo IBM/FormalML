@@ -1,5 +1,5 @@
 Require Import Reals Lra Lia List.
-From mathcomp Require Import Rstruct complex ssreflect common eqtype ssrint ssrnat zify.
+From mathcomp Require Import complex ssreflect common eqtype ssrint ssrnat order zify Rstruct.
 Import ssralg.GRing.
 Import ssralg.
 
@@ -116,8 +116,9 @@ Proof.
 Qed.
 
 Lemma de_moivre (x : R) (n : nat) :
-  exp (cos x +i* sin x) n = (cos ((INR n) * x) +i* sin ((INR n) * x)).
+  exp (cos x +i* sin x) n = (cos ((INR n) * x)%R +i* sin ((INR n) * x)%R).
 Proof.
+  rewrite /mul /=.
   rewrite <- iter_mulr_1.
   induction n.
   - simpl.
@@ -549,7 +550,7 @@ Proof.
   unfold RtoC.
   unfold not.
   intros.
-  replace (S n) with (addn n 1) in H0 by lia.
+  replace (S n) with (n + 1)%nat in H0 by lia.
   inversion H0; clear H0.
   assert (xnneg :(Rle 0 (2 * PI * INR j / INR (n + 1)))).
   {
@@ -557,49 +558,36 @@ Proof.
     - generalize (pos_INR j); intros.
       apply Rmult_le_pos; trivial.
       generalize PI_RGT_0; intros.
-(*     lra.*)
-      admit.
+      apply Rmult_le_pos.
+      + simpl.
+        rewrite /IZR -INR_IPR.
+        apply pos_INR.
+      + apply Rlt_le.
+        by apply Rgt_lt.
     - left.
       apply Rinv_0_lt_compat.
       apply lt_0_INR.
       lia.
   }
   apply cos_eq_1_nneg in H2; trivial.
-  - admit.
-  - unfold mul, one, natmul, add, inv; simpl.
-    unfold Rdiv in xnneg.
-Admitted.
-(*    
-  destruct H2.
-  apply (f_equal (fun r => (r /(2 * PI))%R)) in H0.
-(*  unfold Rdiv in H0. *)
-  rewrite Rmult_comm in H0.
-  assert ((2 * PI)%R <> R0).
-  {
-    generalize PI_neq0; intros.
-    lra.
-  }
-  do 2 rewrite <- Rmult_assoc in H0.
-  rewrite <- Rinv_l_sym in H0; trivial.
-  rewrite Rmult_1_l in H0.
-  symmetry in H0.
-  rewrite Rmult_comm in H0.
-  rewrite <- Rmult_assoc in H0.
-  rewrite <- Rinv_l_sym in H0; trivial.
-  rewrite Rmult_1_l in H0.
-  replace (n+1) with (S n) in H0 by lia.
-  apply (f_equal (fun r => (r * INR (S n))%R)) in H0.
-  rewrite Rmult_assoc in H0.
-  rewrite <- Rinv_l_sym in H0.
-  - rewrite Rmult_1_r in H0.
-    rewrite <- mult_INR in H0.
-    apply INR_eq in H0.
-    apply (f_equal (fun k => k mod (S n))) in H0.
-    rewrite Nat.mod_mul in H0; try lia.
-  - apply not_0_INR.
-    lia.
+  - case: H2 => [k eqq].
+    move: eqq.
+    rewrite -mulrA.
+    move/mulrI.
+    rewrite ssrbool.unfold_in /= /unit_R Pi2_neq0_alt // => /(_ ssrbool.isT).
+    move/(f_equal (fun x => x * (INR (n + 1)))).
+    rewrite -mulrA [_ * INR (n + 1)]mulrC mulrA.
+    rewrite mulfK.
+    + rewrite /mul /= -mult_INR.
+      move/INR_eq => eqq.
+      rewrite {}eqq in H.
+      move: H.
+      by rewrite addn1 Nat.mod_mul.
+    + by rewrite addn1 S_INR_n0.
+  - move: xnneg.
+    rewrite -RinvE//.
+    by rewrite addn1 S_INR_n0.
 Qed.
-*)
 
 Lemma nth_root_1 j n :
   j mod (S n) = 0%N ->
@@ -626,17 +614,14 @@ Lemma pow_nth_root_prim n :
 Proof.
   unfold nth_root.
   rewrite de_moivre.
-  replace (S n) with (addn n 1) by lia.
-  unfold mul; simpl.
-(*
-  replace (INR (addn n 1) * (2 * PI * INR 1 / INR (addn n 1)))%R with (2 * PI)%R.
-  - now rewrite cos_2PI, sin_2PI.
-  - replace (INR 1) with R1 by now unfold INR.
-    field.
-    apply S_INR_not_0.
+  replace (INR n.+1 * (2 * PI * INR 1 / INR n.+1)%R) with (2 * PI)%R.
+  - by rewrite cos_2PI sin_2PI.
+  - rewrite [INR 1]INRE mulr1.
+    rewrite [INR n.+1 * _]mulrC.
+    rewrite -!mulrA mulVf ?mulr1//.
+    replace (zero (Field.zmodType R_fieldType)) with (INR 0) by trivial.
+    by rewrite !INRE ssrnum.Num.Theory.eqr_nat.
 Qed.
- *)
-  Admitted.
 
 Lemma pow_nth_root_prim_exp n :
   exp (nth_root 1 (S n)) (S n) = RtoC R1.  
@@ -715,52 +700,16 @@ Lemma Cpow_sub_r (c : R[i]) (n m : nat):
   exp c (n - m) = Cdiv (exp c n) (exp  c m).
 Proof.
   intros.
-  assert (mul (exp c (n - m)) (exp c m) = exp c n).
-  {
-    rewrite <- exprD.
-    f_equal.
-    unfold ssrnat.addn, ssrnat.addn_rec.
+  destruct H.
+  - rewrite subnn expr0 /Cdiv Cinv_r//.
+    generalize (@expf_neq0 _ c m).
+    case: eqP => //.
+    case: eqP => //.
+    intuition.
+  - rewrite expfB//.
+    case: leP => //.
     lia.
-  }
-  rewrite <- H1.
-  unfold Cdiv.
-  rewrite <- mulrA.
-  assert (exp c m <> C0).
-  {
-    generalize Theory.expf_neq0; intros.
-    assert (is_true (negb (eqtype.eq_op c C0))).
-    {
-      vm_compute.
-      destruct c.
-      now destruct (Req_EM_T Re R0); destruct (Req_EM_T Im R0); subst; try discriminate.
-    }
-    generalize (Theory.expf_neq0 m H3); intros.
-    vm_compute in H4.
-    vm_compute.
-    destruct ((fix Ffix (x : nat) : R[i] :=
-                match x with
-                | 0 => R1 +i* R0
-                | 1 => c
-                | S (S _ as x0) =>
-                    match c with
-                    | Re +i* Im =>
-                        match Ffix x0 with
-                        | Re0 +i* Im0 => (Re * Re0 + - (Im * Im0))%R +i* (Re * Im0 + Im * Re0)%R
-                        end
-                    end
-                end) m).
-    intros HH.
-    inversion HH; subst.
-    (*
-    destruct (Req_EM_T R0 R0); destruct (Req_EM_T R0 R0); subst; congruence.
-     *)
-    admit.
-  }
-  generalize (Cinv_r (exp c m) H2); intros.
-  rewrite H3.
-  unfold C1.
-  now rewrite mulr1.
-Admitted.
+Qed.
 
 Lemma nth_root_diff j k n :
   (le j k) ->
