@@ -867,18 +867,19 @@ Proof.
       rewrite /opp/= -opp_IZR in H.
       apply le_IZR in H.
       lia.
-    +
-(*
-apply pow2_inv in H1.
-    rewrite sqrt_1 in H1.
-    apply Rabs_pm_r in H1.
-    unfold C1, RtoC.
-    unfold opp; simpl.
-    unfold opp; simpl.
-    destruct H1; [left|right]; f_equal; lra.
- *)
-  - admit.
-Admitted.
+    + rewrite RpowE in H1.
+      apply pow2_inv in H1.
+      rewrite sqrt_1 in H1.
+      apply Rabs_pm_r in H1.
+      unfold C1, RtoC.
+      unfold opp; simpl.
+      unfold opp; simpl.
+      destruct H1; [left|right]; f_equal; trivial.
+      rewrite Ropp_0 //.
+  - unfold not; intros.
+    apply eq_IZR in H.
+    lia.
+Qed.
 
 Lemma nth_root_half_pow n :
   nth_root (S n) (2 * (S n)) = opp C1.
