@@ -897,16 +897,9 @@ Qed.
 Lemma pow2_S (j:nat) :
   exists (k : nat), expn 2 j = S k.
 Proof.
-Admitted.
-(*
-  exists (addn (expn 2 j) (oppn 1%N)).
-  induction j.
-  - now simpl.
-  - simpl.
-    rewrite IHj.
-    lia.
+  exists (2^j-1)%nat.
+  lia.
 Qed.
-*)
 
 Lemma odd_roots_prim j n :
   exp (nth_root (2 * j + 1) (2 ^ (S n))) (2^n) = opp C1.
