@@ -861,8 +861,13 @@ Proof.
     apply Rmult_integral in H0.
     destruct H0; subst; ring_simplify in H1.
     + generalize (pow2_ge_0 Im); intros.
-      admit.
-    + admit.
+      apply (f_equal (@opp _)) in H1.
+      rewrite opprK in H1.
+      rewrite H1 in H.
+      rewrite /opp/= -opp_IZR in H.
+      apply le_IZR in H.
+      lia.
+    +
 (*
 apply pow2_inv in H1.
     rewrite sqrt_1 in H1.
