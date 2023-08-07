@@ -5,7 +5,7 @@ From mathcomp Require Import generic_quotient ring_quotient.
 From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool.
 
 Import ssralg.GRing.
-Require Import nth_root_alt.
+Require Import nth_root.
 
 Set Bullet Behavior "Strict Subproofs".
 
