@@ -1,5 +1,5 @@
 Require Import Reals Lra Lia List.
-From mathcomp Require Import complex ssreflect common eqtype ssrint ssrnat order zify Rstruct.
+From mathcomp Require Import complex ssreflect common eqtype ssrint ssrnat Rstruct.
 Import ssralg.GRing.
 Import ssralg.
 
