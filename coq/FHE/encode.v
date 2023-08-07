@@ -116,10 +116,7 @@ Qed.
 Lemma pow_nth_root j n e :
   (nth_root j (S n)) ^+ e = nth_root (e * j) (S n).
 Proof.
-  unfold nth_root.
-  rewrite de_moivre.
-  rewrite mult_INR.
-  do 2 f_equal; field; apply S_INR_not_0.
+  apply Cpow_nth_root.
 Qed.
 
 Lemma pow2_S (j:nat) :
