@@ -94,8 +94,7 @@ Definition Cpow (x : R[i]) (n : nat) : R[i] := exp x n.
 Lemma de_moivre (x : R) (n : nat) :
   exp (cos x +i* sin x) n = (cos ((INR n) * x)%R +i* sin ((INR n) * x)%R).
 Proof.
-  rewrite /mul /=.
-  rewrite <- iter_mulr_1.
+  rewrite /mul /= -iter_mulr_1.
   induction n.
   - simpl.
     rewrite Rmult_0_l.
@@ -114,8 +113,7 @@ Lemma Cpow_nth_root j n e :
   exp (nth_root j (S n)) e = nth_root (e * j) (S n).
 Proof.
   unfold nth_root.
-  rewrite de_moivre.
-  rewrite mult_INR.
+  rewrite de_moivre mult_INR.
   assert ((INR e * (2 * PI * INR j / INR n.+1)%R)%R = 2 * PI * (INR e * INR j)%R / INR n.+1).
   {
     replace (S n) with (n + 1)%nat by lia.
@@ -136,8 +134,7 @@ Qed.
 Lemma nth_root_npow j n :
   exp (nth_root j (S n)) (S n) = RtoC R1.
 Proof.
-  rewrite Cpow_nth_root mulnC.
-  now rewrite nth_root_2PI.
+  by rewrite Cpow_nth_root mulnC nth_root_2PI.
 Qed.
 
 Lemma minus_mod (j1 j2 n : nat) :
@@ -150,9 +147,7 @@ Proof.
     ; intros HH.
     rewrite <- Nat2Z.inj_sub in HH by trivial.
     repeat rewrite <- Nat2Z.inj_mod in HH.
-    rewrite <- eqq1 in HH.
-    rewrite Z.sub_diag in HH.
-    rewrite Zdiv.Zmod_0_l in HH.
+    rewrite -eqq1 Z.sub_diag Zdiv.Zmod_0_l in HH.
     apply (f_equal Z.to_nat) in HH.
     now rewrite Nat2Z.id in HH.
   - unfold subn, subn_rec.
@@ -230,8 +225,7 @@ Proof.
   intros eqq1.
   generalize (cos2 x).
   rewrite eqq1; intros eqq2.
-  rewrite <- Rsqr_neg in eqq2.
-  rewrite Rsqr_1 in eqq2.
+  rewrite -Rsqr_neg Rsqr_1 in eqq2.
   apply Rsqr_0_uniq.
   coq_lra.
 Qed.  
@@ -559,8 +553,7 @@ Proof.
       by rewrite addn1 Nat.mod_mul.
     + by rewrite addn1 S_INR_n0.
   - move: xnneg.
-    rewrite -RinvE//.
-    by rewrite addn1 S_INR_n0.
+    by rewrite -RinvE// addn1 S_INR_n0.
 Qed.
 
 Lemma nth_root_1 j n :
@@ -569,9 +562,8 @@ Lemma nth_root_1 j n :
 Proof.
   intros.
   rewrite (nth_root_mod j 0 n).
-  - now rewrite nth_root_0.
-  - rewrite H.
-    rewrite Nat.mod_small; lia.
+  - by rewrite nth_root_0.
+  - by rewrite H Nat.mod_small; lia.
 Qed.
 
 Lemma nth_root_1_iff  n j :
@@ -600,19 +592,13 @@ Qed.
 Lemma pow_nth_root_prim_exp n :
   exp (nth_root 1 (S n)) (S n) = RtoC R1.  
 Proof.
-(*  rewrite <- Cpow_exp. *)
   apply pow_nth_root_prim.
 Qed.
 
 Lemma pow_nth_root j n :
   exp (nth_root j (S n)) (S n) = RtoC R1.
 Proof.
-  rewrite prim_nth_root.
-  rewrite <- exprM.
-  rewrite ssrnat.mulnC.
-  rewrite exprM.
-  rewrite pow_nth_root_prim_exp.
-  now rewrite expr1n.
+  by rewrite prim_nth_root -exprM ssrnat.mulnC exprM pow_nth_root_prim_exp expr1n.
 Qed.
 
 Lemma nth_root_mul j k n :
@@ -628,8 +614,7 @@ Proof.
 Lemma nth_root_Sn n :
   nth_root (S n) (S n) = RtoC 1%R.
 Proof.
-  rewrite prim_nth_root.
-  now rewrite nth_root_npow.
+  by rewrite prim_nth_root nth_root_npow.
 Qed.
 
 Definition Cdiv (x y : R[i]) := x * (inv y).
@@ -766,18 +751,15 @@ Proof.
   rewrite Rsqr_1 in H.
   apply (f_equal (fun c => mul (inv (nth_root j (S n))) c)) in H.
   unfold RtoC in H.
-  rewrite mulr1 in H.
-  rewrite mulrA in H.
-  rewrite Cinv_l in H.
+  rewrite mulr1 mulrA Cinv_l in H.
   - now rewrite mul1r in H.
-  - apply nth_root_not_0.
+  - by apply nth_root_not_0.
 Qed.
 
 Lemma nth_root_conj_alt j n :
   conjc (nth_root j (S n)) = nth_root (S n - j mod (S n)) (S n).
 Proof.
-  rewrite nth_root_conj.
-  now rewrite nth_root_inv.
+  by rewrite nth_root_conj nth_root_inv.
 Qed.
 
 Lemma nth_root_half_pow_aux n :
@@ -854,7 +836,7 @@ Proof.
 Qed.
 
 Lemma nth_root_half_pow n :
-  nth_root (S n) (2 * (S n)) = -C1.
+  nth_root (S n) (2 * (S n)) = -1.
 Proof.
   generalize (nth_root_half_pow_aux n); intros.
   apply Cpow_2 in H.
