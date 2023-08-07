@@ -902,28 +902,20 @@ Proof.
 Qed.
 
 Lemma odd_roots_prim j n :
-  exp (nth_root (2 * j + 1) (2 ^ (S n))) (2^n) = opp C1.
+  exp (nth_root (2 * j + 1) (2 ^ (S n))) (2^n) = -1.
 Proof.
   generalize (pow2_S (S n)); intros.
   destruct H.
   rewrite H.
   rewrite Cpow_nth_root.
   rewrite <- H.
-(*
   assert ((2 ^ n * (2 * j + 1) mod (2 ^ S n)) =
-           (2 ^ n mod (2 ^ S n))).
+           (2 ^ n mod (2 ^ S n)))%N.
   {
-    replace (2 ^n * (2 * j + 1)) with (2 ^ n + j*(2 * 2^n)) by lia.
-    replace (2 ^ (S n)) with (2 * 2^n).
+    replace (2 ^n * (2 * j + 1))%N with (2 ^ n + j*(2 * 2^n))%N by lia.
+    replace (2 ^ (S n))%N with (2 * 2^n)%N.
     - rewrite Nat.mod_add; try lia.
-      assert (2^n <> 0).
-      {
-        apply Nat.pow_nonzero.
-        lia.
-      }
-      lia.
-    - simpl.
-      lia.
+    - by rewrite expnS.
   }
   rewrite H in H0.
   apply nth_root_mod in H0.
@@ -932,12 +924,10 @@ Proof.
   generalize (pow2_S n); intros.
   destruct H1.
   simpl.
-  replace (2 ^ n + (2 ^n + 0)) with (2 * 2^n) by lia.
-  rewrite H1.
-  now rewrite nth_root_half_pow.
+  replace (2 ^ n + (2 ^n + 0))%N with (2 * 2^n)%N by lia.
+  rewrite expnS H1.
+  apply nth_root_half_pow.
 Qed.  
- *)
-  Admitted.
 
 Lemma mult_conj_root j n :
   (nth_root j (S n)) * (conjc (nth_root j (S n))) = 1.
