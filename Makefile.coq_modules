@@ -121,6 +121,7 @@ QLEARN = \
 
 FHE = \
       nth_root \
+      nth_root_alt \
       encode
 
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \

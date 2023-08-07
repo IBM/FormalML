@@ -5,7 +5,7 @@ From mathcomp Require Import generic_quotient ring_quotient.
 From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool.
 
 Import ssralg.GRing.
-Require Import nth_root.
+Require Import nth_root_alt.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -324,7 +324,7 @@ Proof.
       f_equal; apply eqtype.bool_irrelevance.
     }
     clear H.
-    rewrite !modulo_modn !plusE !minusE in H1.
+    rewrite !modulo_modn in H1.
     apply (f_equal ssrint.Posz) in H1.
     revert H1.
     rewrite -intdiv.modz_nat ssrint.PoszD -ssrint.subzn.
@@ -354,7 +354,7 @@ Proof.
       f_equal; apply eqtype.bool_irrelevance.
     }
     clear H.
-    rewrite !modulo_modn !plusE !minusE.
+    rewrite !modulo_modn.
     replace (expn 2 (S (S n))) with (expn 2 (S n) * 2)%nat by (rewrite (expnS _ (S n)); lia).
     rewrite <- div.muln_modr.
     rewrite -div.modnDm.
@@ -1613,24 +1613,7 @@ Proof.
   unfold zero in *; simpl in *.
   unfold real_complex_def in *.
   unfold zero in *; simpl in *.
-  rewrite <- H.
-  f_equal.
-  assert ((2 ^ n)%N = Nat.pow 2 n).
-  {
-    clear H i.
-    induction n.
-    - simpl.
-      rewrite expn0 //.
-    - rewrite expnS.
-      simpl.
-      lia.
-  }
-  rewrite -! H0.
-  f_equal.
-  f_equal.
-  rewrite expnS.
-  rewrite H0.
-  lia.
+  by rewrite <- H.
 Qed.
 
 Lemma minpoly_mult_odd_nth_roots n (p : {poly R[i]}) :
