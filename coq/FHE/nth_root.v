@@ -385,7 +385,7 @@ Proof.
   coq_lra.
  Qed.
 
-Lemma cos_eq_1_alt (x : R) :
+Lemma cos_eq_1 (x : R) :
   cos x = R1 ->
   exists (k:Z), x = (2 * PI * IZR(k))%R.
 Proof.
@@ -422,7 +422,7 @@ Lemma cos_eq_1_nneg (x : R) :
   exists (k:nat), x = (2 * PI * INR(k))%R.
 Proof.
   intros.
-  generalize (cos_eq_1_alt x H); intros.  
+  generalize (cos_eq_1 x H); intros.  
   destruct H1.
   rewrite H1 in H0.
   replace (IZR Z0) with (2 * PI * 0)%R in H0.
@@ -452,7 +452,7 @@ Proof.
   rewrite Rplus_comm in H0.
   unfold Rsqr in H2.
   rewrite H2 in H0.
-  apply cos_eq_1_alt in H0.
+  apply cos_eq_1 in H0.
   destruct H0.
   exists x0.
   rewrite <- H0.
