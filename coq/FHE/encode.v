@@ -204,22 +204,14 @@ Lemma telescope_div (c : R[i]) (n : nat) :
 Proof.
   intros.
   generalize (telescope_mult_bigop c n); intros.
-  rewrite <- H0.
-  unfold Cdiv.
-  rewrite mulrC.
-  rewrite mulrA.
-  rewrite Cinv_l.
+  rewrite -H0 mulrC mulrA Cinv_l.
   - now rewrite mul1r.
   - unfold not.
     intros.
     clear H0.
     replace C0 with (zero C) in H1 by reflexivity.
     apply (f_equal (fun cc => add cc 1)) in H1.
-    rewrite add0r in H1.
-    rewrite <- addrA in H1.
-    rewrite (addrC _ 1) in H1.
-    rewrite sub_x_x in H1.
-    now rewrite addr0 in H1.
+    by rewrite add0r -addrA (addrC _ 1) sub_x_x addr0 in H1.
 Qed.
 
 Lemma telescope_pow_0_nat (c : R[i]) (n : nat) :
@@ -229,10 +221,7 @@ Lemma telescope_pow_0_nat (c : R[i]) (n : nat) :
 Proof.
   intros.
   rewrite telescope_div; trivial.
-  rewrite H0.
-  rewrite sub_x_x.
-  unfold Cdiv.
-  now rewrite mul0r.
+  by rewrite H0 sub_x_x mul0r.
 Qed.
 
 Lemma telescope_pow_0_ord (c : R[i]) (n : nat) :
@@ -242,8 +231,7 @@ Lemma telescope_pow_0_ord (c : R[i]) (n : nat) :
 Proof.
   intros.
   rewrite <- (telescope_pow_0_nat c n); trivial.
-  simpl.
-  now rewrite big_mkord.
+  by rewrite /= big_mkord.
 Qed.
 
 Lemma mul_conj (c1 c2 : R[i]) :
@@ -264,9 +252,7 @@ Proof.
     apply f_equal.
     unfold opp; simpl.
     lra.
-  - do 2 rewrite exprS.
-    rewrite <- IHn.
-    now rewrite <- mul_conj.
+  - by rewrite !exprS -IHn -mul_conj.
 Qed.
 
 Lemma modulo_modn n m : (n mod m)%nat = div.modn n m.
@@ -304,15 +290,12 @@ Proof.
     erewrite eq_big_seq; [reflexivity |].
     simpl.
     apply ssrbool.in1W; intros.
-    repeat rewrite mxE.
-    rewrite exprMn_comm.
+    rewrite !mxE exprMn_comm.
     + rewrite exp_conj//.
     + rewrite /comm mulrC//.
   - unfold not; intros.
     destruct (pow2_S (S (S n))).
-    rewrite (eqP i0) in H1.
-    rewrite nth_root_conj_alt in H1.
-    rewrite nth_root_mul in H1.
+    rewrite (eqP i0) nth_root_conj_alt nth_root_mul in H1.
     apply nth_root_1_iff in H1.
     rewrite -(eqP i0) in H1.
     clear H0 i i0 pmat x x0.
@@ -331,20 +314,15 @@ Proof.
     + rewrite -intdiv.modz_nat.
       rewrite -intdiv.modzDm.
       rewrite !addn1 intdiv.modzDl intdiv.modzNm.
-      rewrite !intdiv.modzDm.
-      rewrite expnSr.
+      rewrite !intdiv.modzDm expnSr.
       destruct (@leP x y).
       * rewrite -intdiv.modzDl intdiv.modz_small/=; lia.
       * rewrite intdiv.modz_small/=; lia.
     + lia.
   - destruct (pow2_S (S (S n))).
-    rewrite (eqP i0).
-    rewrite nth_root_conj_alt.
-    rewrite nth_root_mul.
-    rewrite Cpow_nth_root.
+    rewrite (eqP i0) nth_root_conj_alt nth_root_mul Cpow_nth_root.
     apply nth_root_1_iff.
-    rewrite -(eqP i0).
-    rewrite - (eqP i).
+    rewrite -(eqP i0) -(eqP i).
     clear H0 i i0 pmat x x0.
     destruct n1 as [x xlt]; destruct n2 as [y ylt]; simpl in *.
     assert (neq:x <> y).
@@ -356,8 +334,7 @@ Proof.
     clear H.
     rewrite !modulo_modn.
     replace (expn 2 (S (S n))) with (expn 2 (S n) * 2)%nat by (rewrite (expnS _ (S n)); lia).
-    rewrite <- div.muln_modr.
-    rewrite -div.modnDm.
+    rewrite -div.muln_modr -div.modnDm.
     replace (2 * x)%nat with (x * 2)%nat by lia.
     rewrite div.modnMDl.
     replace (div.modn (2 ^ n.+1 * 2 - div.modn (2 * y + 1) (2 ^ n.+1 * 2)) 2) with
@@ -429,9 +406,7 @@ Proof.
   rewrite mul_mx_diag.
   repeat rewrite mxE.
   destruct (pow2_S (S (S n))).
-  rewrite (eqP i).
-  do 2 rewrite pow_nth_root.
-  rewrite nth_root_mul.
+  rewrite (eqP i) !pow_nth_root nth_root_mul.
   f_equal.
   lia.
 Qed.
@@ -450,13 +425,9 @@ Proof.
   rewrite mul_diag_mx.
   repeat rewrite mxE.
   destruct (pow2_S (S (S n))).
-  rewrite (eqP i).
-  rewrite pow_nth_root.
-  rewrite <- exp_conj.
-  rewrite mul_conj.
+  rewrite (eqP i) pow_nth_root -exp_conj mul_conj.
   f_equal.
-  rewrite pow_nth_root.
-  rewrite nth_root_mul.
+  rewrite pow_nth_root nth_root_mul.
   f_equal.
   lia.
 Qed.
@@ -536,7 +507,6 @@ Proof.
   do 2 rewrite mxE.
   now rewrite H.
 Qed.
-
 
 Lemma vector_rev_conj_Cpow {n} i (v : 'rV[R[i]]_n) :
   vector_rev_conj v ->
