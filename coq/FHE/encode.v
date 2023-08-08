@@ -2263,7 +2263,8 @@ Proof.
   unfold Cmod, ComplexField.Normc.normc.
   destruct c.
   rewrite RsqrtE//.
-Admitted.
+  apply ssrnum.Num.Theory.addr_ge0; apply ssrnum.Num.Theory.sqr_ge0.
+Qed.
 
 Lemma Cmod_mul (c1 c2 : R[i]):
   Cmod (c1 * c2) = (Cmod c1) * (Cmod c2).
@@ -2281,9 +2282,9 @@ Proof.
 Qed.
   
 Lemma root_eval_bound_cpoly (c : R[i]) (p : {poly R[i]}) (δ : R) :
-  Rlt 0 δ ->
+  Rle 0 δ ->
   Cmod c = 1 ->
-  (forall i, Rlt (Cmod (p`_ i)) δ) ->
+  (forall i, Rle (Cmod (p`_ i)) δ) ->
   Rle (Cmod (p.[c])) (δ *+ (seq.size p)).
 Proof.
   intros δnneg Cnorm1 coeffsmall.
@@ -2304,8 +2305,7 @@ Proof.
     + apply IHl.
       move=>i.
       by move: coeffsmall => /(_ (i.+1))/=.
-    + move: coeffsmall => /(_ O) /=.
-      by apply Rlt_le.
+    + by move: coeffsmall => /(_ O) /= //.
 Qed.
 
 Lemma RtoC_real_complex (r : R) :
@@ -2330,14 +2330,14 @@ Proof.
   by rewrite !expr2 !mulr0 Rplus_0_r sqrt_0.
 Qed.
 
-Lemma root_eval_bound (c : R[i]) (p : {poly R}) (delta : R) :
-  Rlt 0 delta ->
+Lemma root_eval_bound (c : R[i]) (p : {poly R}) (δ : R) :
+  Rle 0 δ ->
   Cmod c = 1 ->
-  (forall i, Rlt (Rabs (p`_ i)) delta) ->
-  Rle (Cmod (map_poly RtoC p).[c])  (INR(seq.size p) * delta).
+  (forall i, Rle (Rabs (p`_ i)) δ) ->
+  Rle (Cmod (map_poly RtoC p).[c])  (δ *+ seq.size p).
 Proof.
   intros.
-  generalize (root_eval_bound_cpoly c (map_poly RtoC p) delta H H0); intros.
+  generalize (root_eval_bound_cpoly c (map_poly RtoC p) δ H H0); intros.
   rewrite (size_map_poly RtoC_rmorphism p) in H2.
   apply H2; intros.
   rewrite coefE.
@@ -2346,11 +2346,11 @@ Proof.
   - by rewrite Cmod_0.
 Qed.    
 
-Lemma decode_delta (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (delta : R) :
-  Rlt 0 delta ->
+Lemma decode_delta (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (δ : R) :
+  Rle 0 δ ->
   let pmat := peval_mat (odd_nth_roots (S n)) in
-  (forall i, (Rlt (Cmod (cl i 0)) delta)) ->
-  forall i, (Rlt (Cmod ((pmat *m cl) i 0)) ((2^S n)%:R * delta)).
+  (forall i, Rlt (Cmod (cl i 0)) δ) ->
+  forall i, Rlt (Cmod ((pmat *m cl) i 0)) ((2^S n)%:R * δ).
 Proof.
   generalize (pmat_normc_1 n); simpl; intros.
   unfold peval_mat, odd_nth_roots in *.
