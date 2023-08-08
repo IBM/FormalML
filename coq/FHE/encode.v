@@ -396,6 +396,7 @@ Proof.
   now rewrite mul_scalar_mx.
 Qed.
 
+
 (* shows evaluation can be done by modified FFT of half size*)
 Lemma peval_mat_prod (n : nat) :
   peval_mat (odd_nth_roots (S n)) =
@@ -2226,6 +2227,113 @@ Section norms.
   Qed.
 
 End norms.
+
+Lemma pmat_normc_1 (n : nat) :
+  let pmat := peval_mat (odd_nth_roots (S n)) in
+  forall i j,
+    Cmod (pmat i j) = 1.
+Proof.
+  simpl; intros.
+  unfold peval_mat, odd_nth_roots.
+  rewrite !mxE.
+  destruct (pow2_S (n.+2)).
+  move => /eqP in i0.
+  by rewrite i0 Cpow_nth_root nth_root_Cmod.
+Qed.
+
+Definition coefE :=
+  (coef0, coef1, coefC, coefX, coefXn, coef_sumMXn,
+   coefZ, coefMC, coefCM, coefXnM, coefMXn, coefXM, coefMX, coefMNn, coefMn,
+   coefN, coefB, coefD, coef_even_poly, coef_odd_poly,
+   coef_take_poly, coef_drop_poly, coef_cons, coef_Poly, coef_poly,
+   coef_deriv, coef_nderivn, coef_derivn, coef_map, coef_sum,
+   coef_comp_poly_Xn, coef_comp_poly).
+
+Lemma Cmod_normc (c : R[i]) :
+  Cmod c = ComplexField.Normc.normc c.
+Proof.
+  unfold Cmod, ComplexField.Normc.normc.
+  destruct c.
+  Admitted.
+
+Lemma Cmod_mul (c1 c2 : R[i]):
+  Cmod (c1 * c2) = (Cmod c1) * (Cmod c2).
+Proof.
+  by rewrite !Cmod_normc ComplexField.Normc.normcM.
+Qed.
+
+Lemma cmod_1_delta (c1 c2 : R[i]) (delta : R) :
+  Cmod c1 = 1 ->
+  Rlt (Cmod c2) delta ->
+  Rlt (Cmod (c1 * c2)) delta.
+Proof.
+  intros.
+  by rewrite Cmod_mul H mul1r.
+Qed.
+
+Lemma root_eval_bound_cpoly (c : R[i]) (p : {poly R[i]}) (delta : R) :
+  Rlt 0 delta ->
+  Cmod c = 1 ->
+  (forall i, Rlt (Cmod (p`_ i)) delta) ->
+  Rle (Cmod (p.[c])) (INR(seq.size p) * delta).
+Proof.
+  intros.
+  destruct p.
+  induction polyseq.
+  - simpl.
+    rewrite expr2 mulr0 Rplus_0_r sqrt_0 Rmult_0_l; lra.
+  - 
+Admitted.
+
+
+Lemma RtoC_real_complex (r : R) :
+  RtoC r = real_complex _ r.
+Proof.
+  reflexivity.
+Qed.
+
+Lemma Cmod_Rabs (r : R) :
+  Cmod (RtoC r) = Rabs r.
+Proof.
+  rewrite RtoC_real_complex /Cmod /=.
+  rewrite (expr2 0) mulr0 Rplus_0_r.
+  generalize (pow2_inv r (r^+ 2)); intros.
+  by rewrite H.
+Qed.
+
+Lemma Cmod_0 :
+  Cmod 0 = 0.
+Proof.
+  unfold Cmod. simpl.
+  by rewrite !expr2 !mulr0 Rplus_0_r sqrt_0.
+Qed.
+
+Lemma root_eval_bound (c : R[i]) (p : {poly R}) (delta : R) :
+  Rlt 0 delta ->
+  Cmod c = 1 ->
+  (forall i, Rlt (Rabs (p`_ i)) delta) ->
+  Rle (Cmod (map_poly RtoC p).[c])  (INR(seq.size p) * delta).
+Proof.
+  intros.
+  generalize (root_eval_bound_cpoly c (map_poly RtoC p) delta H H0); intros.
+  rewrite (size_map_poly RtoC_rmorphism p) in H2.
+  apply H2; intros.
+  rewrite coefE.
+  destruct (i < seq.size p)%N.
+  - by rewrite Cmod_Rabs.
+  - by rewrite Cmod_0.
+Qed.    
+
+Lemma decode_delta (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (delta : R) :
+  Rlt 0 delta ->
+  let pmat := peval_mat (odd_nth_roots (S n)) in
+  (forall i, (Rlt (Cmod (cl i 0)) delta)) ->
+  forall i, (Rlt (Cmod ((pmat *m cl) i 0)) ((2^S n)%:R * delta)).
+Proof.
+  generalize (pmat_normc_1 n); simpl; intros.
+  unfold peval_mat, odd_nth_roots in *.
+  rewrite !mxE.
+  Admitted.
 
 Section unity.
   Variable (T : comRingType).
