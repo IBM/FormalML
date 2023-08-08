@@ -216,9 +216,12 @@ Proof.
   coq_lra.
 Qed.  
 
+Section sin_cos.
+  Local Open Scope R_scope.
+
 Lemma cosneg1_sin0 (x : R) :
-  cos x = Ropp R1 ->
-  sin x = R0.
+  cos x = - 1 ->
+  sin x = 0.
 Proof.
   intros eqq1.
   generalize (cos2 x).
@@ -229,7 +232,7 @@ Proof.
 Qed.  
 
 Lemma cos_eq_1_aux_pos (x : R) :
-  cos x = R1 ->
+  cos x = 1 ->
   exists k, x = (PI * IZR(k))%R.
 Proof.
   intros eqq1.
@@ -241,7 +244,7 @@ Proof.
 Qed.
 
 Lemma cos_eq_1_aux_neg (x : R) :
-  cos x = Ropp R1 ->
+  cos x = - 1 ->
   exists k, x = (PI * IZR(k))%R.
 Proof.
   intros eqq1.
@@ -314,7 +317,7 @@ Proof.
 Qed.
  *)
 
-Lemma cos_eq_1_1 : forall x:R, (exists k : Z, x = (IZR k * 2 * PI)%R) -> cos x = 1%R.
+Lemma cos_eq_1_1 : forall x:R, (exists k : Z, x = (IZR k * 2 * PI)%R) -> cos x = 1.
 Proof.
   assert (forall n, cos (INR n * 2 * PI) = 1%R). {
     intros n;induction n as [|n IHn].
@@ -342,9 +345,9 @@ Proof.
 Qed.
 
 Lemma cos_lt_1 (x : R) :
-  (Rlt 0 x)%R ->
-  (Rlt x (2*PI)) ->
-  (Rlt (cos x) 1).
+  0 < x ->
+  x < 2*PI ->
+  cos x < 1.
 Proof. 
   intros.
   generalize (COS_bound x); intros.
@@ -378,7 +381,7 @@ Proof.
  Qed.
 
 Lemma cos_eq_1 (x : R) :
-  cos x = R1 ->
+  cos x = 1 ->
   exists (k:Z), x = (2 * PI * IZR(k))%R.
 Proof.
   intros Hx.
@@ -410,7 +413,7 @@ Proof.
 
 Lemma cos_eq_1_nneg (x : R) :
   cos x = R1 ->
-  (Rle 0 x)%R ->
+  0 <= x ->
   exists (k:nat), x = (2 * PI * INR(k))%R.
 Proof.
   intros.
@@ -466,6 +469,8 @@ Proof.
   generalize Pi2_neq0.
   by case eqP.
 Qed.
+
+End sin_cos.
 
 Lemma nth_root_eq j k n :
   j mod (S n) = k mod (S n) <->
