@@ -1987,6 +1987,14 @@ Section norms.
     by destruct H.
   Qed.
 
+  Lemma normc_triangR (x y : R[i]) :
+    Rle (normc (x + y)) (normc x + normc y).
+  Proof.
+    move: (normc_triang x y) => /=.
+    rewrite /Order.le /Order.POrder.le /=.
+    by move/RleP.
+  Qed.
+
   Lemma bigmaxr_le_init {n} (v : 'rV[R[i]]_n) init (f:R[i]->R):
     Order.le init (\big[Order.max/init]_(j < n) f (v 0 j)).
   Proof.
@@ -2254,7 +2262,8 @@ Lemma Cmod_normc (c : R[i]) :
 Proof.
   unfold Cmod, ComplexField.Normc.normc.
   destruct c.
-  Admitted.
+  rewrite RsqrtE//.
+Admitted.
 
 Lemma Cmod_mul (c1 c2 : R[i]):
   Cmod (c1 * c2) = (Cmod c1) * (Cmod c2).
@@ -2270,21 +2279,34 @@ Proof.
   intros.
   by rewrite Cmod_mul H mul1r.
 Qed.
-
-Lemma root_eval_bound_cpoly (c : R[i]) (p : {poly R[i]}) (delta : R) :
-  Rlt 0 delta ->
+  
+Lemma root_eval_bound_cpoly (c : R[i]) (p : {poly R[i]}) (δ : R) :
+  Rlt 0 δ ->
   Cmod c = 1 ->
-  (forall i, Rlt (Cmod (p`_ i)) delta) ->
-  Rle (Cmod (p.[c])) (INR(seq.size p) * delta).
+  (forall i, Rlt (Cmod (p`_ i)) δ) ->
+  Rle (Cmod (p.[c])) (δ *+ (seq.size p)).
 Proof.
-  intros.
-  destruct p.
-  induction polyseq.
-  - simpl.
-    rewrite expr2 mulr0 Rplus_0_r sqrt_0 Rmult_0_l; lra.
-  - 
-Admitted.
-
+  intros δnneg Cnorm1 coeffsmall.
+  rewrite -{1}[p]polyseqK horner_Poly.
+  move: (polyseq p) coeffsmall => {p}.
+  elim.
+  - move=> _/=.
+    rewrite mulr0n expr0n /= !mulr0n Rplus_0_l sqrt_0.
+    by apply Rle_refl.
+  - move=> a l IHl coeffsmall /=.
+    rewrite mulrS [δ + _]addrC.
+    rewrite !Cmod_normc.
+    eapply Rle_trans; [apply normc_triangR | ].
+    rewrite ComplexField.Normc.normcM.
+    rewrite -!Cmod_normc Cnorm1 mulr1.
+    rewrite /add /=.
+    apply Rplus_le_compat.
+    + apply IHl.
+      move=>i.
+      by move: coeffsmall => /(_ (i.+1))/=.
+    + move: coeffsmall => /(_ O) /=.
+      by apply Rlt_le.
+Qed.
 
 Lemma RtoC_real_complex (r : R) :
   RtoC r = real_complex _ r.
