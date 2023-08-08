@@ -39,7 +39,7 @@ Definition C0 := Complex R0 R0.
 Definition C := ComplexField.complex_ringType R_fieldType.
 
 Lemma nth_root_0 n :
-  nth_root 0 (S n) = C1.
+  nth_root 0 (S n) = 1.
 Proof.
   unfold nth_root.
   assert ((2 * PI * INR 0 / INR (S n))%R = 0%R).
@@ -51,12 +51,12 @@ Proof.
 Qed.
 
 Lemma nth_root_2PI n j :
-  nth_root (j * (S n)) (S n) = C1.
+  nth_root (j * (S n)) (S n) = 1.
 Proof.
   unfold nth_root.
   replace (2 * PI * INR (j * S n) / INR (S n))%R with
     (0 + 2 * (INR j) * PI)%R.
-  - by rewrite cos_period sin_period /zero /= cos_0 sin_0 /C1.
+  - by rewrite cos_period sin_period /zero /= cos_0 sin_0.
   - rewrite add0r mult_INR -mulrA -mulrA.
     rewrite (mulrC _ PI) -(mulrA 2 _).
     f_equal.
@@ -200,10 +200,8 @@ Proof.
   intros.
   apply H.
   split.
-  - apply (f_equal (fun c => Re c)) in H0.
-    now unfold Re in H0.
-  - apply (f_equal (fun c => Im c)) in H0.
-    now unfold Im in H0.
+  - by apply (f_equal (fun c => Re c)) in H0.
+  - by apply (f_equal (fun c => Im c)) in H0.
  Qed.
 
 Lemma cos1_sin0 (x : R) :
@@ -344,7 +342,7 @@ Proof.
 Qed.
 
 Lemma cos_lt_1 (x : R) :
-  (Rlt 0 x) ->
+  (Rlt 0 x)%R ->
   (Rlt x (2*PI)) ->
   (Rlt (cos x) 1).
 Proof. 
@@ -466,7 +464,6 @@ Lemma Pi2_neq0_alt :
   is_true (2 * PI != 0).
 Proof.
   generalize Pi2_neq0.
-  intros.
   by case eqP.
 Qed.
 
@@ -567,7 +564,7 @@ Proof.
 Qed.
 
 Lemma nth_root_1_iff  n j :
-  nth_root j (S n) = C1 <-> j mod (S n) = 0%N.
+  nth_root j (S n) = 1 <-> j mod (S n) = 0%N.
 Proof.
   rewrite <- (nth_root_0 n).
   rewrite <- nth_root_eq.
@@ -620,7 +617,7 @@ Qed.
 Definition Cdiv (x y : R[i]) := x * (inv y).
 
 Lemma Cinv_1_r :
-  inv C1 = RtoC 1%R.
+  inv 1 = RtoC 1%R.
 Proof.
   unfold RtoC.
   now rewrite Theory.invr1.
@@ -632,7 +629,6 @@ Lemma Cinv_r (x : R[i]) :
 Proof.
   intros.
   rewrite divff //.
-  move :H.
   by case eqP.
 Qed.  
 
@@ -678,15 +674,12 @@ Lemma nth_root_inv j n :
 Proof.
   generalize (nth_root_diff (j mod S n) (S n) n); intros.
   rewrite <- H.
-  - rewrite nth_root_Sn.
-    unfold Cdiv.
-    rewrite mul1r.
+  - rewrite nth_root_Sn mul1r.
     f_equal.
     apply (nth_root_mod j (j mod S n) n).
     rewrite Nat.mod_mod; try lia.
   - assert (S n <> 0%N) by lia.
-    generalize (Nat.mod_upper_bound j (S n) H0); intros.
-    lia.
+    generalize (Nat.mod_upper_bound j (S n) H0); lia.
  Qed.
     
 Lemma nth_root_div j k n :
@@ -704,18 +697,14 @@ Lemma nth_root_Cmod j n :
   Cmod (nth_root j (S n)) = 1%R.
 Proof.
   unfold Cmod, nth_root, fst, snd.
-  rewrite Rplus_comm.
-  unfold one; simpl.
-  rewrite <- sqrt_1.
+  rewrite Rplus_comm /one /= -sqrt_1.
   f_equal.
-  do 2 rewrite <- RpowE.
-  do 2 rewrite <- Rsqr_pow2.
-  now rewrite sin2_cos2.
+  by rewrite -!RpowE -!Rsqr_pow2 sin2_cos2.
 Qed.
 
 Lemma Cmod_Cconj_alt (c : R[i]) :
   let: a +i* b :=c in
-  mul c (conjc c) = (a^+2 + b^+2) +i* 0.
+  c * (conjc c) = (a^+2 + b^+2) +i* 0.
 Proof.
   destruct c.
   unfold mul; simpl.
@@ -731,8 +720,7 @@ Proof.
   destruct c.
   rewrite H.
   f_equal.
-  do 2 rewrite <- RpowE.    
-  rewrite Rsqr_sqrt //.
+  rewrite -!RpowE Rsqr_sqrt //.
   apply Rplus_le_le_0_compat; apply pow2_ge_0.
 Qed.
 
@@ -740,11 +728,9 @@ Lemma nth_root_conj j n :
   conjc (nth_root j (S n)) = inv (nth_root j (S n)).
 Proof.
   generalize (Cmod_Cconj (nth_root j (S n))); intros.
-  rewrite nth_root_Cmod in H.
-  rewrite Rsqr_1 in H.
+  rewrite nth_root_Cmod Rsqr_1 in H.
   apply (f_equal (fun c => mul (inv (nth_root j (S n))) c)) in H.
-  unfold RtoC in H.
-  rewrite mulr1 mulrA Cinv_l in H.
+  rewrite /RtoC mulr1 mulrA Cinv_l in H.
   - now rewrite mul1r in H.
   - by apply nth_root_not_0.
 Qed.
@@ -769,8 +755,7 @@ Proof.
   intros eqq1.
   apply (f_equal sqrt) in eqq1.
   rewrite expr2 in eqq1.
-  rewrite -eqq1 -sqrt_Rsqr_abs.
-  f_equal.
+  rewrite -eqq1 -sqrt_Rsqr_abs //.
 Qed.
 
 Lemma Rabs_pm_l x y : Rabs x = y -> x = y \/ (- x)%R = y.
@@ -795,8 +780,7 @@ Proof.
   destruct c.
   unfold mul in H; simpl in H.
   unfold add in H; simpl in H.
-  unfold mul, opp in H; simpl in H.
-  unfold C1, RtoC in H.
+  unfold mul, opp, RtoC in H; simpl in H.
   injection H; intros; clear H.
   ring_simplify in H0.
   apply (f_equal (fun z => (Rinv 2 * z)%R)) in H0.
@@ -817,8 +801,7 @@ Proof.
       apply pow2_inv in H1.
       rewrite sqrt_1 in H1.
       apply Rabs_pm_r in H1.
-      unfold C1, RtoC.
-      unfold opp; simpl.
+      unfold RtoC, opp; simpl.
       unfold opp; simpl.
       destruct H1; [left|right]; f_equal; trivial.
       * rewrite H //.
