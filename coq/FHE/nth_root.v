@@ -878,9 +878,8 @@ Lemma nth_root_half n :
 Proof.
   destruct (pow2_S (S n)).
   generalize (odd_roots_prim 0 n); intros.
-  replace (2 * 0 +1)%N with 1%N in H by lia.
   rewrite H Cpow_nth_root -H in H0.
-  by replace (2^n * (2 * 0 + 1))%N with (2 ^ n)%N in H0 by lia.
+  by rewrite muln0 add0n muln1 in H0.
 Qed.
 
 Lemma nth_root_opp j n :
