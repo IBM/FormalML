@@ -2346,15 +2346,35 @@ Proof.
   - by rewrite Cmod_0.
 Qed.    
 
+Lemma vector_sum_bound (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (δ : R) :
+  Rle 0 δ ->
+  (forall i, Rle (Cmod (cl i 0)) δ) ->
+  Rle (Cmod (\sum_i cl i 0)) ((2^S n)%:R * δ).
+Proof.
+  intros.
+  Admitted.
+
 Lemma decode_delta (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (δ : R) :
   Rle 0 δ ->
   let pmat := peval_mat (odd_nth_roots (S n)) in
-  (forall i, Rlt (Cmod (cl i 0)) δ) ->
-  forall i, Rlt (Cmod ((pmat *m cl) i 0)) ((2^S n)%:R * δ).
+  (forall i, Rle (Cmod (cl i 0)) δ) ->
+  forall i, Rle (Cmod ((pmat *m cl) i 0)) ((2^S n)%:R * δ).
 Proof.
   generalize (pmat_normc_1 n); simpl; intros.
   unfold peval_mat, odd_nth_roots in *.
   rewrite !mxE.
+  (under eq_big_seq => - do (apply ssrbool.in1W => ?; rewrite !mxE)).
+  pose (pvec := (\col_(i1 < 2^(S n)) 
+                   (fun (ii: 'I_(2 ^ n.+1)) => (nth_root (2 * i + 1) (2 ^ n.+2) ^+ ii) * (cl ii 0)) i1)).
+  generalize (vector_sum_bound n pvec δ H0); intros.
+  unfold pvec in H2.
+  assert (forall i0 : 'I_(2 ^ n.+1),
+             Rle (Cmod (nth_root (2 * i + 1) (2 ^ n.+2) ^+ i0 * cl i0 0)%R)
+               δ)%R.
+  {
+    admit.
+  }
+
   Admitted.
 
 Section unity.
