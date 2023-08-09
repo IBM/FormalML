@@ -2346,10 +2346,10 @@ Proof.
   - by rewrite Cmod_0.
 Qed.    
 
-Lemma vector_sum_bound (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (δ : R) :
+Lemma vector_sum_bound (n : nat) (cl : 'cV[R[i]]_n) (δ : R) :
   Rle 0 δ ->
   (forall i, Rle (Cmod (cl i 0)) δ) ->
-  Rle (Cmod (\sum_i cl i 0)) ((2^S n)%:R * δ).
+  Rle (Cmod (\sum_i cl i 0)) (n%:R * δ).
 Proof.
   intros.
   Admitted.
@@ -2366,16 +2366,32 @@ Proof.
   (under eq_big_seq => - do (apply ssrbool.in1W => ?; rewrite !mxE)).
   pose (pvec := (\col_(i1 < 2^(S n)) 
                    (fun (ii: 'I_(2 ^ n.+1)) => (nth_root (2 * i + 1) (2 ^ n.+2) ^+ ii) * (cl ii 0)) i1)).
-  generalize (vector_sum_bound n pvec δ H0); intros.
+  generalize (vector_sum_bound (2^(S n)) pvec δ H0); intros.
   unfold pvec in H2.
   assert (forall i0 : 'I_(2 ^ n.+1),
-             Rle (Cmod (nth_root (2 * i + 1) (2 ^ n.+2) ^+ i0 * cl i0 0)%R)
+             Rle (Cmod ((\col_i1 (nth_root (2 * i + 1) (2 ^ n.+2) ^+ i1 * cl i1 0)%R) i0 0)) 
+                    
                δ)%R.
   {
-    admit.
+    intros.
+    rewrite mxE.
+    specialize (H i i0).
+    rewrite !mxE in H.
+    rewrite Cmod_mul H mul1r.
+    apply H1.
   }
-
-  Admitted.
+  specialize (H2 H3).
+  eapply Rle_trans.
+  shelve.
+  apply H2.
+  Unshelve.
+  right.
+  f_equal.
+  erewrite eq_big_seq; [reflexivity |].  
+  simpl.
+  apply ssrbool.in1W; intros.
+  now rewrite mxE.
+ Qed.
 
 Section unity.
   Variable (T : comRingType).
