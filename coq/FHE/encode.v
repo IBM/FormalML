@@ -2381,7 +2381,6 @@ Lemma decode_delta (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (δ : R) :
   forall i, Rle (Cmod ((pmat *m cl) i 0)) ((2^S n)%:R * δ).
 Proof.
   simpl; intros.
-  unfold peval_mat, odd_nth_roots in *.
   rewrite !mxE.
   (under eq_big_seq => - do (apply ssrbool.in1W => ?; rewrite !mxE)).
   apply vector_sum_bound; trivial.
