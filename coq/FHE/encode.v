@@ -2346,8 +2346,8 @@ Proof.
   - by rewrite Cmod_0.
 Qed.    
 
-Lemma Cmod_sum (n : nat) (cl : 'cV[R[i]]_n) :
-  Rle (Cmod (\sum_i cl i 0)) (\sum_i (Cmod (cl i 0))).
+Lemma Cmod_sum (n : nat) (cl : 'I_n -> R[i]) :
+  Rle (Cmod (\sum_i cl i)) (\sum_i (Cmod (cl i))).
 Proof.
   Admitted.
 
