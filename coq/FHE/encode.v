@@ -2351,10 +2351,10 @@ Lemma Cmod_sum (n : nat) (cl : 'I_n -> R[i]) :
 Proof.
   Admitted.
 
-Lemma vector_sum_bound (n : nat) (cl : 'cV[R[i]]_n) (δ : R) :
+Lemma vector_sum_bound (n : nat) (cl : 'I_n -> R[i]) (δ : R) :
   Rle 0 δ ->
-  (forall i, Rle (Cmod (cl i 0)) δ) ->
-  Rle (Cmod (\sum_i cl i 0)) (n%:R * δ).
+  (forall i, Rle (Cmod (cl i)) δ) ->
+  Rle (Cmod (\sum_i cl i)) (n%:R * δ).
 Proof.
   intros.
   eapply Rle_trans.
@@ -2384,29 +2384,14 @@ Proof.
   unfold peval_mat, odd_nth_roots in *.
   rewrite !mxE.
   (under eq_big_seq => - do (apply ssrbool.in1W => ?; rewrite !mxE)).
-  pose (pvec := (\col_(i1 < 2^(S n)) 
-                   (fun (ii: 'I_(2 ^ n.+1)) => (nth_root (2 * i + 1) (2 ^ n.+2) ^+ ii) * (cl ii 0)) i1)).
-  generalize (vector_sum_bound (2^(S n)) pvec δ H); intros.
-  assert (forall i0 : 'I_(2 ^ n.+1), Rle (Cmod (pvec i0 0)) δ).
-  {
-    intros.
-    unfold pvec.
-    rewrite mxE.
-    generalize (pmat_normc_1 n i i0); intros.
-    unfold peval_mat, odd_nth_roots in H2.
-    rewrite !mxE in H2.
-    rewrite Cmod_mul H2 mul1r.
-    apply H0.
-  }
-  specialize (H1 H2).
-  unfold pvec in H1.
-  eapply Rle_trans; [|apply H1].
-  right.
-  f_equal.
-  erewrite eq_big_seq; [reflexivity |].  
-  simpl.
-  apply ssrbool.in1W; intros.
-  now rewrite mxE.
+  pose (pvec := fun (ii: 'I_(2 ^ n.+1)) => (nth_root (2 * i + 1) (2 ^ n.+2) ^+ ii) * (cl ii 0)).
+  apply vector_sum_bound; trivial.
+  intros.
+  generalize (pmat_normc_1 n i i0); intros.
+  unfold peval_mat, odd_nth_roots in H1.
+  rewrite !mxE in H1.
+  rewrite Cmod_mul H1 mul1r.
+  apply H0.
  Qed.
 
 Section unity.
