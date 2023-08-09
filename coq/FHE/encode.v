@@ -2266,6 +2266,13 @@ Proof.
   apply ssrnum.Num.Theory.addr_ge0; apply ssrnum.Num.Theory.sqr_ge0.
 Qed.
 
+Lemma Cmod_triang (x y : R[i]) :
+  Rle (Cmod (x + y)) (Cmod x + Cmod y).
+Proof.
+  rewrite !Cmod_normc.
+  by apply normc_triangR.
+Qed.
+
 Lemma Cmod_mul (c1 c2 : R[i]):
   Cmod (c1 * c2) = (Cmod c1) * (Cmod c2).
 Proof.
@@ -2349,7 +2356,17 @@ Qed.
 Lemma Cmod_sum (n : nat) (cl : 'I_n -> R[i]) :
   Rle (Cmod (\sum_i cl i)) (\sum_i (Cmod (cl i))).
 Proof.
-  Admitted.
+  simpl.
+  elim: (index_enum (ordinal_finType n)) => /=.
+  - rewrite !big_nil /=.
+    rewrite !expr2 !mulr0 Rplus_0_r sqrt_0.
+    by apply Rle_refl.
+  - move=> a l IHl.
+    rewrite !big_cons /=.
+    eapply Rle_trans; [ apply Cmod_triang |].
+    apply Rplus_le_compat; trivial.
+    by apply Rle_refl.
+Qed.  
 
 Lemma vector_sum_bound (n : nat) (cl : 'I_n -> R[i]) (δ : R) :
   Rle 0 δ ->
