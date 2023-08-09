@@ -2387,10 +2387,7 @@ Proof.
   }
   specialize (H1 H2).
   unfold pvec in H1.
-  eapply Rle_trans.
-  shelve.
-  apply H1.
-  Unshelve.
+  eapply Rle_trans; [|apply H1].
   right.
   f_equal.
   erewrite eq_big_seq; [reflexivity |].  
