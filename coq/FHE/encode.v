@@ -2371,10 +2371,7 @@ Proof.
     clear cl H0.
     induction n.
     + by rewrite /= Rmult_0_l.
-    + rewrite /= IHn.
-      rewrite mulrS.
-      unfold natmul, add, mul; simpl.
-      by rewrite Rmult_plus_distr_r Rmult_1_l.
+    + by rewrite /= IHn mulrS /natmul /add /mul /= Rmult_plus_distr_r Rmult_1_l.
  Qed.
 
 Lemma decode_delta (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (δ : R) :
