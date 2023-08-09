@@ -2360,30 +2360,29 @@ Lemma decode_delta (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (δ : R) :
   (forall i, Rle (Cmod (cl i 0)) δ) ->
   forall i, Rle (Cmod ((pmat *m cl) i 0)) ((2^S n)%:R * δ).
 Proof.
-  generalize (pmat_normc_1 n); simpl; intros.
+  simpl; intros.
   unfold peval_mat, odd_nth_roots in *.
   rewrite !mxE.
   (under eq_big_seq => - do (apply ssrbool.in1W => ?; rewrite !mxE)).
   pose (pvec := (\col_(i1 < 2^(S n)) 
                    (fun (ii: 'I_(2 ^ n.+1)) => (nth_root (2 * i + 1) (2 ^ n.+2) ^+ ii) * (cl ii 0)) i1)).
-  generalize (vector_sum_bound (2^(S n)) pvec δ H0); intros.
-  unfold pvec in H2.
-  assert (forall i0 : 'I_(2 ^ n.+1),
-             Rle (Cmod ((\col_i1 (nth_root (2 * i + 1) (2 ^ n.+2) ^+ i1 * cl i1 0)%R) i0 0)) 
-                    
-               δ)%R.
+  generalize (vector_sum_bound (2^(S n)) pvec δ H); intros.
+  assert (forall i0 : 'I_(2 ^ n.+1), Rle (Cmod (pvec i0 0)) δ).
   {
     intros.
+    unfold pvec.
     rewrite mxE.
-    specialize (H i i0).
-    rewrite !mxE in H.
-    rewrite Cmod_mul H mul1r.
-    apply H1.
+    generalize (pmat_normc_1 n i i0); intros.
+    unfold peval_mat, odd_nth_roots in H2.
+    rewrite !mxE in H2.
+    rewrite Cmod_mul H2 mul1r.
+    apply H0.
   }
-  specialize (H2 H3).
+  specialize (H1 H2).
+  unfold pvec in H1.
   eapply Rle_trans.
   shelve.
-  apply H2.
+  apply H1.
   Unshelve.
   right.
   f_equal.
