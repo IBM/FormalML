@@ -2346,12 +2346,19 @@ Proof.
   - by rewrite Cmod_0.
 Qed.    
 
+Lemma Cmod_sum (n : nat) (cl : 'cV[R[i]]_n) :
+  Rle (Cmod (\sum_i cl i 0)) (\sum_i (Cmod (cl i 0))).
+Proof.
+  Admitted.
+
 Lemma vector_sum_bound (n : nat) (cl : 'cV[R[i]]_n) (δ : R) :
   Rle 0 δ ->
   (forall i, Rle (Cmod (cl i 0)) δ) ->
   Rle (Cmod (\sum_i cl i 0)) (n%:R * δ).
 Proof.
   intros.
+  eapply Rle_trans.
+  apply Cmod_sum.
   Admitted.
 
 Lemma decode_delta (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (δ : R) :
