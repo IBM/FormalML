@@ -2384,7 +2384,6 @@ Proof.
   unfold peval_mat, odd_nth_roots in *.
   rewrite !mxE.
   (under eq_big_seq => - do (apply ssrbool.in1W => ?; rewrite !mxE)).
-  pose (pvec := fun (ii: 'I_(2 ^ n.+1)) => (nth_root (2 * i + 1) (2 ^ n.+2) ^+ ii) * (cl ii 0)).
   apply vector_sum_bound; trivial.
   intros.
   generalize (pmat_normc_1 n i i0); intros.
