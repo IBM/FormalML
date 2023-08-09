@@ -2359,7 +2359,23 @@ Proof.
   intros.
   eapply Rle_trans.
   apply Cmod_sum.
-  Admitted.
+  apply Rle_trans with (r2 := \sum_(i < n) δ).
+  - apply big_ind2.
+    + lra.
+    + intros.
+      now apply Rplus_le_compat.
+    + intros.
+      apply H0.
+  - right.
+    rewrite big_const_ord.
+    clear cl H0.
+    induction n.
+    + by rewrite /= Rmult_0_l.
+    + rewrite /= IHn.
+      rewrite mulrS.
+      unfold natmul, add, mul; simpl.
+      by rewrite Rmult_plus_distr_r Rmult_1_l.
+ Qed.
 
 Lemma decode_delta (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (δ : R) :
   Rle 0 δ ->
