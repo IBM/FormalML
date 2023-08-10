@@ -2368,14 +2368,21 @@ Proof.
     by apply Rle_refl.
 Qed.  
 
-Lemma vector_sum_bound (n : nat) (cl : 'I_n -> R[i]) (δ : R) :
+Lemma const_sum (n : nat) (δ : R) :
+  \sum_(i < n) δ = n%:R * δ.
+Proof.
+  rewrite big_const_ord.
+  induction n.
+  + by rewrite /= mul0r.
+  + by rewrite /= IHn mulrS mulrDl mul1r.
+Qed.
+
+Lemma bounded_sum (n : nat) (cl : 'I_n -> R) (δ : R) :
   Rle 0 δ ->
-  (forall i, Rle (Cmod (cl i)) δ) ->
-  Rle (Cmod (\sum_i cl i)) (n%:R * δ).
+  (forall i, Rle (cl i) δ) ->
+  Rle (\sum_i cl i) (n%:R * δ).
 Proof.
   intros.
-  eapply Rle_trans.
-  apply Cmod_sum.
   apply Rle_trans with (r2 := \sum_(i < n) δ).
   - apply big_ind2.
     + lra.
@@ -2384,12 +2391,19 @@ Proof.
     + intros.
       apply H0.
   - right.
-    rewrite big_const_ord.
-    clear cl H0.
-    induction n.
-    + by rewrite /= Rmult_0_l.
-    + by rewrite /= IHn mulrS /natmul /add /mul /= Rmult_plus_distr_r Rmult_1_l.
+    apply const_sum.
  Qed.
+
+Lemma Cabs_sum_bound (n : nat) (cl : 'I_n -> R[i]) (δ : R) :
+  Rle 0 δ ->
+  (forall i, Rle (Cmod (cl i)) δ) ->
+  Rle (Cmod (\sum_i cl i)) (n%:R * δ).
+Proof.
+  intros.
+  eapply Rle_trans.
+  apply Cmod_sum.
+  now apply bounded_sum.
+Qed.
 
 Lemma decode_delta (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (δ : R) :
   Rle 0 δ ->
@@ -2399,14 +2413,9 @@ Lemma decode_delta (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (δ : R) :
 Proof.
   simpl; intros.
   rewrite !mxE.
-  (under eq_big_seq => - do (apply ssrbool.in1W => ?; rewrite !mxE)).
-  apply vector_sum_bound; trivial.
+  apply Cabs_sum_bound; trivial.
   intros.
-  generalize (pmat_normc_1 n i i0); intros.
-  unfold peval_mat, odd_nth_roots in H1.
-  rewrite !mxE in H1.
-  rewrite Cmod_mul H1 mul1r.
-  apply H0.
+  by rewrite Cmod_mul pmat_normc_1 mul1r.
  Qed.
 
 Section unity.
