@@ -1,6 +1,6 @@
 Require Import Lia List.
 From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix ring.
-From mathcomp Require Import ssralg ssrfun.
+From mathcomp Require Import ssralg ssrfun ssrint.
 From mathcomp Require Import generic_quotient ring_quotient.
 From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool.
 Import ssralg.GRing.
@@ -16,13 +16,26 @@ Section encrypt.
   Hypothesis (qodd : (odd q)).
   
   Variable (err_poly secret_poly a_poly : {poly 'Z_q}).
+  Variable (ρ : nat). (* bound for errs *)
+
   (* err_poly is small, a_poly is random over 'Z_q *)
 
   Definition public_key := (-a_poly * secret_poly + err_poly, a_poly).
 
-  Definition encrypt (m : {poly 'Z_q}) := (m + fst public_key, snd public_key).
+  Definition encrypt (m : {poly 'Z_q}) : ({poly 'Z_q} * {poly 'Z_q}) :=
+    (m + fst public_key, snd public_key).
 
   Definition encrypt_z (m : {poly int}) := encrypt (red_poly m q).
+
+  Definition balanced_mod {qq:nat} (x : 'Z_qq) :=
+    let xz := x %:Z in
+    let qz := q %:Z in
+    if intOrdered.lez xz (qz/2) then xz else qz-xz.
+
+  Definition coef_norm {qq:nat} (p : {poly 'Z_qq}) :=
+    list_max (map absz (map balanced_mod p)).
+
+  Hypothesis (err_poly_small : coef_norm err_poly <= ρ).
 
   Definition decrypt mpair := (fst mpair) + (snd mpair) * secret_poly.
 
@@ -33,8 +46,11 @@ Section encrypt.
     ring.
   Qed.
   
+(*
+  (* following already defined in ssralg *)
   Definition add_pair (p1 p2 : ({poly 'Z_q} * {poly 'Z_q})) :=
     (fst p1 + fst p2, snd p1 + snd p2).
+*)
 
   Definition scale_pair (m : {poly 'Z_q}) (p : ({poly 'Z_q} * {poly 'Z_q})) :=
     (m * fst p, m * snd p).
@@ -61,7 +77,7 @@ Section encrypt.
 
   Definition decrypt_mul trip := fst trip + secret_poly * decrypt (snd trip).
 
-  Lemma CKKS_mul (m1 m2 : {poly 'Z_q}) :
+  Lemma CKKS_mul_trip (m1 m2 : {poly 'Z_q}) :
     decrypt_mul (mul_pair (encrypt m1) (encrypt m2)) =
       decrypt (encrypt m1) * decrypt (encrypt m2).
   Proof.
@@ -69,6 +85,33 @@ Section encrypt.
     ring.
   Qed.
     
+  Variable (p:nat). (* relin_modulus *)
+  Hypothesis pbig : p > q.
+  Definition pq := (p * q)%N.
+  
+  Definition pq_embed (c : 'Z_q) : 'Z_pq := inZp c.
+
+  Definition secret_p := map_poly pq_embed secret_poly.
+
+  Variable (relin_err relin_a : {poly 'Z_pq}).
+  Hypothesis (relin_err__small : coef_norm relin_err <= ρ).
+
+  Definition red_p_q (c : 'Z_pq) : 'Z_q := 
+    intmul Zp1 (balanced_mod c / p%:Z).
+
+  Definition relin_V2_aux (c2 : {poly 'Z_q}) :=
+    let b := - relin_a * secret_p + (secret_p ^+ 2)*+p + relin_err in
+    let cp := map_poly pq_embed c2 in
+    (map_poly red_p_q (cp * b), map_poly red_p_q (cp * relin_a)).
+
+  Definition relin_V2 trip :=
+    add_pair (fst trip, fst (snd trip))
+             (relin_V2_aux (snd (snd trip))).
+             
+  Definition CKKS_mul (p1 p2 : ({poly 'Z_q} * {poly 'Z_q})) : 
+    ({poly 'Z_q} * {poly 'Z_q}) :=
+    relin_V2 (mul_pair p1 p2).
+
   
 
 End encrypt.
