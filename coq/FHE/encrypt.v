@@ -32,6 +32,12 @@ Section encrypt.
     let qz := q %:Z in
     if intOrdered.lez xz (qz/2) then xz else qz-xz.
 
+  Definition rounded_div (num : int) (den : nat) :=
+    let denz := den %:Z in
+    let q := num/denz in
+    let rem := num - q * denz in
+    if absz rem < (Nat.div den 2) then q else q+1.
+
   Definition coef_norm {qq:nat} (p : {poly 'Z_qq}) :=
     list_max (map absz (map balanced_mod p)).
 
@@ -89,7 +95,8 @@ Section encrypt.
   Hypothesis pbig : p > q.
   Definition pq := (p * q)%N.
   
-  Definition pq_embed (c : 'Z_q) : 'Z_pq := inZp c.
+  Definition pq_embed (c : 'Z_q) : 'Z_pq := 
+    intmul Zp1 (balanced_mod c).
 
   Definition secret_p := map_poly pq_embed secret_poly.
 
@@ -97,7 +104,7 @@ Section encrypt.
   Hypothesis (relin_err__small : coef_norm relin_err <= ρ).
 
   Definition red_p_q (c : 'Z_pq) : 'Z_q := 
-    intmul Zp1 (balanced_mod c / p%:Z).
+    intmul Zp1 (rounded_div (balanced_mod c) p).
 
   Definition relin_V2_aux (c2 : {poly 'Z_q}) :=
     let b := - relin_a * secret_p + (secret_p ^+ 2)*+p + relin_err in
@@ -112,6 +119,5 @@ Section encrypt.
     ({poly 'Z_q} * {poly 'Z_q}) :=
     relin_V2 (mul_pair p1 p2).
 
-  
 
 End encrypt.
