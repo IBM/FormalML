@@ -2467,6 +2467,17 @@ Section unity.
       by rewrite HH in i.
   Qed.
 
+  Lemma odd_pow_prim_root (n:N) :
+    (one T) <> -(one T) ->
+    z ^+ (2^n) = -1 ->
+    forall j,
+      odd j ->
+      ((z ^+ j) ^+ (2^n)) = -1.
+  Proof.    
+    intros.
+    by rewrite exprAC H0 -signr_odd H1 /= expr1.
+  Qed.
+    
   Lemma char_2_opp_eq :
     one T = - (one T) <-> 2%N \in [char T].
   Proof.
