@@ -94,8 +94,10 @@ Section encrypted_ops.
   Variable (p:nat). (* relin_modulus *)
   Hypothesis pbig : p > q.
   
-  Definition pq_embed (c : 'Z_q) : 'Z_(p*q) := 
-    intmul Zp1 (balanced_mod c).
+  Definition ired_q {qq:nat} (i : int) : 'Z_qq :=
+    intmul Zp1 i.
+
+  Definition pq_embed (c : 'Z_q) : 'Z_(p*q) := ired_q (balanced_mod c).
 
   Definition secret_p := map_poly pq_embed secret_poly.
 
@@ -103,10 +105,10 @@ Section encrypted_ops.
   Hypothesis (relin_err__small : coef_norm relin_err <= ρ).
 
   Definition rescale (q1 q2 : nat) (c : 'Z_(q1*q2)) : 'Z_q2 :=
-    intmul Zp1 (rounded_div (balanced_mod c) q1).
+    ired_q (rounded_div (balanced_mod c) q1).
 
   Definition rescale_gen (q1 q2 : nat) (c : 'Z_q1) : 'Z_q2 :=
-    intmul Zp1 (rounded_div (balanced_mod c) (Nat.div q1 q2)).
+    ired_q (rounded_div (balanced_mod c) (Nat.div q1 q2)).
 
   Lemma rescale_gen_prop (q1 q2 : nat) (c : 'Z_(q1*q2)):
     q2 <> 0%N ->
