@@ -94,8 +94,7 @@ Section encrypted_ops.
   Variable (p:nat). (* relin_modulus *)
   Hypothesis pbig : p > q.
   
-  Definition ired_q {qq:nat} (i : int) : 'Z_qq :=
-    intmul Zp1 i.
+  Definition ired_q {qq:nat} (i : int) : 'Z_qq := intmul Zp1 i.
 
   Definition pq_embed (c : 'Z_q) : 'Z_(p*q) := ired_q (balanced_mod c).
 
@@ -136,3 +135,32 @@ Section encrypted_ops.
     relin_V2 (mul_pair p1 p2).
   
 End encrypted_ops.
+
+Section rotation.
+
+  (* show  p x -> p (x^k) is a morphism *)
+  Definition poly_shift [R:comRingType] (k : nat) (p : {poly R}) :=
+    comp_poly 'X^k p.
+
+  Lemma poly_shift_1 [R:comRingType] (k : nat):
+    @poly_shift R k 1 = 1.
+  Proof.
+    by rewrite /poly_shift comp_polyC.
+  Qed.
+
+  Lemma poly_shift_is_rmorphism [R:comRingType] (k : nat) :
+    rmorphism (poly_shift (R := R) k).
+  Proof.
+    unfold poly_shift.
+    constructor.
+    - intros ??.
+      by rewrite comp_polyB.
+    - split.
+      + intros ??.
+        by rewrite comp_poly_multiplicative.
+      + by rewrite comp_polyC polyC1.
+  Qed.
+
+End rotation.  
+      
+      
