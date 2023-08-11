@@ -201,10 +201,15 @@ Section rotation.
     move: a b => [a amon] [b bmon] /= eqq.
     apply poly_inj => /=.
     apply nth_error_eqs => i.
+    have samelen: seq.size a = seq.size b.
+    - admit.
+    - 
+    
     specialize (eqq i).
-    destruct (Compare_dec.lt_dec i (seq.size a))
-    ; destruct (Compare_dec.lt_dec i (seq.size b)).
-    - rewrite !(@nth_error_nth' _ _ _ (@zero (Ring.zmodType R))) //.
+    destruct (Compare_dec.lt_dec i (seq.size a)).
+    + generalize @nth_error_nth'.
+      admit.
+    + (* use defaults *)
   Admitted.
   
   Lemma poly_shift_injective [R:comRingType] (k:nat) : injective (poly_shift (R:=R) (S k)).
