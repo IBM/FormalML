@@ -93,20 +93,32 @@ Section encrypted_ops.
     
   Variable (p:nat). (* relin_modulus *)
   Hypothesis pbig : p > q.
-  Definition pq := (p * q)%N.
   
-  Definition pq_embed (c : 'Z_q) : 'Z_pq := 
+  Definition pq_embed (c : 'Z_q) : 'Z_(p*q) := 
     intmul Zp1 (balanced_mod c).
 
   Definition secret_p := map_poly pq_embed secret_poly.
 
-  Variable (relin_err relin_a : {poly 'Z_pq}).
+  Variable (relin_err relin_a : {poly 'Z_(p*q)}).
   Hypothesis (relin_err__small : coef_norm relin_err <= ρ).
 
   Definition rescale (q1 q2 : nat) (c : 'Z_(q1*q2)) : 'Z_q2 :=
     intmul Zp1 (rounded_div (balanced_mod c) q1).
 
-  Definition red_p_q (c : 'Z_pq) : 'Z_q := rescale p q c.
+  Definition rescale_gen (q1 q2 : nat) (c : 'Z_q1) : 'Z_q2 :=
+    intmul Zp1 (rounded_div (balanced_mod c) (Nat.div q1 q2)).
+
+  Lemma rescale_gen_prop (q1 q2 : nat) (c : 'Z_(q1*q2)):
+    q2 <> 0%N ->
+    rescale q1 q2 c = rescale_gen (q1 * q2) q2 c.
+  Proof.
+    intros.
+    unfold rescale, rescale_gen.
+    do 2 f_equal.
+    now rewrite PeanoNat.Nat.div_mul.
+  Qed.
+    
+  Definition red_p_q (c : 'Z_(p*q)) : 'Z_q := rescale p q c.
 
   Definition relin_V2_aux (c2 : {poly 'Z_q}) :=
     let b := - relin_a * secret_p + (secret_p ^+ 2)*+p + relin_err in
