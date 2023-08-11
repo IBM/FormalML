@@ -10,7 +10,7 @@ Set Bullet Behavior "Strict Subproofs".
 
 Local Open Scope ring_scope.
 
-Section encrypt.
+Section encrypted_ops.
 
   Variable (q:nat).
   Hypothesis (qodd : (odd q)).
@@ -120,4 +120,4 @@ Section encrypt.
     relin_V2 (mul_pair p1 p2).
 
 
-End encrypt.
+End encrypted_ops.
