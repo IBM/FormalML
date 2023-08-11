@@ -2377,6 +2377,16 @@ Proof.
   + by rewrite /= IHn mulrS mulrDl mul1r.
 Qed.
 
+Lemma leq_sum_R [I : Type] (r : list I) [P : pred I] [E1 E2 : I -> R] :
+  (forall i : I, P i -> Rle (E1 i) (E2 i)) ->
+  Rle (\sum_(i <- r | P i) E1 i) (\sum_(i <- r | P i) E2 i).
+Proof.
+  apply big_ind2.
+  - lra.
+  - intros.
+    now apply Rplus_le_compat.
+Qed.
+
 Lemma bounded_sum (n : nat) (cl : 'I_n -> R) (δ : R) :
   Rle 0 δ ->
   (forall i, Rle (cl i) δ) ->
@@ -2384,12 +2394,7 @@ Lemma bounded_sum (n : nat) (cl : 'I_n -> R) (δ : R) :
 Proof.
   intros.
   apply Rle_trans with (r2 := \sum_(i < n) δ).
-  - apply big_ind2.
-    + lra.
-    + intros.
-      now apply Rplus_le_compat.
-    + intros.
-      apply H0.
+  - now apply leq_sum_R.
   - right.
     apply const_sum.
  Qed.
