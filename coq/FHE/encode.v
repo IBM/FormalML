@@ -2468,16 +2468,64 @@ Section unity.
   Qed.
 
   Lemma odd_pow_prim_root (n:N) :
-    (one T) <> -(one T) ->
     z ^+ (2^n) = -1 ->
     forall j,
       odd j ->
       ((z ^+ j) ^+ (2^n)) = -1.
   Proof.    
     intros.
-    by rewrite exprAC H0 -signr_odd H1 /= expr1.
+    by rewrite exprAC H -signr_odd H0 /= expr1.
   Qed.
+
+  Search div.gcdn.
+  Compute (div.gcdn 19 7).
+  Compute (div.egcdn 7 29).
+  Compute (25*7-6*29)%N.
+  Compute (div.egcdn 29 7).
     
+  Lemma gcd_odd_pow2 j n :
+    odd j ->
+    (div.gcdn j (2 ^ (S n)) = 1)%N.
+  Proof.
+    Admitted.
+
+  Lemma odd_pow_prim_root_inv (n:N) :
+    z ^+ (2^n) = -1 ->
+    forall j,
+      odd j ->
+      {k:nat | ((z ^+ j) ^+ k) = z}.
+  Proof.
+    intros.
+    assert (2^(S n) <> 0)%N.
+    {
+      destruct (pow2_S (S n)).
+      move => /eqP in i.
+      rewrite i.
+      lia.
+    }
+    assert {kk | (j * kk mod (2^(S n)) = 1)%N}.
+    {
+      assert (0 < j) by lia.
+      destruct (div.egcdnP (2^(S n)) H2).
+      exists km.
+      rewrite mulnC e addnC Nat.mod_add; try lia.
+      rewrite (gcd_odd_pow2 j n H0).
+      apply Nat.mod_small.
+      destruct (pow2_S n).
+      move => /eqP in i0.
+      rewrite expnS i0; lia.
+    }
+    destruct H2 as [k ?].
+    exists k.
+    assert (z ^+ (2 ^ (S n)) = 1).
+    {
+      by rewrite expnS mulnC exprM H expr2 mulrNN mulr1.
+    }
+    rewrite -exprM.
+    rewrite (Nat.div_mod (j * k) _ H1) e.
+    by rewrite exprD exprM H2 expr1 Theory.expr1n mul1r.
+  Qed.
+  
   Lemma char_2_opp_eq :
     one T = - (one T) <-> 2%N \in [char T].
   Proof.
