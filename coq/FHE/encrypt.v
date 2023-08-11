@@ -103,8 +103,10 @@ Section encrypted_ops.
   Variable (relin_err relin_a : {poly 'Z_pq}).
   Hypothesis (relin_err__small : coef_norm relin_err <= ρ).
 
-  Definition red_p_q (c : 'Z_pq) : 'Z_q := 
-    intmul Zp1 (rounded_div (balanced_mod c) p).
+  Definition rescale (q1 q2 : nat) (c : 'Z_(q1*q2)) : 'Z_q2 :=
+    intmul Zp1 (rounded_div (balanced_mod c) q1).
+
+  Definition red_p_q (c : 'Z_pq) : 'Z_q := rescale p q c.
 
   Definition relin_V2_aux (c2 : {poly 'Z_q}) :=
     let b := - relin_a * secret_p + (secret_p ^+ 2)*+p + relin_err in
@@ -118,6 +120,5 @@ Section encrypted_ops.
   Definition CKKS_mul (p1 p2 : ({poly 'Z_q} * {poly 'Z_q})) : 
     ({poly 'Z_q} * {poly 'Z_q}) :=
     relin_V2 (mul_pair p1 p2).
-
-
+  
 End encrypted_ops.
