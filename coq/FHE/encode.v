@@ -2496,6 +2496,7 @@ Section unity.
     now rewrite (@div.Gauss_gcdr j 2).
   Admitted.
 
+  Set Printing All.
   Lemma odd_pow_prim_root_inv (n:N) :
     z ^+ (2^n) = -1 ->
     forall j,

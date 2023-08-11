@@ -8,6 +8,40 @@ Require Import encode.
 
 Set Bullet Behavior "Strict Subproofs".
 
+Require Import LibUtilsListAdd.
+
+Lemma Forall2_nth_error_iff {A B} (P:A->B->Prop) (l1 : list A) (l2: list B) :
+  (forall (i : nat), match nth_error l1 i, nth_error l2 i with
+             | Some a, Some b => P a b
+              | None, None => Logic.True
+              | _, _ => Logic.False
+              end
+  ) <->
+  Forall2 P l1 l2.
+Proof.
+  split.
+  - revert l2; induction l1; destruct l2; simpl in *; trivial; intros HH.
+    + specialize (HH 0); simpl in HH; contradiction.
+    + specialize (HH 0); simpl in HH; contradiction.
+    + constructor.
+      * now specialize (HH 0); simpl in HH.
+      * apply IHl1; intros i.
+        now specialize (HH (S i)).
+  - induction 1; intros [| i]; simpl; trivial.
+    apply IHForall2.
+Qed.
+
+Lemma nth_error_eqs {A} (l1 l2 : list A) :
+  (forall (i : nat), nth_error l1 i = nth_error l2 i) ->
+  l1 = l2.
+Proof.
+  intros HH.
+  apply Forall2_eq.
+  apply Forall2_nth_error_iff; intros i.
+  rewrite HH.
+  now destruct (nth_error l2 i).
+Qed.
+
 Local Open Scope ring_scope.
 
 Section encrypted_ops.
@@ -137,7 +171,7 @@ Section encrypted_ops.
 End encrypted_ops.
 
 Section rotation.
-
+  
   (* show  p x -> p (x^k) is a morphism *)
   Definition poly_shift [R:comRingType] (k : nat) (p : {poly R}) :=
     comp_poly 'X^k p.
@@ -160,6 +194,30 @@ Section rotation.
         by rewrite comp_poly_multiplicative.
       + by rewrite comp_polyC polyC1.
   Qed.
+
+  Lemma coefp_eq_poly [R:ringType] (a b : {poly R}) :
+    (forall i, a`_i = b`_i) -> a = b.
+  Proof.
+    move: a b => [a amon] [b bmon] /= eqq.
+    apply poly_inj => /=.
+    apply nth_error_eqs => i.
+    specialize (eqq i).
+    destruct (Compare_dec.lt_dec i (seq.size a))
+    ; destruct (Compare_dec.lt_dec i (seq.size b)).
+    - rewrite !(@nth_error_nth' _ _ _ (@zero (Ring.zmodType R))) //.
+  Admitted.
+  
+  Lemma poly_shift_injective [R:comRingType] (k:nat) : injective (poly_shift (R:=R) (S k)).
+  Proof.
+    move=> a b eqq.
+    apply coefp_eq_poly => i.
+    apply (f_equal (coefp (k.+1 * i))) in eqq.
+    move: eqq.
+    rewrite /poly_shift /=.
+    rewrite !coef_comp_poly_Xn //=.
+    rewrite !div.dvdn_mulr //.
+    by rewrite !div.mulKn //.
+  Qed.    
 
 End rotation.  
       
