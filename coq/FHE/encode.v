@@ -2477,17 +2477,24 @@ Section unity.
     by rewrite exprAC H -signr_odd H0 /= expr1.
   Qed.
 
-  Search div.gcdn.
-  Compute (div.gcdn 19 7).
-  Compute (div.egcdn 7 29).
-  Compute (25*7-6*29)%N.
-  Compute (div.egcdn 29 7).
-    
   Lemma gcd_odd_pow2 j n :
     odd j ->
     (div.gcdn j (2 ^ (S n)) = 1)%N.
   Proof.
-    Admitted.
+    intros.
+    assert (div.gcdn j 2 = 1%N).
+    {
+      admit.
+    }
+    induction n; trivial.
+    rewrite expnS.
+    assert (div.coprime j 2).
+    {
+      unfold div.coprime.
+      by apply /eqP.
+    }
+    now rewrite (@div.Gauss_gcdr j 2).
+  Admitted.
 
   Lemma odd_pow_prim_root_inv (n:N) :
     z ^+ (2^n) = -1 ->
