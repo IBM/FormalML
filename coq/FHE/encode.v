@@ -2382,9 +2382,8 @@ Lemma leq_sum_R [I : Type] (r : list I) [P : pred I] [E1 E2 : I -> R] :
   Rle (\sum_(i <- r | P i) E1 i) (\sum_(i <- r | P i) E2 i).
 Proof.
   apply big_ind2.
-  - lra.
-  - intros.
-    now apply Rplus_le_compat.
+  - by right.
+  - by apply Rplus_le_compat.
 Qed.
 
 Lemma bounded_sum (n : nat) (cl : 'I_n -> R) (δ : R) :
@@ -2394,9 +2393,9 @@ Lemma bounded_sum (n : nat) (cl : 'I_n -> R) (δ : R) :
 Proof.
   intros.
   apply Rle_trans with (r2 := \sum_(i < n) δ).
-  - now apply leq_sum_R.
+  - by apply leq_sum_R.
   - right.
-    apply const_sum.
+    by apply const_sum.
  Qed.
 
 Lemma Cabs_sum_bound (n : nat) (cl : 'I_n -> R[i]) (δ : R) :
@@ -2407,7 +2406,7 @@ Proof.
   intros.
   eapply Rle_trans.
   apply Cmod_sum.
-  now apply bounded_sum.
+  by apply bounded_sum.
 Qed.
 
 Lemma decode_delta (n : nat) (cl : 'cV[R[i]]_(2^(S n))) (δ : R) :
