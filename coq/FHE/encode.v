@@ -2482,9 +2482,13 @@ Section unity.
     (div.gcdn j (2 ^ (S n)) = 1)%N.
   Proof.
     intros.
+    generalize (div.coprime2n j); intros.
     assert (div.gcdn j 2 = 1%N).
     {
-      admit.
+      rewrite H in H0.
+      unfold div.coprime in H0.
+      move => /eqP in H0.
+      by rewrite div.gcdnC.
     }
     induction n; trivial.
     rewrite expnS.
@@ -2494,9 +2498,8 @@ Section unity.
       by apply /eqP.
     }
     now rewrite (@div.Gauss_gcdr j 2).
-  Admitted.
+  Qed.
 
-  Set Printing All.
   Lemma odd_pow_prim_root_inv (n:N) :
     z ^+ (2^n) = -1 ->
     forall j,

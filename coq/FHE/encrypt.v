@@ -198,18 +198,11 @@ Section rotation.
   Lemma coefp_eq_poly [R:ringType] (a b : {poly R}) :
     (forall i, a`_i = b`_i) -> a = b.
   Proof.
-    move: a b => [a amon] [b bmon] /= eqq.
-    apply poly_inj => /=.
-    apply nth_error_eqs => i.
+    intros.
     have samelen: seq.size a = seq.size b.
     - admit.
-    - 
-    
-    specialize (eqq i).
-    destruct (Compare_dec.lt_dec i (seq.size a)).
-    + generalize @nth_error_nth'.
-      admit.
-    + (* use defaults *)
+    - rewrite -(coefK a) -(coefK b) samelen /=.
+      now apply eq_poly.
   Admitted.
   
   Lemma poly_shift_injective [R:comRingType] (k:nat) : injective (poly_shift (R:=R) (S k)).
