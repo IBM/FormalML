@@ -199,11 +199,8 @@ Section rotation.
     (forall i, a`_i = b`_i) -> a = b.
   Proof.
     intros.
-    have samelen: seq.size a = seq.size b.
-    - admit.
-    - rewrite -(coefK a) -(coefK b) samelen /=.
-      now apply eq_poly.
-  Admitted.
+    by apply polyP => i.
+  Qed.
   
   Lemma poly_shift_injective [R:comRingType] (k:nat) : injective (poly_shift (R:=R) (S k)).
   Proof.
