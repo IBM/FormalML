@@ -194,18 +194,11 @@ Section rotation.
         by rewrite comp_poly_multiplicative.
       + by rewrite comp_polyC polyC1.
   Qed.
-
-  Lemma coefp_eq_poly [R:ringType] (a b : {poly R}) :
-    (forall i, a`_i = b`_i) -> a = b.
-  Proof.
-    intros.
-    by apply polyP => i.
-  Qed.
   
   Lemma poly_shift_injective [R:comRingType] (k:nat) : injective (poly_shift (R:=R) (S k)).
   Proof.
     move=> a b eqq.
-    apply coefp_eq_poly => i.
+    apply polyP => i.
     apply (f_equal (coefp (k.+1 * i))) in eqq.
     move: eqq.
     rewrite /poly_shift /=.
