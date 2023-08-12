@@ -2,7 +2,7 @@ Require Import Lia List.
 From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix ring.
 From mathcomp Require Import ssralg ssrfun ssrint.
 From mathcomp Require Import generic_quotient ring_quotient.
-From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool.
+From mathcomp Require Import poly mxpoly polydiv zmodp eqtype ssrbool.
 Import ssralg.GRing.
 Require Import encode.
 
@@ -206,6 +206,18 @@ Section rotation.
     rewrite !div.dvdn_mulr //.
     by rewrite !div.mulKn //.
   Qed.    
+
+  Lemma lin_div_odd_power [R:comRingType] k :
+    odd k ->
+    Pdiv.Ring.rdvdp (R := R) ('X + 1%:P) ('X^k + 1%:P).
+  Proof.
+    rewrite -{1}(opprK 1%:P).
+    replace (- polyC (R:=R) 1) with (polyC (R:=R) (-1)).
+    - intros.
+      rewrite Pdiv.Ring.rdvdp_XsubCl /root hornerD hornerXn hornerC.
+      by rewrite -signr_odd H /= expr1 addrC addrN.
+    - by rewrite polyCN polyC1.
+  Qed.
 
 End rotation.  
       
