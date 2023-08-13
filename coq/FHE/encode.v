@@ -1,4 +1,4 @@
-Require Import Reals Lra Lia List Permutation PushNeg.
+Require Import Reals Lra Lia List Permutation.
 From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix Rstruct complex.
 From mathcomp Require Import ssralg ssrfun.
 From mathcomp Require Import generic_quotient ring_quotient.
@@ -2569,18 +2569,26 @@ Section unity.
   Proof.
     intros.
     split; intros.
-    - apply in_map_iff.
-      assert (NoDup (map f l)).
+    - assert (NoDup (map f l)).
       {
         now apply FinFun.Injective_map_NoDup.  
       }
-      Search "perm_on".
-      admit.
+      assert (incl l (map f l)).
+      {
+        apply NoDup_length_incl; trivial.
+        - now rewrite map_length.
+        - intros ??.
+          apply in_map_iff in H4.
+          destruct H4 as [? [??]].
+          specialize (H0 x H5).
+          now rewrite H4 in H0.
+      }
+      now apply H4.
     - apply in_map_iff in H2.
       destruct H2 as [? [??]].
       rewrite -H2.
       now apply H0.
-    Admitted.
+  Qed.
 
   Lemma injective_finite_permutation {S} (l : list S) (f : S -> S) :
     NoDup l ->
