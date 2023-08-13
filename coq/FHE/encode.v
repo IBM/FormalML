@@ -2500,11 +2500,28 @@ Section unity.
     now rewrite (@div.Gauss_gcdr j 2).
   Qed.
 
-  Lemma odd_pow_prim_root_inv (n:N) :
-    z ^+ (2^n) = -1 ->
-    forall j,
-      odd j ->
-      {k:nat | ((z ^+ j) ^+ k) = z}.
+  Lemma pow2_odd_inv (j n :N) :
+    odd j ->
+    {k | (j * k mod (2^(S n)) = 1)%N}.
+  Proof.
+    intros.
+    assert (0 < j) by lia.
+    destruct (div.egcdnP (2^(S n)) H0).
+    exists km.
+    rewrite mulnC e addnC Nat.mod_add; try lia.
+    rewrite (gcd_odd_pow2 j n H).
+    apply Nat.mod_small.
+    destruct (pow2_S n).
+    move => /eqP in i0.
+    rewrite expnS i0; lia.
+  Qed.
+
+  Lemma odd_pow_prim_root_inv (j n:N) :
+    odd j ->
+    exists k,
+    forall (z2:T),
+      z2 ^+ (2^n) = -1 ->
+      ((z2 ^+ j) ^+ k) = z2.
   Proof.
     intros.
     assert (2^(S n) <> 0)%N.
@@ -2514,29 +2531,35 @@ Section unity.
       rewrite i.
       lia.
     }
-    assert {kk | (j * kk mod (2^(S n)) = 1)%N}.
-    {
-      assert (0 < j) by lia.
-      destruct (div.egcdnP (2^(S n)) H2).
-      exists km.
-      rewrite mulnC e addnC Nat.mod_add; try lia.
-      rewrite (gcd_odd_pow2 j n H0).
-      apply Nat.mod_small.
-      destruct (pow2_S n).
-      move => /eqP in i0.
-      rewrite expnS i0; lia.
-    }
-    destruct H2 as [k ?].
+    generalize (pow2_odd_inv j n H); intros.
+    destruct H1 as [k ?].
     exists k.
-    assert (z ^+ (2 ^ (S n)) = 1).
+    intros.
+    assert (z2 ^+ (2 ^ (S n)) = 1).
     {
-      by rewrite expnS mulnC exprM H expr2 mulrNN mulr1.
+      by rewrite expnS mulnC exprM H1 expr2 mulrNN mulr1.
     }
     rewrite -exprM.
-    rewrite (Nat.div_mod (j * k) _ H1) e.
+    rewrite (Nat.div_mod (j * k) _ H0) e.
     by rewrite exprD exprM H2 expr1 Theory.expr1n mul1r.
   Qed.
-  
+
+  Lemma odd_pow_prim_root_inj (j n:N) (z2 : T) :
+    z ^+ (2^n) = -1 ->
+    z2 ^+ (2^n) = -1 ->
+    z <> z2 ->
+    odd j ->
+    z ^+ j <> z2 ^+ j.
+  Proof.
+    intros.
+    unfold not; intros.
+    destruct (odd_pow_prim_root_inv j n H2) as [k ?].
+    apply H4 in H.
+    apply H4 in H0.
+    apply (f_equal (fun z => z ^+k)) in H3.
+    by rewrite H H0 in H3.
+  Qed.
+
   Lemma char_2_opp_eq :
     one T = - (one T) <-> 2%N \in [char T].
   Proof.
