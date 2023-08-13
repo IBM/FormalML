@@ -1,4 +1,4 @@
-Require Import Reals Lra Lia List.
+Require Import Reals Lra Lia List Permutation PushNeg.
 From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix Rstruct complex.
 From mathcomp Require Import ssralg ssrfun.
 From mathcomp Require Import generic_quotient ring_quotient.
@@ -2558,6 +2558,41 @@ Section unity.
     apply H4 in H0.
     apply (f_equal (fun z => z ^+k)) in H3.
     by rewrite H H0 in H3.
+  Qed.
+
+  Lemma injective_finite_bijective {S} (l : list S) (f : S -> S) :
+    NoDup l ->
+    (forall s, In s l -> In (f s) l) ->
+    (forall s1 s2, 
+        f s1 = f s2 -> s1 = s2) ->
+    forall s, In s l <-> In s (map f l).
+  Proof.
+    intros.
+    split; intros.
+    - apply in_map_iff.
+      assert (NoDup (map f l)).
+      {
+        now apply FinFun.Injective_map_NoDup.  
+      }
+      Search "perm_on".
+      admit.
+    - apply in_map_iff in H2.
+      destruct H2 as [? [??]].
+      rewrite -H2.
+      now apply H0.
+    Admitted.
+
+  Lemma injective_finite_permutation {S} (l : list S) (f : S -> S) :
+    NoDup l ->
+    (forall s, In s l -> In (f s) l) ->
+    (forall s1 s2, 
+        f s1 = f s2 -> s1 = s2) ->
+    Permutation l (map f l).
+  Proof.
+    intros.
+    apply NoDup_Permutation; trivial.
+    - now apply FinFun.Injective_map_NoDup.
+    - now apply injective_finite_bijective.
   Qed.
 
   Lemma char_2_opp_eq :
