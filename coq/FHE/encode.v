@@ -2563,8 +2563,7 @@ Section unity.
   Lemma injective_finite_bijective {S} (l : list S) (f : S -> S) :
     NoDup l ->
     (forall s, In s l -> In (f s) l) ->
-    (forall s1 s2, 
-        f s1 = f s2 -> s1 = s2) ->
+    injective f ->
     forall s, In s l <-> In s (map f l).
   Proof.
     intros.
@@ -2593,8 +2592,7 @@ Section unity.
   Lemma injective_finite_permutation {S} (l : list S) (f : S -> S) :
     NoDup l ->
     (forall s, In s l -> In (f s) l) ->
-    (forall s1 s2, 
-        f s1 = f s2 -> s1 = s2) ->
+    injective f ->
     Permutation l (map f l).
   Proof.
     intros.
