@@ -306,7 +306,7 @@ Section rotation.
   Qed.
 
 
-  Lemma comp_poly_exp_polyX [R:comRingType] j k :
+  Lemma comp_poly_exp_polyX [R:ringType] j k :
     (polyX R) ^+ (j * k) = comp_poly ('X^ j) ('X^ k).
   Proof.
     by rewrite comp_Xn_poly /= -exprM.
@@ -318,7 +318,7 @@ Section rotation.
     by rewrite /poly_shift -comp_polyA comp_poly_exp_polyX.
   Qed.
   
-  Lemma lin_div_odd_power [R:comRingType] k :
+  Lemma lin_div_odd_power [R:ringType] k :
     odd k ->
     Pdiv.Ring.rdvdp (R := R) ('X + 1%:P) ('X^k + 1%:P).
   Proof.
@@ -330,11 +330,18 @@ Section rotation.
     - by rewrite polyCN polyC1.
   Qed.
 
+  (*
+  Lemma rdvdp_comp_poly_monic [R:comRingType] (r p q : {poly R}) :
+    lead_coef r \is a unit ->
+    Pdiv.Ring.rdvdp p q ->
+    Pdiv.Ring.rdvdp (p \Po r) (q \Po r).
+   *)
+  
   Lemma pow2_div_odd_power [R:comRingType] k n :
     odd k ->
     Pdiv.Ring.rdvdp (R := R) ('X^(2^n) + 1%:P) ('X^k ^+(2^n) + 1%:P).
   Proof.
-    Admitted.
+  Admitted.
 
 End rotation.  
       
