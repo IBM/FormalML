@@ -121,7 +121,8 @@ QLEARN = \
 
 FHE = \
       nth_root \
-      encode
+      encode \
+      encrypt
 
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	$(addprefix CertRL/LM/,$(ELFIC_UTILS)) \
