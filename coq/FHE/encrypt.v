@@ -329,16 +329,6 @@ Section rotation.
       by rewrite -signr_odd H /= expr1 addrC addrN.
     - by rewrite polyCN polyC1.
   Qed.
-
-  (*
-  Lemma comp_poly_monic [R:comRingType] (p q : {poly R}) :
-    p \is monic ->
-    q \is monic ->
-    q \Po p \is monic.
-  Proof.
-    rewrite !monicE !lead_coefE coef_comp_poly.
-  Admitted.
-   *)
   
   Lemma rdvdp_comp_poly_monic [R:comRingType] (r p q : {poly R}) :
     p \is monic ->
