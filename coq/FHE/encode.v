@@ -2089,6 +2089,26 @@ Section norms.
       apply Rplus_le_compat; apply /RlebP; apply bigmaxr_le.
    Qed.
 
+  Lemma norm_inf_semi_multiplicative {n} (v1 v2 : 'rV[R[i]]_n) :
+    (norm_inf (map2_mx (fun (a b : R[i]) => a * b) v1 v2) <= norm_inf v1 * norm_inf v2)%O.
+  Proof.
+    rewrite /norm_inf.
+    apply big_rec.
+    - unfold Order.le, zero, mul; simpl.
+      apply /RlebP.
+      generalize (Rmult_0_r 0); intros.
+      rewrite -H.
+      apply Rmult_le_compat; try lra; apply /RlebP; rewrite Rmult_0_r; apply bigmax_normc_nneg.
+    - intros i x _ xn.
+      rewrite Order.TotalTheory.le_maxl.
+      rewrite mxE ComplexField.Normc.normcM.
+      apply /andP; split; trivial.
+      clear x xn.
+      unfold Order.le; simpl.
+      apply /RlebP.
+      apply Rmult_le_compat; try apply normc_nnegR; apply /RlebP; apply bigmaxr_le.
+   Qed.
+
   Lemma norm_inf_pos_def {n} (v : 'rV[R[i]]_n) :
     norm_inf v = 0 -> v = 0.
   Proof.
@@ -2146,6 +2166,15 @@ Section norms.
     apply norm_inf_triang.
   Qed.
       
+  Lemma canon_norm_inf_semi_multiplicative n (p q : {poly R}) :
+    (canon_norm_inf n (p * q) <= canon_norm_inf n p * canon_norm_inf n q)%O.
+    unfold canon_norm_inf.
+    generalize (rmorphM (mx_eval_rmorphism (odd_nth_roots' n))); intros.
+    specialize (H p q); simpl in H.
+    rewrite H.
+    apply norm_inf_semi_multiplicative.
+ Qed.
+
 (* following only holds on quotient ring by x^+(2^n) + 1 
   Lemma canon_norm_inf_pos_def n p :
     canon_norm_inf n p = 0 -> p = 0.
