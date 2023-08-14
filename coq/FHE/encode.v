@@ -2544,6 +2544,19 @@ Section unity.
     by rewrite exprD exprM H2 expr1 Theory.expr1n mul1r.
   Qed.
 
+  Lemma odd_pow_prim_inv (n:N) :
+    z ^+ (2^n) = -1 ->
+    forall j,
+      ((z ^+ j) ^+ (2^(S n) -1)) * (z ^+ j) = 1.
+  Proof.
+    intros.
+    rewrite -exprM -exprD /=.
+    replace j with (j * 1)%N at 2 by lia.
+    rewrite -mulnDr mulnC exprM.
+    rewrite addBnCAC; try lia.
+    by rewrite subnn add0n expnS mulnC exprM H expr2 mulrNN mulr1 expr1n.
+  Qed.    
+
   Lemma odd_pow_prim_root_inj (j n:N) (z2 : T) :
     z ^+ (2^n) = -1 ->
     z2 ^+ (2^n) = -1 ->
