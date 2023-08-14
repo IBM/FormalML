@@ -307,10 +307,7 @@ Section rotation.
 
 
   Lemma comp_poly_exp_polyX [R:comRingType] j k :
-    (@exp (poly_ringType (ComRing.ringType R)) (polyX (ComRing.ringType R)) (muln j k)) = 
-      (@comp_poly (ComRing.ringType R)
-         (@exp (poly_ringType (ComRing.ringType R)) (polyX (ComRing.ringType R)) j)
-         (@exp (poly_ringType (ComRing.ringType R)) (polyX (ComRing.ringType R)) k)).
+    (polyX R) ^+ (j * k) = comp_poly ((polyX R) ^+ j) ((polyX R) ^+ k).
   Proof.
     by rewrite comp_Xn_poly /= -exprM.
   Qed.  
@@ -332,6 +329,12 @@ Section rotation.
       by rewrite -signr_odd H /= expr1 addrC addrN.
     - by rewrite polyCN polyC1.
   Qed.
+
+  Lemma pow2_div_odd_power [R:comRingType] k n :
+    odd k ->
+    Pdiv.Ring.rdvdp (R := R) ('X^(2^n) + 1%:P) ('X^k ^+(2^n) + 1%:P).
+  Proof.
+    Admitted.
 
 End rotation.  
       
