@@ -349,24 +349,28 @@ Section rotation.
   
   Lemma pow2_div_odd_power [R:comRingType] k n :
     odd k ->
-    n != 0%nat ->
     Pdiv.Ring.rdvdp (R := R) ('X^(2^n) + 1%:P) ('X^k ^+(2^n) + 1%:P).
   Proof.
-    move=> oddk nn0.
-    move: (rdvdp_comp_poly_monic (R:=R) ('X^(2 ^ n)) ('X + 1%:P) ('X^k + 1%:P)).
-    rewrite lin_div_odd_power //.
-    rewrite (Xn_add_c_monic 0).
-    rewrite !comp_polyD !comp_polyX !comp_polyC.
-    have-> : 'X^(2 ^ n) + 1%:P \is @monic R.
-    {
-      case: (@eqP _ (expn 2 n) 0%nat) =>eqq.
-      - lia.
-      - destruct (expn 2 n); [lia |].
-        apply Xn_add_c_monic.
-    }
-    rewrite comp_Xn_poly -!exprM.
-    rewrite [muln (2^n) k]mulnC.
-    by apply.
+    move=> oddk.
+    case: (@eqVneq _ n 0%nat).
+    - move=> ->.
+      rewrite expn0 !expr1.
+      by apply lin_div_odd_power.
+    - move=> nn0.
+      move: (rdvdp_comp_poly_monic (R:=R) ('X^(2 ^ n)) ('X + 1%:P) ('X^k + 1%:P)).
+      rewrite lin_div_odd_power //.
+      rewrite (Xn_add_c_monic 0).
+      rewrite !comp_polyD !comp_polyX !comp_polyC.
+      have-> : 'X^(2 ^ n) + 1%:P \is @monic R.
+      {
+        case: (@eqP _ (expn 2 n) 0%nat) =>eqq.
+        - lia.
+        - destruct (expn 2 n); [lia |].
+          apply Xn_add_c_monic.
+      }
+      rewrite comp_Xn_poly -!exprM.
+      rewrite [muln (2^n) k]mulnC.
+      by apply.
   Qed.
   
 End rotation.  
