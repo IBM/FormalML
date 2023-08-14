@@ -341,6 +341,7 @@ Section rotation.
   Qed.
 *)
 
+  (*
   Lemma comp_poly_monic [R:comRingType] (p q : {poly R}) :
     p \is monic ->
     q \is monic ->
@@ -348,7 +349,8 @@ Section rotation.
   Proof.
     rewrite !monicE !lead_coefE coef_comp_poly.
   Admitted.
-
+   *)
+  
   Lemma rdvdp_comp_poly_monic [R:comRingType] (r p q : {poly R}) :
     p \is monic ->
     p \Po r \is monic -> 
@@ -370,6 +372,9 @@ Section rotation.
     odd k ->
     Pdiv.Ring.rdvdp (R := R) ('X^(2^n) + 1%:P) ('X^k ^+(2^n) + 1%:P).
   Proof.
+    intros.
+    move: (rdvdp_comp_poly_monic (R:=R) ('X^(2 ^ n)) ('X + 1%:P) ('X^k + 1%:P)).
+    rewrite lin_div_odd_power //.
   Admitted.
 
 End rotation.  
