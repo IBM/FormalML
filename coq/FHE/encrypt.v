@@ -331,11 +331,40 @@ Section rotation.
   Qed.
 
   (*
+  Lemma dvdp_comp_poly [R:idomainType] (r p q : {poly R}) : (p %| q) -> (p \Po r) %| (q \Po r).
+  Proof.
+    have [-> | pn0] := eqVneq p 0.
+    by rewrite comp_poly0 !dvd0p; move/eqP->; rewrite comp_poly0.
+    rewrite mathcomp.algebra.polydiv.Pdiv.Idomain.dvdp_eq; set c := _ ^+ _; set s := _ %/ _; move/eqP=> Hq.
+    apply: (@eq_dvdp c (s \Po r)); first by rewrite expf_neq0 // lead_coef_eq0.
+    by rewrite -comp_polyZ Hq comp_polyM.
+  Qed.
+*)
+
+  Lemma comp_poly_monic [R:comRingType] (p q : {poly R}) :
+    p \is monic ->
+    q \is monic ->
+    q \Po p \is monic.
+  Proof.
+    rewrite !monicE !lead_coefE coef_comp_poly.
+  Admitted.
+
   Lemma rdvdp_comp_poly_monic [R:comRingType] (r p q : {poly R}) :
-    lead_coef r \is a unit ->
+    p \is monic ->
+    p \Po r \is monic -> 
     Pdiv.Ring.rdvdp p q ->
     Pdiv.Ring.rdvdp (p \Po r) (q \Po r).
-   *)
+  Proof.
+    move=> monp monpr.
+    have [-> | pn0] := eqVneq p 0.
+    - by rewrite comp_poly0 !Pdiv.Ring.rdvd0p; move/eqP->; rewrite comp_poly0.
+    - rewrite Pdiv.ComRing.rdvdp_eq.
+      rewrite (monicP monp) expr1n /= scale1r.
+      set s := Pdiv.Ring.rdivp (R:=R) _ _; move/eqP=> Hq.
+      apply: (@mathcomp.algebra.polydiv.Pdiv.RingMonic.eq_rdvdp _ _ _ (s \Po r)).
+      + trivial.
+      + by rewrite -comp_polyM -{}Hq.
+  Qed.
   
   Lemma pow2_div_odd_power [R:comRingType] k n :
     odd k ->
