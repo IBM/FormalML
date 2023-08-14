@@ -2159,19 +2159,15 @@ Section norms.
   Lemma canon_norm_inf_triang n (p q : {poly R}) :
     (canon_norm_inf n (p + q) <= canon_norm_inf n p + canon_norm_inf n q)%O.
   Proof.
-    unfold canon_norm_inf.
-    generalize (raddfD (mx_eval_rmorphism (odd_nth_roots' n))); intros.
-    specialize (H p q); simpl in H.
-    rewrite H.
+    rewrite /canon_norm_inf.
+    move: (raddfD (mx_eval_rmorphism (odd_nth_roots' n)) p q) => /= ->.
     apply norm_inf_triang.
   Qed.
       
   Lemma canon_norm_inf_semi_multiplicative n (p q : {poly R}) :
     (canon_norm_inf n (p * q) <= canon_norm_inf n p * canon_norm_inf n q)%O.
-    unfold canon_norm_inf.
-    generalize (rmorphM (mx_eval_rmorphism (odd_nth_roots' n))); intros.
-    specialize (H p q); simpl in H.
-    rewrite H.
+  Proof.
+    rewrite /canon_norm_inf rmorphM.
     apply norm_inf_semi_multiplicative.
  Qed.
 
@@ -2183,18 +2179,14 @@ Section norms.
   Lemma normc_conj (x : R[i]) :
     ComplexField.Normc.normc x = ComplexField.Normc.normc (conjc x).
   Proof.
-    generalize normcJ.
-    destruct x.
-    simpl.
-    do 2 f_equal.
+    case: x => rx ix /=.
     by rewrite sqrrN.
   Qed.
 
   Lemma normc_conj_mul (x y : R[i]) :
     normc (x * y) = normc (x * (conjc y)).
   Proof.
-    do 2 rewrite ComplexField.Normc.normcM.
-    by rewrite (normc_conj y).
+    by rewrite !ComplexField.Normc.normcM (normc_conj y).
   Qed.
     
   Lemma normc_conj_add (r : R) (x y : R[i]) :
@@ -2259,8 +2251,7 @@ Section norms.
     let pc := map_poly RtoC p in 
     normc (pc.[x]) = normc (pc.[conjc x]).
   Proof.
-    simpl.
-    by rewrite -rpoly_eval_conj normc_conj.
+    by rewrite /= -rpoly_eval_conj normc_conj.
   Qed.
 
 End norms.
