@@ -307,7 +307,7 @@ Section rotation.
 
 
   Lemma comp_poly_exp_polyX [R:comRingType] j k :
-    (polyX R) ^+ (j * k) = comp_poly ((polyX R) ^+ j) ((polyX R) ^+ k).
+    (polyX R) ^+ (j * k) = comp_poly ('X^ j) ('X^ k).
   Proof.
     by rewrite comp_Xn_poly /= -exprM.
   Qed.  
