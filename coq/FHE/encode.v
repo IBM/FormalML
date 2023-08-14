@@ -2550,9 +2550,7 @@ Section unity.
       ((z ^+ j) ^+ (2^(S n) -1)) * (z ^+ j) = 1.
   Proof.
     intros.
-    rewrite -exprM -exprD /=.
-    replace j with (j * 1)%N at 2 by lia.
-    rewrite -mulnDr mulnC exprM.
+    rewrite -exprM -exprD /= -{2}(muln1 j) -mulnDr mulnC exprM.
     rewrite addBnCAC; try lia.
     by rewrite subnn add0n expnS mulnC exprM H expr2 mulrNN mulr1 expr1n.
   Qed.    
