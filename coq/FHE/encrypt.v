@@ -173,10 +173,47 @@ End encrypted_ops.
 Section rotation.
   
   (* show  p x -> p (x^k) is a morphism *)
-  Definition poly_shift [R:comRingType] (k : nat) (p : {poly R}) :=
-    comp_poly 'X^k p.
+  Definition poly_shift [R:ringType] (k : nat) (p : {poly R}) : {poly R}
+    := comp_poly 'X^k p.
 
-  Lemma poly_shift_1 [R:comRingType] (k : nat):
+  Definition poly_shift_alt [R:ringType] (k : nat) (p : {poly R}) : {poly R}
+      := \poly_(i < (k * (seq.size p).-1).+1) (if div.dvdn k i then p`_(div.divn i k) else 0).
+
+  Lemma poly_shift_altE [R:ringType] (k : nat) (p : {poly R}) :
+    poly_shift k.+1 p = poly_shift_alt k.+1 p.
+  Proof.
+    case: (@eqP _ (seq.size p) 0%nat).
+    - move/seq.size0nil.
+      rewrite -polyseq0 => /poly_inj->.
+      rewrite /poly_shift /poly_shift_alt comp_poly0.
+      apply polyP => i.
+      rewrite coef_poly !coef0.
+      case: ltP => //.
+      by case: div.dvdnP => //.
+    - move=> pn0.
+      apply polyP => i.
+      rewrite /poly_shift /poly_shift_alt.
+      rewrite !coef_comp_poly_Xn //= coef_poly /=.
+      case: div.dvdnP.
+      + move=>[m ->].
+        rewrite div.mulnK //.
+        case: ltP => // nlt.
+        rewrite seq.nth_default //.
+        move /ltP: nlt.
+        rewrite mulnC ltnS leq_pmul2l //.
+        rewrite leqNgt Bool.negb_involutive.
+        by case: (seq.size p) pn0.
+      + by case: ltP.
+  Qed.
+
+  Lemma poly_shift_altE' [R:ringType] (k : nat) (p : {poly R}) : k != 0%nat ->
+    poly_shift k p = poly_shift_alt k p.
+  Proof.
+    destruct k => // _.
+    apply poly_shift_altE.
+  Qed.
+
+  Lemma poly_shift_1 [R:ringType] (k : nat):
     @poly_shift R k 1 = 1.
   Proof.
     by rewrite /poly_shift comp_polyC.
@@ -195,7 +232,7 @@ Section rotation.
       + by rewrite comp_polyC polyC1.
   Qed.
   
-  Lemma poly_shift_injective [R:comRingType] (k:nat) : injective (poly_shift (R:=R) (S k)).
+  Lemma poly_shift_injective [R:ringType] (k:nat) : injective (poly_shift (R:=R) (S k)).
   Proof.
     move=> a b eqq.
     apply polyP => i.
@@ -207,6 +244,83 @@ Section rotation.
     by rewrite !div.mulKn //.
   Qed.    
 
+  Lemma poly_shift1_id [R:ringType] (p : {poly R}):
+    @poly_shift R 1 p = p.
+  Proof.
+    apply polyP => i.
+    rewrite /poly_shift /=.
+    rewrite !coef_comp_poly_Xn //=.
+    by rewrite div.dvd1n div.divn1.
+  Qed.    
+
+  Lemma size_poly_shift [R:ringType] (k:nat) (p : {poly R}) (pn0:p!=0) :
+    seq.size (poly_shift (k.+1) p) = (k.+1 * (seq.size p).-1).+1%nat.
+  Proof.
+    rewrite poly_shift_altE.
+    rewrite size_poly_eq //=.
+    rewrite div.dvdn_mulr ?div.dvdnn //.
+    rewrite div.mulKn //.
+    by rewrite -lead_coefE lead_coef_eq0.
+  Qed.
+
+  Lemma size_poly_shift' [R:ringType] (k:nat) (p : {poly R}) (pn0:p!=0) :
+    k != 0%nat ->
+    seq.size (poly_shift k p) = (k * (seq.size p).-1).+1%nat.
+  Proof.
+    elim: k => //.
+    move=> k _ _.
+    by apply size_poly_shift.
+  Qed.
+
+  Definition poly_unshift [R:ringType] (k : nat) (p : {poly R}) :=
+    \poly_(i < (div.divn (seq.size p).-1 k).+1) (p`_(k*i)).
+
+  Lemma poly_shiftK [R:comRingType] (k: nat) : cancel (@poly_shift R (S k)) (@poly_unshift R (S k)).
+  Proof.
+    move=> p.
+    case: (@eqP _ p 0).
+    - move=> -> /=.
+      rewrite /poly_shift comp_poly0 /poly_unshift.
+      apply polyP=> i.
+      rewrite coef_poly !polyseq0 /= !seq.nth_nil.
+      by case: ltP.
+    - rewrite /poly_unshift => /eqP-pn0.
+      rewrite size_poly_shift //.
+      rewrite poly_shift_altE /poly_shift_alt.
+      apply polyP=> i.
+      rewrite coef_poly => /=.
+      rewrite div.mulKn //.
+      rewrite -polySpred //.
+      case: ltP.
+      + move=> ilt.
+        rewrite coef_poly div.mulKn //.
+        rewrite div.dvdn_mulr ?div.dvdnn //.
+        rewrite ltnS leq_pmul2l //.
+        rewrite polySpred // in ilt.
+        rewrite -ltnS.
+        by move/ltP: ilt => ->.
+      + move=> inlt.
+        rewrite seq.nth_default //.
+        rewrite leqNgt.
+        by apply/ltP.
+  Qed.
+
+
+  Lemma comp_poly_exp_polyX [R:comRingType] j k :
+    (@exp (poly_ringType (ComRing.ringType R)) (polyX (ComRing.ringType R)) (muln j k)) = 
+      (@comp_poly (ComRing.ringType R)
+         (@exp (poly_ringType (ComRing.ringType R)) (polyX (ComRing.ringType R)) j)
+         (@exp (poly_ringType (ComRing.ringType R)) (polyX (ComRing.ringType R)) k)).
+  Proof.
+    by rewrite comp_Xn_poly /= -exprM.
+  Qed.  
+  
+  Lemma poly_shiftM [R:comRingType] (j k: nat) (p: {poly R}) :
+    poly_shift (j * k) p = poly_shift j (poly_shift k p).
+  Proof.
+    by rewrite /poly_shift -comp_polyA comp_poly_exp_polyX.
+  Qed.
+  
   Lemma lin_div_odd_power [R:comRingType] k :
     odd k ->
     Pdiv.Ring.rdvdp (R := R) ('X + 1%:P) ('X^k + 1%:P).
