@@ -331,17 +331,6 @@ Section rotation.
   Qed.
 
   (*
-  Lemma dvdp_comp_poly [R:idomainType] (r p q : {poly R}) : (p %| q) -> (p \Po r) %| (q \Po r).
-  Proof.
-    have [-> | pn0] := eqVneq p 0.
-    by rewrite comp_poly0 !dvd0p; move/eqP->; rewrite comp_poly0.
-    rewrite mathcomp.algebra.polydiv.Pdiv.Idomain.dvdp_eq; set c := _ ^+ _; set s := _ %/ _; move/eqP=> Hq.
-    apply: (@eq_dvdp c (s \Po r)); first by rewrite expf_neq0 // lead_coef_eq0.
-    by rewrite -comp_polyZ Hq comp_polyM.
-  Qed.
-*)
-
-  (*
   Lemma comp_poly_monic [R:comRingType] (p q : {poly R}) :
     p \is monic ->
     q \is monic ->
@@ -370,13 +359,26 @@ Section rotation.
   
   Lemma pow2_div_odd_power [R:comRingType] k n :
     odd k ->
+    n != 0%nat ->
     Pdiv.Ring.rdvdp (R := R) ('X^(2^n) + 1%:P) ('X^k ^+(2^n) + 1%:P).
   Proof.
-    intros.
+    move=> oddk nn0.
     move: (rdvdp_comp_poly_monic (R:=R) ('X^(2 ^ n)) ('X + 1%:P) ('X^k + 1%:P)).
     rewrite lin_div_odd_power //.
-  Admitted.
-
+    rewrite (Xn_add_c_monic 0).
+    rewrite !comp_polyD !comp_polyX !comp_polyC.
+    have-> : 'X^(2 ^ n) + 1%:P \is @monic R.
+    {
+      case: (@eqP _ (expn 2 n) 0%nat) =>eqq.
+      - lia.
+      - destruct (expn 2 n); [lia |].
+        apply Xn_add_c_monic.
+    }
+    rewrite comp_Xn_poly -!exprM.
+    rewrite [muln (2^n) k]mulnC.
+    by apply.
+  Qed.
+  
 End rotation.  
       
       
