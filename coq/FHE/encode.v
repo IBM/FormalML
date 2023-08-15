@@ -2095,13 +2095,9 @@ Section norms.
     rewrite /norm_inf.
     apply big_rec.
     - unfold Order.le, zero, mul; simpl.
-      apply /RlebP.
-      generalize (Rmult_0_r 0); intros.
-      rewrite -H.
-      apply Rmult_le_compat; try lra; apply /RlebP; rewrite Rmult_0_r; apply bigmax_normc_nneg.
+      apply /RlebP; apply Rmult_le_pos; apply /RlebP; apply bigmax_normc_nneg.
     - intros i x _ xn.
-      rewrite Order.TotalTheory.le_maxl.
-      rewrite mxE ComplexField.Normc.normcM.
+      rewrite Order.TotalTheory.le_maxl mxE ComplexField.Normc.normcM.
       apply /andP; split; trivial.
       clear x xn.
       unfold Order.le; simpl.
@@ -2133,14 +2129,13 @@ Section norms.
     by rewrite ssrnum.Num.Theory.sqrtr_sqr.
   Qed.
 
-  Lemma mx_evalZ {n} (v : 'rV[R[i]]_n.+1) (r:R) p : mx_eval v (r *: p) = (RtoC r) *: (mx_eval v p).
+  Lemma mx_evalZ {n} (v : 'rV[R[i]]_n.+1) (r:R) p :
+    mx_eval v (r *: p) = (RtoC r) *: (mx_eval v p).
   Proof.
     apply matrixP => a b.
     rewrite !mxE /scale /= scale_polyE.
-    rewrite rmorphismMP /=.
-    rewrite (map_polyC RtoC_rmorphism) /=.
-    rewrite -hornerZ /=.
-    by rewrite /scale /= scale_polyE.
+    rewrite rmorphismMP /= (map_polyC RtoC_rmorphism) /=.
+    by rewrite -hornerZ /= /scale /= scale_polyE.
   Qed.
 
   (* following 4 lemmas show canon_norm_inf is a norm on quotient by x^+(2^n) + 1 *)
@@ -2151,7 +2146,7 @@ Section norms.
   Qed.
 
   Lemma canon_norm_inf_nneg n (p : {poly R}) :
-    (@zero R_ringType <= canon_norm_inf n p)%O.
+    (zero R_ringType <= canon_norm_inf n p)%O.
   Proof.
     apply norm_inf_nneg.
   Qed.
