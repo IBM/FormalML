@@ -61,7 +61,7 @@ Section encrypted_ops.
 
   Definition encrypt_z (m : {poly int}) := encrypt (red_poly m q).
 
-  Definition balanced_mod {qq:nat} (x : 'Z_qq) :=
+  Definition balanced_mod {qq:nat} (x : 'Z_qq):int :=
     let xz := x %:Z in
     let qz := q %:Z in
     if intOrdered.lez xz (qz/2) then xz else qz-xz.
@@ -141,7 +141,7 @@ Section encrypted_ops.
     ired_q (rounded_div (balanced_mod c) q1).
 
   Definition rescale_gen (q1 q2 : nat) (c : 'Z_q1) : 'Z_q2 :=
-    ired_q (rounded_div (balanced_mod c) (Nat.div q1 q2)).
+    ired_q (rounded_div (balanced_mod (c *+ q2)) q1).
 
   Lemma rescale_gen_prop (q1 q2 : nat) (c : 'Z_(q1*q2)):
     q2 <> 0%N ->
@@ -149,9 +149,58 @@ Section encrypted_ops.
   Proof.
     intros.
     unfold rescale, rescale_gen.
-    do 2 f_equal.
-    now rewrite PeanoNat.Nat.div_mul.
-  Qed.
+    f_equal.
+    unfold rounded_div, balanced_mod.
+    simpl.
+    rewrite !addn1.
+    assert (1 <= 1)%coq_nat by lia.
+    generalize (PeanoNat.Nat.divmod_spec q1 1 0 1 H0); intros.
+    generalize (PeanoNat.Nat.divmod_spec (q1 * q2) 1 0 1 H0); intros.
+    replace (1 - 1)%coq_nat with 0%N in H1 by lia.
+    replace (1 - 1)%coq_nat with 0%N in H2 by lia.    
+    rewrite !PeanoNat.Nat.mul_0_r !PeanoNat.Nat.add_0_r in H1.
+    rewrite !PeanoNat.Nat.mul_0_r !PeanoNat.Nat.add_0_r in H2.
+    destruct (Nat.divmod q1 1 0 1).
+    destruct (Nat.divmod (q1 * q2) 1 0 1).
+    destruct H1.
+    destruct H2.
+    simpl.
+    assert (cdivq1: (Posz c) / (Posz q1) = (Posz (c *+ q2)) / (Posz (q1 * q2))%N).
+    {
+      unfold mul, inv, Zp_trunc; simpl.
+      rewrite -mulr_natr.
+      admit.
+    }
+    case: (c <= q * 2).
+    - case: (c *+ q2 <= q * 2).
+      + case: (absz ((Posz c) - (Posz c) / (Posz q1) * q1)%R < n).
+        * case: (absz ((Posz (c *+ q2)) -
+                        (Posz (c *+ q2) / (Posz (q1 * q2))) * (Posz (q1 * q2)))%R < n1).
+          -- by rewrite cdivq1.
+          -- admit.
+
+        * case: (absz ((Posz (c *+ q2)) -
+                        (Posz (c *+ q2) / (Posz (q1 * q2))) * (Posz (q1 * q2)))%R < n1).
+          -- admit.
+          -- by rewrite cdivq1.
+
+      + case: (absz ((Posz c) - (Posz c) / (Posz q1) * q1)%R < n).
+        * case:  (absz
+                    (add
+                       (Posz q - Posz (c *+ q2))
+                       (opp 
+                          (((add (Posz q)
+                               (opp
+                                  (Posz (c *+ q2)))) /
+                              Posz (q1 * q2)) *
+                             Posz (q1 * q2)))) < n1).
+          -- admit.
+          -- admit.
+        * admit.
+    - case: (c *+ q2 <= q * 2).
+      + admit.
+      + admit.
+  Admitted.
     
   Definition red_p_q (c : 'Z_(p*q)) : 'Z_q := rescale p q c.
 
