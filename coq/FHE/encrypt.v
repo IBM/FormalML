@@ -3,6 +3,8 @@ From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix ring.
 From mathcomp Require Import ssralg ssrfun ssrint.
 From mathcomp Require Import generic_quotient ring_quotient.
 From mathcomp Require Import poly mxpoly polydiv zmodp eqtype ssrbool.
+From mathcomp Require Import intdiv.
+
 Import ssralg.GRing.
 Require Import encode.
 
@@ -165,39 +167,28 @@ Section encrypted_ops.
     destruct H1.
     destruct H2.
     simpl.
-    assert (cdivq1: (Posz c) / (Posz q1) = (Posz (c *+ q2)) / (Posz (q1 * q2))%N).
+    assert (cdivq1: ((Posz c) %/ (Posz q1) = (Posz (c *+ q2)) %/ (Posz (q1 * q2))%N)%Z).
     {
-      unfold mul, inv, Zp_trunc; simpl.
       rewrite -mulr_natr.
+      rewrite -(@divzMpr (Posz q2)); [| lia].
       admit.
     }
-    case: (c <= q * 2).
-    - case: (c *+ q2 <= q * 2).
-      + case: (absz ((Posz c) - (Posz c) / (Posz q1) * q1)%R < n).
-        * case: (absz ((Posz (c *+ q2)) -
-                        (Posz (c *+ q2) / (Posz (q1 * q2))) * (Posz (q1 * q2)))%R < n1).
+    case: (leqP c _)=>HH1.
+    - case: (leqP (c *+ q2) (q * 2))=>HH2.
+      + case: (leqP _ n)=>HH3.
+        * case: ltnP=>HH4.
           -- by rewrite cdivq1.
           -- admit.
 
-        * case: (absz ((Posz (c *+ q2)) -
-                        (Posz (c *+ q2) / (Posz (q1 * q2))) * (Posz (q1 * q2)))%R < n1).
+        * case: ltnP=>HH4.
           -- admit.
           -- by rewrite cdivq1.
-
-      + case: (absz ((Posz c) - (Posz c) / (Posz q1) * q1)%R < n).
-        * case:  (absz
-                    (add
-                       (Posz q - Posz (c *+ q2))
-                       (opp 
-                          (((add (Posz q)
-                               (opp
-                                  (Posz (c *+ q2)))) /
-                              Posz (q1 * q2)) *
-                             Posz (q1 * q2)))) < n1).
+      + case: (ltnP _ n)=>HH3.
+        * case: ltnP=>HH4.
           -- admit.
           -- admit.
         * admit.
-    - case: (c *+ q2 <= q * 2).
+    - case: (leqP (c *+ q2) (q * 2))=>HH2.
       + admit.
       + admit.
   Admitted.
