@@ -72,7 +72,13 @@ Definition balanced_mod {qq:nat} (x : 'Z_qq):int :=
     case: (boolP (intOrdered.lez x (qq %/ 2)%Z)) => _.
     - by rewrite int_of_ordK.
     - rewrite /intmul /intOrdered.lez /=.
-      rewrite -opprB.
+      destruct qq; [lia |].
+      rewrite /add/opp /= .
+      have ->: (qq < x) = false.
+      {destruct qq; [lia |].
+       destruct x; simpl.
+       rewrite Zp_cast in i; lia.
+      }
       (*
       replace (opp (add (Posz qq) (opp (Posz (nat_of_ord x))))) with (opp (add (Posz qq) (opp (Posz (nat_of_ord x).+1)))+1).
       + rewrite subzn.
