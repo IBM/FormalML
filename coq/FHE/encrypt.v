@@ -46,6 +46,61 @@ Qed.
 
 Local Open Scope ring_scope.
 
+Lemma nat_of_ordK {p: nat} : cancel (@nat_of_ord (S (S p))) (natmul 1).
+Proof.
+  move=> x.
+  by rewrite Zp_nat valZpK.
+Qed.
+
+Lemma int_of_ordK {p: nat} : cancel (fun x:'Z_p => Posz (nat_of_ord x)) (intmul 1).
+Proof.
+  move=> x.
+  by rewrite -pmulrn nat_of_ordK.
+Qed.
+
+Definition balanced_mod {qq:nat} (x : 'Z_qq):int :=
+  let xz := x %:Z in
+  let qz := qq %:Z in
+  if intOrdered.lez xz (qz %/ 2)%Z then xz else xz-qz.
+
+  Definition ired_q {qq:nat} (i : int) : 'Z_qq := i %:~R.
+
+  Lemma balanced_mod_cong {qq:nat} (qqbig:1 < qq) (x : 'Z_qq) :
+    x = ired_q (balanced_mod x).
+  Proof.
+    unfold ired_q, balanced_mod.
+    case: (boolP (intOrdered.lez x (qq %/ 2)%Z)) => _.
+    - by rewrite int_of_ordK.
+    - rewrite /intmul /intOrdered.lez /=.
+      rewrite -opprB.
+      (*
+      replace (opp (add (Posz qq) (opp (Posz (nat_of_ord x))))) with (opp (add (Posz qq) (opp (Posz (nat_of_ord x).+1)))+1).
+      + rewrite subzn.
+        Set Printing All.
+        rewrite NegzE.
+        rewrite addn1.
+        2: {
+          destruct x; simpl in *.
+          
+        2: apply ltz_ord.
+
+
+
+      match goal with
+        [|- _ = match ?a with _ => _ end] => replace a with ((x - qq.-1).+1)
+      end.
+      Search (_ - _ = Posz _).
+      
+      Set Printing All.
+      
+      rewrite NegzE.
+      
+      Set Printing All.
+
+      rewrite -ltnNge mul1n add1n.
+*)
+  Admitted.
+
 Section encrypted_ops.
 
   Variable (q:nat).
@@ -63,22 +118,6 @@ Section encrypted_ops.
 
   Definition encrypt_z (m : {poly int}) := encrypt (red_poly m q).
 
-  Definition ired_q {qq:nat} (i : int) : 'Z_qq := i %:~R.
-
-  Definition balanced_mod {qq:nat} (x : 'Z_qq):int :=
-    let xz := x %:Z in
-    let qz := q %:Z in
-    if intOrdered.lez xz (qz %/ 2)%Z then xz else qz-xz.
-
-  Lemma balanced_mod_cong {qq:nat} (x : 'Z_qq) :
-    x = ired_q (balanced_mod x).
-  Proof.
-    unfold ired_q, balanced_mod.
-    case: (intOrdered.lez x (q %/ 2)%Z).
-    - unfold intmul.
-      admit.
-    - unfold intmul; admit.
-  Admitted.
   
   Definition rounded_div (num : int) (den : nat) :=
     let denz := den %:Z in
