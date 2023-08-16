@@ -63,14 +63,26 @@ Section encrypted_ops.
 
   Definition encrypt_z (m : {poly int}) := encrypt (red_poly m q).
 
+  Definition ired_q {qq:nat} (i : int) : 'Z_qq := i %:~R.
+
   Definition balanced_mod {qq:nat} (x : 'Z_qq):int :=
     let xz := x %:Z in
     let qz := q %:Z in
-    if intOrdered.lez xz (qz/2) then xz else qz-xz.
+    if intOrdered.lez xz (qz %/ 2)%Z then xz else qz-xz.
 
+  Lemma balanced_mod_cong {qq:nat} (x : 'Z_qq) :
+    x = ired_q (balanced_mod x).
+  Proof.
+    unfold ired_q, balanced_mod.
+    case: (intOrdered.lez x (q %/ 2)%Z).
+    - unfold intmul.
+      admit.
+    - unfold intmul; admit.
+  Admitted.
+  
   Definition rounded_div (num : int) (den : nat) :=
     let denz := den %:Z in
-    let q := num/denz in
+    let q := (num %/ denz)%Z in
     let rem := num - q * denz in
     if absz rem < (Nat.div den 2) then q else q+1.
 
@@ -130,8 +142,6 @@ Section encrypted_ops.
   Variable (p:nat). (* relin_modulus *)
   Hypothesis pbig : p > q.
   
-  Definition ired_q {qq:nat} (i : int) : 'Z_qq := intmul Zp1 i.
-
   Definition pq_embed (c : 'Z_q) : 'Z_(p*q) := ired_q (balanced_mod c).
 
   Definition secret_p := map_poly pq_embed secret_poly.
@@ -167,28 +177,36 @@ Section encrypted_ops.
     destruct H1.
     destruct H2.
     simpl.
-    assert (cdivq1: ((Posz c) %/ (Posz q1) = (Posz (c *+ q2)) %/ (Posz (q1 * q2))%N)%Z).
+    rewrite mul1n.
+    assert (cdivq1:(c %/ q1)%Z = ((c *+ q2) %/ (q1 * q2)%N)%Z).
     {
-      rewrite -mulr_natr.
       rewrite -(@divzMpr (Posz q2)); [| lia].
+      rewrite -mulr_natr.
+      
+      f_equal.
+
+      
+      unfold mul, Zp_trunc; simpl.
+      assert (1 < q1 * q2) by admit.
       admit.
     }
     case: (leqP c _)=>HH1.
-    - case: (leqP (c *+ q2) (q * 2))=>HH2.
-      + case: (leqP _ n)=>HH3.
-        * case: ltnP=>HH4.
+    - case ltnP => HH2.
+      + case (leqP (c *+ q2) _) => HH3.
+        * case: ltnP => HH4.
           -- by rewrite cdivq1.
           -- admit.
-
-        * case: ltnP=>HH4.
+        * case: ltnP => HH4.
+          -- admit.
+          -- admit.
+      + case (leqP (c *+ q2) _) => HH3.
+        * case: ltnP => HH4.
           -- admit.
           -- by rewrite cdivq1.
-      + case: (ltnP _ n)=>HH3.
-        * case: ltnP=>HH4.
+        * case: ltnP => HH4.
           -- admit.
           -- admit.
-        * admit.
-    - case: (leqP (c *+ q2) (q * 2))=>HH2.
+    - case: ltnP => HH2.
       + admit.
       + admit.
   Admitted.
