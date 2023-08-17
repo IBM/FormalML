@@ -60,7 +60,7 @@ Qed.
 
 Definition ired_q {qq:nat} (i : int) : 'Z_qq := i %:~R.
 
-Lemma Zp_intmul_Np {p : nat} (x : 'Z_p) :
+Lemma Zp_intmul_Np {p : nat} {pbig:1 < p} (x : 'Z_p) :
   x = (x%:Z - p%:Z)%:~R.
 Proof.
   generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc p))); intros.
@@ -68,15 +68,15 @@ Proof.
   rewrite base int_of_ordK.
   replace (p %:~R) with (zero (Zp_ringType (Zp_trunc p))).
   - by rewrite oppr0 addr0.
-  - rewrite -pmulrn.
-  Admitted.
+  - by rewrite -pmulrn char_Zp //.
+Qed.      
 
   Definition balanced_mod {qq:nat} (x : 'Z_qq):int :=
   let xz := x %:Z in
   let qz := qq %:Z in
   if intOrdered.lez xz (qz %/ 2)%Z then xz else xz-qz.
 
-  Lemma balanced_mod_cong {qq:nat} (x : 'Z_qq) :
+  Lemma balanced_mod_cong {qq:nat} {qqbig:1 < qq} (x : 'Z_qq) :
     x = ired_q (balanced_mod x).
   Proof.
     unfold ired_q, balanced_mod.
