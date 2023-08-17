@@ -58,55 +58,33 @@ Proof.
   by rewrite -pmulrn nat_of_ordK.
 Qed.
 
-Definition balanced_mod {qq:nat} (x : 'Z_qq):int :=
+Definition ired_q {qq:nat} (i : int) : 'Z_qq := i %:~R.
+
+Lemma Zp_intmul_Np {p : nat} (x : 'Z_p) :
+  x = (x%:Z - p%:Z)%:~R.
+Proof.
+  generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc p))); intros.
+  destruct H.
+  rewrite base int_of_ordK.
+  replace (p %:~R) with (zero (Zp_ringType (Zp_trunc p))).
+  - by rewrite oppr0 addr0.
+  - rewrite -pmulrn.
+  Admitted.
+
+  Definition balanced_mod {qq:nat} (x : 'Z_qq):int :=
   let xz := x %:Z in
   let qz := qq %:Z in
   if intOrdered.lez xz (qz %/ 2)%Z then xz else xz-qz.
 
-  Definition ired_q {qq:nat} (i : int) : 'Z_qq := i %:~R.
-
-  Lemma balanced_mod_cong {qq:nat} (qqbig:1 < qq) (x : 'Z_qq) :
+  Lemma balanced_mod_cong {qq:nat} (x : 'Z_qq) :
     x = ired_q (balanced_mod x).
   Proof.
     unfold ired_q, balanced_mod.
     case: (boolP (intOrdered.lez x (qq %/ 2)%Z)) => _.
     - by rewrite int_of_ordK.
-    - rewrite /intmul /intOrdered.lez /=.
-      destruct qq; [lia |].
-      rewrite /add/opp /= .
-      have ->: (qq < x) = false.
-      {destruct qq; [lia |].
-       destruct x; simpl.
-       rewrite Zp_cast in i; lia.
-      }
-      (*
-      replace (opp (add (Posz qq) (opp (Posz (nat_of_ord x))))) with (opp (add (Posz qq) (opp (Posz (nat_of_ord x).+1)))+1).
-      + rewrite subzn.
-        Set Printing All.
-        rewrite NegzE.
-        rewrite addn1.
-        2: {
-          destruct x; simpl in *.
-          
-        2: apply ltz_ord.
-
-
-
-      match goal with
-        [|- _ = match ?a with _ => _ end] => replace a with ((x - qq.-1).+1)
-      end.
-      Search (_ - _ = Posz _).
-      
-      Set Printing All.
-      
-      rewrite NegzE.
-      
-      Set Printing All.
-
-      rewrite -ltnNge mul1n add1n.
-*)
-  Admitted.
-
+    - by rewrite {1}(Zp_intmul_Np x).
+  Qed.
+  
 Section encrypted_ops.
 
   Variable (q:nat).
