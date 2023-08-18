@@ -60,62 +60,65 @@ Qed.
 
 Definition ired_q {p:nat} (i : int) : 'Z_p := i %:~R.
 
-Lemma Zp_intmul_Np {p : nat} {pbig:1 < p} (x : 'Z_p) :
-  x = (x%:Z - p%:Z)%:~R.
-Proof.
-  generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc p))); intros.
-  destruct H.
-  by rewrite base int_of_ordK -pmulrn char_Zp // oppr0 addr0.
-Qed.      
+Section balance.
 
+  Import ssrnum.Num.Syntax.
+  
   Definition balanced_mod {p:nat} (x : 'Z_p):int :=
-  let xz := x %:Z in
-  let pz := p %:Z in
-  if intOrdered.lez xz (pz %/ 2)%Z then xz else xz-pz.
+    let xz := x %:Z in
+    let pz := p %:Z in
+    if xz <= (pz %/ 2)%Z then xz else xz-pz.
 
-  Lemma balanced_mod_cong {p:nat} {pbig:1 < p} (x : 'Z_p) :
+  Context {p : nat} {pbig:(1 < p)%nat}.
+  
+  Lemma Zp_intmul_Np  (x : 'Z_p) :
+    x = (x%:Z - p%:Z)%:~R.
+  Proof.
+    generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc p))); intros.
+    destruct H.
+    by rewrite base int_of_ordK -pmulrn char_Zp // oppr0 addr0.
+  Qed.
+
+  Import order.Order.TotalTheory.
+  Import ssrnum.Num.Theory. 
+  
+  Lemma balanced_mod_cong (x : 'Z_p) :
     x = ired_q (balanced_mod x).
   Proof.
     unfold ired_q, balanced_mod.
-    case: (intOrdered.lez x (p %/ 2)%Z).
+    case: leP => _.
     - by rewrite int_of_ordK.
     - by rewrite {1}(Zp_intmul_Np x).
   Qed.
 
-  Lemma Zp_lt_p {p:nat} {pbig:1 < p} (x : 'Z_p):
-    intOrdered.ltz x p.
+  Lemma Zp_lt_p (x : 'Z_p):
+    (Posz x) < p.
   Proof.
-    unfold intOrdered.ltz.
     generalize (ltn_ord x); intros.
-    unfold Zp_trunc in H.
-    
-    Admitted.
+    by rewrite {2}Zp_cast in H.
+  Qed.
 
-  Lemma balanced_mod_range1 {p:nat} {pbig:1 < p} (x : 'Z_p):
-    intOrdered.lez (balanced_mod x) (p%:Z %/ 2)%Z.
+  Lemma balanced_mod_range1 (x : 'Z_p):
+    (balanced_mod x) <= (p%:Z %/ 2)%Z.
   Proof.
     unfold balanced_mod.
-    case: (boolP (intOrdered.lez x (p %/ 2)%Z)) => H.
-    - apply H.
-    - generalize (Zp_lt_p (pbig := pbig) x); intros.
+    case: (leP (Posz x) _) => le1.
+    - apply le1.
+    - generalize (Zp_lt_p x); intros.
+      lia.
+  Qed.
+  
+  Lemma balanced_mod_range2 (x : 'Z_p):
+    ((-(p%:Z %/ 2)%Z) <= (balanced_mod x))%R.
+  Proof.
+    unfold balanced_mod.
+    case: (leP (Posz x) _) => HH.
+    - lia.
+    - rewrite -(ltr_add2r (opp p%:Z)) in HH.
       lia.
   Qed.
 
-  Lemma balanced_mod_range2 {p:nat} {pbig:1 < p} (x : 'Z_p):
-    intOrdered.lez  (-(p%:Z %/ 2)%Z) (balanced_mod x).
-  Proof.
-    unfold balanced_mod.
-    case: (boolP (intOrdered.lez x (p %/ 2)%Z)) => H.
-    - lia.
-    - assert (intOrdered.ltz (p%/2)%Z x) by lia.
-      unfold intOrdered.lez.
-      generalize (Zp_lt_p (pbig := pbig) x); intros.
-      unfold intOrdered.ltz in H1.
-      case: (- (p%/2)%Z).
-      + intros.
-
-
-    Admitted.
+End balance.
 
 Section encrypted_ops.
 
