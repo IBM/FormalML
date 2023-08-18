@@ -213,6 +213,9 @@ Section encrypted_ops.
   Definition rescale_gen (q1 q2 : nat) (c : 'Z_q1) : 'Z_q2 :=
     ired_q (rounded_div (balanced_mod (c *+ q2)) q1).
 
+  Import order.Order.
+  
+  
   Lemma rescale_gen_prop (q1 q2 : nat) (c : 'Z_(q1*q2)):
     q2 <> 0%N ->
     rescale q1 q2 c = rescale_gen (q1 * q2) q2 c.
@@ -222,7 +225,6 @@ Section encrypted_ops.
     f_equal.
     unfold rounded_div, balanced_mod.
     simpl.
-    rewrite !addn1.
     assert (1 <= 1)%coq_nat by lia.
     generalize (PeanoNat.Nat.divmod_spec q1 1 0 1 H0); intros.
     generalize (PeanoNat.Nat.divmod_spec (q1 * q2) 1 0 1 H0); intros.
@@ -235,7 +237,6 @@ Section encrypted_ops.
     destruct H1.
     destruct H2.
     simpl.
-    rewrite mul1n.
     assert (cdivq1:(c %/ q1)%Z = ((c *+ q2) %/ (q1 * q2)%N)%Z).
     {
       rewrite -(@divzMpr (Posz q2)); [| lia].
@@ -248,6 +249,8 @@ Section encrypted_ops.
       assert (1 < q1 * q2) by admit.
       admit.
     }
+(*
+    case: leqP.
     case: (leqP c _)=>HH1.
     - case ltnP => HH2.
       + case (leqP (c *+ q2) _) => HH3.
@@ -267,6 +270,7 @@ Section encrypted_ops.
     - case: ltnP => HH2.
       + admit.
       + admit.
+*)
   Admitted.
     
   Definition red_p_q (c : 'Z_(p*q)) : 'Z_q := rescale p q c.
