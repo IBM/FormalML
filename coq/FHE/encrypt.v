@@ -69,6 +69,15 @@ Section balance.
     let pz := p %:Z in
     if xz <= (pz %/ 2)%Z then xz else xz-pz.
 
+  Definition balanced_mod_N {p:nat} (x : 'Z_p):int :=
+    if (x <= (div.divn p 2))%N then x%:Z else x%:Z-p%:Z.
+
+  Lemma absz_bound (x : int) (b : nat) :
+    - (b%:Z) <= x /\ x <= b%:Z <->
+    (absz x <= b)%N.
+  Proof.
+    Admitted.
+
   Context {p : nat} {pbig:(1 < p)%nat}.
   
   Lemma Zp_intmul_Np  (x : 'Z_p) :
@@ -91,8 +100,24 @@ Section balance.
     - by rewrite {1}(Zp_intmul_Np x).
   Qed.
 
+  Lemma balanced_mod_cong_N (x : 'Z_p) :
+    x = ired_q (balanced_mod_N x).
+  Proof.
+    unfold ired_q, balanced_mod_N.
+    case: (x <= div.divn p 2)%N.
+    - by rewrite int_of_ordK.
+    - by rewrite {1}(Zp_intmul_Np x).
+  Qed.
+
   Lemma Zp_lt_p (x : 'Z_p):
     x%:Z < p.
+  Proof.
+    generalize (ltn_ord x); intros.
+    by rewrite {2}Zp_cast in H.
+  Qed.
+
+  Lemma Zp_lt_p_N (x : 'Z_p):
+    (x < p)%N.
   Proof.
     generalize (ltn_ord x); intros.
     by rewrite {2}Zp_cast in H.
@@ -108,6 +133,16 @@ Section balance.
       lia.
   Qed.
   
+  Lemma balanced_mod_range1_N (x : 'Z_p):
+    balanced_mod_N x <= div.divn p 2.
+  Proof.
+    unfold balanced_mod_N.
+    case: (boolP (x <= _)%N) => le1.
+    - apply le1.
+    - generalize (Zp_lt_p_N x); intros.
+      lia.
+  Qed.
+
   Lemma balanced_mod_range2 (x : 'Z_p):
     ((-(p%:Z %/ 2)%Z) <= (balanced_mod x))%R.
   Proof.
@@ -115,10 +150,24 @@ Section balance.
     case: (leP x%:Z _) => HH; lia.
   Qed.
 
-  Lemma balanced_mod_abs_range (x : 'Z_p):
-    (absz (balanced_mod x) <= (Nat.div p 2))%N.
+
+  Lemma balanced_mod_range2_N (x : 'Z_p):
+    -((div.divn p 2)%:Z) <= balanced_mod_N x.
   Proof.
-  Admitted.
+    unfold balanced_mod_N.
+    generalize (balanced_mod_range2 x); intros.
+    unfold balanced_mod in H.
+    by rewrite divz_nat addn1 in H.
+  Qed.
+
+  Lemma balanced_mod_abs_range (x : 'Z_p):
+    (absz (balanced_mod_N x) <= (div.divn p 2))%N.
+  Proof.
+    apply absz_bound.
+    split.
+    - apply balanced_mod_range2_N.
+    - apply balanced_mod_range1_N.
+  Qed.
 
 End balance.
 
@@ -143,15 +192,15 @@ Section encrypted_ops.
     let denz := den %:Z in
     let q := (num %/ denz)%Z in
     let rem := num - q * denz in
-    if absz rem < (Nat.div den 2) then q else q+1.
+    if absz rem < (div.divn den 2) then q else q+1.
 
   Lemma rounded_div_rem_small (num : int) (den : nat) :
-    absz (num - (rounded_div num den) * (den%:Z))%Z < (Nat.div den 2).
+    absz (num - (rounded_div num den) * (den%:Z))%Z <= (div.divn den 2).
   Proof.
     unfold rounded_div.
     case: (boolP ((`|(num - (num %/ den)%Z * den)%R|) < _)) => H.
-    - apply H.
-    - assert (Nat.div den 2 <= `|(num - (num %/ den)%Z * den)%R|) by lia.
+    - lia.
+    - assert (div.divn den 2 <= `|(num - (num %/ den)%Z * den)%R|) by lia.
       Admitted.
 
   Definition coef_norm {qq:nat} (p : {poly 'Z_qq}) :=
