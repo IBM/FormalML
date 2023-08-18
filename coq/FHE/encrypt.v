@@ -214,7 +214,7 @@ Section encrypted_ops.
     ired_q (rounded_div (balanced_mod (c *+ q2)) q1).
 
   Import order.Order.
-  
+  Import ssrnum.Num.Syntax.
   
   Lemma rescale_gen_prop (q1 q2 : nat) (c : 'Z_(q1*q2)):
     q2 <> 0%N ->
@@ -246,31 +246,28 @@ Section encrypted_ops.
 
       
       unfold mul, Zp_trunc; simpl.
-      assert (1 < q1 * q2) by admit.
+      assert (1 < q1 * q2)%N by admit.
       admit.
     }
-(*
-    case: leqP.
-    case: (leqP c _)=>HH1.
-    - case ltnP => HH2.
-      + case (leqP (c *+ q2) _) => HH3.
-        * case: ltnP => HH4.
+    case: (boolP ((Posz c) <= _)%Z) => HH1.
+    - case ltP => HH2.
+      + case: ltP => HH3.
+        * case: (boolP (_ <= _)) => HH4.
           -- by rewrite cdivq1.
           -- admit.
-        * case: ltnP => HH4.
+        * case: (boolP (_ <= _)) => HH4.
+          -- admit.
+          -- admit.             
+      + case: ltP => HH3.
+        * case: (boolP (_ <= _)) => HH4.
           -- admit.
           -- admit.
-      + case (leqP (c *+ q2) _) => HH3.
-        * case: ltnP => HH4.
-          -- admit.
+        * case: (boolP (_ <= _)) => HH4.
           -- by rewrite cdivq1.
-        * case: ltnP => HH4.
           -- admit.
-          -- admit.
-    - case: ltnP => HH2.
+    - case ltP => HH2.
       + admit.
       + admit.
-*)
   Admitted.
     
   Definition red_p_q (c : 'Z_(p*q)) : 'Z_q := rescale p q c.
