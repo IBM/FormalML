@@ -92,7 +92,7 @@ Section balance.
   Qed.
 
   Lemma Zp_lt_p (x : 'Z_p):
-    (Posz x) < p.
+    x%:Z < p.
   Proof.
     generalize (ltn_ord x); intros.
     by rewrite {2}Zp_cast in H.
@@ -102,7 +102,7 @@ Section balance.
     (balanced_mod x) <= (p%:Z %/ 2)%Z.
   Proof.
     unfold balanced_mod.
-    case: (leP (Posz x) _) => le1.
+    case: (leP x%:Z _) => le1.
     - apply le1.
     - generalize (Zp_lt_p x); intros.
       lia.
@@ -112,11 +112,13 @@ Section balance.
     ((-(p%:Z %/ 2)%Z) <= (balanced_mod x))%R.
   Proof.
     unfold balanced_mod.
-    case: (leP (Posz x) _) => HH.
-    - lia.
-    - rewrite -(ltr_add2r (opp p%:Z)) in HH.
-      lia.
+    case: (leP x%:Z _) => HH; lia.
   Qed.
+
+  Lemma balanced_mod_abs_range (x : 'Z_p):
+    (absz (balanced_mod x) <= (Nat.div p 2))%N.
+  Proof.
+  Admitted.
 
 End balance.
 
@@ -136,13 +138,21 @@ Section encrypted_ops.
     (m + fst public_key, snd public_key).
 
   Definition encrypt_z (m : {poly int}) := encrypt (red_poly m q).
-
   
   Definition rounded_div (num : int) (den : nat) :=
     let denz := den %:Z in
     let q := (num %/ denz)%Z in
     let rem := num - q * denz in
     if absz rem < (Nat.div den 2) then q else q+1.
+
+  Lemma rounded_div_rem_small (num : int) (den : nat) :
+    absz (num - (rounded_div num den) * (den%:Z))%Z < (Nat.div den 2).
+  Proof.
+    unfold rounded_div.
+    case: (boolP ((`|(num - (num %/ den)%Z * den)%R|) < _)) => H.
+    - apply H.
+    - assert (Nat.div den 2 <= `|(num - (num %/ den)%Z * den)%R|) by lia.
+      Admitted.
 
   Definition coef_norm {qq:nat} (p : {poly 'Z_qq}) :=
     list_max (map absz (map balanced_mod p)).
@@ -239,17 +249,15 @@ Section encrypted_ops.
     simpl.
     assert (cdivq1:(c %/ q1)%Z = ((c *+ q2) %/ (q1 * q2)%N)%Z).
     {
-      rewrite -(@divzMpr (Posz q2)); [| lia].
+      rewrite -(@divzMpr q2%:Z); [| lia].
       rewrite -mulr_natr.
       
       f_equal.
-
-      
       unfold mul, Zp_trunc; simpl.
       assert (1 < q1 * q2)%N by admit.
       admit.
     }
-    case: (boolP ((Posz c) <= _)%Z) => HH1.
+    case: (boolP (c%:Z <= _)%Z) => HH1.
     - case ltP => HH2.
       + case: ltP => HH3.
         * case: (boolP (_ <= _)) => HH4.
