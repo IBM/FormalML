@@ -81,7 +81,42 @@ Qed.
     - by rewrite int_of_ordK.
     - by rewrite {1}(Zp_intmul_Np x).
   Qed.
-  
+
+  Lemma Zp_lt_p {p:nat} {pbig:1 < p} (x : 'Z_p):
+    intOrdered.ltz x p.
+  Proof.
+    unfold intOrdered.ltz.
+    generalize (ltn_ord x); intros.
+    unfold Zp_trunc in H.
+    
+    Admitted.
+
+  Lemma balanced_mod_range1 {p:nat} {pbig:1 < p} (x : 'Z_p):
+    intOrdered.lez (balanced_mod x) (p%:Z %/ 2)%Z.
+  Proof.
+    unfold balanced_mod.
+    case: (boolP (intOrdered.lez x (p %/ 2)%Z)) => H.
+    - apply H.
+    - generalize (Zp_lt_p (pbig := pbig) x); intros.
+      lia.
+  Qed.
+
+  Lemma balanced_mod_range2 {p:nat} {pbig:1 < p} (x : 'Z_p):
+    intOrdered.lez  (-(p%:Z %/ 2)%Z) (balanced_mod x).
+  Proof.
+    unfold balanced_mod.
+    case: (boolP (intOrdered.lez x (p %/ 2)%Z)) => H.
+    - lia.
+    - assert (intOrdered.ltz (p%/2)%Z x) by lia.
+      unfold intOrdered.lez.
+      generalize (Zp_lt_p (pbig := pbig) x); intros.
+      unfold intOrdered.ltz in H1.
+      case: (- (p%/2)%Z).
+      + intros.
+
+
+    Admitted.
+
 Section encrypted_ops.
 
   Variable (q:nat).
