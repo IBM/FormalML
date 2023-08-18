@@ -58,29 +58,26 @@ Proof.
   by rewrite -pmulrn nat_of_ordK.
 Qed.
 
-Definition ired_q {qq:nat} (i : int) : 'Z_qq := i %:~R.
+Definition ired_q {p:nat} (i : int) : 'Z_p := i %:~R.
 
 Lemma Zp_intmul_Np {p : nat} {pbig:1 < p} (x : 'Z_p) :
   x = (x%:Z - p%:Z)%:~R.
 Proof.
   generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc p))); intros.
   destruct H.
-  rewrite base int_of_ordK.
-  replace (p %:~R) with (zero (Zp_ringType (Zp_trunc p))).
-  - by rewrite oppr0 addr0.
-  - by rewrite -pmulrn char_Zp //.
+  by rewrite base int_of_ordK -pmulrn char_Zp // oppr0 addr0.
 Qed.      
 
-  Definition balanced_mod {qq:nat} (x : 'Z_qq):int :=
+  Definition balanced_mod {p:nat} (x : 'Z_p):int :=
   let xz := x %:Z in
-  let qz := qq %:Z in
-  if intOrdered.lez xz (qz %/ 2)%Z then xz else xz-qz.
+  let pz := p %:Z in
+  if intOrdered.lez xz (pz %/ 2)%Z then xz else xz-pz.
 
-  Lemma balanced_mod_cong {qq:nat} {qqbig:1 < qq} (x : 'Z_qq) :
+  Lemma balanced_mod_cong {p:nat} {pbig:1 < p} (x : 'Z_p) :
     x = ired_q (balanced_mod x).
   Proof.
     unfold ired_q, balanced_mod.
-    case: (boolP (intOrdered.lez x (qq %/ 2)%Z)) => _.
+    case: (intOrdered.lez x (p %/ 2)%Z).
     - by rewrite int_of_ordK.
     - by rewrite {1}(Zp_intmul_Np x).
   Qed.
