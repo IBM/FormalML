@@ -76,7 +76,12 @@ Section balance.
     - (b%:Z) <= x /\ x <= b%:Z <->
     (absz x <= b)%N.
   Proof.
-    Admitted.
+    unfold absz.
+    split; intros.
+    - destruct H.
+      case_eq x; intros; lia.
+    - case_eq x; intros; rewrite H0 in H; lia.
+  Qed.
 
   Context {p : nat} {pbig:(1 < p)%nat}.
   
