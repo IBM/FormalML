@@ -297,62 +297,68 @@ Section encrypted_ops.
     ired_q (rounded_div (balanced_mod c) q1).
 
   Definition rescale_gen (q1 q2 : nat) (c : 'Z_q1) : 'Z_q2 :=
-    ired_q (rounded_div (balanced_mod (c *+ q2)) q1).
+    ired_q (rounded_div ((balanced_mod c) * q2) q1).
 
   Import order.Order.
   Import ssrnum.Num.Syntax.
+
+  Lemma cdivqq_int (q1 q2 : nat) (c : int):
+    (0 < q2)%N ->
+    (c %/ q1)%Z = ((c * q2) %/ (q1 * q2)%N)%Z.
+  Proof.
+    intros.
+    rewrite -(@divzMpr q2%:Z); [| lia].
+    do 2 f_equal.
+  Qed.
   
+  Lemma mul_Posz (n1 n2 : nat) :
+    mul (Posz n1) (Posz n2) = Posz (n1 * n2)%N.
+  Proof.
+    lia.
+  Qed.
+  
+  Lemma le_mul2 (n1 n2 n3 : nat) :
+    (0 < n3)%N ->
+    (2*n1 <= n2)%N <->
+    (2 * n1 * n3 <= (n2 * n3))%N.
+  Proof.
+    split; intros.
+    Admitted.
+
+  Lemma le_div_mul (n1 n2 n3 : nat) :
+    (0 < n3)%N ->
+    (n1 <= div.divn n2 2)%N <->
+    (n1 * n3 <= div.divn (n2 * n3) 2)%N.
+  Proof.
+    intros.
+    generalize div.leq_div2r; intros.
+    Admitted.
+
+  Lemma rounded_div_scale_div (q1 q2 : nat) (c : int):
+    (0 < q2)%N ->
+    rounded_div c q1 = rounded_div (c * q2) (q1 * q2).
+  Proof.
+    intros.
+    rewrite /rounded_div -!cdivqq_int //.
+    have: ((c * q2 - (c %/ q1)%Z * (q1 * q2)%N)%R =
+             (c - (c %/ q1)%Z * q1)%R * q2) by lia.
+    move => HH.
+    rewrite HH; clear HH.
+    rewrite abszM absz_nat.
+    generalize (le_div_mul `|(c - (c %/ q1)%Z * q1)%R| q1 q2 H); intros.
+    case: leP => HH1.
+    - case: leP => HH2; trivial; lia.
+    - case: leP => HH2; trivial; lia.
+  Qed.
+
   Lemma rescale_gen_prop (q1 q2 : nat) (c : 'Z_(q1*q2)):
-    q2 <> 0%N ->
+    (0 < q2)%N ->
     rescale q1 q2 c = rescale_gen (q1 * q2) q2 c.
   Proof.
     intros.
-    unfold rescale, rescale_gen.
-    f_equal.
-    unfold rounded_div, balanced_mod.
-    simpl.
-    assert (1 <= 1)%coq_nat by lia.
-    generalize (PeanoNat.Nat.divmod_spec q1 1 0 1 H0); intros.
-    generalize (PeanoNat.Nat.divmod_spec (q1 * q2) 1 0 1 H0); intros.
-    replace (1 - 1)%coq_nat with 0%N in H1 by lia.
-    replace (1 - 1)%coq_nat with 0%N in H2 by lia.    
-    rewrite !PeanoNat.Nat.mul_0_r !PeanoNat.Nat.add_0_r in H1.
-    rewrite !PeanoNat.Nat.mul_0_r !PeanoNat.Nat.add_0_r in H2.
-    destruct (Nat.divmod q1 1 0 1).
-    destruct (Nat.divmod (q1 * q2) 1 0 1).
-    destruct H1.
-    destruct H2.
-    simpl.
-    assert (cdivq1:(c %/ q1)%Z = ((c *+ q2) %/ (q1 * q2)%N)%Z).
-    {
-      rewrite -(@divzMpr q2%:Z); [| lia].
-      rewrite -mulr_natr.
-      
-      f_equal.
-      unfold mul, Zp_trunc; simpl.
-      assert (1 < q1 * q2)%N by admit.
-      admit.
-    }
-    case: (boolP (c%:Z <= _)%Z) => HH1.
-    - case leP => HH2.
-      + case: leP => HH3.
-        * case: (boolP (_ <= _)) => HH4.
-          -- by rewrite cdivq1.
-          -- admit.
-        * case: (boolP (_ <= _)) => HH4.
-          -- admit.
-          -- admit.             
-      + case: leP => HH3.
-        * case: (boolP (_ <= _)) => HH4.
-          -- admit.
-          -- admit.
-        * case: (boolP (_ <= _)) => HH4.
-          -- by rewrite cdivq1.
-          -- admit.
-    - case leP => HH2.
-      + admit.
-      + admit.
-  Admitted.
+    unfold rescale, rescale_gen, balanced_mod.
+    by rewrite -rounded_div_scale_div.
+  Qed.
     
   Definition red_p_q (c : 'Z_(p*q)) : 'Z_q := rescale p q c.
 
