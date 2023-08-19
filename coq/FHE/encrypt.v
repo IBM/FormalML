@@ -208,7 +208,7 @@ Section encrypted_ops.
     let denz := den %:Z in
     let q := (num %/ denz)%Z in
     let rem := num - q * denz in
-    if absz rem < (div.divn den 2) then q else q+1.
+    if absz rem <= (div.divn den 2) then q else q+1.
 
   Lemma add_opp [R : comRingType] (x : R) :
     (-x) + x = 0.
@@ -217,27 +217,18 @@ Section encrypted_ops.
   Qed.
 
   Lemma rounded_div_rem_small (num : int) (den : nat) :
-    (0 < den)%N ->
+   (0 < den)%N ->
     absz (num - (rounded_div num den) * (den%:Z))%Z <= div.divn den 2.
   Proof.
     intros.
     apply absz_bound.
     unfold rounded_div.
-    case: (boolP ((`|(num - (num %/ den)%Z * den)%R|) < _)) => HH.    
-    - apply absz_bound_lt in HH.
+    case: (boolP ((`|(num - (num %/ den)%Z * den)%R|) <= _)) => HH.    
+    - apply absz_bound in HH.
       destruct HH.
       split; lia.
     - split; try lia.
-      assert (div.divn den 2 <= `|(num - (num %/ den)%Z * den)%R|) by lia.
-      pose (m := (num - (num %/ den)%Z * den)).
-      generalize (@intOrdered.gez0_norm m); intros.
-      assert (order.Order.le (Posz (div.divn den 2)) (num - (num %/ den)%Z * den)%Z).
-      {
-        admit.
-      }
-      replace (- (Posz (div.divn den 2))) with
-        ((Posz (div.divn den 2)) - (Posz den ))%Z; try lia.
-      Admitted.
+   Qed.
 
   Definition coef_norm {qq:nat} (p : {poly 'Z_qq}) :=
     list_max (map absz (map balanced_mod p)).
@@ -343,22 +334,22 @@ Section encrypted_ops.
       admit.
     }
     case: (boolP (c%:Z <= _)%Z) => HH1.
-    - case ltP => HH2.
-      + case: ltP => HH3.
+    - case leP => HH2.
+      + case: leP => HH3.
         * case: (boolP (_ <= _)) => HH4.
           -- by rewrite cdivq1.
           -- admit.
         * case: (boolP (_ <= _)) => HH4.
           -- admit.
           -- admit.             
-      + case: ltP => HH3.
+      + case: leP => HH3.
         * case: (boolP (_ <= _)) => HH4.
           -- admit.
           -- admit.
         * case: (boolP (_ <= _)) => HH4.
           -- by rewrite cdivq1.
           -- admit.
-    - case ltP => HH2.
+    - case leP => HH2.
       + admit.
       + admit.
   Admitted.
