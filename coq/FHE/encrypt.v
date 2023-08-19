@@ -83,6 +83,17 @@ Section balance.
     - case_eq x; intros; rewrite H0 in H; lia.
   Qed.
 
+  Lemma absz_bound_lt (x : int) (b : nat) :
+    - (b%:Z) < x /\ x < b%:Z <->
+    (absz x < b)%N.
+  Proof.
+    unfold absz.
+    split; intros.
+    - destruct H.
+      case_eq x; intros; lia.
+    - case_eq x; intros; rewrite H0 in H; lia.
+  Qed.
+
   Context {p : nat} {pbig:(1 < p)%nat}.
   
   Lemma Zp_intmul_Np  (x : 'Z_p) :
@@ -199,13 +210,33 @@ Section encrypted_ops.
     let rem := num - q * denz in
     if absz rem < (div.divn den 2) then q else q+1.
 
-  Lemma rounded_div_rem_small (num : int) (den : nat) :
-    absz (num - (rounded_div num den) * (den%:Z))%Z <= (div.divn den 2).
+  Lemma add_opp [R : comRingType] (x : R) :
+    (-x) + x = 0.
   Proof.
+    ring.
+  Qed.
+
+  Lemma rounded_div_rem_small (num : int) (den : nat) :
+    (0 < den)%N ->
+    absz (num - (rounded_div num den) * (den%:Z))%Z <= div.divn den 2.
+  Proof.
+    intros.
+    apply absz_bound.
     unfold rounded_div.
-    case: (boolP ((`|(num - (num %/ den)%Z * den)%R|) < _)) => H.
-    - lia.
-    - assert (div.divn den 2 <= `|(num - (num %/ den)%Z * den)%R|) by lia.
+    case: (boolP ((`|(num - (num %/ den)%Z * den)%R|) < _)) => HH.    
+    - apply absz_bound_lt in HH.
+      destruct HH.
+      split; lia.
+    - split; try lia.
+      assert (div.divn den 2 <= `|(num - (num %/ den)%Z * den)%R|) by lia.
+      pose (m := (num - (num %/ den)%Z * den)).
+      generalize (@intOrdered.gez0_norm m); intros.
+      assert (order.Order.le (Posz (div.divn den 2)) (num - (num %/ den)%Z * den)%Z).
+      {
+        admit.
+      }
+      replace (- (Posz (div.divn den 2))) with
+        ((Posz (div.divn den 2)) - (Posz den ))%Z; try lia.
       Admitted.
 
   Definition coef_norm {qq:nat} (p : {poly 'Z_qq}) :=

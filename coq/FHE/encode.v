@@ -2166,6 +2166,9 @@ Section norms.
     apply norm_inf_semi_multiplicative.
  Qed.
 
+  Lemma canon_norm_inf_le_norm1 n (p : {poly R}) :
+    
+
 (* following only holds on quotient ring by x^+(2^n) + 1 
   Lemma canon_norm_inf_pos_def n p :
     canon_norm_inf n p = 0 -> p = 0.
