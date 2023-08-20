@@ -311,7 +311,7 @@ Section encrypted_ops.
     do 2 f_equal.
   Qed.
   
-  Lemma lt_muln (n1 n2 n3 : nat) :
+  Lemma lt_muln_iff (n1 n2 n3 : nat) :
     (n1 < n2)%N <->
      (n1 * (S n3) < n2 * (S n3))%N.
   Proof.
@@ -339,7 +339,7 @@ Section encrypted_ops.
      rewrite le_half_odd // le_half_odd; try lia.
      replace ((n1 * n3).*2) with ((n1.*2)*n3)%N by lia.
      replace n3 with (n3.-1.+1) by lia.
-     apply lt_muln.
+     apply lt_muln_iff.
   Qed.
 
   Lemma le_div_mul (n1 n2 n3 : nat) :
