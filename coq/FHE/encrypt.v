@@ -311,48 +311,70 @@ Section encrypted_ops.
     do 2 f_equal.
   Qed.
   
-  Lemma mul_Posz (n1 n2 : nat) :
-    mul (Posz n1) (Posz n2) = Posz (n1 * n2)%N.
+  Lemma lt_muln (n1 n2 n3 : nat) :
+    (n1 < n2)%N <->
+     (n1 * (S n3) < n2 * (S n3))%N.
+  Proof.
+    induction n3.
+    - lia.
+    - replace (n1 * n3.+2)%N with (n1 * n3.+1 + n1)%N by lia.
+      replace (n2 * n3.+2)%N with (n2 * n3.+1 + n2)%N by lia.      
+      lia.
+  Qed.
+
+  Lemma le_half_odd (n1 n2 : nat) :
+    odd n2 ->
+    (n1 <= half n2)%N <-> (n1.*2.+1 <= n2)%N.
   Proof.
     lia.
   Qed.
-  
-  Lemma le_mul2 (n1 n2 n3 : nat) :
-    (0 < n3)%N ->
-    (2*n1 <= n2)%N <->
-    (2 * n1 * n3 <= (n2 * n3))%N.
-  Proof.
-    split; intros.
-    Admitted.
+
+  Lemma le_half_mul_odd (n1 n2 n3 : nat) :
+    odd n2 ->
+    odd n3 ->
+    (n1 <= half n2)%N <->
+      (n1 * n3 <= half (n2 * n3))%N.
+   Proof.
+     intros.
+     rewrite le_half_odd // le_half_odd; try lia.
+     replace ((n1 * n3).*2) with ((n1.*2)*n3)%N by lia.
+     replace n3 with (n3.-1.+1) by lia.
+     apply lt_muln.
+  Qed.
 
   Lemma le_div_mul (n1 n2 n3 : nat) :
-    (0 < n3)%N ->
+    odd n2 ->
+    odd n3 ->
     (n1 <= div.divn n2 2)%N <->
     (n1 * n3 <= div.divn (n2 * n3) 2)%N.
   Proof.
     intros.
-    generalize div.leq_div2r; intros.
-    Admitted.
+    rewrite !div.divn2.
+    by apply le_half_mul_odd.
+  Qed.
 
   Lemma rounded_div_scale_div (q1 q2 : nat) (c : int):
-    (0 < q2)%N ->
+    odd q1 ->
+    odd q2 ->
     rounded_div c q1 = rounded_div (c * q2) (q1 * q2).
   Proof.
     intros.
+    assert (0 < q2)%N by lia.
     rewrite /rounded_div -!cdivqq_int //.
     have: ((c * q2 - (c %/ q1)%Z * (q1 * q2)%N)%R =
              (c - (c %/ q1)%Z * q1)%R * q2) by lia.
     move => HH.
     rewrite HH; clear HH.
     rewrite abszM absz_nat.
-    generalize (le_div_mul `|(c - (c %/ q1)%Z * q1)%R| q1 q2 H); intros.
+    generalize (le_div_mul `|(c - (c %/ q1)%Z * q1)%R| q1 q2 H H0); intros.
     case: leP => HH1.
     - case: leP => HH2; trivial; lia.
     - case: leP => HH2; trivial; lia.
   Qed.
 
   Lemma rescale_gen_prop (q1 q2 : nat) (c : 'Z_(q1*q2)):
-    (0 < q2)%N ->
+    odd q1 ->
+    odd q2 ->
     rescale q1 q2 c = rescale_gen (q1 * q2) q2 c.
   Proof.
     intros.
