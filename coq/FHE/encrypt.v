@@ -64,10 +64,18 @@ Section balance.
 
   Import ssrnum.Num.Syntax.
   
+  (* range (-p/2, p/2] *)
   Definition balanced_mod {p:nat} (x : 'Z_p):int :=
     let xz := x %:Z in
     let pz := p %:Z in
     if xz <= (pz %/ 2)%Z then xz else xz-pz.
+
+  (* range [-p/2, p/2) *)
+  Definition balanced_mod_alt {p:nat} (x : 'Z_p):int :=
+    let xz := x %:Z in
+    let pz := p %:Z in
+    let xzm := xz - pz in
+    if -(pz %/2)%Z <= xzm then xzm else xz.
 
   Definition balanced_mod_N {p:nat} (x : 'Z_p):int :=
     if (x <= (div.divn p 2))%N then x%:Z else x%:Z-p%:Z.
@@ -163,9 +171,8 @@ Section balance.
     ((-(p%:Z %/ 2)%Z) <= (balanced_mod x))%R.
   Proof.
     unfold balanced_mod.
-    case: (leP x%:Z _) => HH; lia.
+    case: (leP x%:Z _) => HH; try lia.
   Qed.
-
 
   Lemma balanced_mod_range2_N (x : 'Z_p):
     -((div.divn p 2)%:Z) <= balanced_mod_N x.
