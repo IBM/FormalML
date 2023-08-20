@@ -363,8 +363,7 @@ Section encrypted_ops.
     rewrite /rounded_div -!cdivqq_int //.
     have: ((c * q2 - (c %/ q1)%Z * (q1 * q2)%N)%R =
              (c - (c %/ q1)%Z * q1)%R * q2) by lia.
-    move => HH.
-    rewrite HH; clear HH.
+    move ->.
     rewrite abszM absz_nat.
     generalize (le_div_mul `|(c - (c %/ q1)%Z * q1)%R| q1 q2 H H0); intros.
     case: leP => HH1.
