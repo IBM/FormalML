@@ -366,9 +366,7 @@ Section encrypted_ops.
     move ->.
     rewrite abszM absz_nat.
     generalize (le_div_mul `|(c - (c %/ q1)%Z * q1)%R| q1 q2 H H0); intros.
-    case: leP => HH1.
-    - case: leP => HH2; trivial; lia.
-    - case: leP => HH2; trivial; lia.
+    case: leP => HH1; case: leP => HH2; lia.
   Qed.
 
   Lemma rescale_gen_prop (q1 q2 : nat) (c : 'Z_(q1*q2)):
