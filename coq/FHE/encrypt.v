@@ -159,28 +159,33 @@ Section balance.
     balanced_mod x <= p./2.
   Proof.
     unfold balanced_mod.
-    case: (boolP (Posz x <= _)) => le1.
-    - apply le1.
-    - generalize (Zp_lt_p x); intros.
-      lia.
+    generalize (Zp_lt_p x).
+    case: (boolP (Posz x <= _)) => le1; lia.
   Qed.
   
-  Lemma balanced_mod_lo_range1 (x : 'Z_p):
-    balanced_mod_lo x <= p./2.
-  Proof.
-    unfold balanced_mod_lo.
-    case: (boolP (_ <= Posz x - p%:Z)) => le1; try lia.
-    generalize (Zp_lt_p x); lia.
-  Qed.
-
   Lemma balanced_mod_range1_N (x : 'Z_p):
     balanced_mod_N x <= p./2.
   Proof.
     unfold balanced_mod_N.
-    case: (boolP (x <= _)%N) => le1.
-    - apply le1.
-    - generalize (Zp_lt_p_N x); intros.
-      lia.
+    generalize (Zp_lt_p_N x).
+    case: (boolP (x <= _)%N) => le1; lia.
+  Qed.
+
+  Lemma balanced_mod_lo_range1 (x : 'Z_p):
+    balanced_mod_lo x <= p./2.
+  Proof.
+    unfold balanced_mod_lo.
+    generalize (Zp_lt_p x).
+    case: (boolP (_ <= Posz x - p%:Z)) => le1; lia.
+  Qed.
+
+  Lemma balanced_mod_lo_range1_even (x : 'Z_p):
+    ~~ odd p ->
+    balanced_mod_lo x < p./2.
+  Proof.
+    unfold balanced_mod_lo.
+    generalize (Zp_lt_p x).
+    case: (boolP (_ <= Posz x - p%:Z)) => le1; lia.
   Qed.
 
   Lemma balanced_mod_range2 (x : 'Z_p):
@@ -190,17 +195,25 @@ Section balance.
     case: (leP x%:Z _) => HH; try lia.
   Qed.
 
-  Lemma balanced_mod_lo_range2 (x : 'Z_p):
-    -((p./2)%:Z) <= balanced_mod_lo x.
-  Proof.
-    unfold balanced_mod_lo.
-    case: (boolP (_ <= Posz x - p%:Z)) => le1; try lia.
-  Qed.
-
   Lemma balanced_mod_range2_N (x : 'Z_p):
     -((p./2)%:Z) <= balanced_mod_N x.
   Proof.
     apply balanced_mod_range2.
+  Qed.
+
+  Lemma balanced_mod_range2_N_even (x : 'Z_p):
+    ~~ odd p ->
+    -((p./2)%:Z) < balanced_mod_N x.
+  Proof.
+    unfold balanced_mod_N.
+    case leqP => le1; lia.
+  Qed.
+
+  Lemma balanced_mod_lo_range2 (x : 'Z_p):
+    -((p./2)%:Z) <= balanced_mod_lo x.
+  Proof.
+    unfold balanced_mod_lo.
+    case: (boolP (_ <= Posz x - p%:Z)) => le1; lia.
   Qed.
 
   Lemma balanced_mod_abs_range (x : 'Z_p):
