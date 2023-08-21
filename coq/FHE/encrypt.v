@@ -337,11 +337,7 @@ Section encrypted_ops.
     (n1 < n2)%N <->
      (n1 * (S n3) < n2 * (S n3))%N.
   Proof.
-    induction n3.
-    - lia.
-    - replace (n1 * n3.+2)%N with (n1 * n3.+1 + n1)%N by lia.
-      replace (n2 * n3.+2)%N with (n2 * n3.+1 + n2)%N by lia.      
-      lia.
+    induction n3; lia.
   Qed.
 
   Lemma le_half_odd (n1 n2 : nat) :
