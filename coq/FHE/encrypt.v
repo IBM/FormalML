@@ -110,15 +110,6 @@ Section balance.
   Import order.Order.TotalTheory.
   Import ssrnum.Num.Theory. 
   
-  Lemma balanced_mod_lo_cong (x : 'Z_p) :
-    x = ired_q (balanced_mod_lo x).
-  Proof.
-    unfold ired_q, balanced_mod_lo.
-    case: leP => _.
-    - by rewrite {1}(Zp_intmul_Np x).
-    - by rewrite int_of_ordK.
-  Qed.
-
   Lemma balanced_mod_cong (x : 'Z_p) :
     x = ired_q (balanced_mod x).
   Proof.
@@ -126,6 +117,15 @@ Section balance.
     case: (x <= p./2)%N.
     - by rewrite int_of_ordK.
     - by rewrite {1}(Zp_intmul_Np x).
+  Qed.
+
+  Lemma balanced_mod_lo_cong (x : 'Z_p) :
+    x = ired_q (balanced_mod_lo x).
+  Proof.
+    unfold ired_q, balanced_mod_lo.
+    case: leP => _.
+    - by rewrite {1}(Zp_intmul_Np x).
+    - by rewrite int_of_ordK.
   Qed.
 
   Lemma Zp_lt_p (x : 'Z_p):
@@ -354,24 +354,14 @@ Section encrypted_ops.
   Lemma le_half_mul_odd (n1 n2 n3 : nat) :
     odd n2 ->
     odd n3 ->
-    (n1 <= half n2)%N <->
-      (n1 * n3 <= (n2 * n3)./2)%N.
-   Proof.
-     intros.
-     rewrite le_half_odd // le_half_odd; try lia.
-     replace ((n1 * n3).*2) with ((n1.*2)*n3)%N by lia.
-     replace n3 with (n3.-1.+1) by lia.
-     apply lt_muln_iff.
-  Qed.
-
-  Lemma le_div_mul (n1 n2 n3 : nat) :
-    odd n2 ->
-    odd n3 ->
     (n1 <= n2./2)%N <->
     (n1 * n3 <= (n2 * n3)./2)%N.
   Proof.
     intros.
-    by apply le_half_mul_odd.
+    rewrite le_half_odd // le_half_odd; try lia.
+    replace ((n1 * n3).*2) with ((n1.*2)*n3)%N by lia.
+    replace n3 with (n3.-1.+1) by lia.
+    apply lt_muln_iff.
   Qed.
 
   Lemma rounded_div_scale_div (q1 q2 : nat) (c : int):
@@ -386,7 +376,7 @@ Section encrypted_ops.
              (c - (c %/ q1)%Z * q1)%R * q2) by lia.
     move ->.
     rewrite abszM absz_nat.
-    generalize (le_div_mul `|(c - (c %/ q1)%Z * q1)%R| q1 q2 H H0); intros.
+    generalize (le_half_mul_odd `|(c - (c %/ q1)%Z * q1)%R| q1 q2 H H0); intros.
     case: leP => HH1; case: leP => HH2; lia.
   Qed.
 
