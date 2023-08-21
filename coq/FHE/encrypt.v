@@ -211,7 +211,7 @@ Section encrypted_ops.
     let denz := den %:Z in
     let q := (num %/ denz)%Z in
     let rem := num - q * denz in
-    if absz rem <= (div.divn den 2) then q else q+1.
+    if absz rem <= den./2 then q else q+1.
 
   Lemma add_opp [R : comRingType] (x : R) :
     (-x) + x = 0.
@@ -221,7 +221,7 @@ Section encrypted_ops.
 
   Lemma rounded_div_rem_small (num : int) (den : nat) :
    (0 < den)%N ->
-    absz (num - (rounded_div num den) * (den%:Z))%Z <= div.divn den 2.
+    absz (num - (rounded_div num den) * (den%:Z))%Z <= den ./2.
   Proof.
     intros.
     apply absz_bound.
@@ -327,7 +327,7 @@ Section encrypted_ops.
 
   Lemma le_half_odd (n1 n2 : nat) :
     odd n2 ->
-    (n1 <= half n2)%N <-> (n1.*2.+1 <= n2)%N.
+    (n1 <= n2./2)%N <-> (n1.*2.+1 <= n2)%N.
   Proof.
     lia.
   Qed.
@@ -336,7 +336,7 @@ Section encrypted_ops.
     odd n2 ->
     odd n3 ->
     (n1 <= half n2)%N <->
-      (n1 * n3 <= half (n2 * n3))%N.
+      (n1 * n3 <= (n2 * n3)./2)%N.
    Proof.
      intros.
      rewrite le_half_odd // le_half_odd; try lia.
@@ -348,11 +348,10 @@ Section encrypted_ops.
   Lemma le_div_mul (n1 n2 n3 : nat) :
     odd n2 ->
     odd n3 ->
-    (n1 <= div.divn n2 2)%N <->
-    (n1 * n3 <= div.divn (n2 * n3) 2)%N.
+    (n1 <= n2./2)%N <->
+    (n1 * n3 <= (n2 * n3)./2)%N.
   Proof.
     intros.
-    rewrite !div.divn2.
     by apply le_half_mul_odd.
   Qed.
 
