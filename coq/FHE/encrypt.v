@@ -24,8 +24,6 @@ Proof.
   by rewrite -pmulrn nat_of_ordK.
 Qed.
 
-Definition ired_q {p:nat} (i : int) : 'Z_p := i %:~R.
-
 Section balance.
 
   Import ssrnum.Num.Syntax.
@@ -77,18 +75,18 @@ Section balance.
   Import ssrnum.Num.Theory. 
   
   Lemma balanced_mod_cong (x : 'Z_p) :
-    x = ired_q (balanced_mod x).
+    x = (balanced_mod x)%:~R.
   Proof.
-    unfold ired_q, balanced_mod.
+    unfold balanced_mod.
     case: (x <= p./2)%N.
     - by rewrite int_of_ordK.
     - by rewrite {1}(Zp_intmul_Np x).
   Qed.
 
   Lemma balanced_mod_lo_cong (x : 'Z_p) :
-    x = ired_q (balanced_mod_lo x).
+    x = (balanced_mod_lo x)%:~R.
   Proof.
-    unfold ired_q, balanced_mod_lo.
+    unfold balanced_mod_lo.
     case: leP => _.
     - by rewrite {1}(Zp_intmul_Np x).
     - by rewrite int_of_ordK.
@@ -274,7 +272,7 @@ Section encrypted_ops.
   Variable (p:nat). (* relin_modulus *)
   Hypothesis pbig : p > q.
   
-  Definition pq_embed (c : 'Z_q) : 'Z_(p*q) := ired_q (balanced_mod c).
+  Definition pq_embed (c : 'Z_q) : 'Z_(p*q) := (balanced_mod c)%:~R.
 
   Definition secret_p := map_poly pq_embed secret_poly.
 
@@ -282,10 +280,10 @@ Section encrypted_ops.
   Hypothesis (relin_err__small : coef_norm relin_err <= ρ).
 
   Definition rescale (q1 q2 : nat) (c : 'Z_(q1*q2)) : 'Z_q2 :=
-    ired_q (rounded_div (balanced_mod c) q1).
+    (rounded_div (balanced_mod c) q1)%:~R.
 
   Definition rescale_gen (q1 q2 : nat) (c : 'Z_q1) : 'Z_q2 :=
-    ired_q (rounded_div ((balanced_mod c) * q2) q1).
+    (rounded_div ((balanced_mod c) * q2) q1)%:~R.
 
   Import order.Order.
   Import ssrnum.Num.Syntax.
