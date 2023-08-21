@@ -111,7 +111,8 @@ Section balance.
   Proof.
     unfold balanced_mod.
     generalize (Zp_lt_p_N x).
-    case: (boolP (x <= _)%N) => le1; lia.
+    intros.
+    case leqP; lia.
   Qed.
 
   Lemma balanced_mod_lo_range1 (x : 'Z_p):
@@ -119,7 +120,7 @@ Section balance.
   Proof.
     unfold balanced_mod_lo.
     generalize (Zp_lt_p x).
-    case: (boolP (_ <= Posz x - p%:Z)) => le1; lia.
+    case: (boolP (- (p./2)%:Z <= _)) => le1; lia.
   Qed.
 
   Lemma balanced_mod_lo_range1_even (x : 'Z_p):
@@ -128,14 +129,14 @@ Section balance.
   Proof.
     unfold balanced_mod_lo.
     generalize (Zp_lt_p x).
-    case: (boolP (_ <= Posz x - p%:Z)) => le1; lia.
+    case: (boolP (-(p./2)%:Z <= _)) => le1; lia.
   Qed.
 
   Lemma balanced_mod_range2 (x : 'Z_p):
     -((p./2)%:Z) <= balanced_mod x.
   Proof.
     unfold balanced_mod.
-    case: (leqP ) => HH; try lia.
+    case: leqP => HH; try lia.
   Qed.
 
   Lemma balanced_mod_range2_even (x : 'Z_p):
@@ -298,8 +299,7 @@ Section encrypted_ops.
   Qed.
   
   Lemma lt_muln_iff (n1 n2 n3 : nat) :
-    (n1 < n2)%N <->
-     (n1 * (S n3) < n2 * (S n3))%N.
+    (n1 < n2)%N <-> (n1 * (S n3) < n2 * (S n3))%N.
   Proof.
     induction n3; lia.
   Qed.
@@ -314,8 +314,7 @@ Section encrypted_ops.
   Lemma le_half_mul_odd (n1 n2 n3 : nat) :
     odd n2 ->
     odd n3 ->
-    (n1 <= n2./2)%N <->
-    (n1 * n3 <= (n2 * n3)./2)%N.
+    (n1 <= n2./2)%N <-> (n1 * n3 <= (n2 * n3)./2)%N.
   Proof.
     intros.
     rewrite le_half_odd // le_half_odd; try lia.
@@ -337,7 +336,7 @@ Section encrypted_ops.
     move ->.
     rewrite abszM absz_nat.
     generalize (le_half_mul_odd `|(c - (c %/ q1)%Z * q1)%R| q1 q2 H H0); intros.
-    case: leP => HH1; case: leP => HH2; lia.
+    case: leP; case: leP; lia.
   Qed.
 
   Lemma rescale_gen_prop (q1 q2 : nat) (c : 'Z_(q1*q2)):
