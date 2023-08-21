@@ -8,7 +8,43 @@ Require Import LibUtils BasicUtils.
 
 Import ListNotations.
 
-Section Map.
+  Section nth_error.
+
+    Lemma Forall2_nth_error_iff {A B} (P:A->B->Prop) (l1 : list A) (l2: list B) :
+      (forall (i : nat), match nth_error l1 i, nth_error l2 i with
+                         | Some a, Some b => P a b
+                         | None, None => Logic.True
+                         | _, _ => Logic.False
+                         end
+      ) <->
+        Forall2 P l1 l2.
+    Proof.
+      split.
+      - revert l2; induction l1; destruct l2; simpl in *; trivial; intros HH.
+        + specialize (HH 0); simpl in HH; contradiction.
+        + specialize (HH 0); simpl in HH; contradiction.
+        + constructor.
+          * now specialize (HH 0); simpl in HH.
+          * apply IHl1; intros i.
+            now specialize (HH (S i)).
+      - induction 1; intros [| i]; simpl; trivial.
+        apply IHForall2.
+    Qed.
+
+    Lemma nth_error_eqs {A} (l1 l2 : list A) :
+      (forall (i : nat), nth_error l1 i = nth_error l2 i) ->
+      l1 = l2.
+    Proof.
+      intros HH.
+      apply Forall2_eq.
+      apply Forall2_nth_error_iff; intros i.
+      rewrite HH.
+      now destruct (nth_error l2 i).
+    Qed.
+    
+  End nth_error.
+        
+  Section Map.
 
   Lemma removelast_map {A B : Type} (f:A->B) (l : list A) :
     removelast (map f l) = map f (removelast l).
