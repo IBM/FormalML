@@ -66,9 +66,7 @@ Section balance.
   
   (* range (-p/2, p/2] *)
   Definition balanced_mod {p:nat} (x : 'Z_p):int :=
-    let xz := x %:Z in
-    let pz := p %:Z in
-    if xz <= (p./2)%:Z then xz else xz-pz.
+    if (x <= p./2)%N then x%:Z else x%:Z-p%:Z.
 
   (* range [-p/2, p/2) *)
   Definition balanced_mod_lo {p:nat} (x : 'Z_p):int :=
@@ -76,8 +74,6 @@ Section balance.
     let xzm := xz - p%:Z in
     if -(p./2)%:Z <= xzm then xzm else xz.
   
-  Definition balanced_mod_N {p:nat} (x : 'Z_p):int :=
-    if (x <= p./2)%N then x%:Z else x%:Z-p%:Z.
 
   Lemma absz_bound (x : int) (b : nat) :
     - (b%:Z) <= x /\ x <= b%:Z <->
@@ -114,15 +110,6 @@ Section balance.
   Import order.Order.TotalTheory.
   Import ssrnum.Num.Theory. 
   
-  Lemma balanced_mod_cong (x : 'Z_p) :
-    x = ired_q (balanced_mod x).
-  Proof.
-    unfold ired_q, balanced_mod.
-    case: leP => _.
-    - by rewrite int_of_ordK.
-    - by rewrite {1}(Zp_intmul_Np x).
-  Qed.
-
   Lemma balanced_mod_lo_cong (x : 'Z_p) :
     x = ired_q (balanced_mod_lo x).
   Proof.
@@ -132,10 +119,10 @@ Section balance.
     - by rewrite int_of_ordK.
   Qed.
 
-  Lemma balanced_mod_cong_N (x : 'Z_p) :
-    x = ired_q (balanced_mod_N x).
+  Lemma balanced_mod_cong (x : 'Z_p) :
+    x = ired_q (balanced_mod x).
   Proof.
-    unfold ired_q, balanced_mod_N.
+    unfold ired_q, balanced_mod.
     case: (x <= p./2)%N.
     - by rewrite int_of_ordK.
     - by rewrite {1}(Zp_intmul_Np x).
@@ -159,14 +146,6 @@ Section balance.
     balanced_mod x <= p./2.
   Proof.
     unfold balanced_mod.
-    generalize (Zp_lt_p x).
-    case: (boolP (Posz x <= _)) => le1; lia.
-  Qed.
-  
-  Lemma balanced_mod_range1_N (x : 'Z_p):
-    balanced_mod_N x <= p./2.
-  Proof.
-    unfold balanced_mod_N.
     generalize (Zp_lt_p_N x).
     case: (boolP (x <= _)%N) => le1; lia.
   Qed.
@@ -192,20 +171,14 @@ Section balance.
     -((p./2)%:Z) <= balanced_mod x.
   Proof.
     unfold balanced_mod.
-    case: (leP x%:Z _) => HH; try lia.
+    case: (leqP ) => HH; try lia.
   Qed.
 
-  Lemma balanced_mod_range2_N (x : 'Z_p):
-    -((p./2)%:Z) <= balanced_mod_N x.
-  Proof.
-    apply balanced_mod_range2.
-  Qed.
-
-  Lemma balanced_mod_range2_N_even (x : 'Z_p):
+  Lemma balanced_mod_range2_even (x : 'Z_p):
     ~~ odd p ->
-    -((p./2)%:Z) < balanced_mod_N x.
+    -((p./2)%:Z) < balanced_mod x.
   Proof.
-    unfold balanced_mod_N.
+    unfold balanced_mod.
     case leqP => le1; lia.
   Qed.
 
@@ -217,12 +190,12 @@ Section balance.
   Qed.
 
   Lemma balanced_mod_abs_range (x : 'Z_p):
-    (absz (balanced_mod_N x) <= p./2)%N.
+    (absz (balanced_mod x) <= p./2)%N.
   Proof.
     apply absz_bound.
     split.
-    - apply balanced_mod_range2_N.
-    - apply balanced_mod_range1_N.
+    - apply balanced_mod_range2.
+    - apply balanced_mod_range1.
   Qed.
 
   Lemma balanced_mod_lo_abs_range (x : 'Z_p):
