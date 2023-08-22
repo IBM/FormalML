@@ -370,6 +370,8 @@ rewrite /scale_up=> x y.
       + by rewrite /= div.modn_small //.
   Qed.
 
+  Canonical rescale1_rmorphism (q1 q2: nat) := RMorphism (rescale1_is_rmorphism q1 q2).
+
   Lemma cdivqq_int (q1 q2 : nat) (c : int):
     (0 < q2)%N ->
     (c %/ q1)%Z = ((c * q2) %/ (q1 * q2)%N)%Z.
