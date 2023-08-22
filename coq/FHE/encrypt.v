@@ -290,39 +290,37 @@ Section encrypted_ops.
     inZp (muln q2 c).
 
   Lemma scale_up_additive (q1 q2 : nat):
-    additive (scale_up q1 q2).
+    additive (scale_up (Zp_trunc q1).+2 (Zp_trunc q2).+2).
   Proof.
-
-    (*
-rewrite /scale_up=> x y.
-    rewrite /add/opp /=.
-    rewrite mulrDr.
-
-    Search (_ * (_ - _))%R.
-*)    
-    
-    unfold scale_up.
     intros x y.
-    rewrite /scale_up -!Zp_nat nmulrn !pmulrn -intrD.
-    generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc (muln q1 q2)))); intros.
-    destruct H.
-    rewrite base.
-    replace (Posz
-          (muln q2
-             (@nat_of_ord (S (S (Zp_trunc q1)))
-                (@add (Zp_zmodType (S (Zp_trunc q1))) x
-                   (@opp (Zp_zmodType (S (Zp_trunc q1))) y))))) with
-      (mul (Posz q2)
-           (Posz (@nat_of_ord (S (S (Zp_trunc q1)))
-                (@add (Zp_zmodType (S (Zp_trunc q1))) x
-                   (@opp (Zp_zmodType (S (Zp_trunc q1))) y))))).
-    - rewrite mixin.
-      generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc q1))); intros.
-      destruct H.
-      specialize (base0 x y).
-      simpl in base0.
-    
-    Admitted.
+    rewrite /scale_up /add /opp /= /inZp.
+    apply ord_inj => /=.
+    set q1' := (Zp_trunc q1).+2.
+    set q2' := (Zp_trunc q2).+2.
+    rewrite {2 4}(@Zp_cast (q1' * q2')) //.
+    rewrite !div.modnDmr !div.modnDml.
+    rewrite div.muln_modr.
+    unfold q1', q2'.
+    replace ((Zp_trunc ((Zp_trunc q1).+2 * (Zp_trunc q2).+2)).+2 ) with
+      ((Zp_trunc q2).+2 * (Zp_trunc q1).+2)%N at 1 by (unfold Zp_trunc; lia).
+    rewrite div.modn_mod.
+    f_equal; try lia.
+    rewrite div.modn_small.
+    - rewrite mulnDr mulnBr.
+      f_equal.
+      f_equal.
+      rewrite mulnC.
+      unfold Zp_trunc.
+      lia.
+    - rewrite mulnC.
+      have: (ltn y (Zp_trunc q1).+2).
+      + apply ltn_ord.
+      + assert (0 < (Zp_trunc q2).+2).
+        {
+          unfold Zp_trunc; lia.
+        }
+        by rewrite ltn_mul2r.
+  Qed.
 
   Definition rescale1 (q1 q2 : nat) (c : 'Z_(q1*q2)) : 'Z_q2 := inZp c.
 
