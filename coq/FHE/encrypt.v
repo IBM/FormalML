@@ -356,12 +356,8 @@ rewrite /scale_up=> x y.
       + by rewrite div.dvdn_mull.
     - constructor.
       + intros x y.
-        rewrite -!Zp_nat.
-        rewrite !pmulrn.
-        rewrite -m.
-        rewrite -!pmulrn.
-        rewrite !Zp_nat.
-        unfold inZp.
+        rewrite -!Zp_nat !pmulrn.
+        rewrite -m -!pmulrn !Zp_nat /inZp.
         apply ord_inj => //=.
         rewrite div.modn_dvdm //.
         rewrite {1}Zp_cast //.
