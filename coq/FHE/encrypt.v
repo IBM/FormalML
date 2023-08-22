@@ -286,8 +286,58 @@ Section encrypted_ops.
   Definition rescale_gen (q1 q2 : nat) (c : 'Z_q1) : 'Z_q2 :=
     (rounded_div ((balanced_mod c) * q2) q1)%:~R.
 
-  Import order.Order.
-  Import ssrnum.Num.Syntax.
+  Definition scale_up (q1 q2 : nat) (c : 'Z_q1) : 'Z_(q1*q2) :=
+    inZp (muln q2 c).
+
+  Lemma scale_up_additive (q1 q2 : nat):
+    additive (scale_up q1 q2).
+  Proof.
+    unfold scale_up.
+    intros x y.
+    rewrite /scale_up -!Zp_nat nmulrn !pmulrn -intrD.
+    generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc (muln q1 q2)))); intros.
+    destruct H.
+    rewrite base.
+    replace (Posz
+          (muln q2
+             (@nat_of_ord (S (S (Zp_trunc q1)))
+                (@add (Zp_zmodType (S (Zp_trunc q1))) x
+                   (@opp (Zp_zmodType (S (Zp_trunc q1))) y))))) with
+      (mul (Posz q2)
+           (Posz (@nat_of_ord (S (S (Zp_trunc q1)))
+                (@add (Zp_zmodType (S (Zp_trunc q1))) x
+                   (@opp (Zp_zmodType (S (Zp_trunc q1))) y))))).
+    - rewrite mixin.
+      generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc q1))); intros.
+      destruct H.
+      specialize (base0 x y).
+      simpl in base0.
+    
+    Admitted.
+
+  Definition rescale1 (q1 q2 : nat) (c : 'Z_(q1*q2)) : 'Z_q2 := inZp c.
+
+  Lemma rescale1_is_rmorphism (q1 q2 : nat) :
+    rmorphism (rescale1 q1 q2).
+  Proof.
+    unfold rescale1.
+    generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc q2))); intros.
+    destruct H as [? [? ?]].
+    generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc (muln q1 q2)))); intros.
+    destruct H as [? [? ?]].
+    constructor.
+    - intros x y.
+      rewrite -!Zp_nat.
+      admit.
+    - constructor.
+      + intros x y.
+        rewrite -!Zp_nat.
+        rewrite !pmulrn.
+        rewrite -m.
+        rewrite -!pmulrn.
+        rewrite !Zp_nat.
+        unfold inZp.
+        Admitted.
 
   Lemma cdivqq_int (q1 q2 : nat) (c : int):
     (0 < q2)%N ->
