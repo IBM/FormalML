@@ -326,14 +326,11 @@ rewrite /scale_up=> x y.
 
   Definition rescale1 (q1 q2 : nat) (c : 'Z_(q1*q2)) : 'Z_q2 := inZp c.
 
-
   Lemma rescale1_is_rmorphism (q1 q2 : nat) :
     rmorphism (rescale1 (Zp_trunc q1).+2 (Zp_trunc q2).+2).
   Proof.
     unfold rescale1.
     generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc q2))); intros.
-    destruct H as [? [? ?]].
-    generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc (muln q1 q2)))); intros.
     destruct H as [? [? ?]].
     constructor.
     - intros x y.
@@ -342,20 +339,15 @@ rewrite /scale_up=> x y.
       set q1' := (Zp_trunc q1).+2.
       set q2' := (Zp_trunc q2).+2.
       rewrite {2 4}(@Zp_cast (q1' * q2')) //.
-      rewrite !div.modnDmr.
-      rewrite !div.modnDml.
-      rewrite div.modn_dvdm.
+      rewrite !div.modnDmr !div.modnDml div.modn_dvdm.
       + suff: Posz (div.modn (x + (q1' * q2' - y)) q2') = Posz (div.modn (x + (q2' - div.modn y q2')) q2')
           by inversion 1.
         rewrite -!modz_nat !PoszD -!ssrint.subzn.
         * rewrite -modzDmr -(modzDml (muln q1' q2')).
-          rewrite PoszM modzMl add0r modzDmr.
-
-          rewrite -!modz_nat.
+          rewrite PoszM modzMl add0r modzDmr -!modz_nat.
           rewrite -(modzDmr x (Posz q2' - _)).
           rewrite -(modzDml q2' _).
-          rewrite modzz add0r.
-          rewrite modzNm.
+          rewrite modzz add0r modzNm.
           by rewrite modzDmr.
         * apply ltnW.
           by apply div.ltn_pmod.
