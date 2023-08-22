@@ -292,6 +292,15 @@ Section encrypted_ops.
   Lemma scale_up_additive (q1 q2 : nat):
     additive (scale_up q1 q2).
   Proof.
+
+    (*
+rewrite /scale_up=> x y.
+    rewrite /add/opp /=.
+    rewrite mulrDr.
+
+    Search (_ * (_ - _))%R.
+*)    
+    
     unfold scale_up.
     intros x y.
     rewrite /scale_up -!Zp_nat nmulrn !pmulrn -intrD.
@@ -317,8 +326,9 @@ Section encrypted_ops.
 
   Definition rescale1 (q1 q2 : nat) (c : 'Z_(q1*q2)) : 'Z_q2 := inZp c.
 
+
   Lemma rescale1_is_rmorphism (q1 q2 : nat) :
-    rmorphism (rescale1 q1 q2).
+    rmorphism (rescale1 (Zp_trunc q1).+2 (Zp_trunc q2).+2).
   Proof.
     unfold rescale1.
     generalize (intmul1_is_rmorphism (Zp_ringType (Zp_trunc q2))); intros.
@@ -327,8 +337,31 @@ Section encrypted_ops.
     destruct H as [? [? ?]].
     constructor.
     - intros x y.
-      rewrite -!Zp_nat.
-      admit.
+      rewrite /add/opp/=/Zp_add /= /inZp.
+      apply ord_inj => /=.
+      set q1' := (Zp_trunc q1).+2.
+      set q2' := (Zp_trunc q2).+2.
+      rewrite {2 4}(@Zp_cast (q1' * q2')) //.
+      rewrite !div.modnDmr.
+      rewrite !div.modnDml.
+      rewrite div.modn_dvdm.
+      + suff: Posz (div.modn (x + (q1' * q2' - y)) q2') = Posz (div.modn (x + (q2' - div.modn y q2')) q2')
+          by inversion 1.
+        rewrite -!modz_nat !PoszD -!ssrint.subzn.
+        * rewrite -modzDmr -(modzDml (muln q1' q2')).
+          rewrite PoszM modzMl add0r modzDmr.
+
+          rewrite -!modz_nat.
+          rewrite -(modzDmr x (Posz q2' - _)).
+          rewrite -(modzDml q2' _).
+          rewrite modzz add0r.
+          rewrite modzNm.
+          by rewrite modzDmr.
+        * apply ltnW.
+          by apply div.ltn_pmod.
+        * apply ltnW.
+          apply ltn_ord.
+      + by rewrite div.dvdn_mull.
     - constructor.
       + intros x y.
         rewrite -!Zp_nat.
@@ -337,7 +370,13 @@ Section encrypted_ops.
         rewrite -!pmulrn.
         rewrite !Zp_nat.
         unfold inZp.
-        Admitted.
+        apply ord_inj => //=.
+        rewrite div.modn_dvdm //.
+        rewrite {1}Zp_cast //.
+        rewrite (@Zp_cast ((Zp_trunc q1).+2 * (Zp_trunc q2).+2)) //.
+        by rewrite div.dvdn_mull //.
+      + by rewrite /= div.modn_small //.
+  Qed.
 
   Lemma cdivqq_int (q1 q2 : nat) (c : int):
     (0 < q2)%N ->
