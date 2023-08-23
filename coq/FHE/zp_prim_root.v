@@ -39,40 +39,72 @@ rewrite mulnC -mulnA -expnS prednK ?prime_gt0 //.
 by rewrite -modnMmr fermat_little // modnMmr aE.
 Qed.
 
-Local Open Scope ring_scope.
+From mathcomp Require Import finalg countalg.
+
 Import ssralg.GRing.
+
+Section cyclic.
+Local Open Scope ring_scope.
 Local Open Scope group_scope.
-Lemma zp_prime_units_cyclic (p : nat) :
-  prime p ->
-  cyclic (units_Zp_group p).
-Proof.
-  move=> p_prime.
-  move: (field_unit_group_cyclic ).
+
+Variable p : nat.
+Definition Fp := if p > 1 then [set: 'F_p] else 1%g.
+Definition units_Fp := [set: {unit 'F_p}].
+Canonical units_Fp_group := [group of units_Fp].
+
+  Lemma zp_prime_units_cyclic :
+    prime p ->
+    cyclic (units_Fp_group).
+  Proof.
+    generalize (field_unit_group_cyclic units_Fp_group); intros.
+    apply H.
+  Qed.
+
+  Lemma card_units_Fp : p > 0 -> #|units_Fp| = totient p.
+  Proof.
+    move=> p_gt0; transitivity (totient p.-2.+2); last by case: p p_gt0 => [|[|p']].
+    rewrite cardsT card_sub -sum1_card big_mkcond /=.
+    rewrite totient_count_coprime.
+    rewrite big_mkord.
+    unfold Zp_trunc.
+(*
+    by rewrite totient_count_coprime big_mkord.
+*)
   Admitted.
 
-  Lemma zp_prim_root_max (p n : nat) :
+  Lemma zp_prim_root_max :
     prime p ->
-    { w : 'Z_p | (p-1).-primitive_root w}.
+    { w : 'F_p | (p-1).-primitive_root w}.
   Proof.
     intros p_prime.
     generalize (zp_prime_units_cyclic p_prime); intros.
     assert (p > 0)%N by (by apply prime_gt0).
-    generalize (card_units_Zp H0); intros.
+    generalize (card_units_Fp H0); intros.    
     rewrite totient_prime in H1; trivial.
     move => /cyclicP in H.
-    assert (pbig: 0 < (p.-1)%N).
+    Admitted.
+
+Local Open Scope group_scope.
+
+  Lemma zp_prim_root_max_alt (pp : nat) :
+    prime pp ->
+    { w : 'Z_p | (pp-1).-primitive_root w}.
+  Proof.
+    intros p_prime.
+    assert (pp > 0)%N by (by apply prime_gt0).
+    assert (pbig: 0 < (pp.-1)%N).
     {
-      destruct p; [| destruct p].
-      - by rewrite ltnn in H0.
+      destruct pp; [| destruct pp].
+      - by rewrite ltnn in H.
       - by inversion p_prime.
       - by apply ltn0Sn.
     }
 
-    exists (inZp (find ((p.-1).-primitive_root) [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | (x != 0)])).
+    exists (inZp (find ((pp.-1).-primitive_root) [seq x <- ord_enum (Zp_trunc (pdiv pp)).+2 | (x != 0)])).
     
-    have/(nth_find 0)-HH: has (p.-1).-primitive_root [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | (x != 0)].
+    have/(nth_find 0)-HH: has (pp.-1).-primitive_root [seq x <- ord_enum (Zp_trunc (pdiv pp)).+2 | (x != 0)].
     {
-      apply (@has_prim_root _ _ [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | x != 0]) => //.
+      apply (@has_prim_root _ _ [seq x <- ord_enum (Zp_trunc (pdiv pp)).+2 | x != 0]) => //.
       - rewrite all_filter.
         apply/allP => /= x xin.
         apply/implyP=> xn0.
@@ -86,15 +118,16 @@ Proof.
     
   Admitted.
 
-  Lemma zp_prim_root (p n : nat) :
+  Lemma zp_prim_root (n : nat) :
     n > 0 ->
     prime p ->
     n %| p-1 ->
-    { w : 'Z_p | n.-primitive_root w}.
+    { w : 'F_p | n.-primitive_root w}.
   Proof.
     intros npos prim div.
-    destruct (zp_prim_root_max p prim) as [wp ?].
+    destruct (zp_prim_root_max prim).
     generalize (dvdn_prim_root i div); intros.
-    by exists (wp ^+ (div.divn (p - 1)%N n)).
-  Qed.
+    exists (x ^+ ((p - 1) %/ n)).
+    
+  Admitted.
 
