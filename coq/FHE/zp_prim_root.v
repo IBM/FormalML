@@ -46,10 +46,8 @@ Lemma zp_prime_units_cyclic (p : nat) :
   prime p ->
   cyclic (units_Zp_group p).
 Proof.
-  intros p_prime.
-(*
-  generalize (field_unit_group_cyclic (units_Zp_group p)); intros.
-*)
+  move=> p_prime.
+  move: (field_unit_group_cyclic ).
   Admitted.
 
   Lemma zp_prim_root_max (p n : nat) :
@@ -62,8 +60,15 @@ Proof.
     generalize (card_units_Zp H0); intros.
     rewrite totient_prime in H1; trivial.
     move => /cyclicP in H.
-    assert (0 < (p-1)%N) by admit.
-    generalize (has_prim_root); intros.
+    assert (pbig: 0 < (p.-1)%N).
+    {
+      destruct p; [| destruct p].
+      - by rewrite ltnn in H0.
+      - by inversion p_prime.
+      - by apply ltn0Sn.
+    } 
+    move: (@has_prim_root (Fp_fieldType p) (p.-1) (behead (ord_enum (Zp_trunc (pdiv p)).+2)) pbig)=> HH.
+    
   Admitted.
 
   Lemma zp_prim_root (p n : nat) :
