@@ -58,14 +58,19 @@ Canonical units_Fp_group := [group of units_Fp].
     apply H.
   Qed.
 
-  Lemma card_units_Fp : p > 0 -> #|units_Fp| = totient p.
+  Lemma card_units_Fp : prime p -> p > 0 -> #|units_Fp| = totient p.
   Proof.
-    move=> p_gt0; transitivity (totient p.-2.+2); last by case: p p_gt0 => [|[|p']].
+    move=> p_prime.
+    assert (p_gt0 : p > 0) by (by apply prime_gt0).
+    transitivity (totient p.-2.+2); last by case: p p_gt0 => [|[|p']].
     rewrite cardsT card_sub -sum1_card big_mkcond /=.
     rewrite totient_count_coprime.
     rewrite big_mkord.
     unfold Zp_trunc.
-    Admitted.
+    replace (pdiv p) with p; try easy.
+    unfold pdiv.
+    by rewrite primes_prime.
+  Qed.
 
   Lemma zp_prim_root_max :
     prime p ->
@@ -73,9 +78,8 @@ Canonical units_Fp_group := [group of units_Fp].
   Proof.
     intros p_prime.
     generalize (zp_prime_units_cyclic p_prime); intros.
-    assert (p > 0)%N by (by apply prime_gt0).
-    generalize (card_units_Fp H0); intros.    
-    rewrite totient_prime in H1; trivial.
+    generalize (card_units_Fp p_prime); intros.    
+    rewrite totient_prime in H0; trivial.
     move => /cyclicP in H.
     Admitted.
 
