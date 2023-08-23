@@ -1,3 +1,4 @@
+Require Import Lia.
 From mathcomp Require Import all_ssreflect zmodp poly ssralg cyclic fingroup.
 
 Set Implicit Arguments.
@@ -56,7 +57,7 @@ Canonical units_Fp_group := [group of units_Fp].
     prime p ->
     cyclic (units_Fp_group).
   Proof.
-    generalize (field_unit_group_cyclic units_Fp_group); intros.
+    generalize (field_unit_group_cyclic units_Fp_group ); intros.
     apply H.
   Qed.
 
@@ -67,10 +68,7 @@ Canonical units_Fp_group := [group of units_Fp].
     rewrite totient_count_coprime.
     rewrite big_mkord.
     unfold Zp_trunc.
-(*
-    by rewrite totient_count_coprime big_mkord.
-*)
-  Admitted.
+    Admitted.
 
   Lemma zp_prim_root_max :
     prime p ->
@@ -86,25 +84,30 @@ Canonical units_Fp_group := [group of units_Fp].
 
 Local Open Scope group_scope.
 
-  Lemma zp_prim_root_max_alt (pp : nat) :
-    prime pp ->
-    { w : 'Z_p | (pp-1).-primitive_root w}.
-  Proof.
+Lemma prime_pbig2 (q : nat) :
+  prime q ->
+   0 < (q.-1)%N.
+Proof.
     intros p_prime.
-    assert (pp > 0)%N by (by apply prime_gt0).
-    assert (pbig: 0 < (pp.-1)%N).
-    {
-      destruct pp; [| destruct pp].
+    assert (q > 0)%N by (by apply prime_gt0).
+    destruct q; [| destruct q].
       - by rewrite ltnn in H.
       - by inversion p_prime.
       - by apply ltn0Sn.
-    }
+Qed.    
+  
 
-    exists (inZp (find ((pp.-1).-primitive_root) [seq x <- ord_enum (Zp_trunc (pdiv pp)).+2 | (x != 0)])).
-    
-    have/(nth_find 0)-HH: has (pp.-1).-primitive_root [seq x <- ord_enum (Zp_trunc (pdiv pp)).+2 | (x != 0)].
+  Lemma zp_prim_root_max_alt :
+    prime p ->
+    { w : 'Z_p | (p-1).-primitive_root w}.
+  Proof.
+    intros p_prime.
+    assert (p > 0)%N by (by apply prime_gt0).
+    generalize (prime_pbig2 p_prime); intros pbig.
+    exists (inZp (find ((p.-1).-primitive_root) [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | (x != 0)])).
+    have/(nth_find 0)-HH: has (p.-1).-primitive_root [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | (x != 0)].
     {
-      apply (@has_prim_root _ _ [seq x <- ord_enum (Zp_trunc (pdiv pp)).+2 | x != 0]) => //.
+      apply (@has_prim_root _ _ [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | x != 0]) => //.
       - rewrite all_filter.
         apply/allP => /= x xin.
         apply/implyP=> xn0.
@@ -114,8 +117,6 @@ Local Open Scope group_scope.
       - rewrite size_filter /=.
         admit.        
     }
-    
-    
   Admitted.
 
   Lemma zp_prim_root (n : nat) :
