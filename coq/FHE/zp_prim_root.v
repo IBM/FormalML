@@ -58,7 +58,7 @@ Canonical units_Fp_group := [group of units_Fp].
     apply H.
   Qed.
 
-  Lemma card_units_Fp : prime p -> p > 0 -> #|units_Fp| = totient p.
+  Lemma card_units_Fp : prime p -> #|units_Fp| = totient p.
   Proof.
     move=> p_prime.
     assert (p_gt0 : p > 0) by (by apply prime_gt0).
@@ -103,7 +103,6 @@ Qed.
     { w : 'Z_p | (p-1).-primitive_root w}.
   Proof.
     intros p_prime.
-    assert (p > 0)%N by (by apply prime_gt0).
     generalize (prime_pbig2 p_prime); intros pbig.
     exists (inZp (find ((p.-1).-primitive_root) [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | (x != 0)])).
     have/(nth_find 0)-HH: has (p.-1).-primitive_root [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | (x != 0)].
