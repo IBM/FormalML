@@ -66,8 +66,23 @@ Proof.
       - by rewrite ltnn in H0.
       - by inversion p_prime.
       - by apply ltn0Sn.
-    } 
-    move: (@has_prim_root (Fp_fieldType p) (p.-1) (behead (ord_enum (Zp_trunc (pdiv p)).+2)) pbig)=> HH.
+    }
+
+    exists (inZp (find ((p.-1).-primitive_root) [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | (x != 0)])).
+    
+    have/(nth_find 0)-HH: has (p.-1).-primitive_root [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | (x != 0)].
+    {
+      apply (@has_prim_root _ _ [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | x != 0]) => //.
+      - rewrite all_filter.
+        apply/allP => /= x xin.
+        apply/implyP=> xn0.
+        admit.
+      - apply filter_uniq.
+        by apply ord_enum_uniq.
+      - rewrite size_filter /=.
+        admit.        
+    }
+    
     
   Admitted.
 
