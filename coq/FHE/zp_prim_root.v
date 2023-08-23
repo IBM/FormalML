@@ -1,5 +1,4 @@
-Require Import Lia.
-From mathcomp Require Import all_ssreflect zmodp poly ssralg cyclic fingroup.
+From mathcomp Require Import all_ssreflect zmodp poly ssralg cyclic fingroup finalg.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -39,8 +38,6 @@ rewrite -[_^ _]muln1 -modnMmr -[in LHS]aE // modnMmr.
 rewrite mulnC -mulnA -expnS prednK ?prime_gt0 //.
 by rewrite -modnMmr fermat_little // modnMmr aE.
 Qed.
-
-From mathcomp Require Import finalg countalg.
 
 Import ssralg.GRing.
 
