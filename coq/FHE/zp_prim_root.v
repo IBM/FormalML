@@ -100,7 +100,7 @@ Qed.
 
   Lemma zp_prim_root_max_alt :
     prime p ->
-    { w : 'Z_p | (p-1).-primitive_root w}.
+    exists ( w : 'Z_p), (p-1).-primitive_root w.
   Proof.
     intros p_prime.
     generalize (prime_pbig2 p_prime); intros pbig.
@@ -111,6 +111,16 @@ Qed.
       - rewrite all_filter.
         apply/allP => /= x xin.
         apply/implyP=> xn0.
+        rewrite unity_rootE.
+        assert (not (is_true (dvdn p x))).
+        {
+          assert (x < p).
+          {
+            admit.
+          }
+          admit.
+        }
+        generalize (fermat_little_pred p_prime H); intros.
         admit.
       - apply filter_uniq.
         by apply ord_enum_uniq.
