@@ -128,7 +128,6 @@ Qed.
           }
           assert (0 < x).
           {
-            destruct x.
             admit.
           }
           unfold not.
@@ -137,8 +136,9 @@ Qed.
           lia.
         }
         generalize (fermat_little_pred p_prime H); intros.
-        apply /eqP.
-        Search exp.
+        apply (f_equal (fun z => inZp (p' := p.-1) z)) in H0.
+        generalize unit_Zp_expg; intros.
+        specialize (H1 (p.-2) ).
         admit.
       - apply filter_uniq.
         generalize enum_uniq; intros.
