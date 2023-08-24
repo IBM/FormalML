@@ -3,6 +3,7 @@ From mathcomp Require Import all_ssreflect zmodp poly ssralg cyclic fingroup fin
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
+Set Bullet Behavior "Strict Subproofs".
 
 (* next 3 lemmas are copied from mathcomp_extra rsa *)
 
@@ -72,14 +73,20 @@ Canonical units_Fp_group := [group of units_Fp].
     by rewrite primes_prime.
   Qed.
 
-  Lemma zp_prim_root_max :
+  Lemma card_units_Fp' : prime p -> #|units_Fp| = p.-1.
+  Proof.
+    intros.
+    generalize (card_units_Fp H); intros.
+    by rewrite totient_prime in H0.
+  Qed.
+
+  Lemma zp_prim_root_max_alt :
     prime p ->
     { w : 'F_p | (p-1).-primitive_root w}.
   Proof.
     intros p_prime.
     generalize (zp_prime_units_cyclic p_prime); intros.
-    generalize (card_units_Fp p_prime); intros.    
-    rewrite totient_prime in H0; trivial.
+    generalize (card_units_Fp' p_prime); intros.    
     move => /cyclicP in H.
     Admitted.
 
@@ -98,16 +105,15 @@ Proof.
 Qed.    
   
 
-  Lemma zp_prim_root_max_alt :
+  Lemma zp_prim_root_max :
     prime p ->
-    exists ( w : 'Z_p), (p-1).-primitive_root w.
+    { w : 'F_p | (p.-1).-primitive_root w}.
   Proof.
     intros p_prime.
     generalize (prime_pbig2 p_prime); intros pbig.
-    exists (inZp (find ((p.-1).-primitive_root) [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | (x != 0)])).
-    have/(nth_find 0)-HH: has (p.-1).-primitive_root [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | (x != 0)].
+    have/(nth_find 0)-HH: has (p.-1).-primitive_root [seq x <- enum 'F_p | (x != 0)].
     {
-      apply (@has_prim_root _ _ [seq x <- ord_enum (Zp_trunc (pdiv p)).+2 | x != 0]) => //.
+      apply (@has_prim_root _ _ [seq x <- enum 'F_p | x != 0]) => //.
       - rewrite all_filter.
         apply/allP => /= x xin.
         apply/implyP=> xn0.
@@ -121,24 +127,27 @@ Qed.
           admit.
         }
         generalize (fermat_little_pred p_prime H); intros.
+        apply /eqP.
+        Search exp.
         admit.
       - apply filter_uniq.
-        by apply ord_enum_uniq.
+        generalize enum_uniq; intros.
+        admit.
       - rewrite size_filter /=.
         admit.        
     }
+    by exists ([seq x <- enum 'F_p | x != 0]`_(find (p.-1).-primitive_root [seq x <- enum 'F_p | x != 0])).
   Admitted.
 
   Lemma zp_prim_root (n : nat) :
     n > 0 ->
     prime p ->
-    n %| p-1 ->
+    n %| p.-1 ->
     { w : 'F_p | n.-primitive_root w}.
   Proof.
     intros npos prim div.
     destruct (zp_prim_root_max prim).
     generalize (dvdn_prim_root i div); intros.
-    exists (x ^+ ((p - 1) %/ n)).
-    
-  Admitted.
+    by exists (exp x (divn (Nat.pred p) n)).
+  Qed.
 
