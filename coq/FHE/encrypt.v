@@ -116,35 +116,18 @@ Section balance.
   Qed.
 
   Lemma balanced_mod_lo_range1 (x : 'Z_p):
-    balanced_mod_lo x <= p./2.
+    balanced_mod_lo x <= p.-1./2.
   Proof.
     unfold balanced_mod_lo.
     generalize (Zp_lt_p x).
     case: (boolP (- (p./2)%:Z <= _)) => le1; lia.
   Qed.
 
-  Lemma balanced_mod_lo_range1_even (x : 'Z_p):
-    ~~ odd p ->
-    balanced_mod_lo x < p./2.
-  Proof.
-    unfold balanced_mod_lo.
-    generalize (Zp_lt_p x).
-    case: (boolP (-(p./2)%:Z <= _)) => le1; lia.
-  Qed.
-
   Lemma balanced_mod_range2 (x : 'Z_p):
-    -((p./2)%:Z) <= balanced_mod x.
+    -((p.-1./2)%:Z) <= balanced_mod x.
   Proof.
     unfold balanced_mod.
     case: leqP => HH; try lia.
-  Qed.
-
-  Lemma balanced_mod_range2_even (x : 'Z_p):
-    ~~ odd p ->
-    -((p./2)%:Z) < balanced_mod x.
-  Proof.
-    unfold balanced_mod.
-    case leqP => le1; lia.
   Qed.
 
   Lemma balanced_mod_lo_range2 (x : 'Z_p):
@@ -159,7 +142,7 @@ Section balance.
   Proof.
     apply absz_bound.
     split.
-    - apply balanced_mod_range2.
+    - generalize (balanced_mod_range2 x); lia.
     - apply balanced_mod_range1.
   Qed.
 
@@ -169,7 +152,7 @@ Section balance.
     apply absz_bound.
     split.
     - apply balanced_mod_lo_range2.
-    - apply balanced_mod_lo_range1.
+    - generalize (balanced_mod_lo_range1 x); lia.
   Qed.
 
   Lemma balanced_mod_unique (c1 c2 : int) :
