@@ -1,4 +1,5 @@
-From mathcomp Require Import all_ssreflect zmodp poly ssralg cyclic fingroup finalg.
+Require Import Lia.
+From mathcomp Require Import all_ssreflect zmodp poly ssralg cyclic fingroup finalg ring.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -122,9 +123,18 @@ Qed.
         {
           assert (x < p).
           {
+            generalize (ltn_ord x); intros.
+            by rewrite {2}(Fp_cast p_prime) in H.
+          }
+          assert (0 < x).
+          {
+            destruct x.
             admit.
           }
-          admit.
+          unfold not.
+          intros.
+          generalize (dvdn_leq H0 H1); intros.
+          lia.
         }
         generalize (fermat_little_pred p_prime H); intros.
         apply /eqP.
@@ -134,6 +144,7 @@ Qed.
         generalize enum_uniq; intros.
         admit.
       - rewrite size_filter /=.
+        generalize (card_Fp p_prime); intros.
         admit.        
     }
     by exists ([seq x <- enum 'F_p | x != 0]`_(find (p.-1).-primitive_root [seq x <- enum 'F_p | x != 0])).
