@@ -104,7 +104,38 @@ Proof.
       - by inversion p_prime.
       - by apply ltn0Sn.
 Qed.    
-  
+
+   Lemma Zp_trunc_prime (q : nat) :
+     prime q ->
+     (Zp_trunc (pdiv q)).+2 = q.
+   Proof.
+     intros p_prime.
+     unfold Zp_trunc.
+     assert (1 < q).
+     {
+       generalize (prime_pbig2 p_prime); intros.
+       lia.
+     }
+     replace (pdiv q) with q.
+     - lia.
+     - unfold pdiv.
+       by rewrite primes_prime.
+    Qed.
+
+   Lemma Fp_exp_expn (x : 'F_p) (n : nat):
+     prime p ->
+     nat_of_ord (x ^+ n)%R = x ^ n %% p.
+   Proof.
+     intros p_prime.
+     generalize (Zp_trunc_prime p_prime); intros.
+     induction n.
+     - simpl.
+       rewrite {1}H expn0.
+       reflexivity.
+     - rewrite expnS exprS /mul /= IHn -modnMm.
+       rewrite {2}H {3}H {3}H.
+       by rewrite -(modnMm x _) modn_mod.
+   Qed.
 
   Lemma zp_prim_root_max :
     prime p ->
@@ -136,10 +167,12 @@ Qed.
           lia.
         }
         generalize (fermat_little_pred p_prime H); intros.
-        apply (f_equal (fun z => inZp (p' := p.-1) z)) in H0.
-        generalize unit_Zp_expg; intros.
-        specialize (H1 (p.-2) ).
-        admit.
+        apply /eqP.
+        apply val_inj => /=.
+        generalize (Zp_trunc_prime p_prime); intros.
+        rewrite {2}H1.
+        rewrite -H0.
+        by rewrite Fp_exp_expn.
       - apply filter_uniq.
         generalize enum_uniq; intros.
         admit.
