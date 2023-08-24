@@ -60,33 +60,14 @@ Proof.
       - by apply ltn0Sn.
 Qed.    
 
-   Lemma Zp_trunc_prime (q : nat) :
-     prime q ->
-     (Zp_trunc (pdiv q)).+2 = q.
-   Proof.
-     intros p_prime.
-     unfold Zp_trunc.
-     assert (1 < q).
-     {
-       generalize (prime_pbig2 p_prime); intros.
-       lia.
-     }
-     replace (pdiv q) with q.
-     - lia.
-     - unfold pdiv.
-       by rewrite primes_prime.
-    Qed.
-
    Lemma Fp_exp_expn (x : 'F_p) (n : nat):
      prime p ->
      nat_of_ord (x ^+ n)%R = x ^ n %% p.
    Proof.
      intros p_prime.
-     generalize (Zp_trunc_prime p_prime); intros.
+     generalize (Fp_cast p_prime); intros.
      induction n.
-     - simpl.
-       rewrite {1}H expn0.
-       reflexivity.
+     - by rewrite /= {1}H expn0.
      - rewrite expnS exprS /mul /= IHn -modnMm.
        rewrite {2}H {3}H {3}H.
        by rewrite -(modnMm x _) modn_mod.
@@ -113,26 +94,19 @@ Qed.
             by rewrite {2}(Fp_cast p_prime) in H.
           }
           assert (0 < x) by by rewrite lt0n.
-            
-          unfold not.
-          intros.
-          generalize (dvdn_leq H0 H1); intros.
-          lia.
+          unfold not; intros.
+          generalize (dvdn_leq H0 H1); lia.
         }
         generalize (fermat_little_pred p_prime H); intros.
         apply /eqP.
         apply val_inj => /=.
-        generalize (Zp_trunc_prime p_prime); intros.
-        rewrite {2}H1.
-        rewrite -H0.
-        by rewrite Fp_exp_expn.
+        by rewrite {2}(Fp_cast p_prime) -H0 Fp_exp_expn.
       - simpl.
         apply filter_uniq.
         apply enum_uniq.
       - rewrite -rem_filter; [| apply enum_uniq].
         rewrite size_rem.
-        + rewrite -cardE.
-          by rewrite (card_Fp p_prime).
+        + by rewrite -cardE (card_Fp p_prime).
         + by rewrite enumT Finite.EnumDef.enumDef /=  mem_ord_enum.
     } 
     by exists ([seq x <- enum 'F_p | x != 0]`_(find (p.-1).-primitive_root [seq x <- enum 'F_p | x != 0])).
@@ -147,7 +121,7 @@ Qed.
     intros npos prim div.
     destruct (zp_prim_root_max prim).
     generalize (dvdn_prim_root i div); intros.
-    by exists (exp x (divn (Nat.pred p) n)).
+    by exists (exp x (p.-1 %/ n)).
   Qed.
 
 End cyclic.
