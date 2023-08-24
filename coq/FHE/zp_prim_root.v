@@ -81,16 +81,6 @@ Canonical units_Fp_group := [group of units_Fp].
     by rewrite totient_prime in H0.
   Qed.
 
-  Lemma zp_prim_root_max_alt :
-    prime p ->
-    { w : 'F_p | (p-1).-primitive_root w}.
-  Proof.
-    intros p_prime.
-    generalize (zp_prime_units_cyclic p_prime); intros.
-    generalize (card_units_Fp' p_prime); intros.    
-    move => /cyclicP in H.
-    Admitted.
-
 Local Open Scope group_scope.
 
 Lemma prime_pbig2 (q : nat) :
@@ -143,9 +133,9 @@ Qed.
   Proof.
     intros p_prime.
     generalize (prime_pbig2 p_prime); intros pbig.
-    have/(nth_find 0)-HH: has (p.-1).-primitive_root [seq x <- enum 'F_p | (x != 0)].
+    have/(nth_find 0)-HH: has (p.-1).-primitive_root [seq x <- enum 'F_p | x != Zp0].
     {
-      apply (@has_prim_root _ _ [seq x <- enum 'F_p | x != 0]) => //.
+      apply (@has_prim_root _ _ [seq x <- enum 'F_p | x != Zp0]) => //.
       - rewrite all_filter.
         apply/allP => /= x xin.
         apply/implyP=> xn0.
@@ -157,10 +147,8 @@ Qed.
             generalize (ltn_ord x); intros.
             by rewrite {2}(Fp_cast p_prime) in H.
           }
-          assert (0 < x).
-          {
-            admit.
-          }
+          assert (0 < x) by by rewrite lt0n.
+            
           unfold not.
           intros.
           generalize (dvdn_leq H0 H1); intros.
@@ -173,15 +161,17 @@ Qed.
         rewrite {2}H1.
         rewrite -H0.
         by rewrite Fp_exp_expn.
-      - apply filter_uniq.
-        generalize enum_uniq; intros.
-        admit.
-      - rewrite size_filter /=.
-        generalize (card_Fp p_prime); intros.
-        admit.        
-    }
+      - simpl.
+        apply filter_uniq.
+        apply enum_uniq.
+      - rewrite -rem_filter; [| apply enum_uniq].
+        rewrite size_rem.
+        + rewrite -cardE.
+          by rewrite (card_Fp p_prime).
+        + by rewrite enumT Finite.EnumDef.enumDef /=  mem_ord_enum.
+    } 
     by exists ([seq x <- enum 'F_p | x != 0]`_(find (p.-1).-primitive_root [seq x <- enum 'F_p | x != 0])).
-  Admitted.
+  Qed.  
 
   Lemma zp_prim_root (n : nat) :
     n > 0 ->
@@ -194,4 +184,3 @@ Qed.
     generalize (dvdn_prim_root i div); intros.
     by exists (exp x (divn (Nat.pred p) n)).
   Qed.
-
