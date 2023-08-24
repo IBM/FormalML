@@ -172,6 +172,33 @@ Section balance.
     - apply balanced_mod_lo_range1.
   Qed.
 
+  Lemma balanced_mod_unique (c1 c2 : int) :
+    c1 <= p./2 ->
+    c2 <= p./2 ->
+    -((p.-1./2)%:Z) <= c1 ->
+    -((p.-1./2)%:Z) <= c2 ->
+    ((c1 - c2) %% p)%Z = 0 ->
+    c1 = c2.
+   Proof.
+     intros.
+     case (leP (0%Z) (c1 - c2)%Z) => le0.
+     - assert (le0_lep:0%Z <= c1 - c2 < p%:Z).
+       {
+         apply /andP; lia.
+       }
+       generalize (modz_small le0_lep); lia.
+     - assert (le0_lep:0%Z <= c2 - c1 < p%:Z).
+       {
+         apply /andP; lia.
+       }
+       assert (((c2 - c1) %% p)%Z = 0).
+       {
+         replace (c2 - c1)%Z with (-1 *  (c1 - c2))%Z by lia.
+         by rewrite -modzMmr H3 mulr0 mod0z.
+       }
+       generalize (modz_small le0_lep); lia.
+  Qed.
+
 End balance.
 
 Section encrypted_ops.
