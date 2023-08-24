@@ -45,43 +45,8 @@ Import ssralg.GRing.
 
 Section cyclic.
 Local Open Scope ring_scope.
-Local Open Scope group_scope.
 
 Variable p : nat.
-Definition Fp := if p > 1 then [set: 'F_p] else 1%g.
-Definition units_Fp := [set: {unit 'F_p}].
-Canonical units_Fp_group := [group of units_Fp].
-
-  Lemma zp_prime_units_cyclic :
-    prime p ->
-    cyclic (units_Fp_group).
-  Proof.
-    generalize (field_unit_group_cyclic units_Fp_group ); intros.
-    apply H.
-  Qed.
-
-  Lemma card_units_Fp : prime p -> #|units_Fp| = totient p.
-  Proof.
-    move=> p_prime.
-    assert (p_gt0 : p > 0) by (by apply prime_gt0).
-    transitivity (totient p.-2.+2); last by case: p p_gt0 => [|[|p']].
-    rewrite cardsT card_sub -sum1_card big_mkcond /=.
-    rewrite totient_count_coprime.
-    rewrite big_mkord.
-    unfold Zp_trunc.
-    replace (pdiv p) with p; try easy.
-    unfold pdiv.
-    by rewrite primes_prime.
-  Qed.
-
-  Lemma card_units_Fp' : prime p -> #|units_Fp| = p.-1.
-  Proof.
-    intros.
-    generalize (card_units_Fp H); intros.
-    by rewrite totient_prime in H0.
-  Qed.
-
-Local Open Scope group_scope.
 
 Lemma prime_pbig2 (q : nat) :
   prime q ->
@@ -184,3 +149,5 @@ Qed.
     generalize (dvdn_prim_root i div); intros.
     by exists (exp x (divn (Nat.pred p) n)).
   Qed.
+
+End cyclic.
