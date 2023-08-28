@@ -1,3 +1,4 @@
+Require Import LibUtilsListAdd ListAdd Permutation.
 Require Import Lia.
 From mathcomp Require Import all_ssreflect zmodp poly ssralg cyclic fingroup finalg ring.
 
@@ -243,7 +244,60 @@ Section chinese.
     wlog le_yx : x y / y <= x; last by rewrite !eqn_mod_dvd // Gauss_dvd.
     by have [?|/ltnW ?] := leqP y x; last rewrite !(eq_sym (x %% _)); apply.
   Qed.
-*)
+ *)
+
+  Lemma symmetricE {A} (f:A->A->bool) :  (ssrbool.symmetric f) <-> (RelationClasses.Symmetric f).
+  Proof.
+    rewrite /symmetric /RelationClasses.Symmetric.
+    split; intros.
+    - by rewrite H.
+    - case_eq (f x y)=> eqq.
+      + by rewrite H.
+      + case_eq (f y x)=> eqq2//.
+        by rewrite (H _ _ eqq2) in eqq.
+  Qed.
+
+  Lemma allE {A} (P:pred A) (l:list A) : all P l <->  Forall (fun x : A => P x) l.
+  Proof.
+    elim: l => /=.
+    - split=>// _.
+    - move=> a l IHl.
+      split.
+      + move/andP=> [ap pairP].
+        constructor; tauto.
+      + inversion 1; subst.
+        by rewrite H2 IHl.
+  Qed.    
+
+  Lemma pairwiseE {A} (P:rel A) (l:list A) : pairwise P l <-> ForallOrdPairs P l.
+  Proof.
+    elim: l => /=.
+    - split=>// _.
+      constructor.
+    - move=> a l IHl.
+      split.
+      + move/andP=> [ap pairP].
+        constructor;[| tauto].
+        by apply allE.
+      + inversion 1; subst.
+        apply/andP; split.
+        * by apply allE.
+        * by apply IHl.
+  Qed.
+    
+  Lemma pairwise_perm_symm {A} f (l1 l2: list A) :
+    symmetric f ->
+    Permutation l1 l2 ->
+    pairwise f l1 = pairwise f l2.
+  Proof.
+    intros.
+    apply symmetricE in H.
+    apply Bool.eq_true_iff_eq.
+    split; intros HH; apply pairwiseE; apply pairwiseE in HH.
+    - by rewrite ForallOrdPairs_perm; [| apply Permutation_sym; apply H0].
+    - by rewrite ForallOrdPairs_perm; [| apply H0].
+  Qed.
+
   Lemma chinese_remainder_list_2 :
     forall (l1 l2 l : list (nat * nat)) (p : nat * nat),
       pairwise coprime (map snd l) ->
@@ -256,60 +310,45 @@ Section chinese.
       rewrite H0 in H.
       by apply (chinese_remainder_list_l H).
     - pose (l3 := l1 ++ [:: p] ++ l2).
-      assert (l = a :: l3).
-      {
-        admit.
-      }
-      rewrite H1.
-      simpl.
-      unfold l3.
-      simpl.
-      case_eq (l1 ++ p :: l2); intros.
-      + generalize (app_cons_not_nil l2 l2 p); intros.
-        admit.
-      + rewrite -H2.
-        assert (coprime a.2 (fold_left muln [seq i.2 | i <- p0 :: l0] 1)).
+      have ->/=: l = a :: l3 by by rewrite H0.
+      case_eq l3.
+      + subst l3; destruct l1; simpl; congruence.
+      + move=> _ _ <-.
+        have pc': pairwise coprime [seq i.2 | i <- l3].
+        {
+          rewrite H0/= in H.
+          by move/andP: H => [_ ->].
+        }
+        specialize (IHl1 l2 l3 p pc' (Logic.eq_refl _)).
+        rewrite <- (eqP IHl1).
+        have cp: coprime (a.2) (fold_left muln [seq i.2 | i <- l3] 1).
         {
           admit.
-        }
-        rewrite -H2 in H3.
-        generalize (chinese_modr H3 a.1 (chinese_list (p0 :: l0))); intros.
-        rewrite -H2 in H4.
-        assert (pairwise coprime (map snd (p0 :: l0))).
+        } 
+        move/eqP: (chinese_modr cp (a.1) (chinese_list l3)).
+        have ->: fold_left muln [seq i.2 | i <- l3] 1 = fold_right muln 1 [seq i.2 | i <- (p::(l1++l2))].
         {
-          admit.
+          rewrite fold_symmetric.
+          - apply fold_right_perm.
+            + apply mulnA.
+            + apply mulnC.
+            + apply Permutation_map.
+              by rewrite Permutation_middle.
+          - apply mulnA.
+          - apply mulnC.
         }
-        generalize (chinese_remainder_list_l H5); intros.
-        rewrite -H2 in H6.
-        
-        
-(*      
-      
-    pose (m := fold_left muln (map snd l) 1).
-    assert (pairwise coprime (map snd (p :: (l1 ++ l2)))).
-    {
-      admit.
-    }
-    assert (chinese_list (p :: (l1 ++ l2)) = chinese_list l %[mod m]).
-    {
-      admit.
-    }
-    generalize (chinese_remainder_list_l H1); intros.
-    move => /eqP in H3.
-    rewrite -H3.
-    apply /eqP.
-    symmetry.
-    assert (m = p.2 * (fold_left muln (map snd (l1 ++ l2)) 1)).
-    {
-      admit.
-    }
-    rewrite H4 in H2.
-    move => /eqP in H2.
-    rewrite chinese_remainder in H2.
-    apply /eqP.
-    now move => /andP in H2.
-*)    
-    Admitted.
+
+        simpl.
+        rewrite chinese_remainder.
+        * by move/andP => [-> _].
+        * subst l3.
+          rewrite (pairwise_perm_symm (l2:=[seq i.2 | i <- p :: (l1 ++ l2)]))/= in pc'.
+          -- move/andP: pc' => [allcp _].
+             admit.
+          -- move=> x y.
+             by rewrite coprime_sym.
+          -- by rewrite <- Permutation_middle.
+  Admitted.
     
   Lemma chinese_remainder_list_permutation (l l2: list (nat * nat)) :
     pairwise coprime (map snd l) ->
@@ -329,23 +368,12 @@ Section chinese.
   Lemma chinese_remainder_list  (l : list (nat * nat)) :
     pairwise coprime (map snd l) ->
     forall p,
-      In p l ->
+      p \in l ->
       chinese_list l == p.1 %[mod p.2].
   Proof.
     intros.
-    assert (exists l1 l2,
-               l = l1 ++ (p::nil) ++ l2).
-    {
-      admit.
-    }
-    destruct H1 as [l1 [l2 ?]].
-    rewrite H1.
-    generalize (chinese_remainder_list_2 H H1); intros.
-    Admitted.
+    case/splitPr: H0 H=>l1 l2 HH.
+    by eapply chinese_remainder_list_2 => //=.
+  Qed.    
 
 End chinese.
-     
-  
-
-    
-        
