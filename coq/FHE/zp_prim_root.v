@@ -166,6 +166,17 @@ Section chinese.
     by apply /andP.
   Qed.
 
+  Lemma all_coprime' (a : nat) (l : seq nat) :
+    all (coprime a) l ->
+    coprime a (\prod_(i <- l) i).
+  Proof.
+    intros.
+    apply big_rec.
+    - apply coprimen1.
+    - intros.
+      
+  Admitted.
+
   Lemma pairwise_coprime_list (l : seq nat) :
     pairwise coprime l ->
     match l with
@@ -180,6 +191,29 @@ Section chinese.
     apply all_coprime; trivial.
     apply coprimen1.
  Qed.
+
+  Lemma pairwise_comprime_list_fold_right (a : nat) (l : seq nat) :
+    all (coprime a) l ->
+    coprime a (fold_right muln 1 l).
+  Proof.
+    induction l; intros; simpl.
+    - apply coprimen1.
+    - simpl in H.
+      move => /andP in H.
+      destruct H.
+      specialize (IHl H0).
+      rewrite coprimeMr.
+      by apply /andP.
+ Qed.
+
+  Lemma pairwise_comprime_list1_fold_left (a : nat) (l : seq nat) :
+    all (coprime a) l ->
+    coprime a (fold_left muln l 1).
+  Proof.
+    generalize (coprimen1 a); intros.
+    by apply all_coprime.
+ Qed.
+
 
   Lemma chinese_remainder_list_l (l : list (nat * nat)) :
     pairwise coprime (map snd l) ->
@@ -331,8 +365,15 @@ Section chinese.
         specialize (IHl1 l2 l3 p pc' (Logic.eq_refl _)).
         rewrite <- (eqP IHl1).
         have cp: coprime (a.2) (fold_left muln [seq i.2 | i <- l3] 1).
+
         {
-          admit.
+          apply pairwise_comprime_list1_fold_left.
+          rewrite H0 in H.
+          simpl in H.
+          unfold l3.
+          move /andP in H.
+          destruct H.
+          by simpl.
         } 
         move/eqP: (chinese_modr cp (a.1) (chinese_list l3)).
         have ->: fold_left muln [seq i.2 | i <- l3] 1 = fold_right muln 1 [seq i.2 | i <- (p::(l1++l2))].
@@ -353,11 +394,11 @@ Section chinese.
         * subst l3.
           rewrite (pairwise_perm_symm (l2:=[seq i.2 | i <- p :: (l1 ++ l2)]))/= in pc'.
           -- move/andP: pc' => [allcp _].
-             admit.
+             by apply pairwise_comprime_list_fold_right.
           -- move=> x y.
              by rewrite coprime_sym.
           -- by rewrite <- Permutation_middle.
-  Admitted.
+  Qed.
     
   Lemma chinese_remainder_list_permutation (l l2: list (nat * nat)) :
     pairwise coprime (map snd l) ->
