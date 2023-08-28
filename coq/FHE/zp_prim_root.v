@@ -143,6 +143,15 @@ Section chinese.
           (a.1) (chinese_list l')
     end.
 
+  Fixpoint chinese_list' (l : seq (nat * nat)) : nat :=
+    match l with
+    | nil => 0
+    | a :: nil => a.1
+    | a :: l' =>
+        chinese (a.2) (\prod_(i <- l') snd i)
+          (a.1) (chinese_list' l')
+    end.
+
   Lemma all_coprime (a a0 : nat) (l : seq nat) :
     coprime a a0 ->
     all (coprime a) l ->
