@@ -139,105 +139,39 @@ Section chinese.
     | nil => 0
     | a :: nil => a.1
     | a :: l' =>
-        chinese (a.2) (fold_left muln (map snd l') 1)
+        chinese (a.2) (\prod_(i <- (map snd l')) i)
           (a.1) (chinese_list l')
     end.
 
-  Fixpoint chinese_list' (l : seq (nat * nat)) : nat :=
-    match l with
-    | nil => 0
-    | a :: nil => a.1
-    | a :: l' =>
-        chinese (a.2) (\prod_(i <- l') snd i)
-          (a.1) (chinese_list' l')
-    end.
-
-  Lemma all_coprime (a a0 : nat) (l : seq nat) :
-    coprime a a0 ->
-    all (coprime a) l ->
-    coprime a (fold_left muln l a0).
-  Proof.
-    revert a0.
-    induction l; simpl; intros; trivial.
-    move => /andP in H0.
-    destruct H0.
-    apply IHl; trivial.
-    rewrite coprimeMr.
-    by apply /andP.
-  Qed.
-
-  Lemma all_coprime' (a : nat) (l : seq nat) :
+  Lemma all_coprime (a : nat) (l : seq nat) :
     all (coprime a) l ->
     coprime a (\prod_(i <- l) i).
   Proof.
     intros.
+    rewrite big_seq.
     apply big_rec.
     - apply coprimen1.
     - intros.
-      
-  Admitted.
-
-  Lemma pairwise_coprime_list (l : seq nat) :
-    pairwise coprime l ->
-    match l with
-    | nil => true
-    | a :: l' => coprime a (fold_left muln l' 1)
-    end.
-  Proof.
-    induction l; simpl; trivial.
-    intros.
-    move => /andP in H.
-    destruct H.
-    apply all_coprime; trivial.
-    apply coprimen1.
- Qed.
-
-  Lemma pairwise_comprime_list_fold_right (a : nat) (l : seq nat) :
-    all (coprime a) l ->
-    coprime a (fold_right muln 1 l).
-  Proof.
-    induction l; intros; simpl.
-    - apply coprimen1.
-    - simpl in H.
-      move => /andP in H.
-      destruct H.
-      specialize (IHl H0).
-      rewrite coprimeMr.
-      by apply /andP.
- Qed.
-
-  Lemma pairwise_comprime_list1_fold_left (a : nat) (l : seq nat) :
-    all (coprime a) l ->
-    coprime a (fold_left muln l 1).
-  Proof.
-    generalize (coprimen1 a); intros.
-    by apply all_coprime.
- Qed.
-
-
-  Lemma chinese_remainder_list_l (l : list (nat * nat)) :
-    pairwise coprime (map snd l) ->
-    match l with
-    | nil => true
-    | a :: _ => chinese_list l == a.1 %[mod a.2]
-    end.
-  Proof.
-     induction l; simpl; trivial; intros.
-     destruct l; trivial.
-     rewrite chinese_modl //.
-     move => /andP in H; destruct H.
-     apply all_coprime; trivial.
-     apply coprimen1.
+      move/allP/(_ _ H0): H.
+      by rewrite coprimeMr H1 => ->.
   Qed.
 
-  Lemma chinese_reminder_list_cons1 (a : nat * nat) (l : list (nat * nat)) :
-        pairwise coprime (map snd (a::l)) ->
-        chinese_list (a::l) == a.1 %[mod a.2].
+  Lemma chinese_remainder_list_cons1 (a : nat * nat) (l : list (nat * nat)) :
+    all (coprime a.2) (map snd l) ->
+    chinese_list (a::l) == a.1 %[mod a.2].
   Proof.
-    intros.
-    by apply (chinese_remainder_list_l H).
+    induction l=> //= HH.
+    rewrite big_cons.
+    destruct l; trivial.
+    - rewrite chinese_modl //.
+      rewrite big_nil muln1.
+      by move/andP: HH => [-> _].
+    - rewrite chinese_modl //.
+      move/andP: HH => [HH1 HH2/=].
+      by rewrite coprimeMr HH1 /= all_coprime.
   Qed.
 
+  (*
   Lemma chinese_reminder_list_cons2 (a : nat * nat) (l : list (nat * nat)) :
         pairwise coprime (map snd (a::l)) ->
         let m := fold_left muln (map snd l) 1 in 
@@ -255,6 +189,7 @@ Section chinese.
         by destruct H.
  Qed.
 
+*)
 (*
   Lemma Gauss_dvd_l m n p :
     m * n %| p -> (m %| p).
@@ -351,7 +286,9 @@ Section chinese.
     - simpl in H0.
       rewrite H0.
       rewrite H0 in H.
-      by apply (chinese_remainder_list_l H).
+      rewrite chinese_remainder_list_cons1 //.
+      simpl in H.
+      by move/andP: H => [-> _].
     - pose (l3 := l1 ++ [:: p] ++ l2).
       have ->/=: l = a :: l3 by by rewrite H0.
       case_eq l3.
@@ -364,42 +301,38 @@ Section chinese.
         }
         specialize (IHl1 l2 l3 p pc' (Logic.eq_refl _)).
         rewrite <- (eqP IHl1).
-        have cp: coprime (a.2) (fold_left muln [seq i.2 | i <- l3] 1).
+        have cp: coprime (a.2) (\prod_(i <- (map snd l3)) i).
 
         {
-          apply pairwise_comprime_list1_fold_left.
-          rewrite H0 in H.
+          rewrite all_coprime //.
+          subst l3.
           simpl in H.
-          unfold l3.
-          move /andP in H.
-          destruct H.
-          by simpl.
+          rewrite H0/= in H.
+          by move/andP: H => [-> _].
         } 
         move/eqP: (chinese_modr cp (a.1) (chinese_list l3)).
-        have ->: fold_left muln [seq i.2 | i <- l3] 1 = fold_right muln 1 [seq i.2 | i <- (p::(l1++l2))].
+        have ->: \prod_(i <- [seq i.2 | i <- l3]) i = \prod_(i <- [seq i.2 | i <- p::(l1++l2)]) i.
         {
-          rewrite fold_symmetric.
-          - apply fold_right_perm.
-            + apply mulnA.
-            + apply mulnC.
-            + apply Permutation_map.
-              by rewrite Permutation_middle.
+          apply perm_big_AC.
           - apply mulnA.
           - apply mulnC.
+          - subst l3.
+            apply perm_map.
+            by rewrite perm_catCA perm_refl.
         }
-
         simpl.
-        rewrite chinese_remainder.
+        rewrite big_cons chinese_remainder.
         * by move/andP => [-> _].
         * subst l3.
           rewrite (pairwise_perm_symm (l2:=[seq i.2 | i <- p :: (l1 ++ l2)]))/= in pc'.
           -- move/andP: pc' => [allcp _].
-             by apply pairwise_comprime_list_fold_right.
+             by apply all_coprime.
           -- move=> x y.
              by rewrite coprime_sym.
           -- by rewrite <- Permutation_middle.
   Qed.
-    
+
+  (*
   Lemma chinese_remainder_list_permutation (l l2: list (nat * nat)) :
     pairwise coprime (map snd l) ->
     Permutation l l2 ->
@@ -415,6 +348,7 @@ Section chinese.
     simpl.
     Admitted.
 
+   *)
   Lemma chinese_remainder_list  (l : list (nat * nat)) :
     pairwise coprime (map snd l) ->
     forall p,
