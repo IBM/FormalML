@@ -143,7 +143,7 @@ Section chinese.
           (a.1) (chinese_list l')
     end.
 
-  Lemma all_coprime (a : nat) (l : seq nat) :
+  Lemma all_coprime_prod (a : nat) (l : seq nat) :
     all (coprime a) l ->
     coprime a (\prod_(i <- l) i).
   Proof.
@@ -168,7 +168,7 @@ Section chinese.
       by move/andP: HH => [-> _].
     - rewrite chinese_modl //.
       move/andP: HH => [HH1 HH2/=].
-      by rewrite coprimeMr HH1 /= all_coprime.
+      by rewrite coprimeMr HH1 /= all_coprime_prod.
   Qed.
 
   (*
@@ -183,7 +183,7 @@ Section chinese.
     - apply /eqP.
       by rewrite modn1.
     - rewrite chinese_modr //.
-      apply all_coprime.
+      apply all_coprime_prod.
       + apply coprimen1.
       + move => /andP in H.
         by destruct H.
@@ -293,7 +293,7 @@ Section chinese.
         have cp: coprime (a.2) (\prod_(i <- (map snd l3)) i).
 
         {
-          rewrite all_coprime //.
+          rewrite all_coprime_prod //.
           subst l3.
           simpl in H.
           rewrite H0/= in H.
@@ -318,7 +318,7 @@ Section chinese.
         * subst l3.
           rewrite (pairwise_perm_symm (l2:=[seq i.2 | i <- p :: (l1 ++ l2)]))/= in pc'.
           -- move/andP: pc' => [allcp _].
-             by apply all_coprime.
+             by apply all_coprime_prod.
           -- move=> x y.
              by rewrite coprime_sym.
           -- by rewrite <- Permutation_middle.
@@ -376,7 +376,7 @@ Section chinese.
           rewrite in_cons.
           apply /orP.
           by right.
-     + by apply all_coprime.
+     + by apply all_coprime_prod.
   Qed.
 
 End chinese.
