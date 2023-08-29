@@ -156,7 +156,7 @@ Section chinese.
       by rewrite coprimeMr H1 => ->.
   Qed.
 
-  Lemma chinese_remainder_list_l (a : nat * nat) (l : list (nat * nat)) :
+  Lemma chinese_remainder_list_cons_l (a : nat * nat) (l : list (nat * nat)) :
     all (coprime a.2) (map snd l) ->
     chinese_list (a::l) == a.1 %[mod a.2].
   Proof.
@@ -180,7 +180,7 @@ Section chinese.
     tauto.
   Qed.
 
-  Lemma chinese_reminder_list_r (a : nat * nat) (l : list (nat * nat)) :
+  Lemma chinese_reminder_list_cons_r (a : nat * nat) (l : list (nat * nat)) :
     pairwise coprime (map snd (a::l)) ->
     let m := \prod_(i <- map snd l) i in 
     chinese_list (a::l) == chinese_list l %[mod m].
@@ -280,7 +280,7 @@ Section chinese.
     - simpl in H0.
       rewrite H0.
       rewrite H0 in H.
-      rewrite chinese_remainder_list_l //.
+      rewrite chinese_remainder_list_cons_l //.
       simpl in H.
       by move/andP: H => [-> _].
     - pose (l3 := l1 ++ [:: p] ++ l2).
