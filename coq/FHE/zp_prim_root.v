@@ -1,6 +1,5 @@
-Require Import LibUtilsListAdd ListAdd Permutation.
 Require Import Lia.
-From mathcomp Require Import all_ssreflect zmodp poly ssralg cyclic fingroup finalg ring.
+From mathcomp Require Import all_ssreflect zmodp poly ssralg cyclic fingroup finalg ring seq.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -127,9 +126,7 @@ Qed.
 
 End cyclic.
 
-Require Import List.
-From mathcomp Require Import seq.
-Require Import Permutation.
+Require Import ssrbool.
 
 Section chinese.
 
@@ -367,12 +364,37 @@ Section chinese.
      + by apply all_coprime_prod.
   Qed.
 
+  Lemma allrel_sym {A:eqType} f (l1 l2: seq A) :
+    symmetric f ->
+    allrel f l1 l2 = allrel f l2 l1.
+  Proof.
+    rewrite allrelC=>sym.
+    apply eq_allrel => x y.
+    by rewrite sym.
+  Qed.
+
   Lemma pairwise_perm_sym {A:eqType} f (l1 l2: seq A) :
     symmetric f ->
     perm_eq l1 l2 ->
     pairwise f l1 = pairwise f l2.
   Proof.
-  Admitted.
+    move=> symf.
+    move: l1 l2.
+    wlog pimp: / forall l1 l2, perm_eq l1 l2 -> pairwise f l1 -> pairwise f l2.
+    - apply.
+      apply catCA_perm_ind=> l1 l2 l3.
+      rewrite !pairwise_cat !allrel_catr.
+      move/andP=>[/andP-[rel12 rel13] /andP-[p1 /andP-[rel23 /andP-[p2 p3]]]].
+      repeat (try (apply/andP; split)) => //.
+      by rewrite allrel_sym.
+    - move=> l1 l2 pm.
+      apply Bool.eq_bool_prop_intro.
+      split =>/Bool.Is_true_eq_true=> HH
+         ; apply Bool.Is_true_eq_left
+         ; eapply pimp; try apply HH.
+      + by [].
+      + by rewrite perm_sym.
+  Qed.
 
   Lemma pairwise_coprime_perm l l2:
     perm_eq l l2 ->
