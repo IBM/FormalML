@@ -367,13 +367,21 @@ Section chinese.
      + by apply all_coprime_prod.
   Qed.
 
+  Lemma pairwise_perm_sym {A:eqType} f (l1 l2: seq A) :
+    symmetric f ->
+    perm_eq l1 l2 ->
+    pairwise f l1 = pairwise f l2.
+  Proof.
+  Admitted.
+
   Lemma pairwise_coprime_perm l l2:
-    pairwise coprime l ->
     perm_eq l l2 ->
-    pairwise coprime l2.
+    pairwise coprime l = pairwise coprime l2.
   Proof.
     intros.
-    Admitted.
+    apply pairwise_perm_sym => // x y.
+    apply coprime_sym.
+  Qed.
 
   Lemma chinese_remainder_list_permutation (l l2: list (nat * nat)) :
     pairwise coprime (map snd l) ->
@@ -384,14 +392,19 @@ Section chinese.
     intros co_l perm.
     apply chinese_remainder_list_unique; trivial.
     intros.
-    generalize (chinese_remainder_list co_l); intros CR_l.
     assert (co_l2: pairwise coprime (map snd l2)).
     {
-      apply (pairwise_coprime_perm co_l).
-      by apply perm_map.
+      rewrite (pairwise_coprime_perm (l2:=[seq i.2 | i <- l]))//.
+      apply perm_map.
+      by rewrite perm_sym.
     }
-    generalize (chinese_remainder_list co_l2); intros CR_l2. 
-    Admitted.
+    move/mapP: H => [px ] in1 ->.
+    rewrite (eqP (chinese_remainder_list co_l in1)).
+    move: in1.
+    rewrite (perm_mem perm)=> in2.
+    rewrite (eqP (chinese_remainder_list co_l2 in2)).
+    apply eqxx.
+  Qed.
 
 
 End chinese.
