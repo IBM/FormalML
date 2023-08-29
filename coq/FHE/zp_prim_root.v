@@ -213,6 +213,7 @@ Section chinese.
     by have [?|/ltnW ?] := leqP y x; last rewrite !(eq_sym (x %% _)); apply.
   Qed.
 
+(*
   Lemma symmetricE {A} (f:A->A->bool) :  (ssrbool.symmetric f) <-> (RelationClasses.Symmetric f).
   Proof.
     rewrite /symmetric /RelationClasses.Symmetric.
@@ -264,6 +265,7 @@ Section chinese.
     - by rewrite ForallOrdPairs_perm; [| apply Permutation_sym; apply H0].
     - by rewrite ForallOrdPairs_perm; [| apply H0].
   Qed.
+*)
 
   Lemma chinese_remainder_list_2 :
     forall (l1 l2 l : list (nat * nat)) (p : nat * nat),
