@@ -171,25 +171,28 @@ Section chinese.
       by rewrite coprimeMr HH1 /= all_coprime_prod.
   Qed.
 
-  (*
+  Lemma pairwise_coprime_cons a l :
+    pairwise coprime (a :: l) ->
+    all (coprime a) l.
+  Proof.
+    simpl.
+    move /andP.
+    tauto.
+  Qed.
+
   Lemma chinese_reminder_list_cons2 (a : nat * nat) (l : list (nat * nat)) :
-        pairwise coprime (map snd (a::l)) ->
-        let m := fold_left muln (map snd l) 1 in 
-        chinese_list (a::l) == chinese_list l %[mod m].
+    pairwise coprime (map snd (a::l)) ->
+    let m := \prod_(i <- map snd l) i in 
+    chinese_list (a::l) == chinese_list l %[mod m].
   Proof.
     intros.
     simpl.
     destruct l; trivial.
-    - apply /eqP.
-      by rewrite modn1.
+    - rewrite big_nil /= modn1 //.
     - rewrite chinese_modr //.
       apply all_coprime_prod.
-      + apply coprimen1.
-      + move => /andP in H.
-        by destruct H.
+      by apply pairwise_coprime_cons.
  Qed.
-
-   *)
 
   Lemma mul_dvdn_l x d1 d2:
     d1 * d2 %| x -> d1 %| x.
@@ -327,23 +330,6 @@ Section chinese.
 *)
   Qed.
 
-  (*
-  Lemma chinese_remainder_list_permutation (l l2: list (nat * nat)) :
-    pairwise coprime (map snd l) ->
-    Permutation l l2 ->
-    let m := fold_left muln (map snd l) 1 in
-    chinese_list l == chinese_list l2 %[mod m].
-  Proof.
-    intros.
-    assert (pairwise coprime (map snd l2)).
-    {
-      Search pairwise.
-      admit.
-    }
-    simpl.
-    Admitted.
-
-   *)
   Lemma chinese_remainder_list  (l : list (nat * nat)) :
     pairwise coprime (map snd l) ->
     forall p,
@@ -380,5 +366,32 @@ Section chinese.
           by right.
      + by apply all_coprime_prod.
   Qed.
+
+  Lemma pairwise_coprime_perm l l2:
+    pairwise coprime l ->
+    perm_eq l l2 ->
+    pairwise coprime l2.
+  Proof.
+    intros.
+    Admitted.
+
+  Lemma chinese_remainder_list_permutation (l l2: list (nat * nat)) :
+    pairwise coprime (map snd l) ->
+    perm_eq l l2 ->
+    let m := \prod_(i <- map snd l) i in
+    chinese_list l == chinese_list l2 %[mod m].
+  Proof.
+    intros co_l perm.
+    apply chinese_remainder_list_unique; trivial.
+    intros.
+    generalize (chinese_remainder_list co_l); intros CR_l.
+    assert (co_l2: pairwise coprime (map snd l2)).
+    {
+      apply (pairwise_coprime_perm co_l).
+      by apply perm_map.
+    }
+    generalize (chinese_remainder_list co_l2); intros CR_l2. 
+    Admitted.
+
 
 End chinese.
