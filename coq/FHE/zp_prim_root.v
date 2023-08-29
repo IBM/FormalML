@@ -189,40 +189,32 @@ Section chinese.
         by destruct H.
  Qed.
 
-*)
-(*
-  Lemma Gauss_dvd_l m n p :
-    m * n %| p -> (m %| p).
+   *)
+
+  Lemma mul_dvdn_l x d1 d2:
+    d1 * d2 %| x -> d1 %| x.
+   Proof.
+     eapply dvdn_trans.
+     apply dvdn_mulr.
+     by apply dvdnn.
+   Qed.
+
+  Lemma mul_dvdn_r x d1 d2:
+    d1 * d2 %| x -> d2 %| x.
   Proof.
-    Search dvdn.
-    unfold dvdn.
-    Search modn.
-    generalize
-  Admitted.
-  
+    rewrite mulnC.
+    by apply mul_dvdn_l.
+  Qed.
+
   Lemma modn_muln x y b1 b2 :
     x == y %[mod b1 * b2] ->
     (x == y %[mod b1]).
   Proof.
     wlog le_yx : x y / y <= x; last rewrite !eqn_mod_dvd //.
-    - intros.
-      apply H; trivial.
-      have [?|/ltnW ?] := leqP y x.
-      generalize eq_sym; intros.
-      trivial.
-      admit.
-    - apply Gauss_dvd_l.
+    - intros; apply H; trivial.
+       admit.
+    - apply mul_dvdn_l.
   Admitted.
-
-  Lemma chinese_remainder m1 m2 x y :
-    coprime m1 m2 ->
-    (x == y %[mod m1 * m2]) = (x == y %[mod m1]) && (x == y %[mod m2]).
-  Proof.
-    intros.
-    wlog le_yx : x y / y <= x; last by rewrite !eqn_mod_dvd // Gauss_dvd.
-    by have [?|/ltnW ?] := leqP y x; last rewrite !(eq_sym (x %% _)); apply.
-  Qed.
- *)
 
   Lemma symmetricE {A} (f:A->A->bool) :  (ssrbool.symmetric f) <-> (RelationClasses.Symmetric f).
   Proof.
