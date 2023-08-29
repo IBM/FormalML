@@ -353,4 +353,30 @@ Section chinese.
     by eapply chinese_remainder_list_2 => //=.
   Qed.    
 
+  Lemma chinese_remainder_list_unique (a b : nat) (l : list nat) :
+    pairwise coprime l ->
+    (forall p,
+        p \in l -> a == b %[mod p]) ->
+    a == b %[mod \prod_(i <- l) i].
+  Proof.
+    induction l; simpl; intros.
+    - by rewrite big_nil !modn1.
+    - move /andP in H.
+      destruct H.
+      rewrite big_cons chinese_remainder.
+      + apply /andP.
+        split.
+        * apply H0.
+          rewrite in_cons.
+          apply /orP.
+          by left.
+        * apply IHl; trivial.
+          intros.
+          apply H0.
+          rewrite in_cons.
+          apply /orP.
+          by right.
+     + by apply all_coprime.
+  Qed.
+
 End chinese.
