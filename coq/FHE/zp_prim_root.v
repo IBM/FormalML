@@ -207,14 +207,11 @@ Section chinese.
   Qed.
 
   Lemma modn_muln x y b1 b2 :
-    x == y %[mod b1 * b2] ->
-    (x == y %[mod b1]).
+    x == y %[mod b1 * b2] -> x == y %[mod b1].
   Proof.
-    wlog le_yx : x y / y <= x; last rewrite !eqn_mod_dvd //.
-    - intros; apply H; trivial.
-       admit.
-    - apply mul_dvdn_l.
-  Admitted.
+    wlog le_yx : x y / y <= x; last by (rewrite !eqn_mod_dvd //; apply mul_dvdn_l).
+    by have [?|/ltnW ?] := leqP y x; last rewrite !(eq_sym (x %% _)); apply.
+  Qed.
 
   Lemma symmetricE {A} (f:A->A->bool) :  (ssrbool.symmetric f) <-> (RelationClasses.Symmetric f).
   Proof.
@@ -313,7 +310,10 @@ Section chinese.
             by rewrite perm_catCA perm_refl.
         }
         simpl.
-        rewrite big_cons chinese_remainder.
+        rewrite big_cons.
+        by apply modn_muln.
+(*        
+        rewrite chinese_remainder.
         * by move/andP => [-> _].
         * subst l3.
           rewrite (pairwise_perm_symm (l2:=[seq i.2 | i <- p :: (l1 ++ l2)]))/= in pc'.
@@ -322,6 +322,7 @@ Section chinese.
           -- move=> x y.
              by rewrite coprime_sym.
           -- by rewrite <- Permutation_middle.
+*)
   Qed.
 
   (*
