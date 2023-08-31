@@ -889,22 +889,21 @@ Proof.
   by rewrite H -nth_root_mul -H nth_root_half mulrN1 addrC addNr.
 Qed.
 
+Definition Nat2Zinj := (Nat2Z.inj_mod, Nat2Z.inj_mul, Nat2Z.inj_add, Nat2Z.inj_sub).
+
 Lemma inv_pow_nth_root j k :
   exp (nth_root j (S k)) k = inv (nth_root j (S k)).
 Proof.
   rewrite nth_root_inv Cpow_nth_root -nth_root_eq.
   apply Nat2Z.inj.
-  rewrite !Nat2Z.inj_mod.
-  unfold subn, subn_rec, muln, muln_rec.
-  rewrite Nat2Z.inj_mul Nat2Z.inj_sub.
+  rewrite !Nat2Zinj.
   - rewrite Zdiv.Zmult_mod Zdiv.Zminus_mod.
-    rewrite Zdiv.Z_mod_same_full Nat2Z.inj_mod Zdiv.Zmod_mod.
+    rewrite Zdiv.Z_mod_same_full Zdiv.Zmod_mod.
     rewrite Z.sub_0_l Z.opp_eq_mul_m1 Z.mul_comm.
     symmetry.
     rewrite Zdiv.Zmult_mod !Zdiv.Zmod_mod.    
     f_equal.
     f_equal.
-    generalize Z.sub_0_l; intros.
     replace (Zneg xH)%Z with (Z.sub (Z.of_nat k) (Z.of_nat (S k))).
     + rewrite Zdiv.Zminus_mod Zdiv.Z_mod_same_full.
       f_equal.
