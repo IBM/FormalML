@@ -655,7 +655,45 @@ Section rotation.
       rewrite [muln (2^n) k]mulnC.
       by apply.
   Qed.
-  
-End rotation.  
+
+End rotation.
+
+  Require Import Reals nth_root encode.
+  From mathcomp Require Import Rstruct complex.
+
+  Lemma poly_shift_eval [S : comRingType] (p : {poly S}) (k : nat) (v : S) :
+    p.[v^+k] = (poly_shift k p).[v].
+  Proof.
+    unfold poly_shift.
+    by rewrite horner_comp hornerXn.
+  Qed.
+
+  Lemma poly_shift_C (p : {poly R}) (k : nat) :
+    poly_shift k (map_poly RtoC p) = map_poly RtoC (poly_shift k p).
+  Proof.
+    by rewrite /poly_shift map_comp_poly map_polyXn.
+  Qed.
+
+  Lemma poly_shift_eval_C (p : {poly R}) (k:nat) (v : R[i]) :
+    (map_poly RtoC p).[v^+k] = (map_poly RtoC (poly_shift k p)).[v].
+  Proof.
+    by rewrite poly_shift_eval poly_shift_C.
+  Qed.
+    
+  Lemma conj_poly_eval_pow (p : {poly R}) (i j :nat) :
+    let v := nth_root i (S j) in
+    conjc ((map_poly RtoC p).[v]) = (map_poly RtoC (poly_shift j p)).[v].
+  Proof.
+    simpl.
+    rewrite -poly_shift_eval_C.
+    rewrite rpoly_eval_conj.
+    f_equal.
+    by rewrite -conj_pow_nth_root.
+  Qed.
+    
+
+
+
+
       
       
