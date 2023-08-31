@@ -424,9 +424,7 @@ Section chinese.
     rewrite (eqP (chinese_remainder_list co_l in1)).
     move: in1.
     rewrite (perm_mem perm)=> in2.
-    rewrite (eqP (chinese_remainder_list co_l2 in2)).
-    apply eqxx.
+    by rewrite (eqP (chinese_remainder_list co_l2 in2)).
   Qed.
-
 
 End chinese.
