@@ -1,5 +1,5 @@
 Require Import Reals Lra Lia List Permutation.
-From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix Rstruct complex.
+From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix Rstruct complex seq fingroup.
 From mathcomp Require Import ssralg ssrfun.
 From mathcomp Require Import generic_quotient ring_quotient.
 From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool.
@@ -2445,7 +2445,7 @@ Section unity.
   Variable (T : comRingType).
   Variable (z : T).
 
-  Lemma two_pow_prim_root (n:N) :
+  Lemma two_pow_prim_root (n:nat) :
     (one T) <> -(one T) ->
     z ^+ (2^n) = -1 ->
     primitive_root_of_unity (2^(n.+1)) z.
@@ -2486,7 +2486,7 @@ Section unity.
       by rewrite HH in i.
   Qed.
 
-  Lemma odd_pow_prim_root (n:N) :
+  Lemma odd_pow_prim_root (n:nat) :
     z ^+ (2^n) = -1 ->
     forall j,
       odd j ->
@@ -2519,7 +2519,7 @@ Section unity.
     now rewrite (@div.Gauss_gcdr j 2).
   Qed.
 
-  Lemma pow2_odd_inv (j n :N) :
+  Lemma pow2_odd_inv (j n :nat) :
     odd j ->
     {k | (j * k mod (2^(S n)) = 1)%N}.
   Proof.
@@ -2535,7 +2535,7 @@ Section unity.
     rewrite expnS i0; lia.
   Qed.
 
-  Lemma odd_pow_prim_root_inv (j n:N) :
+  Lemma odd_pow_prim_root_inv (j n:nat) :
     odd j ->
     exists k,
     forall (z2:T),
@@ -2563,7 +2563,7 @@ Section unity.
     by rewrite exprD exprM H2 expr1 Theory.expr1n mul1r.
   Qed.
 
-  Lemma odd_pow_prim_inv (n:N) :
+  Lemma odd_pow_prim_inv (n:nat) :
     z ^+ (2^n) = -1 ->
     forall j,
       ((z ^+ j) ^+ (2^(S n) -1)) * (z ^+ j) = 1.
@@ -2574,7 +2574,7 @@ Section unity.
     by rewrite subnn add0n expnS mulnC exprM H expr2 mulrNN mulr1 expr1n.
   Qed.    
 
-  Lemma odd_pow_prim_root_inj (j n:N) (z2 : T) :
+  Lemma odd_pow_prim_root_inj (j n:nat) (z2 : T) :
     z ^+ (2^n) = -1 ->
     z2 ^+ (2^n) = -1 ->
     z <> z2 ->
@@ -2589,6 +2589,49 @@ Section unity.
     apply (f_equal (fun z => z ^+k)) in H3.
     by rewrite H H0 in H3.
   Qed.
+
+  Lemma odd_pow_prim_roots_perm (j n : nat) :
+    let l := mkseq (fun i => nth_root (2 * i + 1) (2 ^ (S n))) (2^n) in
+    Permutation l (map (fun r => r^+(2*j+1)) l).
+  Proof.
+    Search "perm".
+    apply NoDup_Permutation_bis.
+    - assert (uniq (mkseq (fun i : nat => nth_root (2 * i + 1) (2 ^ n.+1)) (2 ^ n))).
+      {
+        apply /mkseq_uniqP.
+        intros ?????.
+        rewrite /in_mem /mem /= in H.
+        rewrite /in_mem /mem /= in H0.
+        destruct (pow2_S (S n)).
+        rewrite (eqP i) -nth_root_eq -(eqP i) in H1.
+        rewrite !Nat.mod_small in H1; try rewrite expnS; try lia.
+      }
+      admit.
+    - apply Nat.eq_le_incl.
+      apply map_length.
+    - intros ??.
+      assert (odd (2*j+1)) by lia.
+      generalize (odd_pow_prim_root_inv (2*j+1) n H0); intros.
+      
+    Admitted.
+
+  Lemma odd_pow_prim_roots_perm_eq (j n : nat) :
+    let l := mkseq (fun i => nth_root (2 * i + 1) (2 ^ (S n))) (2^n) in
+    perm_eq l (map (fun r => r^+(2*j+1)) l).
+  Proof.
+    assert (uniq (mkseq (fun i : nat => nth_root (2 * i + 1) (2 ^ n.+1)) (2 ^ n))).
+    {
+      apply /mkseq_uniqP.
+      intros ?????.
+      rewrite /in_mem /mem /= in H.
+      rewrite /in_mem /mem /= in H0.
+      destruct (pow2_S (S n)).
+      rewrite (eqP i) -nth_root_eq -(eqP i) in H1.
+      rewrite !Nat.mod_small in H1; try rewrite expnS; try lia.
+    }
+    apply uniq_perm; trivial.
+    - rewrite map_inj_in_uniq; trivial.
+      Admitted.
 
   Lemma injective_finite_bijective {S} (l : list S) (f : S -> S) :
     NoDup l ->
@@ -2630,6 +2673,8 @@ Section unity.
     - now apply FinFun.Injective_map_NoDup.
     - now apply injective_finite_bijective.
   Qed.
+
+      
 
   Lemma char_2_opp_eq :
     one T = - (one T) <-> 2%N \in [char T].
