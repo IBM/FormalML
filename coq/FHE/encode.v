@@ -2594,7 +2594,6 @@ Section unity.
     let l := mkseq (fun i => nth_root (2 * i + 1) (2 ^ (S n))) (2^n) in
     Permutation l (map (fun r => r^+(2*j+1)) l).
   Proof.
-    Search "perm".
     apply NoDup_Permutation_bis.
     - assert (uniq (mkseq (fun i : nat => nth_root (2 * i + 1) (2 ^ n.+1)) (2 ^ n))).
       {
@@ -2615,6 +2614,32 @@ Section unity.
       
     Admitted.
 
+  Lemma nth_root_eq' j k (n:nat) : n != 0%nat ->
+    j mod n = k mod n <->
+      nth_root j n = nth_root k n.
+  Proof.
+    destruct n; [lia |]=>_.
+    apply nth_root_eq.
+  Qed.
+
+  Lemma expn0 (c:nat) n : c != 0%nat -> expn c n != 0%nat.
+  Proof.
+    lia.
+  Qed.
+
+  Lemma pow_nth_root' j n e : n != 0%nat ->
+    (nth_root j n) ^+ e = nth_root (e * j) n.
+  Proof.
+    destruct n; [lia |]=>_.
+    apply pow_nth_root.
+  Qed.
+
+  Lemma iff_eqb (a b:bool) : (a <-> b) <-> a = b.
+  Proof.
+    destruct a; destruct b; simpl in *; firstorder.
+    elim H => //.
+  Qed.
+  
   Lemma odd_pow_prim_roots_perm_eq (j n : nat) :
     let l := mkseq (fun i => nth_root (2 * i + 1) (2 ^ (S n))) (2^n) in
     perm_eq l (map (fun r => r^+(2*j+1)) l).
@@ -2630,8 +2655,18 @@ Section unity.
       rewrite !Nat.mod_small in H1; try rewrite expnS; try lia.
     }
     apply uniq_perm; trivial.
-    - rewrite map_inj_in_uniq; trivial.
-      Admitted.
+    - rewrite map_inj_in_uniq // => a b.
+      rewrite /mkseq => /mapP-[i inth ->] /mapP-[k knth ->].
+      rewrite mem_iota in inth.
+      rewrite mem_iota in knth.
+      do 2 rewrite pow_nth_root' ?expn0 //.
+      do 2 rewrite -nth_root_eq' ?expn0 //.
+      admit.
+    - move=> a.
+      apply iff_eqb.
+      split; rewrite /mkseq => /mapP-[i inth ->].
+      +
+  Admitted.
 
   Lemma injective_finite_bijective {S} (l : list S) (f : S -> S) :
     NoDup l ->
