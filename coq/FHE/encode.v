@@ -2661,11 +2661,19 @@ Section unity.
       rewrite mem_iota in knth.
       do 2 rewrite pow_nth_root' ?expn0 //.
       do 2 rewrite -nth_root_eq' ?expn0 //.
+      move=> HH.
+      assert (odd (2*j+1)) by lia.
+      destruct (pow2_odd_inv (2*j+1) n H0).
       admit.
     - move=> a.
       apply iff_eqb.
-      split; rewrite /mkseq => /mapP-[i inth ->].
-      +
+      split; rewrite /mkseq -map_comp /comp => /mapP-[i inth ->]; apply/mapP.
+      + exists 0%nat.
+        * admit.
+        * admit.
+      + exists 0%nat.
+        * admit.
+        * admit.
   Admitted.
 
   Lemma injective_finite_bijective {S} (l : list S) (f : S -> S) :
