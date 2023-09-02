@@ -2622,7 +2622,7 @@ Section unity.
     apply nth_root_eq.
   Qed.
 
-  Lemma expn0 (c:nat) n : c != 0%nat -> expn c n != 0%nat.
+  Lemma expn_n0 (c:nat) n : c != 0%nat -> expn c n != 0%nat.
   Proof.
     lia.
   Qed.
@@ -2730,8 +2730,8 @@ Section unity.
     apply uniq_perm; trivial.
     - rewrite map_inj_in_uniq // => a b.
       rewrite /mkseq => /mapP-[i inth ->] /mapP-[k knth ->].
-      do 2 rewrite pow_nth_root' ?expn0 //.
-      do 2 rewrite -nth_root_eq' ?expn0 //.
+      do 2 rewrite pow_nth_root' ?expn_n0 //.
+      do 2 rewrite -nth_root_eq' ?expn_n0 //.
       rewrite !modulo_modn => HH.
       apply (f_equal (fun k => ((x %% 2^n.+1) * k) %% 2^n.+1)%N) in HH.
       do 2 rewrite modnMm mulnA -modnMm e mul1n in HH.
