@@ -2,7 +2,7 @@ Require Import Reals Lra Lia List Permutation.
 From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix Rstruct complex seq fingroup.
 From mathcomp Require Import ssralg ssrfun.
 From mathcomp Require Import generic_quotient ring_quotient.
-From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool.
+From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool div.
 
 Import ssralg.GRing.
 Require Import nth_root.
@@ -266,7 +266,7 @@ Proof.
   rewrite !muln0 subnn !addn0 in HH.
   destruct HH; subst.
   replace (n0 + m * n0 + (m - n1))%nat with (n0 * m.+1 + (m - n1))%nat by lia.
-  rewrite div.modnMDl div.modn_small//.
+  rewrite modnMDl modn_small//.
   lia.
 Qed.
 
@@ -2590,6 +2590,7 @@ Section unity.
     by rewrite H H0 in H3.
   Qed.
 
+(*
   Lemma odd_pow_prim_roots_perm (j n : nat) :
     let l := mkseq (fun i => nth_root (2 * i + 1) (2 ^ (S n))) (2^n) in
     Permutation l (map (fun r => r^+(2*j+1)) l).
@@ -2613,7 +2614,7 @@ Section unity.
       generalize (odd_pow_prim_root_inv (2*j+1) n H0); intros.
       
     Admitted.
-
+*)
   Lemma nth_root_eq' j k (n:nat) : n != 0%nat ->
     j mod n = k mod n <->
       nth_root j n = nth_root k n.
@@ -2639,7 +2640,89 @@ Section unity.
     destruct a; destruct b; simpl in *; firstorder.
     elim H => //.
   Qed.
+
+(*
+  Lemma odd_pow_ind i j n :
+    exists x0,
+      nth_root (2 * i + 1) (2 ^ n.+1) ^+ (2 * j + 1) = nth_root (2 * x0 + 1) (2 ^ n.+1).
+  Proof.
+    exists ((2*(i*j)+i+j)%N mod 2^n).
+    rewrite pow_nth_root'; try lia.
+    rewrite -nth_root_eq'; try lia.
+    
+   Admitted.
+ *)
   
+  Lemma odd_rep (n : nat) :
+    odd n -> n = (2*(n%/2)+1)%N.
+  Proof.
+    intros.
+    generalize (divn_eq n 2); intros.
+    assert (n %% 2 = 1)%N.
+    {
+      by rewrite modn2 H.
+    }
+    by rewrite H1 in H0; lia.
+  Qed.
+
+  Lemma mul_dvdn_l (x d1 d2:nat) :
+    (d1 * d2 %| x)%N -> (d1 %| x)%N.
+   Proof.
+     eapply dvdn_trans.
+     apply dvdn_mulr.
+     by apply dvdnn.
+   Qed.
+
+  Lemma mul_dvdn_r (x d1 d2:nat) :
+    (d1 * d2 %| x)%N -> (d2 %| x)%N.
+  Proof.
+    rewrite mulnC.
+    by apply mul_dvdn_l.
+  Qed.
+
+  Lemma modn_muln (x y b1 b2:nat) :
+    x == y %[mod b1 * b2] -> x == y %[mod b1].
+  Proof.
+    wlog le_yx : x y / y <= x; last by (rewrite !eqn_mod_dvd //; apply mul_dvdn_l).
+    by have [?|/ltnW ?] := leqP y x; last rewrite !(eq_sym (x %% _)%N); apply.
+  Qed.
+
+  Lemma pow2_odd (x n : nat) :
+    (x %% 2^(n.+1) = 1)%N -> odd x.
+  Proof.
+    intros.
+    rewrite expnS in H.
+    assert (x %% 2 = 1)%N.
+    {
+      assert (1 %% (2 * 2^n) = 1)%N.
+      {
+        rewrite modn_small; lia.
+      }
+      rewrite -{3}H0 in H.
+      move /eqP in H.
+      apply modn_muln in H.
+      move /eqP in H.
+      rewrite H.
+      rewrite modn_small; trivial.
+    }
+    rewrite modn2 in H0.
+    replace (1%N) with (nat_of_bool true) in H0 by easy.
+    
+    Admitted.
+
+  Lemma pow2_odd_inv_aux (j x n : nat) :
+    ((x * (2*j+1)) %% 2^(n.+1) = 1)%N ->
+    exists x0, x = (2*x0+1)%N.
+  Proof.
+    intros.
+    exists (x%/2)%N.
+    apply odd_rep.
+    apply pow2_odd in H.
+    rewrite oddM in H.
+    move /andP in H.
+    tauto.
+  Qed.
+
   Lemma odd_pow_prim_roots_perm_eq (j n : nat) :
     let l := mkseq (fun i => nth_root (2 * i + 1) (2 ^ (S n))) (2^n) in
     perm_eq l (map (fun r => r^+(2*j+1)) l).
@@ -2654,26 +2737,48 @@ Section unity.
       rewrite (eqP i) -nth_root_eq -(eqP i) in H1.
       rewrite !Nat.mod_small in H1; try rewrite expnS; try lia.
     }
+    assert (odd (2*j+1)) by lia.
+    destruct (pow2_odd_inv (2*j+1) n H0).
+    rewrite mulnC modulo_modn in e.      
     apply uniq_perm; trivial.
     - rewrite map_inj_in_uniq // => a b.
       rewrite /mkseq => /mapP-[i inth ->] /mapP-[k knth ->].
-      rewrite mem_iota in inth.
-      rewrite mem_iota in knth.
       do 2 rewrite pow_nth_root' ?expn0 //.
       do 2 rewrite -nth_root_eq' ?expn0 //.
-      move=> HH.
-      assert (odd (2*j+1)) by lia.
-      destruct (pow2_odd_inv (2*j+1) n H0).
-      admit.
+      rewrite !modulo_modn => HH.
+      apply (f_equal (fun k => ((x %% 2^n.+1) * k) %% 2^n.+1)%N) in HH.
+      do 2 rewrite modnMm mulnA -modnMm e mul1n in HH.
+      by rewrite !modn_mod in HH.
     - move=> a.
       apply iff_eqb.
       split; rewrite /mkseq -map_comp /comp => /mapP-[i inth ->]; apply/mapP.
-      + exists 0%nat.
-        * admit.
-        * admit.
-      + exists 0%nat.
-        * admit.
-        * admit.
+      + assert (exists x0, (2 * x0 +1)*(2 * j +1) mod 2^n.+1 = (2 * i +1)%N mod 2^n.+1).
+        {
+          destruct (pow2_odd_inv_aux _ _ _ e).
+          rewrite H1 in e.
+          exists ((2*(x0 * i)+x0+i)%N).
+          rewrite !modulo_modn.
+          admit.
+        }
+        destruct H1.
+        exists (x0 mod 2^n).
+        * rewrite mem_iota.
+          apply /andP.
+          split; try lia.
+          rewrite add0n.
+          generalize (Nat.mod_upper_bound x0 (2^n)); lia.
+        * rewrite pow_nth_root'; try lia.
+          rewrite -nth_root_eq'; try lia.
+          rewrite -H1.
+          admit.
+      + exists ((2*(i*j)+i+j)%N mod 2^n).
+        * rewrite mem_iota.
+          apply /andP.
+          split; try lia.
+          rewrite add0n.
+          generalize (Nat.mod_upper_bound  (2 * (i * j) + i + j)  (2^n)); lia.
+        * rewrite pow_nth_root'; try lia.
+          rewrite -nth_root_eq'; try lia.
   Admitted.
 
   Lemma injective_finite_bijective {S} (l : list S) (f : S -> S) :
