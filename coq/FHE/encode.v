@@ -2687,7 +2687,7 @@ Section unity.
     by have [?|/ltnW ?] := leqP y x; last rewrite !(eq_sym (x %% _)%N); apply.
   Qed.
 
-  Lemma pow2_odd (x n : nat) :
+  Lemma pow2_odd_rem1_odd (x n : nat) :
     (x %% 2^(n.+1) = 1)%N -> odd x.
   Proof.
     intros.
@@ -2717,7 +2717,7 @@ Section unity.
     intros.
     exists (x%/2)%N.
     apply odd_rep.
-    apply pow2_odd in H.
+    apply pow2_odd_rem1_odd in H.
     rewrite oddM in H.
     move /andP in H.
     tauto.
@@ -2758,7 +2758,10 @@ Section unity.
           rewrite H1 in e.
           exists ((2*(x0 * i)+x0+i)%N).
           rewrite !modulo_modn.
-          admit.
+          replace (2 * (2 * (x0 * i) + x0 + i) + 1)%N with ((2 * x0 + 1)*(2 * i + 1))%N by lia.
+          rewrite -mulnA (mulnC (2 * i + 1)%N _) mulnA.
+          rewrite -modnMm e mul1n.
+          by rewrite modn_mod.
         }
         destruct H1.
         exists (x0 mod 2^n).
@@ -2770,7 +2773,13 @@ Section unity.
         * rewrite pow_nth_root'; try lia.
           rewrite -nth_root_eq'; try lia.
           rewrite -H1.
-          admit.
+          rewrite (mulnC (2 * x0 + 1)%N).
+          rewrite !modulo_modn -modnMm -(modnMm (2*j+1)%N).
+          do 2 f_equal.
+          rewrite muln_modr -expnS.
+          assert (1 < 2^n.+1) by lia.
+          generalize (modn_small H2); intros.
+          by rewrite -{6}H3 modnDm.
       + exists ((2*(i*j)+i+j)%N mod 2^n).
         * rewrite mem_iota.
           apply /andP.
@@ -2779,7 +2788,12 @@ Section unity.
           generalize (Nat.mod_upper_bound  (2 * (i * j) + i + j)  (2^n)); lia.
         * rewrite pow_nth_root'; try lia.
           rewrite -nth_root_eq'; try lia.
-  Admitted.
+          rewrite !modulo_modn muln_modr -expnS.
+          assert (1 < 2^n.+1) by lia.
+          generalize (modn_small H1); intros.
+          rewrite -{9}H2 modnDm.
+          f_equal; lia.
+   Qed.
 
   Lemma injective_finite_bijective {S} (l : list S) (f : S -> S) :
     NoDup l ->
