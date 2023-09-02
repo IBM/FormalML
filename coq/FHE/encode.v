@@ -2613,7 +2613,6 @@ Section unity.
       assert (odd (2*j+1)) by lia.
       generalize (odd_pow_prim_root_inv (2*j+1) n H0); intros.
       
-    Admitted.
 *)
   Lemma nth_root_eq' j k (n:nat) : n != 0%nat ->
     j mod n = k mod n <->
@@ -2641,18 +2640,6 @@ Section unity.
     elim H => //.
   Qed.
 
-(*
-  Lemma odd_pow_ind i j n :
-    exists x0,
-      nth_root (2 * i + 1) (2 ^ n.+1) ^+ (2 * j + 1) = nth_root (2 * x0 + 1) (2 ^ n.+1).
-  Proof.
-    exists ((2*(i*j)+i+j)%N mod 2^n).
-    rewrite pow_nth_root'; try lia.
-    rewrite -nth_root_eq'; try lia.
-    
-   Admitted.
- *)
-  
   Lemma odd_rep (n : nat) :
     odd n -> n = (2*(n%/2)+1)%N.
   Proof.
