@@ -2674,6 +2674,13 @@ Section unity.
     by have [?|/ltnW ?] := leqP y x; last rewrite !(eq_sym (x %% _)%N); apply.
   Qed.
 
+  Lemma modn2_odd (x : nat) :
+    odd x <-> (x %% 2 = 1)%N.
+  Proof.
+    rewrite modn2.
+    by case: (odd _).
+  Qed.
+
   Lemma pow2_odd_rem1_odd (x n : nat) :
     (x %% 2^(n.+1) = 1)%N -> odd x.
   Proof.
@@ -2692,8 +2699,7 @@ Section unity.
       rewrite H.
       rewrite modn_small; trivial.
     }
-    rewrite modn2.
-    by case: (odd _).
+    by rewrite modn2_odd.
   Qed.
   
   Lemma pow2_odd_inv_aux (j x n : nat) :

@@ -1,6 +1,6 @@
 Require Import Lia List.
 From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix ring.
-From mathcomp Require Import ssralg ssrfun ssrint.
+From mathcomp Require Import ssralg ssrfun ssrint seq.
 From mathcomp Require Import generic_quotient ring_quotient.
 From mathcomp Require Import poly mxpoly polydiv zmodp eqtype ssrbool.
 From mathcomp Require Import intdiv.
@@ -691,6 +691,25 @@ End rotation.
     by rewrite -conj_pow_nth_root.
   Qed.
     
+  From mathcomp Require Import ssrnat.
+   Lemma poly_odd_pow_prim_roots_perm_eq (j n : nat) (p : {poly R[i]}):
+     let l := mkseq (fun i => nth_root (2 * i + 1) (2 ^ (S n))) (2^n) in
+     perm_eq (map (fun x => p.[x]) l)
+       (map (fun x => (poly_shift (2*j+1) p).[x]) l).
+   Proof.
+     pose (l := mkseq (fun i => nth_root (2 * i + 1) (2 ^ (S n))) (2^n)).
+     assert (map (fun x => (poly_shift (2*j+1) p).[x]) l =
+               map (fun x => p.[x]) (map (fun x => x^+(2*j+1)) l)).
+     {
+       generalize (poly_shift_eval p (2*j+1)); intros.
+       admit.
+     }
+     rewrite /= H /l /=.
+     apply perm_map.
+     apply odd_pow_prim_roots_perm_eq.
+  Admitted.     
+
+
 
 
 
