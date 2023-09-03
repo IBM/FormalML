@@ -698,16 +698,16 @@ End rotation.
        (map (fun x => (poly_shift (2*j+1) p).[x]) l).
    Proof.
      pose (l := mkseq (fun i => nth_root (2 * i + 1) (2 ^ (S n))) (2^n)).
-     assert (map (fun x => (poly_shift (2*j+1) p).[x]) l =
-               map (fun x => p.[x]) (map (fun x => x^+(2*j+1)) l)).
+     have /= ->: map (fun x => (poly_shift (2*j+1) p).[x]) l =
+               map (fun x => p.[x]) (map (fun x => x^+(2*j+1)) l).
      {
-       generalize (poly_shift_eval p (2*j+1)); intros.
-       admit.
+       rewrite -map_comp /ssrfun.comp.
+       apply eq_map=> a.
+       by rewrite poly_shift_eval.
      }
-     rewrite /= H /l /=.
      apply perm_map.
      apply odd_pow_prim_roots_perm_eq.
-  Admitted.     
+   Qed.
 
 
 
