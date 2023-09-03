@@ -1,5 +1,6 @@
 Require Import Lia.
 From mathcomp Require Import all_ssreflect zmodp poly ssralg cyclic fingroup finalg ring seq.
+Require Import encode.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -190,28 +191,6 @@ Section chinese.
       apply all_coprime_prod.
       by apply pairwise_coprime_cons.
  Qed.
-
-  Lemma mul_dvdn_l x d1 d2:
-    d1 * d2 %| x -> d1 %| x.
-   Proof.
-     eapply dvdn_trans.
-     apply dvdn_mulr.
-     by apply dvdnn.
-   Qed.
-
-  Lemma mul_dvdn_r x d1 d2:
-    d1 * d2 %| x -> d2 %| x.
-  Proof.
-    rewrite mulnC.
-    by apply mul_dvdn_l.
-  Qed.
-
-  Lemma modn_muln x y b1 b2 :
-    x == y %[mod b1 * b2] -> x == y %[mod b1].
-  Proof.
-    wlog le_yx : x y / y <= x; last by (rewrite !eqn_mod_dvd //; apply mul_dvdn_l).
-    by have [?|/ltnW ?] := leqP y x; last rewrite !(eq_sym (x %% _)); apply.
-  Qed.
 
 (*
   Lemma symmetricE {A} (f:A->A->bool) :  (ssrbool.symmetric f) <-> (RelationClasses.Symmetric f).
