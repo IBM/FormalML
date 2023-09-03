@@ -2679,7 +2679,7 @@ Section unity.
   Proof.
     intros.
     rewrite expnS in H.
-    assert (x %% 2 = 1)%N.
+    have: (x %% 2 = 1)%N.
     {
       assert (1 %% (2 * 2^n) = 1)%N.
       {
@@ -2692,11 +2692,10 @@ Section unity.
       rewrite H.
       rewrite modn_small; trivial.
     }
-    rewrite modn2 in H0.
-    replace (1%N) with (nat_of_bool true) in H0 by easy.
-    
-    Admitted.
-
+    rewrite modn2.
+    by case: (odd _).
+  Qed.
+  
   Lemma pow2_odd_inv_aux (j x n : nat) :
     ((x * (2*j+1)) %% 2^(n.+1) = 1)%N ->
     exists x0, x = (2*x0+1)%N.
@@ -2840,4 +2839,5 @@ Section unity.
   Qed.
 
   End unity.
-      
+     
+ 
