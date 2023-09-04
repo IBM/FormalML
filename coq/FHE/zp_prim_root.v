@@ -430,9 +430,22 @@ Qed.
 
 Lemma modn_sub i j m :
   i >= j ->
+  (i == j %[mod m]) = (i - j == 0 %[mod m]).
+Proof.
+  move/eqn_mod_dvd->.
+  by rewrite mod0n.
+Qed.
+
+Lemma modn_sub_iff i j m :
+  i >= j ->
   i = j %[mod m] <-> i - j = 0 %[mod m].
 Proof.
-  Admitted.
+  move/modn_sub=>eqq.
+  split; move/eqP
+  ; [rewrite eqq | rewrite -eqq]
+  ; by move/eqP.
+Qed.
+
 
 Lemma subn_sqr_1 (x : nat) :
   x^2-1 = (x + 1) * (x - 1).
@@ -453,9 +466,9 @@ Proof.
     replace (4 * (x.*2)) with (8 * x) by lia.
     by rewrite -modnDm modnMr modnDmr.
   - rewrite expnS (mulnC _ (2^n.+1)) expnM (expnS _ n.+3).
-    rewrite modn_sub; [|lia].
+    rewrite modn_sub_iff; [|lia].
     rewrite subn_sqr_1.
-    rewrite modn_sub in IHn; [|lia].
+    rewrite modn_sub_iff in IHn; [|lia].
     assert (exists k,
                2 * k = ((2 * j + 1) ^ 2 ^ n.+1 + 1)).
     {
