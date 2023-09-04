@@ -407,3 +407,84 @@ Section chinese.
   Qed.
 
 End chinese.
+
+(* order of 3 mod 2^(n+2) = 2^n *)
+(* show 3^(2^n) <> 1 mod 2^(n+3) *)
+
+From mathcomp Require Import ssrnat.
+
+Lemma n_n1_even j :
+  exists k,
+    j * (j + 1) = k.*2.
+Proof.
+  assert (~~ odd(j * (j + 1))).
+  {
+    replace (j+1) with (S j) by lia.
+    rewrite oddM oddS.
+    by case: (odd j).
+  }
+  apply even_halfK in H.
+  exists ((j * (j + 1)) ./2).
+  by rewrite H.
+Qed.
+
+Lemma modn_sub i j m :
+  i >= j ->
+  i = j %[mod m] <-> i - j = 0 %[mod m].
+Proof.
+  Admitted.
+
+Lemma subn_sqr_1 (x : nat) :
+  x^2-1 = (x + 1) * (x - 1).
+Proof.
+  replace (x^2-1) with (x^2-1^2) by lia.
+  by rewrite mulnC -subn_sqr.
+Qed.
+
+Lemma ord_odd_pow_2 j n :
+  (2*j+1)^(2^n.+1) = 1 %[mod 2^(n.+3)].
+Proof.
+  induction n.
+  - rewrite expn1 expnS expn1.
+    replace ((2 * j + 1) * (2 * j + 1)) with (4*(j*(j+1)) + 1) by lia.
+    destruct (n_n1_even j).
+    rewrite H /=.
+    replace (2^3) with 8 by lia.
+    replace (4 * (x.*2)) with (8 * x) by lia.
+    by rewrite -modnDm modnMr modnDmr.
+  - rewrite expnS (mulnC _ (2^n.+1)) expnM (expnS _ n.+3).
+    rewrite modn_sub; [|lia].
+    rewrite subn_sqr_1.
+    rewrite modn_sub in IHn; [|lia].
+    assert (exists k,
+               2 * k = ((2 * j + 1) ^ 2 ^ n.+1 + 1)).
+    {
+      assert (~~ odd  ((2 * j + 1) ^ 2 ^ n.+1 + 1)).
+      {
+        rewrite oddD oddX oddD.
+        replace (2 *j) with (j.*2) by lia.
+        rewrite odd_double /=.
+        lia.
+      }
+      apply even_halfK in H.
+      exists (((2 * j + 1) ^ 2 ^ n.+1 + 1)./2).
+      rewrite -H.
+      lia.
+    }
+    destruct H.
+    rewrite -H -mulnA -muln_modr.
+    replace 0 with (2*0) at 7 by lia.
+    rewrite -muln_modr.
+    f_equal.
+    by rewrite -modnMm IHn modnMm muln0.
+ Qed.
+
+Lemma ord_3_pow_2 n:
+  3^(2^n) <> 1 %[mod 2^n.+3].
+Proof.
+  induction n.
+  - rewrite expn0 expn1.
+    admit.
+  - admit.
+    Admitted.
+ 
