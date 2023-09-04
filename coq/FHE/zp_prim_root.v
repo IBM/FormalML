@@ -492,12 +492,80 @@ Proof.
     by rewrite -modnMm IHn modnMm muln0.
  Qed.
 
-Lemma ord_3_pow_2 n:
-  3^(2^n) <> 1 %[mod 2^n.+3].
+Lemma add4_pow2_mod j n :
+  (j + 4)^(2 ^n) = j^(2^n) + (2^n.+2)*j^(2^n-1) %[mod 2^n.+3].
 Proof.
-  induction n.
-  - rewrite expn0 expn1.
-    admit.
-  - admit.
-    Admitted.
+
+  Admitted.
+
+Lemma ord_pow_2_odd j n :
+  odd j ->
+  j ^ (2^n) = 1 %[mod 2^n.+3] ->
+  (j + 4)^(2^n) <> 1 %[mod 2^n.+3].
+Proof.
+  intros.
+  rewrite add4_pow2_mod -modnDm H0 modnDm addnC modn_sub_iff; [|lia].
+  replace (2 ^ n.+2 * j ^ (2 ^ n - 1) + 1 - 1) with
+    (2 ^ n.+2 * j ^ (2 ^ n - 1)) by lia.
+  rewrite (expnS _ n.+2) (mulnC 2 _).
+  replace 0 with (2^n.+2 * 0) at 6 by lia.
+  rewrite -!muln_modr mod0n muln0.
+  apply /eqP.
+  rewrite muln_eq0.
+  apply /norP.
+  split; [lia |].
+  by rewrite modn2 oddX H orbT.
+Qed.
+
+Lemma ord_5_pow_2 n :
+  5^(2^n) <> 1 %[mod 2^n.+3].
+Proof.
+  replace (5) with (1 + 4) by lia.
+  apply ord_pow_2_odd; [lia|].
+  by rewrite exp1n.
+Qed.
+
+Lemma mod_mul_mul_0 a b m1 m2 :
+  a == 0 %[mod m1] && (b == 0 %[mod m2]) ->
+  a * b == 0 %[mod m1 * m2].
+Proof.
+  do 3 (rewrite eqn_mod_dvd; [|lia]).
+  rewrite !subn0.
+  intros.
+  move /andP in H.
+  destruct H.
+  by rewrite dvdn_mul.
+Qed.
+
+Lemma mod_mul_mul_0_alt a b m1 m2 :
+  a = 0 %[mod m1] /\ (b = 0 %[mod m2]) ->
+  a * b = 0 %[mod m1 * m2].
+Proof.
+  Admitted.
  
+  Lemma pow_3_5_pow_2 n :
+    3^(2^n.+1) = 5^(2^n.+1) %[mod 2^n.+4].
+  Proof.
+  induction n.
+  - lia.
+  - symmetry.
+    rewrite modn_sub_iff; [|rewrite leq_exp2r; lia].
+    rewrite expnS !(mulnC 2 _) !expnM subn_sqr.
+    symmetry in IHn.
+    rewrite modn_sub_iff in IHn; [|rewrite leq_exp2r; lia].
+    rewrite (expnS _ n.+4) (mulnC 2 _).
+    rewrite mod_mul_mul_0_alt; trivial.
+    split; trivial.
+    rewrite modn2 mod0n oddD !oddX.
+    lia.
+  Qed.
+
+  Lemma ord_3_pow_2 n :
+    3^(2^n) <> 1 %[mod 2^n.+3].
+  Proof.
+    destruct n.
+    - lia.
+    - rewrite pow_3_5_pow_2.
+      apply ord_5_pow_2.
+  Qed.
+
