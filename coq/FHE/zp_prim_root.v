@@ -495,7 +495,7 @@ Proof.
 Lemma add4_pow2_mod j n :
   (j + 4)^(2 ^n) = j^(2^n) + (2^n.+2)*j^(2^n-1) %[mod 2^n.+3].
 Proof.
-
+  rewrite (Pascal j 4 (2^n)).
   Admitted.
 
 Lemma ord_pow_2_odd j n :
