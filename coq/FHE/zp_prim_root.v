@@ -492,11 +492,30 @@ Proof.
     by rewrite -modnMm IHn modnMm muln0.
  Qed.
 
+Lemma iotaSn0 m n : n != 0 ->
+  iota m n = m :: iota m.+1 n.-1.
+Proof.
+  case: n => //=.
+Qed.
+
+Lemma index_iotaSn0 m n : m < n ->
+  index_iota m n = m :: index_iota m.+1 n.
+Proof.
+  rewrite /index_iota=> mltn.
+  rewrite iotaSn0; try lia.
+  do 2 f_equal.
+  lia.
+Qed.  
+
 Lemma add4_pow2_mod j n :
   (j + 4)^(2 ^n) = j^(2^n) + (2^n.+2)*j^(2^n-1) %[mod 2^n.+3].
 Proof.
-  rewrite (Pascal j 4 (2^n)).
-  Admitted.
+  rewrite (Pascal j 4 (2^n)) /=.
+  move: (@big_mkord _ 0 addn (2 ^ n).+1 predT (fun i => 'C(2 ^ n, i) * (j ^ (2 ^ n - i) * 4 ^ i)))=> /= <-.
+  rewrite index_iotaSn0 // big_cons.
+  rewrite index_iotaSn0 ?big_cons; [| lia].
+  rewrite expn0 expn1 muln1 subn0 bin0 bin1 mul1n addnA.
+Admitted.
 
 Lemma ord_pow_2_odd j n :
   odd j ->
