@@ -527,7 +527,11 @@ Proof.
     rewrite sum_nat_eq0.
     apply/forallP => x.
     apply/implyP => xbig.
-    admit.
+    assert (('C(2 ^ n, x) * 4 ^ x) %% 2 ^ n.+3 == 0)%N.
+    {
+      admit.
+    }
+    by rewrite (mulnC _ (4 ^ x)) mulnA -modnMm (eqP H) mul0n mod0n.
   }
   by rewrite -modnDmr -modnDmr H !mod0n addn0.
   
