@@ -531,9 +531,7 @@ Lemma mod_mul_mul_0 a b m1 m2 :
 Proof.
   do 3 (rewrite eqn_mod_dvd; [|lia]).
   rewrite !subn0.
-  intros.
-  move /andP in H.
-  destruct H.
+  move /andP=>[diva divb].
   by rewrite dvdn_mul.
 Qed.
 
@@ -541,7 +539,9 @@ Lemma mod_mul_mul_0_alt a b m1 m2 :
   a = 0 %[mod m1] /\ (b = 0 %[mod m2]) ->
   a * b = 0 %[mod m1 * m2].
 Proof.
-  Admitted.
+  move=>[/eqP? /eqP?].
+  by apply/eqP/mod_mul_mul_0/andP.
+Qed.
  
   Lemma pow_3_5_pow_2 n :
     3^(2^n.+1) = 5^(2^n.+1) %[mod 2^n.+4].
