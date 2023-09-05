@@ -691,7 +691,7 @@ End rotation.
     by rewrite -conj_pow_nth_root.
   Qed.
     
-  From mathcomp Require Import ssrnat.
+  From mathcomp Require Import ssrnat div.
    Lemma poly_odd_pow_prim_roots_perm_eq (j n : nat) (p : {poly R[i]}):
      let l := mkseq (fun i => nth_root (2 * i + 1) (2 ^ (S n))) (2^n) in
      perm_eq (map (fun x => p.[x]) l)
@@ -709,6 +709,52 @@ End rotation.
      apply odd_pow_prim_roots_perm_eq.
    Qed.
 
+   Lemma nth_root_pow_trans n i k :
+     exists j,
+       (nth_root (2 * i + 1) (2 ^ (S n))) ^+ (2 * j + 1) =
+         nth_root (2 * k + 1) (2 ^ (S n)).
+   Proof.
+     assert (exists j,
+                (2 * i + 1) * (2 * j + 1) = 2 * k + 1 %[mod 2^(S n)]).
+     {
+       generalize (pow2_odd_inv (2 * i + 1) n); intros.
+       destruct H; try lia.
+       generalize (pow2_odd_inv_aux i x n); intros.
+       rewrite (mulnC x _) in H.
+       rewrite modulo_modn in e.
+       specialize (H e).
+       destruct H.
+       rewrite H in e.
+       exists (2 * x0 * k + x0 + k)%N.
+       replace (2 * (2 * x0 * k + x0 + k) + 1)%N with
+         ((2 * x0 + 1) * (2 * k + 1))%N by lia.
+       rewrite mulnA.
+       assert (1 %% 2^n.+1 = 1)%N.
+       {
+         rewrite modn_small; lia.
+       }
+       rewrite -{6}H0 in e.
+       apply (f_equal (fun z => (z * (2 * k + 1) %% 2^ n.+1)%N)) in e.
+       by rewrite H0 mul1n modnMml in e.
+     }
+     destruct H.
+     exists x.
+     rewrite pow_nth_root'; try lia.
+     apply nth_root_eq'; try lia.
+     by rewrite mulnC !modulo_modn.
+   Qed.
+
+   Lemma poly_odd_pow_prim_roots_perm_trans (n : nat) (p : {poly R[i]}):
+     forall i k,
+     exists j,
+       (poly_shift (2*j+1) p).[nth_root (2 * i + 1) (2 ^ (S n))] =
+         p.[nth_root (2 * k + 1) (2 ^ (S n))].
+   Proof.
+     intros.
+     destruct (nth_root_pow_trans n i k).
+     exists x.
+     by rewrite -poly_shift_eval H.
+   Qed.
 
 
 
