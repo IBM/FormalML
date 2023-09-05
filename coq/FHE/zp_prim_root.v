@@ -515,6 +515,14 @@ Proof.
   rewrite index_iotaSn0 // big_cons.
   rewrite index_iotaSn0 ?big_cons; [| lia].
   rewrite expn0 expn1 muln1 subn0 bin0 bin1 mul1n addnA.
+  rewrite (mulnC _ 4) mulnA.
+  replace (2^n*4) with (2^n.+2) by (rewrite !expnS; lia).
+  assert (\sum_(2 <= j0 < (2 ^ n).+1) 'C(2 ^ n, j0) * (j ^ (2 ^ n - j0) * 4 ^ j0) = 0 %[mod 2^n.+3]).
+  {
+    admit.
+  }
+  by rewrite -modnDmr -modnDmr H !mod0n addn0.
+  
 Admitted.
 
 Lemma ord_pow_2_odd j n :
