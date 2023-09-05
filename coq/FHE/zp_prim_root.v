@@ -519,6 +519,14 @@ Proof.
   replace (2^n*4) with (2^n.+2) by (rewrite !expnS; lia).
   assert (\sum_(2 <= j0 < (2 ^ n).+1) 'C(2 ^ n, j0) * (j ^ (2 ^ n - j0) * 4 ^ j0) = 0 %[mod 2^n.+3]).
   {
+    rewrite -modn_summ.
+    rewrite (eqP (_ : \sum_( _ <= _ < _ ) _ == 0)) //.
+    rewrite (big_nat_widenl _ 0) //.
+    move: (@big_mkord _ 0 addn  (2 ^ n).+1 (fun i => (andb true (leq (S (S O)) i))) (fun i => ('C(2 ^ n, i) * (j ^ (2 ^ n - i) * 4 ^ i))
+                                                               %% 2 ^ n.+3)) => /= ->.
+    rewrite sum_nat_eq0.
+    apply/forallP => x.
+    apply/implyP => xbig.
     admit.
   }
   by rewrite -modnDmr -modnDmr H !mod0n addn0.
