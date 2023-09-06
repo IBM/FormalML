@@ -293,17 +293,6 @@ Section chinese.
         simpl.
         rewrite big_cons.
         by apply modn_muln.
-(*        
-        rewrite chinese_remainder.
-        * by move/andP => [-> _].
-        * subst l3.
-          rewrite (pairwise_perm_symm (l2:=[seq i.2 | i <- p :: (l1 ++ l2)]))/= in pc'.
-          -- move/andP: pc' => [allcp _].
-             by apply all_coprime_prod.
-          -- move=> x y.
-             by rewrite coprime_sym.
-          -- by rewrite <- Permutation_middle.
-*)
   Qed.
 
   Lemma chinese_remainder_list  (l : list (nat * nat)) :
@@ -508,6 +497,7 @@ Proof.
 Qed.
 
 
+(*
 Lemma add4_pow2_mod j n :
   (j + 4)^(2 ^n) = j^(2^n) + (2^n.+2)*j^(2^n-1) %[mod 2^n.+3].
 Proof.
@@ -556,16 +546,7 @@ Proof.
   split; [lia |].
   by rewrite modn2 oddX H orbT.
 Qed.
-
-Lemma ord_5_pow_2 n :
-  5^(2^n) <> 1 %[mod 2^n.+3].
-Proof.
-  replace (5) with (1 + 4) by lia.
-  apply ord_pow_2_odd; [lia|].
-  by rewrite exp1n.
-Qed.
-
-
+*)
 
 (* https://math.stackexchange.com/questions/459815/the-structure-of-the-group-mathbbz-2n-mathbbz *)
 
@@ -642,7 +623,7 @@ Proof.
     by rewrite -modnDm H0 mod0n addn0 modn_mod (expnS _ (n.+2)).
  Qed.
 
-Lemma ord_5_pow_2_alt' n :
+Lemma ord_5_pow_2 n :
   5^(2^n) <> 1 %[mod 2^n.+3].
 Proof.
   rewrite ord_5_pow_2_alt.
