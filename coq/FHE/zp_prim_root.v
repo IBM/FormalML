@@ -597,7 +597,15 @@ Proof.
     apply mod_pow2_sqr_aux; lia.
  Qed.
 
-Lemma ord_5_pow_2_alt n :
+  Lemma modn_muln (x y b1 b2:nat) :
+    x == y %[mod b1 * b2] -> x == y %[mod b1].
+  Proof.
+    wlog le_yx : x y / y <= x; last by (rewrite !eqn_mod_dvd //; apply mul_dvdn_l).
+    by have [?|/ltnW ?] := leqP y x; last rewrite !(eq_sym (x %% _)%N); apply.
+  Qed.
+
+
+Lemma ord_5_pow_2 n :
   5 ^ (2 ^ n) = 1 + 2^n.+2 %[mod 2^n.+3].
 Proof.
   induction n.
@@ -623,10 +631,10 @@ Proof.
     by rewrite -modnDm H0 mod0n addn0 modn_mod (expnS _ (n.+2)).
  Qed.
 
-Lemma ord_5_pow_2 n :
+Lemma ord_5_pow_2_neq n :
   5^(2^n) <> 1 %[mod 2^n.+3].
 Proof.
-  rewrite ord_5_pow_2_alt.
+  rewrite ord_5_pow_2.
   rewrite modn_sub_iff; try lia.
   replace (1 + 2 ^ n.+2 - 1) with (2^n.+2) by lia.
   rewrite !modn_small; try lia.
@@ -651,12 +659,12 @@ Qed.
     lia.
   Qed.
 
-  Lemma ord_3_pow_2 n :
+  Lemma ord_3_pow_2_neq n :
     3^(2^n) <> 1 %[mod 2^n.+3].
   Proof.
     destruct n.
     - lia.
     - rewrite pow_3_5_pow_2.
-      apply ord_5_pow_2.
+      apply ord_5_pow_2_neq.
   Qed.
 
