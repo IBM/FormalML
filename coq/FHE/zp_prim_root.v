@@ -647,6 +647,7 @@ Lemma ord_pow_gcd b e1 e2 n :
   b^e2 = 1 %[mod n] ->
   b^(gcdn e1 e2) = 1 %[mod n].
 Proof.
+  Search gcdn.
   Admitted.
 
 Lemma ord_5_pow_2_neq_m1 n :
@@ -680,10 +681,6 @@ Proof.
   clear H1 H2 H0 H3 H4.
   rewrite modn_small in H; [|rewrite !expnS; lia].
   rewrite modn_small in H; [|rewrite !expnS; lia].
-  rewrite (expnS _ n.+2) in H.
-  apply (f_equal (fun z => z + 1 - 2^n.+2)) in H.
-  replace  (1 + 2 ^ n.+2 + 1 - 2 ^ n.+2) with 2 in H by lia.
-  replace (2 * 2^n.+2 -1 + 1 - 2^n.+2) with (2^n.+2) in H by lia.
   rewrite !expnS in H; lia.
  Admitted.           
 
