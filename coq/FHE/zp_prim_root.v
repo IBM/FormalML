@@ -642,6 +642,51 @@ Proof.
   lia.
 Qed.
 
+Lemma ord_pow_gcd b e1 e2 n :
+  b^e1 = 1 %[mod n] ->
+  b^e2 = 1 %[mod n] ->
+  b^(gcdn e1 e2) = 1 %[mod n].
+Proof.
+  Admitted.
+
+Lemma ord_5_pow_2_neq_m1 n :
+  not (exists k,
+        5^k = 2^n.+3-1 %[mod 2^n.+3]).
+Proof.
+  unfold not; intros.
+  destruct H.
+  assert ((5 ^ x)^2 = 1 %[mod 2^n.+3]).
+  {
+    rewrite modn_sub_iff.
+    - rewrite subn_sqr_1.
+      rewrite -modnMm -(modnDm (5^x) _) H modnDm.
+      replace (2^n.+3-1+1) with (2^n.+3) by lia.
+      by rewrite modnn mul0n mod0n.
+    - rewrite sqrn_gt0.
+      rewrite expn_gt0.
+      lia.
+  }
+  generalize (ord_5_pow_2 n); intros.
+  generalize (ord_odd_pow_2 2 n); intros.
+  replace (2 * 2 + 1) with 5 in H2 by lia.
+  rewrite -expnM in H0.
+  generalize (ord_pow_gcd H2 H0); intros.
+  assert (x = 2^n).
+  {
+    admit.
+  }
+  rewrite H4 in H.
+  rewrite H1 in H.
+  clear H1 H2 H0 H3 H4.
+  rewrite modn_small in H; [|rewrite !expnS; lia].
+  rewrite modn_small in H; [|rewrite !expnS; lia].
+  rewrite (expnS _ n.+2) in H.
+  apply (f_equal (fun z => z + 1 - 2^n.+2)) in H.
+  replace  (1 + 2 ^ n.+2 + 1 - 2 ^ n.+2) with 2 in H by lia.
+  replace (2 * 2^n.+2 -1 + 1 - 2^n.+2) with (2^n.+2) in H by lia.
+  rewrite !expnS in H; lia.
+ Admitted.           
+
   Lemma pow_3_5_pow_2 n :
     3^(2^n.+1) = 5^(2^n.+1) %[mod 2^n.+4].
   Proof.
