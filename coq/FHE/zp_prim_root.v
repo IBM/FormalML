@@ -505,7 +505,8 @@ Proof.
   rewrite iotaSn0; try lia.
   do 2 f_equal.
   lia.
-Qed.  
+Qed.
+
 
 Lemma add4_pow2_mod j n :
   (j + 4)^(2 ^n) = j^(2^n) + (2^n.+2)*j^(2^n-1) %[mod 2^n.+3].
@@ -564,6 +565,11 @@ Proof.
   by rewrite exp1n.
 Qed.
 
+
+
+(* https://math.stackexchange.com/questions/459815/the-structure-of-the-group-mathbbz-2n-mathbbz *)
+
+
 Lemma mod_mul_mul_0 a b m1 m2 :
   a == 0 %[mod m1] && (b == 0 %[mod m2]) ->
   a * b == 0 %[mod m1 * m2].
@@ -582,6 +588,71 @@ Proof.
   by apply/eqP/mod_mul_mul_0/andP.
 Qed.
  
+Lemma mod_pow2_sqr_aux a b n :
+  b <= a ->
+  a = b %[mod 2^n.+1] ->
+  a^2 = b^2 %[mod 2^n.+2].
+Proof.
+  intros.
+  rewrite modn_sub_iff // in H0.
+  rewrite modn_sub_iff.
+  - rewrite subn_sqr.
+    rewrite expnS mulnC.
+    apply mod_mul_mul_0_alt.
+    split; trivial.
+    rewrite -modn_sub_iff // expnS in H0.
+    lia.
+  - by rewrite leq_sqr.
+ Qed.
+
+Lemma mod_pow2_sqr a b n :
+  a = b %[mod 2^n.+1] ->
+  a^2 = b^2 %[mod 2^n.+2].
+Proof.
+  case (boolP (b <= a)); intros.
+  - by apply mod_pow2_sqr_aux.
+  - symmetry.
+    symmetry in H.
+    apply mod_pow2_sqr_aux; lia.
+ Qed.
+
+Lemma ord_5_pow_2_alt n :
+  5 ^ (2 ^ n) = 1 + 2^n.+2 %[mod 2^n.+3].
+Proof.
+  induction n.
+  - lia.
+  - rewrite expnS mulnC expnM.
+    apply mod_pow2_sqr in IHn.
+    rewrite IHn.
+    generalize (expnD (1 + 2^n.+2) 1 1); intros.
+    rewrite H !expn1.
+    replace  ((1 + 2 ^ n.+2) * (1 + 2 ^ n.+2)) with
+      (1 + 2 * (2^n.+2) + (2^n.+2)*(2^n.+2)) by lia.
+    rewrite -expnD.
+    assert (2^(n.+2 + n.+2) = 0 %[mod 2^n.+4]).
+    {
+      replace (n.+2 + n.+2) with ((2 * n).+4) by lia.
+      rewrite !expnS -!muln_modr.
+      replace (2^(2*n) %% 2^n) with 0.
+      - rewrite muln0 mod0n //.
+      - rewrite mulnC expnM.
+        generalize (expnD (2 ^ n) 1 1); intros.
+        by rewrite H0 !expn1 -modnMm modnn muln0 mod0n.
+    }
+    by rewrite -modnDm H0 mod0n addn0 modn_mod (expnS _ (n.+2)).
+ Qed.
+
+Lemma ord_5_pow_2_alt' n :
+  5^(2^n) <> 1 %[mod 2^n.+3].
+Proof.
+  rewrite ord_5_pow_2_alt.
+  rewrite modn_sub_iff; try lia.
+  replace (1 + 2 ^ n.+2 - 1) with (2^n.+2) by lia.
+  rewrite !modn_small; try lia.
+  rewrite (expnS _ (n.+2)).
+  lia.
+Qed.
+
   Lemma pow_3_5_pow_2 n :
     3^(2^n.+1) = 5^(2^n.+1) %[mod 2^n.+4].
   Proof.
