@@ -643,12 +643,23 @@ Proof.
 Qed.
 
 Lemma ord_pow_gcd b e1 e2 n :
+  1 < n ->
   b^e1 = 1 %[mod n] ->
   b^e2 = 1 %[mod n] ->
   b^(gcdn e1 e2) = 1 %[mod n].
 Proof.
-  Search gcdn.
-  Admitted.
+  intros.
+  destruct e2.
+  - by rewrite gcdn0.
+  - assert (0 < e2.+1) by lia.
+    destruct (egcdnP e1 H2).
+    apply (f_equal (fun z => z^kn %% n)) in H0.
+    rewrite !modnXm -expnM mulnC exp1n in H0.
+    apply (f_equal (fun z => z^km %% n)) in H1.
+    rewrite !modnXm -expnM mulnC e expnD exp1n -modnMm H0 in H1.
+    rewrite {1}(modn_small H) mul1n modn_mod in H1.
+    by rewrite gcdnC.
+ Qed.
 
 Lemma ord_5_pow_2_neq_m1 n :
   not (exists k,
