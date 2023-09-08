@@ -682,14 +682,19 @@ Proof.
   generalize (ord_odd_pow_2 2 n); intros.
   replace (2 * 2 + 1) with 5 in H2 by lia.
   rewrite -expnM in H0.
-  generalize (ord_pow_gcd H2 H0); intros.
   assert (x = 2^n).
   {
+    assert (1 < 2^n.+3).
+    {
+      clear H H1 H2 H0.
+      rewrite !expnS; lia.
+    }
+    generalize (ord_pow_gcd H3 H2 H0); intros.
     admit.
   }
-  rewrite H4 in H.
+  rewrite H3 in H.
   rewrite H1 in H.
-  clear H1 H2 H0 H3 H4.
+  clear H1 H2 H0 H3.
   rewrite modn_small in H; [|rewrite !expnS; lia].
   rewrite modn_small in H; [|rewrite !expnS; lia].
   rewrite !expnS in H; lia.
