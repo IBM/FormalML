@@ -2445,16 +2445,15 @@ Section unity.
   Variable (T : comRingType).
   Variable (z : T).
 
-  Lemma two_pow_prim_root (n:nat) :
-    (one T) <> -(one T) ->
-    z ^+ (2^n) = -1 ->
+  Lemma two_pow_prim_root_alt (n:nat) :
+    z ^+ (2^n) <> 1 ->
+    z ^+ (2^n.+1) = 1 ->
     primitive_root_of_unity (2^(n.+1)) z.
   Proof.
-    intros onem1 zpowm1.
+    intros zpow_n1 zpow1.
     assert (root_of_unity (2^(n.+1)) z).
     {
-      apply /unity_rootP.
-      by rewrite expnSr exprM zpowm1 expr2 mulrNN mulr1.
+      by apply /unity_rootP.
     }
     destruct (@prim_order_exists _ (2^(n.+1)) z).
     - destruct (pow2_S (n.+1)).
@@ -2480,11 +2479,59 @@ Section unity.
           f_equal.
           lia.
         }
-        rewrite HH exprM (prim_expr_order i) Theory.expr1n in zpowm1.
-        tauto.
+        by rewrite HH exprM (prim_expr_order i) Theory.expr1n in zpow_n1.
       }
       by rewrite HH in i.
   Qed.
+
+  Lemma two_pow_prim_root (n:nat) :
+    -(one T) <> (one T) ->
+    z ^+ (2^n) = -1 ->
+    primitive_root_of_unity (2^(n.+1)) z.
+  Proof.
+    intros onem1 zpowm1.
+    apply two_pow_prim_root_alt.
+    - by rewrite -zpowm1 in onem1.
+    - by rewrite expnSr exprM zpowm1 expr2 mulrNN mulr1.
+  Qed.
+
+  Lemma two_pow_prim_root_not_m1 (n : nat) :
+    primitive_root_of_unity (2^(n.+1)) z ->
+    -(one T) <> (one T) ->
+    z ^+ (2^n) <> -1 ->
+    not (exists k, z^+k = -1).
+  Proof.
+    intros.
+    unfold not; intros.
+    destruct H2.
+    generalize H2; intros.
+    apply (f_equal (fun y => y^+2)) in H2.
+    rewrite -exprM in H2.
+    replace (-(one T)) with ((-(one T))  ^+ 1) in H2 by (rewrite expr1 //).
+    rewrite sqrr_sign in H2.
+    unfold primitive_root_of_unity in H.
+    move /andP in H.
+    destruct H.
+    assert ((x * 2).-unity_root z).
+    {
+      by apply /unity_rootP.
+    }
+    destruct x.
+    - rewrite expr0 in H3.
+      by rewrite -H3 in H0.
+    - replace (x.+1 * 2)%N with ((2*x).+2)%N in H5 by lia.
+      assert (((2 * x).+2)%N == (2^n.+1)%N).
+      {
+        admit.
+      }
+      move /eqP in H6.
+      rewrite expnS in H6.
+      replace ((2*x).+2)%N with (2 *x.+1)%N in H6 by lia.
+      assert (x.+1 = 2^n)%N by lia.
+      rewrite H7 in H3.
+      rewrite H3 in H1.
+      tauto.
+   Admitted.
 
   Lemma odd_pow_prim_root (n:nat) :
     z ^+ (2^n) = -1 ->
