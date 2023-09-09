@@ -2441,6 +2441,28 @@ Proof.
   by rewrite Cmod_mul pmat_normc_1 mul1r.
  Qed.
 
+  Lemma mul_dvdn_l (x d1 d2:nat) :
+    (d1 * d2 %| x)%N -> (d1 %| x)%N.
+   Proof.
+     eapply dvdn_trans.
+     apply dvdn_mulr.
+     by apply dvdnn.
+   Qed.
+
+  Lemma mul_dvdn_r (x d1 d2:nat) :
+    (d1 * d2 %| x)%N -> (d2 %| x)%N.
+  Proof.
+    rewrite mulnC.
+    by apply mul_dvdn_l.
+  Qed.
+
+  Lemma modn_muln (x y b1 b2:nat) :
+    x == y %[mod b1 * b2] -> x == y %[mod b1].
+  Proof.
+    wlog le_yx : x y / y <= x; last by (rewrite !eqn_mod_dvd //; apply mul_dvdn_l).
+    by have [?|/ltnW ?] := leqP y x; last rewrite !(eq_sym (x %% _)%N); apply.
+  Qed.
+
 Section unity.
   Variable (T : comRingType).
   Variable (z : T).
@@ -2495,43 +2517,119 @@ Section unity.
     - by rewrite expnSr exprM zpowm1 expr2 mulrNN mulr1.
   Qed.
 
-  Lemma two_pow_prim_root_not_m1 (n : nat) :
-    primitive_root_of_unity (2^(n.+1)) z ->
+  Lemma unity_gcd e1 e2 :
+    z^+e1 = 1  ->
+    z^+e2 = 1  ->
+    z^+(gcdn e1 e2) = 1.
+  Proof.
+  intros.
+  destruct e2.
+  - by rewrite gcdn0.
+  - assert (0 < e2.+1) by lia.
+    destruct (egcdnP e1 H1).
+    apply (f_equal (fun y => y^+kn)) in H.
+    rewrite -exprM mulnC expr1n in H.
+    apply (f_equal (fun z => z^+km)) in H0.
+    by rewrite -exprM mulnC e exprD expr1n H mul1r gcdnC in H0.
+ Qed.
+
+Lemma modn_sub i j m :
+  i >= j ->
+  (i == j %[mod m]) = (i - j == 0 %[mod m]).
+Proof.
+  move/eqn_mod_dvd->.
+  by rewrite mod0n.
+Qed.
+
+Lemma modn_sub_iff i j m :
+  i >= j ->
+  i = j %[mod m] <-> i - j = 0 %[mod m].
+Proof.
+  move/modn_sub=>eqq.
+  split; move/eqP
+  ; [rewrite eqq | rewrite -eqq]
+  ; by move/eqP.
+Qed.
+
+Lemma prim_root_inv (k n : nat) :
+  primitive_root_of_unity (n.+1) z ->
+  k < n.+1 ->
+  (z^+k) * (z ^+ (n.+1 - k)) = 1.
+Proof.
+  intros.
+  rewrite -exprD.
+  replace (k + (n.+1-k))%N with (n.+1)%N by lia.
+  by apply prim_expr_order.
+Qed.
+
+Lemma prim_root_inv' (k n : nat) :
+  n != 0%N ->
+  primitive_root_of_unity n z ->
+  k < n ->
+  (z^+k) * (z ^+ (n - k)) = 1.
+Proof.
+  intros.
+  rewrite -exprD.
+  replace (k + (n-k))%N with (n)%N by lia.
+  by apply prim_expr_order.
+Qed.
+
+Lemma prim_root_pow_unique (k1 k2 n : nat) :
+  primitive_root_of_unity n z ->
+  z ^+ k1 = z^+ k2 <-> k1 = k2 %[mod n].
+Proof.
+  intros.
+  generalize (eq_prim_root_expr H k1 k2); intros.
+  split; intros.
+  - move /eqP in H1.
+    rewrite H0 in H1.
+    apply (eqP H1).
+  - move /eqP in H1.
+    rewrite -H0 in H1.  
+    apply (eqP H1).
+Qed.
+  
+Lemma two_pow_prim_root_inv (k n : nat) :
+  primitive_root_of_unity (2^n.+1) z ->
+  k < 2^n.+1 ->
+  (z^+k) * (z ^+ (2^n.+1 - k)) = 1.
+Proof.
+  intros.
+  apply prim_root_inv'; lia.
+Qed.
+
+Lemma prim_root_pow_sqr (k n : nat) :
+  n != 0%N ->
+  primitive_root_of_unity (2*n)%N z ->
+  (z^+k)^+2 = 1 ->
+  k = 0 %[mod n].
+Proof.
+  intros.
+  rewrite -exprM mulnC in H1.
+  generalize (prim_root_pow_unique (2*k) 0%N (2*n)%N H0); intros.
+  rewrite expr0 in H2.
+  assert (0 < 2*n) by lia.
+  rewrite H2 -muln_modr (modn_small H3) in H1.
+  assert (k %% n = 0)%N by lia.
+  by rewrite H4 mod0n.
+Qed.
+
+Lemma two_pow_prim_root_m1 (k n : nat) :
+    primitive_root_of_unity (2^n.+1) z ->
     -(one T) <> (one T) ->
-    z ^+ (2^n) <> -1 ->
-    not (exists k, z^+k = -1).
+    z^+k = -1 ->
+    k = 2^n %[mod 2^n.+1].
   Proof.
     intros.
-    unfold not; intros.
-    destruct H2.
-    generalize H2; intros.
-    apply (f_equal (fun y => y^+2)) in H2.
-    rewrite -exprM in H2.
-    replace (-(one T)) with ((-(one T))  ^+ 1) in H2 by (rewrite expr1 //).
-    rewrite sqrr_sign in H2.
-    unfold primitive_root_of_unity in H.
-    move /andP in H.
-    destruct H.
-    assert ((x * 2).-unity_root z).
+    assert (2^n != 0)%N by lia.
+    rewrite expnS in H.
+    assert (z ^+ k ^+ 2 = 1).
     {
-      by apply /unity_rootP.
+      rewrite H1.
+      admit.
     }
-    destruct x.
-    - rewrite expr0 in H3.
-      by rewrite -H3 in H0.
-    - replace (x.+1 * 2)%N with ((2*x).+2)%N in H5 by lia.
-      assert (((2 * x).+2)%N == (2^n.+1)%N).
-      {
-        admit.
-      }
-      move /eqP in H6.
-      rewrite expnS in H6.
-      replace ((2*x).+2)%N with (2 *x.+1)%N in H6 by lia.
-      assert (x.+1 = 2^n)%N by lia.
-      rewrite H7 in H3.
-      rewrite H3 in H1.
-      tauto.
-   Admitted.
+    generalize (prim_root_pow_sqr k (2^n) H2 H H3); intros.
+    Admitted.
 
   Lemma odd_pow_prim_root (n:nat) :
     z ^+ (2^n) = -1 ->
@@ -2699,27 +2797,6 @@ Section unity.
     by rewrite H1 in H0; lia.
   Qed.
 
-  Lemma mul_dvdn_l (x d1 d2:nat) :
-    (d1 * d2 %| x)%N -> (d1 %| x)%N.
-   Proof.
-     eapply dvdn_trans.
-     apply dvdn_mulr.
-     by apply dvdnn.
-   Qed.
-
-  Lemma mul_dvdn_r (x d1 d2:nat) :
-    (d1 * d2 %| x)%N -> (d2 %| x)%N.
-  Proof.
-    rewrite mulnC.
-    by apply mul_dvdn_l.
-  Qed.
-
-  Lemma modn_muln (x y b1 b2:nat) :
-    x == y %[mod b1 * b2] -> x == y %[mod b1].
-  Proof.
-    wlog le_yx : x y / y <= x; last by (rewrite !eqn_mod_dvd //; apply mul_dvdn_l).
-    by have [?|/ltnW ?] := leqP y x; last rewrite !(eq_sym (x %% _)%N); apply.
-  Qed.
 
   Lemma modn2_odd (x : nat) :
     odd x <-> (x %% 2 = 1)%N.

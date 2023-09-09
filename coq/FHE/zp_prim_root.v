@@ -597,14 +597,6 @@ Proof.
     apply mod_pow2_sqr_aux; lia.
  Qed.
 
-  Lemma modn_muln (x y b1 b2:nat) :
-    x == y %[mod b1 * b2] -> x == y %[mod b1].
-  Proof.
-    wlog le_yx : x y / y <= x; last by (rewrite !eqn_mod_dvd //; apply mul_dvdn_l).
-    by have [?|/ltnW ?] := leqP y x; last rewrite !(eq_sym (x %% _)%N); apply.
-  Qed.
-
-
 Lemma ord_5_pow_2 n :
   5 ^ (2 ^ n) = 1 + 2^n.+2 %[mod 2^n.+3].
 Proof.
@@ -658,6 +650,67 @@ Proof.
     by rewrite !modnXm -expnM mulnC e expnD exp1n -modnMm H modnMm mul1n gcdnC in H0.
  Qed.
 
+From mathcomp Require Import poly zmodp.
+Local Open Scope ring_scope.
+
+Lemma ord_pow2' (n : nat) (b : 'Z_(2^n.+3)):
+  b^+(2^n.+1) = 1 :> 'Z_(2^n.+3) ->
+  b^+(2^n) <> 1 :> 'Z_(2^n.+3) ->
+  (2^(S n)).-primitive_root b.
+Proof.
+  Admitted.  
+
+Lemma ord_pow2 b x n :
+  b^(2^n.+1) = 1 %[mod 2^n.+3] ->
+  b^x = 1 %[mod 2^n.+3] ->
+  b^(2^n) <> 1 %[mod 2^n.+3] ->
+  2^n.+1 %| x.
+Proof.
+  intros.
+  generalize (ord_pow_gcd H H0); intros.
+  assert (gcdn (2^n.+1) x = 2^n.+1).
+  {
+    
+Admitted.
+
+Lemma ord_pow2_alt b x n :
+  b^(2^n.+1) = 1 %[mod 2^n.+3] ->
+  b^x = 2^n.+3-1 %[mod 2^n.+3] ->
+  b^(2^n) <> 1 %[mod 2^n.+3] ->
+  x = 2^n.
+Proof.
+  intros.
+  assert (0 < 2^n.+1).
+  {
+    clear H H0 H1.
+    rewrite !expnS; lia.
+  }
+  assert (0 < b).
+  {
+    destruct b.
+    - rewrite exp0n // in H.
+      clear H0 H1.
+      rewrite !modn_small in H; try lia.
+      rewrite !expnS; lia.
+    - clear H0 H1; lia.
+  }
+  assert (b^(2*x) = 1 %[mod 2^n.+3]).
+  {
+    rewrite mulnC expnM modn_sub_iff.
+    - rewrite subn_sqr_1 -modnMm -(modnDm (b^x) _) H0 modnDm.
+      clear H H0 H1.
+      replace (2^n.+3-1+1)%N with (2^n.+3)%N by lia.
+      by rewrite modnn mul0n mod0n.
+    - rewrite sqrn_gt0 expn_gt0.
+      clear H H0 H1.
+      lia.
+  }
+  generalize (ord_pow2 H H4 H1); intros.
+  rewrite expnS in H5.
+  
+  
+Admitted.  
+
 Lemma ord_5_pow_2_neq_m1 n :
   not (exists k,
         5^k = 2^n.+3-1 %[mod 2^n.+3]).
@@ -667,17 +720,15 @@ Proof.
   assert ((5 ^ x)^2 = 1 %[mod 2^n.+3]).
   {
     rewrite modn_sub_iff.
-    - rewrite subn_sqr_1.
-      rewrite -modnMm -(modnDm (5^x) _) H modnDm.
-      replace (2^n.+3-1+1) with (2^n.+3) by lia.
+    - rewrite subn_sqr_1 -modnMm  -(modnDm (5^x) _) H modnDm.
+      replace (2^n.+3-1+1)%N with (2^n.+3)%N by lia.
       by rewrite modnn mul0n mod0n.
-    - rewrite sqrn_gt0.
-      rewrite expn_gt0.
+    - rewrite sqrn_gt0 expn_gt0.
       lia.
   }
   generalize (ord_5_pow_2 n); intros.
   generalize (ord_odd_pow_2 2 n); intros.
-  replace (2 * 2 + 1) with 5 in H2 by lia.
+  replace (2 * 2 + 1)%N with 5%N in H2 by lia.
   rewrite -expnM in H0.
   assert (x = 2^n).
   {
@@ -699,10 +750,10 @@ Proof.
   - lia.
   - symmetry.
     rewrite modn_sub_iff; [|rewrite leq_exp2r; lia].
-    rewrite expnS !(mulnC 2 _) !expnM subn_sqr.
+    rewrite expnS !(mulnC 2%N _) !expnM subn_sqr.
     symmetry in IHn.
     rewrite modn_sub_iff in IHn; [|rewrite leq_exp2r; lia].
-    rewrite (expnS _ n.+4) (mulnC 2 _).
+    rewrite (expnS _ n.+4) (mulnC 2%N _).
     rewrite mod_mul_mul_0_alt; trivial.
     split; trivial.
     rewrite modn2 mod0n oddD !oddX.
