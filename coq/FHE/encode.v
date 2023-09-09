@@ -2625,10 +2625,17 @@ Lemma two_pow_prim_root_m1 (k n : nat) :
     rewrite expnS in H.
     assert (z ^+ k ^+ 2 = 1).
     {
-      rewrite H1.
-      admit.
+      by rewrite H1 expr2 mulrNN mulr1.
     }
     generalize (prim_root_pow_sqr k (2^n) H2 H H3); intros.
+    assert (k <> 0 %[mod 2^n.+1]).
+    {
+      unfold not; intros.
+      rewrite -expnS in H.
+      generalize (prim_root_pow_unique k 0 (2^n.+1) H); intros.
+      rewrite expr0 H1 in H6.
+      by rewrite -H6 in H5.
+    }
     Admitted.
 
   Lemma odd_pow_prim_root (n:nat) :
