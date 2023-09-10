@@ -2658,13 +2658,14 @@ Lemma two_pow_prim_root_m1 (k n : nat) :
         assert (1 < 2) by lia.
         rewrite (modn_small H3).
         rewrite H1 expnS -muln_modl mod0n in H5.
-        assert ((k %/ 2 ^ n) %% 2 <> 0)%N by lia.
-        
-        admit.
+        have: ((k %/ 2 ^ n) %% 2 <> 0)%N by lia.
+        have:  ((k %/ 2 ^ n) %% 2)%N < 2 by by apply ltn_pmod.
+        case: ((k %/ 2 ^ n) %% 2)%nat; [lia |].
+        case: ((k %/ 2 ^ n) %% 2)%nat; lia.
       }
       by rewrite H3.
     - rewrite mul1n //.
-    Admitted.
+  Qed.
 
   Lemma odd_pow_prim_root (n:nat) :
     z ^+ (2^n) = -1 ->
