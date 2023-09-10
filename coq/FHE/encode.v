@@ -2660,7 +2660,7 @@ Lemma two_pow_prim_root_m1 (k n : nat) :
         rewrite H1 expnS -muln_modl mod0n in H5.
         have: ((k %/ 2 ^ n) %% 2 <> 0)%N by lia.
         have:  ((k %/ 2 ^ n) %% 2)%N < 2 by by apply ltn_pmod.
-        case: ((k %/ 2 ^ n) %% 2)%nat; [| case]; lia.
+        lia.
       }
       by rewrite H3.
     - rewrite mul1n //.
