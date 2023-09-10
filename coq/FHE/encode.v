@@ -2636,6 +2636,34 @@ Lemma two_pow_prim_root_m1 (k n : nat) :
       rewrite expr0 H1 in H6.
       by rewrite -H6 in H5.
     }
+    clear H H0 H1 H3 z T.
+    assert (0 < 2^n)%N by lia.
+    rewrite (modn_small H) in H4.
+    move /eqP in H4.
+    generalize (dvdn_eq (2^n) k); intros.
+    unfold dvdn in H0.
+    rewrite H4 in H0.
+    assert (k = (k %/ 2^n) * (2^n))%N.
+    {
+      symmetry.
+      apply /eqP.
+      by rewrite -H0.
+    }
+    rewrite H1 expnS -muln_modl.
+    replace  (2 ^ n %% (2 * 2 ^ n))%N with
+       ((1 * 2 ^ n) %% (2 * 2 ^ n))%N.
+    - rewrite -muln_modl.
+      assert ((k %/ 2 ^ n) %% 2 = 1 %% 2)%N.
+      {
+        assert (1 < 2) by lia.
+        rewrite (modn_small H3).
+        rewrite H1 expnS -muln_modl mod0n in H5.
+        assert ((k %/ 2 ^ n) %% 2 <> 0)%N by lia.
+        
+        admit.
+      }
+      by rewrite H3.
+    - rewrite mul1n //.
     Admitted.
 
   Lemma odd_pow_prim_root (n:nat) :
