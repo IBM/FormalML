@@ -626,12 +626,13 @@ Proof.
 Lemma ord_5_pow_2_neq n :
   5^(2^n) <> 1 %[mod 2^n.+3].
 Proof.
-  rewrite ord_5_pow_2.
-  rewrite modn_sub_iff; try lia.
-  replace (1 + 2 ^ n.+2 - 1) with (2^n.+2) by lia.
-  rewrite !modn_small; try lia.
-  rewrite (expnS _ (n.+2)).
-  lia.
+  rewrite ord_5_pow_2 !expnS !modn_small; lia.
+Qed.
+
+Lemma ord_5_pow_2_neq_m1 n :
+  5^(2^n) <> 2^n.+3-1 %[mod 2^n.+3].
+Proof.
+  rewrite ord_5_pow_2 !expnS; lia.
 Qed.
 
 Lemma ord_pow_gcd b e1 e2 n :
@@ -658,7 +659,9 @@ Lemma ord_pow2' (n : nat) (b : 'Z_(2^n.+3)):
   b^+(2^n) <> 1 :> 'Z_(2^n.+3) ->
   (2^(S n)).-primitive_root b.
 Proof.
-  Admitted.  
+  intros.
+  by apply two_pow_prim_root_alt.
+Qed.
 
 Lemma ord_pow2 b x n :
   b^(2^n.+1) = 1 %[mod 2^n.+3] ->
@@ -711,7 +714,7 @@ Proof.
   
 Admitted.  
 
-Lemma ord_5_pow_2_neq_m1 n :
+Lemma ord_5_pow_2_neq_m1' n :
   not (exists k,
         5^k = 2^n.+3-1 %[mod 2^n.+3]).
 Proof.
