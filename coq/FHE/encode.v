@@ -2641,8 +2641,7 @@ Lemma two_pow_prim_root_m1 (k n : nat) :
     rewrite (modn_small H) in H4.
     move /eqP in H4.
     generalize (dvdn_eq (2^n) k); intros.
-    unfold dvdn in H0.
-    rewrite H4 in H0.
+    rewrite /dvdn H4 in H0.
     assert (k = (k %/ 2^n) * (2^n))%N.
     {
       symmetry.
@@ -2651,19 +2650,18 @@ Lemma two_pow_prim_root_m1 (k n : nat) :
     }
     rewrite H1 expnS -muln_modl.
     replace  (2 ^ n %% (2 * 2 ^ n))%N with
-       ((1 * 2 ^ n) %% (2 * 2 ^ n))%N.
-    - rewrite -muln_modl.
-      assert ((k %/ 2 ^ n) %% 2 = 1 %% 2)%N.
-      {
-        assert (1 < 2) by lia.
-        rewrite (modn_small H3).
-        rewrite H1 expnS -muln_modl mod0n in H5.
-        have: ((k %/ 2 ^ n) %% 2 <> 0)%N by lia.
-        have:  ((k %/ 2 ^ n) %% 2)%N < 2 by by apply ltn_pmod.
-        lia.
-      }
-      by rewrite H3.
-    - rewrite mul1n //.
+       ((1 * 2 ^ n) %% (2 * 2 ^ n))%N by rewrite mul1n //.
+    rewrite -muln_modl.
+    assert ((k %/ 2 ^ n) %% 2 = 1 %% 2)%N.
+    {
+      assert (1 < 2) by lia.
+      rewrite (modn_small H3).
+      rewrite H1 expnS -muln_modl mod0n in H5.
+      have: ((k %/ 2 ^ n) %% 2 <> 0)%N by lia.
+      have:  ((k %/ 2 ^ n) %% 2)%N < 2 by by apply ltn_pmod.
+      lia.
+    }
+    by rewrite H3.
   Qed.
 
   Lemma odd_pow_prim_root (n:nat) :
