@@ -2619,28 +2619,24 @@ Lemma zero_modn_mod2n (k n : nat) :
   k = 0 %[mod n] ->
   k = 0 %[mod 2*n] \/ k = n %[mod 2*n].
 Proof.
-  intros.
-  generalize (dvdn_eq n k); intros.
-  move /eqP in H0.
-  rewrite (modn_small H) in H0.
-  rewrite /dvdn H0 in H1.
-  assert (k = k%/n * n)%N.
+  move=> npos /eqP.
+  move: (dvdn_eq n k).
+  rewrite (modn_small npos) /dvdn => -> eqq1.
+
+  have ->: (k = k%/n * n)%N.
   {
     symmetry.
-    apply /eqP.
-    by rewrite -H1.
+    by apply /eqP.
   }
-  rewrite H2.
   rewrite -muln_modl.
-  assert (((k %/n) %% 2 = 0) \/ ((k %/n) %% 2 = 1))%N.
+  have [-> | eqq]: (((k %/n) %% 2 = 0) \/ ((k %/n) %% 2 = 1))%N.
   {
     have:  ((k %/ n) %% 2)%N < 2 by by apply ltn_pmod.
     lia.
   }
-  destruct H3.
-  - left; by rewrite H3 mod0n mul0n.
+  - left; by rewrite mod0n mul0n.
   - right.
-    rewrite -{3}(mul1n n) H3 -muln_modl.
+    rewrite -{3}(mul1n n) eqq -muln_modl.
     lia.
 Qed.
 
