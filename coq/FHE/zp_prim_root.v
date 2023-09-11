@@ -663,6 +663,18 @@ Proof.
   by apply @two_pow_prim_root_alt.
 Qed.
 
+Lemma zp_m1_neq1 (n : nat) :
+  n > 2 ->
+  -1 <> 1 :> 'Z_n.
+Proof.
+  intros.
+  injection; unfold Zp_trunc; simpl.
+  replace (n.-2.+2) with n by lia.
+  have /modn_small->: (1 < n)%N by lia.
+  have /modn_small->: (n-1 < n)%N by lia.
+  lia.
+Qed.      
+
 Lemma ord_pow2 b x n :
   b^(2^n.+1) = 1 %[mod 2^n.+3] ->
   b^x = 1 %[mod 2^n.+3] ->
@@ -735,7 +747,41 @@ Proof.
   assert (x = 2^n).
   {
     set b : 'Z_(2^n.+3) := inZp 5.
-    generalize (two_pow_prim_root_m1 b); intros.
+    assert (b^+x = -1).
+    {
+      unfold opp; simpl.
+      unfold Zp_opp, Zp_trunc.
+      admit.
+    }
+    assert (b^+(2^n.+1) = 1 :> 'Z_(2^n.+3)).    
+    {
+      admit.
+    }
+    assert (b ^+ (2 ^ n) <> 1).
+    {
+      admit.
+    }
+    generalize (ord_pow2' H2 H3); intros.
+    assert (bigmod: 2 < 2^n.+3).
+    {
+      rewrite !expnS.
+      clear eqq eqq2 H H0 H1 H2 H3 H4.
+      lia.
+    }
+    generalize (two_pow_prim_root_m1 b x n H4 (zp_m1_neq1 bigmod)); intros.
+    assert (2 ^ n < 2^n.+1).
+    {
+      rewrite !expnS.
+      clear eqq eqq2 H H0 H1 H2 H3 H4.
+      lia.
+    }
+    rewrite -(modn_small H6).
+    assert (x < 2^n.+1).
+    {
+      admit.
+    }
+    rewrite -(modn_small H7).
+    apply H5.
     admit.
   }
   rewrite H1 in eqq.
