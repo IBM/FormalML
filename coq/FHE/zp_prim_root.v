@@ -660,7 +660,7 @@ Lemma ord_pow2' (n : nat) (b : 'Z_(2^n.+3)):
   (2^(S n)).-primitive_root b.
 Proof.
   intros.
-  by apply two_pow_prim_root_alt.
+  by apply @two_pow_prim_root_alt.
 Qed.
 
 Lemma ord_pow2 b x n :
@@ -715,15 +715,14 @@ Proof.
 Admitted.  
 
 Lemma ord_5_pow_2_neq_m1' n :
-  not (exists k,
+  ~ (exists k,
         5^k = 2^n.+3-1 %[mod 2^n.+3]).
 Proof.
-  unfold not; intros.
-  destruct H.
-  assert ((5 ^ x)^2 = 1 %[mod 2^n.+3]).
+  elim=>[x eqq].
+  have eqq2: ((5 ^ x)^2 = 1 %[mod 2^n.+3]).
   {
     rewrite modn_sub_iff.
-    - rewrite subn_sqr_1 -modnMm  -(modnDm (5^x) _) H modnDm.
+    - rewrite subn_sqr_1 -modnMm  -(modnDm (5^x) _) eqq modnDm.
       replace (2^n.+3-1+1)%N with (2^n.+3)%N by lia.
       by rewrite modnn mul0n mod0n.
     - rewrite sqrn_gt0 expn_gt0.
@@ -731,24 +730,21 @@ Proof.
   }
   generalize (ord_5_pow_2 n); intros.
   generalize (ord_odd_pow_2 2 n); intros.
-  replace (2 * 2 + 1)%N with 5%N in H2 by lia.
-  rewrite -expnM in H0.
+  replace (2 * 2 + 1)%N with 5%N in H0 by lia.
+  rewrite -expnM in eqq2.
   assert (x = 2^n).
   {
-    pose (b := @inZp ((2^n.+3).-1) 5).
-(*
+    set b : 'Z_(2^n.+3) := inZp 5.
     generalize (two_pow_prim_root_m1 b); intros.
-*)
-    
     admit.
   }
-  rewrite H3 in H.
-  rewrite H1 in H.
-  clear H1 H2 H0 H3.
-  rewrite modn_small in H; [|rewrite !expnS; lia].
-  rewrite modn_small in H; [|rewrite !expnS; lia].
-  rewrite !expnS in H; lia.
- Admitted.           
+  rewrite H1 in eqq.
+  rewrite H in eqq.
+  clear H1 H0 H eqq2.
+  rewrite modn_small in eqq; [|rewrite !expnS; lia].
+  rewrite modn_small in eqq; [|rewrite !expnS; lia].
+  rewrite !expnS in eqq; lia.
+ Admitted.
 
   Lemma pow_3_5_pow_2 n :
     3^(2^n.+1) = 5^(2^n.+1) %[mod 2^n.+4].
