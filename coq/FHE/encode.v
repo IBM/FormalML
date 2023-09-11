@@ -2463,10 +2463,15 @@ Proof.
     by have [?|/ltnW ?] := leqP y x; last rewrite !(eq_sym (x %% _)%N); apply.
   Qed.
 
-Section unity.
+  Section unity.
+(*
+    Context {T : comRingType}
+            (z : T).
+*)
+
   Variable (T : comRingType).
   Variable (z : T).
-
+    
   Lemma two_pow_prim_root_alt (n:nat) :
     z ^+ (2^n) <> 1 ->
     z ^+ (2^n.+1) = 1 ->

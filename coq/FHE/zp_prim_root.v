@@ -735,7 +735,11 @@ Proof.
   rewrite -expnM in H0.
   assert (x = 2^n).
   {
-    generalize (ord_pow_gcd H2 H0); intros.
+    pose (b := @inZp ((2^n.+3).-1) 5).
+(*
+    generalize (two_pow_prim_root_m1 b); intros.
+*)
+    
     admit.
   }
   rewrite H3 in H.
