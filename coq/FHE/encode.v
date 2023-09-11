@@ -2614,6 +2614,36 @@ Proof.
   by rewrite H4 mod0n.
 Qed.
 
+Lemma zero_modn_mod2n (k n : nat) :
+  0 < n ->
+  k = 0 %[mod n] ->
+  k = 0 %[mod 2*n] \/ k = n %[mod 2*n].
+Proof.
+  intros.
+  generalize (dvdn_eq n k); intros.
+  move /eqP in H0.
+  rewrite (modn_small H) in H0.
+  rewrite /dvdn H0 in H1.
+  assert (k = k%/n * n)%N.
+  {
+    symmetry.
+    apply /eqP.
+    by rewrite -H1.
+  }
+  rewrite H2.
+  rewrite -muln_modl.
+  assert (((k %/n) %% 2 = 0) \/ ((k %/n) %% 2 = 1))%N.
+  {
+    have:  ((k %/ n) %% 2)%N < 2 by by apply ltn_pmod.
+    lia.
+  }
+  destruct H3.
+  - left; by rewrite H3 mod0n mul0n.
+  - right.
+    rewrite -{3}(mul1n n) H3 -muln_modl.
+    lia.
+Qed.
+
 Lemma two_pow_prim_root_m1 (k n : nat) :
     primitive_root_of_unity (2^n.+1) z ->
     -(one T) <> (one T) ->
@@ -2638,31 +2668,25 @@ Lemma two_pow_prim_root_m1 (k n : nat) :
     }
     clear H H0 H1 H3 z T.
     assert (0 < 2^n)%N by lia.
-    rewrite (modn_small H) in H4.
-    move /eqP in H4.
-    generalize (dvdn_eq (2^n) k); intros.
-    rewrite /dvdn H4 in H0.
-    assert (k = (k %/ 2^n) * (2^n))%N.
-    {
-      symmetry.
-      apply /eqP.
-      by rewrite -H0.
-    }
-    rewrite H1 expnS -muln_modl.
-    replace  (2 ^ n %% (2 * 2 ^ n))%N with
-       ((1 * 2 ^ n) %% (2 * 2 ^ n))%N by rewrite mul1n //.
-    rewrite -muln_modl.
-    assert ((k %/ 2 ^ n) %% 2 = 1 %% 2)%N.
-    {
-      assert (1 < 2) by lia.
-      rewrite (modn_small H3).
-      rewrite H1 expnS -muln_modl mod0n in H5.
-      have: ((k %/ 2 ^ n) %% 2 <> 0)%N by lia.
-      have:  ((k %/ 2 ^ n) %% 2)%N < 2 by by apply ltn_pmod.
-      lia.
-    }
-    by rewrite H3.
-  Qed.
+    generalize (zero_modn_mod2n k (2^n) H H4); intros.
+    rewrite expnS.
+    rewrite expnS in H5.
+    by destruct H0.
+ Qed.
+
+Lemma two_pow_prim_root_m1_alt (k n : nat) :
+  primitive_root_of_unity (2^n.+1) z ->
+  -(one T) <> (one T) ->
+  z^+(2^n) <> -1 ->
+  not (exists k, z^+k = -1).
+Proof.
+  intros.
+  unfold not; intros.
+  destruct H2.
+  generalize (two_pow_prim_root_m1 x n H H0 H2); intros.
+  generalize (prim_expr_mod H); intros.
+  by rewrite -H4 H3 H4 in H2.
+Qed.
 
   Lemma odd_pow_prim_root (n:nat) :
     z ^+ (2^n) = -1 ->
