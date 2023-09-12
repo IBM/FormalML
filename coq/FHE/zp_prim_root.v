@@ -712,13 +712,20 @@ Lemma ord_unit_pow_2_Zp (n : nat) (b : {unit 'Z_(2^n.+3)}) :
   b ^+ (2^n.+1) = 1.
 Proof.
   intros.
-  generalize (unit_pow_2_Zp' b); intros.
-  generalize (ord_odd_pow_2' n H); intros.
-  generalize (unit_Zp_expg b (2^n.+1)); intros.
-  simpl in *.
-  unfold inZp in H1.
-    
-    Admitted.
+  move: (unit_pow_2_Zp' b)=> bodd.
+  move: (ord_odd_pow_2' n bodd)=> b2n1_1.
+  move: (unit_Zp_expg b (2^n.+1)); simpl in *.
+  rewrite /inZp.
+  move/(f_equal val)=> /=.
+  rewrite {3}Zp_cast; [| rewrite !expnS; lia].
+  rewrite b2n1_1 => eqq.
+  apply/eqP.
+  rewrite /eq_op /= /eq_op /=.
+  rewrite eqq.
+  rewrite Zp_cast; [| rewrite !expnS; lia].
+  rewrite modn_small //.
+  rewrite !expnS; lia.
+Qed.
 
 (*
 Lemma ord_is_unit_pow_2_Zp (n : nat) (b : {unit 'Z_(2^n.+3)}) :
