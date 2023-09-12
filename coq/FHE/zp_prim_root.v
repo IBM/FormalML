@@ -691,13 +691,12 @@ Lemma unit_pow_2_Zp (n : nat) (b : 'Z_(2^n.+3)) :
   b \is a unit <->
   odd b.
 Proof.
-  assert (2^n.+3 > 1).
+  have/(unitZpE b): (2^n.+3 > 1).
   {
     rewrite !expnS; lia.
   }
-  generalize (unitZpE b H); intros.
-  replace (b%:R) with b in H0 by by rewrite natr_Zp.
-  rewrite H0.
+
+  rewrite (_ : (b%:R) = b) ?natr_Zp // => ->.
   rewrite -coprimen2 coprime_sym coprime_pexpr; lia.
 Qed.
 
