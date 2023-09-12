@@ -481,6 +481,18 @@ Proof.
     by rewrite -modnMm IHn modnMm muln0.
  Qed.
 
+Lemma ord_odd_pow_2' j n :
+  odd j ->
+  j^(2^n.+1) = 1 %[mod 2^(n.+3)].
+Proof.
+  intros.
+  generalize (ord_odd_pow_2 (j./2) n); intros.
+  generalize (odd_double_half j); intros.
+  replace (2 * j./2) with (j./2.*2) in H0 by lia.
+  rewrite H /= addnC in H1.
+  by rewrite -H1.
+Qed.  
+
 Lemma iotaSn0 m n : n != 0 ->
   iota m n = m :: iota m.+1 n.-1.
 Proof.
@@ -675,6 +687,78 @@ Proof.
   lia.
 Qed.      
 
+Lemma unit_pow_2_Zp (n : nat) (b : 'Z_(2^n.+3)) :
+  b \is a unit <->
+  odd b.
+Proof.
+  assert (2^n.+3 > 1).
+  {
+    rewrite !expnS; lia.
+  }
+  generalize (unitZpE b H); intros.
+  replace (b%:R) with b in H0 by by rewrite natr_Zp.
+  rewrite H0.
+  rewrite -coprimen2 coprime_sym coprime_pexpr; lia.
+Qed.
+
+Lemma unit_pow_2_Zp' (n : nat) (b : {unit 'Z_(2^n.+3)}) :
+  odd (val b).
+Proof.
+  by rewrite -unit_pow_2_Zp ?(valP b).
+Qed.
+
+Import GroupScope.
+Lemma ord_unit_pow_2_Zp (n : nat) (b : {unit 'Z_(2^n.+3)}) :
+  b ^+ (2^n.+1) = 1.
+Proof.
+  intros.
+  generalize (unit_pow_2_Zp' b); intros.
+  generalize (ord_odd_pow_2' n H); intros.
+  generalize (unit_Zp_expg b (2^n.+1)); intros.
+  simpl in *.
+  unfold inZp in H1.
+    
+    Admitted.
+
+(*
+Lemma ord_is_unit_pow_2_Zp (n : nat) (b : {unit 'Z_(2^n.+3)}) :
+  val (b ^+ (2^n.+1)) = Zp1.
+  Locate val.
+    
+rewrite expn1 expnS expn1.
+    replace ((2 * j + 1) * (2 * j + 1)) with (4*(j*(j+1)) + 1) by lia.
+    destruct (n_n1_even j).
+    rewrite H /=.
+    replace (2^3) with 8 by lia.
+    replace (4 * (x.*2)) with (8 * x) by lia.
+    by rewrite -modnDm modnMr modnDmr.
+  - rewrite expnS (mulnC _ (2^n.+1)) expnM (expnS _ n.+3).
+    rewrite modn_sub_iff; [|lia].
+    rewrite subn_sqr_1.
+    rewrite modn_sub_iff in IHn; [|lia].
+    assert (exists k,
+               2 * k = ((2 * j + 1) ^ 2 ^ n.+1 + 1)).
+    {
+      assert (~~ odd  ((2 * j + 1) ^ 2 ^ n.+1 + 1)).
+      {
+        rewrite oddD oddX oddD.
+        replace (2 *j) with (j.*2) by lia.
+        rewrite odd_double /=.
+        lia.
+      }
+      apply even_halfK in H.
+      exists (((2 * j + 1) ^ 2 ^ n.+1 + 1)./2).
+      rewrite -H.
+      lia.
+    }
+    destruct H.
+    rewrite -H -mulnA -muln_modr.
+    replace 0 with (2*0) at 7 by lia.
+    rewrite -muln_modr.
+    f_equal.
+    by rewrite -modnMm IHn modnMm muln0.
+ Qed.
+*)
 Lemma ord_pow2 b x n :
   b^(2^n.+1) = 1 %[mod 2^n.+3] ->
   b^x = 1 %[mod 2^n.+3] ->
@@ -683,8 +767,7 @@ Lemma ord_pow2 b x n :
 Proof.
   intros.
   generalize (ord_pow_gcd H H0); intros.
-  assert (gcdn (2^n.+1) x = 2^n.+1).
-  {
+  assert (gcdn (2^n.+1) x = (2^n.+1)%N).
     
 Admitted.
 
@@ -692,7 +775,7 @@ Lemma ord_pow2_alt b x n :
   b^(2^n.+1) = 1 %[mod 2^n.+3] ->
   b^x = 2^n.+3-1 %[mod 2^n.+3] ->
   b^(2^n) <> 1 %[mod 2^n.+3] ->
-  x = 2^n.
+  (x = 2^n)%N.
 Proof.
   intros.
   assert (0 < 2^n.+1).
@@ -744,7 +827,7 @@ Proof.
   generalize (ord_odd_pow_2 2 n); intros.
   replace (2 * 2 + 1)%N with 5%N in H0 by lia.
   rewrite -expnM in eqq2.
-  assert (x = 2^n).
+  assert (x = 2^n)%N.
   {
     set b : 'Z_(2^n.+3) := inZp 5.
     assert (b^+x = -1).
@@ -761,6 +844,7 @@ Proof.
     {
       admit.
     }
+    (*
     generalize (ord_pow2' H2 H3); intros.
     assert (bigmod: 2 < 2^n.+3).
     {
@@ -790,6 +874,7 @@ Proof.
   rewrite modn_small in eqq; [|rewrite !expnS; lia].
   rewrite modn_small in eqq; [|rewrite !expnS; lia].
   rewrite !expnS in eqq; lia.
+*)
  Admitted.
 
   Lemma pow_3_5_pow_2 n :
