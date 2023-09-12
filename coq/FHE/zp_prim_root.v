@@ -760,6 +760,19 @@ Proof.
   
 Admitted.
 
+Lemma inZp_exp j k n :
+  inZp (j ^ k) = inZp j ^+ k :> 'Z_n.
+Proof.
+Admitted.
+
+Lemma ord_5_pow_2_Zp_alt n :
+  inZp 5 ^+ (2^n) = inZp (1 + 2^n.+2) :> 'Z_(2^n.+3).
+Proof.
+  rewrite -ord_5_pow_2_Zp'.
+  by rewrite inZp_exp.
+Qed.
+
+
 Lemma ord_pow2 b x n :
   b^(2^n.+1) = 1 %[mod 2^n.+3] ->
   b^x = 1 %[mod 2^n.+3] ->
