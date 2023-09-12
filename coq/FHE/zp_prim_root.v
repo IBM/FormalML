@@ -720,11 +720,9 @@ Proof.
   rewrite {3}Zp_cast; [| rewrite !expnS; lia].
   rewrite b2n1_1 => eqq.
   apply/eqP.
-  rewrite /eq_op /= /eq_op /=.
-  rewrite eqq.
+  rewrite /eq_op /= /eq_op /= eqq.
   rewrite Zp_cast; [| rewrite !expnS; lia].
-  rewrite modn_small //.
-  rewrite !expnS; lia.
+  rewrite modn_small // !expnS; lia.
 Qed.
 
 (*
