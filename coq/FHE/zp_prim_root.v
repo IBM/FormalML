@@ -706,29 +706,21 @@ Proof.
   by rewrite -unit_pow_2_Zp ?(valP b).
 Qed.
 
-Import GroupScope.
-Lemma ord_unit_pow_2_Zp (n : nat) (b : {unit 'Z_(2^n.+3)}) :
-  b ^+ (2^n.+1) = 1.
+Lemma inZp_mul j k n :
+  inZp (j * k) = inZp j * inZp k :> 'Z_n.
 Proof.
-  move: (unit_pow_2_Zp' b)=> bodd.
-  move: (ord_odd_pow_2' n bodd)=> b2n1_1.
-  move: (unit_Zp_expg b (2^n.+1)).
-  rewrite /inZp.
-  move/(f_equal val)=> /=.
-  rewrite {3}Zp_cast; [| rewrite !expnS; lia].
-  rewrite b2n1_1 => eqq.
-  apply/eqP.
-  rewrite /eq_op /= /eq_op /= eqq.
-  rewrite Zp_cast; [| rewrite !expnS; lia].
-  rewrite modn_small // !expnS; lia.
+  apply: val_inj => /=.
+  by rewrite modnMm.
 Qed.
 
-Lemma ord_unit_pow_2_Zp' (n : nat) (b : {unit 'Z_(2^n.+3)}) :
-  #[b] %| (2^n.+1)%N.
+Lemma inZp_exp j k n :
+  inZp (j ^ k) = inZp j ^+ k :> 'Z_n.
 Proof.
-  rewrite order_dvdn.
-  apply /eqP.
-  apply ord_unit_pow_2_Zp.
+  induction k.
+  - rewrite expn0 expr0.
+    by apply: val_inj => /=.
+  - rewrite exprS expnS -IHk.
+    apply inZp_mul.
 Qed.
 
 Lemma ord_5_pow_2_Zp' n :
@@ -746,32 +738,35 @@ Lemma ord_5_pow_2_Zp n :
   inZp 5 ^+ (2^n) = inZp (1 + 2^n.+2) :> 'Z_(2^n.+3).
 Proof.
   rewrite -ord_5_pow_2_Zp'.
-  set b5 : 'Z_(2^n.+3) := inZp 5.
-  assert (ub5:b5 \is a unit).
-  {
-    rewrite unit_pow_2_Zp /b5 /= Zp_cast; [|rewrite !expnS; lia].
-    by rewrite modn_small;[|rewrite !expnS; lia].
-  }
-  generalize (unit_Zp_expg (FinRing.unit _ ub5) (2^n)); intros.
-  simpl in H.
-  rewrite {3}Zp_cast in H; [|rewrite !expnS; lia].
-  rewrite modn_small in H; [|rewrite !expnS; lia].
-  rewrite -H.
-  
-Admitted.
-
-Lemma inZp_exp j k n :
-  inZp (j ^ k) = inZp j ^+ k :> 'Z_n.
-Proof.
-Admitted.
-
-Lemma ord_5_pow_2_Zp_alt n :
-  inZp 5 ^+ (2^n) = inZp (1 + 2^n.+2) :> 'Z_(2^n.+3).
-Proof.
-  rewrite -ord_5_pow_2_Zp'.
   by rewrite inZp_exp.
 Qed.
 
+Lemma ord_5_pow_2_Zp_1 n :
+  inZp 5 ^+ (2^n.+1) = 1 :> 'Z_(2^n.+3).
+Proof.
+  assert (odd5:odd 5) by by [].
+  move: (ord_odd_pow_2' n odd5)=> b2n1_1.
+  rewrite -inZp_exp.
+  apply: val_inj => /=.
+  rewrite Zp_cast; try lia.
+  rewrite !expnS; lia.
+Qed.
+
+Lemma primitive_5_pow2 n :
+  let b5 : 'Z_(2^n.+3) := inZp 5 in
+  (2^n.+1).-primitive_root b5.
+Proof.
+  apply ord_pow2'.
+  - apply ord_5_pow_2_Zp_1.
+  - rewrite ord_5_pow_2_Zp.
+    unfold not; intros.
+    apply (f_equal val) in H.
+    simpl in H.
+    rewrite Zp_cast in H; [|rewrite !expnS; lia].
+    rewrite modn_small in H; [|rewrite !expnS; lia].
+    rewrite modn_small in H; [|rewrite !expnS; lia].    
+    lia.
+Qed.
 
 Lemma ord_pow2 b x n :
   b^(2^n.+1) = 1 %[mod 2^n.+3] ->
@@ -917,3 +912,27 @@ Proof.
       apply ord_5_pow_2_neq.
   Qed.
 
+Import GroupScope.
+Lemma ord_unit_pow_2_Zp (n : nat) (b : {unit 'Z_(2^n.+3)}) :
+  b ^+ (2^n.+1) = 1.
+Proof.
+  move: (unit_pow_2_Zp' b)=> bodd.
+  move: (ord_odd_pow_2' n bodd)=> b2n1_1.
+  move: (unit_Zp_expg b (2^n.+1)).
+  rewrite /inZp.
+  move/(f_equal val)=> /=.
+  rewrite {3}Zp_cast; [| rewrite !expnS; lia].
+  rewrite b2n1_1 => eqq.
+  apply/eqP.
+  rewrite /eq_op /= /eq_op /= eqq.
+  rewrite Zp_cast; [| rewrite !expnS; lia].
+  rewrite modn_small // !expnS; lia.
+Qed.
+
+Lemma ord_unit_pow_2_Zp' (n : nat) (b : {unit 'Z_(2^n.+3)}) :
+  #[b] %| (2^n.+1)%N.
+Proof.
+  rewrite order_dvdn.
+  apply /eqP.
+  apply ord_unit_pow_2_Zp.
+Qed.
