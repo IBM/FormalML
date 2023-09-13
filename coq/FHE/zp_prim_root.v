@@ -828,6 +828,15 @@ Qed.
       apply ord_5_pow_2_neq.
   Qed.
 
+  Lemma ord_3_pow_2_neq_m1 n :
+    3^(2^n) <> 2^n.+3-1 %[mod 2^n.+3].
+  Proof.
+    destruct n.
+    - lia.
+    - rewrite pow_3_5_pow_2.
+      apply ord_5_pow_2_neq_m1.     
+  Qed.
+
   Lemma primitive_3_pow2 n :
     let b3 : 'Z_(2^n.+3) := inZp 3 in
     (2^n.+1).-primitive_root b3.
@@ -844,6 +853,35 @@ Qed.
       rewrite Zp_cast in H0; [|rewrite !expnS; lia].
       tauto.
   Qed.
+
+  Lemma m1_neq_pow3_mod2n (n : nat) :
+  let b3 : 'Z_(2^n.+3) := inZp 3 in
+  not (exists k, b3^+k = -1).
+Proof.
+  generalize (primitive_3_pow2 n); intros.
+  simpl in H.
+  generalize (two_pow_prim_root_m1_alt b3 n H); intros.
+  apply H0.
+  - apply zp_m1_neq1.
+    rewrite !expnS; lia.
+  - generalize (@ord_3_pow_2_neq_m1 n); intros.
+    unfold opp; simpl.
+    unfold Zp_opp.
+    unfold not; intros.
+    unfold b3 in H2.
+    rewrite -inZp_exp in H2.
+    apply (f_equal val) in H2.
+    simpl in H2.
+    rewrite Zp_cast in H2; [|rewrite !expnS; lia].
+    rewrite H2 in H1.
+    clear H0 H2.
+    rewrite modn_small in H1.
+    + rewrite modn_small in H1; [|rewrite !expnS; lia].
+      rewrite modn_small in H1; [|rewrite !expnS; lia].
+      tauto.
+    + rewrite modn_small; [|rewrite !expnS; lia].        
+      lia.
+Qed.
 
 Import GroupScope.
 Lemma ord_unit_pow_2_Zp (n : nat) (b : {unit 'Z_(2^n.+3)}) :
