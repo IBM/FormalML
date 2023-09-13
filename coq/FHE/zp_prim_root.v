@@ -752,6 +752,17 @@ Proof.
   rewrite !expnS; lia.
 Qed.
 
+Lemma ord_3_pow_2_Zp_1 n :
+  inZp 3 ^+ (2^n.+1) = 1 :> 'Z_(2^n.+3).
+Proof.
+  assert (odd3:odd 3) by by [].
+  move: (ord_odd_pow_2' n odd3)=> b2n1_1.
+  rewrite -inZp_exp.
+  apply: val_inj => /=.
+  rewrite Zp_cast; try lia.
+  rewrite !expnS; lia.
+Qed.
+
 Lemma primitive_5_pow2 n :
   let b5 : 'Z_(2^n.+3) := inZp 5 in
   (2^n.+1).-primitive_root b5.
@@ -768,123 +779,28 @@ Proof.
     lia.
 Qed.
 
-Lemma ord_pow2 b x n :
-  b^(2^n.+1) = 1 %[mod 2^n.+3] ->
-  b^x = 1 %[mod 2^n.+3] ->
-  b^(2^n) <> 1 %[mod 2^n.+3] ->
-  2^n.+1 %| x.
+Lemma m1_neq_pow5_mod2n (n : nat) :
+  let b5 : 'Z_(2^n.+3) := inZp 5 in
+  not (exists k, b5^+k = -1).
 Proof.
-  intros.
-  generalize (ord_pow_gcd H H0); intros.
-  assert (gcdn (2^n.+1) x = (2^n.+1)%N).
-    
-Admitted.
-
-Lemma ord_pow2_alt b x n :
-  b^(2^n.+1) = 1 %[mod 2^n.+3] ->
-  b^x = 2^n.+3-1 %[mod 2^n.+3] ->
-  b^(2^n) <> 1 %[mod 2^n.+3] ->
-  (x = 2^n)%N.
-Proof.
-  intros.
-  assert (0 < 2^n.+1).
-  {
-    clear H H0 H1.
+  generalize (primitive_5_pow2 n); intros.
+  simpl in H.
+  generalize (two_pow_prim_root_m1_alt b5 n H); intros.
+  apply H0.
+  - apply zp_m1_neq1.
     rewrite !expnS; lia.
-  }
-  assert (0 < b).
-  {
-    destruct b.
-    - rewrite exp0n // in H.
-      clear H0 H1.
-      rewrite !modn_small in H; try lia.
-      rewrite !expnS; lia.
-    - clear H0 H1; lia.
-  }
-  assert (b^(2*x) = 1 %[mod 2^n.+3]).
-  {
-    rewrite mulnC expnM modn_sub_iff.
-    - rewrite subn_sqr_1 -modnMm -(modnDm (b^x) _) H0 modnDm.
-      clear H H0 H1.
-      replace (2^n.+3-1+1)%N with (2^n.+3)%N by lia.
-      by rewrite modnn mul0n mod0n.
-    - rewrite sqrn_gt0 expn_gt0.
-      clear H H0 H1.
-      lia.
-  }
-  generalize (ord_pow2 H H4 H1); intros.
-  rewrite expnS in H5.
-  
-  
-Admitted.  
-
-Lemma ord_5_pow_2_neq_m1' n :
-  ~ (exists k,
-        5^k = 2^n.+3-1 %[mod 2^n.+3]).
-Proof.
-  elim=>[x eqq].
-  have eqq2: ((5 ^ x)^2 = 1 %[mod 2^n.+3]).
-  {
-    rewrite modn_sub_iff.
-    - rewrite subn_sqr_1 -modnMm  -(modnDm (5^x) _) eqq modnDm.
-      replace (2^n.+3-1+1)%N with (2^n.+3)%N by lia.
-      by rewrite modnn mul0n mod0n.
-    - rewrite sqrn_gt0 expn_gt0.
-      lia.
-  }
-  generalize (ord_5_pow_2 n); intros.
-  generalize (ord_odd_pow_2 2 n); intros.
-  replace (2 * 2 + 1)%N with 5%N in H0 by lia.
-  rewrite -expnM in eqq2.
-  assert (x = 2^n)%N.
-  {
-    set b : 'Z_(2^n.+3) := inZp 5.
-    assert (b^+x = -1).
-    {
-      unfold opp; simpl.
-      unfold Zp_opp, Zp_trunc.
-      admit.
-    }
-    assert (b^+(2^n.+1) = 1 :> 'Z_(2^n.+3)).    
-    {
-      admit.
-    }
-    assert (b ^+ (2 ^ n) <> 1).
-    {
-      admit.
-    }
-    (*
-    generalize (ord_pow2' H2 H3); intros.
-    assert (bigmod: 2 < 2^n.+3).
-    {
-      rewrite !expnS.
-      clear eqq eqq2 H H0 H1 H2 H3 H4.
-      lia.
-    }
-    generalize (two_pow_prim_root_m1 b x n H4 (zp_m1_neq1 bigmod)); intros.
-    assert (2 ^ n < 2^n.+1).
-    {
-      rewrite !expnS.
-      clear eqq eqq2 H H0 H1 H2 H3 H4.
-      lia.
-    }
-    rewrite -(modn_small H6).
-    assert (x < 2^n.+1).
-    {
-      admit.
-    }
-    rewrite -(modn_small H7).
-    apply H5.
-    admit.
-  }
-  rewrite H1 in eqq.
-  rewrite H in eqq.
-  clear H1 H0 H eqq2.
-  rewrite modn_small in eqq; [|rewrite !expnS; lia].
-  rewrite modn_small in eqq; [|rewrite !expnS; lia].
-  rewrite !expnS in eqq; lia.
-*)
- Admitted.
+  - rewrite ord_5_pow_2_Zp.
+    unfold opp; simpl.
+    unfold Zp_opp.
+    unfold not; intros.
+    apply (f_equal val) in H1.
+    simpl in H1.
+    rewrite Zp_cast in H1; [|rewrite !expnS; lia].
+    rewrite modn_small in H1; [|rewrite !expnS; lia].
+    rewrite modn_small in H1; [|rewrite !expnS; lia].
+    rewrite modn_small in H1; [|rewrite !expnS; lia].        
+    rewrite !expnS in H1; lia.
+Qed.
 
   Lemma pow_3_5_pow_2 n :
     3^(2^n.+1) = 5^(2^n.+1) %[mod 2^n.+4].
@@ -910,6 +826,23 @@ Proof.
     - lia.
     - rewrite pow_3_5_pow_2.
       apply ord_5_pow_2_neq.
+  Qed.
+
+  Lemma primitive_3_pow2 n :
+    let b3 : 'Z_(2^n.+3) := inZp 3 in
+    (2^n.+1).-primitive_root b3.
+  Proof.
+    apply ord_pow2'.
+    - apply ord_3_pow_2_Zp_1.
+    - generalize (@ord_3_pow_2_neq n); intros.
+      unfold one; simpl.
+      unfold Zp1.
+      unfold not; intros.
+      rewrite -inZp_exp in H0.
+      apply (f_equal val) in H0.
+      simpl in H0.
+      rewrite Zp_cast in H0; [|rewrite !expnS; lia].
+      tauto.
   Qed.
 
 Import GroupScope.

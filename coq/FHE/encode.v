@@ -2670,7 +2670,7 @@ Lemma two_pow_prim_root_m1 (k n : nat) :
     by destruct H0.
  Qed.
 
-Lemma two_pow_prim_root_m1_alt (k n : nat) :
+Lemma two_pow_prim_root_m1_alt (n : nat) :
   primitive_root_of_unity (2^n.+1) z ->
   -(one T) <> (one T) ->
   z^+(2^n) <> -1 ->
