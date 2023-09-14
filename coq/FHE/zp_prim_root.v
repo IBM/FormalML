@@ -883,7 +883,10 @@ Proof.
       lia.
 Qed.
 
-Import GroupScope.
+Section two_pow_units.
+  
+  Import GroupScope.
+  
 Lemma ord_unit_pow_2_Zp (n : nat) (b : {unit 'Z_(2^n.+3)}) :
   b ^+ (2^n.+1) = 1.
 Proof.
@@ -907,3 +910,44 @@ Proof.
   apply /eqP.
   apply ord_unit_pow_2_Zp.
 Qed.
+
+Lemma dvdn_prime_power x p n :
+  prime p ->
+  x %| p^n.+1 ->
+  ~ x %| p^n ->
+  (x = p^n.+1)%N.
+Proof.
+  intros p_prime x_n1 x_n.
+  generalize (prime_gt1 p_prime); intros pgt.
+  move /dvdn_pfactor in x_n1.
+  destruct (x_n1 p_prime).
+  rewrite H0 (dvdn_Pexp2l x0 n pgt) in x_n.
+  assert (x0 = n.+1) by lia.
+  by rewrite H1 in H0.
+Qed.
+
+Lemma ord_unit_pow_2_Zp_max (n : nat) (b : {unit 'Z_(2^n.+3)}) :
+  b ^+ (2^n) <> 1 ->
+  #[b] = (2^n.+1)%N.
+Proof.
+  intros.
+  generalize (ord_unit_pow_2_Zp' b); intros.
+  assert (~ #[b] %| 2^n).
+  {
+    unfold not; intros.
+    rewrite order_dvdn in H1.
+    by move /eqP in H1.
+  }
+  by apply dvdn_prime_power.
+Qed.
+
+Lemma card_units_pow_2_Zp (n : nat) :
+  #|units_Zp (2^n.+3)| = (2^n.+2)%N.
+Proof.
+  rewrite card_units_Zp; try lia.
+  rewrite totient_pfactor; trivial; try lia.
+  rewrite !expnS; lia.
+Qed.
+
+End two_pow_units.
+  
