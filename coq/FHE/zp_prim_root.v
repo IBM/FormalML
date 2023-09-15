@@ -976,6 +976,7 @@ Proof.
   {
     assert ([set a] :&: <[b]> = set0).
     {
+      clear H1.
       admit.
     }
     by rewrite H1 setIUl H2 setU0 -set1gE setI1g.
@@ -1012,7 +1013,10 @@ Proof.
   rewrite -H3.
   rewrite (card_units_pow_2_Zp n).
   generalize (unit_pow_2_Zp_gensx' H H0 H1); intros.
-  simpl.
+  rewrite joinGE /= norm_joinEr /=.
+  - rewrite H4 divnn !expnS; lia.
+  - 
+
 Admitted.
   
 
