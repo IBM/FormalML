@@ -970,20 +970,17 @@ Lemma ord2_setI (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
   #|<[a]>%G :&: <[b]>%G| = 1%N.
 Proof.
   intros.
-  generalize (cycle2g H); intros.
-  rewrite /=.
-  assert (<[a]> :&: <[b]> = [set 1]).
+  have ->: (<[a]> :&: <[b]> = [set 1]).
   {
-    assert ([set a] :&: <[b]> = set0).
+    rewrite (cycle2g H) setIUl.
+    have /eqP->: ([set a] :&: <[b]> == set0).
     {
-      clear H1.
-      admit.
-    }
-    by rewrite H1 setIUl H2 setU0 -set1gE setI1g.
+      by rewrite setI_eq0 disjoints1.
+    } 
+    by rewrite setU0 -set1gE setI1g.
   }
-  rewrite H2.
-  apply cards1.
-Admitted.
+  by rewrite cards1.
+Qed.
 
 Lemma unit_pow_2_Zp_gensx' (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
   #[a] = 2%N ->
