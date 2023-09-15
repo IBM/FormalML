@@ -1002,7 +1002,7 @@ Proof.
   intros.
   assert ((<[a]> * <[b]>)%G \subset [group of units_Zp (2 ^ n.+3)]).
   {
-    admit.
+    apply subsetT.
   }
   apply index1g; trivial.
   generalize (divgS H2).
