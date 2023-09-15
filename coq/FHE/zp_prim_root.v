@@ -883,6 +883,7 @@ Proof.
       lia.
 Qed.
 
+From mathcomp Require Import finset.
 Section two_pow_units.
   
   Import GroupScope.
@@ -948,6 +949,72 @@ Proof.
   rewrite totient_pfactor; trivial; try lia.
   rewrite !expnS; lia.
 Qed.
+
+Lemma unit_pow_2_Zp_gensx (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
+  #[a] = 2%N ->
+  #[b] = (2^n.+1)%N ->
+  #|<[a]>%G :&: <[b]>%G| = 1%N ->
+  #|<[a]> * <[b]>|  = (2^n.+2)%N.
+Proof.
+  intros.
+  unfold order in H.
+  unfold order in H0.
+  generalize (mul_cardG <[a]> <[b]> ); intros.
+  rewrite H H0 H1 muln1 in H2.
+  by rewrite -H2 !expnS.
+Qed.
+
+Lemma ord2_setI (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
+  #[a] = 2%N ->
+  (a \notin <[b]>) ->
+  #|<[a]>%G :&: <[b]>%G| = 1%N.
+Proof.
+  intros.
+  generalize (cycle2g H); intros.
+  rewrite /=.
+  assert (<[a]> :&: <[b]> = [set 1]).
+  {
+    assert ([set a] :&: <[b]> = set0).
+    {
+      admit.
+    }
+    by rewrite H1 setIUl H2 setU0 -set1gE setI1g.
+  }
+  rewrite H2.
+  apply cards1.
+Admitted.
+
+Lemma unit_pow_2_Zp_gensx' (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
+  #[a] = 2%N ->
+  #[b] = (2^n.+1)%N ->
+  (a \notin <[b]>) ->
+  #|<[a]> * <[b]>|  = (2^n.+2)%N.
+Proof.
+  intros.
+  apply unit_pow_2_Zp_gensx; trivial.
+  by apply ord2_setI.
+Qed.
+
+Lemma unit_pow_2_Zp_gensx'' (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
+  #[a] = 2%N ->
+  #[b] = (2^n.+1)%N ->
+  (a \notin <[b]>) ->
+  (<[a]> * <[b]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
+Proof.
+  intros.
+  assert ((<[a]> * <[b]>)%G \subset [group of units_Zp (2 ^ n.+3)]).
+  {
+    admit.
+  }
+  apply index1g; trivial.
+  generalize (divgS H2).
+  intros.
+  rewrite -H3.
+  rewrite (card_units_pow_2_Zp n).
+  generalize (unit_pow_2_Zp_gensx' H H0 H1); intros.
+  simpl.
+Admitted.
+  
 
 End two_pow_units.
   
