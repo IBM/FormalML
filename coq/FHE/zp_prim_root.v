@@ -1005,5 +1005,29 @@ Proof.
     apply H5.
 Qed.
 
+Lemma unit_3_pow_2_Zp (n : nat) :
+  (3 : 'Z_(2^n.+3)) \is a unit.
+Proof.
+  rewrite unitZpE.
+  - rewrite coprimeXl //.
+  - rewrite !expnS; lia.
+Qed.
+
+Lemma unit_m1_pow_2_Zp (n : nat) :
+  (- 1 : 'Z_(2^n.+3)) \is a unit.
+Proof.
+  apply unitrN1.
+Qed.
+
+(*
+Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
+  (<[-1]> * <[3]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
+  let b3 :  unit (R := 'Z_(2^n.+3)) := inZp 3 in
+  b3.
+  #[a] = 2%N ->
+  #[b] = (2^n.+1)%N ->
+  (a \notin <[b]>) ->
+*)
+
 End two_pow_units.
   
