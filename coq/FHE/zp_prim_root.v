@@ -950,7 +950,7 @@ Proof.
   rewrite !expnS; lia.
 Qed.
 
-Lemma unit_pow_2_Zp_gensx (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
+Lemma unit_pow_2_Zp_gens_ord (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
   #[a] = 2%N ->
   #[b] = (2^n.+1)%N ->
   #|<[a]>%G :&: <[b]>%G| = 1%N ->
@@ -982,50 +982,27 @@ Proof.
   by rewrite cards1.
 Qed.
 
-Lemma unit_pow_2_Zp_gensx' (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
-  #[a] = 2%N ->
-  #[b] = (2^n.+1)%N ->
-  (a \notin <[b]>) ->
-  #|<[a]> * <[b]>|  = (2^n.+2)%N.
-Proof.
-  intros.
-  apply unit_pow_2_Zp_gensx; trivial.
-  by apply ord2_setI.
-Qed.
-
-Lemma unit_pow_2_Zp_gensx'' (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
+Lemma unit_pow_2_Zp_gens (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
   #[a] = 2%N ->
   #[b] = (2^n.+1)%N ->
   (a \notin <[b]>) ->
   (<[a]> * <[b]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
 Proof.
   intros.
-  assert ((<[a]> * <[b]>)%G \subset [group of units_Zp (2 ^ n.+3)]).
-  {
-    apply subsetT.
-  }
+  generalize (subsetT (<[a]> * <[b]>)%G); intros.
   apply index1g; trivial.
-  generalize (divgS H2).
-  intros.
-  rewrite -H3.
-  rewrite (card_units_pow_2_Zp n).
-  generalize (unit_pow_2_Zp_gensx' H H0 H1); intros.
-  rewrite joinGE /= norm_joinEr /=.
-  - rewrite H4 divnn !expnS; lia.
+  rewrite -(divgS H2) (card_units_pow_2_Zp n) joinGE /= norm_joinEr /=.
+  - rewrite unit_pow_2_Zp_gens_ord //.
+    + rewrite divnn !expnS; lia.
+    + by apply ord2_setI.
   - apply cents_norm.
     generalize (units_Zp_abelian (2^n.+3)); intros.
-    assert (<[a]> \subset (units_Zp (2^n.+3))).
-    {
-      apply subsetT.
-    }
-    generalize (sub_abelian_cent H5 H6); intros.
-    assert (<[b]> \subset (units_Zp (2^n.+3))).
-    {
-      apply subsetT.
-    }
+    generalize (subsetT <[a]>); intros.
+    generalize (sub_abelian_cent H3 H4); intros.
+    generalize (subsetT <[b]>); intros.    
     eapply subset_trans.
-    apply H8.
-    apply H7.
+    apply H6.
+    apply H5.
 Qed.
 
 End two_pow_units.
