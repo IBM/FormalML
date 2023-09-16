@@ -1012,10 +1012,21 @@ Proof.
   generalize (unit_pow_2_Zp_gensx' H H0 H1); intros.
   rewrite joinGE /= norm_joinEr /=.
   - rewrite H4 divnn !expnS; lia.
-  - 
-
-Admitted.
-  
+  - apply cents_norm.
+    generalize (units_Zp_abelian (2^n.+3)); intros.
+    assert (<[a]> \subset (units_Zp (2^n.+3))).
+    {
+      apply subsetT.
+    }
+    generalize (sub_abelian_cent H5 H6); intros.
+    assert (<[b]> \subset (units_Zp (2^n.+3))).
+    {
+      apply subsetT.
+    }
+    eapply subset_trans.
+    apply H8.
+    apply H7.
+Qed.
 
 End two_pow_units.
   
