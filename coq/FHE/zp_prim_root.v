@@ -883,11 +883,10 @@ Proof.
       lia.
 Qed.
 
-From mathcomp Require Import finset.
+From mathcomp Require Import finset eqtype finalg.
 Section two_pow_units.
   
   Import GroupScope.
-  
 Lemma ord_unit_pow_2_Zp (n : nat) (b : {unit 'Z_(2^n.+3)}) :
   b ^+ (2^n.+1) = 1.
 Proof.
@@ -1019,15 +1018,32 @@ Proof.
   apply unitrN1.
 Qed.
 
-(*
 Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
-  (<[-1]> * <[3]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
-  let b3 :  unit (R := 'Z_(2^n.+3)) := inZp 3 in
-  b3.
-  #[a] = 2%N ->
-  #[b] = (2^n.+1)%N ->
-  (a \notin <[b]>) ->
-*)
+  let um1 : {unit 'Z_(2^n.+3)} := FinRing.Unit _ (unit_m1_pow_2_Zp n) in
+  let ub3 : {unit 'Z_(2^n.+3)} := FinRing.Unit _ (unit_3_pow_2_Zp n) in
+  (<[um1]> * <[ub3]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
+Proof.
+  apply unit_pow_2_Zp_gens.
+  - apply nt_prime_order; trivial.
+    + apply val_inj; simpl.
+      by rewrite mulrNN mulr1.
+    + assert (2 < 2^n.+3).
+      {
+        rewrite !expnS; lia.
+      }
+      apply /eqP.
+      unfold not; intros.
+      apply (f_equal FinRing.uval) in H0.
+      simpl in H0.
+      by apply (zp_m1_neq1 H) in H0.
+  - apply ord_unit_pow_2_Zp_max.
+    generalize (primitive_3_pow2 n); intros.
+    generalize (@ord_3_pow_2_neq n); intros.
+    unfold not; intros.
+    admit.
+  - generalize (@m1_neq_pow3_mod2n n); intros.
+    admit.
+Admitted.
 
 End two_pow_units.
   
