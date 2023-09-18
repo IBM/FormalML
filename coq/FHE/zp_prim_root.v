@@ -1018,6 +1018,13 @@ Proof.
   apply unitrN1.
 Qed.
 
+Lemma unit_3_exp_pow_2_Zp (n k : nat) :
+  ((3 : 'Z_(2^n.+3)) ^+ k)%R \is a unit.
+Proof.
+  rewrite unitrX //.
+  apply unit_3_pow_2_Zp.
+Qed.
+
 Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
   let um1 : {unit 'Z_(2^n.+3)} := FinRing.Unit _ (unit_m1_pow_2_Zp n) in
   let ub3 : {unit 'Z_(2^n.+3)} := FinRing.Unit _ (unit_3_pow_2_Zp n) in
