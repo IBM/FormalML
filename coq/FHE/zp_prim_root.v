@@ -1018,13 +1018,6 @@ Proof.
   apply unitrN1.
 Qed.
 
-Lemma unit_3_exp_pow_2_Zp (n k : nat) :
-  ((3 : 'Z_(2^n.+3)) ^+ k)%R \is a unit.
-Proof.
-  rewrite unitrX //.
-  apply unit_3_pow_2_Zp.
-Qed.
-
 Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unit_m1_pow_2_Zp n) in
   let ub3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n) in
@@ -1055,16 +1048,13 @@ Proof.
     move/cyclePmin => [x xlt].
     move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
     rewrite /= unit_Zp_expg /=.
-    rewrite {2 3 4 5 6}Zp_cast //.
-    rewrite !modn_small // /inZp.
+    rewrite {2 3 4 5 6}Zp_cast // !modn_small // /inZp.
     move/(f_equal val) => /=.
-    rewrite !Zp_cast //.
-    rewrite modn_small; [| rewrite !expnS; lia].
+    rewrite !Zp_cast // modn_small; [| rewrite !expnS; lia].
     rewrite modn_small // => HH.
     apply H.
     exists x.
-    rewrite /opp /= /Zp_opp.
-    rewrite {2}Zp_cast // -inZp_exp.
+    rewrite /opp /= /Zp_opp {2}Zp_cast // -inZp_exp.
     apply val_inj.
     rewrite /= !Zp_cast // -HH.
     by rewrite !modn_small //; rewrite !expnS; lia.
