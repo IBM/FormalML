@@ -1026,10 +1026,13 @@ Proof.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
-  let um1 := FinRing.Unit (Phant 'Z_(2^n.+3)) (unit_m1_pow_2_Zp n) in
-  let ub3 := FinRing.Unit (Phant 'Z_(2^n.+3)) (unit_3_pow_2_Zp n) in
+  let um1 := FinRing.unit 'Z_(2^n.+3) (unit_m1_pow_2_Zp n) in
+  let ub3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n) in
   (<[um1]> * <[ub3]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
 Proof.
+  have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have small3: 3 < 2 ^ n.+3 by (rewrite !expnS; lia).
   apply unit_pow_2_Zp_gens.
   - apply nt_prime_order; trivial.
     + apply val_inj; simpl.
@@ -1045,15 +1048,27 @@ Proof.
       by apply (zp_m1_neq1 H) in H0.
   - apply ord_unit_pow_2_Zp_max.
     generalize (@ord_3_pow_2_neq n); intros.
-    unfold not; intros.
-    apply (f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)) in H0.
-    rewrite FinRing.val_unitX /= in H0.
-    apply (f_equal val) in H0.
-    simpl in H0.
-    rewrite {2}Zp_cast in H0; [|rewrite !expnS; lia].
-    rewrite -H0 in H.
-    admit.
+    move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
+    rewrite unit_Zp_expg /=.
+    rewrite {2 3 4 5 6}Zp_cast //.
+    rewrite !modn_small //.
+    rewrite /inZp.
+    move/(f_equal val) => /=.
+    rewrite !Zp_cast //.
   - generalize (@m1_neq_pow3_mod2n n); intros.
+    apply/negP.
+    move/cyclePmin => [x xlt].
+    move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
+    rewrite /= unit_Zp_expg /=.
+    rewrite {2 3 4 5 6}Zp_cast //.
+    rewrite !modn_small //.
+    rewrite /inZp.
+    move/(f_equal val) => /=.
+    rewrite !Zp_cast //.
+    rewrite modn_small; [| rewrite !expnS; lia].
+    rewrite modn_small // => HH.
+    apply H.
+    exists x.
     admit.
 Admitted.
 
