@@ -1026,8 +1026,8 @@ Proof.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
-  let um1 : {unit 'Z_(2^n.+3)} := FinRing.Unit _ (unit_m1_pow_2_Zp n) in
-  let ub3 : {unit 'Z_(2^n.+3)} := FinRing.Unit _ (unit_3_pow_2_Zp n) in
+  let um1 := FinRing.Unit (Phant 'Z_(2^n.+3)) (unit_m1_pow_2_Zp n) in
+  let ub3 := FinRing.Unit (Phant 'Z_(2^n.+3)) (unit_3_pow_2_Zp n) in
   (<[um1]> * <[ub3]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
 Proof.
   apply unit_pow_2_Zp_gens.
@@ -1044,9 +1044,14 @@ Proof.
       simpl in H0.
       by apply (zp_m1_neq1 H) in H0.
   - apply ord_unit_pow_2_Zp_max.
-    generalize (primitive_3_pow2 n); intros.
     generalize (@ord_3_pow_2_neq n); intros.
     unfold not; intros.
+    apply (f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)) in H0.
+    rewrite FinRing.val_unitX /= in H0.
+    apply (f_equal val) in H0.
+    simpl in H0.
+    rewrite {2}Zp_cast in H0; [|rewrite !expnS; lia].
+    rewrite -H0 in H.
     admit.
   - generalize (@m1_neq_pow3_mod2n n); intros.
     admit.
