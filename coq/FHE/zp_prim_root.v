@@ -1056,24 +1056,19 @@ Proof.
     move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
     rewrite /= unit_Zp_expg /=.
     rewrite {2 3 4 5 6}Zp_cast //.
-    rewrite !modn_small //.
-    rewrite /inZp.
+    rewrite !modn_small // /inZp.
     move/(f_equal val) => /=.
     rewrite !Zp_cast //.
     rewrite modn_small; [| rewrite !expnS; lia].
     rewrite modn_small // => HH.
     apply H.
     exists x.
-    unfold opp; simpl.
-    unfold Zp_opp.
+    rewrite /opp /= /Zp_opp.
     rewrite {2}Zp_cast; [| rewrite !expnS; lia].
     rewrite -inZp_exp.
     apply val_inj.
-    simpl.
-    rewrite !Zp_cast //.
-    rewrite -HH.
-    rewrite modn_small; [| rewrite !expnS; lia].
-    rewrite modn_small //.
+    rewrite /= !Zp_cast // -HH.
+    by rewrite !modn_small //; rewrite !expnS; lia.
 Qed.
 
 End two_pow_units.
