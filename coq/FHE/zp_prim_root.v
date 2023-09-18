@@ -1035,17 +1035,12 @@ Proof.
   have small3: 3 < 2 ^ n.+3 by (rewrite !expnS; lia).
   apply unit_pow_2_Zp_gens.
   - apply nt_prime_order; trivial.
-    + apply val_inj; simpl.
-      by rewrite mulrNN mulr1.
-    + assert (2 < 2^n.+3).
-      {
-        rewrite !expnS; lia.
-      }
-      apply /eqP.
-      unfold not; intros.
-      apply (f_equal FinRing.uval) in H0.
-      simpl in H0.
-      by apply (zp_m1_neq1 H) in H0.
+    + apply val_inj.
+      by rewrite /= mulrNN mulr1.
+    + apply /eqP.
+      move/(f_equal FinRing.uval).
+      simpl.
+      by apply (zp_m1_neq1 small2).
   - apply ord_unit_pow_2_Zp_max.
     generalize (@ord_3_pow_2_neq n); intros.
     move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
@@ -1069,8 +1064,17 @@ Proof.
     rewrite modn_small // => HH.
     apply H.
     exists x.
-    admit.
-Admitted.
+    unfold opp; simpl.
+    unfold Zp_opp.
+    rewrite {2}Zp_cast; [| rewrite !expnS; lia].
+    rewrite -inZp_exp.
+    apply val_inj.
+    simpl.
+    rewrite !Zp_cast //.
+    rewrite -HH.
+    rewrite modn_small; [| rewrite !expnS; lia].
+    rewrite modn_small //.
+Qed.
 
 End two_pow_units.
   
