@@ -95,7 +95,7 @@ Qed.
             by rewrite {2}(Fp_cast p_prime) in H.
           }
           assert (0 < x) by by rewrite lt0n.
-          unfold not; intros.
+          intros ?.
           generalize (dvdn_leq H0 H1); lia.
         }
         generalize (fermat_little_pred p_prime H); intros.
@@ -770,7 +770,7 @@ Proof.
   apply ord_pow2'.
   - apply ord_5_pow_2_Zp_1.
   - rewrite ord_5_pow_2_Zp.
-    unfold not; intros.
+    intros ?.
     apply (f_equal val) in H.
     simpl in H.
     rewrite Zp_cast in H; [|rewrite !expnS; lia].
@@ -792,7 +792,7 @@ Proof.
   - rewrite ord_5_pow_2_Zp.
     unfold opp; simpl.
     unfold Zp_opp.
-    unfold not; intros.
+    intros ?.
     apply (f_equal val) in H1.
     simpl in H1.
     rewrite Zp_cast in H1; [|rewrite !expnS; lia].
@@ -846,7 +846,7 @@ Qed.
     - generalize (@ord_3_pow_2_neq n); intros.
       unfold one; simpl.
       unfold Zp1.
-      unfold not; intros.
+      intros ?.
       rewrite -inZp_exp in H0.
       apply (f_equal val) in H0.
       simpl in H0.
@@ -867,7 +867,7 @@ Proof.
   - generalize (@ord_3_pow_2_neq_m1 n); intros.
     unfold opp; simpl.
     unfold Zp_opp.
-    unfold not; intros.
+    intros ?.
     unfold b3 in H2.
     rewrite -inZp_exp in H2.
     apply (f_equal val) in H2.
@@ -934,7 +934,7 @@ Proof.
   generalize (ord_unit_pow_2_Zp' b); intros.
   assert (~ #[b] %| 2^n).
   {
-    unfold not; intros.
+    intros ?.
     rewrite order_dvdn in H1.
     by move /eqP in H1.
   }
