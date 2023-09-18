@@ -1064,8 +1064,7 @@ Proof.
     apply H.
     exists x.
     rewrite /opp /= /Zp_opp.
-    rewrite {2}Zp_cast; [| rewrite !expnS; lia].
-    rewrite -inZp_exp.
+    rewrite {2}Zp_cast // -inZp_exp.
     apply val_inj.
     rewrite /= !Zp_cast // -HH.
     by rewrite !modn_small //; rewrite !expnS; lia.
