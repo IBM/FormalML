@@ -2233,7 +2233,7 @@ Section norms.
     
   Lemma rpoly_eval_conj (p : {poly R}) (x : R[i]) :
     let pc := map_poly RtoC p in 
-    conjc (pc.[x]) = pc.[conjc x].
+    pc.[x]^*%C = pc.[x^*%C].
   Proof.
     case: p => l llast.
     rewrite /horner /= !map_polyE /=.
@@ -2248,7 +2248,7 @@ Section norms.
 
   Lemma rpoly_eval_conj_R (p : {poly R}) (x : R[i]) :
     let pc := map_poly RtoC p in 
-    pc.[x] = (pc.[x]^*)%C ->
+    pc.[x] = pc.[x]^*%C ->
     pc.[x] = pc.[x^* %C].
   Proof.
     move=> /= -> . by rewrite rpoly_eval_conj.
@@ -2256,7 +2256,7 @@ Section norms.
 
   Lemma normc_conj_poly (p : {poly R}) (x : R[i]) :
     let pc := map_poly RtoC p in 
-    normc (pc.[x]) = normc (pc.[conjc x]).
+    normc (pc.[x]) = normc (pc.[x^*%C]).
   Proof.
     by rewrite /= -rpoly_eval_conj normc_conj.
   Qed.
