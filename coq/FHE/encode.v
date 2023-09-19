@@ -2251,8 +2251,7 @@ Section norms.
     pc.[x] = (pc.[x]^*)%C ->
     pc.[x] = pc.[x^* %C].
   Proof.
-    intros.
-    by rewrite H rpoly_eval_conj.
+    move=> /= -> . by rewrite rpoly_eval_conj.
   Qed.
 
   Lemma normc_conj_poly (p : {poly R}) (x : R[i]) :
