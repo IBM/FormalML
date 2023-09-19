@@ -2246,6 +2246,15 @@ Section norms.
       by rewrite -add_conj -mul_conj conjc_RtoC.
   Qed.
 
+  Lemma rpoly_eval_conj_R (p : {poly R}) (x : R[i]) :
+    let pc := map_poly RtoC p in 
+    pc.[x] = (pc.[x]^*)%C ->
+    pc.[x] = pc.[x^* %C].
+  Proof.
+    intros.
+    by rewrite H rpoly_eval_conj.
+  Qed.
+
   Lemma normc_conj_poly (p : {poly R}) (x : R[i]) :
     let pc := map_poly RtoC p in 
     normc (pc.[x]) = normc (pc.[conjc x]).
