@@ -1012,6 +1012,14 @@ Proof.
   - rewrite !expnS; lia.
 Qed.
 
+Lemma unit_5_pow_2_Zp (n : nat) :
+  (5 : 'Z_(2^n.+3)) \is a unit.
+Proof.
+  rewrite unitZpE.
+  - rewrite coprimeXl //.
+  - rewrite !expnS; lia.
+Qed.
+
 Lemma unit_m1_pow_2_Zp (n : nat) :
   (- 1 : 'Z_(2^n.+3)) \is a unit.
 Proof.
@@ -1049,6 +1057,50 @@ Proof.
     move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
     rewrite /= unit_Zp_expg /=.
     rewrite {2 3 4 5 6}Zp_cast // !modn_small // /inZp.
+    move/(f_equal val) => /=.
+    rewrite !Zp_cast // modn_small; [| rewrite !expnS; lia].
+    rewrite modn_small // => HH.
+    apply H.
+    exists x.
+    rewrite /opp /= /Zp_opp {2}Zp_cast // -inZp_exp.
+    apply val_inj.
+    rewrite /= !Zp_cast // -HH.
+    by rewrite !modn_small //; rewrite !expnS; lia.
+Qed.
+
+Lemma unit_pow_2_Zp_gens_m1_5 (n : nat) :
+  let um1 := FinRing.unit 'Z_(2^n.+3) (unit_m1_pow_2_Zp n) in
+  let ub5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n) in
+  (<[um1]> * <[ub5]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
+Proof.
+  have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have small3: 3 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have small4: 4 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have small5: 5 < 2 ^ n.+3 by (rewrite !expnS; lia).    
+  apply unit_pow_2_Zp_gens.
+  - apply nt_prime_order; trivial.
+    + apply val_inj.
+      by rewrite /= mulrNN mulr1.
+    + apply /eqP.
+      move/(f_equal FinRing.uval).
+      simpl.
+      by apply (zp_m1_neq1 small2).
+  - apply ord_unit_pow_2_Zp_max.
+    generalize (@ord_5_pow_2_neq n); intros.
+    move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
+    rewrite unit_Zp_expg /=.
+    rewrite {2 3 4 5 6 7 8 9 10}Zp_cast //.
+    rewrite !modn_small //.
+    rewrite /inZp.
+    move/(f_equal val) => /=.
+    rewrite !Zp_cast //.
+  - generalize (@m1_neq_pow5_mod2n n); intros.
+    apply/negP.
+    move/cyclePmin => [x xlt].
+    move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
+    rewrite /= unit_Zp_expg /=.
+    rewrite {2 3 4 5 6 7 8 9 10}Zp_cast // !modn_small // /inZp.
     move/(f_equal val) => /=.
     rewrite !Zp_cast // modn_small; [| rewrite !expnS; lia].
     rewrite modn_small // => HH.
