@@ -1045,18 +1045,14 @@ Proof.
   - apply ord_unit_pow_2_Zp_max.
     generalize (@ord_3_pow_2_neq n); intros.
     move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
-    rewrite unit_Zp_expg /=.
-    rewrite {2 3 4 5 6}Zp_cast //.
-    rewrite !modn_small //.
-    rewrite /inZp.
+    rewrite unit_Zp_expg /= {2 3 4 5 6}Zp_cast // !modn_small // /inZp.
     move/(f_equal val) => /=.
     rewrite !Zp_cast //.
   - generalize (@m1_neq_pow3_mod2n n); intros.
     apply/negP.
     move/cyclePmin => [x xlt].
     move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
-    rewrite /= unit_Zp_expg /=.
-    rewrite {2 3 4 5 6}Zp_cast // !modn_small // /inZp.
+    rewrite /= unit_Zp_expg /= {2 3 4 5 6}Zp_cast // !modn_small // /inZp.
     move/(f_equal val) => /=.
     rewrite !Zp_cast // modn_small; [| rewrite !expnS; lia].
     rewrite modn_small // => HH.
@@ -1064,8 +1060,7 @@ Proof.
     exists x.
     rewrite /opp /= /Zp_opp {2}Zp_cast // -inZp_exp.
     apply val_inj.
-    rewrite /= !Zp_cast // -HH.
-    by rewrite !modn_small //; rewrite !expnS; lia.
+    by rewrite /= !Zp_cast // -HH !modn_small //; rewrite !expnS; lia.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_5 (n : nat) :
@@ -1089,18 +1084,14 @@ Proof.
   - apply ord_unit_pow_2_Zp_max.
     generalize (@ord_5_pow_2_neq n); intros.
     move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
-    rewrite unit_Zp_expg /=.
-    rewrite {2 3 4 5 6 7 8 9 10}Zp_cast //.
-    rewrite !modn_small //.
-    rewrite /inZp.
+    rewrite unit_Zp_expg /= {2 3 4 5 6 7 8 9 10}Zp_cast // !modn_small // /inZp.
     move/(f_equal val) => /=.
     rewrite !Zp_cast //.
   - generalize (@m1_neq_pow5_mod2n n); intros.
     apply/negP.
     move/cyclePmin => [x xlt].
     move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
-    rewrite /= unit_Zp_expg /=.
-    rewrite {2 3 4 5 6 7 8 9 10}Zp_cast // !modn_small // /inZp.
+    rewrite /= unit_Zp_expg /= {2 3 4 5 6 7 8 9 10}Zp_cast // !modn_small // /inZp.
     move/(f_equal val) => /=.
     rewrite !Zp_cast // modn_small; [| rewrite !expnS; lia].
     rewrite modn_small // => HH.
@@ -1108,8 +1099,7 @@ Proof.
     exists x.
     rewrite /opp /= /Zp_opp {2}Zp_cast // -inZp_exp.
     apply val_inj.
-    rewrite /= !Zp_cast // -HH.
-    by rewrite !modn_small //; rewrite !expnS; lia.
+    by rewrite /= !Zp_cast // -HH !modn_small //; rewrite !expnS; lia.
 Qed.
 
 End two_pow_units.
