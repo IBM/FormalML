@@ -392,6 +392,76 @@ Section chinese.
     by rewrite (eqP (chinese_remainder_list co_l2 in2)).
   Qed.
 
+  Definition Zp_reduce_r (p q : nat) (a : 'Z_(p*q)) : 'Z_q := inZp a.
+  Definition Zp_reduce_l (p q : nat) (a : 'Z_(p*q)) : 'Z_p := inZp a.  
+  Definition Zp_reduce_pair (p q : nat) (a : 'Z_(p*q)) := (Zp_reduce_l a,
+                                                            Zp_reduce_r a).
+
+  Lemma modn_plus_const x a b m :
+    a = b %[mod m] ->
+    x + a = x + b %[mod m].
+  Proof.
+    intros.
+    by rewrite -modnDm H modnDm.
+  Qed.
+
+  Lemma Zp_reduce_r_is_morphism (p q : nat) :
+    1 < p ->
+    1 < q ->    
+    rmorphism (@Zp_reduce_r p q).
+  Proof.
+    intros.
+    assert (1 < p*q) by lia.
+    assert ((Zp_trunc q).+2 %| (Zp_trunc (p * q)).+2).
+    {
+      rewrite !Zp_cast //.
+      apply dvdn_mull.
+      apply dvdnn.
+    }
+    constructor.
+    - intros ??.
+      apply val_inj; simpl.
+      rewrite modnDm modn_dvdm //.
+      apply (@modn_plus_const x (((Zp_trunc (p * q)).+2 - y) %% (Zp_trunc (p * q)).+2)
+               ((Zp_trunc q).+2 - y %% (Zp_trunc q).+2) (Zp_trunc q).+2).
+      rewrite modn_dvdm //.
+      admit.
+    - constructor.
+      + intros ??.
+        apply val_inj; simpl.
+        rewrite modnMm modn_dvdm // !Zp_cast //.
+      + apply val_inj; simpl.
+        rewrite modn_dvdm // !Zp_cast //.
+   Admitted.        
+
+  Lemma Zp_reduce_l_is_morphism (p q : nat) :
+    1 < p ->
+    1 < q ->    
+    rmorphism (@Zp_reduce_l p q).
+  Proof.
+    intros.
+    unfold Zp_reduce_l.
+    rewrite mulnC.
+    by apply Zp_reduce_r_is_morphism.
+  Qed.
+
+  Lemma Zp_reduce_pair_is_morphism (p q : nat) :
+    1 < p ->
+    1 < q ->    
+    rmorphism (@Zp_reduce_pair p q).
+  Proof.
+    intros.
+    destruct (@Zp_reduce_l_is_morphism p q H H0) as [? [? ?]].
+    destruct (@Zp_reduce_r_is_morphism p q H H0) as [? [? ?]].
+    constructor.
+    - intros ??.
+      rewrite /Zp_reduce_pair base base0 //.
+    - constructor.
+      + intros ??.
+        rewrite /Zp_reduce_pair m m0 //.
+      + rewrite /Zp_reduce_pair e e0 //.
+  Qed.      
+
 End chinese.
 
 (* order of 3 mod 2^(n+2) = 2^n *)
