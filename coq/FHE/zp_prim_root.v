@@ -462,6 +462,28 @@ Section chinese.
       + rewrite /Zp_reduce_pair e e0 //.
   Qed.      
 
+  Definition Zp_lift_pair (p q : nat) (r : 'Z_p * 'Z_q) : 'Z_(p*q) :=
+    inZp (chinese p q r.1 r.2).
+
+  Lemma Zp_lift_pair_is_morphism (p q : nat) :
+    1 < p ->
+    1 < q ->
+    coprime p q ->
+    rmorphism (@Zp_lift_pair p q).
+  Proof.
+    intros.
+    generalize (chinese_remainder H1); intros.
+    generalize (chinese_modl H1); intros.
+    generalize (chinese_modr H1); intros.    
+    constructor.
+    - admit.
+    - constructor.
+      + intros ??.
+        unfold Zp_lift_pair.
+        admit.
+      + admit.
+  Admitted.
+
 End chinese.
 
 (* order of 3 mod 2^(n+2) = 2^n *)
