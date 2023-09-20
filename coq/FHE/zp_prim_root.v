@@ -53,24 +53,24 @@ Lemma prime_pbig2 (q : nat) :
   prime q ->
    0 < (q.-1)%N.
 Proof.
-    intros p_prime.
-    assert (q > 0)%N by (by apply prime_gt0).
-    destruct q; [| destruct q].
-      - by rewrite ltnn in H.
-      - by inversion p_prime.
-      - by apply ltn0Sn.
-Qed.    
+  move=> p_prime.
+  move: (p_prime) => /(prime_gt0).
+  destruct q; [| destruct q].
+  - by rewrite ltnn.
+  - by inversion p_prime.
+  - by rewrite ltn0Sn.
+Qed.
 
    Lemma Fp_exp_expn (x : 'F_p) (n : nat):
      prime p ->
      nat_of_ord (x ^+ n)%R = x ^ n %% p.
    Proof.
-     intros p_prime.
-     generalize (Fp_cast p_prime); intros.
+     move=> p_prime.
+     have peqq := (Fp_cast p_prime).
      induction n.
-     - by rewrite /= {1}H expn0.
+     - by rewrite /= {1}peqq expn0.
      - rewrite expnS exprS /mul /= IHn -modnMm.
-       rewrite {2}H {3}H {3}H.
+       rewrite {2 4 5}peqq.
        by rewrite -(modnMm x _) modn_mod.
    Qed.
 
@@ -78,32 +78,29 @@ Qed.
     prime p ->
     { w : 'F_p | (p.-1).-primitive_root w}.
   Proof.
-    intros p_prime.
-    generalize (prime_pbig2 p_prime); intros pbig.
+    move=> p_prime.
+    have pbig := (prime_pbig2 p_prime).
     have/(nth_find 0)-HH: has (p.-1).-primitive_root [seq x <- enum 'F_p | x != Zp0].
     {
-      apply (@has_prim_root _ _ [seq x <- enum 'F_p | x != Zp0]) => //.
+      apply (@has_prim_root _ _ [seq x <- enum 'F_p | x != Zp0]) => //=.
       - rewrite all_filter.
         apply/allP => /= x xin.
         apply/implyP=> xn0.
         rewrite unity_rootE.
-        assert (not (is_true (dvdn p x))).
+        have/(fermat_little_pred p_prime)-eqq: ~ p %| x.
         {
-          assert (x < p).
+          have xltp: x < p.
           {
-            generalize (ltn_ord x); intros.
-            by rewrite {2}(Fp_cast p_prime) in H.
+            move: (ltn_ord x).
+            by rewrite {2}(Fp_cast p_prime).
           }
-          assert (0 < x) by by rewrite lt0n.
-          intros ?.
-          generalize (dvdn_leq H0 H1); lia.
+          have xpos: (0 < x) by by rewrite lt0n.
+          move/(dvdn_leq xpos); lia.
         }
-        generalize (fermat_little_pred p_prime H); intros.
         apply /eqP.
         apply val_inj => /=.
-        by rewrite {2}(Fp_cast p_prime) -H0 Fp_exp_expn.
-      - simpl.
-        apply filter_uniq.
+        by rewrite {2}(Fp_cast p_prime) -eqq Fp_exp_expn.
+      - apply filter_uniq.
         apply enum_uniq.
       - rewrite -rem_filter; [| apply enum_uniq].
         rewrite size_rem.
