@@ -502,6 +502,16 @@ Section chinese.
   Definition Zp_lift_pair (p q : nat) (r : 'Z_p * 'Z_q) : 'Z_(p*q) :=
     inZp (chinese p q r.1 r.2).
 
+  Lemma modn_muln_l x p q :
+    (x %% (p * q)) %% p = x %% p.
+  Proof.
+    Admitted.
+
+  Lemma modn_muln_r x p q :
+    (x %% (p * q)) %% q = x %% q.
+  Proof.
+    Admitted.
+
   Lemma Zp_lift_pair_is_morphism (p q : nat) :
     1 < p ->
     1 < q ->
@@ -532,11 +542,46 @@ Section chinese.
       + rewrite H4.
         symmetry.
         rewrite -modnDm H4.
-        admit.
+        rewrite modnB; [|lia|lia].
+        rewrite modn_muln_l modnMr addn0.
+        case (boolP (0 < (chinese p q m1 m2 %% p))); simpl; intros.
+        * rewrite mul1n H4.
+          symmetry.
+          rewrite -modnDm !modn_mod.
+          apply modn_plus_const.
+          rewrite Zp_cast in i1; [|lia].
+          rewrite modnB; [|lia|lia].
+          rewrite modnn (modn_small i1) addn0.
+          case (boolP (0 < m1)); simpl; intros.
+          -- by rewrite mul1n.
+          -- assert (m1 = 0) by lia.
+             by rewrite H6 mul0n !subn0 modnn mod0n.
+        * assert (chinese p q m1 m2 %% p = 0) by lia.
+          rewrite mul0n H4.
+          symmetry.
+          rewrite -modnDm !modn_mod.
+          apply modn_plus_const.
+          admit.
       + rewrite H5.
         symmetry.
         rewrite -modnDm H5.
-        admit.
+        rewrite modnB; [|lia|lia].
+        rewrite modn_muln_r modnMl addn0.
+        case (boolP (0 < (chinese p q m1 m2 %% q))); simpl; intros.
+        * rewrite mul1n H5.
+          symmetry.
+          rewrite -modnDm !modn_mod.
+          apply modn_plus_const.
+          rewrite Zp_cast in i2; [|lia].
+          rewrite modnB; [|lia|lia].
+          rewrite modnn (modn_small i2) addn0.
+          case (boolP (0 < m2)); simpl; intros.
+          -- by rewrite mul1n.
+          -- assert (m2 = 0) by lia.
+             by rewrite H6 mul0n !subn0 modnn mod0n.
+        * assert (chinese p q m1 m2 %% q = 0) by lia.
+          rewrite mul0n H5.
+          admit.
     - constructor.
       + intros ??.
         unfold Zp_lift_pair.
