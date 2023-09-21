@@ -629,6 +629,77 @@ Section chinese.
         * rewrite H5 !modn_small //.          
  Qed.
 
+  Lemma right_inv_chinese (p q : nat) :
+    1 < p ->
+    1 < q ->
+    coprime p q ->
+    cancel (@Zp_lift_pair p q) (@Zp_reduce_pair p q).
+  Proof.
+    intros.
+    unfold cancel.
+    intros.
+    unfold Zp_reduce_pair, Zp_lift_pair.
+    destruct x.
+    simpl.
+    unfold Zp_reduce_l, Zp_reduce_r.
+    generalize (chinese_remainder H1); intros.
+    generalize (chinese_modl H1); intros.
+    generalize (chinese_modr H1); intros.
+    assert (1 < p * q) by lia.
+    destruct o, o0.
+    f_equal.
+    - apply val_inj.
+      rewrite /= !Zp_cast //.
+      rewrite Zp_cast // in i.
+      rewrite modn_muln_l H3.
+      by rewrite (modn_small i).
+    - apply val_inj.
+      rewrite /= !Zp_cast //.
+      rewrite Zp_cast // in i0.
+      rewrite modn_muln_r H4.
+      by rewrite (modn_small i0).
+  Qed.
+
+  Lemma left_inv_chinese (p q : nat) :
+    1 < p ->
+    1 < q ->
+    coprime p q ->
+    cancel (@Zp_reduce_pair p q) (@Zp_lift_pair p q).
+  Proof.
+    intros.
+    unfold cancel.
+    intros.
+    unfold Zp_reduce_pair, Zp_lift_pair.
+    destruct x.
+    unfold Zp_reduce_l, Zp_reduce_r.
+    generalize (chinese_remainder H1); intros.
+    generalize (chinese_modl H1); intros.
+    generalize (chinese_modr H1); intros.
+    assert (1 < p * q) by lia.
+    apply val_inj.
+    simpl.
+    rewrite !Zp_cast //.
+    rewrite Zp_cast // in i.
+    replace m with (m %% (p * q)) at 3.
+    - apply /eqP.
+      rewrite H2.
+      apply /andP.
+      split.
+      + apply /eqP.
+        by rewrite H3 modn_mod.
+      + apply /eqP.
+        by rewrite H4 modn_mod.
+    - by rewrite (modn_small i).
+  Qed.
+
+  Lemma bijective_chinese (p q : nat) 
+              (pbig: 1 < p)
+              (qbig: 1 < q)
+              (cop: coprime p q) :
+    bijective ('Z_(p*q)).
+  Proof.
+    Admitted.
+    
 End chinese.
 
 (* order of 3 mod 2^(n+2) = 2^n *)
