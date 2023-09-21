@@ -539,12 +539,8 @@ Section chinese.
       unfold Zp_lift_pair.
       rewrite -inZp_add.
       apply val_inj.
-      destruct x.
-      destruct y.
-      destruct s.
-      destruct s0.
-      destruct s1.
-      destruct s2.
+      destruct x, y.
+      destruct s, s0, s1, s2.
       rewrite /= !Zp_cast //.
       apply /eqP.
       rewrite H3.
@@ -552,8 +548,7 @@ Section chinese.
       split; apply /eqP.
       + rewrite H4.
         symmetry.
-        rewrite -modnDm H4.
-        rewrite modnB; [|lia|lia].
+        rewrite -modnDm H4 modnB; [|lia|lia].
         rewrite modn_muln_l modnMr addn0.
         case (boolP (0 < (chinese p q m1 m2 %% p))); simpl; intros.
         * rewrite mul1n H4.
@@ -577,14 +572,12 @@ Section chinese.
           rewrite modnn (modn_small i1) addn0.
           case (boolP (0 < m1)); simpl; intros.
           -- rewrite mul1n.
-             rewrite H4 in H6.
-             rewrite (modn_small i1) in H6.
+             rewrite H4 (modn_small i1) in H6.
              lia.
           -- by rewrite mul0n.
       + rewrite H5.
         symmetry.
-        rewrite -modnDm H5.
-        rewrite modnB; [|lia|lia].
+        rewrite -modnDm H5 modnB; [|lia|lia].
         rewrite modn_muln_r modnMl addn0.
         case (boolP (0 < (chinese p q m1 m2 %% q))); simpl; intros.
         * rewrite mul1n H5.
@@ -608,8 +601,7 @@ Section chinese.
           rewrite modnn (modn_small i2) addn0.
           case (boolP (0 < m2)); simpl; intros.
           -- rewrite mul1n.
-             rewrite H5 in H6.
-             rewrite (modn_small i2) in H6.
+             rewrite H5 (modn_small i2) in H6.
              lia.
           -- by rewrite mul0n.
     - constructor.
@@ -617,12 +609,8 @@ Section chinese.
         unfold Zp_lift_pair.
         rewrite -inZp_mul.
         apply val_inj.
-        destruct x.
-        destruct y.
-        destruct s.
-        destruct s0.
-        destruct s1.
-        destruct s2.
+        destruct x, y.
+        destruct s, s0, s1, s2.
         rewrite /= !Zp_cast //.
         apply /eqP.
         rewrite H3.
