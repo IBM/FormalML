@@ -698,9 +698,9 @@ Section chinese.
               (cop: coprime p q) :
     bijective (@Zp_reduce_pair p q).
   Proof.
-    generalize (can_inj (left_inv_chinese pbig qbig cop)); intros.
-    generalize (can_inj (right_inv_chinese pbig qbig cop)); intros.    
-    Admitted.
+    apply (Bijective (left_inv_chinese pbig qbig cop)).
+    apply (right_inv_chinese pbig qbig cop).
+  Qed.
     
   Lemma bijective_chinese_alt (p q : nat) 
               (pbig: 1 < p)
@@ -708,7 +708,9 @@ Section chinese.
               (cop: coprime p q) :
     bijective (@Zp_lift_pair p q).
   Proof.
-    Admitted.
+    apply (Bijective (right_inv_chinese pbig qbig cop)).
+    apply (left_inv_chinese pbig qbig cop).    
+  Qed.
 
 End chinese.
 
