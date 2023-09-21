@@ -572,7 +572,15 @@ Section chinese.
           symmetry.
           rewrite -modnDm !modn_mod.
           apply modn_plus_const.
-          admit.
+          rewrite Zp_cast in i1; [|lia].
+          rewrite modnB; [|lia|lia].
+          rewrite modnn (modn_small i1) addn0.
+          case (boolP (0 < m1)); simpl; intros.
+          -- rewrite mul1n.
+             rewrite H4 in H6.
+             rewrite (modn_small i1) in H6.
+             lia.
+          -- by rewrite mul0n.
       + rewrite H5.
         symmetry.
         rewrite -modnDm H5.
@@ -592,7 +600,18 @@ Section chinese.
              by rewrite H6 mul0n !subn0 modnn mod0n.
         * assert (chinese p q m1 m2 %% q = 0) by lia.
           rewrite mul0n H5.
-          admit.
+          symmetry.
+          rewrite -modnDm !modn_mod.
+          apply modn_plus_const.
+          rewrite Zp_cast in i2; [|lia].
+          rewrite modnB; [|lia|lia].
+          rewrite modnn (modn_small i2) addn0.
+          case (boolP (0 < m2)); simpl; intros.
+          -- rewrite mul1n.
+             rewrite H5 in H6.
+             rewrite (modn_small i2) in H6.
+             lia.
+          -- by rewrite mul0n.
     - constructor.
       + intros ??.
         unfold Zp_lift_pair.
@@ -620,7 +639,7 @@ Section chinese.
         split; apply /eqP.
         * rewrite H4 !modn_small //.
         * rewrite H5 !modn_small //.          
-  Admitted.
+ Qed.
 
 End chinese.
 
