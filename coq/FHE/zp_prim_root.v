@@ -122,9 +122,34 @@ Qed.
     by exists (exp x (p.-1 %/ n)).
   Qed.
 
+Lemma inZp_add j k n :
+  inZp (j + k) = inZp j + inZp k :> 'Z_n.
+Proof.
+  apply: val_inj => /=.
+  by rewrite modnDm.
+Qed.
+
+Lemma inZp_mul j k n :
+  inZp (j * k) = inZp j * inZp k :> 'Z_n.
+Proof.
+  apply: val_inj => /=.
+  by rewrite modnMm.
+Qed.
+
+Lemma inZp_exp j k n :
+  inZp (j ^ k) = inZp j ^+ k :> 'Z_n.
+Proof.
+  induction k.
+  - rewrite expn0 expr0.
+    by apply: val_inj => /=.
+  - rewrite exprS expnS -IHk.
+    apply inZp_mul.
+Qed.
+
 End cyclic.
 
 Require Import ssrbool.
+
 
 Section chinese.
 
@@ -472,16 +497,61 @@ Section chinese.
     rmorphism (@Zp_lift_pair p q).
   Proof.
     intros.
+    assert (1 < p*q) by lia.
     generalize (chinese_remainder H1); intros.
     generalize (chinese_modl H1); intros.
     generalize (chinese_modr H1); intros.    
     constructor.
-    - admit.
+    - intros ??.
+      unfold Zp_lift_pair.
+      rewrite -inZp_add.
+      apply val_inj.
+      destruct x.
+      destruct y.
+      destruct s.
+      destruct s0.
+      destruct s1.
+      destruct s2.
+      rewrite /= !Zp_cast //.
+      apply /eqP.
+      rewrite H3.
+      apply /andP.
+      split; apply /eqP.
+      + rewrite H4.
+        symmetry.
+        rewrite -modnDm H4.
+        admit.
+      + rewrite H5.
+        symmetry.
+        rewrite -modnDm H5.
+        admit.
     - constructor.
       + intros ??.
         unfold Zp_lift_pair.
-        admit.
-      + admit.
+        rewrite -inZp_mul.
+        apply val_inj.
+        destruct x.
+        destruct y.
+        destruct s.
+        destruct s0.
+        destruct s1.
+        destruct s2.
+        rewrite /= !Zp_cast //.
+        apply /eqP.
+        rewrite H3.
+        apply /andP.
+        split; apply /eqP; symmetry.
+        * by rewrite -modnMm !H4 /= modnMm modn_mod.
+        * by rewrite -modnMm !H5 /= modnMm modn_mod.
+      + unfold Zp_lift_pair.
+        apply val_inj.
+        rewrite /= !Zp_cast //.
+        apply /eqP.
+        rewrite H3.
+        apply /andP.
+        split; apply /eqP.
+        * rewrite H4 !modn_small //.
+        * rewrite H5 !modn_small //.          
   Admitted.
 
 End chinese.
@@ -795,22 +865,6 @@ Proof.
   by rewrite -unit_pow_2_Zp ?(valP b).
 Qed.
 
-Lemma inZp_mul j k n :
-  inZp (j * k) = inZp j * inZp k :> 'Z_n.
-Proof.
-  apply: val_inj => /=.
-  by rewrite modnMm.
-Qed.
-
-Lemma inZp_exp j k n :
-  inZp (j ^ k) = inZp j ^+ k :> 'Z_n.
-Proof.
-  induction k.
-  - rewrite expn0 expr0.
-    by apply: val_inj => /=.
-  - rewrite exprS expnS -IHk.
-    apply inZp_mul.
-Qed.
 
 Lemma ord_5_pow_2_Zp' n :
   inZp (5 ^ (2^n)) = inZp (1 + 2^n.+2) :> 'Z_(2^n.+3).
