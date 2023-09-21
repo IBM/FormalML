@@ -696,10 +696,20 @@ Section chinese.
               (pbig: 1 < p)
               (qbig: 1 < q)
               (cop: coprime p q) :
-    bijective ('Z_(p*q)).
+    bijective (@Zp_reduce_pair p q).
   Proof.
+    generalize (can_inj (left_inv_chinese pbig qbig cop)); intros.
+    generalize (can_inj (right_inv_chinese pbig qbig cop)); intros.    
     Admitted.
     
+  Lemma bijective_chinese_alt (p q : nat) 
+              (pbig: 1 < p)
+              (qbig: 1 < q)
+              (cop: coprime p q) :
+    bijective (@Zp_lift_pair p q).
+  Proof.
+    Admitted.
+
 End chinese.
 
 (* order of 3 mod 2^(n+2) = 2^n *)
