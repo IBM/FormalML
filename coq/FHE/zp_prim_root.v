@@ -505,12 +505,23 @@ Section chinese.
   Lemma modn_muln_l x p q :
     (x %% (p * q)) %% p = x %% p.
   Proof.
-    Admitted.
+    assert (x %% (p * q) <= x).
+    {
+      apply leq_mod.
+    }
+    symmetry.
+    apply /eqP.
+    rewrite (eqn_mod_dvd p H).
+    apply mul_dvdn_l with (d2 := q).
+    rewrite -(eqn_mod_dvd (p * q) H).
+    by rewrite modn_mod.
+  Qed.
 
   Lemma modn_muln_r x p q :
     (x %% (p * q)) %% q = x %% q.
   Proof.
-    Admitted.
+    by rewrite mulnC modn_muln_l.
+  Qed.
 
   Lemma Zp_lift_pair_is_morphism (p q : nat) :
     1 < p ->
