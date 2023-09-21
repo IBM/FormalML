@@ -450,14 +450,27 @@ Section chinese.
       apply (@modn_plus_const x (((Zp_trunc (p * q)).+2 - y) %% (Zp_trunc (p * q)).+2)
                ((Zp_trunc q).+2 - y %% (Zp_trunc q).+2) (Zp_trunc q).+2).
       rewrite modn_dvdm //.
-      admit.
+      destruct y.
+      simpl.
+      rewrite !Zp_cast //.
+      rewrite Zp_cast // in i.
+      clear H2 x.
+      rewrite modnB; try lia.
+      rewrite modnMl.
+      case (boolP (0 < m %% q)); intros; simpl.
+      + rewrite mul1n addn0.
+        assert (q - m%%q < q) by lia.
+        rewrite (modn_small H2) //.
+      + rewrite mul0n addn0.
+        assert (m%%q = 0) by lia.
+        rewrite H2 !subn0 modnn //.
     - constructor.
       + intros ??.
         apply val_inj; simpl.
         rewrite modnMm modn_dvdm // !Zp_cast //.
       + apply val_inj; simpl.
         rewrite modn_dvdm // !Zp_cast //.
-   Admitted.        
+  Qed.
 
   Lemma Zp_reduce_l_is_morphism (p q : nat) :
     1 < p ->
@@ -465,8 +478,7 @@ Section chinese.
     rmorphism (@Zp_reduce_l p q).
   Proof.
     intros.
-    unfold Zp_reduce_l.
-    rewrite mulnC.
+    rewrite /Zp_reduce_l mulnC.
     by apply Zp_reduce_r_is_morphism.
   Qed.
 
