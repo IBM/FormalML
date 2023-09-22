@@ -1239,18 +1239,18 @@ Proof.
 Qed.
 
 Lemma card_units_pow_2_Zp (n : nat) :
-  #|units_Zp (2^n.+3)| = (2^n.+2)%N.
+  #|units_Zp (2^n.+2)| = (2^n.+1)%N.
 Proof.
   rewrite card_units_Zp; try lia.
   rewrite totient_pfactor; trivial; try lia.
   rewrite !expnS; lia.
 Qed.
 
-Lemma unit_pow_2_Zp_gens_ord (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
+Lemma unit_pow_2_Zp_gens_ord (n : nat) (a b : {unit 'Z_(2^n.+2)}) :
   #[a] = 2%N ->
-  #[b] = (2^n.+1)%N ->
+  #[b] = (2^n)%N ->
   #|<[a]>%G :&: <[b]>%G| = 1%N ->
-  #|<[a]> * <[b]>|  = (2^n.+2)%N.
+  #|<[a]> * <[b]>|  = (2^n.+1)%N.
 Proof.
   intros.
   unfold order in H.
@@ -1260,7 +1260,7 @@ Proof.
   by rewrite -H2 !expnS.
 Qed.
 
-Lemma ord2_setI (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
+Lemma ord2_setI (n : nat) (a b : {unit 'Z_(2^n)}) :
   #[a] = 2%N ->
   (a \notin <[b]>) ->
   #|<[a]>%G :&: <[b]>%G| = 1%N.
@@ -1278,11 +1278,11 @@ Proof.
   by rewrite cards1.
 Qed.
 
-Lemma unit_pow_2_Zp_gens (n : nat) (a b : {unit 'Z_(2^n.+3)}) :
+Lemma unit_pow_2_Zp_gens (n : nat) (a b : {unit 'Z_(2^n.+2)}) :
   #[a] = 2%N ->
-  #[b] = (2^n.+1)%N ->
+  #[b] = (2^n)%N ->
   (a \notin <[b]>) ->
-  (<[a]> * <[b]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
+  (<[a]> * <[b]>)%G  :=: [group of (units_Zp (2^n.+2)%N)].
 Proof.
   intros.
   generalize (subsetT (<[a]> * <[b]>)%G); intros.
@@ -1292,7 +1292,7 @@ Proof.
     + rewrite divnn !expnS; lia.
     + by apply ord2_setI.
   - apply cents_norm.
-    generalize (units_Zp_abelian (2^n.+3)); intros.
+    generalize (units_Zp_abelian (2^n.+2)); intros.
     generalize (subsetT <[a]>); intros.
     generalize (sub_abelian_cent H3 H4); intros.
     generalize (subsetT <[b]>); intros.    
@@ -1302,7 +1302,7 @@ Proof.
 Qed.
 
 Lemma unit_3_pow_2_Zp (n : nat) :
-  (3 : 'Z_(2^n.+3)) \is a unit.
+  (3 : 'Z_(2^n.+1)) \is a unit.
 Proof.
   rewrite unitZpE.
   - rewrite coprimeXl //.
@@ -1310,7 +1310,7 @@ Proof.
 Qed.
 
 Lemma unit_5_pow_2_Zp (n : nat) :
-  (5 : 'Z_(2^n.+3)) \is a unit.
+  (5 : 'Z_(2^n.+1)) \is a unit.
 Proof.
   rewrite unitZpE.
   - rewrite coprimeXl //.
@@ -1318,14 +1318,14 @@ Proof.
 Qed.
 
 Lemma unit_m1_pow_2_Zp (n : nat) :
-  (- 1 : 'Z_(2^n.+3)) \is a unit.
+  (- 1 : 'Z_(2^n.+1)) \is a unit.
 Proof.
   apply unitrN1.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
-  let um1 := FinRing.unit 'Z_(2^n.+3) (unit_m1_pow_2_Zp n) in
-  let ub3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n) in
+  let um1 := FinRing.unit 'Z_(2^n.+3) (unit_m1_pow_2_Zp n.+2) in
+  let ub3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
   (<[um1]> * <[ub3]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
 Proof.
   have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
@@ -1361,8 +1361,8 @@ Proof.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_5 (n : nat) :
-  let um1 := FinRing.unit 'Z_(2^n.+3) (unit_m1_pow_2_Zp n) in
-  let ub5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n) in
+  let um1 := FinRing.unit 'Z_(2^n.+3) (unit_m1_pow_2_Zp n.+2) in
+  let ub5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
   (<[um1]> * <[ub5]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
 Proof.
   have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
