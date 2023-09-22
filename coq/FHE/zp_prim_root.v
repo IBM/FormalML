@@ -1360,6 +1360,25 @@ Proof.
     by rewrite /= !Zp_cast // -pow3m1 !modn_small //; rewrite !expnS; lia.
 Qed.
 
+Lemma unit_Z4_gens_m1 :
+  let um1 := FinRing.unit 'Z_(2^1.+1) (unit_m1_pow_2_Zp 1) in  
+  <[um1]> :=: [group of (units_Zp (2^1.+1)%N)].
+Proof.
+  intros.
+  generalize (subsetT (<[um1]>)); intros.
+  apply index1g; trivial.
+  rewrite -(divgS H) (card_units_pow_2_Zp 0).
+  assert (#[um1] = 2%N).
+  {
+    apply nt_prime_order; trivial.
+    apply val_inj.
+    by rewrite /= mulrNN mulr1.
+  }
+  unfold order in H0.
+  rewrite H0.
+  lia.
+Qed.
+
 Lemma unit_pow_2_Zp_gens_m1_5 (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unit_m1_pow_2_Zp n.+2) in
   let ub5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
