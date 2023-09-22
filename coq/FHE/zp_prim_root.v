@@ -1246,18 +1246,12 @@ Proof.
   rewrite !expnS; lia.
 Qed.
 
-Lemma unit_Zp_gens_ord (n oa ob : nat) (a b : {unit 'Z_n}) :
-  #[a] = oa ->
-  #[b] = ob ->
+Lemma unit_Zp_gens_ord (n : nat) (a b : {unit 'Z_n}) :
   #|<[a]>%G :&: <[b]>%G| = 1%N ->
-  #|<[a]> * <[b]>|  = (oa * ob)%N.
+  #|<[a]> * <[b]>|  = (#[a] * #[b])%N.
 Proof.
   intros.
-  unfold order in H.
-  unfold order in H0.
-  generalize (mul_cardG <[a]> <[b]> ); intros.
-  rewrite H H0 H1 muln1 in H2.
-  by rewrite -H2.
+  by rewrite mul_cardG H muln1.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_ord (n : nat) (a b : {unit 'Z_(2^n.+2)}) :
@@ -1267,7 +1261,7 @@ Lemma unit_pow_2_Zp_gens_ord (n : nat) (a b : {unit 'Z_(2^n.+2)}) :
   #|<[a]> * <[b]>|  = (2^n.+1)%N.
 Proof.
   intros.
-  rewrite (unit_Zp_gens_ord H H0 H1); trivial.
+  rewrite (unit_Zp_gens_ord H1) H H0; trivial.
   by rewrite expnS.
 Qed.
 
