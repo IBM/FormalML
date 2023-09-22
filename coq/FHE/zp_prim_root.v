@@ -505,16 +505,12 @@ Section chinese.
   Lemma modn_muln_l x p q :
     (x %% (p * q)) %% p = x %% p.
   Proof.
-    assert (x %% (p * q) <= x).
-    {
-      apply leq_mod.
-    }
     symmetry.
     apply /eqP.
-    rewrite (eqn_mod_dvd p H).
+    have HH: (x %% (p * q) <= x) by apply leq_mod.
+    rewrite eqn_mod_dvd //.
     apply mul_dvdn_l with (d2 := q).
-    rewrite -(eqn_mod_dvd (p * q) H).
-    by rewrite modn_mod.
+    by rewrite -(eqn_mod_dvd (p * q)) // modn_mod.
   Qed.
 
   Lemma modn_muln_r x p q :
@@ -1349,19 +1345,19 @@ Proof.
     rewrite unit_Zp_expg /= {2 3 4 5 6}Zp_cast // !modn_small // /inZp.
     move/(f_equal val) => /=.
     rewrite !Zp_cast //.
-  - generalize (@m1_neq_pow3_mod2n n); intros.
+  - have nexist := @m1_neq_pow3_mod2n n.
     apply/negP.
     move/cyclePmin => [x xlt].
     move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
     rewrite /= unit_Zp_expg /= {2 3 4 5 6}Zp_cast // !modn_small // /inZp.
     move/(f_equal val) => /=.
     rewrite !Zp_cast // modn_small; [| rewrite !expnS; lia].
-    rewrite modn_small // => HH.
-    apply H.
+    rewrite modn_small // => pow3m1.
+    apply nexist.
     exists x.
     rewrite /opp /= /Zp_opp {2}Zp_cast // -inZp_exp.
     apply val_inj.
-    by rewrite /= !Zp_cast // -HH !modn_small //; rewrite !expnS; lia.
+    by rewrite /= !Zp_cast // -pow3m1 !modn_small //; rewrite !expnS; lia.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_5 (n : nat) :
