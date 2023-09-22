@@ -1317,14 +1317,8 @@ Proof.
   - rewrite !expnS; lia.
 Qed.
 
-Lemma unit_m1_pow_2_Zp (n : nat) :
-  (- 1 : 'Z_(2^n.+1)) \is a unit.
-Proof.
-  apply unitrN1.
-Qed.
-
 Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
-  let um1 := FinRing.unit 'Z_(2^n.+3) (unit_m1_pow_2_Zp n.+2) in
+  let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
   let ub3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
   (<[um1]> * <[ub3]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
 Proof.
@@ -1380,7 +1374,7 @@ Proof.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_5 (n : nat) :
-  let um1 := FinRing.unit 'Z_(2^n.+3) (unit_m1_pow_2_Zp n.+2) in
+  let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
   let ub5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
   (<[um1]> * <[ub5]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
 Proof.
