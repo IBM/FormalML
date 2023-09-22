@@ -688,7 +688,7 @@ Section chinese.
     - by rewrite (modn_small i).
   Qed.
 
-  Lemma bijective_chinese (p q : nat) 
+  Lemma bijective_reduce_pair (p q : nat) 
               (pbig: 1 < p)
               (qbig: 1 < q)
               (cop: coprime p q) :
@@ -698,7 +698,7 @@ Section chinese.
     apply (right_inv_chinese pbig qbig cop).
   Qed.
     
-  Lemma bijective_chinese_alt (p q : nat) 
+  Lemma bijective_lift_pair (p q : nat) 
               (pbig: 1 < p)
               (qbig: 1 < q)
               (cop: coprime p q) :
