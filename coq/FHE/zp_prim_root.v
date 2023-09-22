@@ -1361,8 +1361,8 @@ Proof.
 Qed.
 
 Lemma unit_Z4_gens_m1 :
-  let um1 := FinRing.unit 'Z_(2^1.+1) (unit_m1_pow_2_Zp 1) in  
-  <[um1]> :=: [group of (units_Zp (2^1.+1)%N)].
+  let um1 := FinRing.unit 'Z_4 (unitrN1 _) in  
+  <[um1]> :=: [group of (units_Zp 4)].
 Proof.
   intros.
   generalize (subsetT (<[um1]>)); intros.
