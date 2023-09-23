@@ -1000,20 +1000,19 @@ Proof.
   lia.
 Qed.      
 
-Lemma unit_pow_2_Zp (n : nat) (b : 'Z_(2^n.+3)) :
+Lemma unit_pow_2_Zp (n : nat) (b : 'Z_(2^n.+1)) :
   b \is a unit <->
   odd b.
 Proof.
-  have/(unitZpE b): (2^n.+3 > 1).
+  have/(unitZpE b): (2^n.+1 > 1).
   {
     rewrite !expnS; lia.
   }
-
   rewrite (_ : (b%:R) = b) ?natr_Zp // => ->.
   rewrite -coprimen2 coprime_sym coprime_pexpr; lia.
 Qed.
 
-Lemma unit_pow_2_Zp' (n : nat) (b : {unit 'Z_(2^n.+3)}) :
+Lemma unit_pow_2_Zp' (n : nat) (b : {unit 'Z_(2^n.+1)}) :
   odd (val b).
 Proof.
   by rewrite -unit_pow_2_Zp ?(valP b).
@@ -1321,6 +1320,18 @@ Proof.
   rewrite unitZpE.
   - rewrite coprimeXl //.
   - rewrite !expnS; lia.
+Qed.
+
+Lemma unit_odd_pow_2_Zp (j n : nat):
+  odd j ->
+  (inZp j : 'Z_(2^n.+1)) \is a unit.
+Proof.
+  intros.
+  rewrite unit_pow_2_Zp /=.
+  rewrite expnS Zp_cast; [|lia].
+  rewrite odd_mod //.
+  replace (2 * 2^n)%N with ((2^n).*2) by lia.
+  by rewrite odd_double.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
