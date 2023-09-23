@@ -1181,6 +1181,7 @@ Proof.
 Qed.
 
 From mathcomp Require Import finset eqtype finalg.
+From mathcomp Require Import fingroup.quotient.
 Section two_pow_units.
   
   Import GroupScope.
@@ -1324,8 +1325,8 @@ Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
-  let ub3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
-  (<[um1]> * <[ub3]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
+  let u3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
+  (<[um1]> * <[u3]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
 Proof.
   have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
   have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
@@ -1380,8 +1381,8 @@ Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_5 (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
-  let ub5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
-  (<[um1]> * <[ub5]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
+  let u5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
+  (<[um1]> * <[u5]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
 Proof.
   have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
   have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
@@ -1416,6 +1417,24 @@ Proof.
     apply val_inj.
     by rewrite /= !Zp_cast // -HH !modn_small //; rewrite !expnS; lia.
 Qed.
+
+Lemma unit_pow_2_Zp_gens_m1_3_quo (n : nat) :
+  let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
+  let u3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
+  <[u3]>%G/<[um1]>%G  = ([group of (units_Zp (2^n.+3)%N)]/<[um1]>)%G.
+Proof.
+  intros.
+  rewrite -quotientYidl.
+  - admit.
+  - apply cents_norm.
+    generalize (units_Zp_abelian (2^n.+3)); intros.
+    generalize (subsetT <[um1]>); intros.
+    generalize (sub_abelian_cent H H0); intros.
+    generalize (subsetT <[u3]>); intros.    
+    eapply subset_trans.
+    apply H2.
+    apply H1.
+Admitted.    
 
 End two_pow_units.
   
