@@ -1421,11 +1421,12 @@ Qed.
 Lemma unit_pow_2_Zp_gens_m1_3_quo (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
   let u3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
-  <[u3]>%G/<[um1]>%G  = ([group of (units_Zp (2^n.+3)%N)]/<[um1]>)%G.
+  <[u3]>/<[um1]> = [group of (units_Zp (2^n.+3)%N)]/<[um1]>.
 Proof.
   intros.
   rewrite -quotientYidl.
-  - admit.
+  - f_equal.
+    admit.
   - apply cents_norm.
     generalize (units_Zp_abelian (2^n.+3)); intros.
     generalize (subsetT <[um1]>); intros.
