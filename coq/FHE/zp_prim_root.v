@@ -1287,8 +1287,8 @@ Qed.
 Lemma unit_pow_2_Zp_gens (n : nat) (a b : {unit 'Z_(2^n.+2)}) :
   #[a] = 2%N ->
   #[b] = (2^n)%N ->
-  (a \notin <[b]>) ->
-  (<[a]> * <[b]>)%G  :=: [group of (units_Zp (2^n.+2)%N)].
+  a \notin <[b]> ->
+  <[a]> <*> <[b]> = [group of (units_Zp (2^n.+2)%N)].
 Proof.
   intros.
   generalize (subsetT (<[a]> * <[b]>)%G); intros.
@@ -1326,7 +1326,7 @@ Qed.
 Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
   let u3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
-  (<[um1]> * <[u3]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
+  <[um1]> <*> <[u3]> = [group of (units_Zp (2^n.+3)%N)].
 Proof.
   have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
   have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
@@ -1362,7 +1362,7 @@ Qed.
 
 Lemma unit_Z4_gens_m1 :
   let um1 := FinRing.unit 'Z_4 (unitrN1 _) in  
-  <[um1]> :=: [group of (units_Zp 4)].
+  <[um1]> = [group of (units_Zp 4)].
 Proof.
   intros.
   generalize (subsetT (<[um1]>)); intros.
@@ -1382,7 +1382,7 @@ Qed.
 Lemma unit_pow_2_Zp_gens_m1_5 (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
   let u5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
-  (<[um1]> * <[u5]>)%G  :=: [group of (units_Zp (2^n.+3)%N)].
+  <[um1]> <*> <[u5]> = [group of (units_Zp (2^n.+3)%N)].
 Proof.
   have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
   have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
@@ -1426,7 +1426,7 @@ Proof.
   intros.
   rewrite -quotientYidl.
   - f_equal.
-    admit.
+    by rewrite unit_pow_2_Zp_gens_m1_3.
   - apply cents_norm.
     generalize (units_Zp_abelian (2^n.+3)); intros.
     generalize (subsetT <[um1]>); intros.
@@ -1435,7 +1435,7 @@ Proof.
     eapply subset_trans.
     apply H2.
     apply H1.
-Admitted.    
+ Qed.
 
 End two_pow_units.
   
