@@ -1297,13 +1297,11 @@ Proof.
     + rewrite divnn !expnS; lia.
     + by apply ord2_setI.
   - apply cents_norm.
-    generalize (units_Zp_abelian (2^n.+2)); intros.
-    generalize (subsetT <[a]>); intros.
-    generalize (sub_abelian_cent H3 H4); intros.
-    generalize (subsetT <[b]>); intros.    
     eapply subset_trans.
-    apply H6.
-    apply H5.
+    apply subsetT.
+    apply sub_abelian_cent.
+    + apply units_Zp_abelian.
+    + apply subsetT.
 Qed.
 
 Lemma unit_3_pow_2_Zp (n : nat) :
