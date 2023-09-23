@@ -1327,11 +1327,17 @@ Lemma unit_odd_pow_2_Zp (j n : nat):
   (inZp j : 'Z_(2^n.+1)) \is a unit.
 Proof.
   intros.
-  rewrite unit_pow_2_Zp /=.
-  rewrite expnS Zp_cast; [|lia].
+  rewrite unit_pow_2_Zp /= expnS Zp_cast; [|lia].
   rewrite odd_mod //.
   replace (2 * 2^n)%N with ((2^n).*2) by lia.
   by rewrite odd_double.
+Qed.
+
+Lemma unit_3_pow_2_Zp' (n : nat) :
+  (3 : 'Z_(2^n.+1)) \is a unit.
+Proof.
+  apply unit_odd_pow_2_Zp.
+  rewrite /= expnS Zp_cast; lia.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
