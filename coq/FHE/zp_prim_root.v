@@ -948,6 +948,36 @@ Proof.
     by rewrite -modnDm H0 mod0n addn0 modn_mod (expnS _ (n.+2)).
  Qed.
 
+Lemma add_exp_mod_p a b p :
+  prime p ->
+  (a + b)^p = a^p + b^p %[mod p].
+Proof.
+  intros.
+  rewrite expnDn.
+  assert (forall k, 
+             0 < k < p -> 'C(p,k) = 0 %[mod p]).
+  {
+    intros.
+    assert (0 <= 'C(p,k)) by lia.
+    apply /eqP.
+    rewrite (eqn_mod_dvd p H1) subn0.
+    by apply prime_dvd_bin.
+  }
+  Search binomial.
+  Admitted.
+
+Lemma ord_p1_pow_p p n :
+  prime p ->
+  odd p ->
+  (1 + p)^(p^n) = 1 + p^n.+1 %[mod p^n.+2].
+Proof.
+  intros.
+  induction n.
+  - by rewrite expn0 !expn1.
+  - rewrite expnS expnS.
+    apply (f_equal (fun z => z^p)) in IHn.
+    Admitted.
+
 Lemma ord_5_pow_2_neq n :
   5^(2^n) <> 1 %[mod 2^n.+3].
 Proof.
