@@ -1445,13 +1445,11 @@ Proof.
   - f_equal.
     by rewrite unit_pow_2_Zp_gens_m1_3.
   - apply cents_norm.
-    generalize (units_Zp_abelian (2^n.+3)); intros.
-    generalize (subsetT <[um1]>); intros.
-    generalize (sub_abelian_cent H H0); intros.
-    generalize (subsetT <[u3]>); intros.    
     eapply subset_trans.
-    apply H2.
-    apply H1.
+    apply subsetT.
+    apply sub_abelian_cent.
+    + apply units_Zp_abelian.
+    + apply subsetT.
  Qed.
 
 End two_pow_units.
