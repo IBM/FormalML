@@ -952,31 +952,24 @@ Lemma add_exp_mod_p a b p :
   prime p ->
   (a + b)^p = a^p + b^p %[mod p].
 Proof.
-  intros.
+  move=> pprime.
   rewrite expnDn.
-  rewrite -(@big_mkord _ 0 addn p.+1 predT
-              (fun i => 'C(p, i) * (a ^ (p - i) * b ^ i))).
-  rewrite (perm_big_AC _ _ _ (r2:=(0::p::index_iota 1 p))); [| apply addnA | apply addnC |].
-  - rewrite !big_cons /=.
-    rewrite bin0 binn subn0 subnn !expn0 !mul1n muln1 addnA.
-    rewrite -modnDmr -modn_summ.
-    suff/eqP->:  (\sum_(1 <= i < p) ('C(p, i) * (a ^ (p - i) * b ^ i)) %% p) == 0
-      by rewrite mod0n addn0.
-    under eq_big_seq.
-    {
-      move=> k.
-      rewrite mem_index_iota=> kin.
-      rewrite -modnMml (eqP (_ : 'C(p,k) == 0 %[mod p])).
-      - rewrite mod0n mul0n mod0n.
-        over.
-      - by rewrite (eqn_mod_dvd p) // subn0 prime_dvd_bin.
-    }
-    by rewrite sum_nat_const_nat muln0.
-  - rewrite /index_iota /= perm_cons.
-    rewrite -{1}(@prednK p) ?prime_gt0 //.
-    rewrite -(addn1 p.-1) iotaD perm_catC /=.
-    rewrite addnC addn1 subn1.
-    rewrite {1}(@prednK p) ?prime_gt0 //.
+  move: (prime_gt0 pprime).
+  case: p pprime; [lia |]=> p pprime _.
+  rewrite big_ord_recr big_ord_recl /=.
+  rewrite bin0 binn subn0 subnn !expn0 !mul1n muln1.
+  rewrite addnC addnA.
+  rewrite -modnDmr -modn_summ.
+  suff/eqP->:  \sum_(i < p) (('C(p.+1, bump 0 i) * (a ^ (p.+1 - bump 0 i) * b ^ bump 0 i)) %% p.+1) == 0
+    by rewrite mod0n addn0 addnC.
+  rewrite sum_nat_eq0.
+  apply/forallP=> k.
+  apply/implyP=> _.
+  rewrite -modnMml (eqP (_ : 'C(p.+1, bump 0 k) == 0 %[mod p.+1])).
+  - by rewrite mod0n. 
+  - rewrite (eqn_mod_dvd p.+1) // subn0 prime_dvd_bin //.
+    rewrite /bump.
+    destruct k; simpl; lia.
 Qed.
 
 Lemma ord_p1_pow_p p n :
