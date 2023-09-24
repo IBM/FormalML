@@ -954,17 +954,30 @@ Lemma add_exp_mod_p a b p :
 Proof.
   intros.
   rewrite expnDn.
-  assert (forall k, 
-             0 < k < p -> 'C(p,k) = 0 %[mod p]).
-  {
-    intros.
-    assert (0 <= 'C(p,k)) by lia.
-    apply /eqP.
-    rewrite (eqn_mod_dvd p H1) subn0.
-    by apply prime_dvd_bin.
-  }
-  Search binomial.
-  Admitted.
+  rewrite -(@big_mkord _ 0 addn p.+1 predT
+              (fun i => 'C(p, i) * (a ^ (p - i) * b ^ i))).
+  rewrite (perm_big_AC _ _ _ (r2:=(0::p::index_iota 1 p))); [| apply addnA | apply addnC |].
+  - rewrite !big_cons /=.
+    rewrite bin0 binn subn0 subnn !expn0 !mul1n muln1 addnA.
+    rewrite -modnDmr -modn_summ.
+    suff/eqP->:  (\sum_(1 <= i < p) ('C(p, i) * (a ^ (p - i) * b ^ i)) %% p) == 0
+      by rewrite mod0n addn0.
+    under eq_big_seq.
+    {
+      move=> k.
+      rewrite mem_index_iota=> kin.
+      rewrite -modnMml (eqP (_ : 'C(p,k) == 0 %[mod p])).
+      - rewrite mod0n mul0n mod0n.
+        over.
+      - by rewrite (eqn_mod_dvd p) // subn0 prime_dvd_bin.
+    }
+    by rewrite sum_nat_const_nat muln0.
+  - rewrite /index_iota /= perm_cons.
+    rewrite -{1}(@prednK p) ?prime_gt0 //.
+    rewrite -(addn1 p.-1) iotaD perm_catC /=.
+    rewrite addnC addn1 subn1.
+    rewrite {1}(@prednK p) ?prime_gt0 //.
+Qed.
 
 Lemma ord_p1_pow_p p n :
   prime p ->
