@@ -694,8 +694,9 @@ Section chinese.
               (cop: coprime p q) :
     bijective (@Zp_reduce_pair p q).
   Proof.
-    apply (Bijective (left_inv_chinese pbig qbig cop)).
-    apply (right_inv_chinese pbig qbig cop).
+    eapply Bijective.
+    - by apply left_inv_chinese.
+    - by apply right_inv_chinese.
   Qed.
     
   Lemma bijective_lift_pair (p q : nat) 
@@ -704,8 +705,9 @@ Section chinese.
               (cop: coprime p q) :
     bijective (@Zp_lift_pair p q).
   Proof.
-    apply (Bijective (right_inv_chinese pbig qbig cop)).
-    apply (left_inv_chinese pbig qbig cop).    
+    eapply Bijective.
+    - by apply right_inv_chinese.
+    - by apply left_inv_chinese.
   Qed.
 
 End chinese.
@@ -971,6 +973,22 @@ Proof.
     rewrite /bump.
     destruct k; simpl; lia.
 Qed.
+
+Lemma add_exp_mod_exp_p p k :
+  prime p ->
+  odd p ->
+  (1 + p)^(p^k) = 1 %[mod p^k.+1].
+Proof.
+  intros.
+  induction k.
+  - by rewrite expn0 !expn1 -modnDm modnn addn0 modn_mod.
+  - rewrite expnS.
+    assert (exists a,
+               (1 + p)^p^k = 1 + a*(p^k.+1) %[mod p^k.+2]).
+    {
+      admit.
+    }
+    Admitted.
 
 Lemma ord_p1_pow_p p n :
   prime p ->
