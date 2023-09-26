@@ -980,15 +980,22 @@ Lemma add_exp_mod_exp_p p k :
   (1 + p)^(p^k) = 1 %[mod p^k.+1].
 Proof.
   intros.
-  induction k.
-  - by rewrite expn0 !expn1 -modnDm modnn addn0 modn_mod.
-  - rewrite expnS.
-    assert (exists a,
-               (1 + p)^p^k = 1 + a*(p^k.+1) %[mod p^k.+2]).
-    {
-      admit.
-    }
-    Admitted.
+  rewrite expnDn.
+  rewrite big_ord_recl /= bin0 exp1n !mul1n expn0.
+  rewrite -modnDmr -modn_summ.
+  suff/eqP-> : \sum_(i < p ^ k) 'C(p ^ k, bump 0 i) * (1 ^ (p ^ k - bump 0 i) * p ^ bump 0 i) %% (p ^ k.+1) == 0
+    by rewrite mod0n addn0.
+
+  rewrite sum_nat_eq0.
+  apply/forallP=> i.
+  apply/implyP=> _.
+  rewrite exp1n mul1n.
+  rewrite /bump /=.
+ (*
+  rewrite bin_ffactd.
+  *)
+
+Admitted.
 
 Lemma ord_p1_pow_p p n :
   prime p ->
