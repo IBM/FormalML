@@ -1512,4 +1512,39 @@ Proof.
  Qed.
 
 End two_pow_units.
+
+From mathcomp Require Import matrix.
+Section add_self.
+
+  Context {G:ringType}.
+  Context {n:nat} (npos:0 < n).
   
+  Definition modn_ord (m:nat) : 'I_n := Ordinal (@ltn_pmod m n npos).
+  
+  Definition rotate_index_right_ord (idx:'I_n) (e:nat) : 'I_n
+    := modn_ord (idx + e).
+  
+  Definition rotate_row_right (v:'rV[G]_n) (e:nat)
+    := \row_(i < n) v 0 (rotate_index_right_ord i e).
+
+  Definition row_sum_naive_rot_row (v:'rV[G]_n)
+    := (\sum_(i < n) rotate_row_right v i).
+
+  Definition row_sum_naive_rot (v:'rV[G]_n)
+    := row_sum_naive_rot_row v 0 (Ordinal npos).
+
+  Lemma row_sum_naive_rot_correct (v:'rV[G]_n)
+    : row_sum_naive_rot v == \sum_(j < n) v 0 j.
+  Proof.
+    rewrite/row_sum_naive_rot/row_sum_naive_rot_row.
+    rewrite /rotate_row_right/rotate_index_right_ord.
+    rewrite summxE /=.
+    apply/eqP.
+    apply eq_bigr=> k _.
+    rewrite !mxE.
+    f_equal.
+    apply ord_inj => /=.
+    by rewrite add0n modn_small.
+  Qed.
+
+End add_self.
