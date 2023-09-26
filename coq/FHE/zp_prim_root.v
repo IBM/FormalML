@@ -1513,7 +1513,7 @@ Proof.
 
 End two_pow_units.
 
-From mathcomp Require Import matrix.
+From mathcomp Require Import matrix perm.
 Section add_self.
 
   Context {G:ringType}.
@@ -1521,14 +1521,32 @@ Section add_self.
   
   Definition modn_ord (m:nat) : 'I_n := Ordinal (@ltn_pmod m n npos).
   
-  Definition rotate_index_right_ord (idx:'I_n) (e:nat) : 'I_n
+  Definition rotate_index_right_ord (idx:'I_n) (e:nat) 
     := modn_ord (idx + e).
   
+  Lemma rotate_ind_right_ord_cancel (e:nat) :
+    cancel (fun (idx : 'I_n) => rotate_index_right_ord idx e)
+      (fun (idx : 'I_n) => rotate_index_right_ord idx (n - e %% n)).
+  Proof.
+    rewrite /rotate_index_right_ord /cancel /modn_ord /=.
+    intros.
+    apply ord_inj=> /=.
+    rewrite -(modnDm x e n).
+    rewrite modnDml.
+    generalize (ltn_pmod e npos); intros.
+    replace  (x %% n + e %% n + (n - e %% n))%N with
+      (x%%n + n)%N by lia.
+    rewrite -modnDmr modnn addn0 modn_mod.
+    rewrite modn_small //.
+  Qed.
+
+  Definition rot_perm e := perm (can_inj (rotate_ind_right_ord_cancel e)).
+
   Definition rotate_row_right (v:'rV[G]_n) (e:nat)
     := \row_(i < n) v 0 (rotate_index_right_ord i e).
 
   Definition row_sum_naive_rot_row (v:'rV[G]_n)
-    := (\sum_(i < n) rotate_row_right v i).
+    := \sum_(i < n) rotate_row_right v i.
 
   Definition row_sum_naive_rot (v:'rV[G]_n)
     := row_sum_naive_rot_row v 0 (Ordinal npos).
