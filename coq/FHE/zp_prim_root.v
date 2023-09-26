@@ -1531,9 +1531,9 @@ Section add_self.
     rewrite /rotate_index_right_ord /cancel /modn_ord /=.
     intros.
     apply ord_inj=> /=.
-    rewrite -(modnDm x e n) modnDml.
+    rewrite -(modnDm x e n) modnDml -addnA.
     generalize (ltn_pmod e npos); intros.
-    replace (x %% n + e %% n + (n - e %% n))%N with (x%%n + n)%N by lia.
+    replace (e %% n + (n - e %% n))%N with n by lia.
     rewrite -modnDmr modnn addn0 modn_mod modn_small //.
   Qed.
 
