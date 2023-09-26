@@ -1539,6 +1539,16 @@ Section add_self.
 
   Definition rot_perm e := perm (can_inj (rotate_ind_right_ord_cancel e)).
 
+  Lemma rot_mul e1 e2 :
+    perm_mul (rot_perm e1) (rot_perm e2) = rot_perm (e1 + e2).
+  Proof.
+    rewrite /perm_mul /rot_perm -permP.
+    move => x.
+    rewrite permE /= !permE /rotate_index_right_ord /modn_ord.
+    apply ord_inj=> /=.
+    by rewrite modnDml addnA.
+  Qed.
+
   Definition rotate_row_right (v:'rV[G]_n) (e:nat)
     := \row_(i < n) v 0 (rotate_index_right_ord i e).
 
