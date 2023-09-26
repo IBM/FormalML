@@ -1531,13 +1531,10 @@ Section add_self.
     rewrite /rotate_index_right_ord /cancel /modn_ord /=.
     intros.
     apply ord_inj=> /=.
-    rewrite -(modnDm x e n).
-    rewrite modnDml.
+    rewrite -(modnDm x e n) modnDml.
     generalize (ltn_pmod e npos); intros.
-    replace  (x %% n + e %% n + (n - e %% n))%N with
-      (x%%n + n)%N by lia.
-    rewrite -modnDmr modnn addn0 modn_mod.
-    rewrite modn_small //.
+    replace (x %% n + e %% n + (n - e %% n))%N with (x%%n + n)%N by lia.
+    rewrite -modnDmr modnn addn0 modn_mod modn_small //.
   Qed.
 
   Definition rot_perm e := perm (can_inj (rotate_ind_right_ord_cancel e)).
@@ -1555,8 +1552,7 @@ Section add_self.
     : row_sum_naive_rot v == \sum_(j < n) v 0 j.
   Proof.
     rewrite/row_sum_naive_rot/row_sum_naive_rot_row.
-    rewrite /rotate_row_right/rotate_index_right_ord.
-    rewrite summxE /=.
+    rewrite /rotate_row_right/rotate_index_right_ord summxE /=.
     apply/eqP.
     apply eq_bigr=> k _.
     rewrite !mxE.
