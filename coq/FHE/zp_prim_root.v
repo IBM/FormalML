@@ -974,6 +974,96 @@ Proof.
     destruct k; simpl; lia.
 Qed.
 
+Lemma prime_pow_dvd_aux k p n :
+  k <= p^n.+1 ->
+  forall j,
+    j <= n.+1 ->
+    p ^ j %| k <-> p^j %| (p^n.+1 - k).
+Proof.
+  intros kle j jlt.
+  assert (p^j %| p^n.+1).
+  {
+    by apply dvdn_exp2l.
+  }
+  split; intros.
+  - by apply dvdn_sub.
+  - by rewrite -(dvdn_subr (m := p^n.+1)).
+Qed.
+
+Lemma prime_pow_dvd j k p n  :
+  prime p ->
+  ~~ (p %| j) ->
+  p^n.+1 %| j * k ->
+  p^n.+1 %| k.
+Proof.
+  intros.
+  induction n.
+  - rewrite expn1 in H1.
+    rewrite expn1.
+    generalize (Euclid_dvdM j k H); intros.
+    rewrite H1 in H2.
+    assert ( (p %| j) || (p %| k)) by easy.
+    move /orP in H3.
+    Admitted.
+  
+Lemma prime_dvd_pow_m1_bin k p n : prime p -> k < p^n.+1 ->
+                                   ~~ (p %| 'C(p^n.+1-1, k)).
+Proof.
+  intros.
+  apply /negP.
+  induction k.
+  - rewrite bin0.
+    intros ?.
+    apply prime_gt1 in H.
+    apply dvdn_leq in H1; lia.
+  - assert (k < p^n.+1) by lia.
+    specialize (IHk H1).
+    generalize (mul_bin_left (p^k-1) k); intros.
+    intros ?.
+    replace (p^k-1-k) with (p^k-k.+1) in H2.
+    + admit.
+    + clear IHk H2 H3; lia.
+Admitted.
+
+Lemma prime_pow_dvd_bin j k p n :
+  prime p -> 0 < k < p^n ->
+  p^j %| 'C(p^n, k) == ~~ (p^(n-j).+1 %| k).
+Proof.
+  intros.
+  generalize (mul_bin_down (p^n) k); intros.
+  assert (p^n %| (p^n-k) * 'C(p^n,k)).
+  {
+    rewrite -H1.
+    apply dvdn_mulr.
+    apply dvdnn.
+  }
+  
+    
+  
+Admitted.
+
+Lemma prime_dvd_pow_bin_full k p n :
+  prime p ->
+  0 < k < p ->
+  p^n.+1 %| 'C(p^n.+1, k).
+Proof.
+  intros.
+  generalize (mul_bin_down (p^n.+1) k); intros.  
+  assert (~~ (p %| p^n.+1-k)).
+  {
+    Search "dvdn_sub".
+    admit.
+  }
+  assert (p^n.+1 %| (p^n.+1-k) * 'C(p^n.+1,k)).
+  {
+    rewrite -H1.
+    apply dvdn_mulr.
+    apply dvdnn.
+  }
+  
+  
+  Admitted.
+  
 Lemma add_exp_mod_exp_p p k :
   prime p ->
   odd p ->
@@ -996,6 +1086,8 @@ Proof.
   *)
 
 Admitted.
+
+
 
 Lemma ord_p1_pow_p p n :
   prime p ->
