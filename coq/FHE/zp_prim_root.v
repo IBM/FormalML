@@ -1131,7 +1131,11 @@ Proof.
     rewrite -H4 -H5 expnS in H0.
     assert (forall k, 0 < p^k).
     {
-      admit.
+      intros.
+      rewrite expn_gt0.
+      apply prime_gt0 in H.
+      apply /orP.
+      tauto.
     }
     assert (xlek: x <= k) by admit.
     replace (a %/ p ^ x * p ^ x * (b %/ p ^ (k - x) * p ^ (k - x))) with
