@@ -1013,13 +1013,45 @@ Lemma prime_pow_dvd j k p n  :
 Proof.
   move=> pprime pndivj.
   induction n.
-  - rewrite !expn1.
-    rewrite Euclid_dvdM //.
+  - rewrite !expn1 Euclid_dvdM //.
     case/orP => // eqq1.
     by rewrite eqq1 in pndivj.
-  - 
-Admitted.
+  - intros.
+    assert (p^n.+1 %| j * k).
+    {
+      rewrite expnS in H.
+      by apply mul_dvdn_r in H.
+    }
+    generalize (divnK (IHn H0)); intros.
+    clear IHn H0.
+    rewrite -H1 expnS dvdn_pmul2r.
+    + rewrite -H1 mulnA expnS dvdn_pmul2r in H.
+      * rewrite Euclid_dvdM // in H.
+        move /orP in H.
+        destruct H; trivial.
+        by move /negP in pndivj.
+      * apply prime_gt1 in pprime; lia.
+    + apply prime_gt1 in pprime; lia.
+ Qed.
   
+Lemma prime_pow_dvd_gen j k p e n  :
+  prime p ->
+  ~~ (p^e.+1 %| j) ->
+  p^n.+1 %| j * k ->
+  p^(n.+1-e) %| k.
+Proof.
+  intros p_prim notdiv.
+  induction e.
+  - rewrite subn0.
+    by apply prime_pow_dvd.
+(*  - 
+rewrite expn1 Euclid_dvdM //.
+    move /orP.
+    intros or.
+    destruct or; trivial.
+*)
+Admitted.
+
 Lemma prime_dvd_pow_m1_bin k p n : prime p -> k < p^n.+1 ->
                                    ~~ (p %| 'C(p^n.+1-1, k)).
 Proof.
@@ -1224,7 +1256,6 @@ Proof.
   rewrite coprimeXl //.
   by rewrite prime_coprime.
 Qed.
-
   
 Lemma add_exp_mod_exp_p p k :
   prime p ->
