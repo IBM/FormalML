@@ -1111,7 +1111,7 @@ Qed.
 Lemma prime_power_dvd_mul_helper p k a b :
   prime p ->
   p ^ k %| a * b ->
-  exists j, (p^j %| a) && (p^(k-j) %| b).
+  exists j, (j<=k) && (p^j %| a) && (p^(k-j) %| b).
 Proof.
   intros.
   induction k.
@@ -1126,9 +1126,11 @@ Proof.
     destruct IHk.
     move /andP in H2.
     destruct H2.
-    generalize (divnK H2); intros.
+    move /andP in H2.
+    destruct H2.
     generalize (divnK H3); intros.
-    rewrite -H4 -H5 expnS in H0.
+    generalize (divnK H4); intros.
+    rewrite -H5 -H6 expnS in H0.
     assert (forall k, 0 < p^k).
     {
       intros.
@@ -1137,7 +1139,6 @@ Proof.
       apply /orP.
       tauto.
     }
-    assert (xlek: x <= k) by admit.
     replace (a %/ p ^ x * p ^ x * (b %/ p ^ (k - x) * p ^ (k - x))) with
       (a %/ p ^ x * (b %/ p ^ (k - x) * p ^ k)) in H0.
     + rewrite mulnA in H0.
@@ -1146,27 +1147,25 @@ Proof.
       move /orP in H0.
       destruct H0.
       * exists (x.+1).
-        apply /andP.
-        split.
-        -- rewrite -H4 expnS dvdn_pmul2r //.
-        -- replace (k.+1-x.+1) with (k-x).
-           ++ apply H3.
-           ++ clear H1 H2 H3 H4 H5 H0.
-              lia.
+        apply /andP; split.
+        -- apply /andP; split; trivial.
+           rewrite -H6 expnS dvdn_pmul2r //.
+        -- replace (k.+1-x.+1) with (k-x); trivial.
       * exists x.
-        apply /andP.
-        split; trivial.
-        rewrite -H5.
-        replace (k.+1-x) with (1 + (k - x)).
-        -- rewrite expnD expn1 dvdn_pmul2r //.
-        -- clear H1 H2 H3 H4 H5 H0.
+        apply /andP; split; trivial.
+        -- apply /andP; split; trivial.
            lia.
-   + clear H1 H2 H3 H4 H5 H0.
+        -- rewrite -H5.
+           replace (k.+1-x) with (1 + (k - x)).
+           ++ rewrite expnD expn1 dvdn_pmul2r //.
+           ++ clear H1 H3 H4 H5 H0.
+              lia.
+   + clear H1 H3 H4 H5 H6 H0.
      replace (p^k) with (p^x * p^(k-x)); try lia.
      rewrite -expnD.
      f_equal.
      lia.
-Admitted.
+ Qed.
 
 Lemma prime_power_dvd_mul p k a b :
   prime p ->
