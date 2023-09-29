@@ -974,20 +974,35 @@ Proof.
     destruct k; simpl; lia.
 Qed.
 
-Lemma prime_pow_dvd_aux k p n :
-  k <= p^n.+1 ->
+Lemma iffbP {x y : bool}: reflect (x <-> y) (x == y).
+Proof.
+  case: x y; case
+  ; rewrite eqE /= /eqb /=
+  ; constructor
+  ; firstorder.
+Qed.
+
+Lemma iffEq {x y : bool}: (x <-> y) <-> (x = y).
+Proof.
+  case: x y; case; firstorder.
+  symmetry; firstorder.
+Qed.
+
+Lemma prime_pow_dvd_aux k p n:
+  k <= p^n ->
   forall j,
-    j <= n.+1 ->
-    p ^ j %| k <-> p^j %| (p^n.+1 - k).
+    j <= n ->
+    (p ^ j %| k) = (p^j %| (p^n - k)).
 Proof.
   intros kle j jlt.
-  assert (p^j %| p^n.+1).
+  assert (p^j %| p^n).
   {
     by apply dvdn_exp2l.
   }
+  apply iffEq.
   split; intros.
-  - by apply dvdn_sub.
-  - by rewrite -(dvdn_subr (m := p^n.+1)).
+  - rewrite dvdn_sub //.
+  - by rewrite -(dvdn_subr (m := p^n)).
 Qed.
 
 Lemma prime_pow_dvd j k p n  :
@@ -996,15 +1011,14 @@ Lemma prime_pow_dvd j k p n  :
   p^n.+1 %| j * k ->
   p^n.+1 %| k.
 Proof.
-  intros.
+  move=> pprime pndivj.
   induction n.
-  - rewrite expn1 in H1.
-    rewrite expn1.
-    generalize (Euclid_dvdM j k H); intros.
-    rewrite H1 in H2.
-    assert ( (p %| j) || (p %| k)) by easy.
-    move /orP in H3.
-    Admitted.
+  - rewrite !expn1.
+    rewrite Euclid_dvdM //.
+    case/orP => // eqq1.
+    by rewrite eqq1 in pndivj.
+  - 
+Admitted.
   
 Lemma prime_dvd_pow_m1_bin k p n : prime p -> k < p^n.+1 ->
                                    ~~ (p %| 'C(p^n.+1-1, k)).
@@ -1025,22 +1039,160 @@ Proof.
     + clear IHk H2 H3; lia.
 Admitted.
 
+Lemma expn_boundr a b c :
+  1 < a ->
+  a ^ b <= c ->
+  b <= c.
+Proof.
+  move=> abig able.
+  rewrite -(@leq_exp2l a) // (leq_trans able) //.
+  by rewrite ltnW // ltn_expl.
+Qed.
+
+Lemma max_prime_pow_dvd j p :
+  1 < p ->
+  0 < j ->
+  {k | (p^k %| j) && ~~ (p^k.+1 %| j)}.
+Proof.
+  move=> pbig jnneg.
+  have exP: exists i : nat, [pred k | p ^ k %| j] i.
+  {
+    exists 0.
+    by rewrite /= expn0 dvd1n.
+  }
+
+  have bounded: forall i : nat, [pred k | p ^ k %| j] i -> i <= j.
+  {
+    move=> i /=.
+    move/(dvdn_leq jnneg).
+    by apply expn_boundr.
+  } 
+  
+  exists (ex_maxn exP bounded).
+  case: ex_maxnP=> i /= divi ub.
+  rewrite divi /=.
+  apply/negP.
+  move/ub.
+  by rewrite ltnn.
+Qed.
+  
+Lemma prime_power_dvd_mul p k a b :
+  prime p ->
+  p ^ k %| a * b = [exists j:(ordinal (k.-1.+1)), (p^j %| a) && (p^(k-j) %| b)].
+Proof.
+(*  move=> pprime.
+  case: (eqVneq a 0)=> [-> | neqq].
+  - admit.
+  - case: (@max_prime_pow_dvd a p).
+    + by apply prime_gt1.
+    + lia.
+    + move => x /andP-[pdiva pndiva].
+      have: p^(k-x) %| b = (p ^ k %| a * b).
+      {
+        repeat case: dvdnP => //.
+        - move=> HH1 [j eqq1]; subst.
+          elim HH1.
+          move: pdiva.
+          move/dvdnP=> [jj eqq2]; subst.
+          exists (jj * j).
+          rewrite -!mulnA.
+          f_equal.
+          rewrite mulnC -!mulnA.
+          f_equal.
+          rewrite -expnD.
+          f_equal.
+          rewrite subnK //.
+          
+        - 
+      } 
+        
+      case: dvdnP.
+      apply/iffEq.
+      split=> HH.
+      * have pdvib: p^(x-k) %| b.
+        {
+          Search (_ * _ %| _ * _).
+        
+      move/andP.
+  
+  case: dvdnP=> HH; symmetry.
+  - destruct HH as [j eqq].
+    
+
+
+  
+  induction k => /=.
+  - rewrite expn0 dvd1n.
+    symmetry.
+    apply/existsP.
+    simpl.
+    exists ord0.
+    by rewrite /= expn0 !dvd1n.
+  - rewrite expnS.
+    apply/iffEq.
+    split=> HH.
+    + have: p ^ k %| a * b by apply mul_dvdn_r in HH.
+      rewrite IHk.
+      move/existsP=>[j ]/andP-[diva divb].
+      apply/existsP.
+      case_eq (dvdn (p^j.+1) a) => eqq1.
+      * have ordpf: j.+1 < k.+1.
+        {
+          admit.
+        } 
+        exists (Ordinal ordpf).
+        by rewrite /= eqq1 /= subSS.
+      * have ordpf: j < k.+1.
+        {
+          admit.
+        } 
+        exists (Ordinal ordpf).
+        rewrite /= diva /=.
+        
+        
+        dvdn_pmul2r: forall [p d m : nat], 0 < p -> (d * p %| m * p) = (d %| m)
+        dvdn_pmul2l: forall [p d m : nat], 0 < p -> (p * d %| p * m) = (d %| m)
+    *)
+    
+Admitted.
+
+(*    
 Lemma prime_pow_dvd_bin j k p n :
   prime p -> 0 < k < p^n ->
   p^j %| 'C(p^n, k) == ~~ (p^(n-j).+1 %| k).
 Proof.
   intros.
-  generalize (mul_bin_down (p^n) k); intros.
-  assert (p^n %| (p^n-k) * 'C(p^n,k)).
+  have HH1: (p^n %| (p^n-k) * 'C(p^n,k)).
   {
-    rewrite -H1.
-    apply dvdn_mulr.
-    apply dvdnn.
+    by rewrite -mul_bin_down dvdn_mulr.
   }
-  
+
+  case: (@max_prime_pow_dvd 'C(p^n, k) p).
+  - admit.
+  - admit.
+  - move=> x /andP-[div1 ndiv1].
+    case: dvdnP.
     
+    case/orP: (leqVgt j x)=>jx.
+    + rewrite (@dvdn_trans (p ^ x)) // ?dvdn_exp2l //.
+      apply/eqP.
+      symmetry.
+      apply/negP => dvi2.
+      
+      
   
-Admitted.
+  intros.
+  rewrite mulnC.
+  rewrite prime_power_dvd_mul // => /existsP-[a /andP-[div1 div2]].
+  rewrite -prime_pow_dvd_aux in div2.
+  - apply/iffbP.
+    split=> HH.
+    
+    apply iffP.
+  - lia.
+  - destruct a; simpl; lia.
+  *)
+
 
 Lemma prime_dvd_pow_bin_full k p n :
   prime p ->
@@ -1049,10 +1201,18 @@ Lemma prime_dvd_pow_bin_full k p n :
 Proof.
   intros.
   generalize (mul_bin_down (p^n.+1) k); intros.  
-  assert (~~ (p %| p^n.+1-k)).
+  have HH: (~~ (p %| p^n.+1-k)).
   {
-    Search "dvdn_sub".
-    admit.
+    rewrite dvdn_subr.
+    - apply/negP.
+      move/dvdn_leq.
+      lia.
+    - apply (@leq_trans (k ^ n.+1)).
+      + rewrite -[k]expn1 leq_pexp2l //.
+        lia.
+      + rewrite leq_exp2r //.
+        lia.
+    - by rewrite dvdn_exp.
   }
   assert (p^n.+1 %| (p^n.+1-k) * 'C(p^n.+1,k)).
   {
@@ -1060,9 +1220,11 @@ Proof.
     apply dvdn_mulr.
     apply dvdnn.
   }
-  
-  
-  Admitted.
+  rewrite Gauss_dvdr // in H2.
+  rewrite coprimeXl //.
+  by rewrite prime_coprime.
+Qed.
+
   
 Lemma add_exp_mod_exp_p p k :
   prime p ->
@@ -1081,6 +1243,9 @@ Proof.
   apply/implyP=> _.
   rewrite exp1n mul1n.
   rewrite /bump /=.
+
+        
+  
  (*
   rewrite bin_ffactd.
   *)
