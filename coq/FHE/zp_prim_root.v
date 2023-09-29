@@ -1034,42 +1034,6 @@ Proof.
     + apply prime_gt1 in pprime; lia.
  Qed.
   
-Lemma prime_pow_dvd_gen j k p e n  :
-  prime p ->
-  ~~ (p^e.+1 %| j) ->
-  p^n.+1 %| j * k ->
-  p^(n.+1-e) %| k.
-Proof.
-  intros p_prim notdiv.
-  induction e.
-  - rewrite subn0.
-    by apply prime_pow_dvd.
-(*  - 
-rewrite expn1 Euclid_dvdM //.
-    move /orP.
-    intros or.
-    destruct or; trivial.
-*)
-Admitted.
-
-Lemma prime_dvd_pow_m1_bin k p n : prime p -> k < p^n.+1 ->
-                                   ~~ (p %| 'C(p^n.+1-1, k)).
-Proof.
-  intros.
-  apply /negP.
-  induction k.
-  - rewrite bin0.
-    intros ?.
-    apply prime_gt1 in H.
-    apply dvdn_leq in H1; lia.
-  - assert (k < p^n.+1) by lia.
-    specialize (IHk H1).
-    generalize (mul_bin_left (p^k-1) k); intros.
-    intros ?.
-    replace (p^k-1-k) with (p^k-k.+1) in H2.
-    + admit.
-    + clear IHk H2 H3; lia.
-Admitted.
 
 Lemma expn_boundr a b c :
   1 < a ->
@@ -1107,7 +1071,43 @@ Proof.
   move/ub.
   by rewrite ltnn.
 Qed.
-  
+
+Lemma prime_dvd_pow_m1_bin k p n : prime p -> k < p^n.+1 ->
+                                   ~~ (p %| 'C(p^n.+1-1, k)).
+Proof.
+  intros.
+  apply /negP.
+  revert H0.
+  induction k.
+  - rewrite bin0.
+    intros ??.
+    apply prime_gt1 in H.
+    apply dvdn_leq in H1; lia.
+  - intros.
+    assert (k < p^n.+1) by lia.
+    specialize (IHk H1).
+    generalize (mul_bin_left (p^k-1) k); intros.
+    intros ?.
+    generalize (prime_gt1 H); intros.
+    replace (p^k-1-k) with (p^k-k.+1) in H2.
+    + assert (0 < k.+1) by lia.
+      destruct (max_prime_pow_dvd H4 H5).
+      assert (0< p^k -k.+1).
+      {
+        admit.
+      }
+      destruct (max_prime_pow_dvd H4 H6).      
+      assert (x = x0).
+      {
+        admit.
+      }
+      move /andP in i.
+      move /andP in i0.
+      destruct i; destruct i0.
+      admit.
+    + clear IHk H2 H3; lia.
+Admitted.
+
 Lemma prime_power_dvd_mul_helper p k a b :
   prime p ->
   p ^ k %| a * b ->
@@ -1165,6 +1165,69 @@ Proof.
      rewrite -expnD.
      f_equal.
      lia.
+ Qed.
+
+Lemma prime_pow_dvd_gen' j k p e n  :
+  prime p ->
+  e <= n ->
+  (p^e %| j) ->
+  ~~ (p^e.+1 %| j) ->
+  p^n.+1 %| j * k ->
+  p^(n.+1-e) %| k.
+Proof.
+  intros p_prim ele divj notdivj divjk.
+  generalize (divnK divj); intros.
+  rewrite -H in divjk.
+  rewrite mulnC mulnA in divjk.
+  replace (p^n.+1) with (p^(n.+1-e) * p^e) in divjk.
+  - rewrite dvdn_pmul2r in divjk.
+    assert (~~ (p %| (j %/ p ^ e))).
+    {
+      apply /negP.
+      intros ?.
+      apply prime_gt0 in p_prim.
+      assert (0 < p^e).
+      {
+        rewrite expn_gt0.
+        apply /orP.
+        tauto.
+      }
+      rewrite -(dvdn_pmul2r H1) in H0.
+      rewrite divnK // in H0.
+      rewrite expnS in notdivj.
+      move /negP in notdivj.
+      tauto.
+    }
+    + replace (n.+1-e) with ((n-e).+1) in divjk.
+      * rewrite mulnC in divjk.
+        generalize (prime_pow_dvd p_prim H0 divjk); intros.
+        replace (n.+1-e) with ((n-e).+1); trivial.
+        clear divj notdivj H H0 divjk H1; lia.
+      * clear divj notdivj H H0 divjk; lia.
+    + rewrite expn_gt0.
+      apply prime_gt0 in p_prim.
+      apply /orP.
+      tauto.
+  - rewrite -expnD.
+    f_equal.
+    clear divj notdivj H divjk; lia.
+ Qed.
+
+Lemma prime_pow_dvd_gen j k p e n  :
+  prime p ->
+  e <= n.+1 ->
+  (p^e %| j) ->
+  ~~ (p^e.+1 %| j) ->
+  p^n.+1 %| j * k ->
+  p^(n.+1-e) %| k.
+Proof.
+  intros p_prim ele divj notdivj divjk.
+  case (boolP (e <= n)).
+  - intros.
+    by apply prime_pow_dvd_gen' with (j := j).
+  - intros.
+    assert (e = n.+1) by lia.
+    by rewrite H subnn expn0 dvd1n.
  Qed.
 
 Lemma prime_power_dvd_mul p k a b :
@@ -1247,8 +1310,7 @@ Proof.
     
 Admitted.
 
-(*    
-Lemma prime_pow_dvd_bin j k p n :
+Lemma prime_pow_dvd_bin_full j k p n :
   prime p -> 0 < k < p^n ->
   p^j %| 'C(p^n, k) == ~~ (p^(n-j).+1 %| k).
 Proof.
@@ -1266,6 +1328,8 @@ Proof.
     
     case/orP: (leqVgt j x)=>jx.
     + rewrite (@dvdn_trans (p ^ x)) // ?dvdn_exp2l //.
+Admitted.      
+(*
       apply/eqP.
       symmetry.
       apply/negP => dvi2.
@@ -1282,10 +1346,10 @@ Proof.
     apply iffP.
   - lia.
   - destruct a; simpl; lia.
-  *)
+*)
 
 
-Lemma prime_dvd_pow_bin_full k p n :
+Lemma prime_dvd_pow_bin k p n :
   prime p ->
   0 < k < p ->
   p^n.+1 %| 'C(p^n.+1, k).
