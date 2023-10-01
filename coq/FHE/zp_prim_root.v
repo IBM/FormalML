@@ -1326,8 +1326,7 @@ Proof.
     assert (0 < k) by lia.
     generalize (dvdn_leq H4 H2); intros.
     clear H2 H3 HH.
-    assert (p^j < p^n) by lia.
-    apply ltn_pexp2l with (m := p); trivial.
+    apply ltn_pexp2l with (m := p); try lia.
     by apply prime_gt0.
   }
   destruct n; trivial.
