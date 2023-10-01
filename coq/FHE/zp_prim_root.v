@@ -824,7 +824,6 @@ Proof.
 Qed.
 
 
-(*
 Lemma add4_pow2_mod j n :
   (j + 4)^(2 ^n) = j^(2^n) + (2^n.+2)*j^(2^n-1) %[mod 2^n.+3].
 Proof.
@@ -873,7 +872,7 @@ Proof.
   split; [lia |].
   by rewrite modn2 oddX H orbT.
 Qed.
-*)
+
 
 (* https://math.stackexchange.com/questions/459815/the-structure-of-the-group-mathbbz-2n-mathbbz *)
 
@@ -1311,43 +1310,30 @@ Proof.
 Admitted.
 
 Lemma prime_pow_dvd_bin_full j k p n :
-  prime p -> 0 < k < p^n ->
-  p^j %| 'C(p^n, k) == ~~ (p^(n-j).+1 %| k).
+  prime p -> 0 < k < p^n -> 0 < n ->
+  p^j %| k ->
+  ~~ (p^j.+1 %| k) ->
+  p^(n-j) %| 'C(p^n, k).
 Proof.
   intros.
-  have HH1: (p^n %| (p^n-k) * 'C(p^n,k)).
+  have HH: (p^n %| k * 'C(p^n,k)).
   {
-    by rewrite -mul_bin_down dvdn_mulr.
+    destruct k; trivial.
+    by rewrite -mul_bin_diag dvdn_mulr.    
   }
-
-  case: (@max_prime_pow_dvd 'C(p^n, k) p).
-  - admit.
-  - admit.
-  - move=> x /andP-[div1 ndiv1].
-    case: dvdnP.
-    
-    case/orP: (leqVgt j x)=>jx.
-    + rewrite (@dvdn_trans (p ^ x)) // ?dvdn_exp2l //.
-Admitted.      
-(*
-      apply/eqP.
-      symmetry.
-      apply/negP => dvi2.
-      
-      
-  
-  intros.
-  rewrite mulnC.
-  rewrite prime_power_dvd_mul // => /existsP-[a /andP-[div1 div2]].
-  rewrite -prime_pow_dvd_aux in div2.
-  - apply/iffbP.
-    split=> HH.
-    
-    apply iffP.
-  - lia.
-  - destruct a; simpl; lia.
-*)
-
+  assert (j < n).
+  {
+    assert (0 < k) by lia.
+    generalize (dvdn_leq H4 H2); intros.
+    clear H2 H3 HH.
+    assert (p^j < p^n) by lia.
+    apply ltn_pexp2l with (m := p); trivial.
+    by apply prime_gt0.
+  }
+  destruct n; trivial.
+  apply prime_pow_dvd_gen with (j := k); trivial.
+  lia.
+Qed.
 
 Lemma prime_dvd_pow_bin k p n :
   prime p ->
