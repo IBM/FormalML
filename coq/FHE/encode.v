@@ -119,6 +119,15 @@ Proof.
   apply Cpow_nth_root.
 Qed.
 
+Lemma pow_nth_root' j n e :
+  n != 0%nat ->
+  (nth_root j n) ^+ e = nth_root (e * j) n.
+Proof.
+  destruct n; [lia |]=>_.
+  apply pow_nth_root.
+Qed.
+
+
 Lemma pow2_S (j:nat) :
   { k : nat | (2^j)%nat == S k}.
 Proof.
@@ -2174,11 +2183,47 @@ Section norms.
     by rewrite map_polyXn hornerXn /exprz.
   Qed.
 
+  Lemma normc_nth_root j (n:nat) :
+    n != 0%nat ->
+    normc (nth_root j n) = 1.
+  Proof.
+    rewrite /normc /nth_root => nN0.
+    rewrite -!RpowE -!Rsqr_pow2 addrC /add /=.
+    by rewrite sin2_cos2 ssrnum.Num.Theory.sqrtr1.
+  Qed.    
+
+  Lemma iter_max {disp : Datatypes.unit} {T : porderType disp} i (a b: T) :
+    i != 0%nat ->
+    ssrnat.iter i (Order.max a) b = Order.max a b.
+  Proof.
+    induction i => //=.
+    destruct i => // _.
+    rewrite IHi //=.
+    by rewrite Order.POrderTheory.max_maxxK.
+  Qed.
+
   Lemma canon_norm_inf_pow n e :
     canon_norm_inf n 'X^e = 1.
   Proof.
     rewrite /canon_norm_inf mx_eval_pow /odd_nth_roots'.
-  Admitted.
+    unfold norm_inf.
+    under eq_big_seq.
+    {
+      intros.
+      rewrite !mxE.
+      rewrite /exprz.
+      rewrite pow_nth_root'; try lia.
+      rewrite normc_nth_root; try lia.
+      over.
+    }
+    simpl.
+    rewrite big_const_ord iter_max //.
+    rewrite /Order.max.
+    case: RltP => //.
+    rewrite /one/zero/=.
+    move/lt_IZR.
+    lia.
+  Qed.
   
   Lemma canon_norm_inf_C_pow n e c :
     canon_norm_inf n (c *: 'X^e) = Rabs c.
@@ -2198,24 +2243,30 @@ Section norms.
     coef_norm1 (polyC c) = Rabs c.
   Proof.
     rewrite /coef_norm1 size_polyC.
-    case: (c == 0); simpl.
-    - rewrite big_ord0.
-      admit.
+    case: eqVneq; simpl.
+    - rewrite big_ord0 => ->.
+      by rewrite Rabs_R0.
     - by rewrite big_ord1 coefC.
-    Admitted.
+  Qed.
 
   Lemma coef_norm1_poly_def m (p : {poly R}) :
     coef_norm1 (\sum_(i < m) p`_i *: 'X^i) = \sum_(i < m) Rabs p`_i.
   Proof.
     unfold coef_norm1.
-    induction m.
-    - rewrite !big_ord0 size_polyC.
-      assert ((zero R_ringType) == (zero R_ringType)).
-      {
-        by apply /eqP.
-      }
-      by rewrite H /= big_ord0.
-    - 
+    have ->: size (\sum_(i < m) p`_i *: 'X^i) = m.
+    {
+      admit.
+    }
+    apply eq_big => //= i _.
+    f_equal.
+    rewrite coef_sum.
+    under eq_big_seq.
+    {
+      intros.
+      rewrite coefZ coefXn.
+      over.
+    }
+        
     Admitted.
                                               
   Lemma canon_norm_inf_poly_def n m (p : {poly R}) :
@@ -2225,8 +2276,25 @@ Section norms.
     induction m.
     - rewrite !big_ord0 canon_norm_inf_C Rabs_R0.
       apply Order.POrderTheory.le_refl.
-    - generalize big_nat_recl; intros.
-    Admitted.
+    - 
+      move: (@big_nat_recr {poly R} 0 (add_monoid _)
+               m
+               0
+               (fun i =>  p`_i *: 'X^i)
+               (leq0n _)
+            ).
+      rewrite !big_mkord => ->.
+      move: (@big_nat_recr R 0 (@add_monoid _)
+               m
+               0
+               (fun i => canon_norm_inf n (p`_i *: 'X^i))
+               (leq0n _)
+            ).
+      rewrite !big_mkord => -> /=.
+      eapply Order.POrderTheory.le_trans.
+      + apply canon_norm_inf_triang.
+      + by apply ssrnum.Num.Theory.lerD.
+  Qed.
 
   Lemma canon_norm_inf_le_norm1 n (p : {poly R}) :
     (canon_norm_inf n p <= coef_norm1 p)%O.
@@ -2907,12 +2975,6 @@ Qed.
     lia.
   Qed.
 
-  Lemma pow_nth_root' j n e : n != 0%nat ->
-    (nth_root j n) ^+ e = nth_root (e * j) n.
-  Proof.
-    destruct n; [lia |]=>_.
-    apply pow_nth_root.
-  Qed.
 
   Lemma iff_eqb (a b:bool) : (a <-> b) <-> a = b.
   Proof.
