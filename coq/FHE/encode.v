@@ -2166,14 +2166,88 @@ Section norms.
     apply norm_inf_semi_multiplicative.
  Qed.
 
-(*
+  Lemma mx_eval_pow {n} (v : 'rV_n.+1) e :
+    mx_eval v 'X^e = map_mx (fun c => c ^ e) v.
+  Proof.
+    apply eq_map_mx.
+    intros ?.
+    by rewrite map_polyXn hornerXn /exprz.
+  Qed.
+
+  Lemma canon_norm_inf_pow n e :
+    canon_norm_inf n 'X^e = 1.
+  Proof.
+    rewrite /canon_norm_inf mx_eval_pow /odd_nth_roots'.
+  Admitted.
+  
+  Lemma canon_norm_inf_C_pow n e c :
+    canon_norm_inf n (c *: 'X^e) = Rabs c.
+  Proof.
+    by rewrite canon_norm_infZ canon_norm_inf_pow mulr1.
+  Qed.
+
+  Lemma canon_norm_inf_C n (c : R) :
+    canon_norm_inf n (polyC c) = Rabs c.
+  Proof.
+    rewrite -(canon_norm_inf_C_pow n 0 c).
+    f_equal.
+    by rewrite expr0 /scale /Lmodule.scale /= scale_polyE mulr1.
+  Qed.
+
+  Lemma coef_norm1_C (c : R) :
+    coef_norm1 (polyC c) = Rabs c.
+  Proof.
+    rewrite /coef_norm1 size_polyC.
+    case: (c == 0); simpl.
+    - rewrite big_ord0.
+      admit.
+    - by rewrite big_ord1 coefC.
+    Admitted.
+
+  Lemma coef_norm1_poly_def m (p : {poly R}) :
+    coef_norm1 (\sum_(i < m) p`_i *: 'X^i) = \sum_(i < m) Rabs p`_i.
+  Proof.
+    unfold coef_norm1.
+    induction m.
+    - rewrite !big_ord0 size_polyC.
+      assert ((zero R_ringType) == (zero R_ringType)).
+      {
+        by apply /eqP.
+      }
+      by rewrite H /= big_ord0.
+    - 
+    Admitted.
+                                              
+  Lemma canon_norm_inf_poly_def n m (p : {poly R}) :
+        (canon_norm_inf n (\sum_(i < m) p`_i *: 'X^i) <=
+           \sum_(i < m) canon_norm_inf n (p`_i *: 'X^i))%O.
+  Proof.
+    induction m.
+    - rewrite !big_ord0 canon_norm_inf_C Rabs_R0.
+      apply Order.POrderTheory.le_refl.
+    - generalize big_nat_recl; intros.
+    Admitted.
+
   Lemma canon_norm_inf_le_norm1 n (p : {poly R}) :
-*)    
+    (canon_norm_inf n p <= coef_norm1 p)%O.
+  Proof.
+    rewrite -(coefK p) poly_def coef_norm1_poly_def.
+    eapply Order.POrderTheory.le_trans.
+    apply canon_norm_inf_poly_def.
+    rewrite /Order.le /Order.POrder.le /=.
+    apply /RlebP.
+    right.
+    apply eq_big_seq.
+    intros ??.
+    by rewrite canon_norm_inf_C_pow.
+  Qed.
 
 (* following only holds on quotient ring by x^+(2^n) + 1 
   Lemma canon_norm_inf_pos_def n p :
     canon_norm_inf n p = 0 -> p = 0.
 *)
+
+  
 
   Lemma normc_conj (x : R[i]) :
     ComplexField.Normc.normc x = ComplexField.Normc.normc (conjc x).
