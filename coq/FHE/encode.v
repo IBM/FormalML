@@ -1641,7 +1641,17 @@ Proof.
     rewrite uniq_rootsE /rs map_inj_uniq.
     - apply ord_enum_uniq.
     - intros ???.
-      admit.
+      rewrite /odd_nth_roots !mxE in H1.
+      destruct (pow2_S (S n)).
+      move /eqP in i.
+      rewrite i -nth_root_eq -i in H1.
+      assert (x1 < 2^n) by admit.
+      assert (x2 < 2^n) by admit.      
+      rewrite !modulo_modn !modn_small in H1.
+      + assert ((2 *x1)%N = (2 * x2)%N) by lia.
+        admit.
+      + rewrite expnS; lia.
+      + rewrite expnS; lia.
   }
   destruct (uniq_roots_prod_XsubC all_rs uniq_rs).
   assert ( ('X^(2 ^ n) + 1%:P) = \prod_(z <- rs) ('X - z%:P)).
@@ -2351,9 +2361,11 @@ Section norms.
     by rewrite canon_norm_inf_C_pow.
   Qed.
 
+(*
   Lemma canon_norm_zer_dvd n (p : {poly R}) :
     canon_norm_inf n p = 0 ->
     'X^(2^n) + 1 dvd p.
+*)
 
 (* following only holds on quotient ring by x^+(2^n) + 1 
   Lemma canon_norm_inf_pos_def n p :
