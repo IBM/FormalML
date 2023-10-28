@@ -2322,7 +2322,15 @@ Section norms.
     (x <= R0)%O ->
     x = 0.
   Proof.
-    Admitted.
+    intros.
+    apply Rle_antisym.
+    - rewrite /Order.le/= in H0.
+      move /RlebP in H0.
+      by replace (R0) with (IZR (Z0)) in H0 by lra.
+    - rewrite /Order.le/= in H.
+      move /RlebP in H.
+      by replace (R0) with (IZR (Z0)) in H by lra.
+  Qed.
 
   Lemma canon_norm_zer_mod_qpoly n (p : {poly R}) :
     canon_norm_inf n p = 0 ->
