@@ -1623,6 +1623,45 @@ rewrite H1.
 rewrite mulr0 //.
 Qed.
 
+Lemma minpoly_mult_odd_nth_roots' n (p : {poly R[i]}) :
+  (forall i, root p (odd_nth_roots n 0 i)) ->
+  ('X^(2^n) + 1%:P) %| p.
+Proof.
+  generalize (odd_nth_roots_minpoly n); intros.
+  set rs := map (fun i => odd_nth_roots n 0 i)
+              (ord_enum (2^n)).
+  assert (all_rs:all (root p) rs).
+  {
+    apply /allP.
+    intros ??.
+    admit.
+  }
+  assert (uniq_rs:uniq_roots rs).
+  {
+    unfold rs.
+    admit.
+  }
+  destruct (uniq_roots_prod_XsubC all_rs uniq_rs).
+  assert ( ('X^(2 ^ n) + 1%:P) = \prod_(z <- rs) ('X - z%:P)).
+  {
+    assert (size (('X^(2 ^ n) + (one C)%:P)) = (size rs).+1).
+    {
+      rewrite /rs size_map size_addl.
+      - rewrite size_polyXn.
+        admit.
+      - rewrite size_polyC size_polyXn; lia.
+    }
+    rewrite (all_roots_prod_XsubC H2); trivial.
+    - rewrite lead_coefDl.
+      + rewrite lead_coefXn scale1r //.
+      + rewrite size_polyXn size_polyC; lia.
+    - admit.
+  }
+  rewrite -H2 in H1.
+  rewrite H1.
+  apply Pdiv.Idomain.dvdp_mulIr.
+Admitted.  
+
 Lemma drop_poly_opp [S : ringType] n (p : {poly S}) :
   drop_poly n (- p) = - drop_poly n p.
 Proof.
@@ -2308,6 +2347,10 @@ Section norms.
     intros ??.
     by rewrite canon_norm_inf_C_pow.
   Qed.
+
+  Lemma canon_norm_zer_dvd n (p : {poly R}) :
+    canon_norm_inf n p = 0 ->
+    'X^(2^n) + 1 dvd p.
 
 (* following only holds on quotient ring by x^+(2^n) + 1 
   Lemma canon_norm_inf_pos_def n p :
