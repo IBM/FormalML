@@ -1623,74 +1623,6 @@ rewrite H1.
 rewrite mulr0 //.
 Qed.
 
-Lemma twoxp1 (x1 x2 : nat) :
-  (2*x1+1)%N = (2*x2+1)%N -> x1 = x2.
-Proof.
-  lia.
-Qed.
-
-Lemma minpoly_mult_odd_nth_roots' n (p : {poly R[i]}) :
-  (forall i, root p (odd_nth_roots n 0 i)) ->
-  ('X^(2^n) + 1%:P) %| p.
-Proof.
-  generalize (odd_nth_roots_minpoly n); intros.
-  set rs := map (fun i => odd_nth_roots n 0 i)
-              (ord_enum (2^n)).
-  assert (all_rs:all (root p) rs).
-  {
-    apply /allP.
-    simpl.
-    unfold rs.
-    intros ??.
-    admit.
-  }
-  assert (uniq_rs:uniq_roots rs).
-  {
-    rewrite uniq_rootsE /rs map_inj_uniq.
-    - apply ord_enum_uniq.
-    - intros ???.
-      rewrite /odd_nth_roots !mxE in H1.
-      destruct (pow2_S (S n)).
-      move /eqP in i.
-      rewrite i -nth_root_eq -i in H1.
-      assert (x1 < 2^n) by
-        apply ltn_ord.
-      assert (x2 < 2^n) by
-        apply ltn_ord.
-      rewrite !modulo_modn !modn_small in H1.
-      + apply twoxp1 in H1.
-        simpl.
-        destruct x1.
-        destruct x2.
-        simpl in H1.
-        admit.
-      + rewrite expnS; lia.
-      + rewrite expnS; lia.
-  }
-  destruct (uniq_roots_prod_XsubC all_rs uniq_rs).
-  assert ( ('X^(2 ^ n) + 1%:P) = \prod_(z <- rs) ('X - z%:P)).
-  {
-    assert (size (('X^(2 ^ n) + (one C)%:P)) = (size rs).+1).
-    {
-      rewrite /rs size_map size_addl.
-      - rewrite size_polyXn.
-        f_equal.
-        generalize (val_ord_enum (2^n)); intros.
-        apply (f_equal (fun x => size x)) in H2.
-        by rewrite size_map size_iota in H2.
-      - rewrite size_polyC size_polyXn; lia.
-    }
-    rewrite (all_roots_prod_XsubC H2); trivial.
-    - rewrite lead_coefDl.
-      + rewrite lead_coefXn scale1r //.
-      + rewrite size_polyXn size_polyC; lia.
-    - apply /allP; simpl; intros ??.
-      admit.
-  }
-  rewrite -H2 in H1.
-  rewrite H1.
-  apply Pdiv.Idomain.dvdp_mulIr.
-Admitted.  
 
 Lemma drop_poly_opp [S : ringType] n (p : {poly S}) :
   drop_poly n (- p) = - drop_poly n p.
@@ -2378,18 +2310,41 @@ Section norms.
     by rewrite canon_norm_inf_C_pow.
   Qed.
 
-(*
-  Lemma canon_norm_zer_dvd n (p : {poly R}) :
+  Lemma canon_norm_inf_val n (p : {poly R}) i :
+    (normc ((map_poly RtoC p).[odd_nth_roots n 0 i]) <= canon_norm_inf n p)%O.
+  Proof.
+    unfold canon_norm_inf, norm_inf.
+    simpl.
+    Admitted.
+
+  Lemma squeez0 (x : R) :
+    (R0 <= x)%O ->
+    (x <= R0)%O ->
+    x = 0.
+  Proof.
+    Admitted.
+
+  Lemma canon_norm_zer_mod_qpoly n (p : {poly R}) :
     canon_norm_inf n p = 0 ->
-    'X^(2^n) + 1 dvd p.
-*)
+    Pdiv.Ring.rmodp (R:=R_ringType) p ('X^(2 ^ n) + 1%:P) = 0.
+  Proof.
+    intros.
+    apply odd_nth_roots_minpoly_mult_R.
+    intros.
+    unfold root.
+    apply /eqP.
+    generalize (canon_norm_inf_val n p i); intros.
+    rewrite H in H0.
+    apply ComplexField.Normc.eq0_normc.
+    apply squeez0.
+    - apply normc_nneg.
+    - by replace (R0) with (IZR (Z0)) by lra.
+  Qed.
 
 (* following only holds on quotient ring by x^+(2^n) + 1 
   Lemma canon_norm_inf_pos_def n p :
     canon_norm_inf n p = 0 -> p = 0.
 *)
-
-  
 
   Lemma normc_conj (x : R[i]) :
     ComplexField.Normc.normc x = ComplexField.Normc.normc (conjc x).
