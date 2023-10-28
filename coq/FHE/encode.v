@@ -2249,25 +2249,36 @@ Section norms.
     - by rewrite big_ord1 coefC.
   Qed.
 
-  Lemma coef_norm1_poly_def m (p : {poly R}) :
-    coef_norm1 (\sum_(i < m) p`_i *: 'X^i) = \sum_(i < m) Rabs p`_i.
+  Lemma size_poly_def_nz (p : {poly R}) :
+    p != 0 ->
+    size (\sum_(i < size p) p`_i *: 'X^i) = size p.
+  Proof.
+    intros.
+    rewrite -poly_def size_poly_eq //.
+    rewrite -lead_coefE.
+    generalize (lead_coef_eq0 p); intros.
+    rewrite H0 //.
+  Qed.
+
+  Lemma size_poly_def (p : {poly R}) :
+    size (\sum_(i < size p) p`_i *: 'X^i) = size p.
+  Proof.
+    case: (eqVneq p 0).
+    - intros.
+      by rewrite e poly_size_0 big_ord0 poly_size_0.
+    - by apply size_poly_def_nz.
+  Qed.    
+    
+  Lemma coef_norm1_poly_def (p : {poly R}) :
+    coef_norm1 (\sum_(i < (size p)) p`_i *: 'X^i) = \sum_(i < (size p)) Rabs p`_i.
   Proof.
     unfold coef_norm1.
-    have ->: size (\sum_(i < m) p`_i *: 'X^i) = m.
-    {
-      admit.
-    }
+    rewrite size_poly_def.
     apply eq_big => //= i _.
     f_equal.
-    rewrite coef_sum.
-    under eq_big_seq.
-    {
-      intros.
-      rewrite coefZ coefXn.
-      over.
-    }
-        
-    Admitted.
+    rewrite -poly_def coef_poly.
+    by rewrite (ltn_ord i).
+  Qed.
                                               
   Lemma canon_norm_inf_poly_def n m (p : {poly R}) :
         (canon_norm_inf n (\sum_(i < m) p`_i *: 'X^i) <=
