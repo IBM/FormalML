@@ -1639,6 +1639,8 @@ Proof.
   assert (all_rs:all (root p) rs).
   {
     apply /allP.
+    simpl.
+    unfold rs.
     intros ??.
     admit.
   }
@@ -1682,7 +1684,8 @@ Proof.
     - rewrite lead_coefDl.
       + rewrite lead_coefXn scale1r //.
       + rewrite size_polyXn size_polyC; lia.
-    - admit.
+    - apply /allP; simpl; intros ??.
+      admit.
   }
   rewrite -H2 in H1.
   rewrite H1.
