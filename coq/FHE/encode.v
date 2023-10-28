@@ -2310,11 +2310,21 @@ Section norms.
     by rewrite canon_norm_inf_C_pow.
   Qed.
 
+  Lemma f_le_big_max n (i : 'I_n) (F : 'I_n -> R) :
+    (F i <= \big[Order.max/0]_(j < n) F j)%O.
+  Proof.
+    Admitted.
+      
+
   Lemma canon_norm_inf_val n (p : {poly R}) i :
     (normc ((map_poly RtoC p).[odd_nth_roots n 0 i]) <= canon_norm_inf n p)%O.
   Proof.
     unfold canon_norm_inf, norm_inf.
     simpl.
+    generalize (f_le_big_max (2^n) i (fun i => normc (map_poly RtoC p).[odd_nth_roots n 0 i])); intros.
+    eapply Order.POrderTheory.le_trans.
+    - apply H.
+    - admit.
     Admitted.
 
   Lemma squeez0 (x : R) :
