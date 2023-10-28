@@ -1673,7 +1673,9 @@ Proof.
       rewrite /rs size_map size_addl.
       - rewrite size_polyXn.
         f_equal.
-        admit.
+        generalize (val_ord_enum (2^n)); intros.
+        apply (f_equal (fun x => size x)) in H2.
+        by rewrite size_map size_iota in H2.
       - rewrite size_polyC size_polyXn; lia.
     }
     rewrite (all_roots_prod_XsubC H2); trivial.
