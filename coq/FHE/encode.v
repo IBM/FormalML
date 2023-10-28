@@ -2249,24 +2249,13 @@ Section norms.
     - by rewrite big_ord1 coefC.
   Qed.
 
-  Lemma size_poly_def_nz (p : {poly R}) :
-    p != 0 ->
-    size (\sum_(i < size p) p`_i *: 'X^i) = size p.
-  Proof.
-    intros.
-    rewrite -poly_def size_poly_eq //.
-    rewrite -lead_coefE.
-    generalize (lead_coef_eq0 p); intros.
-    rewrite H0 //.
-  Qed.
-
   Lemma size_poly_def (p : {poly R}) :
     size (\sum_(i < size p) p`_i *: 'X^i) = size p.
   Proof.
-    case: (eqVneq p 0).
-    - intros.
-      by rewrite e poly_size_0 big_ord0 poly_size_0.
-    - by apply size_poly_def_nz.
+    case: (eqVneq p 0); intros.
+    - by rewrite e poly_size_0 big_ord0 poly_size_0.
+    - rewrite -poly_def size_poly_eq //.
+      by rewrite -lead_coefE lead_coef_eq0.
   Qed.    
     
   Lemma coef_norm1_poly_def (p : {poly R}) :
