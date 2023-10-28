@@ -1623,6 +1623,12 @@ rewrite H1.
 rewrite mulr0 //.
 Qed.
 
+Lemma twoxp1 (x1 x2 : nat) :
+  (2*x1+1)%N = (2*x2+1)%N -> x1 = x2.
+Proof.
+  lia.
+Qed.
+
 Lemma minpoly_mult_odd_nth_roots' n (p : {poly R[i]}) :
   (forall i, root p (odd_nth_roots n 0 i)) ->
   ('X^(2^n) + 1%:P) %| p.
@@ -1645,10 +1651,16 @@ Proof.
       destruct (pow2_S (S n)).
       move /eqP in i.
       rewrite i -nth_root_eq -i in H1.
-      assert (x1 < 2^n) by admit.
-      assert (x2 < 2^n) by admit.      
+      assert (x1 < 2^n) by
+        apply ltn_ord.
+      assert (x2 < 2^n) by
+        apply ltn_ord.
       rewrite !modulo_modn !modn_small in H1.
-      + assert ((2 *x1)%N = (2 * x2)%N) by lia.
+      + apply twoxp1 in H1.
+        simpl.
+        destruct x1.
+        destruct x2.
+        simpl in H1.
         admit.
       + rewrite expnS; lia.
       + rewrite expnS; lia.
