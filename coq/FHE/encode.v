@@ -2259,14 +2259,13 @@ Section norms.
   Qed.    
     
   Lemma coef_norm1_poly_def (p : {poly R}) :
-    coef_norm1 (\sum_(i < (size p)) p`_i *: 'X^i) = \sum_(i < (size p)) Rabs p`_i.
+    coef_norm1 (\sum_(i < (size p)) p`_i *: 'X^i) =
+      \sum_(i < (size p)) Rabs p`_i.
   Proof.
-    unfold coef_norm1.
-    rewrite size_poly_def.
+    rewrite /coef_norm1 size_poly_def.
     apply eq_big => //= i _.
     f_equal.
-    rewrite -poly_def coef_poly.
-    by rewrite (ltn_ord i).
+    by rewrite -poly_def coef_poly ltn_ord.
   Qed.
                                               
   Lemma canon_norm_inf_poly_def n m (p : {poly R}) :
