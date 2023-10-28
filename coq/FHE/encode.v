@@ -1638,8 +1638,10 @@ Proof.
   }
   assert (uniq_rs:uniq_roots rs).
   {
-    unfold rs.
-    admit.
+    rewrite uniq_rootsE /rs map_inj_uniq.
+    - apply ord_enum_uniq.
+    - intros ???.
+      admit.
   }
   destruct (uniq_roots_prod_XsubC all_rs uniq_rs).
   assert ( ('X^(2 ^ n) + 1%:P) = \prod_(z <- rs) ('X - z%:P)).
@@ -1648,6 +1650,7 @@ Proof.
     {
       rewrite /rs size_map size_addl.
       - rewrite size_polyXn.
+        f_equal.
         admit.
       - rewrite size_polyC size_polyXn; lia.
     }
