@@ -2310,22 +2310,24 @@ Section norms.
     by rewrite canon_norm_inf_C_pow.
   Qed.
 
-  Lemma f_le_big_max n (i : 'I_n) (F : 'I_n -> R) :
-    (F i <= \big[Order.max/0]_(j < n) F j)%O.
-  Proof.
-    Admitted.
-      
-
-  Lemma canon_norm_inf_val n (p : {poly R}) i :
-    (normc ((map_poly RtoC p).[odd_nth_roots n 0 i]) <= canon_norm_inf n p)%O.
+  Lemma canon_norm_inf_val n (p : {poly R}) (i : 'I_(2^n-1).+1) :
+    (normc ((map_poly RtoC p).[odd_nth_roots' n 0 i]) <= canon_norm_inf n p)%O.
   Proof.
     unfold canon_norm_inf, norm_inf.
     simpl.
-    generalize (f_le_big_max (2^n) i (fun i => normc (map_poly RtoC p).[odd_nth_roots n 0 i])); intros.
+    generalize (@bigmaxr_le (2^n-1).+1 (odd_nth_roots' n) 0 (fun c => normc (map_poly RtoC p).[c]) i); intros.
     eapply Order.POrderTheory.le_trans.
-    - apply H.
-    - admit.
-    Admitted.
+    - rewrite /Order.le/=.
+      apply H.
+    - rewrite /Order.le/=.
+      apply /RlebP.
+      right.
+      apply eq_big_seq.
+      intros ??.
+      f_equal.
+      unfold mx_eval.
+      by rewrite !mxE.
+  Qed.
 
   Lemma squeez0 (x : R) :
     (R0 <= x)%O ->
@@ -2342,7 +2344,7 @@ Section norms.
       by replace (R0) with (IZR (Z0)) in H by lra.
   Qed.
 
-  Lemma canon_norm_zer_mod_qpoly n (p : {poly R}) :
+  Lemma canon_norm_zero_mod_qpoly n (p : {poly R}) :
     canon_norm_inf n p = 0 ->
     Pdiv.Ring.rmodp (R:=R_ringType) p ('X^(2 ^ n) + 1%:P) = 0.
   Proof.
@@ -2351,12 +2353,20 @@ Section norms.
     intros.
     unfold root.
     apply /eqP.
-    generalize (canon_norm_inf_val n p i); intros.
+    generalize (canon_norm_inf_val n p); intros.
+    destruct i.
+    assert (m < (2^n-1).+1) by lia.
+    specialize (H0 (Ordinal H1)).
     rewrite H in H0.
     apply ComplexField.Normc.eq0_normc.
     apply squeez0.
     - apply normc_nneg.
-    - by replace (R0) with (IZR (Z0)) by lra.
+    - replace (odd_nth_roots n 0 (Ordinal (n:=2^n) i)) with
+        (odd_nth_roots' n 0 (Ordinal (n:=(2^n-1).+1) H1)).
+      + by replace (R0) with (IZR (Z0)) by lra.
+      + unfold odd_nth_roots'.
+        unfold odd_nth_roots.
+        by rewrite !mxE.
   Qed.
 
 (* following only holds on quotient ring by x^+(2^n) + 1 
