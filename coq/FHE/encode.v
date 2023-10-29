@@ -2329,21 +2329,6 @@ Section norms.
       by rewrite !mxE.
   Qed.
 
-  Lemma squeez0 (x : R) :
-    (R0 <= x)%O ->
-    (x <= R0)%O ->
-    x = 0.
-  Proof.
-    intros.
-    apply Rle_antisym.
-    - rewrite /Order.le/= in H0.
-      move /RlebP in H0.
-      by replace (R0) with (IZR (Z0)) in H0 by lra.
-    - rewrite /Order.le/= in H.
-      move /RlebP in H.
-      by replace (R0) with (IZR (Z0)) in H by lra.
-  Qed.
-
   Lemma canon_norm_zero_mod_qpoly n (p : {poly R}) :
     canon_norm_inf n p = 0 ->
     Pdiv.Ring.rmodp (R:=R_ringType) p ('X^(2 ^ n) + 1%:P) = 0.
@@ -2359,14 +2344,13 @@ Section norms.
     specialize (H0 (Ordinal H1)).
     rewrite H in H0.
     apply ComplexField.Normc.eq0_normc.
-    apply squeez0.
-    - apply normc_nneg.
+    apply Order.POrderTheory.le_anti.
+    apply /andP; split.
     - replace (odd_nth_roots n 0 (Ordinal (n:=2^n) i)) with
         (odd_nth_roots' n 0 (Ordinal (n:=(2^n-1).+1) H1)).
-      + by replace (R0) with (IZR (Z0)) by lra.
-      + unfold odd_nth_roots'.
-        unfold odd_nth_roots.
-        by rewrite !mxE.
+      + apply H0.
+      + by rewrite /odd_nth_roots' /odd_nth_roots !mxE.
+    - apply normc_nneg.
   Qed.
 
 (* following only holds on quotient ring by x^+(2^n) + 1 
