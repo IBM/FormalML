@@ -214,7 +214,6 @@ Section chinese.
       by apply pairwise_coprime_cons.
  Qed.
 
-(*
   Lemma symmetricE {A} (f:A->A->bool) :  (ssrbool.symmetric f) <-> (RelationClasses.Symmetric f).
   Proof.
     rewrite /symmetric /RelationClasses.Symmetric.
@@ -226,7 +225,7 @@ Section chinese.
         by rewrite (H _ _ eqq2) in eqq.
   Qed.
 
-  Lemma allE {A} (P:pred A) (l:list A) : all P l <->  Forall (fun x : A => P x) l.
+  Lemma allE {A} (P:pred A) (l:list A) : all P l <->  List.Forall (fun x : A => P x) l.
   Proof.
     elim: l => /=.
     - split=>// _.
@@ -238,7 +237,8 @@ Section chinese.
         by rewrite H2 IHl.
   Qed.    
 
-  Lemma pairwiseE {A} (P:rel A) (l:list A) : pairwise P l <-> ForallOrdPairs P l.
+
+  Lemma pairwiseE {A} (P:rel A) (l:list A) : pairwise P l <-> List.ForallOrdPairs P l.
   Proof.
     elim: l => /=.
     - split=>// _.
@@ -253,18 +253,19 @@ Section chinese.
         * by apply allE.
         * by apply IHl.
   Qed.
-    
+
+(*
   Lemma pairwise_perm_symm {A} f (l1 l2: list A) :
     symmetric f ->
-    Permutation l1 l2 ->
+    Permutation.Permutation l1 l2 ->
     pairwise f l1 = pairwise f l2.
   Proof.
     intros.
     apply symmetricE in H.
     apply Bool.eq_true_iff_eq.
     split; intros HH; apply pairwiseE; apply pairwiseE in HH.
-    - by rewrite ForallOrdPairs_perm; [| apply Permutation_sym; apply H0].
-    - by rewrite ForallOrdPairs_perm; [| apply H0].
+    - by rewrite ListAdd.ForallOrdPairs_perm; [| apply Permutation_sym; apply H0].
+    - by rewrite ListAdd.ForallOrdPairs_perm; [| apply H0].
   Qed.
 *)
 
@@ -823,7 +824,7 @@ Proof.
   lia.
 Qed.
 
-
+(*
 Lemma add4_pow2_mod j n :
   (j + 4)^(2 ^n) = j^(2^n) + (2^n.+2)*j^(2^n-1) %[mod 2^n.+3].
 Proof.
@@ -844,11 +845,44 @@ Proof.
     rewrite sum_nat_eq0.
     apply/forallP => x.
     apply/implyP => xbig.
+    assert (forall k, k < n -> ('C(2 ^ n, 2^k.+1) * 4 ^ 2^k.+1) %% 2 ^ n.+3 == 0)%N.    
+    {
+      intros.
+      assert (exists q, 'C(2^n, 2^k.+1) = q * 2^(n-k.+1)).
+      {
+        admit.
+      }
+      destruct H0.
+      rewrite H0.
+      replace 4 with (2^2) by lia.
+      rewrite -expnM -expnS.
+      replace (x0 * 2 ^ (n - k.+1) * 2 ^ 2 ^ k.+2) with
+        (x0 * 2^ (n - k.+1 + (2^k.+2))).
+      - assert (2^k.+2 >= k.+4).
+        {
+          clear H H0.
+          induction k; trivial.
+          assert (k.+4 < 2*2^k.+2) by lia.
+          by rewrite expnS.
+        }
+        rewrite -modnMm.
+        assert (exists q,  (2 ^ (n - k.+1 + 2 ^ k.+2) = q * 2^n.+3)).
+        {
+          admit.
+        }
+        destruct H2.
+        by rewrite H2 modnMl muln0 mod0n.
+      - by rewrite -mulnA expnD.
+    }
     assert (('C(2 ^ n, x) * 4 ^ x) %% 2 ^ n.+3 == 0)%N.
     {
+      (* 2^(n-1) | 'C(2^n, 2), ok for x = 2 *)
+      (* 2^n | 'C(2^n,3), ok for x = 3 *)
+      (* 2^(n-2) | 'C(2^n, 4), ok for x = 4 *)
+      (* enough to prove for x = 2^k, since sucessive values are better *)
       admit.
     }
-    by rewrite (mulnC _ (4 ^ x)) mulnA -modnMm (eqP H) mul0n mod0n.
+    by rewrite (mulnC _ (4 ^ x)) mulnA -modnMm (eqP H0) mul0n mod0n.
   }
   by rewrite -modnDmr -modnDmr H !mod0n addn0.
   
@@ -872,7 +906,7 @@ Proof.
   split; [lia |].
   by rewrite modn2 oddX H orbT.
 Qed.
-
+*)
 
 (* https://math.stackexchange.com/questions/459815/the-structure-of-the-group-mathbbz-2n-mathbbz *)
 
@@ -1071,6 +1105,7 @@ Proof.
   by rewrite ltnn.
 Qed.
 
+(*
 Lemma prime_dvd_pow_m1_bin k p n : prime p -> k < p^n.+1 ->
                                    ~~ (p %| 'C(p^n.+1-1, k)).
 Proof.
@@ -1106,6 +1141,7 @@ Proof.
       admit.
     + clear IHk H2 H3; lia.
 Admitted.
+*)
 
 Lemma prime_power_dvd_mul_helper p k a b :
   prime p ->
@@ -1229,6 +1265,7 @@ Proof.
     by rewrite H subnn expn0 dvd1n.
  Qed.
 
+(*
 Lemma prime_power_dvd_mul p k a b :
   prime p ->
   p ^ k %| a * b = [exists j:(ordinal (k.-1.+1)), (p^j %| a) && (p^(k-j) %| b)].
@@ -1308,6 +1345,7 @@ Proof.
     *)
     
 Admitted.
+*)
 
 Lemma prime_pow_dvd_bin_full j k p n :
   prime p -> 0 < k < p^n -> 0 < n ->
@@ -1365,6 +1403,7 @@ Proof.
   by rewrite prime_coprime.
 Qed.
   
+(*
 Lemma add_exp_mod_exp_p p k :
   prime p ->
   odd p ->
@@ -1404,6 +1443,8 @@ Proof.
   - rewrite expnS expnS.
     apply (f_equal (fun z => z^p)) in IHn.
     Admitted.
+
+ *)
 
 Lemma ord_5_pow_2_neq n :
   5^(2^n) <> 1 %[mod 2^n.+3].
