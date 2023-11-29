@@ -1939,16 +1939,36 @@ Section norms.
   Definition canon_norm1 n (p : {poly R}):R := norm1 (mx_eval (odd_nth_roots' n) p).
   Definition canon_norm_inf n (p : {poly R}):R := norm_inf (mx_eval (odd_nth_roots' n) p).
 
+
+  Lemma normc_nneg (x : R[i]) :
+    (R0  <= normc x)%O.
+  Proof.
+    rewrite /normc.
+    case: x => r i.
+    apply ssrnum.Num.Theory.sqrtr_ge0.
+  Qed.
+
+  Lemma sum_normc_nneg {n} (v : 'rV[R[i]]_n) :
+    ((@zero R_zmodType) <= \sum_(k < n) normc (R:=R_rcfType) (v ord0 k))%O.
+  Proof.
+    apply big_rec => // i x _ xnneg.
+    by rewrite ssrnum.Num.Theory.addr_ge0 // normc_nneg.
+  Qed.
+
   Lemma mat_vec_norm1 {n} (v : 'rV[R[i]]_n) :
     norm1 v = matrix_norm_inf v.
   Proof.
-    unfold norm1, matrix_norm_inf.
-  Admitted.
-
+    rewrite /norm1 /matrix_norm_inf /=.
+    rewrite big_ord_recl big_ord0.
+    rewrite Order.POrderTheory.max_l //.
+    by rewrite sum_normc_nneg.
+  Qed.    
+    
   Lemma mat_vec_norm_inf {n} (v : 'rV[R[i]]_n) :
     norm1 v = matrix_norm1 v.
   Proof.
     unfold norm1, matrix_norm1, matrix_norm_inf.
+    symmetry.
   Admitted.
 
 
@@ -1958,20 +1978,13 @@ Section norms.
     Rleb (matrix_norm_inf (mat1 *m mat2))
       ((matrix_norm_inf mat1) * (matrix_norm_inf mat2)).
   Proof.
-    Admitted.
+  Admitted.
 
   Lemma R00 : R0 = 0.
   Proof.
     by [].
   Qed.
 
-  Lemma normc_nneg (x : R[i]) :
-    (R0  <= normc x)%O.
-  Proof.
-    rewrite /normc.
-    case: x => r i.
-    apply ssrnum.Num.Theory.sqrtr_ge0.
-  Qed.
 
   Lemma normc_nnegR (x : R[i]) :
     Rle R0 (normc x).
