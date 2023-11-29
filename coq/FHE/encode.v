@@ -1965,12 +1965,13 @@ Section norms.
   Qed.    
     
   Lemma mat_vec_norm_inf {n} (v : 'rV[R[i]]_n) :
-    norm1 v = matrix_norm1 v.
+    norm_inf v = matrix_norm1 v.
   Proof.
-    unfold norm1, matrix_norm1, matrix_norm_inf.
-    symmetry.
-  Admitted.
-
+    rewrite /norm_inf /matrix_norm1 /matrix_norm_inf /=.
+    apply eq_bigr.
+    intros.
+    by rewrite big_ord_recl big_ord0 addr0 mxE.
+  Qed.
 
   Lemma matrix_norm_inf_sub_mult {n m p} 
     (mat1 : 'M[R[i]]_(n, m))
