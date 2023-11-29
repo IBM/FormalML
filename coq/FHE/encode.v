@@ -1926,12 +1926,39 @@ Section norms.
 
   Definition norm_inf {n} (v : 'rV[R[i]]_n):R := \big[Order.max/0]_(j < n) normc (v 0 j).
 
+  Definition matrix_norm_inf {n m} (mat : 'M[R[i]]_(n,m)) :=
+    \big[Order.max/0]_(j<n) (\sum_(k<m) normc (mat j k)).
+
+  Definition matrix_norm1 {n m} (mat : 'M[R[i]]_(n,m)) :=
+    matrix_norm_inf (mat ^T).
+
   Definition coef_norm1 (p : {poly R}):R := \sum_(j < seq.size p) Rabs (p`_ j).
 
   Definition coef_maxnorm (p : {poly R}):R := \big[Order.max/0]_(j < seq.size p) Rabs (p`_ j).
 
   Definition canon_norm1 n (p : {poly R}):R := norm1 (mx_eval (odd_nth_roots' n) p).
   Definition canon_norm_inf n (p : {poly R}):R := norm_inf (mx_eval (odd_nth_roots' n) p).
+
+  Lemma mat_vec_norm1 {n} (v : 'rV[R[i]]_n) :
+    norm1 v = matrix_norm_inf v.
+  Proof.
+    unfold norm1, matrix_norm_inf.
+  Admitted.
+
+  Lemma mat_vec_norm_inf {n} (v : 'rV[R[i]]_n) :
+    norm1 v = matrix_norm1 v.
+  Proof.
+    unfold norm1, matrix_norm1, matrix_norm_inf.
+  Admitted.
+
+
+  Lemma matrix_norm_inf_sub_mult {n m p} 
+    (mat1 : 'M[R[i]]_(n, m))
+    (mat2 : 'M[R[i]]_(m, p)) :
+    Rleb (matrix_norm_inf (mat1 *m mat2))
+      ((matrix_norm_inf mat1) * (matrix_norm_inf mat2)).
+  Proof.
+    Admitted.
 
   Lemma R00 : R0 = 0.
   Proof.
