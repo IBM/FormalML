@@ -1967,9 +1967,8 @@ Section norms.
     norm1 v = matrix_norm1 (v^T).
   Proof.
     rewrite /norm1 /matrix_norm1 /matrix_norm_inf /=.
-    rewrite big_ord_recl big_ord0 Order.POrderTheory.max_l.
-    - by apply eq_bigr => i _; rewrite !mxE.
-    - by rewrite sum_normc_nneg.
+    rewrite big_ord_recl big_ord0 Order.POrderTheory.max_l ?sum_normc_nneg //.
+    by apply eq_bigr => i _; rewrite !mxE.
   Qed.
  
  Lemma matrix_norm_inf_sub_mult {n m p} 
