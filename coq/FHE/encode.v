@@ -1959,7 +1959,7 @@ Section norms.
     norm_inf v = matrix_norm_inf (v^T).
   Proof.
     rewrite /norm_inf /matrix_norm_inf /=.
-    apply eq_bigr; move=>??.
+    apply eq_bigr => i _.
     by rewrite big_ord_recl big_ord0 addr0 mxE.
   Qed.
   
@@ -1967,10 +1967,9 @@ Section norms.
     norm1 v = matrix_norm1 (v^T).
   Proof.
     rewrite /norm1 /matrix_norm1 /matrix_norm_inf /=.
-    rewrite big_ord_recl big_ord0.
-    rewrite Order.POrderTheory.max_l.
-    by apply eq_bigr; move=>??; rewrite !mxE.
-    by rewrite sum_normc_nneg.
+    rewrite big_ord_recl big_ord0 Order.POrderTheory.max_l.
+    - by apply eq_bigr => i _; rewrite !mxE.
+    - by rewrite sum_normc_nneg.
   Qed.
  
  Lemma matrix_norm_inf_sub_mult {n m p} 
