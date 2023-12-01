@@ -2305,7 +2305,12 @@ Section norms.
     - apply /RlebP.
       apply bigmax_normc_nneg.
   Qed.
-  
+
+  Lemma nested_sums_comm {n m} (a : 'I_n -> 'I_m -> R) :
+    \sum_(i<n) \sum_(j<m) (a i j) = \sum_(j<m) \sum_(i<n) (a i j).
+  Proof.
+    Admitted.
+
  Lemma matrix_norm_inf_sub_mult {n m p} 
     (mat1 : 'M[R[i]]_(n, m))
     (mat2 : 'M[R[i]]_(m, p)) :
@@ -2344,13 +2349,12 @@ Section norms.
           -- rewrite mulrC sum_mult_distr.
              apply eq_bigr => i _.
              by rewrite mulrC ComplexField.Normc.normcM.
-        * admit.
+        * by rewrite nested_sums_comm.
     - apply /RlebP.
       apply bigmax_nneg => i.
       apply sum_nneg => k.
       apply normc_nneg.
-  Admitted.
-
+  Qed.
 
   Lemma norm_inf_triang {n} (v1 v2 : 'rV[R[i]]_n) :
     (norm_inf (v1 + v2) <= norm_inf v1 + norm_inf v2)%O.
