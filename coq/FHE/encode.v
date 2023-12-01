@@ -2226,22 +2226,47 @@ Section norms.
         apply bigmaxr_le.
   Qed.
 
-  Lemma bigmax_normc_nneg {n} (v : 'rV[R[i]]_n):
-    Rleb 0 (\big[Order.max/0]_(j < n) normc (v 0 j)).
+
+  Lemma bigmax_nneg {n} (v : 'I_n -> R) :
+    (forall i, Rleb 0 (v i)) ->
+    Rleb 0 (\big[Order.max/0]_(j < n) (v j)).
   Proof.
+    intros.
     apply big_rec.
     - apply /RlebP.
       unfold zero; simpl.
       lra.
     - intros.
-      assert  ((zero R_ringType) <= Order.max (normc (R:=R_rcfType) (v 0 i)) x)%O.
+      assert  ((zero R_ringType) <= Order.max (v i) x)%O.
       {
         rewrite Order.TotalTheory.le_maxr.      
         apply /orP.
         left.
-        apply normc_nneg.
+        apply H.
       }
       by rewrite /Order.le /= in H1.
+   Qed.
+
+  Lemma bigmax_normc_nneg {n} (v : 'rV[R[i]]_n):
+    Rleb 0 (\big[Order.max/0]_(j < n) normc (v 0 j)).
+  Proof.
+    apply bigmax_nneg => i.
+    apply normc_nneg.
+  Qed.
+
+  Lemma sum_nneg {n} (v : 'I_n -> R) :
+    (forall i, Rleb 0 (v i)) ->
+    Rleb 0 (\sum_(j < n) (v j)).
+  Proof.
+    intros.
+    apply big_rec.
+    - apply /RlebP.
+      unfold zero; simpl.
+      lra.
+    - intros.
+      apply /RlebP.
+      rewrite /add /=.
+      apply Rplus_le_le_0_compat; by apply /RlebP.
    Qed.
 
  Lemma matrix_vec_norm_inf_sub_mult {n m} 
@@ -2273,11 +2298,13 @@ Section norms.
     generalize (@max_mult_distr n); intros.
     rewrite /mul /= in H.
     rewrite H.
-    - apply bigmax_le2.
-      intros.
+    - apply bigmax_le2 => j.
       under eq_bigr do rewrite mxE.
-                       
-
+      admit.
+    - apply /RlebP.
+      apply bigmax_nneg => i.
+      apply sum_nneg => k.
+      apply normc_nneg.
   Admitted.
 
 
