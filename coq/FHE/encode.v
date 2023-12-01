@@ -2124,9 +2124,11 @@ Section norms.
     intros.
     apply /RlebP.
     move /RlebP in H.
-    move /RlebP in H0.        
-    apply Rmax_Rle.
-    Admitted.
+    move /RlebP in H0.
+    apply Rmax_case; apply Rmax_Rle.
+    - by left.
+    - by right.
+  Qed.
 
   Lemma bigmax_le2 {n} (a b : 'I_n -> R) :
     (forall j, Rleb (a j) (b j)) ->
