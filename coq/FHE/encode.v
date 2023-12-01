@@ -2306,10 +2306,36 @@ Section norms.
       apply bigmax_normc_nneg.
   Qed.
 
+  Lemma sum_plus {n} (a b : 'I_n -> R) :
+    \sum_(i<n) (a i) + \sum_(i<n) (b i) = \sum_(i<n) ((a i) + (b i)).
+  Proof.
+    induction n.
+    - by rewrite !big_ord0 addr0.
+    - rewrite !big_ord_recl.
+      rewrite -IHn.
+      rewrite /add /=.
+      lra.
+  Qed.
+
   Lemma nested_sums_comm {n m} (a : 'I_n -> 'I_m -> R) :
     \sum_(i<n) \sum_(j<m) (a i j) = \sum_(j<m) \sum_(i<n) (a i j).
   Proof.
-    Admitted.
+    induction n.
+    - induction m.
+      + by rewrite !big_ord0.
+      + rewrite big_ord0.
+        under eq_bigr do rewrite big_ord0.
+        simpl.
+        rewrite big_ord_recl add0r.
+        clear IHm a.
+        induction m.
+        * by rewrite big_ord0.
+        * by rewrite big_ord_recl add0r -IHm.
+    - rewrite big_ord_recl IHn.
+      rewrite sum_plus.
+      apply eq_bigr => i _.
+      by rewrite big_ord_recl.
+  Qed.
 
  Lemma matrix_norm_inf_sub_mult {n m p} 
     (mat1 : 'M[R[i]]_(n, m))
