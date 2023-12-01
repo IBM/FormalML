@@ -1926,6 +1926,9 @@ Section norms.
 
   Definition norm_inf {n} (v : 'rV[R[i]]_n):R := \big[Order.max/0]_(j < n) normc (v 0 j).
 
+  Definition cvec_norm_inf {n} (v : 'cV[R[i]]_n):R := norm_inf(v^T).
+  Definition cvec_norm1 {n} (v : 'cV[R[i]]_n):R := norm1(v^T).  
+
   Definition matrix_norm_inf {n m} (mat : 'M[R[i]]_(n,m)) :=
     \big[Order.max/0]_(j<n) (\sum_(k<m) normc (mat j k)).
 
@@ -1959,27 +1962,18 @@ Section norms.
     norm_inf v = matrix_norm_inf (v^T).
   Proof.
     rewrite /norm_inf /matrix_norm_inf /=.
-    apply eq_bigr => i _.
+    apply eq_bigr => j _.
     by rewrite big_ord_recl big_ord0 addr0 mxE.
   Qed.
-  
+
   Lemma mat_vec_norm1 {n} (v : 'rV[R[i]]_n) :
     norm1 v = matrix_norm1 (v^T).
   Proof.
     rewrite /norm1 /matrix_norm1 /matrix_norm_inf /=.
     rewrite big_ord_recl big_ord0 Order.POrderTheory.max_l ?sum_normc_nneg //.
-    by apply eq_bigr => i _; rewrite !mxE.
-  Qed.
+    by apply eq_bigr => j _; rewrite !mxE.
+    Qed.
  
- Lemma matrix_norm_inf_sub_mult {n m p} 
-    (mat1 : 'M[R[i]]_(n, m))
-    (mat2 : 'M[R[i]]_(m, p)) :
-    Rleb (matrix_norm_inf (mat1 *m mat2))
-      ((matrix_norm_inf mat1) * (matrix_norm_inf mat2)).
-  Proof.
-    rewrite /matrix_norm_inf /=.
-    
-  Admitted.
 
   Lemma R00 : R0 = 0.
   Proof.
@@ -2008,6 +2002,21 @@ Section norms.
         by apply Rmult_lt_compat_l.
       + subst.
         by rewrite !mul0r.
+  Qed.
+
+  Lemma maxrM_l (c a b : R) : Rle 0 c -> Order.max (a * c) (b * c)  = (Order.max a b)*c.
+  Proof.
+    rewrite /Order.max /Order.lt /=.
+    (repeat case: RltbP); try lra; intros.
+    - destruct H.
+      + apply Rmult_lt_reg_r in p => //.
+      + subst.
+        by rewrite !mulr0.
+    - destruct H.
+      + elim n.
+        by apply Rmult_lt_compat_r.
+      + subst.
+        by rewrite !mulr0.
   Qed.
 
   Lemma norm_infZ {n} (c : R[i]) (v : 'rV[R[i]]_n) :
@@ -2045,6 +2054,97 @@ Section norms.
     rewrite /Order.le /Order.POrder.le /=.
     by move/RleP.
   Qed.
+
+  Lemma normc_triang_sum {n} (a : 'I_n -> R[i]) :
+    Rleb (normc (\sum_(j<n) (a j)))
+      (\sum_(j<n) normc (a j)).
+  Proof.
+    induction n.
+    - rewrite !big_ord0 ComplexField.Normc.normc0.
+      apply /RlebP.
+      apply Rle_refl.
+    - rewrite !big_ord_recl.
+      apply /RlebP.
+      eapply Rle_trans.
+      apply normc_triangR.
+      apply Rplus_le_compat_l.
+      apply /RlebP.
+      apply IHn.
+  Qed.
+
+  Lemma sum_mult_distr {n} (a : 'I_n -> R) (c : R) :
+    (\sum_(j<n) (a j))*c = \sum_(j<n) (a j) * c.
+  Proof.
+    induction n.
+    - by rewrite !big_ord0 mul0r.
+    - rewrite !big_ord_recl mulrDl.
+      f_equal.
+      by rewrite IHn.
+  Qed.   
+
+  Lemma max_mult_distr {n} (a : 'I_n -> R) (c : R) :
+    Rle 0 c ->
+    (\big[Order.max/0]_(j<n) (a j))*c =
+      \big[Order.max/0]_(j<n) ((a j)*c).
+  Proof.
+    induction n.
+    - by rewrite !big_ord0 mul0r.
+    - intros.
+      rewrite !big_ord_recl -maxrM_l //.
+      rewrite IHn //.
+  Qed.   
+
+  Lemma sum_le {n} (a b : 'I_n -> R) :
+    (forall j, Rleb (a j) (b j)) ->
+    Rleb (\sum_(j<n) (a j)) (\sum_(j<n) (b j)).
+  Proof.
+    induction n.
+    - rewrite !big_ord0.
+      intros.
+      apply /RlebP.
+      now right.
+    - intros.
+      rewrite !big_ord_recl.
+      apply /RlebP.
+      apply Rplus_le_compat.
+      + apply /RlebP.
+        apply H.
+      + apply /RlebP.
+        apply IHn.
+        intros.
+        apply H.
+  Qed.   
+
+  Lemma max_le_compat (a b c d : R) :
+    Rleb a b ->
+    Rleb c d ->
+    Rleb (Order.max a c) (Order.max b d).
+  Proof.
+    rewrite -!RmaxE.
+    intros.
+    apply /RlebP.
+    move /RlebP in H.
+    move /RlebP in H0.        
+    apply Rmax_Rle.
+    Admitted.
+
+  Lemma bigmax_le2 {n} (a b : 'I_n -> R) :
+    (forall j, Rleb (a j) (b j)) ->
+    Rleb (\big[Order.max/0]_(j<n) (a j))
+      (\big[Order.max/0]_(j<n) (b j)).
+  Proof.
+    induction n.
+    - rewrite !big_ord0.
+      intros.
+      apply /RlebP.
+      now right.
+    - intros.
+      rewrite !big_ord_recl.
+      apply max_le_compat; rewrite //.
+      apply IHn.
+      intros.
+      apply H.
+  Qed.   
 
   Lemma bigmaxr_le_init {n} (v : 'rV[R[i]]_n) init (f:R[i]->R):
     Order.le init (\big[Order.max/init]_(j < n) f (v 0 j)).
@@ -2100,6 +2200,30 @@ Section norms.
         apply omax_r_real.
   Qed.
   
+  Lemma mat_vec_norm_bound1 {n m}
+    (mat : 'M[R[i]]_(n, m))
+    (vec : 'rV[R[i]]_m) k:
+    Rleb (normc (\sum_(j<m) (mat k j) * (vec 0 j)))
+      ((\sum_(j<m) normc (mat k j)) *
+         (\big[Order.max/0]_(j<m) normc (vec 0 j))).
+  Proof.
+    apply /RlebP.
+    eapply Rle_trans.
+    - apply /RlebP.
+      apply normc_triang_sum.
+    - generalize (@sum_mult_distr m); intros.
+      rewrite /mul /= in H.
+      rewrite H.
+      apply /RlebP.
+      apply sum_le => j.
+      rewrite ComplexField.Normc.normcM.
+      apply /RlebP.
+      apply Rmult_le_compat_l.
+      + apply normc_nnegR.
+      + apply /RlebP.
+        apply bigmaxr_le.
+  Qed.
+
   Lemma bigmax_normc_nneg {n} (v : 'rV[R[i]]_n):
     Rleb 0 (\big[Order.max/0]_(j < n) normc (v 0 j)).
   Proof.
@@ -2117,6 +2241,35 @@ Section norms.
       }
       by rewrite /Order.le /= in H1.
    Qed.
+
+ Lemma matrix_vec_norm_inf_sub_mult {n m} 
+    (mat : 'M[R[i]]_(n, m))
+    (vec : 'rV[R[i]]_m) :
+    Rleb (matrix_norm_inf (mat *m (vec^T)))
+      ((matrix_norm_inf mat) * (norm_inf vec)).
+  Proof.
+    rewrite /matrix_norm_inf /norm_inf /mulmx /=.
+    generalize (@max_mult_distr n); intros.
+    rewrite /mul /= in H.
+    rewrite H.
+    - apply bigmax_le2.
+      intros.
+      rewrite big_ord_recl big_ord0 addr0 mxE /trmx /=.
+      generalize (@mat_vec_norm_bound1 n m mat vec j); intros.
+      Admitted.
+    - apply /RlebP.
+      apply bigmax_normc_nneg.
+    Admitted.
+  
+ Lemma matrix_norm_inf_sub_mult {n m p} 
+    (mat1 : 'M[R[i]]_(n, m))
+    (mat2 : 'M[R[i]]_(m, p)) :
+    Rleb (matrix_norm_inf (mat1 *m mat2))
+      ((matrix_norm_inf mat1) * (matrix_norm_inf mat2)).
+  Proof.
+    rewrite /matrix_norm_inf /mulmx /=.
+  Admitted.
+
 
   Lemma norm_inf_triang {n} (v1 v2 : 'rV[R[i]]_n) :
     (norm_inf (v1 + v2) <= norm_inf v1 + norm_inf v2)%O.
