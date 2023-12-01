@@ -2257,9 +2257,8 @@ Section norms.
     - apply bigmax_le2.
       intros.
       rewrite big_ord_recl big_ord0 addr0 mxE /trmx /=.
-      generalize (@mat_vec_norm_bound1 n m mat vec j); intros.
-      symmetry; under eq_bigr do rewrite !mxE.
-                                 by rewrite H0.
+      under eq_bigr do rewrite !mxE.
+                       by rewrite mat_vec_norm_bound1.
     - apply /RlebP.
       apply bigmax_normc_nneg.
   Qed.
