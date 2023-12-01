@@ -2202,6 +2202,24 @@ Section norms.
         apply omax_r_real.
   Qed.
   
+  Lemma bigmaxr_le_alt {n} (v : 'I_n -> R) init i:
+    Rleb (v i) (\big[Order.max/init]_(j < n) (v j)).
+  Proof.
+    rewrite BigOp.bigopE.
+    unlock reducebig.
+    move: (mem_index_enum i).
+    elim: (index_enum _) => /= [| a l IHl].
+    - by rewrite seq.in_nil.
+    - rewrite seq.in_cons => /orP [/eqP->| ].
+      + by exact: omax_l_real.
+      + move=> inn.
+        move: (IHl inn) => /RlebP=>le1.
+        apply/RlebP.
+        eapply Rle_trans; try apply le1.
+        apply/RlebP.
+        apply omax_r_real.
+  Qed.
+
   Lemma mat_vec_norm_bound1 {n m}
     (mat : 'M[R[i]]_(n, m))
     (vec : 'rV[R[i]]_m) k:
@@ -2300,7 +2318,33 @@ Section norms.
     rewrite H.
     - apply bigmax_le2 => j.
       under eq_bigr do rewrite mxE.
-      admit.
+      apply /RlebP.
+      apply Rle_trans with
+        (r2 := \sum_(i < p) (\sum_(j0 < m) normc (R:=R_rcfType) (mat1 j j0 * mat2 j0 i))).
+      + apply /RlebP.
+        apply sum_le => j0.
+        apply normc_triang_sum.
+      + replace  (\sum_(i < p) \sum_(j0 < m) normc (R:=R_rcfType) (mat1 j j0 * mat2 j0 i)) with
+          (\sum_(j0 < m) \sum_(i < p) normc (R:=R_rcfType) (mat1 j j0 * mat2 j0 i)).
+        * generalize (@sum_mult_distr); intros.
+          rewrite /mul /= in H0.
+          rewrite H0.
+          apply /RlebP.
+          apply sum_le => j0.
+          replace  (\sum_(i < p) normc (R:=R_rcfType) (mat1 j j0 * mat2 j0 i)) with
+            ((normc (R:=R_rcfType) (mat1 j j0)) * 
+               (\sum_(i < p) normc (R:=R_rcfType) (mat2 j0 i))).
+          -- apply /RlebP.
+             apply Rmult_le_compat_l.
+             ++ apply normc_nnegR.
+             ++ apply /RlebP.
+                generalize (@bigmaxr_le_alt m
+                              (fun j0 => (\sum_(i < p) normc (R:=R_rcfType) (mat2 j0 i))) 0 j0); intros.
+                apply H1.
+          -- rewrite mulrC sum_mult_distr.
+             apply eq_bigr => i _.
+             by rewrite mulrC ComplexField.Normc.normcM.
+        * admit.
     - apply /RlebP.
       apply bigmax_nneg => i.
       apply sum_nneg => k.
