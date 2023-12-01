@@ -2270,6 +2270,14 @@ Section norms.
       ((matrix_norm_inf mat1) * (matrix_norm_inf mat2)).
   Proof.
     rewrite /matrix_norm_inf /mulmx /=.
+    generalize (@max_mult_distr n); intros.
+    rewrite /mul /= in H.
+    rewrite H.
+    - apply bigmax_le2.
+      intros.
+      under eq_bigr do rewrite mxE.
+                       
+
   Admitted.
 
 
