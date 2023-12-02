@@ -406,6 +406,7 @@ Proof.
 Qed.
 
 
+
 (* shows evaluation can be done by modified FFT of half size*)
 Lemma peval_mat_prod (n : nat) :
   peval_mat (odd_nth_roots (S n)) =
@@ -1942,6 +1943,15 @@ Section norms.
   Definition canon_norm1 n (p : {poly R}):R := norm1 (mx_eval (odd_nth_roots' n) p).
   Definition canon_norm_inf n (p : {poly R}):R := norm_inf (mx_eval (odd_nth_roots' n) p).
 
+  Lemma norm_inf_diag {n} (v : 'rV[R[i]]_n) :
+    norm_inf v = matrix_norm_inf (diag_mx v).
+  Proof.  
+    rewrite /norm_inf /matrix_norm_inf.
+    apply eq_bigr => i _.
+    unfold diag_mx.
+    under eq_bigr do
+        rewrite mxE.
+        Admitted.
 
   Lemma normc_nneg (x : R[i]) :
     (R0  <= normc x)%O.
@@ -2317,7 +2327,7 @@ Section norms.
       lra.
   Qed.
 
-  Lemma nested_sums_comm {n m} (a : 'I_n -> 'I_m -> R) :
+  Lemma exchange_sums {n m} (a : 'I_n -> 'I_m -> R) :
     \sum_(i<n) \sum_(j<m) (a i j) = \sum_(j<m) \sum_(i<n) (a i j).
   Proof.
     apply exchange_big.
@@ -2341,7 +2351,7 @@ Section norms.
       + apply /RlebP.
         apply sum_le => j0.
         apply normc_triang_sum.
-      + rewrite nested_sums_comm.
+      + rewrite exchange_sums.
         generalize (@sum_mult_distr); intros.
         rewrite /mul /= in H0.
         rewrite H0.
