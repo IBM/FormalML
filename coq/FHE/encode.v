@@ -1949,16 +1949,14 @@ Section norms.
     rewrite /norm_inf /matrix_norm_inf.
     apply eq_bigr => i _.
     rewrite (bigD1 i) // /= big1_idem ?addr0 //.
-    - rewrite /diag_mx mxE.
-      f_equal.
-      admit.
+    - by rewrite /diag_mx mxE eq_refl /= mulr1n.
     - generalize (diag_mx_is_diag v) => H.
       move /is_diag_mxP in H.
       intros.
-      rewrite H.
-      + by rewrite ComplexField.Normc.normc0.
-      + admit.
-   Admitted.
+      rewrite -tr_diag_mx mxE.
+      rewrite H //.
+      by rewrite ComplexField.Normc.normc0.
+  Qed.
 
   Lemma normc_nneg (x : R[i]) :
     (R0  <= normc x)%O.
