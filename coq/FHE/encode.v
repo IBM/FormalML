@@ -1965,9 +1965,8 @@ Section norms.
     rewrite (bigD1 i) // /= big1_idem ?addr0 //.
     - by rewrite /diag_mx mxE eq_refl /= mulr1n.
     - intros.
-      rewrite mxE.
-      rewrite eq_sym (Bool.negb_involutive_reverse (@eq_op (Finite.eqType (ordinal_finType n)) i0 i)).
-      by rewrite H ComplexField.Normc.normc0.
+      rewrite mxE eq_sym.
+      by rewrite (negbTE H) ComplexField.Normc.normc0.
  Qed.
 
   Lemma normc_nneg (x : R[i]) :
