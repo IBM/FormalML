@@ -2378,10 +2378,11 @@ Section norms.
       apply normc_nneg.
   Qed.
 
-  Lemma big_max_const n (c : R) :
+  Lemma big_max_const (n:nat) (c : R) : n != 0%nat ->
     Rle 0 c ->
-    \big[Order.max/0]_(j < n.+1) c = c.
+    \big[Order.max/0]_(j < n) c = c.
   Proof.
+    case: n; [lia |intros n _].
     induction n.
     - rewrite big_ord_recl big_ord0 => H.
       rewrite Order.POrderTheory.max_l //.
@@ -2409,23 +2410,14 @@ Section norms.
     by rewrite sin2_cos2 ssrnum.Num.Theory.sqrtr1.
   Qed.    
 
-  Lemma big_max_const_fun (n : nat) (a : 'I_n.+1 -> R) (c : R) :
+  Lemma big_max_const_fun (n : nat) (a : 'I_n -> R) (c : R) :  n != 0%nat ->
     Rle 0 c ->
     (forall i, a i = c) ->
-    \big[Order.max/0]_(i < n.+1) (a i) = c.
+    \big[Order.max/0]_(i < n) (a i) = c.
   Proof.
-    intros cpos aconst.
-    induction n.
-    - rewrite big_ord_recl big_ord0.
-      rewrite Order.POrderTheory.max_l //.
-      apply /RlebP.
-      by rewrite aconst.
-    - rewrite big_ord_recl.
-      rewrite IHn.
-      + rewrite Order.POrderTheory.max_l //.
-        by rewrite aconst.
-      + intros.
-        by rewrite aconst.
+    intros.
+    under eq_bigr do rewrite H1.
+    by apply big_max_const.
   Qed.
 
   Lemma norm_inf_const_norm (n : nat) (vec : 'rV[R[i]]_n.+1) :
@@ -2438,24 +2430,29 @@ Section norms.
     rewrite /one /=; lra.
   Qed.
 
-  Lemma norm_inf_conj_half_roots (n : nat) :
-    norm_inf (map_mx conjc (nth_roots_half n.+1)) = 1.
+  Lemma pow2n0 n : (2 ^ n)%N != 0%N.
   Proof.
-    rewrite /norm_inf /nth_roots_half.
-    destruct (pow2_S (n.+1)).
-    rewrite (eqP i).
+    by rewrite expn_eq0.
+  Qed.
+
+  Hint Immediate pow2n0.
+    
+  Lemma norm_inf_conj_half_roots (n : nat) : n != 0%nat ->
+    norm_inf (map_mx conjc (nth_roots_half n)) = 1.
+  Proof.
+    rewrite /norm_inf /nth_roots_half => nn0.
     apply big_max_const_fun.
+    - apply pow2n0.
     - rewrite /one/=; lra.
     - intros.
-      rewrite !mxE -normc_conj normc_nth_root //.
-      lia.
+      by rewrite !mxE -normc_conj normc_nth_root // pow2n0.
   Qed.
   
   Lemma norm_inf_peval_mat_conj_even_roots (n : nat) :
     matrix_norm_inf (peval_mat (map_mx conjc (even_nth_roots n.+1))) = (2 ^ n.+1)%:R.
   Proof.
     rewrite /matrix_norm_inf /peval_mat.
-    Admitted.
+  Admitted.
   
   Lemma encode_mat_norm_inf (n : nat) :
     let pmat := peval_mat (odd_nth_roots (S n)) in
