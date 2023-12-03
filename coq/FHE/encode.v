@@ -2392,6 +2392,100 @@ Section norms.
       apply normc_nneg.
   Qed.
 
+  Lemma big_max_const n (c : R) :
+    Rle 0 c ->
+    \big[Order.max/0]_(j < n.+1) c = c.
+  Proof.
+    induction n.
+    - rewrite big_ord_recl big_ord0 => H.
+      rewrite Order.POrderTheory.max_l //.
+      apply /RlebP.
+      apply H.
+    - rewrite big_ord_recl => H.
+      rewrite IHn.
+      rewrite Order.POrderTheory.max_l //.
+      apply H.
+  Qed.
+
+  Lemma normc_conj (x : R[i]) :
+    ComplexField.Normc.normc x = ComplexField.Normc.normc (conjc x).
+  Proof.
+    case: x => rx ix /=.
+    by rewrite sqrrN.
+  Qed.
+
+  Lemma normc_nth_root j (n:nat) :
+    n != 0%nat ->
+    normc (nth_root j n) = 1.
+  Proof.
+    rewrite /normc /nth_root => nN0.
+    rewrite -!RpowE -!Rsqr_pow2 addrC /add /=.
+    by rewrite sin2_cos2 ssrnum.Num.Theory.sqrtr1.
+  Qed.    
+
+  Lemma big_max_const_fun (n : nat) (a : 'I_n.+1 -> R) (c : R) :
+    Rle 0 c ->
+    (forall i, a i = c) ->
+    \big[Order.max/0]_(i < n.+1) (a i) = c.
+  Proof.
+    intros cpos aconst.
+    induction n.
+    - rewrite big_ord_recl big_ord0.
+      rewrite Order.POrderTheory.max_l //.
+      apply /RlebP.
+      by rewrite aconst.
+    - rewrite big_ord_recl.
+      rewrite IHn.
+      + rewrite Order.POrderTheory.max_l //.
+        by rewrite aconst.
+      + intros.
+        by rewrite aconst.
+  Qed.
+
+  Lemma norm_inf_const_norm (n : nat) (vec : 'rV[R[i]]_n.+1) :
+    (forall i , normc (R:=R_rcfType) (vec 0 i) = 1) ->
+    norm_inf vec = 1.
+  Proof.
+    intros.
+    rewrite /norm_inf.
+    apply big_max_const_fun; trivial.
+    rewrite /one /=; lra.
+  Qed.
+
+  Lemma norm_inf_conj_half_roots (n : nat) :
+    norm_inf (map_mx conjc (nth_roots_half n.+1)) = 1.
+  Proof.
+    rewrite /norm_inf /nth_roots_half.
+    destruct (pow2_S (n.+1)).
+    rewrite (eqP i).
+    apply big_max_const_fun.
+    - rewrite /one/=; lra.
+    - intros.
+      rewrite !mxE -normc_conj normc_nth_root //.
+      lia.
+  Qed.
+  
+  Lemma norm_inf_peval_mat_conj_even_roots (n : nat) :
+    matrix_norm_inf (peval_mat (map_mx conjc (even_nth_roots n.+1))) = (2 ^ n.+1)%:R.
+  Proof.
+    rewrite /matrix_norm_inf /peval_mat.
+    Admitted.
+  
+  Lemma encode_mat_norm_inf (n : nat) :
+    let pmat := peval_mat (odd_nth_roots (S n)) in
+    let encmat := (conj_mat (pmat^T)) in
+    Rleb (matrix_norm_inf encmat) (2^S n)%:R.
+  Proof.
+    rewrite /= encode_mat_prod.
+    apply /RlebP.
+    eapply Rle_trans.
+    - apply /RlebP.
+      apply matrix_norm_inf_sub_mult.
+    - rewrite -norm_inf_diag norm_inf_conj_half_roots Rmult_1_l.
+      rewrite norm_inf_peval_mat_conj_even_roots.
+      lra.
+  Qed.
+
   Lemma norm_inf_triang {n} (v1 v2 : 'rV[R[i]]_n) :
     (norm_inf (v1 + v2) <= norm_inf v1 + norm_inf v2)%O.
   Proof.
@@ -2499,14 +2593,6 @@ Section norms.
     by rewrite map_polyXn hornerXn /exprz.
   Qed.
 
-  Lemma normc_nth_root j (n:nat) :
-    n != 0%nat ->
-    normc (nth_root j n) = 1.
-  Proof.
-    rewrite /normc /nth_root => nN0.
-    rewrite -!RpowE -!Rsqr_pow2 addrC /add /=.
-    by rewrite sin2_cos2 ssrnum.Num.Theory.sqrtr1.
-  Qed.    
 
   Lemma iter_max {disp : Datatypes.unit} {T : porderType disp} i (a b: T) :
     i != 0%nat ->
@@ -2673,12 +2759,6 @@ Section norms.
     canon_norm_inf n p = 0 -> p = 0.
 *)
 
-  Lemma normc_conj (x : R[i]) :
-    ComplexField.Normc.normc x = ComplexField.Normc.normc (conjc x).
-  Proof.
-    case: x => rx ix /=.
-    by rewrite sqrrN.
-  Qed.
 
   Lemma normc_conj_mul (x y : R[i]) :
     normc (x * y) = normc (x * (conjc y)).
