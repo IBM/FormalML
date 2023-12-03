@@ -2094,6 +2094,16 @@ Section norms.
       by rewrite IHn.
   Qed.   
 
+  Lemma sum_mult_distl {n} (a : 'I_n -> R) (c : R) :
+    c * (\sum_(j<n) (a j)) = \sum_(j<n) c * (a j).
+  Proof.
+    induction n.
+    - by rewrite !big_ord0 mulr0.
+    - rewrite !big_ord_recl mulrDr.
+      f_equal.
+      by rewrite IHn.
+  Qed.   
+
   Lemma max_mult_distr {n} (a : 'I_n -> R) (c : R) :
     Rle 0 c ->
     (\big[Order.max/0]_(j<n) (a j))*c =
@@ -2106,6 +2116,18 @@ Section norms.
       rewrite IHn //.
   Qed.   
 
+ Lemma max_mult_distl {n} (a : 'I_n -> R) (c : R) :
+    Rle 0 c ->
+    c * (\big[Order.max/0]_(j<n) (a j)) =
+      \big[Order.max/0]_(j<n) (c * (a j)).
+  Proof.
+    induction n.
+    - by rewrite !big_ord0 mulr0.
+    - intros.
+      rewrite !big_ord_recl !(mulrC c _) -maxrM_l //.
+      rewrite !(mulrC _ c) IHn //.
+  Qed.
+  
   Lemma sum_le {n} (a b : 'I_n -> R) :
     (forall j, Rleb (a j) (b j)) ->
     Rleb (\sum_(j<n) (a j)) (\sum_(j<n) (b j)).
@@ -2378,6 +2400,19 @@ Section norms.
       apply normc_nneg.
   Qed.
 
+  Lemma matrix_norm_inf_scale {n m} (mat : 'M[R[i]]_(n,m)) (c : R[i]) :
+    matrix_norm_inf (scalemx c mat) = (normc c)*(matrix_norm_inf mat).
+  Proof.
+    rewrite /matrix_norm_inf /scalemx.
+    rewrite max_mult_distl.
+    - apply eq_bigr => j _.
+      rewrite sum_mult_distl.
+      apply eq_bigr => k _.
+      rewrite mxE.
+      by rewrite ComplexField.Normc.normcM.
+    - apply normc_nnegR.
+  Qed.
+                              
   Lemma big_max_const (n:nat) (c : R) : n != 0%nat ->
     Rle 0 c ->
     \big[Order.max/0]_(j < n) c = c.
