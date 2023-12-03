@@ -2403,13 +2403,11 @@ Section norms.
   Lemma matrix_norm_inf_scale {n m} (mat : 'M[R[i]]_(n,m)) (c : R[i]) :
     matrix_norm_inf (scalemx c mat) = (normc c)*(matrix_norm_inf mat).
   Proof.
-    rewrite /matrix_norm_inf /scalemx.
-    rewrite max_mult_distl.
+    rewrite /matrix_norm_inf /scalemx max_mult_distl.
     - apply eq_bigr => j _.
       rewrite sum_mult_distl.
       apply eq_bigr => k _.
-      rewrite mxE.
-      by rewrite ComplexField.Normc.normcM.
+      by rewrite mxE ComplexField.Normc.normcM.
     - apply normc_nnegR.
   Qed.
                               
