@@ -2437,10 +2437,10 @@ Section norms.
 
   Hint Immediate pow2n0.
     
-  Lemma norm_inf_conj_half_roots (n : nat) : n != 0%nat ->
-    norm_inf (map_mx conjc (nth_roots_half n)) = 1.
+  Lemma norm_inf_conj_half_roots (n : nat) :
+    norm_inf (map_mx conjc (nth_roots_half n.+1)) = 1.
   Proof.
-    rewrite /norm_inf /nth_roots_half => nn0.
+    rewrite /norm_inf /nth_roots_half.
     apply big_max_const_fun.
     - apply pow2n0.
     - rewrite /one/=; lra.
@@ -2448,10 +2448,29 @@ Section norms.
       by rewrite !mxE -normc_conj normc_nth_root // pow2n0.
   Qed.
   
-  Lemma norm_inf_peval_mat_conj_even_roots (n : nat) :
+  Lemma big_sum_const (n : nat) (c : R) :
+    \sum_(j<n) c = c *+ n.
+  Proof.
+    induction n.
+    - by rewrite big_ord0 mulr0n.
+    - rewrite big_ord_recl IHn.
+      by rewrite mulrSr addrC.
+   Qed.
+
+  Lemma norm_inf_peval_mat_conj_even_roots (n : nat) : 
     matrix_norm_inf (peval_mat (map_mx conjc (even_nth_roots n.+1))) = (2 ^ n.+1)%:R.
   Proof.
     rewrite /matrix_norm_inf /peval_mat.
+    apply big_max_const_fun.
+    - apply pow2n0.
+    - admit.
+    - intros.
+      under eq_bigr => i0 _.
+      rewrite /even_nth_roots !mxE -exp_conj -normc_conj pow_nth_root' ?normc_nth_root.
+      over.
+      apply pow2n0.
+      apply pow2n0.
+      by rewrite big_sum_const.
   Admitted.
   
   Lemma encode_mat_norm_inf (n : nat) :
