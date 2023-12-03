@@ -2463,7 +2463,8 @@ Section norms.
     rewrite /matrix_norm_inf /peval_mat.
     apply big_max_const_fun.
     - apply pow2n0.
-    - admit.
+    - rewrite -INRE.
+      apply pos_INR.
     - intros.
       under eq_bigr => i0 _.
       rewrite /even_nth_roots !mxE -exp_conj -normc_conj pow_nth_root' ?normc_nth_root.
@@ -2471,7 +2472,7 @@ Section norms.
       apply pow2n0.
       apply pow2n0.
       by rewrite big_sum_const.
-  Admitted.
+  Qed.
   
   Lemma encode_mat_norm_inf (n : nat) :
     let pmat := peval_mat (odd_nth_roots (S n)) in
