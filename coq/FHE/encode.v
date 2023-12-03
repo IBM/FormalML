@@ -1958,6 +1958,20 @@ Section norms.
       by rewrite ComplexField.Normc.normc0.
   Qed.
 
+  Lemma norm_inf_diag_alt {n} (v : 'rV[R[i]]_n) :
+    norm_inf v = matrix_norm_inf (diag_mx v).
+  Proof.  
+    rewrite /norm_inf /matrix_norm_inf.
+    apply eq_bigr => i _.
+    rewrite (bigD1 i) // /= big1_idem ?addr0 //.
+    - by rewrite /diag_mx mxE eq_refl /= mulr1n.
+    - intros.
+      rewrite mxE.
+      Admitted.
+(*
+      by rewrite ComplexField.Normc.normc0.
+*)
+
   Lemma normc_nneg (x : R[i]) :
     (R0  <= normc x)%O.
   Proof.
