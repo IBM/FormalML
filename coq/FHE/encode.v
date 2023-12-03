@@ -1950,20 +1950,6 @@ Section norms.
     apply eq_bigr => i _.
     rewrite (bigD1 i) // /= big1_idem ?addr0 //.
     - by rewrite /diag_mx mxE eq_refl /= mulr1n.
-    - generalize (diag_mx_is_diag v) => H.
-      move /is_diag_mxP in H.
-      intros.
-      rewrite H; [|rewrite eq_sym //].
-      by rewrite ComplexField.Normc.normc0.
-  Qed.
-
-  Lemma norm_inf_diag_alt {n} (v : 'rV[R[i]]_n) :
-    norm_inf v = matrix_norm_inf (diag_mx v).
-  Proof.  
-    rewrite /norm_inf /matrix_norm_inf.
-    apply eq_bigr => i _.
-    rewrite (bigD1 i) // /= big1_idem ?addr0 //.
-    - by rewrite /diag_mx mxE eq_refl /= mulr1n.
     - intros.
       rewrite mxE eq_sym.
       by rewrite (negbTE H) ComplexField.Normc.normc0.
