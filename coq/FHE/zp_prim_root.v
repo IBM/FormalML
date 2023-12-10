@@ -1,5 +1,5 @@
 Require Import Lia.
-From mathcomp Require Import all_ssreflect zmodp poly ssralg cyclic fingroup finalg ring seq.
+From mathcomp Require Import all_ssreflect zmodp poly ssralg cyclic fingroup finalg ring seq bigop.
 Require Import encode.
 
 Set Implicit Arguments.
@@ -168,7 +168,7 @@ Section chinese.
     coprime a (\prod_(i <- l) i).
   Proof.
     intros.
-    rewrite big_seq.
++    rewrite big_seq.
     apply big_rec.
     - apply coprimen1.
     - intros.
@@ -355,6 +355,88 @@ Section chinese.
      + by apply all_coprime_prod.
   Qed.
 
+  Definition balanced_chinese_list (l : seq (nat * nat)) :=
+    \sum_(p <- l)
+      (\prod_(q <- l | q != p) q.2) *
+      ((p.1 * (egcdn (\prod_(q <- l | q!= p) q.2) p.2).1) %% p.2).
+
+  Lemma egcd_coprime (a b : nat) :
+    0 < a ->
+    coprime a b ->
+    (egcdn a b).1 * a = 1 %[mod b].
+  Proof.
+    intros.
+    destruct (egcdnP b H).
+    rewrite /= e (eqP H0) -modnDm modnMl add0n modn_mod //.
+  Qed.
+
+  Lemma egcd_coprime_mult (a b c : nat) :
+    0 < a ->
+    0 < b ->
+    coprime a b ->
+    c * (egcdn a b).1 * a = c %[mod b].
+  Proof.
+    intros.
+    rewrite -mulnA -modnMmr egcd_coprime //.
+    rewrite modnS mod0n dvdn1.
+    case (boolP (b == 1)); intros HH; move /eqP in HH.
+    - by rewrite HH muln0 !modn1.
+    - by rewrite muln1.
+  Qed.
+
+  Lemma balanced_chinese_list_mod_1 (l : seq (nat * nat)) :
+    (forall p, p \in l -> 0 < p.2) ->
+    pairwise coprime (map snd l) ->
+    forall p,
+      p \in l ->
+            \prod_(q <- l | q != p) q.2 * ((p.1 * (egcdn (\prod_(q <- l | q != p) q.2) p.2).1) %% p.2) == p.1 %[mod p.2].
+  Proof.
+    intros.
+    apply /eqP.
+    rewrite modnMmr mulnC.
+    apply egcd_coprime_mult; trivial.
+    - admit.
+    - by apply H.
+    - admit.
+    Admitted.
+
+  Lemma modn_add0 (m a b : nat) :
+    b == 0 %[mod m] ->
+    a %% m + b == a %[mod m].
+  Proof.
+    intros.
+    move /eqP in H.
+    rewrite modnDml -modnDm H mod0n addn0 modn_mod //.
+  Qed.
+
+  Lemma modn_mull0 (m a b : nat) :
+    a %% m = 0 ->
+    (a * b) %% m = 0.
+  Proof.
+    intros.
+    rewrite -(mod0n m) -modnMml H mul0n //.
+  Qed.
+
+  Lemma balanced_chinese_list_mod (l : seq (nat * nat)) :
+    (forall p, p \in l -> 0 < p.2) ->
+    pairwise coprime (map snd l) ->
+    forall p,
+      p \in l ->
+      balanced_chinese_list l == p.1 %[mod p.2].
+  Proof.
+    intros.
+    unfold balanced_chinese_list.
+    rewrite -modn_summ.
+    rewrite (bigD1_seq p) /= //.
+    - rewrite (eqP (balanced_chinese_list_mod_1 H H0 H1)).
+      apply modn_add0.
+      rewrite big1_idem //.
+      intros.
+      apply modn_mull0.
+      admit.
+    - admit.
+      Admitted.
+                                    
   Lemma allrel_sym {A:eqType} f (l1 l2: seq A) :
     symmetric f ->
     allrel f l1 l2 = allrel f l2 l1.
@@ -363,7 +445,7 @@ Section chinese.
     apply eq_allrel => x y.
     by rewrite sym.
   Qed.
-
++++
   Lemma pairwise_perm_sym {A:eqType} f (l1 l2: seq A) :
     symmetric f ->
     perm_eq l1 l2 ->
