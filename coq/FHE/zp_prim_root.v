@@ -366,8 +366,8 @@ Section chinese.
     (egcdn a b).1 * a = 1 %[mod b].
   Proof.
     intros.
-    destruct (egcdnP b H).
-    rewrite /= e (eqP H0) -modnDm modnMl add0n modn_mod //.
+    case: egcdnP => //= km kn ->.
+    by rewrite (eqP H0) -modnDm modnMl add0n modn_mod.
   Qed.
 
   Lemma egcd_coprime_mult (a b c : nat) :
