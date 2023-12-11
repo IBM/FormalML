@@ -565,19 +565,23 @@ Section chinese.
           f_equal.
           apply eq_in_filter => x xin /=.
           case: (eqVneq x.2 1) => /=; [by rewrite Bool.andb_false_r |intros ne1].
-          rewrite /eq_op /=.
-          case: (eqVneq x.2 p.2)
-          ; rewrite /= /eq_op/=;
-              [intros eq1| rewrite Bool.andb_false_r /=; by move =>->].
-          rewrite !Bool.andb_true_r /=.
-          rewrite eq1 eqnE eqxx /=.
-          symmetry.
-          case (eqVneq x.1 p.1) => /= [->|]; [by rewrite eqxx|].
-          admit.
+          case: (eqVneq x p).
+          { move => ->.
+            by rewrite eqxx.
+          }
+          case: (eqVneq x.2 p.2) => //= eqq2.
+          rewrite /eq_op/= eqq2 eqxx Bool.andb_true_r => eqq1.
+          move: H0.
+          rewrite (pairwise_perm_sym coprime_sym (perm_map snd (perm_to_rem H1))) /=.
+          move/andP=> [].
+          have x2in:  x.2 \in [seq i.2 | i <- rem p l] by apply map_f.
+          move/allP/(_ x.2 x2in).
+          rewrite eqq2 /coprime gcdnn -eqq2 => eqq3.
+          by rewrite eqq3/= in ne1.
       + by apply mulnA.
       + by apply mulnC.
       + by apply perm_to_rem.
-    Admitted.
+  Qed.
 
   Lemma modn_add0 (m a b : nat) :
     b == 0 %[mod m] ->
@@ -625,10 +629,9 @@ Section chinese.
         split.
         - rewrite pairwise_map in H0.
           apply H0.
-        - rewrite pairwiseE.
-          apply List.ForallPairs_ForallOrdPairs.
-          intros ????.
-          admit.
+        - apply/(pairwiseP (0,0)) => x y xlt ylt xlty.
+          apply H.
+          by apply mem_nth.
       }
       apply sub_pairwise.
       intros ???.
