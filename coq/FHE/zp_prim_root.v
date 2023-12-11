@@ -379,8 +379,8 @@ Section chinese.
     intros.
     rewrite -mulnA -modnMmr egcd_coprime //.
     rewrite modnS mod0n dvdn1.
-    case (boolP (b == 1)); intros HH; move /eqP in HH.
-    - by rewrite HH muln0 !modn1.
+    case: eqVneq => [-> |].
+    - by rewrite muln0 !modn1.
     - by rewrite muln1.
   Qed.
 
