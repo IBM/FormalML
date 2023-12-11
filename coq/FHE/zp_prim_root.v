@@ -401,6 +401,7 @@ Section chinese.
        by destruct H0.
    Qed.
 
+   (*
   Lemma coprime_prod_alt (p : nat) (l : seq nat) :
     pairwise coprime l ->
     coprime p (\prod_(q <- l | q != p) q).
@@ -417,7 +418,98 @@ Section chinese.
       destruct H0.
       
       Admitted.
+    *)
 
+  Lemma sym_pairwiseP {T : Type} (r : T -> T -> bool) (sym:symmetric r) (x0 : T) (xs : seq T) :
+    reflect {in gtn (size xs) &, {homo nth x0 xs : i j / i <> j >-> r i j}} (pairwise r xs).
+  Proof.
+    induction xs; simpl; first by apply (iffP idP).
+    apply: (iffP andP).
+    - intros [??]?????.
+      destruct x; destruct y; simpl.
+      + lia.
+      + move/(all_nthP x0): H.
+        apply.
+        rewrite/in_mem/mem/= in H2.
+        lia.
+      + rewrite sym.
+        move/(all_nthP x0): H.
+        apply.
+        rewrite/in_mem/mem/= in H1.
+        lia.
+      + rewrite H0 in IHxs.
+        inversion IHxs.
+        apply H4; trivial.
+        lia.
+    - intros ?.
+      split.
+      + apply/(all_nthP x0)=> i ilt.
+        move: (H 0 i.+1) => /=.
+        apply; rewrite /in_mem/mem/=; lia.
+      + inversion IHxs => //.
+        elim H1 => x y xlt ylt xny.
+        move: (H x.+1 y.+1).
+        unfold in_mem, mem in *; simpl in *.
+        apply; lia.
+  Qed.
+  
+  Lemma pairwise_perm_sym {A:eqType} f (l1 l2: seq A) :
+    symmetric f ->
+    perm_eq l1 l2 ->
+    pairwise f l1 = pairwise f l2.
+  Proof.
+    move => sf p.
+    apply Bool.eq_true_iff_eq.
+    cut (forall (l1 l2 : seq A)
+           (sf : symmetric f)
+           (p : perm_eq l1 l2),
+            pairwise f l2 = true -> pairwise f l1 = true).
+    {
+      split.
+      - apply H; trivial.
+        by rewrite perm_sym. 
+      - by apply H.
+    }
+
+    clear l1 l2 sf p => l1 l2 sf p.
+    
+    case: l1 p => [|a l p].
+    -rewrite perm_sym.
+     by move/perm_nilP => ->.
+    - move/(perm_iotaP a): p => [Is pi] => ->.
+      move/(sym_pairwiseP sf a) => sp.
+      apply/(sym_pairwiseP sf a) => n x nbig xbig nltx.
+      simpl in *.
+      rewrite size_map in nbig, xbig.
+
+      rewrite !(nth_map 0) //.
+      apply sp.
+      + unfold in_mem, mem; simpl.
+          have:  (all [pred x | x < size l2] Is).
+          {
+            rewrite (perm_all _ pi).
+            apply/(all_nthP 0); intros; simpl.
+            rewrite size_iota in H.
+            rewrite nth_iota; lia.
+          } 
+          move/all_nthP => /=.
+          by apply.
+      + unfold in_mem, mem; simpl.
+          have:  (all [pred x | x < size l2] Is).
+          {
+            rewrite (perm_all _ pi).
+            apply/(all_nthP 0); intros; simpl.
+            rewrite size_iota in H.
+            rewrite nth_iota; lia.
+          } 
+          move/all_nthP => /=.
+          by apply.
+      + apply/eqP.
+        rewrite nth_uniq//.
+          * by apply/eqP.
+          * rewrite (perm_uniq pi).
+             apply iota_uniq.
+  Qed.
 
   Lemma balanced_chinese_list_mod_1 (l : seq (nat * nat)) :
     (forall p, p \in l -> 0 < p.2) ->
@@ -431,31 +523,34 @@ Section chinese.
     rewrite modnMmr mulnC.
     apply egcd_coprime_mult; trivial.
     - rewrite big_seq_cond.
-      apply big_rec.
-      + lia.
-      + intros.
-        move /andP in H2.
-        destruct H2.
-        specialize (H i H2).
-        generalize (leq_mul H H3); intros.
-        rewrite muln1 in H5.
-        apply H5.
+      apply prodn_cond_gt0 => i.
+      move/andP => [iinl _].
+      by apply H.
     - by apply H.
-    - set l2 := map snd (rem p l).
-      assert (forall x,
-                 x \in l2 -> coprime p.2 x).
-      {
-        admit.
-      }
-      assert (\prod_(q <- l | q != p) q.2 = \prod_(q <- l2) q).
-      {
-        admit.
-      }
-      rewrite H3 coprime_sym.
-      apply coprime_prod.
-      intros.
-      subst l2.
-      admit.
+    - rewrite (perm_big_AC _ _ _ (r2:=p :: rem p l)).
+      + case: (eqVneq p.2 1) => [->|neq].
+        {
+          by rewrite coprimen1.
+        }
+        rewrite -big_filter /= eqxx /=.
+        rewrite (_ : (\prod_(i <- [seq i <- rem p l | i != p]) i.2) = (\prod_(i <- (map snd [seq x <- rem p l | x.2 != 1]) | (i != p.2)) i)).
+        * rewrite coprime_sym -big_filter.
+          apply all_coprime_prod.
+          apply pairwise_coprime_cons.
+          rewrite (pairwise_perm_sym coprime_sym (perm_map snd (perm_to_rem H1))) in H0.
+          revert H0.
+          apply subseq_pairwise.
+          rewrite /= eqxx.
+          rewrite filter_map.
+          apply map_subseq.
+          eapply subseq_trans.
+          -- apply filter_subseq.
+          -- apply filter_subseq.
+        * rewrite big_map.
+          admit.
+      + by apply mulnA.
+      + by apply mulnC.
+      + by apply perm_to_rem.
     Admitted.
 
   Lemma modn_add0 (m a b : nat) :
