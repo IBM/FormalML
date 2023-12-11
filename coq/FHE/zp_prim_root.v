@@ -384,6 +384,41 @@ Section chinese.
     - by rewrite muln1.
   Qed.
 
+  Lemma coprime_prod (p : nat) (l : seq nat) :
+    (forall q, q \in l -> coprime p q) ->
+    coprime p (\prod_(q <- l) q).
+   Proof.
+     intros.
+     rewrite big_seq_cond.
+     apply big_rec.
+     - apply coprimen1.
+     - intros.
+       rewrite coprimeMr.
+       apply /andP.
+       split; trivial.
+       apply H.
+       move /andP in H0.
+       by destruct H0.
+   Qed.
+
+  Lemma coprime_prod_alt (p : nat) (l : seq nat) :
+    pairwise coprime l ->
+    coprime p (\prod_(q <- l | q != p) q).
+  Proof.
+    intros.
+    rewrite big_seq_cond.
+    apply big_rec.
+    - apply coprimen1.
+    - intros.
+      rewrite coprimeMr.
+      apply /andP.
+      split; trivial.
+      move /andP in H0.
+      destruct H0.
+      
+      Admitted.
+
+
   Lemma balanced_chinese_list_mod_1 (l : seq (nat * nat)) :
     (forall p, p \in l -> 0 < p.2) ->
     pairwise coprime (map snd l) ->
@@ -395,9 +430,32 @@ Section chinese.
     apply /eqP.
     rewrite modnMmr mulnC.
     apply egcd_coprime_mult; trivial.
-    - admit.
+    - rewrite big_seq_cond.
+      apply big_rec.
+      + lia.
+      + intros.
+        move /andP in H2.
+        destruct H2.
+        specialize (H i H2).
+        generalize (leq_mul H H3); intros.
+        rewrite muln1 in H5.
+        apply H5.
     - by apply H.
-    - admit.
+    - set l2 := map snd (rem p l).
+      assert (forall x,
+                 x \in l2 -> coprime p.2 x).
+      {
+        admit.
+      }
+      assert (\prod_(q <- l | q != p) q.2 = \prod_(q <- l2) q).
+      {
+        admit.
+      }
+      rewrite H3 coprime_sym.
+      apply coprime_prod.
+      intros.
+      subst l2.
+      admit.
     Admitted.
 
   Lemma modn_add0 (m a b : nat) :
@@ -418,23 +476,55 @@ Section chinese.
   Qed.
 
   Lemma balanced_chinese_list_mod (l : seq (nat * nat)) :
-    (forall p, p \in l -> 0 < p.2) ->
+    (forall p, p \in l -> 1 < p.2) ->
     pairwise coprime (map snd l) ->
     forall p,
       p \in l ->
       balanced_chinese_list l == p.1 %[mod p.2].
   Proof.
     intros.
-    unfold balanced_chinese_list.
-    rewrite -modn_summ.
-    rewrite (bigD1_seq p) /= //.
-    - rewrite (eqP (balanced_chinese_list_mod_1 H H0 H1)).
+    rewrite -modn_summ (bigD1_seq p) /= //.
+    - have posl: (forall p, p \in l -> 0 < p.2).
+      {
+        intros ??.
+        apply H in H2.
+        lia.
+      }
+      rewrite (eqP (balanced_chinese_list_mod_1 posl H0 H1)).
       apply modn_add0.
       rewrite big1_idem //.
       intros.
       apply modn_mull0.
       admit.
-    - admit.
+    - rewrite uniq_pairwise.
+      have: (pairwise (fun x y => coprime x.2 y.2 && (1<x.2)) l).
+      {
+        rewrite pairwise_relI.
+        apply /andP.
+        split.
+        - rewrite pairwise_map in H0.
+          apply H0.
+        - rewrite pairwiseE.
+          apply List.ForallPairs_ForallOrdPairs.
+          intros ????.
+          admit.
+      }
+      apply sub_pairwise.
+      intros ???.
+      simpl.
+      assert (x = y -> false).
+      {
+        intros.
+        destruct x; destruct y.
+        simpl in H2.
+        inversion H3.
+        rewrite H6 in H2.
+        move /andP in H2; destruct H2.
+        rewrite /coprime gcdnn in H2.
+        move /eqP in H2.
+        lia.
+      }
+      by apply (contra_not_neq H3).
       Admitted.
                                     
   Lemma allrel_sym {A:eqType} f (l1 l2: seq A) :
@@ -445,7 +535,7 @@ Section chinese.
     apply eq_allrel => x y.
     by rewrite sym.
   Qed.
-+++
+
   Lemma pairwise_perm_sym {A:eqType} f (l1 l2: seq A) :
     symmetric f ->
     perm_eq l1 l2 ->
