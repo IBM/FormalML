@@ -620,7 +620,13 @@ Section chinese.
       rewrite big1_idem //.
       intros.
       apply modn_mull0.
-      admit.
+      rewrite -big_filter.
+      rewrite (perm_big_AC _ _ _ (r2:=p :: rem p [seq i0 <- l | i0 != i])).
+      + by rewrite big_cons modnMr.
+      + by apply mulnA.
+      + by apply mulnC.
+      + apply perm_to_rem.
+        by rewrite mem_filter H1 eq_sym H2.
     - rewrite uniq_pairwise.
       have: (pairwise (fun x y => coprime x.2 y.2 && (1<x.2)) l).
       {
@@ -649,7 +655,7 @@ Section chinese.
         lia.
       }
       by apply (contra_not_neq H3).
-      Admitted.
+  Qed.
                                     
   Lemma allrel_sym {A:eqType} f (l1 l2: seq A) :
     symmetric f ->
