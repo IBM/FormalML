@@ -511,6 +511,16 @@ Section chinese.
              apply iota_uniq.
   Qed.
 
+  Lemma prodn_filter1 [I : Type] (r : seq I) (F : I -> nat) :
+    \prod_(i <- r | F i != 1) F i = \prod_(i <- r) F i.
+  Proof.
+    induction r.
+    - by rewrite !big_nil.
+    - rewrite !big_cons -IHr.
+      case: eqVneq => /= [->|//].
+      lia.
+  Qed.
+      
   Lemma balanced_chinese_list_mod_1 (l : seq (nat * nat)) :
     (forall p, p \in l -> 0 < p.2) ->
     pairwise coprime (map snd l) ->
@@ -547,6 +557,22 @@ Section chinese.
           -- apply filter_subseq.
           -- apply filter_subseq.
         * rewrite big_map.
+          transitivity (\prod_(i <- [seq i <- rem p l | i != p] | i.2 != 1) i.2)
+          ; [by rewrite prodn_filter1 |].
+          rewrite -big_filter.
+          symmetry; rewrite -big_filter.
+          rewrite -!filter_predI /predI.
+          f_equal.
+          apply eq_in_filter => x xin /=.
+          case: (eqVneq x.2 1) => /=; [by rewrite Bool.andb_false_r |intros ne1].
+          rewrite /eq_op /=.
+          case: (eqVneq x.2 p.2)
+          ; rewrite /= /eq_op/=;
+              [intros eq1| rewrite Bool.andb_false_r /=; by move =>->].
+          rewrite !Bool.andb_true_r /=.
+          rewrite eq1 eqnE eqxx /=.
+          symmetry.
+          case (eqVneq x.1 p.1) => /= [->|]; [by rewrite eqxx|].
           admit.
       + by apply mulnA.
       + by apply mulnC.
