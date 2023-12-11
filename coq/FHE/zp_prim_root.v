@@ -237,7 +237,6 @@ Section chinese.
         by rewrite H2 IHl.
   Qed.    
 
-
   Lemma pairwiseE {A} (P:rel A) (l:list A) : pairwise P l <-> List.ForallOrdPairs P l.
   Proof.
     elim: l => /=.
@@ -253,21 +252,6 @@ Section chinese.
         * by apply allE.
         * by apply IHl.
   Qed.
-
-(*
-  Lemma pairwise_perm_symm {A} f (l1 l2: list A) :
-    symmetric f ->
-    Permutation.Permutation l1 l2 ->
-    pairwise f l1 = pairwise f l2.
-  Proof.
-    intros.
-    apply symmetricE in H.
-    apply Bool.eq_true_iff_eq.
-    split; intros HH; apply pairwiseE; apply pairwiseE in HH.
-    - by rewrite ListAdd.ForallOrdPairs_perm; [| apply Permutation_sym; apply H0].
-    - by rewrite ListAdd.ForallOrdPairs_perm; [| apply H0].
-  Qed.
-*)
 
   Lemma chinese_remainder_list_split :
     forall (l1 l2 l : list (nat * nat)) (p : nat * nat),
@@ -384,42 +368,6 @@ Section chinese.
     - by rewrite muln1.
   Qed.
 
-  Lemma coprime_prod (p : nat) (l : seq nat) :
-    (forall q, q \in l -> coprime p q) ->
-    coprime p (\prod_(q <- l) q).
-   Proof.
-     intros.
-     rewrite big_seq_cond.
-     apply big_rec.
-     - apply coprimen1.
-     - intros.
-       rewrite coprimeMr.
-       apply /andP.
-       split; trivial.
-       apply H.
-       move /andP in H0.
-       by destruct H0.
-   Qed.
-
-   (*
-  Lemma coprime_prod_alt (p : nat) (l : seq nat) :
-    pairwise coprime l ->
-    coprime p (\prod_(q <- l | q != p) q).
-  Proof.
-    intros.
-    rewrite big_seq_cond.
-    apply big_rec.
-    - apply coprimen1.
-    - intros.
-      rewrite coprimeMr.
-      apply /andP.
-      split; trivial.
-      move /andP in H0.
-      destruct H0.
-      
-      Admitted.
-    *)
-
   Lemma sym_pairwiseP {T : Type} (r : T -> T -> bool) (sym:symmetric r) (x0 : T) (xs : seq T) :
     reflect {in gtn (size xs) &, {homo nth x0 xs : i j / i <> j >-> r i j}} (pairwise r xs).
   Proof.
@@ -453,62 +401,45 @@ Section chinese.
         apply; lia.
   Qed.
   
+  Lemma allrel_sym {A:eqType} f (l1 l2: seq A) :
+    symmetric f ->
+    allrel f l1 l2 = allrel f l2 l1.
+  Proof.
+    rewrite allrelC=>sym.
+    apply eq_allrel => x y.
+    by rewrite sym.
+  Qed.
+
   Lemma pairwise_perm_sym {A:eqType} f (l1 l2: seq A) :
     symmetric f ->
     perm_eq l1 l2 ->
     pairwise f l1 = pairwise f l2.
   Proof.
-    move => sf p.
-    apply Bool.eq_true_iff_eq.
-    cut (forall (l1 l2 : seq A)
-           (sf : symmetric f)
-           (p : perm_eq l1 l2),
-            pairwise f l2 = true -> pairwise f l1 = true).
-    {
-      split.
-      - apply H; trivial.
-        by rewrite perm_sym. 
-      - by apply H.
-    }
+    move=> symf.
+    move: l1 l2.
+    wlog pimp: / forall l1 l2, perm_eq l1 l2 -> pairwise f l1 -> pairwise f l2.
+    - apply.
+      apply catCA_perm_ind=> l1 l2 l3.
+      rewrite !pairwise_cat !allrel_catr.
+      move/andP=>[/andP-[rel12 rel13] /andP-[p1 /andP-[rel23 /andP-[p2 p3]]]].
+      repeat (try (apply/andP; split)) => //.
+      by rewrite allrel_sym.
+    - move=> l1 l2 pm.
+      apply Bool.eq_bool_prop_intro.
+      split =>/Bool.Is_true_eq_true=> HH
+         ; apply Bool.Is_true_eq_left
+         ; eapply pimp; try apply HH.
+      + by [].
+      + by rewrite perm_sym.
+  Qed.
 
-    clear l1 l2 sf p => l1 l2 sf p.
-    
-    case: l1 p => [|a l p].
-    -rewrite perm_sym.
-     by move/perm_nilP => ->.
-    - move/(perm_iotaP a): p => [Is pi] => ->.
-      move/(sym_pairwiseP sf a) => sp.
-      apply/(sym_pairwiseP sf a) => n x nbig xbig nltx.
-      simpl in *.
-      rewrite size_map in nbig, xbig.
-
-      rewrite !(nth_map 0) //.
-      apply sp.
-      + unfold in_mem, mem; simpl.
-          have:  (all [pred x | x < size l2] Is).
-          {
-            rewrite (perm_all _ pi).
-            apply/(all_nthP 0); intros; simpl.
-            rewrite size_iota in H.
-            rewrite nth_iota; lia.
-          } 
-          move/all_nthP => /=.
-          by apply.
-      + unfold in_mem, mem; simpl.
-          have:  (all [pred x | x < size l2] Is).
-          {
-            rewrite (perm_all _ pi).
-            apply/(all_nthP 0); intros; simpl.
-            rewrite size_iota in H.
-            rewrite nth_iota; lia.
-          } 
-          move/all_nthP => /=.
-          by apply.
-      + apply/eqP.
-        rewrite nth_uniq//.
-          * by apply/eqP.
-          * rewrite (perm_uniq pi).
-             apply iota_uniq.
+  Lemma pairwise_coprime_perm l l2:
+    perm_eq l l2 ->
+    pairwise coprime l = pairwise coprime l2.
+  Proof.
+    intros.
+    apply pairwise_perm_sym => // x y.
+    apply coprime_sym.
   Qed.
 
   Lemma prodn_filter1 [I : Type] (r : seq I) (F : I -> nat) :
@@ -657,46 +588,6 @@ Section chinese.
       by apply (contra_not_neq H3).
   Qed.
                                     
-  Lemma allrel_sym {A:eqType} f (l1 l2: seq A) :
-    symmetric f ->
-    allrel f l1 l2 = allrel f l2 l1.
-  Proof.
-    rewrite allrelC=>sym.
-    apply eq_allrel => x y.
-    by rewrite sym.
-  Qed.
-
-  Lemma pairwise_perm_sym {A:eqType} f (l1 l2: seq A) :
-    symmetric f ->
-    perm_eq l1 l2 ->
-    pairwise f l1 = pairwise f l2.
-  Proof.
-    move=> symf.
-    move: l1 l2.
-    wlog pimp: / forall l1 l2, perm_eq l1 l2 -> pairwise f l1 -> pairwise f l2.
-    - apply.
-      apply catCA_perm_ind=> l1 l2 l3.
-      rewrite !pairwise_cat !allrel_catr.
-      move/andP=>[/andP-[rel12 rel13] /andP-[p1 /andP-[rel23 /andP-[p2 p3]]]].
-      repeat (try (apply/andP; split)) => //.
-      by rewrite allrel_sym.
-    - move=> l1 l2 pm.
-      apply Bool.eq_bool_prop_intro.
-      split =>/Bool.Is_true_eq_true=> HH
-         ; apply Bool.Is_true_eq_left
-         ; eapply pimp; try apply HH.
-      + by [].
-      + by rewrite perm_sym.
-  Qed.
-
-  Lemma pairwise_coprime_perm l l2:
-    perm_eq l l2 ->
-    pairwise coprime l = pairwise coprime l2.
-  Proof.
-    intros.
-    apply pairwise_perm_sym => // x y.
-    apply coprime_sym.
-  Qed.
 
   Lemma chinese_remainder_list_permutation (l l2: list (nat * nat)) :
     pairwise coprime (map snd l) ->
