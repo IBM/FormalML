@@ -468,7 +468,7 @@ Section chinese.
       move/andP => [iinl _].
       by apply H.
     - by apply H.
-    - rewrite (perm_big_AC _ _ _ (r2:=p :: rem p l)).
+    - rewrite (perm_big_AC mulnA mulnC _ (r2:=p :: rem p l)).
       + case: (eqVneq p.2 1) => [->|neq].
         {
           by rewrite coprimen1.
@@ -509,8 +509,6 @@ Section chinese.
           move/allP/(_ x.2 x2in).
           rewrite eqq2 /coprime gcdnn -eqq2 => eqq3.
           by rewrite eqq3/= in ne1.
-      + by apply mulnA.
-      + by apply mulnC.
       + by apply perm_to_rem.
   Qed.
 
@@ -527,7 +525,6 @@ Section chinese.
     replace  [seq _ <- rem p l | true] with [seq i <- l | i != p]; trivial.
     rewrite rem_filter // filter_predT.
     apply eq_filter.
-    intros ?.
     by rewrite /predC1 /=.
   Qed.
 
