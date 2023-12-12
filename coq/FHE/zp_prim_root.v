@@ -514,6 +514,52 @@ Section chinese.
       + by apply perm_to_rem.
   Qed.
 
+  Lemma prod_split1 (l : seq (nat * nat)) (p : nat*nat) :
+    uniq l ->
+    p \in l -> 
+    \prod_(q<-l) q.2 = p.2 * \prod_(q <- l | q != p) q.2.
+  Proof.  
+    intros.
+    rewrite (big_rem_AC mulnA mulnC _ (z := p)) //.
+    f_equal.
+    rewrite -big_filter.
+    symmetry; rewrite -big_filter.
+    replace  [seq _ <- rem p l | true] with [seq i <- l | i != p]; trivial.
+    rewrite rem_filter // filter_predT.
+    apply eq_filter.
+    intros ?.
+    by rewrite /predC1 /=.
+  Qed.
+
+  Lemma muln_lt (a b c : nat) :
+    0 < c ->
+    a < b ->
+    a * c < b * c.
+  Proof.
+    intros.
+    by rewrite ltn_pmul2r.
+  Qed.
+
+  Lemma balanced_chinese_list_mod_1_lt (l : seq (nat * nat)) :
+    uniq l ->
+    (forall p, p \in l -> 0 < p.2) ->
+    forall p,
+      p \in l ->
+            \prod_(q <- l | q != p) q.2 * ((p.1 * (egcdn (\prod_(q <- l | q != p) q.2) p.2).1) %% p.2) < \prod_(q <- l) q.2.
+  Proof.
+    intros.
+    rewrite (prod_split1 H H1) mulnC.
+    apply muln_lt.
+    - rewrite big_seq_cond.
+      apply prodn_cond_gt0 => i.
+      intros.
+      apply H0.
+      move /andP in H2.
+      tauto.
+    - apply ltn_pmod.
+      by apply H0.
+  Qed.
+
   Lemma modn_add0 (m a b : nat) :
     b == 0 %[mod m] ->
     a %% m + b == a %[mod m].
