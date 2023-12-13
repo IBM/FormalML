@@ -356,7 +356,6 @@ Section chinese.
 
   Lemma egcd_coprime_mult (a b c : nat) :
     0 < a ->
-    0 < b ->
     coprime a b ->
     c * (egcdn a b).1 * a = c %[mod b].
   Proof.
@@ -462,12 +461,11 @@ Section chinese.
     intros.
     apply /eqP.
     rewrite modnMmr mulnC.
-    apply egcd_coprime_mult; trivial.
+    apply egcd_coprime_mult.
     - rewrite big_seq_cond.
       apply prodn_cond_gt0 => i.
       move/andP => [iinl _].
       by apply H.
-    - by apply H.
     - rewrite (perm_big_AC mulnA mulnC _ (r2:=p :: rem p l)).
       + case: (eqVneq p.2 1) => [->|neq].
         {
@@ -528,15 +526,6 @@ Section chinese.
     by rewrite /predC1 /=.
   Qed.
 
-  Lemma muln_lt (a b c : nat) :
-    0 < c ->
-    a < b ->
-    a * c < b * c.
-  Proof.
-    intros.
-    by rewrite ltn_pmul2r.
-  Qed.
-
   Lemma balanced_chinese_list_mod_inner_lt (l : seq (nat * nat)) :
     uniq l ->
     (forall p, p \in l -> 0 < p.2) ->
@@ -545,16 +534,15 @@ Section chinese.
             \prod_(q <- l | q != p) q.2 * ((p.1 * (egcdn (\prod_(q <- l | q != p) q.2) p.2).1) %% p.2) < \prod_(q <- l) q.2.
   Proof.
     intros.
-    rewrite (prod_split1 H H1) mulnC.
-    apply muln_lt.
+    rewrite (prod_split1 H H1) mulnC ltn_pmul2r.
+    - apply ltn_pmod.
+      by apply H0.
     - rewrite big_seq_cond.
       apply prodn_cond_gt0 => i.
       intros.
       apply H0.
       move /andP in H2.
       tauto.
-    - apply ltn_pmod.
-      by apply H0.
   Qed.
 
   Lemma modn_add0 (m a b : nat) :
