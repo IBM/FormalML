@@ -574,7 +574,7 @@ Section chinese.
     rewrite -(mod0n m) -modnMml H mul0n //.
   Qed.
 
-  Lemma balanced_chinese_list_mod (l : seq (nat * nat)) :
+  Lemma balanced_chinese_list_mod1 (l : seq (nat * nat)) :
     (forall p, p \in l -> 1 < p.2) ->
     pairwise coprime (map snd l) ->
     forall p,
@@ -630,7 +630,76 @@ Section chinese.
       }
       by apply (contra_not_neq H3).
   Qed.
-                                    
+
+  Lemma balanced_chinese_list_filter1 (l : seq (nat * nat)) :
+    balanced_chinese_list [seq x <- l | x.2 != 1] = balanced_chinese_list l.
+  Proof.
+    rewrite /balanced_chinese_list.
+
+    move: (perm_filterC (fun a => a.2 != 1) l).
+    move/permPl => p1.
+    rewrite -(perm_big_AC addnA addnC _ _ _ p1).
+    rewrite big_cat /=.
+    
+    have ->: \sum_(i <-[seq x <- l | predC (fun a : nat * nat => a.2 != 1) x])
+      \prod_(q <- l | q != i) q.2 * ((i.1 * (egcdn (\prod_(q <- l | q != i) q.2) i.2).1) %% i.2) = 0.
+    {
+      rewrite big_filter.
+      under eq_bigr.
+      {
+        move=> i /=.
+        case: eqVneq => //= -> _.
+        rewrite modn1 muln0.
+        over.
+      }
+      by rewrite big_const_seq iter_addn_0 mul0n.
+    }
+    rewrite addn0 !big_filter.
+    
+    apply eq_bigr => i ne1.
+    f_equal.
+    - rewrite -big_filter.
+      symmetry.
+      rewrite -big_filter -prodn_filter1 -big_filter.
+      f_equal.
+      rewrite -!filter_predI /predI.
+      apply eq_in_filter => x xin /=.
+      by rewrite andbC.
+    - do 4 f_equal.
+      rewrite -big_filter.
+      symmetry.
+      rewrite -big_filter -prodn_filter1 -big_filter.
+      f_equal.
+      rewrite -!filter_predI /predI.
+      apply eq_in_filter => x xin /=.
+      by rewrite andbC.
+  Qed.
+
+  Lemma balanced_chinese_list_mod (l : seq (nat * nat)) :
+    (forall p, p \in l -> 0 < p.2) ->
+    pairwise coprime (map snd l) ->
+    forall p,
+      p \in l ->
+      balanced_chinese_list l == p.1 %[mod p.2].
+  Proof.
+    intros.
+    case: (eqVneq p.2 1) => eqq.
+    {
+      by rewrite eqq !modn1.
+    } 
+    have: balanced_chinese_list [seq x <- l | x.2 != 1] == p.1 %[mod p.2].
+    - apply balanced_chinese_list_mod1.
+      + move=> nn.
+        rewrite mem_filter.
+        move/andP => [ne1 nnin].
+        move: (H _ nnin) ne1 => /=.
+        destruct (nn.2) as [|[]]; lia.
+      + move: H0.
+        rewrite !pairwise_map.
+        apply pairwise_filter.
+      + by rewrite mem_filter H1 eqq.
+    - by rewrite balanced_chinese_list_filter1. 
+  Qed.                                    
 
   Lemma chinese_remainder_list_permutation (l l2: list (nat * nat)) :
     pairwise coprime (map snd l) ->
