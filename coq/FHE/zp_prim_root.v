@@ -452,7 +452,7 @@ Section chinese.
       lia.
   Qed.
       
-  Lemma balanced_chinese_list_mod_1 (l : seq (nat * nat)) :
+  Lemma balanced_chinese_list_mod_inner (l : seq (nat * nat)) :
     (forall p, p \in l -> 0 < p.2) ->
     pairwise coprime (map snd l) ->
     forall p,
@@ -537,7 +537,7 @@ Section chinese.
     by rewrite ltn_pmul2r.
   Qed.
 
-  Lemma balanced_chinese_list_mod_1_lt (l : seq (nat * nat)) :
+  Lemma balanced_chinese_list_mod_inner_lt (l : seq (nat * nat)) :
     uniq l ->
     (forall p, p \in l -> 0 < p.2) ->
     forall p,
@@ -589,7 +589,7 @@ Section chinese.
         apply H in H2.
         lia.
       }
-      rewrite (eqP (balanced_chinese_list_mod_1 posl H0 H1)).
+      rewrite (eqP (balanced_chinese_list_mod_inner posl H0 H1)).
       apply modn_add0.
       rewrite big1_idem //.
       intros.
