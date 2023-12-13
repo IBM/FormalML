@@ -510,6 +510,52 @@ Section chinese.
       + by apply perm_to_rem.
   Qed.
 
+  Lemma pairwise_coprime_uniq (l : seq nat) :
+    (forall p, p \in l -> 1 < p) ->
+    pairwise coprime l ->
+    uniq l.
+  Proof.
+    intros.
+    rewrite uniq_pairwise.
+    have: (pairwise (fun x y => coprime x y && (1<x)) l).
+    {
+      rewrite pairwise_relI.
+      apply /andP.
+      split; trivial.
+      apply/(pairwiseP 0) => x y xlt ylt xlty.
+      apply H.
+      by apply mem_nth.
+    }
+    apply sub_pairwise.
+    intros ???.
+    simpl.
+    assert (x = y -> false).
+    {
+      intros.
+      rewrite H2 in H1.
+      move /andP in H1; destruct H1.
+      rewrite /coprime gcdnn in H1.
+      move /eqP in H1.
+      lia.
+    }
+    by apply (contra_not_neq H2).
+  Qed.
+
+  Lemma pairwise_coprime_uniq_pair (l : seq (nat * nat)) :
+    (forall p, p \in l -> 1 < p.2) ->
+    pairwise coprime (map snd l) ->
+    uniq l.
+  Proof.
+    intros.
+    apply (map_uniq (f := snd)).
+    apply pairwise_coprime_uniq; trivial.
+    intros.
+    move /mapP in H1.
+    destruct H1.
+    rewrite H2.
+    by apply H.
+  Qed.
+
   Lemma prod_split1 (l : seq (nat * nat)) (p : nat*nat) :
     uniq l ->
     p \in l -> 
@@ -543,6 +589,57 @@ Section chinese.
       apply H0.
       move /andP in H2.
       tauto.
+  Qed.
+
+  Lemma sum_list_const {T} (l : list T) (c : nat) :
+    \sum_(p <- l) c = (size l) * c.
+  Proof.
+    induction l.
+    - by rewrite big_nil /= mul0n.
+    - rewrite big_cons IHl /=.
+      lia.
+  Qed.
+
+  Lemma big_sum_le (l : list (nat * nat)) (F : nat * nat -> nat) (c : nat) :
+    (forall p, p \in l -> F p <= c) ->
+    \sum_(p <- l) F p <= (size l)*c.
+  Proof.
+    intros.
+    rewrite -sum_list_const.
+    rewrite big_seq_cond.
+    replace (\sum_(p <- l) c) with
+      (\sum_(i <- l | (i \in l) && true) c).
+    - apply leq_sum.
+      intros.
+      apply H.
+      move /andP in H0.
+      tauto.
+    - by rewrite -big_seq_cond.
+  Qed.
+
+  Lemma big_sum_lt (l : list (nat * nat)) (F : nat * nat -> nat) (c : nat) :
+    (forall p, p \in l -> F p < c) ->
+    0 < size l ->
+    \sum_(p <- l) F p < (size l)*c.
+  Proof.             
+    intros.
+    rewrite -sum_list_const.
+    Admitted.
+
+  Lemma balanced_chinese_list_mod_lt (l : seq (nat * nat)) :
+    (forall p, p \in l -> 1 < p.2) ->
+    pairwise coprime (map snd l) ->
+    0 < (size l) ->
+    balanced_chinese_list l < (size l) * \prod_(q <- l) q.2.
+  Proof.
+    intros.
+    apply big_sum_lt; trivial.
+    intros.
+    apply balanced_chinese_list_mod_inner_lt; trivial.
+    - by apply pairwise_coprime_uniq_pair.
+    - intros.
+      apply H in H3.
+      lia.
   Qed.
 
   Lemma modn_add0 (m a b : nat) :
@@ -583,40 +680,11 @@ Section chinese.
       intros.
       apply modn_mull0.
       rewrite -big_filter.
-      rewrite (perm_big_AC _ _ _ (r2:=p :: rem p [seq i0 <- l | i0 != i])).
+      rewrite (perm_big_AC mulnA mulnC _ (r2:=p :: rem p [seq i0 <- l | i0 != i])).
       + by rewrite big_cons modnMr.
-      + by apply mulnA.
-      + by apply mulnC.
       + apply perm_to_rem.
         by rewrite mem_filter H1 eq_sym H2.
-    - rewrite uniq_pairwise.
-      have: (pairwise (fun x y => coprime x.2 y.2 && (1<x.2)) l).
-      {
-        rewrite pairwise_relI.
-        apply /andP.
-        split.
-        - rewrite pairwise_map in H0.
-          apply H0.
-        - apply/(pairwiseP (0,0)) => x y xlt ylt xlty.
-          apply H.
-          by apply mem_nth.
-      }
-      apply sub_pairwise.
-      intros ???.
-      simpl.
-      assert (x = y -> false).
-      {
-        intros.
-        destruct x; destruct y.
-        simpl in H2.
-        inversion H3.
-        rewrite H6 in H2.
-        move /andP in H2; destruct H2.
-        rewrite /coprime gcdnn in H2.
-        move /eqP in H2.
-        lia.
-      }
-      by apply (contra_not_neq H3).
+    - by apply pairwise_coprime_uniq_pair.
   Qed.
 
   Lemma balanced_chinese_list_filter1 (l : seq (nat * nat)) :
