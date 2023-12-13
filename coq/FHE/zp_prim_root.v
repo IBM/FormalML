@@ -604,27 +604,35 @@ Section chinese.
     (forall p, p \in l -> F p <= c) ->
     \sum_(p <- l) F p <= (size l)*c.
   Proof.
-    intros.
+    move=> inle.
     rewrite -sum_list_const.
-    rewrite big_seq_cond.
-    replace (\sum_(p <- l) c) with
-      (\sum_(i <- l | (i \in l) && true) c).
-    - apply leq_sum.
-      intros.
-      apply H.
-      move /andP in H0.
-      tauto.
-    - by rewrite -big_seq_cond.
+    rewrite !big_seq.
+    apply leq_sum => i ini.
+    by apply inle.
   Qed.
 
   Lemma big_sum_lt_const (l : list (nat * nat)) (F : nat * nat -> nat) (c : nat) :
     (forall p, p \in l -> F p < c) ->
     0 < size l ->
     \sum_(p <- l) F p < (size l)*c.
-  Proof.             
-    intros.
-    rewrite -sum_list_const.
-    Admitted.
+  Proof.
+    move=> inle lnnil.
+    destruct l.
+    - by rewrite !big_nil.
+    - rewrite !big_cons /= mulSn.
+      have lt1: F p < c.
+      {
+        apply inle.
+        apply mem_head.
+      }
+      rewrite -(ltn_add2r (size l * c)) in lt1.
+      eapply leq_ltn_trans; [|apply lt1].
+      rewrite leq_add2l.
+      apply big_sum_le_const => x xin.
+      apply ltnW.
+      apply inle.
+      by rewrite in_cons xin orbT.
+  Qed.
 
   Lemma balanced_chinese_list_mod_lt (l : seq (nat * nat)) :
     (forall p, p \in l -> 1 < p.2) ->
