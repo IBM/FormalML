@@ -600,7 +600,7 @@ Section chinese.
       lia.
   Qed.
 
-  Lemma big_sum_le (l : list (nat * nat)) (F : nat * nat -> nat) (c : nat) :
+  Lemma big_sum_le_const (l : list (nat * nat)) (F : nat * nat -> nat) (c : nat) :
     (forall p, p \in l -> F p <= c) ->
     \sum_(p <- l) F p <= (size l)*c.
   Proof.
@@ -617,7 +617,7 @@ Section chinese.
     - by rewrite -big_seq_cond.
   Qed.
 
-  Lemma big_sum_lt (l : list (nat * nat)) (F : nat * nat -> nat) (c : nat) :
+  Lemma big_sum_lt_const (l : list (nat * nat)) (F : nat * nat -> nat) (c : nat) :
     (forall p, p \in l -> F p < c) ->
     0 < size l ->
     \sum_(p <- l) F p < (size l)*c.
@@ -633,7 +633,7 @@ Section chinese.
     balanced_chinese_list l < (size l) * \prod_(q <- l) q.2.
   Proof.
     intros.
-    apply big_sum_lt; trivial.
+    apply big_sum_lt_const; trivial.
     intros.
     apply balanced_chinese_list_mod_inner_lt; trivial.
     - by apply pairwise_coprime_uniq_pair.
