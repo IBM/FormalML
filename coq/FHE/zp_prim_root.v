@@ -600,7 +600,7 @@ Section chinese.
       lia.
   Qed.
 
-  Lemma big_sum_le_const (l : list (nat * nat)) (F : nat * nat -> nat) (c : nat) :
+  Lemma big_sum_le_const {T:eqType} (l : list T) (F : T -> nat) (c : nat) :
     (forall p, p \in l -> F p <= c) ->
     \sum_(p <- l) F p <= (size l)*c.
   Proof.
@@ -611,7 +611,7 @@ Section chinese.
     by apply inle.
   Qed.
 
-  Lemma big_sum_lt_const (l : list (nat * nat)) (F : nat * nat -> nat) (c : nat) :
+  Lemma big_sum_lt_const {T:eqType} (l : list T) (F : T -> nat) (c : nat) :
     (forall p, p \in l -> F p < c) ->
     0 < size l ->
     \sum_(p <- l) F p < (size l)*c.
@@ -620,7 +620,7 @@ Section chinese.
     destruct l.
     - by rewrite !big_nil.
     - rewrite !big_cons /= mulSn.
-      have lt1: F p < c.
+      have lt1: F s < c.
       {
         apply inle.
         apply mem_head.
