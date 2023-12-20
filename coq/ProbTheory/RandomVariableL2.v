@@ -507,7 +507,47 @@ Section L2.
         now rewrite Rmult_0_l.
   Qed.
 
+  Lemma is_lim_seq_ps_p_event_ge_event_lt
+        (eps : posreal) 
+        (X: Ts -> R)
+        (Xn: nat -> Ts -> R)
+        (rvx : RandomVariable dom borel_sa X)
+        (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
+    is_lim_seq (fun n => ps_P (event_ge dom (rvabs (rvminus X (Xn n))) eps)) 0 ->
+    is_lim_seq (fun n => ps_P (event_lt dom (rvabs (rvminus X (Xn n))) eps)) 1.  
+ Proof.
+   intros.
+   assert (forall n,
+              1- ps_P (event_ge dom (rvabs (rvminus X (Xn n))) eps) =
+                ps_P (event_lt dom (rvabs (rvminus X (Xn n))) eps)).
+   {
+     intros.
+     rewrite <- ps_complement.
+     f_equal.
+     admit.
+   }
+   apply (is_lim_seq_ext _ _ 1 H0).
+   apply is_lim_seq_minus with (l1 := 1) (l2 := 0); trivial.
+   - apply is_lim_seq_const.
+   - unfold is_Rbar_minus, is_Rbar_plus.
+     simpl; f_equal; f_equal; lra.
+  Admitted.     
 
+
+ Lemma conv_l1_prob_alt
+   (eps : posreal) 
+   (X: Ts -> R)
+   (Xn: nat -> Ts -> R)
+   (rvx : RandomVariable dom borel_sa X)
+   (rvxn : forall n, RandomVariable dom borel_sa (Xn n)) :
+   (forall n, is_finite (NonnegExpectation (rvabs (rvminus X (Xn n))))) ->
+   is_lim_seq (fun n => NonnegExpectation (rvabs (rvminus X (Xn n)))) 0 ->
+   is_lim_seq (fun n => ps_P (event_lt dom (rvabs (rvminus X (Xn n))) eps)) 1.
+ Proof.
+   intros.
+   apply is_lim_seq_ps_p_event_ge_event_lt.
+   now apply conv_l1_prob.
+ Qed.
 
   Lemma L2RRV_inner_plus (x y z : LpRRV prts 2) :
     L2RRVinner (LpRRVplus prts x y) z = L2RRVinner x z + L2RRVinner y z.
