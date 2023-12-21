@@ -2,13 +2,14 @@ Require Import QArith.Qreals.
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
 Require Import Morphisms FiniteType List ListAdd Permutation infprod Almost NumberIso.
 Require Import Sums SimpleExpectation PushNeg.
+Require Import utils.Utils.
 Require Import EquivDec.
 Require Import Classical.
 Require Import ClassicalChoice.
 Require Import IndefiniteDescription ClassicalDescription.
 Require Import BorelSigmaAlgebra.
 Require Import DVector RealVectorHilbert VectorRandomVariable.
-Require Import VectorConditionalExpectation.
+Require Import VectorConditionalExpectation RbarExpectation ConditionalExpectation.
 
 (* note this file does not import from slln, so there are some duplicate lemmas *)
 
@@ -16,6 +17,105 @@ Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
 
 Import ListNotations.
+
+Section conv_as.
+    Context {Ts : Type}
+            {dom: SigmaAlgebra Ts}.
+
+      Lemma conv_as_prob_1 {prts: ProbSpace dom} (f : nat -> Ts -> R) 
+          {rv : forall n, RandomVariable dom borel_sa (f n)} :
+      almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
+      forall (eps:posreal),
+        is_lim_seq (fun n => ps_P (event_lt dom (rvabs (f n)) eps)) 1.
+    Proof.
+      intros.
+      assert (almost prts (fun x => is_lim_seq (fun n =>
+                            EventIndicator (classic_dec (event_lt dom (rvabs (f n)) eps)) x) 1)).
+      {
+        apply almost_impl' with (P1 := (fun x => is_lim_seq (fun n => f n x) 0)); trivial.
+        apply all_almost.
+        intros.
+        unfold EventIndicator; simpl.
+        apply is_lim_seq_spec in H0.
+        apply is_lim_seq_spec.
+        unfold is_lim_seq'.
+        unfold is_lim_seq' in H0.
+        intros.
+        specialize (H0 eps).
+        destruct H0.
+        exists x0.
+        intros.
+        specialize (H0 n H1).
+        unfold rvabs.
+        rewrite Rminus_0_r in H0.
+        match_destr; try lra.
+        replace (1 - 1) with (0) by lra.
+        rewrite Rabs_R0.
+        apply cond_pos.
+      }
+      generalize (Dominated_convergence_almost 
+                    prts 
+                    (fun n => 
+                       EventIndicator (classic_dec (event_lt dom (rvabs (f n)) eps)))
+                    (const 1)
+                 ); intros.
+      specialize (H1 (const 1)).
+      cut_to H1; try typeclasses eauto.
+      assert  (isfefn : forall n : nat,
+                   IsFiniteExpectation prts
+                     (EventIndicator (classic_dec (event_lt dom (rvabs (f n)) eps)))).
+      {
+        intros.
+        apply IsFiniteExpectation_simple; try typeclasses eauto.
+      }
+      assert  (isfefn' : forall n : nat,
+                   Rbar_IsFiniteExpectation prts
+                     (EventIndicator (classic_dec (event_lt dom (rvabs (f n)) eps)))).
+      {
+        intros.
+        now apply IsFiniteExpectation_Rbar.
+      }
+      specialize (H1 isfefn' (Rbar_IsFiniteExpectation_const prts 1) (Rbar_IsFiniteExpectation_const prts 1)).
+      cut_to H1.
+      - generalize (fun n => Expectation_EventIndicator (classic_dec (event_lt dom (rvabs (f n)) eps)) ); intros.
+        apply is_lim_seq_ext with (v := (fun n : nat => ps_P (event_lt dom (rvabs (f n)) eps))) in H1.
+        + now rewrite Rbar_FiniteExpectation_const in H1.
+        + intros.
+          generalize (FiniteExpectation_indicator prts (classic_dec (event_lt dom (rvabs (f n)) eps))); intros.
+          rewrite <- H3.
+          rewrite (Rbar_FinExp_FinExp _ _).
+          apply FiniteExpectation_pf_irrel.
+      - intros.
+        apply all_almost.
+        intros; simpl.
+        rv_unfold.
+        match_destr.
+        + rewrite Rabs_right; lra.
+        + rewrite Rabs_R0; lra.
+      - revert H0.
+        apply almost_impl; apply all_almost; intros ??.
+        now apply is_Elim_seq_fin.
+   Qed.
+
+    Lemma conv_as_prob_1_eps {prts: ProbSpace dom} (f : nat -> Ts -> R)
+      {rv : forall n, RandomVariable dom borel_sa (f n)} :
+      almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
+      forall (eps:posreal),
+        eventually (fun n => ps_P (event_lt dom (rvabs (f n)) eps) >= 1 - eps).
+    Proof.
+      intros.
+      apply (conv_as_prob_1 _) with (eps := eps) in H.
+      rewrite <- is_lim_seq_spec in H.
+      destruct (H eps).
+      exists x.
+      intros.
+      specialize (H0 n H1).
+      rewrite Rabs_minus_sym in H0.
+      rewrite Rabs_right in H0; try lra.
+      generalize (ps_le1 prts (event_lt dom (rvabs (f n)) eps)); lra.
+   Qed.
+
+End conv_as.
 
 Section vec_cauchy.
 
@@ -70,7 +170,7 @@ Section vec_cauchy.
     apply H0.
   Qed.
 
-  Lemma In_le_list_sum (ts : list nat): forall i, In i ts -> (i <= list_sum ts)%nat.
+  Lemma In_le_list_sum (ts : list nat): forall i, In i ts -> (i <= List.list_sum ts)%nat.
   Proof.
     intros i Hi.
     induction ts.
@@ -79,7 +179,6 @@ Section vec_cauchy.
       -- rewrite H. simpl; lia.
       -- specialize (IHts H). simpl; lia.
   Qed.
-
 
   Lemma vec_cauchy_seq_at_iff {A : Type} (n : nat) (omega : A) (X : nat -> A -> vector R n):
     vec_cauchy_seq_at omega X <->
@@ -113,7 +212,7 @@ Section vec_cauchy.
       }
       destruct (nth_exist_join (fun i pf => H i pf (mkposreal _ eps_div_pos)))
         as [ts [Hsize tspfs]].
-      exists (list_sum ts).
+      exists (List.list_sum ts).
       intros n1 n2 n1big n2big.
       apply (@Nth_Hnorm n); [ lia | ].
       intros i pf.
@@ -121,10 +220,10 @@ Section vec_cauchy.
       cut_to tspfs.
       * rewrite Rabs_minus_sym in tspfs.
         apply tspfs.
-      * apply Nat.le_trans with (list_sum ts); auto.
+      * apply Nat.le_trans with (List.list_sum ts); auto.
         apply In_le_list_sum; apply nth_In.
         now rewrite Hsize.
-      * apply Nat.le_trans with (list_sum ts); auto.
+      * apply Nat.le_trans with (List.list_sum ts); auto.
         apply In_le_list_sum; apply nth_In.
         now rewrite Hsize.
   Qed.
