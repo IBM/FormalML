@@ -523,15 +523,15 @@ Section L2.
    {
      intros.
      rewrite <- ps_complement.
-     f_equal.
-     admit.
+     apply ps_proper.
+     split; simpl; unfold pre_event_complement; lra.
    }
    apply (is_lim_seq_ext _ _ 1 H0).
    apply is_lim_seq_minus with (l1 := 1) (l2 := 0); trivial.
    - apply is_lim_seq_const.
    - unfold is_Rbar_minus, is_Rbar_plus.
      simpl; f_equal; f_equal; lra.
-  Admitted.     
+ Qed.
 
 
  Lemma conv_l1_prob_alt
