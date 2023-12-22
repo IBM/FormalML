@@ -115,6 +115,18 @@ Section conv_as.
       generalize (ps_le1 prts (event_lt dom (rvabs (f n)) eps)); lra.
    Qed.
 
+    Lemma conv_prob_1_eps_vec {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size)
+      (eps : posreal)
+      {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (f n)} :
+      (forall i pf,
+          eventually (fun n => ps_P (event_lt dom (rvabs (fun omega => vector_nth i pf (f n omega))) eps) >= 1 - eps)) ->
+      eventually (fun n => ps_P (event_lt dom (rvmaxabs (f n)) eps) >= 1 - eps).
+    Proof.
+      intros.
+      unfold rvmaxabs.
+      unfold eventually in *.
+    Admitted.
+      
 End conv_as.
 
 Section vec_cauchy.
