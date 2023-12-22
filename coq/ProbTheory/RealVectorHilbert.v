@@ -513,6 +513,16 @@ Section Rvector_defs.
     lra.
   Qed.
 
+  Lemma Rvector_scale_const (c1 c2 : R) :
+    c1 .* vector_const c2 n = vector_const (c1 * c2)%R n.
+  Proof.
+    apply vector_nth_eq; intros.
+    rewrite vector_nth_const.
+    unfold Rvector_scale.
+    rewrite vector_nth_map, vector_nth_const.
+    lra.
+  Qed.
+
   Lemma Rvector_inner_const_l (x:vector R n) c : vector_const c n ⋅ x = (c * ∑ x)%R.
   Proof.
     now rewrite <- Rvector_scal_one, Rvector_inner_scal, Rvector_inner_one_l.

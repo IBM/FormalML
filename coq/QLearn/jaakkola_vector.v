@@ -699,16 +699,10 @@ Proof.
   rewrite <- Rinv_l_sym in H0; lra.
 Qed.
 
-Lemma Rvector_scale_const {n : nat} (c1 c2 : R) :
-  Rvector_scale c1 (vector_const c2 n) = vector_const (c1 * c2) n.
-Proof.
-  Admitted.
-
 Lemma Rvector_max_abs_const {n : nat} (c : R) :
   Rvector_max_abs (vector_const c n) = Rabs c.
 Proof.
   Admitted.
-
 
 Lemma delta_eps_bound (eps : posreal) (C : posreal) {N} (delta : vector R N) :
   0 < gamma ->
