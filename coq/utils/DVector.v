@@ -1025,7 +1025,29 @@ Proof.
     congruence.
   - rewrite vector_length; reflexivity.
 Qed.
-  
+
+Lemma vector_map_add_to_end {n} {A B} (x:A) (v:vector A n) (f:A->B):
+  vector_map f (vector_add_to_end x v) = vector_add_to_end (f x) (vector_map f v).
+Proof.
+  apply vector_nth_eq; intros.
+  rewrite vector_nth_map.
+  destruct (Nat.eq_dec i n).
+  - subst.
+    now repeat rewrite vector_nth_add_to_end_suffix.
+  - assert (pf':(i < n)%nat) by lia.
+    repeat rewrite vector_nth_add_to_end_prefix with (pf2:=pf').
+    now rewrite vector_nth_map.
+Qed.
+
+Lemma vector_fold_left_add_to_end {A B} (f: A -> B -> A) {n} (x:B) (v: vector B n) (init : A) :
+  vector_fold_left f (vector_add_to_end x v) init =
+    f (vector_fold_left f v init) x.
+Proof.
+  destruct v; simpl.
+  unfold vector_fold_left; simpl; clear e.
+  now rewrite fold_left_app.
+Qed.
+
 Lemma vector_fold_left_map_commute {A} {n} f g (v: vector A n) init
   (factor : forall a b, f (g a) (g b) = g (f a b)) :
   vector_fold_left f (vector_map g v) (g init) =
@@ -1034,6 +1056,91 @@ Proof.
   destruct v; simpl.
   unfold vector_fold_left, vector_map; simpl.
   now apply fold_left_map_factor.
+Qed.
+
+
+Program Definition vector_removelast {n} {A} (v:vector A (S n)) : vector A n :=
+  removelast (proj1_sig v).
+Next Obligation.
+  now rewrite removelast_length, vector_length; simpl.
+Qed.
+
+Definition vector_last  {A} {n} (v:vector A (S n)) : A
+  := vector_nth n (Nat.lt_succ_diag_r n) v.
+
+
+Lemma vector_removelast_eq {n} {A} (v:vector A (S n)) :
+  v = vector_add_to_end (vector_last v) (vector_removelast v).
+Proof.
+  apply vector_eq.
+  destruct v; simpl.
+  revert n e.
+  induction x; [simpl; lia |].
+  intros.
+  destruct n.
+  - destruct x; simpl in *; try lia.
+    f_equal.
+  - assert (e' : length x = S n) by (simpl in *; lia).
+    specialize (IHx _ e').
+    simpl; destruct x; [simpl in *; lia |].
+    rewrite <- app_comm_cons.
+    f_equal.
+    etransitivity; try apply IHx.
+    f_equal.
+    f_equal.
+    generalize (vector_nth_in (S n)
+                  (Nat.lt_succ_diag_r (S n))
+                  (exist (fun l : list A => length l = S (S n)) (a :: a0 :: x) e))
+    ; intros HH1.
+    generalize (vector_nth_in n
+                  (Nat.lt_succ_diag_r n) (exist (fun l : list A => length l = S n) (a0 :: x) e'))
+    ; intros HH2.
+    simpl in *.
+    rewrite <- HH2 in HH1.
+    now invcs HH1.
+Qed.
+
+Lemma vector_removelast_add_to_end {n} {A} x (v:vector A n) :
+  v = vector_removelast (vector_add_to_end x v).
+Proof.
+  apply vector_eq.
+  destruct v; simpl; clear.
+  induction x0; simpl; trivial.
+  destruct x0; simpl; trivial.
+  f_equal.
+  apply IHx0.
+Qed.
+
+Program Lemma vector_nth_removelast  {n} {A} (v:vector A (S n)) i pf :
+  vector_nth i pf (vector_removelast v) = vector_nth i _ v.
+Proof.
+  rewrite (vector_removelast_eq v) at 2.
+  now rewrite (vector_nth_add_to_end_prefix _ _ _ _ pf).
+Qed.
+
+Program Lemma vector_removelast_create {T : Type} n f :
+  vector_removelast (vector_create (T:=T) 0 (S n) f) =
+    vector_create 0 n (fun i pf1 pf2 => f i pf1 _).
+Proof.
+  apply vector_nth_eq; intros.
+  rewrite vector_nth_removelast.
+  repeat rewrite vector_nth_create.
+  now apply vector_create_fun_ext.
+Qed.
+
+Lemma vector_ind_end {A} (P:forall {n}, vector A n -> Prop)
+  (Pzero : P vector0)
+  (Psucc : forall {n} (v:vector A n) x,
+      P v -> P (vector_add_to_end x v))
+  : forall {n} (v:vector A n), P v.
+Proof.
+  induction n; simpl.
+  - intros.
+    rewrite vector0_0.
+    exact Pzero.
+  - intros.
+    rewrite vector_removelast_eq.
+    now apply Psucc.
 Qed.
 
 Section ivector.

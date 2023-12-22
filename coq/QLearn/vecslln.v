@@ -17,7 +17,7 @@ Set Bullet Behavior "Strict Subproofs".
 Set Default Goal Selector "!".
 
 Import ListNotations.
-
+  
 Section conv_as.
     Context {Ts : Type}
             {dom: SigmaAlgebra Ts}.
@@ -131,6 +131,20 @@ Section conv_as.
         apply vector_nth_ext.
     Qed.
 
+    Lemma vector_map_add_to_end {n} {A B} (x:A) (v:vector A n) (f:A->B):
+      vector_map f (vector_add_to_end x v) = vector_add_to_end (f x) (vector_map f v).
+    Proof.
+      apply vector_nth_eq; intros.
+      rewrite vector_nth_map.
+      destruct (Nat.eq_dec i n).
+      - subst.
+        now repeat rewrite vector_nth_add_to_end_suffix.
+      - assert (pf':(i < n)%nat) by lia.
+        repeat rewrite vector_nth_add_to_end_prefix with (pf2:=pf').
+        now rewrite vector_nth_map.
+    Qed.
+
+                                     
     Lemma conv_as_prob_1_rvmaxabs {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size)
       {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (f n)} :
       almost prts (fun x => forall i pf, is_lim_seq (fun n => vector_nth i pf (f n x)) 0) ->
@@ -144,30 +158,82 @@ Section conv_as.
         apply almost_impl.
         apply all_almost.
         intros ??.
-        unfold rvmaxabs.
-        admit.
-      }
+        unfold rvmaxabs, Rvector_max_abs, Rvector_abs.
+        revert H; clear; intros HH.
+        generalize (iso_b_f (Isomorphism:=(@vector_iso nat R size)) (fun n => f n x)); intros eqqf.
+        cut ( is_lim_seq (fun n : nat => vector_fold_left Rmax (vector_map Rabs (iso_b (Isomorphism:=(@vector_iso nat R size)) (iso_f (Isomorphism:=(@vector_iso nat R size)) (fun n : nat => f n x)) n)) 0) 0).
+        {
+          apply is_lim_seq_ext; intros.
+          now rewrite eqqf.
+        } 
+        assert (HH':forall (i : nat) (pf : (i < size)%nat), is_lim_seq (fun n : nat => vector_nth i pf (iso_b (Isomorphism:=(@vector_iso nat R size)) (iso_f (Isomorphism:=(@vector_iso nat R size)) (fun n : nat => f n x)) n)) 0).
+        {
+          intros.
+          generalize (HH i pf).
+          apply is_lim_seq_ext; intros.
+          now rewrite eqqf.
+        }
+        assert (HH'':
+                  forall (i : nat) (pf : (i < size)%nat),
+                    is_lim_seq (fun n : nat => vector_nth i pf (vector_map Rabs (iso_b (iso_f (fun n0 : nat => f n0 x)) n))) 0).
+        {
+          intros i pf.
+          specialize (HH' i pf).
+          apply is_lim_seq_abs in HH'.
+          revert HH'.
+          unfold Rbar_abs.
+          rewrite Rabs_R0.
+          apply is_lim_seq_ext; intros nn.
+          now rewrite vector_nth_map.
+        } 
+        revert HH''.
+        generalize (iso_f (Isomorphism:=(@vector_iso nat R size)) (fun n0 : nat => f n0 x)).
+        clear.
+        intros v.
+        induction size, v using vector_ind_end; intros.
+        - eapply is_lim_seq_ext; try eapply is_lim_seq_const; intros; reflexivity.
+        - simpl in *.
+          cut (is_lim_seq
+                 (fun nn : nat =>
+                    Rmax (vector_fold_left Rmax (vector_map Rabs (vector_of_funs_to_fun_to_vector v nn)) 0) (Rabs (x nn))) 0).
+          {
+            apply is_lim_seq_ext; intros nn.
+            rewrite vector_of_funs_to_fun_to_vector_add_to_end, vector_map_add_to_end.
+            now rewrite  (vector_fold_left_add_to_end Rmax (n:=n)).
+          } 
+          apply is_lim_seq_max.
+          + apply IHv.
+            intros i pf.
+            assert (pf': (i < S n)%nat) by lia.
+            generalize (HH'' i pf').
+            apply is_lim_seq_ext; intros nn.
+            repeat rewrite vector_nth_map.
+            repeat rewrite vector_of_funs_vector_nth.
+            now rewrite (vector_nth_add_to_end_prefix _ _ _ _ pf).
+          + generalize (HH'' n (Nat.lt_succ_diag_r n)).
+            apply is_lim_seq_ext; intros nn.
+            rewrite vector_nth_map.
+            now rewrite vector_of_funs_vector_nth, vector_nth_add_to_end_suffix.
+      } 
       destruct (conv_as_prob_1_eps (fun n => rvmaxabs (f n)) H0 eps eps).
       exists x.
       intros.
       specialize (H1 n H2).
-      eapply Rge_trans.
-      - shelve.
-      - apply H1.
-        Unshelve.
-        right.
-        apply ps_proper.
-        intros ?.
-        simpl.
-        assert (rvmaxabs (f n) x0 = rvabs (rvmaxabs (f n)) x0).
-        {
-          unfold rvabs.
-          rewrite Rabs_right; trivial.
-          apply Rle_ge.
-          apply rvmaxabs_pos.
-        }
-        now rewrite H3.
-    Admitted.
+      
+      eapply Rge_trans; [| apply H1].
+      right.
+      apply ps_proper.
+      intros ?.
+      simpl.
+      assert (rvmaxabs (f n) x0 = rvabs (rvmaxabs (f n)) x0).
+      {
+        unfold rvabs.
+        rewrite Rabs_right; trivial.
+        apply Rle_ge.
+        apply rvmaxabs_pos.
+      }
+      now rewrite H3.
+    Qed.
 
 End conv_as.
 
