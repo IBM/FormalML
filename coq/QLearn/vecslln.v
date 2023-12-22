@@ -100,26 +100,34 @@ Section conv_as.
     Lemma conv_as_prob_1_eps {prts: ProbSpace dom} (f : nat -> Ts -> R)
       {rv : forall n, RandomVariable dom borel_sa (f n)} :
       almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
-      forall (eps:posreal),
-        eventually (fun n => ps_P (event_lt dom (rvabs (f n)) eps) >= 1 - eps).
+      forall (eps1 eps2:posreal),
+        eventually (fun n => ps_P (event_lt dom (rvabs (f n)) eps1) >= 1 - eps2).
     Proof.
       intros.
-      apply (conv_as_prob_1 _) with (eps := eps) in H.
+      apply (conv_as_prob_1 _) with (eps := eps1) in H.
       rewrite <- is_lim_seq_spec in H.
-      destruct (H eps).
+      destruct (H eps2).
       exists x.
       intros.
       specialize (H0 n H1).
       rewrite Rabs_minus_sym in H0.
       rewrite Rabs_right in H0; try lra.
-      generalize (ps_le1 prts (event_lt dom (rvabs (f n)) eps)); lra.
+      generalize (ps_le1 prts (event_lt dom (rvabs (f n)) eps1)); lra.
    Qed.
+
+    Lemma conv_as_prob_1_vec {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size)
+      {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (f n)} :
+      (forall i pf, almost prts (fun x => is_lim_seq (fun n => vector_nth i pf (f n x)) 0)) ->
+      almost prts (fun x => forall i pf, is_lim_seq (fun n => vector_nth i pf (f n x)) 0).
+    Proof.
+      Admitted.
 
     Lemma conv_prob_1_eps_vec {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size)
       (eps : posreal)
       {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (f n)} :
+(* independence condition *)      
       (forall i pf,
-          eventually (fun n => ps_P (event_lt dom (rvabs (fun omega => vector_nth i pf (f n omega))) eps) >= 1 - eps)) ->
+          eventually (fun n => ps_P (event_lt dom (rvabs (fun omega => vector_nth i pf (f n omega))) eps) >= 1 - eps/INR(size))) ->
       eventually (fun n => ps_P (event_lt dom (rvmaxabs (f n)) eps) >= 1 - eps).
     Proof.
       intros.
