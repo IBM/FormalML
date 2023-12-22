@@ -120,7 +120,16 @@ Section conv_as.
       (forall i pf, almost prts (fun x => is_lim_seq (fun n => vector_nth i pf (f n x)) 0)) ->
       almost prts (fun x => forall i pf, is_lim_seq (fun n => vector_nth i pf (f n x)) 0).
     Proof.
-      Admitted.
+      intros.
+      apply almost_bounded_forall; trivial.
+      - intros.
+        apply lt_dec.
+      - intros.
+        revert H0.
+        apply is_lim_seq_ext.
+        intros.
+        apply vector_nth_ext.
+    Qed.
 
     Lemma conv_prob_1_eps_vec {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size)
       (eps : posreal)
@@ -134,7 +143,7 @@ Section conv_as.
       unfold rvmaxabs.
       unfold eventually in *.
     Admitted.
-      
+
 End conv_as.
 
 Section vec_cauchy.
