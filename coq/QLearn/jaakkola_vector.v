@@ -672,7 +672,84 @@ Proof.
     now apply (lemma2_n0_w x w X XX Y G C).
 Qed.
   
-    
-  
-  
-  
+Lemma gamma_C :
+  0 < gamma < 1 ->
+  forall (C : R),
+    C > gamma / (1-gamma) ->
+    0 < C /\
+    gamma * (C + 1)/C < 1.
+Proof.
+  intros.
+  assert (0 < C).
+  {
+    apply Rgt_lt in H0.
+    eapply Rlt_trans; [|apply H0].
+    apply Rdiv_lt_0_compat; lra.
+  }
+  split; trivial.
+  apply Rmult_lt_reg_r with (r := C); trivial.
+  unfold Rdiv.
+  rewrite Rmult_assoc.
+  rewrite <- Rinv_l_sym; try lra.
+  rewrite Rmult_1_l.
+  rewrite Rmult_1_r.
+  apply Rmult_gt_compat_r with (r := (1 - gamma)) in H0; try lra.
+  unfold Rdiv in H0.
+  rewrite Rmult_assoc in H0.
+  rewrite <- Rinv_l_sym in H0; lra.
+Qed.
+
+Lemma Rvector_scale_const {n : nat} (c1 c2 : R) :
+  Rvector_scale c1 (vector_const c2 n) = vector_const (c1 * c2) n.
+Proof.
+  Admitted.
+
+Lemma Rvector_max_abs_const {n : nat} (c : R) :
+  Rvector_max_abs (vector_const c n) = Rabs c.
+Proof.
+  Admitted.
+
+
+Lemma delta_eps_bound (eps : posreal) (C : posreal) {N} (delta : vector R N) :
+  0 < gamma ->
+  Rvector_max_abs delta > C * eps ->
+  gamma * Rvector_max_abs (Rvector_plus delta (vector_const (pos eps) N)) <=
+    gamma * (C + 1)/ C * Rvector_max_abs delta.
+Proof.
+  intros.
+  unfold Rdiv.
+  rewrite Rmult_assoc.
+  rewrite Rmult_assoc.
+  apply Rmult_le_compat_l; try lra.
+  rewrite <- Rmult_1_l at 1.
+  rewrite (Rinv_l_sym C) at 1.
+  - rewrite <- Rmult_assoc.
+    rewrite (Rmult_comm (C + 1) _).
+    rewrite Rmult_assoc.
+    rewrite Rmult_assoc.
+    apply Rmult_le_compat_l.
+    + left.
+      apply Rinv_pos.
+      apply cond_pos.
+    + replace (pos C) with (Rabs C) at 1.
+      * rewrite <- Rvector_max_abs_scale.
+        rewrite Rvector_scale_plus_l.
+        eapply Rle_trans.
+        -- apply Rvector_max_abs_triang.
+        -- rewrite Rvector_scale_const.
+           rewrite Rvector_max_abs_const.
+           rewrite Rabs_right.
+           ++ apply Rgt_lt in H0.
+              apply Rplus_lt_compat_l with (r := Rvector_max_abs (Rvector_scale C delta)) in H0.
+              eapply Rle_trans.
+              ** left; apply H0.
+              ** rewrite Rvector_max_abs_scale.
+                 right.
+                 rewrite Rabs_right; try lra.
+                 left; apply cond_pos.
+          ++ apply Rle_ge.
+             apply Rmult_le_pos; left; apply cond_pos.
+      * apply Rabs_right; apply Rle_ge; left; apply cond_pos.
+  - apply Rgt_not_eq.
+    apply cond_pos.
+Qed.

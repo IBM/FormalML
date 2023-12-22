@@ -218,9 +218,7 @@ Section conv_as.
       destruct (conv_as_prob_1_eps (fun n => rvmaxabs (f n)) H0 eps eps).
       exists x.
       intros.
-      specialize (H1 n H2).
-      
-      eapply Rge_trans; [| apply H1].
+      eapply Rge_trans; [|now apply (H1 _ H2)].
       right.
       apply ps_proper.
       intros ?.
@@ -234,6 +232,7 @@ Section conv_as.
       }
       now rewrite H3.
     Qed.
+
 
 End conv_as.
 
