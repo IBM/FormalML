@@ -700,14 +700,17 @@ Proof.
 Qed.
 
 Lemma Rvector_max_abs_const {n : nat} (c : R) :
-  Rvector_max_abs (vector_const c n) = Rabs c.
+  Rvector_max_abs (vector_const c (S n)) = Rabs c.
 Proof.
-  Admitted.
+  destruct (Rvector_max_abs_nth_in (vector_const c (S n))) as [?[? eqq]].
+  rewrite eqq.
+  now rewrite vector_nth_const.
+Qed.
 
-Lemma delta_eps_bound (eps : posreal) (C : posreal) {N} (delta : vector R N) :
+Lemma delta_eps_bound (eps : posreal) (C : posreal) {N} (delta : vector R (S N)) :
   0 < gamma ->
   Rvector_max_abs delta > C * eps ->
-  gamma * Rvector_max_abs (Rvector_plus delta (vector_const (pos eps) N)) <=
+  gamma * Rvector_max_abs (Rvector_plus delta (vector_const (pos eps) (S N))) <=
     gamma * (C + 1)/ C * Rvector_max_abs delta.
 Proof.
   intros.
