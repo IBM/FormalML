@@ -131,17 +131,42 @@ Section conv_as.
         apply vector_nth_ext.
     Qed.
 
-    Lemma conv_prob_1_eps_vec {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size)
-      (eps : posreal)
+    Lemma conv_as_prob_1_rvmaxabs {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size)
       {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (f n)} :
-(* independence condition *)      
-      (forall i pf,
-          eventually (fun n => ps_P (event_lt dom (rvabs (fun omega => vector_nth i pf (f n omega))) eps) >= 1 - eps/INR(size))) ->
-      eventually (fun n => ps_P (event_lt dom (rvmaxabs (f n)) eps) >= 1 - eps).
+      almost prts (fun x => forall i pf, is_lim_seq (fun n => vector_nth i pf (f n x)) 0) ->
+      forall (eps : posreal),
+        eventually (fun n => ps_P (event_lt dom (rvmaxabs (f n)) eps) >= 1 - eps).
     Proof.
       intros.
-      unfold rvmaxabs.
-      unfold eventually in *.
+      assert (almost prts (fun x => is_lim_seq (fun n => rvmaxabs (f n) x) 0)).
+      {
+        revert H.
+        apply almost_impl.
+        apply all_almost.
+        intros ??.
+        unfold rvmaxabs.
+        admit.
+      }
+      destruct (conv_as_prob_1_eps (fun n => rvmaxabs (f n)) H0 eps eps).
+      exists x.
+      intros.
+      specialize (H1 n H2).
+      eapply Rge_trans.
+      - shelve.
+      - apply H1.
+        Unshelve.
+        right.
+        apply ps_proper.
+        intros ?.
+        simpl.
+        assert (rvmaxabs (f n) x0 = rvabs (rvmaxabs (f n)) x0).
+        {
+          unfold rvabs.
+          rewrite Rabs_right; trivial.
+          apply Rle_ge.
+          apply rvmaxabs_pos.
+        }
+        now rewrite H3.
     Admitted.
 
 End conv_as.
