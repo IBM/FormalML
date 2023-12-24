@@ -200,24 +200,53 @@ Proof.
   now simpl.
 Qed.  
 
+Theorem ln_part_prod_n (a : nat -> posreal) (n1 n2 : nat) :
+  ln (part_prod_n_pos a n1 n2) = sum_n_m (fun n1 => ln (a n1)) n1 n2.
+Proof.
+  unfold part_prod_n_pos, part_prod_n.
+  unfold sum_n, sum_n_m.
+  unfold Iter.iter_nat.
+  rewrite Iter.iter_iter'.
+  rewrite iota_is_an_annoying_seq at 1.
+  unfold Iter.iter', part_prod_n.
+  assert (exists l, l = (List.seq n1 (S n2 - n1))); [eauto |].
+  destruct H.
+  rewrite <- H at 2.
+  assert (pf': 0 <  List.fold_right (fun y => Rmult (pos (a y))) 1 x).
+  {
+    rewrite H.
+    rewrite <- ListAdd.fold_right_map.
+    apply pos_part_prod_n.
+  }
+  transitivity (ln
+    {|
+      pos :=
+        List.fold_right (fun y => Rmult (pos (a y))) 1
+          x;
+      cond_pos := pf'
+    |}).
+  {
+    revert pf'.
+    rewrite H.
+    now rewrite <- ListAdd.fold_right_map.
+  }
+  clear H.
+  induction x; simpl.
+  - apply ln_1.
+  - rewrite ln_mult.
+    + unfold plus in *; simpl in *.
+      f_equal.
+      apply IHx.
+      apply fold_right_mult_pos.
+    + apply cond_pos.
+    + apply fold_right_mult_pos.
+Qed.
+
 
 Theorem ln_part_prod (a : nat -> posreal) (n : nat) :
   ln (part_prod_pos a n) = sum_n (fun n1 => ln (a n1)) n.
 Proof.
-  unfold part_prod_pos, part_prod; simpl.
-  unfold sum_n, sum_n_m.
-  unfold Iter.iter_nat.
-  rewrite Iter.iter_iter'.
-  rewrite iota_is_an_annoying_seq.
-  unfold Iter.iter', part_prod_n.
-  generalize (List.seq 0 (S n - 0)); intros l; simpl.
-  rewrite ListAdd.fold_right_map.
-  induction l; simpl.
-  - apply ln_1.
-  - rewrite ln_mult.
-    + now rewrite IHl.
-    + apply cond_pos.
-    + apply fold_right_mult_pos.
+  apply ln_part_prod_n.
 Qed.
 
 Lemma initial_seg_prod (a : nat -> posreal) (m k:nat):
