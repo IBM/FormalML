@@ -386,15 +386,54 @@ Proof.
     + now rewrite Rmult_1_r.
 Qed.
 
+Lemma exp_part_prod (a : nat -> posreal) (n : nat) :
+  part_prod a n = exp (sum_n (fun n1 => ln (a n1)) n).
+Proof.
+  generalize (ln_part_prod a n); intros.
+  apply (f_equal exp) in H.
+  rewrite exp_ln in H.
+  apply H.
+  apply part_prod_pos.
+Qed.
+
+Theorem ln_part_prod_n (a : nat -> posreal) (n1 n2 : nat) :
+  ln (part_prod_n_pos a n1 n2) = sum_n_m (fun n1 => ln (a n1)) n1 n2.
+Proof.
+  unfold part_prod_n_pos, part_prod_n; simpl.
+  unfold sum_n_m.
+  unfold Iter.iter_nat.
+  rewrite Iter.iter_iter'.
+  unfold Iter.iter', part_prod_n.
+Admitted.
+(*
+  generalize (List.seq 0 (S n - 0)); intros l; simpl.
+  rewrite ListAdd.fold_right_map.
+  induction l; simpl.
+  - apply ln_1.
+  - rewrite ln_mult.
+    + now rewrite IHl.
+    + apply cond_pos.
+    + apply fold_right_mult_pos.
+*)
+
+Lemma exp_part_prod_n (a : nat -> posreal) (n1 n2 : nat) :
+  part_prod_n a n1 n2 = exp (sum_n_m (fun n1 => ln (a n1)) n1 n2).
+Proof.
+  generalize (ln_part_prod_n a n1 n2); intros.
+  apply (f_equal exp) in H.
+  rewrite exp_ln in H.
+  apply H.
+  apply part_prod_n_pos.
+Qed.
+
   Lemma Fprod_not_0 (a : nat -> R) 
-    (abounds : forall n, 0 <= a n < 1) :
-    ex_series a ->
+    (abounds : forall n, 0 <= a n < 1) 
+    (ex_ser: ex_series a) :
     exists (c:R),
       0 < c /\
         is_lim_seq (part_prod (fun n => (mkposreal (1 - a n)  (a1_pos_pf (abounds  n))))) c.
   Proof.
-    intros.
-    apply ex_series_lim_0 in H.
+    generalize (ex_series_lim_0 _ ex_ser); intros.
     apply is_lim_seq_spec in H.
     destruct xm1_exp as [? [??]].
     destruct H0.
@@ -510,8 +549,70 @@ Qed.
            rewrite <- H10 in H11.
            simpl in H11.
            apply H11.
-        -- generalize (ln_part_prod); intros.
-           admit.
+         -- generalize (exp_part_prod_n (fun n : nat => {| pos := exp (-2 * a n); cond_pos := exp_pos (-2 * a n) |}) ); intros.
+            assert (forall n1,
+                        part_prod_n (fun n : nat => {| pos := exp (-2 * a n); cond_pos := exp_pos (-2 * a n) |}) 
+                          (S n0) (n1 + S n0) =
+                          exp
+                            (sum_n_m (fun n3 : nat => (-2 * a n3))
+                               (S n0) (n1 + S n0))).
+            {
+              intros.
+              rewrite H11.
+              f_equal.
+              apply sum_n_m_ext.
+              intros.
+              simpl.
+              now rewrite ln_exp.
+            }
+            rewrite (Lim_seq_ext _ _ H12).
+            rewrite (Lim_seq_continuous exp).
+            apply exp_pos.
+            apply derivable_continuous_pt.
+            apply derivable_pt_exp.
+            rewrite <- ex_finite_lim_series in ex_ser.
+            unfold ex_finite_lim_seq.
+            unfold ex_finite_lim_seq in ex_ser.
+            destruct ex_ser.
+            assert (is_lim_seq (sum_n (fun n => -2 * a n)) (- 2 * x1)).
+            {
+              assert (forall n1, sum_n (fun n => scal (-2) (a n)) n1 = scal (-2) (sum_n a n1)).
+              {
+                intros.
+                now rewrite sum_n_scal_l.
+              }
+              unfold scal in H14; simpl in H14.
+              unfold mult in H14; simpl in H14.
+              symmetry in H14.
+              apply (is_lim_seq_ext _ _ _ H14).
+              replace (Finite (-2 * x1)) with (Rbar_mult (-2) x1); try now simpl.
+              now apply is_lim_seq_scal_l.
+            }
+            unfold sum_n in H14.
+            apply is_lim_seq_incr_n with (N := S n0)in H14.
+            assert (forall n,
+                       sum_n_m (fun n0 : nat => -2 * a n0) 0 (n + S n0) =
+                         plus (sum_n_m (fun n0 : nat => -2 * a n0) 0 n0)
+                       (sum_n_m (fun n0 : nat => -2 * a n0) (S n0) (n + S n0))).
+            {
+              intros.
+              rewrite <- sum_split; trivial; lia.
+            }
+            unfold plus in H15; simpl in H15.
+            exists (-2*x1 - sum_n_m (fun n0 : nat => -2 * a n0) 0 n0 ).
+            assert (forall n,
+                       (sum_n_m (fun n0 : nat => -2 * a n0) (S n0) (n + S n0)) =
+                         sum_n_m (fun n0 : nat => -2 * a n0) 0 (n + S n0) - 
+                           (sum_n_m (fun n0 : nat => -2 * a n0) 0 n0)).
+            {
+              intros.
+              specialize (H15 n).
+              lra.
+            }
+            symmetry in H16.
+            apply (is_lim_seq_ext _ _ _ H16).
+            apply is_lim_seq_minus'; trivial.
+            apply is_lim_seq_const.
       * apply ex_lim_seq_const.
       * apply ex_lim_seq_decr.
         intros.
@@ -533,7 +634,7 @@ Qed.
        intros.
        simpl.
        generalize (abounds n1); lra.
-    Admitted.
+  Qed.
 
   Lemma pos1 (a : R) :
     0 <= a -> 0 < 1 + a.
