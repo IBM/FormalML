@@ -388,15 +388,27 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
     }
     specialize (H5 (mkposreal _ H6)).
     destruct H5.
-    simpl in H5.
-    exists x.
-    unfold Hierarchy.ball in H5.
-    simpl in H5.
-    unfold AbsRing_ball in H5.
-    unfold abs, minus in H5; simpl in H5.
-    unfold plus, opp in H5; simpl in H5.
-    rewrite Ropp_0 in H5.
-    rewrite H in H5.
+    assert (forall y, 0<=y<=x ->
+                      0 < df y).
+    {
+      intros.
+      specialize (H5 y).
+      assert (Hierarchy.ball 0 x y).
+      {
+        unfold Hierarchy.ball in H5; simpl in H5.
+        unfold AbsRing_ball in H5; simpl in H5.
+        admit.
+      }
+      specialize (H5 H8).
+      rewrite H in H5.
+      simpl in H5.
+      admit.
+    }
+    assert (forall x, derive_pt f x (H1 x) = df x).
+    {
+      admit.
+    }
+    
   Admitted.
   
   Lemma part_prod_n_le_h (a b : nat -> posreal) (n h : nat) :
