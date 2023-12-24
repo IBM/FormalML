@@ -275,6 +275,13 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
         now apply exp_increasing.
   Qed.
 
+  Lemma ex_derive_exp (x : R) :
+    ex_derive exp x.
+  Proof.
+    eexists.
+    apply is_derive_exp.
+  Qed.
+
   Lemma xm1_exp :
     exists x,
       0 < x < 1 /\ 
@@ -328,8 +335,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
                lra.
             -- apply ex_derive_const.
             -- apply ex_derive_id.
-          * eexists.
-            apply is_derive_exp.
+          * apply ex_derive_exp.
           * apply ex_derive_mult.
             -- apply ex_derive_const.
             -- apply ex_derive_id.
@@ -339,8 +345,24 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
         apply ex_derive_const.
         apply ex_derive_id.
       - apply ex_derive_comp.
-        + eexists.
-          apply is_derive_exp.
+        + apply ex_derive_exp.
+        + apply (ex_derive_mult (const (-2)) id).
+          apply ex_derive_const.
+          apply ex_derive_id.
+    }
+    assert (forall x, is_derive f x (df x)).
+    {
+      intros.
+      generalize (Derive_correct f x); intros.
+      rewrite H3 in H4.
+      apply H4.
+      unfold f.
+      apply (ex_derive_minus (Rminus 1) (fun y => exp(-2*y)) x).
+      - apply (ex_derive_minus (const 1) id).
+        apply ex_derive_const.
+        apply ex_derive_id.
+      - apply ex_derive_comp.
+        + apply ex_derive_exp.
         + apply (ex_derive_mult (const (-2)) id).
           apply ex_derive_const.
           apply ex_derive_id.
@@ -359,23 +381,22 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
             -- apply derivable_id.
           * apply derivable_exp.
     }
-    rewrite continuity_pt_locally in H4.
+    rewrite continuity_pt_locally in H5.
     assert (0 < /2).
     {
       lra.
     }
-    specialize (H4 (mkposreal _ H5)).
-    destruct H4.
-    simpl in H4.
+    specialize (H5 (mkposreal _ H6)).
+    destruct H5.
+    simpl in H5.
     exists x.
-    unfold Hierarchy.ball in H4.
-    simpl in H4.
-    unfold AbsRing_ball in H4.
-    unfold abs, minus in H4; simpl in H4.
-    unfold plus, opp in H4; simpl in H4.
-    rewrite Ropp_0 in H4.
-    rewrite H in H4.
-    
+    unfold Hierarchy.ball in H5.
+    simpl in H5.
+    unfold AbsRing_ball in H5.
+    unfold abs, minus in H5; simpl in H5.
+    unfold plus, opp in H5; simpl in H5.
+    rewrite Ropp_0 in H5.
+    rewrite H in H5.
   Admitted.
   
   Lemma part_prod_n_le_h (a b : nat -> posreal) (n h : nat) :
