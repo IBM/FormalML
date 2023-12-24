@@ -275,6 +275,266 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
         now apply exp_increasing.
   Qed.
 
+  Lemma xm1_exp :
+    exists x,
+      0 < x < 1 /\ 
+        forall y, 0 <= y <= x ->
+                  1-y >= exp(-2*y).
+  Proof.
+    exists (1/2).
+    split; try lra.
+    intros.
+    assert (1 - 0 >= exp(-2*0)).
+    {
+      rewrite Rminus_0_r.
+      rewrite Rmult_0_r.
+      rewrite exp_0.
+      lra.
+    }
+    assert (1 - 1/2 >= exp(-2 * (1/2))).
+    {
+      replace (-2) with ((-1)*2) by lra.
+      rewrite Rmult_assoc.
+      replace (1 - 1/2) with (1/2) by lra.
+      unfold Rdiv.
+      rewrite Rmult_1_l.
+      rewrite <- Rinv_r_sym; try lra.
+      rewrite Rmult_1_r.
+      replace (exp (-1)) with (/(exp 1)).
+      - apply Rle_ge.
+        apply Rinv_le_contravar; try lra.
+        replace (2) with (1 + 1) by lra.
+        left.
+        apply exp_ineq1.
+        lra.
+      - rewrite <- exp_Ropp.
+        f_equal.
+    }
+
+  Admitted.
+  
+  Lemma part_prod_n_le_h (a b : nat -> posreal) (n h : nat) :
+    (forall n1, (n <= n1 <= n + h)%nat -> a n1 <= b n1) ->
+    part_prod_n a n (n + h) <= part_prod_n b n (n + h).
+  Proof.
+    intros.
+    induction h.
+    - replace (n + 0)%nat with n by lia.
+      rewrite part_prod_n_k_k.
+      rewrite part_prod_n_k_k.
+      apply H.
+      lia.
+    - replace (n + S h)%nat with (S (n + h)) by lia.
+      rewrite part_prod_n_S; try lia.
+      rewrite part_prod_n_S; try lia.
+      apply Rmult_le_compat.
+      + left; apply part_prod_n_pos.
+      + left; apply cond_pos.
+      + apply IHh.
+        intros.
+        apply H.
+        lia.
+      + apply H.
+        lia.
+   Qed.
+
+  Lemma part_prod_n_le (a b : nat -> posreal) (n m : nat) :
+    (forall n1, (n <= n1 <= m)%nat -> a n1 <= b n1) ->
+    part_prod_n a n m <= part_prod_n b n m.
+  Proof.
+    intros.
+    destruct (le_dec n m).
+    - pose (h := (m - n)%nat).
+      replace (m) with (n + h)%nat by lia.
+      apply part_prod_n_le_h.
+      intros.
+      apply H.
+      lia.
+    - assert (n > m)%nat by lia.
+      rewrite part_prod_n_1; trivial.
+      rewrite part_prod_n_1; trivial.      
+      lra.
+   Qed.
+
+  Lemma Rmult_le_mult_1 (a b : R) :
+    0 <= a ->
+    b <= 1 ->
+    a * b <= a.
+  Proof.
+    intros.
+    replace a with (a * 1) at 2; try lra.
+    now apply Rmult_le_compat_l.
+  Qed.
+  
+Lemma prod_bounded_1 (F : nat -> posreal) (r s :nat) :
+  (forall (n:nat), F n <= 1) -> part_prod_n F r s <= 1.
+Proof.
+  intros.
+  unfold part_prod_n.
+  induction (S s-r)%nat.
+  - simpl.
+    lra.
+  - replace (S n) with (n+1)%nat by lia.
+    rewrite seq_plus, List.map_app, List.fold_right_app; simpl.
+    replace (1) with (1*1) at 2 by lra.
+    rewrite fold_right_mult_acc.
+    apply Rmult_le_compat; trivial.
+    + rewrite ListAdd.fold_right_map; left.
+      apply (fold_right_mult_pos F).
+    + left; apply Rmult_lt_0_compat; [|lra].
+      apply cond_pos.
+    + now rewrite Rmult_1_r.
+Qed.
+
+  Lemma Fprod_not_0 (a : nat -> R) 
+    (abounds : forall n, 0 <= a n < 1) :
+    ex_series a ->
+    exists (c:R),
+      0 < c /\
+        is_lim_seq (part_prod (fun n => (mkposreal (1 - a n)  (a1_pos_pf (abounds  n))))) c.
+  Proof.
+    intros.
+    apply ex_series_lim_0 in H.
+    apply is_lim_seq_spec in H.
+    destruct xm1_exp as [? [??]].
+    destruct H0.
+    specialize (H (mkposreal _ H0)).
+    destruct H as [n0 ?].
+    assert (forall n1, 
+               part_prod (fun n => mkposreal (1 - a n) 
+                                     (a1_pos_pf (abounds  n))) (n1 + S n0) =
+                 
+                 (part_prod (fun n => mkposreal (1 - a n) 
+                                        (a1_pos_pf (abounds  n))) n0)
+                 *
+                 (part_prod_n (fun n => mkposreal (1 - a n) 
+                                        (a1_pos_pf (abounds  n))) (S n0) (n1 + S n0))).
+   {
+     intros.
+     replace (n1 + S n0)%nat with (n0 + S n1)%nat by lia.
+     now rewrite initial_seg_prod.
+   }
+   assert (ex_lim_seq
+             (part_prod
+                (fun n : nat =>
+                   {| pos := 1 - a n; cond_pos := a1_pos_pf (abounds n) |}))).
+   {
+     apply ex_lim_seq_decr.
+     intros.
+     unfold part_prod.
+     rewrite part_prod_n_S; try lia.
+     apply Rmult_le_mult_1.
+     - left; apply part_prod_n_pos.
+     - simpl.
+       generalize (abounds (S n)); intros.
+       lra.
+   }
+   generalize H4; intros.
+   destruct H4.
+   exists x0.
+   generalize (is_finite_Lim_bounded
+                 (part_prod
+                    (fun n : nat =>
+                       {| pos := 1 - a n; cond_pos := a1_pos_pf (abounds n) |})) 0 1); intros.
+   cut_to H6.
+   generalize (is_lim_seq_unique _ _ H4); intros.
+   rewrite H7 in H6.
+   rewrite <- H6 in H4.
+   - split; cycle 1.
+     apply H4.
+     + rewrite <- (Lim_seq_incr_n _ (S n0)) in H7; intros.
+       rewrite <- H7.
+       rewrite (Lim_seq_ext _ _ H3).
+       assert (is_finite  (Lim_seq
+                             (fun n : nat =>
+                                part_prod_n
+                                  (fun n1 : nat =>
+                                     mkposreal (Rminus (IZR (Zpos xH)) (a n1))
+                                       (@a1_pos_pf (a n1) (abounds n1))) 
+                                  (S n0) (Init.Nat.add n (S n0))))).
+        {
+          apply is_finite_Lim_bounded with (m := 0) (M := 1).
+          intros.
+          split.
+          - left; apply part_prod_n_pos.
+          - apply prod_bounded_1.
+            intros.
+            simpl.
+            generalize (abounds n1).
+            lra.
+        }
+        assert (forall n1,
+                   part_prod_n (fun n => mkposreal _ (exp_pos (-2 * a n))) (S n0) (n1 + S n0)
+                   <= 
+                     part_prod_n (fun n : nat => {| pos := 1 - a n; cond_pos := a1_pos_pf (abounds n) |}) (S n0) (n1 + S n0)).
+           {
+             intros.
+             apply part_prod_n_le.
+             intros.
+             simpl.
+             apply Rge_le.
+             apply H1.
+             generalize (abounds n2).
+             split; try lra.
+             assert (n0 <= n2)%nat by lia.
+             specialize (H n2 H11).
+             rewrite Rabs_right in H; simpl in H; lra.
+           }
+           assert (is_finite (Lim_seq
+                             (fun n1 : nat =>
+                                part_prod_n (fun n : nat => {| pos := exp (-2 * a n); cond_pos := exp_pos (-2 * a n) |})
+                                  (S n0) (n1 + S n0)))).
+           {
+             apply is_finite_Lim_bounded with (m := 0) (M := 1).
+             intros.
+             split.
+             left; apply part_prod_n_pos.
+             simpl.
+             eapply Rle_trans.
+             apply H9.
+             apply prod_bounded_1.
+             intros.
+             simpl.
+             generalize (abounds n1).
+             lra.
+           }
+       rewrite Lim_seq_mult.
+       * rewrite Lim_seq_const.
+         rewrite <- H8.
+         simpl.
+         apply Rmult_lt_0_compat.
+         apply part_prod_pos.
+         eapply Rlt_le_trans; cycle 1.
+         -- generalize (Lim_seq_le _ _ H9); intros.
+           rewrite <- H8 in H11.
+           rewrite <- H10 in H11.
+           simpl in H11.
+           apply H11.
+        -- generalize (ln_part_prod); intros.
+           admit.
+      * apply ex_lim_seq_const.
+      * apply ex_lim_seq_decr.
+        intros.
+        unfold part_prod.
+        replace (S n + S n0)%nat with (S (n + S n0)) by lia.
+        rewrite part_prod_n_S; try lia.
+        apply Rmult_le_mult_1.
+        -- left; apply part_prod_n_pos.
+        -- simpl.
+           generalize (abounds (S (n + S n0))); intros.
+           lra.
+      * rewrite Lim_seq_const.
+        rewrite <- H8.
+        now simpl.
+   - intros.
+     split.
+     + left; apply part_prod_pos.
+     + apply prod_bounded_1.
+       intros.
+       simpl.
+       generalize (abounds n1); lra.
+    Admitted.
+
   Lemma pos1 (a : R) :
     0 <= a -> 0 < 1 + a.
   Proof.

@@ -9,7 +9,7 @@ Require Import SigmaAlgebras ProbSpace.
 Require Import DVector RealVectorHilbert VectorRandomVariable.
 Require Import RandomVariableL2.
 Require hilbert.
-Require Import vecslln.
+Require Import vecslln Tsitsiklis.
 Require Import ConditionalExpectation VectorConditionalExpectation.
 Require Import IndefiniteDescription ClassicalDescription.
 Require slln.
