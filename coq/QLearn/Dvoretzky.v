@@ -13,7 +13,7 @@ Import ListNotations.
 Require Import Classical.
 Require Import slln.
 
-Require Import DVector.
+Require Import DVector derivlemmas.
 Set Bullet Behavior "Strict Subproofs".
 
 Require Import LM.hilbert Classical IndefiniteDescription.
@@ -281,36 +281,101 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
         forall y, 0 <= y <= x ->
                   1-y >= exp(-2*y).
   Proof.
-    exists (1/2).
-    split; try lra.
-    intros.
-    assert (1 - 0 >= exp(-2*0)).
+    pose (f := fun y => 1-y - exp(-2 *y)).
+    pose (df := fun y => -1 + 2*exp(-2*y)).
+  (* derivative at 0 of 1 - y - exp(-2*y) *)
+    assert (df 0 = 1).
     {
-      rewrite Rminus_0_r.
+      unfold df.
       rewrite Rmult_0_r.
       rewrite exp_0.
       lra.
     }
-    assert (1 - 1/2 >= exp(-2 * (1/2))).
+    assert (f 0 = 0).
     {
-      replace (-2) with ((-1)*2) by lra.
-      rewrite Rmult_assoc.
-      replace (1 - 1/2) with (1/2) by lra.
-      unfold Rdiv.
-      rewrite Rmult_1_l.
-      rewrite <- Rinv_r_sym; try lra.
-      rewrite Rmult_1_r.
-      replace (exp (-1)) with (/(exp 1)).
-      - apply Rle_ge.
-        apply Rinv_le_contravar; try lra.
-        replace (2) with (1 + 1) by lra.
-        left.
-        apply exp_ineq1.
-        lra.
-      - rewrite <- exp_Ropp.
-        f_equal.
+      unfold f.
+      rewrite Rmult_0_r.
+      rewrite exp_0.
+      lra.
     }
-
+    assert (derivable f).
+    {
+      unfold f.
+      apply derivable_minus.
+      - apply derivable_minus.
+        + apply derivable_const.
+        + apply derivable_id.
+      - apply derivable_comp.
+        + apply derivable_mult.
+          * apply derivable_const.
+          * apply derivable_id.
+        + apply derivable_exp.
+    }
+    generalize (positive_derivative f H1); intros.
+    assert (forall x, Derive f x = (df x)).
+    {
+      intros.
+      unfold f, df.
+      rewrite Derive_minus.
+      - rewrite Derive_minus.
+        + rewrite Derive_const.
+          rewrite Derive_id.
+          rewrite Derive_comp.
+          * rewrite Derive_mult.
+            -- rewrite Derive_const.
+               rewrite Derive_id.
+               rewrite Derive_exp.
+               lra.
+            -- apply ex_derive_const.
+            -- apply ex_derive_id.
+          * eexists.
+            apply is_derive_exp.
+          * apply ex_derive_mult.
+            -- apply ex_derive_const.
+            -- apply ex_derive_id.
+        + apply ex_derive_const.
+        + apply ex_derive_id.
+      - apply (ex_derive_minus (const 1) id).
+        apply ex_derive_const.
+        apply ex_derive_id.
+      - apply ex_derive_comp.
+        + eexists.
+          apply is_derive_exp.
+        + apply (ex_derive_mult (const (-2)) id).
+          apply ex_derive_const.
+          apply ex_derive_id.
+   }
+    assert (continuity_pt df 0).
+    {
+      unfold df.
+      apply continuity_pt_plus.
+      - now apply continuity_pt_const.
+      - apply continuity_pt_mult.
+        + now apply continuity_pt_const.
+        + apply derivable_continuous_pt.
+          apply derivable_comp.
+          * apply derivable_mult.
+            -- apply derivable_const.
+            -- apply derivable_id.
+          * apply derivable_exp.
+    }
+    rewrite continuity_pt_locally in H4.
+    assert (0 < /2).
+    {
+      lra.
+    }
+    specialize (H4 (mkposreal _ H5)).
+    destruct H4.
+    simpl in H4.
+    exists x.
+    unfold Hierarchy.ball in H4.
+    simpl in H4.
+    unfold AbsRing_ball in H4.
+    unfold abs, minus in H4; simpl in H4.
+    unfold plus, opp in H4; simpl in H4.
+    rewrite Ropp_0 in H4.
+    rewrite H in H4.
+    
   Admitted.
   
   Lemma part_prod_n_le_h (a b : nat -> posreal) (n h : nat) :
