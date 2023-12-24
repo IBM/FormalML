@@ -312,7 +312,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
         + apply derivable_exp.
     }
     generalize (positive_derivative f H1); intros.
-    assert (forall x, Derive f x = (df x)).
+    assert (forall x, Derive f x = df x).
     {
       intros.
       unfold f, df.
@@ -460,26 +460,6 @@ Proof.
   apply H.
   apply part_prod_pos.
 Qed.
-
-Theorem ln_part_prod_n (a : nat -> posreal) (n1 n2 : nat) :
-  ln (part_prod_n_pos a n1 n2) = sum_n_m (fun n1 => ln (a n1)) n1 n2.
-Proof.
-  unfold part_prod_n_pos, part_prod_n; simpl.
-  unfold sum_n_m.
-  unfold Iter.iter_nat.
-  rewrite Iter.iter_iter'.
-  unfold Iter.iter', part_prod_n.
-Admitted.
-(*
-  generalize (List.seq 0 (S n - 0)); intros l; simpl.
-  rewrite ListAdd.fold_right_map.
-  induction l; simpl.
-  - apply ln_1.
-  - rewrite ln_mult.
-    + now rewrite IHl.
-    + apply cond_pos.
-    + apply fold_right_mult_pos.
-*)
 
 Lemma exp_part_prod_n (a : nat -> posreal) (n1 n2 : nat) :
   part_prod_n a n1 n2 = exp (sum_n_m (fun n1 => ln (a n1)) n1 n2).
