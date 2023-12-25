@@ -283,9 +283,8 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
   Qed.
 
   Lemma xm1_exp :
-    exists x,
-      0 < x < 1 /\ 
-        forall y, 0 <= y <= x ->
+    exists (x : posreal),
+        forall y, 0 <= y < x ->
                   1-y >= exp(-2*y).
   Proof.
     pose (f := fun y => 1-y - exp(-2 *y)).
@@ -318,7 +317,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
           * apply derivable_id.
         + apply derivable_exp.
     }
-    generalize (positive_derivative f H1); intros.
+
     assert (forall x, Derive f x = df x).
     {
       intros.
@@ -354,8 +353,8 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
     {
       intros.
       generalize (Derive_correct f x); intros.
-      rewrite H3 in H4.
-      apply H4.
+      rewrite H2 in H3.
+      apply H3.
       unfold f.
       apply (ex_derive_minus (Rminus 1) (fun y => exp(-2*y)) x).
       - apply (ex_derive_minus (const 1) id).
@@ -381,35 +380,72 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
             -- apply derivable_id.
           * apply derivable_exp.
     }
-    rewrite continuity_pt_locally in H5.
+    rewrite continuity_pt_locally in H4.
     assert (0 < /2).
     {
       lra.
     }
-    specialize (H5 (mkposreal _ H6)).
-    destruct H5.
-    assert (forall y, 0<=y<=x ->
+    specialize (H4 (mkposreal _ H5)).
+    destruct H4.
+    assert (forall y, 0<=y<x ->
                       0 < df y).
     {
       intros.
-      specialize (H5 y).
+      specialize (H4 y).
       assert (Hierarchy.ball 0 x y).
       {
-        unfold Hierarchy.ball in H5; simpl in H5.
-        unfold AbsRing_ball in H5; simpl in H5.
-        admit.
+        unfold Hierarchy.ball; simpl.
+        unfold AbsRing_ball; simpl.
+        unfold abs, minus; simpl.
+        unfold plus, opp; simpl.
+        rewrite Ropp_0.
+        rewrite Rplus_0_r.
+        rewrite Rabs_right; lra.
       }
-      specialize (H5 H8).
-      rewrite H in H5.
-      simpl in H5.
-      admit.
+      specialize (H4 H7).
+      rewrite H in H4.
+      simpl in H4.
+      unfold Rabs in H4.
+      match_destr_in H4; lra.
     }
-    assert (forall x, derive_pt f x (H1 x) = df x).
+    exists x.
+    intros.
+    assert (0 < x) by apply cond_pos.
+    generalize (derive_increasing_interv 0 x f H1 H8); intros.
+    assert (forall t, derive_pt f t (H1 t) = df t).
     {
-      admit.
+      intros.
+      rewrite Derive_Reals.
+      now rewrite H2.
     }
-    
-  Admitted.
+    assert (forall t : R, 0 < t < x -> 0 < derive_pt f t (H1 t)).
+    {
+      intros.
+      rewrite H10.
+      apply H6.
+      lra.
+    }
+    specialize (H9 H11).
+    specialize (H11 y).
+    rewrite H10 in H11.
+    specialize (H9 0 y).
+    assert (0 <= 0 <= x) by lra.
+    assert (0 <= y <= x) by lra.
+    specialize (H9 H12 H13).
+    unfold f in H9.
+    rewrite Rminus_0_r in H9.
+    rewrite Rmult_0_r in H9.
+    rewrite exp_0 in H9.
+    replace (1 - 1) with 0 in H9 by lra.
+    destruct (Rlt_dec 0 y).
+    - specialize (H9 r).
+      lra.
+    - assert (y = 0) by lra.
+      rewrite H14.
+      rewrite Rmult_0_r.
+      rewrite exp_0.
+      lra.
+  Qed.
   
   Lemma part_prod_n_le_h (a b : nat -> posreal) (n h : nat) :
     (forall n1, (n <= n1 <= n + h)%nat -> a n1 <= b n1) ->
@@ -513,9 +549,8 @@ Qed.
   Proof.
     generalize (ex_series_lim_0 _ ex_ser); intros.
     apply is_lim_seq_spec in H.
-    destruct xm1_exp as [? [??]].
-    destruct H0.
-    specialize (H (mkposreal _ H0)).
+    destruct xm1_exp as [? ?].
+    specialize (H x).
     destruct H as [n0 ?].
     assert (forall n1, 
                part_prod (fun n => mkposreal (1 - a n) 
@@ -546,22 +581,22 @@ Qed.
        generalize (abounds (S n)); intros.
        lra.
    }
-   generalize H4; intros.
-   destruct H4.
+   generalize H2; intros.
+   destruct H2.
    exists x0.
    generalize (is_finite_Lim_bounded
                  (part_prod
                     (fun n : nat =>
                        {| pos := 1 - a n; cond_pos := a1_pos_pf (abounds n) |})) 0 1); intros.
-   cut_to H6.
-   generalize (is_lim_seq_unique _ _ H4); intros.
-   rewrite H7 in H6.
-   rewrite <- H6 in H4.
+   cut_to H4.
+   generalize (is_lim_seq_unique _ _ H2); intros.
+   rewrite H5 in H4.
+   rewrite <- H4 in H2.
    - split; cycle 1.
-     apply H4.
-     + rewrite <- (Lim_seq_incr_n _ (S n0)) in H7; intros.
-       rewrite <- H7.
-       rewrite (Lim_seq_ext _ _ H3).
+     apply H2.
+     + rewrite <- (Lim_seq_incr_n _ (S n0)) in H5; intros.
+       rewrite <- H5.
+       rewrite (Lim_seq_ext _ _ H1).
        assert (is_finite  (Lim_seq
                              (fun n : nat =>
                                 part_prod_n
@@ -590,11 +625,11 @@ Qed.
              intros.
              simpl.
              apply Rge_le.
-             apply H1.
+             apply H0.
              generalize (abounds n2).
              split; try lra.
              assert (n0 <= n2)%nat by lia.
-             specialize (H n2 H11).
+             specialize (H n2 H9).
              rewrite Rabs_right in H; simpl in H; lra.
            }
            assert (is_finite (Lim_seq
@@ -608,7 +643,7 @@ Qed.
              left; apply part_prod_n_pos.
              simpl.
              eapply Rle_trans.
-             apply H9.
+             apply H7.
              apply prod_bounded_1.
              intros.
              simpl.
@@ -617,16 +652,16 @@ Qed.
            }
        rewrite Lim_seq_mult.
        * rewrite Lim_seq_const.
-         rewrite <- H8.
+         rewrite <- H6.
          simpl.
          apply Rmult_lt_0_compat.
          apply part_prod_pos.
          eapply Rlt_le_trans; cycle 1.
-         -- generalize (Lim_seq_le _ _ H9); intros.
-           rewrite <- H8 in H11.
-           rewrite <- H10 in H11.
-           simpl in H11.
-           apply H11.
+         -- generalize (Lim_seq_le _ _ H7); intros.
+           rewrite <- H6 in H9.
+           rewrite <- H8 in H9.
+           simpl in H9.
+           apply H9.
          -- generalize (exp_part_prod_n (fun n : nat => {| pos := exp (-2 * a n); cond_pos := exp_pos (-2 * a n) |}) ); intros.
             assert (forall n1,
                         part_prod_n (fun n : nat => {| pos := exp (-2 * a n); cond_pos := exp_pos (-2 * a n) |}) 
@@ -636,14 +671,14 @@ Qed.
                                (S n0) (n1 + S n0))).
             {
               intros.
-              rewrite H11.
+              rewrite H9.
               f_equal.
               apply sum_n_m_ext.
               intros.
               simpl.
               now rewrite ln_exp.
             }
-            rewrite (Lim_seq_ext _ _ H12).
+            rewrite (Lim_seq_ext _ _ H10).
             rewrite (Lim_seq_continuous exp).
             apply exp_pos.
             apply derivable_continuous_pt.
@@ -659,15 +694,15 @@ Qed.
                 intros.
                 now rewrite sum_n_scal_l.
               }
-              unfold scal in H14; simpl in H14.
-              unfold mult in H14; simpl in H14.
-              symmetry in H14.
-              apply (is_lim_seq_ext _ _ _ H14).
+              unfold scal in H12; simpl in H12.
+              unfold mult in H12; simpl in H12.
+              symmetry in H12.
+              apply (is_lim_seq_ext _ _ _ H12).
               replace (Finite (-2 * x1)) with (Rbar_mult (-2) x1); try now simpl.
               now apply is_lim_seq_scal_l.
             }
-            unfold sum_n in H14.
-            apply is_lim_seq_incr_n with (N := S n0)in H14.
+            unfold sum_n in H12.
+            apply is_lim_seq_incr_n with (N := S n0)in H12.
             assert (forall n,
                        sum_n_m (fun n0 : nat => -2 * a n0) 0 (n + S n0) =
                          plus (sum_n_m (fun n0 : nat => -2 * a n0) 0 n0)
@@ -676,7 +711,7 @@ Qed.
               intros.
               rewrite <- sum_split; trivial; lia.
             }
-            unfold plus in H15; simpl in H15.
+            unfold plus in H13; simpl in H13.
             exists (-2*x1 - sum_n_m (fun n0 : nat => -2 * a n0) 0 n0 ).
             assert (forall n,
                        (sum_n_m (fun n0 : nat => -2 * a n0) (S n0) (n + S n0)) =
@@ -684,11 +719,11 @@ Qed.
                            (sum_n_m (fun n0 : nat => -2 * a n0) 0 n0)).
             {
               intros.
-              specialize (H15 n).
+              specialize (H13 n).
               lra.
             }
-            symmetry in H16.
-            apply (is_lim_seq_ext _ _ _ H16).
+            symmetry in H14.
+            apply (is_lim_seq_ext _ _ _ H14).
             apply is_lim_seq_minus'; trivial.
             apply is_lim_seq_const.
       * apply ex_lim_seq_const.
@@ -703,7 +738,7 @@ Qed.
            generalize (abounds (S (n + S n0))); intros.
            lra.
       * rewrite Lim_seq_const.
-        rewrite <- H8.
+        rewrite <- H6.
         now simpl.
    - intros.
      split.
