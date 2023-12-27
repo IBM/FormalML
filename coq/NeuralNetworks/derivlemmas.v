@@ -3,50 +3,6 @@ Require Import Lra.
 
 Set Bullet Behavior "Strict Subproofs".
 
-(*
-Lemma is_derive_comp :
-  forall (f : R -> R) (g : R -> R) (x : R) (df : R) (dg : R),
-  is_derive f (g x) df ->
-  is_derive g x dg ->
-  is_derive (fun x => f (g x)) x (dg  * df).
-
-Lemma Derive_comp (f g : R -> R) (x : R) :
-  ex_derive f (g x) -> ex_derive g x
-    -> Derive (fun x => f (g x)) x = Derive g x * Derive f (g x).
-
-Lemma is_derive_plus :
-  forall (f g : K -> V) (x : K) (df dg : V),
-  is_derive f x df ->
-  is_derive g x dg ->
-  is_derive (fun x => plus (f x) (g x)) x (plus df dg).
-
-Lemma is_derive_minus :
-  forall (f g : K -> V) (x : K) (df dg : V),
-  is_derive f x df ->
-  is_derive g x dg ->
-  is_derive (fun x => minus (f x) (g x)) x (minus df dg).
-
-Lemma is_derive_mult :
-  forall (f g : R -> R) (x : R) (df dg : R),
-  is_derive f x df ->
-  is_derive g x dg ->
-  is_derive (fun t : R => f t * g t) x (df * g x + f x * dg) .
-
-Lemma is_derive_div :
-  forall (f g : R -> R) (x : R) (df dg : R),
-  is_derive f x df ->
-  is_derive g x dg ->
-  g x <> 0 ->
-  is_derive (fun t : R => f t / g t) x ((df * g x - f x * dg) / (g x ^ 2)).
-
-Lemma is_derive_Rabs (f : R -> R) (x df : R) :
-  is_derive f x df -> f x <> 0
-    -> is_derive (fun x => Rabs (f x)) x (sign (f x) * df).
-
-Lemma is_derive_unique f x l :
-  is_derive f x l -> Derive f x = l.
- *)
-
 Lemma ball_abs (x y:R_AbsRing) (eps : posreal):
   ball x eps y <-> Rabs(y - x) < eps.
 Proof.
@@ -399,6 +355,13 @@ Proof.
   apply is_derive_exp.
 Qed.
 
+Lemma ex_derive_exp (x : R) :
+  ex_derive exp x.
+Proof.
+  eexists.
+  apply is_derive_exp.
+Qed.
+
 Lemma is_derive_ln (x:R) : 0 < x -> is_derive ln x (/ x).
 Proof.
   rewrite is_derive_Reals.
@@ -412,6 +375,13 @@ Proof.
   now apply is_derive_ln.
 Qed.
 
+Lemma ex_derive_ln (x : R) :
+  0 < x -> ex_derive ln x.
+Proof.
+  eexists.
+  now apply is_derive_ln.
+Qed.
+
 Lemma is_derive_abs_pos (x:R): 0 < x -> is_derive Rabs x 1.
 Proof.
   rewrite is_derive_Reals.
@@ -422,6 +392,13 @@ Lemma Derive_abs_pos (x:R): 0 < x -> Derive Rabs x = 1.
 Proof.
   intros.
   apply is_derive_unique.
+  now apply is_derive_abs_pos.
+Qed.
+
+Lemma ex_derive_abs_pos (x : R) :
+  0 < x -> ex_derive Rabs x.
+Proof.
+  eexists.
   now apply is_derive_abs_pos.
 Qed.
 

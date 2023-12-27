@@ -275,13 +275,6 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
         now apply exp_increasing.
   Qed.
 
-  Lemma ex_derive_exp (x : R) :
-    ex_derive exp x.
-  Proof.
-    eexists.
-    apply is_derive_exp.
-  Qed.
-
   Lemma xm1_exp :
     exists (x : posreal),
         forall y, 0 <= y < x ->
@@ -293,15 +286,13 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
     assert (df 0 = 1).
     {
       unfold df.
-      rewrite Rmult_0_r.
-      rewrite exp_0.
+      rewrite Rmult_0_r, exp_0.
       lra.
     }
     assert (f 0 = 0).
     {
       unfold f.
-      rewrite Rmult_0_r.
-      rewrite exp_0.
+      rewrite Rmult_0_r, exp_0.
       lra.
     }
     assert (derivable f).
@@ -324,13 +315,9 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
       unfold f, df.
       rewrite Derive_minus.
       - rewrite Derive_minus.
-        + rewrite Derive_const.
-          rewrite Derive_id.
-          rewrite Derive_comp.
+        + rewrite Derive_const, Derive_id, Derive_comp.
           * rewrite Derive_mult.
-            -- rewrite Derive_const.
-               rewrite Derive_id.
-               rewrite Derive_exp.
+            -- rewrite Derive_const, Derive_id, Derive_exp.
                lra.
             -- apply ex_derive_const.
             -- apply ex_derive_id.
@@ -394,13 +381,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
       specialize (H4 y).
       assert (Hierarchy.ball 0 x y).
       {
-        unfold Hierarchy.ball; simpl.
-        unfold AbsRing_ball; simpl.
-        unfold abs, minus; simpl.
-        unfold plus, opp; simpl.
-        rewrite Ropp_0.
-        rewrite Rplus_0_r.
-        rewrite Rabs_right; lra.
+        rewrite ball_abs, Rminus_0_r, Rabs_right; lra.
       }
       specialize (H4 H7).
       rewrite H in H4.
@@ -433,17 +414,13 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
     assert (0 <= y <= x) by lra.
     specialize (H9 H12 H13).
     unfold f in H9.
-    rewrite Rminus_0_r in H9.
-    rewrite Rmult_0_r in H9.
-    rewrite exp_0 in H9.
+    rewrite Rminus_0_r, Rmult_0_r, exp_0 in H9.
     replace (1 - 1) with 0 in H9 by lra.
     destruct (Rlt_dec 0 y).
     - specialize (H9 r).
       lra.
     - assert (y = 0) by lra.
-      rewrite H14.
-      rewrite Rmult_0_r.
-      rewrite exp_0.
+      rewrite H14, Rmult_0_r, exp_0.
       lra.
   Qed.
   
@@ -454,8 +431,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
     intros.
     induction h.
     - replace (n + 0)%nat with n by lia.
-      rewrite part_prod_n_k_k.
-      rewrite part_prod_n_k_k.
+      rewrite part_prod_n_k_k, part_prod_n_k_k.
       apply H.
       lia.
     - replace (n + S h)%nat with (S (n + h)) by lia.
