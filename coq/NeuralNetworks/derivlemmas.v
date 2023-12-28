@@ -362,6 +362,44 @@ Proof.
   apply is_derive_exp.
 Qed.
 
+Lemma is_derive_sin (x:R) : is_derive sin x (cos x).
+Proof.
+  rewrite is_derive_Reals.
+  apply derivable_pt_lim_sin.
+Qed.
+
+Lemma Derive_sin (x:R) : Derive sin x = cos x.
+Proof.
+  apply is_derive_unique.
+  apply is_derive_sin.
+Qed.
+
+Lemma ex_derive_sin (x : R) :
+  ex_derive sin x.
+Proof.
+  eexists.
+  apply is_derive_sin.
+Qed.
+
+Lemma is_derive_cos (x:R) : is_derive cos x (- sin x).
+Proof.
+  rewrite is_derive_Reals.
+  apply derivable_pt_lim_cos.
+Qed.
+
+Lemma Derive_cos (x:R) : Derive cos x = - sin x.
+Proof.
+  apply is_derive_unique.
+  apply is_derive_cos.
+Qed.
+
+Lemma ex_derive_cos (x : R) :
+  ex_derive cos x.
+Proof.
+  eexists.
+  apply is_derive_cos.
+Qed.
+
 Lemma is_derive_ln (x:R) : 0 < x -> is_derive ln x (/ x).
 Proof.
   rewrite is_derive_Reals.
@@ -437,6 +475,12 @@ Proof.
   now apply is_derive_abs.
 Qed.
 
+Lemma ex_derive_abs (x:R): 0 <> x -> ex_derive Rabs x.
+Proof.
+  eexists.
+  now apply is_derive_abs.
+Qed.
+
 Lemma is_derive_sqr (x:R): is_derive Rsqr x (2 * x).
 Proof.
   rewrite is_derive_Reals.
@@ -449,6 +493,11 @@ Proof.
   now apply is_derive_sqr.
 Qed.
   
+Lemma ex_derive_sqr (x:R): ex_derive Rsqr x.
+Proof.
+  eexists.
+  apply is_derive_sqr.
+Qed.
 
 Lemma is_derive_sign_pos :
   forall (x:R), 0<x -> is_derive sign x 0.
@@ -500,6 +549,12 @@ Lemma Derive_sign (x:R) : 0 <> x -> Derive sign x = 0.
 Proof.
   intros.
   apply is_derive_unique.
+  now apply is_derive_sign.
+Qed.
+
+Lemma ex_derive_sign (x:R) : 0 <> x -> ex_derive sign x.
+Proof.
+  eexists.
   now apply is_derive_sign.
 Qed.
 
