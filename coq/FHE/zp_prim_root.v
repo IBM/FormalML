@@ -2300,22 +2300,59 @@ Proof.
     by rewrite /= !Zp_cast // -HH !modn_small //; rewrite !expnS; lia.
 Qed.
 
+Lemma unit_pow_2_Zp_gens_m1_3_alt (n : nat) :
+  let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
+  let u3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
+  <[um1]> * <[u3]> = [group of (units_Zp (2^n.+3)%N)].
+Proof.
+  rewrite <-  unit_pow_2_Zp_gens_m1_3.
+  symmetry.
+  apply comm_joingE.
+  apply centC.
+  apply cents_cycle.
+  apply val_inj.
+  unfold mulg; simpl.
+  unfold FinRing.unit_mul; simpl.
+  unfold mul; simpl.  
+  now rewrite Zp_mulC.
+Qed.
+
+Lemma unit_pow_2_Zp_gens_m1_5_alt (n : nat) :
+  let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
+  let u5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
+  <[um1]> * <[u5]> = [group of (units_Zp (2^n.+3)%N)].
+Proof.
+  rewrite <-  unit_pow_2_Zp_gens_m1_5.
+  symmetry.
+  apply comm_joingE.
+  apply centC.
+  apply cents_cycle.
+  apply val_inj.
+  unfold mulg; simpl.
+  unfold FinRing.unit_mul; simpl.
+  unfold mul; simpl.  
+  now rewrite Zp_mulC.
+Qed.    
+  
 Lemma unit_pow_2_Zp_gens_m1_3_quo (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
   let u3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
   <[u3]>/<[um1]> = [group of (units_Zp (2^n.+3)%N)]/<[um1]>.
 Proof.
   intros.
-  rewrite -quotientYidl.
-  - f_equal.
-    by rewrite unit_pow_2_Zp_gens_m1_3.
-  - apply cents_norm.
-    eapply subset_trans.
-    apply subsetT.
-    apply sub_abelian_cent.
-    + apply units_Zp_abelian.
-    + apply subsetT.
- Qed.
+  rewrite - quotientMidl.
+  by rewrite unit_pow_2_Zp_gens_m1_3_alt.
+Qed.
+
+Lemma unit_pow_2_Zp_gens_m1_5_quo (n : nat) :
+  let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
+  let u5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
+  <[u5]>/<[um1]> =  [group of (units_Zp (2^n.+3)%N)]/<[um1]>.
+Proof.
+  intros.
+  rewrite - quotientMidl.
+  by rewrite unit_pow_2_Zp_gens_m1_5_alt.
+Qed.
 
 End two_pow_units.
 
