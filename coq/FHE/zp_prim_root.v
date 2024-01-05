@@ -2150,6 +2150,24 @@ Proof.
   by rewrite cards1.
 Qed.
 
+Lemma ord2_setI_G1 (n : nat) (a b : {unit 'Z_(2^n)}) :
+  #[a] = 2%N ->
+  (a \notin <[b]>) ->
+  <[a]>%G :&: <[b]>%G = 1.
+Proof.
+  intros.
+  have ->: (<[a]> :&: <[b]> = [set 1]).
+  {
+    rewrite (cycle2g H) setIUl.
+    have /eqP->: ([set a] :&: <[b]> == set0).
+    {
+      by rewrite setI_eq0 disjoints1.
+    } 
+    by rewrite setU0 -set1gE setI1g.
+  }
+  easy.
+Qed.
+
 Lemma unit_pow_2_Zp_gens (n : nat) (a b : {unit 'Z_(2^n.+2)}) :
   #[a] = 2%N ->
   #[b] = (2^n)%N ->
@@ -2205,6 +2223,28 @@ Proof.
   rewrite /= expnS Zp_cast; lia.
 Qed.
 
+Lemma m1_not_in_unit_3_pow (n : nat) :
+ FinRing.unit 'Z_(2 ^ n.+3) (unitrN1 (Zp_finUnitRingType (Zp_trunc (2 ^ n.+3))))
+   \notin <[FinRing.unit 'Z_(2 ^ n.+3) (unit_3_pow_2_Zp n.+2)]>.
+Proof.
+  have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have small3: 3 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have nexist := @m1_neq_pow3_mod2n n.
+  apply/negP.
+  move/cyclePmin => [x xlt].
+  move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
+  rewrite /= unit_Zp_expg /= {2 3 4 5 6}Zp_cast // !modn_small // /inZp.
+  move/(f_equal val) => /=.
+  rewrite !Zp_cast // modn_small; [| rewrite !expnS; lia].
+  rewrite modn_small // => pow3m1.
+  apply nexist.
+  exists x.
+  rewrite /opp /= /Zp_opp {2}Zp_cast // -inZp_exp.
+  apply val_inj.
+  by rewrite /= !Zp_cast // -pow3m1 !modn_small //; rewrite !expnS; lia.
+Qed.
+
 Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
   let u3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
@@ -2227,19 +2267,7 @@ Proof.
     rewrite unit_Zp_expg /= {2 3 4 5 6}Zp_cast // !modn_small // /inZp.
     move/(f_equal val) => /=.
     rewrite !Zp_cast //.
-  - have nexist := @m1_neq_pow3_mod2n n.
-    apply/negP.
-    move/cyclePmin => [x xlt].
-    move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
-    rewrite /= unit_Zp_expg /= {2 3 4 5 6}Zp_cast // !modn_small // /inZp.
-    move/(f_equal val) => /=.
-    rewrite !Zp_cast // modn_small; [| rewrite !expnS; lia].
-    rewrite modn_small // => pow3m1.
-    apply nexist.
-    exists x.
-    rewrite /opp /= /Zp_opp {2}Zp_cast // -inZp_exp.
-    apply val_inj.
-    by rewrite /= !Zp_cast // -pow3m1 !modn_small //; rewrite !expnS; lia.
+  - apply m1_not_in_unit_3_pow.
 Qed.
 
 Lemma unit_Z4_gens_m1 :
@@ -2261,6 +2289,30 @@ Proof.
   lia.
 Qed.
 
+Lemma m1_not_in_unit_5_pow (n : nat) :
+ FinRing.unit 'Z_(2 ^ n.+3) (unitrN1 (Zp_finUnitRingType (Zp_trunc (2 ^ n.+3))))
+   \notin <[FinRing.unit 'Z_(2 ^ n.+3) (unit_5_pow_2_Zp n.+2)]>.
+Proof.
+  have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have small3: 3 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have small4: 4 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have small5: 5 < 2 ^ n.+3 by (rewrite !expnS; lia).    
+  generalize (@m1_neq_pow5_mod2n n); intros.
+  apply/negP.
+  move/cyclePmin => [x xlt].
+  move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
+  rewrite /= unit_Zp_expg /= {2 3 4 5 6 7 8 9 10}Zp_cast // !modn_small // /inZp.
+  move/(f_equal val) => /=.
+  rewrite !Zp_cast // modn_small; [| rewrite !expnS; lia].
+  rewrite modn_small // => HH.
+  apply H.
+  exists x.
+  rewrite /opp /= /Zp_opp {2}Zp_cast // -inZp_exp.
+  apply val_inj.
+  by rewrite /= !Zp_cast // -HH !modn_small //; rewrite !expnS; lia.
+Qed.
+  
 Lemma unit_pow_2_Zp_gens_m1_5 (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
   let u5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
@@ -2285,19 +2337,7 @@ Proof.
     rewrite unit_Zp_expg /= {2 3 4 5 6 7 8 9 10}Zp_cast // !modn_small // /inZp.
     move/(f_equal val) => /=.
     rewrite !Zp_cast //.
-  - generalize (@m1_neq_pow5_mod2n n); intros.
-    apply/negP.
-    move/cyclePmin => [x xlt].
-    move/(f_equal (fun (z : {unit 'Z_(2^n.+3)}) => val z)).
-    rewrite /= unit_Zp_expg /= {2 3 4 5 6 7 8 9 10}Zp_cast // !modn_small // /inZp.
-    move/(f_equal val) => /=.
-    rewrite !Zp_cast // modn_small; [| rewrite !expnS; lia].
-    rewrite modn_small // => HH.
-    apply H.
-    exists x.
-    rewrite /opp /= /Zp_opp {2}Zp_cast // -inZp_exp.
-    apply val_inj.
-    by rewrite /= !Zp_cast // -HH !modn_small //; rewrite !expnS; lia.
+  - apply m1_not_in_unit_5_pow.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_3_alt (n : nat) :
@@ -2353,6 +2393,84 @@ Proof.
   rewrite - quotientMidl.
   by rewrite unit_pow_2_Zp_gens_m1_5_alt.
 Qed.
+
+Lemma unit_pow_2_Zp_gens_m1_3_quo_isog (n : nat) :
+  let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
+  let u3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
+  morphism.isog <[u3]> (<[u3]>/<[um1]>).
+Proof.
+  intros.
+  apply quotient_isog.
+  - apply cents_norm.
+    eapply subset_trans.
+    apply subsetT.
+    apply sub_abelian_cent.
+    + apply units_Zp_abelian.
+    + apply subsetT.
+  - apply ord2_setI_G1.
+    + rewrite -(expn1 2).
+      apply dvdn_prime_power; trivial.
+      * rewrite order_dvdn expn1.
+        apply /eqP.
+        apply val_inj.
+        simpl.
+        by rewrite mulrNN mulr1.
+      * rewrite expn0.
+        unfold not.
+        intros.
+        rewrite order_dvdn expg1 expn1 in H.
+        move /eqP in H.
+        unfold oneg in H; simpl in H.
+        apply (f_equal val) in H.
+        rewrite /= /opp /one /= in H.
+        apply (f_equal val) in H.
+        rewrite /Zp_trunc /= in H.
+        have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
+        have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
+        replace ((2^n.+3).-2.+2) with (2^n.+3)%N in H by lia.
+        rewrite (modn_small small1) in H.
+        rewrite modn_small in H; lia.
+    + apply m1_not_in_unit_3_pow.
+ Qed.
+
+Lemma unit_pow_2_Zp_gens_m1_5_quo_isog (n : nat) :
+  let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
+  let u5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
+  morphism.isog <[u5]> (<[u5]>/<[um1]>).
+Proof.
+  intros.
+  apply quotient_isog.
+  - apply cents_norm.
+    eapply subset_trans.
+    apply subsetT.
+    apply sub_abelian_cent.
+    + apply units_Zp_abelian.
+    + apply subsetT.
+  - apply ord2_setI_G1.
+    + rewrite -(expn1 2).
+      apply dvdn_prime_power; trivial.
+      * rewrite order_dvdn expn1.
+        apply /eqP.
+        apply val_inj.
+        simpl.
+        by rewrite mulrNN mulr1.
+      * rewrite expn0.
+        unfold not.
+        intros.
+        rewrite order_dvdn expg1 expn1 in H.
+        move /eqP in H.
+        unfold oneg in H; simpl in H.
+        apply (f_equal val) in H.
+        rewrite /= /opp /one /= in H.
+        apply (f_equal val) in H.
+        rewrite /Zp_trunc /= in H.
+        have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
+        have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
+        replace ((2^n.+3).-2.+2) with (2^n.+3)%N in H by lia.
+        rewrite (modn_small small1) in H.
+        rewrite modn_small in H; lia.
+    + apply m1_not_in_unit_5_pow.
+ Qed.
 
 End two_pow_units.
 
