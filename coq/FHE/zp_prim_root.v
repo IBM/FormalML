@@ -2242,9 +2242,9 @@ Lemma unit_pow_2_Zp_gens_m1_3 (n : nat) :
   let u3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
   <[um1]> <*> <[u3]> = [group of (units_Zp (2^n.+3)%N)].
 Proof.
-  have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
-  have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
   have small3: 3 < 2 ^ n.+3 by (rewrite !expnS; lia).
+  have small1: 1 < 2 ^ n.+3 by lia.
+  have small2: 2 < 2 ^ n.+3 by lia.
   apply unit_pow_2_Zp_gens.
   - apply nt_prime_order; trivial.
     + apply val_inj.
@@ -2285,11 +2285,11 @@ Lemma m1_not_in_unit_5_pow (n : nat) :
  FinRing.unit 'Z_(2 ^ n.+3) (unitrN1 (Zp_finUnitRingType (Zp_trunc (2 ^ n.+3))))
    \notin <[FinRing.unit 'Z_(2 ^ n.+3) (unit_5_pow_2_Zp n.+2)]>.
 Proof.
-  have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
-  have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
-  have small3: 3 < 2 ^ n.+3 by (rewrite !expnS; lia).
-  have small4: 4 < 2 ^ n.+3 by (rewrite !expnS; lia).
   have small5: 5 < 2 ^ n.+3 by (rewrite !expnS; lia).    
+  have small1: 1 < 2 ^ n.+3 by lia.
+  have small2: 2 < 2 ^ n.+3 by lia.
+  have small3: 3 < 2 ^ n.+3 by lia.
+  have small4: 4 < 2 ^ n.+3 by lia.
   generalize (@m1_neq_pow5_mod2n n); intros.
   apply/negP.
   move/cyclePmin => [x xlt].
@@ -2310,11 +2310,11 @@ Lemma unit_pow_2_Zp_gens_m1_5 (n : nat) :
   let u5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
   <[um1]> <*> <[u5]> = [group of (units_Zp (2^n.+3)%N)].
 Proof.
-  have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
-  have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
-  have small3: 3 < 2 ^ n.+3 by (rewrite !expnS; lia).
-  have small4: 4 < 2 ^ n.+3 by (rewrite !expnS; lia).
   have small5: 5 < 2 ^ n.+3 by (rewrite !expnS; lia).    
+  have small1: 1 < 2 ^ n.+3 by lia.
+  have small2: 2 < 2 ^ n.+3 by lia.
+  have small3: 3 < 2 ^ n.+3 by lia.
+  have small4: 4 < 2 ^ n.+3 by lia.
   apply unit_pow_2_Zp_gens.
   - apply nt_prime_order; trivial.
     + apply val_inj.
@@ -2457,8 +2457,8 @@ Proof.
         rewrite /= /opp /one /= in H.
         apply (f_equal val) in H.
         rewrite /Zp_trunc /= in H.
-        have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
         have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
+        have small1: 1 < 2 ^ n.+3 by lia.
         replace ((2^n.+3).-2.+2) with (2^n.+3)%N in H by lia.
         rewrite (modn_small small1) modn_small in H; lia.
     + apply m1_not_in_unit_5_pow.
