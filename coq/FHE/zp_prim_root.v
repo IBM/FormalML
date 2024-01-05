@@ -2343,10 +2343,7 @@ Proof.
   apply centC.
   apply cents_cycle.
   apply val_inj.
-  unfold mulg; simpl.
-  unfold FinRing.unit_mul; simpl.
-  unfold mul; simpl.  
-  now rewrite Zp_mulC.
+  now rewrite /mulg /FinRing.unit_mul /= /mul /= Zp_mulC.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_5_alt (n : nat) :
@@ -2360,10 +2357,7 @@ Proof.
   apply centC.
   apply cents_cycle.
   apply val_inj.
-  unfold mulg; simpl.
-  unfold FinRing.unit_mul; simpl.
-  unfold mul; simpl.  
-  now rewrite Zp_mulC.
+  now rewrite /mulg /FinRing.unit_mul /= /mul /= Zp_mulC.
 Qed.    
   
 Lemma unit_pow_2_Zp_gens_m1_3_quo (n : nat) :
@@ -2407,8 +2401,7 @@ Proof.
         apply val_inj.
         simpl.
         by rewrite mulrNN mulr1.
-      * rewrite expn0.
-        unfold not.
+      * rewrite expn0 /not.
         intros.
         rewrite order_dvdn expg1 expn1 in H.
         move /eqP in H.
@@ -2420,8 +2413,7 @@ Proof.
         have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
         have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
         replace ((2^n.+3).-2.+2) with (2^n.+3)%N in H by lia.
-        rewrite (modn_small small1) in H.
-        rewrite modn_small in H; lia.
+        rewrite (modn_small small1) modn_small in H; lia.
     + apply m1_not_in_unit_3_pow.
  Qed.
 
@@ -2456,8 +2448,7 @@ Proof.
         apply /eqP.
         apply val_inj.
         by rewrite /= mulrNN mulr1.
-      * rewrite expn0.
-        unfold not.
+      * rewrite expn0 /not.
         intros.
         rewrite order_dvdn expg1 expn1 in H.
         move /eqP in H.
@@ -2469,8 +2460,7 @@ Proof.
         have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
         have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
         replace ((2^n.+3).-2.+2) with (2^n.+3)%N in H by lia.
-        rewrite (modn_small small1) in H.
-        rewrite modn_small in H; lia.
+        rewrite (modn_small small1) modn_small in H; lia.
     + apply m1_not_in_unit_5_pow.
 Qed.
 
