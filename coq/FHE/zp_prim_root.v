@@ -2132,24 +2132,6 @@ Proof.
   by rewrite expnS.
 Qed.
 
-Lemma ord2_setI (n : nat) (a b : {unit 'Z_(2^n)}) :
-  #[a] = 2%N ->
-  (a \notin <[b]>) ->
-  #|<[a]>%G :&: <[b]>%G| = 1%N.
-Proof.
-  intros.
-  have ->: (<[a]> :&: <[b]> = [set 1]).
-  {
-    rewrite (cycle2g H) setIUl.
-    have /eqP->: ([set a] :&: <[b]> == set0).
-    {
-      by rewrite setI_eq0 disjoints1.
-    } 
-    by rewrite setU0 -set1gE setI1g.
-  }
-  by rewrite cards1.
-Qed.
-
 Lemma ord2_setI_G1 (n : nat) (a b : {unit 'Z_(2^n)}) :
   #[a] = 2%N ->
   (a \notin <[b]>) ->
@@ -2166,6 +2148,16 @@ Proof.
     by rewrite setU0 -set1gE setI1g.
   }
   easy.
+Qed.
+
+Lemma ord2_setI (n : nat) (a b : {unit 'Z_(2^n)}) :
+  #[a] = 2%N ->
+  (a \notin <[b]>) ->
+  #|<[a]>%G :&: <[b]>%G| = 1%N.
+Proof.
+  intros.
+  rewrite ord2_setI_G1; trivial.
+  by rewrite cards1.
 Qed.
 
 Lemma unit_pow_2_Zp_gens (n : nat) (a b : {unit 'Z_(2^n.+2)}) :
@@ -2420,7 +2412,7 @@ Proof.
         intros.
         rewrite order_dvdn expg1 expn1 in H.
         move /eqP in H.
-        unfold oneg in H; simpl in H.
+        rewrite /oneg /= in H.
         apply (f_equal val) in H.
         rewrite /= /opp /one /= in H.
         apply (f_equal val) in H.
@@ -2463,14 +2455,13 @@ Proof.
       * rewrite order_dvdn expn1.
         apply /eqP.
         apply val_inj.
-        simpl.
-        by rewrite mulrNN mulr1.
+        by rewrite /= mulrNN mulr1.
       * rewrite expn0.
         unfold not.
         intros.
         rewrite order_dvdn expg1 expn1 in H.
         move /eqP in H.
-        unfold oneg in H; simpl in H.
+        rewrite /oneg /= in H.
         apply (f_equal val) in H.
         rewrite /= /opp /one /= in H.
         apply (f_equal val) in H.
