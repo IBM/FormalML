@@ -1953,8 +1953,7 @@ Proof.
   - apply zp_m1_neq1.
     rewrite !expnS; lia.
   - rewrite ord_5_pow_2_Zp.
-    unfold opp; simpl.
-    unfold Zp_opp.
+    rewrite /opp /= /Zp_opp.
     intros ?.
     apply (f_equal val) in H1.
     simpl in H1.
@@ -1963,6 +1962,30 @@ Proof.
     rewrite modn_small in H1; [|rewrite !expnS; lia].
     rewrite modn_small in H1; [|rewrite !expnS; lia].        
     rewrite !expnS in H1; lia.
+Qed.
+
+Lemma m1_neq_pow5_mod2n_gen (n : nat) :
+  let b5 : 'Z_(2^n.+2) := inZp 5 in
+  not (exists k, b5^+k = -1).
+Proof.
+  destruct n.
+  - simpl.
+    set b5 : 'Z_(2^0.+2) := inZp 5.
+    unfold not.
+    intros.
+    destruct H.
+    assert (b5 = 1).
+    {
+      apply val_inj; simpl.
+      rewrite /Zp_trunc /=.
+      lia.
+    }
+    rewrite H0 expr1n in H.
+    rewrite /opp /= /Zp_opp in H.
+    apply (f_equal val) in H.
+    simpl in H.
+    rewrite Zp_cast in H; lia.
+  - apply m1_neq_pow5_mod2n.
 Qed.
 
   Lemma pow_3_5_pow_2 n :
@@ -2305,6 +2328,27 @@ Proof.
   by rewrite /= !Zp_cast // -HH !modn_small //; rewrite !expnS; lia.
 Qed.
   
+Lemma m1_not_in_unit_5_pow_gen (n : nat) :
+ FinRing.unit 'Z_(2 ^ n.+2) (unitrN1 (Zp_finUnitRingType (Zp_trunc (2 ^ n.+2))))
+   \notin <[FinRing.unit 'Z_(2 ^ n.+2) (unit_5_pow_2_Zp n.+1)]>.
+Proof.
+  destruct n.
+  - generalize (@m1_neq_pow5_mod2n_gen 0); intros.
+    apply /negP.
+    move/cyclePmin => [x xlt].
+    move/(f_equal (fun (z : {unit 'Z_(2^0.+2)}) => val z)).
+    rewrite /= unit_Zp_expg /= {2 3 4 5 6 7 8 9 10}Zp_cast //.
+    have small3: 3 < 2 ^ 0.+2 by (rewrite !expnS; lia).    
+    have small1: 1 < 2 ^ 0.+2 by lia.
+    have small2: 2 < 2 ^ 0.+2 by lia.
+    rewrite (modn_small small3) (modn_small small1) // /inZp.
+    move/(f_equal val) => /=.
+    rewrite !Zp_cast //.
+    rewrite (modn_small small1) exp1n.
+    rewrite !modn_small; try lia.
+  - apply m1_not_in_unit_5_pow.
+Qed.
+
 Lemma unit_pow_2_Zp_gens_m1_5 (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
   let u5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
@@ -2360,6 +2404,44 @@ Proof.
   now rewrite /mulg /FinRing.unit_mul /= /mul /= Zp_mulC.
 Qed.    
   
+Lemma unit_pow_2_2_alt :
+  let um1 := FinRing.unit 'Z_(2^2) (unitrN1 _) in
+  let u5 := FinRing.unit 'Z_(2^2) (unit_5_pow_2_Zp 1) in
+  <[um1]> * <[u5]> = [group of (units_Zp (2^2))].
+Proof.
+  intros.
+  generalize unit_Z4_gens_m1; intros.
+  assert (u5 = 1).
+  {
+    unfold u5.
+    apply val_inj; simpl.
+    unfold Zp_trunc.
+    apply val_inj; simpl.
+    now rewrite modn_small.
+  }
+  generalize (cycle_eq1 u5); intros.
+  move /eqP in H0.
+  rewrite -H1 in H0.
+  move /eqP in H0.
+  rewrite H0.
+  rewrite -comm_joingE.
+  - rewrite joingG1.
+    rewrite -H.
+    unfold um1.
+    by rewrite /Zp_trunc /=.
+  - apply commute1.
+Qed.    
+
+Lemma unit_pow_2_Zp_gens_m1_5_alt_gen (n : nat) :
+  let um1 := FinRing.unit 'Z_(2^n.+2) (unitrN1 _) in
+  let u5 := FinRing.unit 'Z_(2^n.+2) (unit_5_pow_2_Zp n.+1) in
+  <[um1]> * <[u5]> = [group of (units_Zp (2^n.+2)%N)].
+Proof.
+  destruct n.
+  - apply unit_pow_2_2_alt.
+  - apply unit_pow_2_Zp_gens_m1_5_alt.
+Qed.
+
 Lemma unit_pow_2_Zp_gens_m1_3_quo (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
   let u3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
@@ -2371,13 +2453,13 @@ Proof.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_5_quo (n : nat) :
-  let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
-  let u5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
-  <[u5]>/<[um1]> =  [group of (units_Zp (2^n.+3)%N)]/<[um1]>.
+  let um1 := FinRing.unit 'Z_(2^n.+2) (unitrN1 _) in
+  let u5 := FinRing.unit 'Z_(2^n.+2) (unit_5_pow_2_Zp n.+1) in
+  <[u5]>/<[um1]> =  [group of (units_Zp (2^n.+2)%N)]/<[um1]>.
 Proof.
   intros.
   rewrite - quotientMidl.
-  by rewrite unit_pow_2_Zp_gens_m1_5_alt.
+  by rewrite unit_pow_2_Zp_gens_m1_5_alt_gen.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_3_quo_isog (n : nat) :
@@ -2429,8 +2511,8 @@ Proof.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_5_quo_isog (n : nat) :
-  let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
-  let u5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
+  let um1 := FinRing.unit 'Z_(2^n.+2) (unitrN1 _) in
+  let u5 := FinRing.unit 'Z_(2^n.+2) (unit_5_pow_2_Zp n.+1) in
   morphism.isog <[u5]> (<[u5]>/<[um1]>).
 Proof.
   intros.
@@ -2457,17 +2539,17 @@ Proof.
         rewrite /= /opp /one /= in H.
         apply (f_equal val) in H.
         rewrite /Zp_trunc /= in H.
-        have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
-        have small1: 1 < 2 ^ n.+3 by lia.
-        replace ((2^n.+3).-2.+2) with (2^n.+3)%N in H by lia.
+        have small2: 2 < 2 ^ n.+2 by (rewrite !expnS; lia).
+        have small1: 1 < 2 ^ n.+2 by lia.
+        replace ((2^n.+2).-2.+2) with (2^n.+2)%N in H by lia.
         rewrite (modn_small small1) modn_small in H; lia.
-    + apply m1_not_in_unit_5_pow.
+    + apply m1_not_in_unit_5_pow_gen.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_5_quo_isog_alt (n : nat) :
-  let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
-  let u5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
-  morphism.isog <[u5]> ([group of (units_Zp (2^n.+3)%N)]/<[um1]>).
+  let um1 := FinRing.unit 'Z_(2^n.+2) (unitrN1 _) in
+  let u5 := FinRing.unit 'Z_(2^n.+2) (unit_5_pow_2_Zp n.+1) in
+  morphism.isog <[u5]> ([group of (units_Zp (2^n.+2)%N)]/<[um1]>).
 Proof.
   intros.
   simpl.
