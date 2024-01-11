@@ -2129,11 +2129,11 @@ Proof.
 Qed.
 
 Lemma card_units_pow_2_Zp (n : nat) :
-  #|units_Zp (2^n.+2)| = (2^n.+1)%N.
+  #|units_Zp (2^n.+1)| = (2^n)%N.
 Proof.
   rewrite card_units_Zp; try lia.
-  rewrite totient_pfactor; trivial; try lia.
-  rewrite !expnS; lia.
+  rewrite totient_pfactor // /=.
+  lia.
 Qed.
 
 Lemma unit_Zp_gens_ord (n : nat) (a b : {unit 'Z_n}) :
@@ -2192,7 +2192,7 @@ Proof.
   intros.
   generalize (subsetT (<[a]> * <[b]>)%G); intros.
   apply index1g; trivial.
-  rewrite -(divgS H2) (card_units_pow_2_Zp n) joinGE /= norm_joinEr /=.
+  rewrite -(divgS H2) (card_units_pow_2_Zp n.+1) joinGE /= norm_joinEr /=.
   - rewrite unit_pow_2_Zp_gens_ord //.
     + rewrite divnn !expnS; lia.
     + by apply ord2_setI.
@@ -2293,7 +2293,7 @@ Proof.
   intros.
   generalize (subsetT (<[um1]>)); intros.
   apply index1g; trivial.
-  rewrite -(divgS H) (card_units_pow_2_Zp 0).
+  rewrite -(divgS H) (card_units_pow_2_Zp 1).
   assert (#[um1] = 2%N).
   {
     apply nt_prime_order; trivial.
@@ -2303,6 +2303,30 @@ Proof.
   unfold order in H0.
   rewrite H0.
   lia.
+Qed.
+
+Lemma unit_Z2 :
+  <[1]> = [group of (units_Zp 2)].
+Proof.
+  generalize (card_units_pow_2_Zp 0); intros.
+  rewrite expn0 expn1 in H.
+  apply card1_trivg in H.
+  rewrite H.
+  apply /eqP.
+  apply cycle_eq1.
+Qed.
+
+Lemma unit_Z2_alt :
+  let um1 := FinRing.unit 'Z_2 (unitrN1 _) in  
+  <[um1]> = [group of (units_Zp 2)].
+Proof.
+  rewrite -unit_Z2.
+  intros.
+  f_equal.
+  unfold um1.
+  apply val_inj; simpl.
+  apply val_inj; simpl.
+  rewrite Zp_cast; lia.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_3_gen (n : nat) :
@@ -2334,6 +2358,37 @@ Proof.
     }
     by rewrite H0.
   - apply unit_pow_2_Zp_gens_m1_3.
+Qed.
+
+Lemma unit_pow_2_Zp_gens_m1_3_gen_gen (n : nat) :
+  let um1 := FinRing.unit 'Z_(2^n.+1) (unitrN1 _) in
+  let u3 := FinRing.unit 'Z_(2^n.+1) (unit_3_pow_2_Zp n) in
+  <[um1]> <*> <[u3]> = [group of (units_Zp (2^n.+1)%N)].
+Proof.
+  destruct n.
+  - intros.
+    rewrite -unit_Z2_alt.
+    assert (<[u3]> \subset <[um1]>).
+    {
+      rewrite cycle_subG.
+      assert (u3 = um1).
+      {
+        unfold u3, um1.
+        apply val_inj; simpl.
+        apply val_inj; simpl.
+        rewrite Zp_cast; lia.
+      }
+      rewrite H.
+      apply cycle_id.
+    }
+    move /joing_idPl in H.
+    rewrite H.
+    assert (um1 = FinRing.unit 'Z_2 (unitrN1 (Zp_finUnitRingType (Zp_trunc 2)))).
+    {
+      by apply val_inj; simpl.
+    }
+    by rewrite H0.
+  - apply unit_pow_2_Zp_gens_m1_3_gen.
 Qed.
 
 Lemma m1_not_in_unit_5_pow (n : nat) :
@@ -2435,6 +2490,8 @@ Proof.
   apply val_inj.
   now rewrite /mulg /FinRing.unit_mul /= /mul /= Zp_mulC.
 Qed.
+
+
 
 Lemma unit_pow_2_Zp_gens_m1_5_alt (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
