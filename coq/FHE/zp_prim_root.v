@@ -2610,6 +2610,30 @@ Proof.
   + apply subsetT.
 Qed.
 
+Lemma unitrN1_card_2 (n : nat) :
+  #[FinRing.unit 'Z_(2 ^ n.+2) (unitrN1 _)] = 2%N.
+Proof.
+  rewrite -(expn1 2).
+  apply dvdn_prime_power; trivial.
+  - rewrite order_dvdn expn1.
+    apply /eqP.
+    apply val_inj.
+    by rewrite /= mulrNN mulr1.
+  - rewrite expn0 /not.
+    intros.
+    rewrite order_dvdn expg1 expn1 in H.
+    move /eqP in H.
+    rewrite /oneg /= in H.
+    apply (f_equal val) in H.
+    rewrite /= /opp /one /= in H.
+    apply (f_equal val) in H.
+    rewrite /Zp_trunc /= in H.
+    have small2: 2 < 2 ^ n.+2 by (rewrite !expnS; lia).
+    have small1: 1 < 2 ^ n.+2 by lia.
+    replace ((2^n.+2).-2.+2) with (2^n.+2)%N in H by lia.
+    rewrite (modn_small small1) modn_small in H; lia.
+Qed.
+  
 Lemma unit_pow_2_Zp_gens_m1_3_quo_isog (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
   let u3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
@@ -2618,26 +2642,7 @@ Proof.
   intros.
   apply quotient_isog_unit_Zp.
   apply ord2_setI_G1.
-  - rewrite -(expn1 2).
-    apply dvdn_prime_power; trivial.
-    + rewrite order_dvdn expn1.
-      apply /eqP.
-      apply val_inj.
-      simpl.
-      by rewrite mulrNN mulr1.
-    + rewrite expn0 /not.
-      intros.
-      rewrite order_dvdn expg1 expn1 in H.
-      move /eqP in H.
-      rewrite /oneg /= in H.
-      apply (f_equal val) in H.
-      rewrite /= /opp /one /= in H.
-      apply (f_equal val) in H.
-      rewrite /Zp_trunc /= in H.
-      have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
-      have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
-      replace ((2^n.+3).-2.+2) with (2^n.+3)%N in H by lia.
-      rewrite (modn_small small1) modn_small in H; lia.
+  - apply unitrN1_card_2.
   - apply m1_not_in_unit_3_pow.
  Qed.
 
@@ -2650,26 +2655,7 @@ Proof.
   apply quotient_isog_unit_Zp.
   rewrite setIC.
   apply ord2_setI_G1.
-  - rewrite -(expn1 2).
-    apply dvdn_prime_power; trivial.
-    + rewrite order_dvdn expn1.
-      apply /eqP.
-      apply val_inj.
-      simpl.
-      by rewrite mulrNN mulr1.
-    + rewrite expn0 /not.
-      intros.
-      rewrite order_dvdn expg1 expn1 in H.
-      move /eqP in H.
-      rewrite /oneg /= in H.
-      apply (f_equal val) in H.
-      rewrite /= /opp /one /= in H.
-      apply (f_equal val) in H.
-      rewrite /Zp_trunc /= in H.
-      have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
-      have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
-      replace ((2^n.+3).-2.+2) with (2^n.+3)%N in H by lia.
-      rewrite (modn_small small1) modn_small in H; lia.
+  - apply unitrN1_card_2.
   - apply m1_not_in_unit_3_pow.
  Qed.
 
@@ -2703,25 +2689,7 @@ Proof.
   intros.
   apply quotient_isog_unit_Zp.
   apply ord2_setI_G1.
-  - rewrite -(expn1 2).
-    apply dvdn_prime_power; trivial.
-    + rewrite order_dvdn expn1.
-      apply /eqP.
-      apply val_inj.
-      by rewrite /= mulrNN mulr1.
-    + rewrite expn0 /not.
-      intros.
-      rewrite order_dvdn expg1 expn1 in H.
-      move /eqP in H.
-      rewrite /oneg /= in H.
-      apply (f_equal val) in H.
-      rewrite /= /opp /one /= in H.
-      apply (f_equal val) in H.
-      rewrite /Zp_trunc /= in H.
-      have small2: 2 < 2 ^ n.+2 by (rewrite !expnS; lia).
-      have small1: 1 < 2 ^ n.+2 by lia.
-      replace ((2^n.+2).-2.+2) with (2^n.+2)%N in H by lia.
-      rewrite (modn_small small1) modn_small in H; lia.
+  - apply unitrN1_card_2.
   - apply m1_not_in_unit_5_pow_gen.
 Qed.
 
@@ -2734,25 +2702,7 @@ Proof.
   apply quotient_isog_unit_Zp.
   rewrite setIC.
   apply ord2_setI_G1.
-  - rewrite -(expn1 2).
-    apply dvdn_prime_power; trivial.
-    + rewrite order_dvdn expn1.
-      apply /eqP.
-      apply val_inj.
-      by rewrite /= mulrNN mulr1.
-    + rewrite expn0 /not.
-      intros.
-      rewrite order_dvdn expg1 expn1 in H.
-      move /eqP in H.
-      rewrite /oneg /= in H.
-      apply (f_equal val) in H.
-      rewrite /= /opp /one /= in H.
-      apply (f_equal val) in H.
-      rewrite /Zp_trunc /= in H.
-      have small2: 2 < 2 ^ n.+2 by (rewrite !expnS; lia).
-      have small1: 1 < 2 ^ n.+2 by lia.
-      replace ((2^n.+2).-2.+2) with (2^n.+2)%N in H by lia.
-      rewrite (modn_small small1) modn_small in H; lia.
+  - apply unitrN1_card_2.
   - apply m1_not_in_unit_5_pow_gen.
 Qed.
 
