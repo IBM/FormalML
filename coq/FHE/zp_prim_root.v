@@ -2491,8 +2491,6 @@ Proof.
   now rewrite /mulg /FinRing.unit_mul /= /mul /= Zp_mulC.
 Qed.
 
-
-
 Lemma unit_pow_2_Zp_gens_m1_5_alt (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
   let u5 := FinRing.unit 'Z_(2^n.+3) (unit_5_pow_2_Zp n.+2) in
@@ -2585,41 +2583,62 @@ Proof.
   by rewrite unit_pow_2_Zp_gens_m1_5_alt_gen.
 Qed.
 
+Lemma quotient_isog_abelian (gT : finGroupType) (A H G : {group gT}) :
+  abelian A ->
+  H \subset A ->
+  G \subset A ->
+  H :&: G = 1 ->
+  morphism.isog G (G / H).
+Proof.
+  intros.
+  apply quotient_isog; trivial.
+  apply cents_norm.
+  by apply (sub_abelian_cent2 H0).
+Qed.
+
+Lemma quotient_isog_unit_Zp (p : nat) (H G : {group {unit 'Z_p}}) :
+  H :&: G = 1 ->
+  morphism.isog G (G / H).
+Proof.
+  intros.
+  apply quotient_isog; trivial.
+  apply cents_norm.
+  eapply subset_trans.
+  apply subsetT.
+  apply sub_abelian_cent.
+  + apply units_Zp_abelian.
+  + apply subsetT.
+Qed.
+
 Lemma unit_pow_2_Zp_gens_m1_3_quo_isog (n : nat) :
   let um1 := FinRing.unit 'Z_(2^n.+3) (unitrN1 _) in
   let u3 := FinRing.unit 'Z_(2^n.+3) (unit_3_pow_2_Zp n.+2) in
   morphism.isog <[u3]> (<[u3]>/<[um1]>).
 Proof.
   intros.
-  apply quotient_isog.
-  - apply cents_norm.
-    eapply subset_trans.
-    apply subsetT.
-    apply sub_abelian_cent.
-    + apply units_Zp_abelian.
-    + apply subsetT.
-  - apply ord2_setI_G1.
-    + rewrite -(expn1 2).
-      apply dvdn_prime_power; trivial.
-      * rewrite order_dvdn expn1.
-        apply /eqP.
-        apply val_inj.
-        simpl.
-        by rewrite mulrNN mulr1.
-      * rewrite expn0 /not.
-        intros.
-        rewrite order_dvdn expg1 expn1 in H.
-        move /eqP in H.
-        rewrite /oneg /= in H.
-        apply (f_equal val) in H.
-        rewrite /= /opp /one /= in H.
-        apply (f_equal val) in H.
-        rewrite /Zp_trunc /= in H.
-        have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
-        have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
-        replace ((2^n.+3).-2.+2) with (2^n.+3)%N in H by lia.
-        rewrite (modn_small small1) modn_small in H; lia.
-    + apply m1_not_in_unit_3_pow.
+  apply quotient_isog_unit_Zp.
+  apply ord2_setI_G1.
+  - rewrite -(expn1 2).
+    apply dvdn_prime_power; trivial.
+    + rewrite order_dvdn expn1.
+      apply /eqP.
+      apply val_inj.
+      simpl.
+      by rewrite mulrNN mulr1.
+    + rewrite expn0 /not.
+      intros.
+      rewrite order_dvdn expg1 expn1 in H.
+      move /eqP in H.
+      rewrite /oneg /= in H.
+      apply (f_equal val) in H.
+      rewrite /= /opp /one /= in H.
+      apply (f_equal val) in H.
+      rewrite /Zp_trunc /= in H.
+      have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
+      have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
+      replace ((2^n.+3).-2.+2) with (2^n.+3)%N in H by lia.
+      rewrite (modn_small small1) modn_small in H; lia.
+  - apply m1_not_in_unit_3_pow.
  Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_3_quo_isog_um1 (n : nat) :
@@ -2628,36 +2647,30 @@ Lemma unit_pow_2_Zp_gens_m1_3_quo_isog_um1 (n : nat) :
   morphism.isog <[um1]> (<[um1]>/<[u3]>).
 Proof.
   intros.
-  apply quotient_isog.
-  - apply cents_norm.
-    eapply subset_trans.
-    apply subsetT.
-    apply sub_abelian_cent.
-    + apply units_Zp_abelian.
-    + apply subsetT.
-  - rewrite setIC.
-    apply ord2_setI_G1.
-    + rewrite -(expn1 2).
-      apply dvdn_prime_power; trivial.
-      * rewrite order_dvdn expn1.
-        apply /eqP.
-        apply val_inj.
-        simpl.
-        by rewrite mulrNN mulr1.
-      * rewrite expn0 /not.
-        intros.
-        rewrite order_dvdn expg1 expn1 in H.
-        move /eqP in H.
-        rewrite /oneg /= in H.
-        apply (f_equal val) in H.
-        rewrite /= /opp /one /= in H.
-        apply (f_equal val) in H.
-        rewrite /Zp_trunc /= in H.
-        have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
-        have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
-        replace ((2^n.+3).-2.+2) with (2^n.+3)%N in H by lia.
-        rewrite (modn_small small1) modn_small in H; lia.
-    + apply m1_not_in_unit_3_pow.
+  apply quotient_isog_unit_Zp.
+  rewrite setIC.
+  apply ord2_setI_G1.
+  - rewrite -(expn1 2).
+    apply dvdn_prime_power; trivial.
+    + rewrite order_dvdn expn1.
+      apply /eqP.
+      apply val_inj.
+      simpl.
+      by rewrite mulrNN mulr1.
+    + rewrite expn0 /not.
+      intros.
+      rewrite order_dvdn expg1 expn1 in H.
+      move /eqP in H.
+      rewrite /oneg /= in H.
+      apply (f_equal val) in H.
+      rewrite /= /opp /one /= in H.
+      apply (f_equal val) in H.
+      rewrite /Zp_trunc /= in H.
+      have small1: 1 < 2 ^ n.+3 by (rewrite !expnS; lia).
+      have small2: 2 < 2 ^ n.+3 by (rewrite !expnS; lia).
+      replace ((2^n.+3).-2.+2) with (2^n.+3)%N in H by lia.
+      rewrite (modn_small small1) modn_small in H; lia.
+  - apply m1_not_in_unit_3_pow.
  Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_3_quo_isog_alt (n : nat) :
@@ -2688,34 +2701,28 @@ Lemma unit_pow_2_Zp_gens_m1_5_quo_isog (n : nat) :
   morphism.isog <[u5]> (<[u5]>/<[um1]>).
 Proof.
   intros.
-  apply quotient_isog.
-  - apply cents_norm.
-    eapply subset_trans.
-    apply subsetT.
-    apply sub_abelian_cent.
-    + apply units_Zp_abelian.
-    + apply subsetT.
-  - apply ord2_setI_G1.
-    + rewrite -(expn1 2).
-      apply dvdn_prime_power; trivial.
-      * rewrite order_dvdn expn1.
-        apply /eqP.
-        apply val_inj.
-        by rewrite /= mulrNN mulr1.
-      * rewrite expn0 /not.
-        intros.
-        rewrite order_dvdn expg1 expn1 in H.
-        move /eqP in H.
-        rewrite /oneg /= in H.
-        apply (f_equal val) in H.
-        rewrite /= /opp /one /= in H.
-        apply (f_equal val) in H.
-        rewrite /Zp_trunc /= in H.
-        have small2: 2 < 2 ^ n.+2 by (rewrite !expnS; lia).
-        have small1: 1 < 2 ^ n.+2 by lia.
-        replace ((2^n.+2).-2.+2) with (2^n.+2)%N in H by lia.
-        rewrite (modn_small small1) modn_small in H; lia.
-    + apply m1_not_in_unit_5_pow_gen.
+  apply quotient_isog_unit_Zp.
+  apply ord2_setI_G1.
+  - rewrite -(expn1 2).
+    apply dvdn_prime_power; trivial.
+    + rewrite order_dvdn expn1.
+      apply /eqP.
+      apply val_inj.
+      by rewrite /= mulrNN mulr1.
+    + rewrite expn0 /not.
+      intros.
+      rewrite order_dvdn expg1 expn1 in H.
+      move /eqP in H.
+      rewrite /oneg /= in H.
+      apply (f_equal val) in H.
+      rewrite /= /opp /one /= in H.
+      apply (f_equal val) in H.
+      rewrite /Zp_trunc /= in H.
+      have small2: 2 < 2 ^ n.+2 by (rewrite !expnS; lia).
+      have small1: 1 < 2 ^ n.+2 by lia.
+      replace ((2^n.+2).-2.+2) with (2^n.+2)%N in H by lia.
+      rewrite (modn_small small1) modn_small in H; lia.
+  - apply m1_not_in_unit_5_pow_gen.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_5_quo_isog_um1 (n : nat) :
@@ -2724,35 +2731,29 @@ Lemma unit_pow_2_Zp_gens_m1_5_quo_isog_um1 (n : nat) :
   morphism.isog <[um1]> (<[um1]>/<[u5]>).
 Proof.
   intros.
-  apply quotient_isog.
-  - apply cents_norm.
-    eapply subset_trans.
-    apply subsetT.
-    apply sub_abelian_cent.
-    + apply units_Zp_abelian.
-    + apply subsetT.
-  - rewrite setIC.
-    apply ord2_setI_G1.
-    + rewrite -(expn1 2).
-      apply dvdn_prime_power; trivial.
-      * rewrite order_dvdn expn1.
-        apply /eqP.
-        apply val_inj.
-        by rewrite /= mulrNN mulr1.
-      * rewrite expn0 /not.
-        intros.
-        rewrite order_dvdn expg1 expn1 in H.
-        move /eqP in H.
-        rewrite /oneg /= in H.
-        apply (f_equal val) in H.
-        rewrite /= /opp /one /= in H.
-        apply (f_equal val) in H.
-        rewrite /Zp_trunc /= in H.
-        have small2: 2 < 2 ^ n.+2 by (rewrite !expnS; lia).
-        have small1: 1 < 2 ^ n.+2 by lia.
-        replace ((2^n.+2).-2.+2) with (2^n.+2)%N in H by lia.
-        rewrite (modn_small small1) modn_small in H; lia.
-    + apply m1_not_in_unit_5_pow_gen.
+  apply quotient_isog_unit_Zp.
+  rewrite setIC.
+  apply ord2_setI_G1.
+  - rewrite -(expn1 2).
+    apply dvdn_prime_power; trivial.
+    + rewrite order_dvdn expn1.
+      apply /eqP.
+      apply val_inj.
+      by rewrite /= mulrNN mulr1.
+    + rewrite expn0 /not.
+      intros.
+      rewrite order_dvdn expg1 expn1 in H.
+      move /eqP in H.
+      rewrite /oneg /= in H.
+      apply (f_equal val) in H.
+      rewrite /= /opp /one /= in H.
+      apply (f_equal val) in H.
+      rewrite /Zp_trunc /= in H.
+      have small2: 2 < 2 ^ n.+2 by (rewrite !expnS; lia).
+      have small1: 1 < 2 ^ n.+2 by lia.
+      replace ((2^n.+2).-2.+2) with (2^n.+2)%N in H by lia.
+      rewrite (modn_small small1) modn_small in H; lia.
+  - apply m1_not_in_unit_5_pow_gen.
 Qed.
 
 Lemma unit_pow_2_Zp_gens_m1_5_quo_isog_alt (n : nat) :
