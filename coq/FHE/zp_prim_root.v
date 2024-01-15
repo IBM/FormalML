@@ -2804,10 +2804,33 @@ Section add_self_pow.
     | S m' => row_sum_rot_pow_rec (v + rotate_row_right (expn_2_pos n) v (2^m')) m'
     end.
 
+(*  Lemma vals_modn_mul i j m n :
+    i == j %[mod m] ->
+    exists k, k < n /\ i == j + k*n %[mod m * n].
+  Proof.
+    rewrite !modn_def.
+    (do 3 case: edivnP) => q1 r1 -> imp1 q2 r2 -> imp2 q3 r3 eqq3 imp3 /=.
+    move/eqP => ?; subst.
+    eexists.
+    rewrite !modn_def.
+    case: edivnP => q4 r4 eqq4 imp4 => /=.
+    
+    
+    
+    
 
+    
+
+  Lemma vals_mod_2_Sn i j n :
+    i == j %[mod 2^n] ->
+    i == j %[mod 2^n.+1] \/ i == j + 2^n %[mod 2^n.+1].
+  Proof.
+*)
+  
   Definition is_partitioned_in_same_bins_by_m_to {n} (v:'rV[G]_(2^n)) m :=
     (forall i j, val i == val j %[mod 2^m] -> v 0 i = v 0 j).
 
+  
   Lemma row_sum_rot_pow_rec_step_narrows_bins {n} (v:'rV[G]_(2^n)) (m : nat) :
     is_partitioned_in_same_bins_by_m_to v (S m) ->
     is_partitioned_in_same_bins_by_m_to (v + rotate_row_right (expn_2_pos n) v (2^m)) m.
