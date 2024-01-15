@@ -2836,13 +2836,13 @@ Section add_self_pow.
       rewrite !modn_small in eqq.
       - apply val_inj.
         by apply/eqP.
-      - admit.
-      - admit.
+      - apply ltn_ord.
+      - apply ltn_ord.
     }
     induction n' => //= v.
     move/row_sum_rot_pow_rec_step_narrows_bins => HH.
     by apply IHn'.
-  Admitted.    
+  Qed.
 
   Lemma row_sum_rot_pow_is_summed  {n} (v:'rV[G]_(2^n)) :
     \sum_(i < 2^n) v 0 i = (row_sum_rot_pow v) 0 (Ordinal (expn_2_pos n)).
