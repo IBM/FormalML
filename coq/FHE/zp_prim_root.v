@@ -2804,12 +2804,59 @@ Section add_self_pow.
     | S m' => row_sum_rot_pow_rec (v + rotate_row_right (expn_2_pos n) v (2^m')) m'
     end.
 
+
+  Definition is_partitioned_in_same_bins_by_m_to {n} (v:'rV[G]_(2^n)) m :=
+    (forall i j, val i == val j %[mod 2^m] -> v 0 i = v 0 j).
+
+  Lemma row_sum_rot_pow_rec_step_narrows_bins {n} (v:'rV[G]_(2^n)) (m : nat) :
+    is_partitioned_in_same_bins_by_m_to v (S m) ->
+    is_partitioned_in_same_bins_by_m_to (v + rotate_row_right (expn_2_pos n) v (2^m)) m.
+  Proof.
+  Admitted.
+
+  Lemma row_sum_rot_pow_rec_step_preserves_sum {n} (v:'rV[G]_(2^n)) (m : nat) :
+    is_partitioned_in_same_bins_by_m_to v (S m) ->
+    \sum_(i < 2^S m) v =
+      \sum_(i < m) (v + rotate_row_right (expn_2_pos n) v (2^m)).
+  Proof.
+  Admitted.
+
   Definition row_sum_rot_pow  {n} (v:'rV[G]_(2^n)) := row_sum_rot_pow_rec v n.
 
+  Lemma row_sum_rot_pow_is_really_binned  {n} (v:'rV[G]_(2^n)) :
+    is_partitioned_in_same_bins_by_m_to (row_sum_rot_pow v) 0.
+  Proof.
+    rewrite /row_sum_rot_pow.
+    suff {v}: forall n', forall v : 'rV_(2 ^ n),
+        is_partitioned_in_same_bins_by_m_to v n' ->
+        is_partitioned_in_same_bins_by_m_to (row_sum_rot_pow_rec v n') 0.
+    { apply.
+      rewrite /is_partitioned_in_same_bins_by_m_to => i j eqq.
+      suff ->: i = j => //.
+      rewrite !modn_small in eqq.
+      - apply val_inj.
+        by apply/eqP.
+      - admit.
+      - admit.
+    }
+    induction n' => //= v.
+    move/row_sum_rot_pow_rec_step_narrows_bins => HH.
+    by apply IHn'.
+  Admitted.    
+
+  Lemma row_sum_rot_pow_is_summed  {n} (v:'rV[G]_(2^n)) :
+    \sum_(i < 2^n) v 0 i = (row_sum_rot_pow v) 0 (Ordinal (expn_2_pos n)).
+  Proof.
+    
+  Admitted.
+     
   (* claim at kth iteration v is a concatenation of 2^k equal vectors each of which has the same sum as the original v. *)
   Lemma row_sum_rot_pow_correct {n} (v:'rV[G]_(2^n))
     : row_sum_rot_pow_rec v n = const_mx (\sum_(j < 2^n) v 0 j).
-   Proof.
+  Proof.
+        
+    
+    
    Admitted.
   
 End add_self_pow.
