@@ -2837,10 +2837,11 @@ Section add_self_pow.
   Proof.
   Admitted.
 
-  Lemma row_sum_rot_pow_rec_step_preserves_sum {n} (v:'rV[G]_(2^n)) (m : nat) :
+  Lemma row_sum_rot_pow_rec_step_preserves_sum {n} (v:'rV[G]_(2^n)) (m : nat)
+    (pf1:2^m.+1<=2^n) (pf2:2^m<=2^n):
     is_partitioned_in_same_bins_by_m_to v (S m) ->
-    \sum_(i < 2^S m) v =
-      \sum_(i < 2^m) (v + rotate_row_right (expn_2_pos n) v (2^m)).
+    \sum_(i < 2^S m) v 0 (widen_ord pf1 i) =
+      \sum_(i < 2^m) (v + rotate_row_right (expn_2_pos n) v (2^m)) 0 (widen_ord pf2 i).
   Proof.
   Admitted.
 
@@ -2891,16 +2892,30 @@ Section add_self_pow.
       - apply is_partitioned_in_same_bins_by_m_to0.
     }
     induction n' => /= pf v' isp.
-
-  Admitted.
+    - rewrite (big_pred1_id _ _ _ _ (i:=0)).
+      + rewrite addr0.
+        f_equal.
+        by apply val_inj.
+      + move=> i /=.
+        by rewrite ord1 eqxx.
+    - have pf': is_true (2 ^ n' <= 2 ^ n).
+      {
+        rewrite (leq_trans _ pf) // expnS.
+        lia.
+      } 
+      rewrite <- (IHn' pf').
+      + by apply row_sum_rot_pow_rec_step_preserves_sum.
+      + by apply row_sum_rot_pow_rec_step_narrows_bins.
+  Qed.
      
   (* claim at kth iteration v is a concatenation of 2^k equal vectors each of which has the same sum as the original v. *)
   Lemma row_sum_rot_pow_correct {n} (v:'rV[G]_(2^n))
     : row_sum_rot_pow_rec v n = const_mx (\sum_(j < 2^n) v 0 j).
   Proof.
-        
-    
-    
-   Admitted.
+    apply/matrixP => rr i.
+    rewrite !ord1 /const_mx !mxE row_sum_rot_pow_is_summed /row_sum_rot_pow .
+    apply row_sum_rot_pow_is_really_binned.
+    by rewrite expn0 !modn1.
+  Qed.
   
 End add_self_pow.
