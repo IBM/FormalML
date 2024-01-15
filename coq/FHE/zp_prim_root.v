@@ -2839,11 +2839,27 @@ Section add_self_pow.
 
   Lemma row_sum_rot_pow_rec_step_preserves_sum {n} (v:'rV[G]_(2^n)) (m : nat)
     (pf1:2^m.+1<=2^n) (pf2:2^m<=2^n):
-    is_partitioned_in_same_bins_by_m_to v (S m) ->
     \sum_(i < 2^S m) v 0 (widen_ord pf1 i) =
       \sum_(i < 2^m) (v + rotate_row_right (expn_2_pos n) v (2^m)) 0 (widen_ord pf2 i).
   Proof.
-  Admitted.
+    intros.
+    under [\sum_(i < 2 ^ m) _] eq_bigr do rewrite !mxE.
+
+    rewrite /= big_split /=.
+
+    have pf1': (2 ^ m + 2 ^ m <= 2 ^ n) by (rewrite (leq_trans _ pf1) // expnS; lia).
+    transitivity (\sum_(i < 2 ^ m + 2 ^ m) v 0 (widen_ord pf1' i)).
+    - have: 2 ^ m.+1 = addn (2 ^ m) (2 ^ m)
+      by (rewrite expnS; lia).
+      destruct 1.
+      apply eq_bigr => i _.
+      by f_equal; apply val_inj.
+   - rewrite big_split_ord /=.
+     f_equal; (apply eq_bigr => i _; f_equal; apply val_inj => //=).
+     rewrite addnC modn_small //.
+     have leq1: i < 2 ^ m by apply ltn_ord.
+     lia.
+  Qed.
 
   Definition row_sum_rot_pow  {n} (v:'rV[G]_(2^n)) := row_sum_rot_pow_rec v n.
 
@@ -2881,7 +2897,6 @@ Section add_self_pow.
   Proof.
     rewrite /row_sum_rot_pow.
     suff {v} HH: forall n' (pf:2^n'<=2^n), forall v' : 'rV_(2 ^ n),
-        is_partitioned_in_same_bins_by_m_to v' n' ->
         \sum_(i < 2^n') v' 0 (widen_ord pf i) = 
           (row_sum_rot_pow_rec v' n') 0  (Ordinal (expn_2_pos n)).
     {
@@ -2889,9 +2904,8 @@ Section add_self_pow.
       - apply eq_big => // i _.
         f_equal.
         by apply ord_inj.
-      - apply is_partitioned_in_same_bins_by_m_to0.
     }
-    induction n' => /= pf v' isp.
+    induction n' => /= pf v'.
     - rewrite (big_pred1_id _ _ _ _ (i:=0)).
       + rewrite addr0.
         f_equal.
@@ -2904,8 +2918,7 @@ Section add_self_pow.
         lia.
       } 
       rewrite <- (IHn' pf').
-      + by apply row_sum_rot_pow_rec_step_preserves_sum.
-      + by apply row_sum_rot_pow_rec_step_narrows_bins.
+      by apply row_sum_rot_pow_rec_step_preserves_sum.
   Qed.
      
   (* claim at kth iteration v is a concatenation of 2^k equal vectors each of which has the same sum as the original v. *)
