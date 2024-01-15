@@ -2789,3 +2789,27 @@ Section add_self.
   Qed.
 
 End add_self.
+
+Section add_self_pow.
+  Context {G:comRingType}.
+
+  Lemma expn_2_pos (n : nat) : 0 < expn 2 n.
+  Proof.
+    lia.
+  Qed.
+
+  Fixpoint row_sum_rot_pow_rec {n} (v:'rV[G]_(2^n)) (m : nat) : 'rV[G]_(2^n) :=
+    match m with
+    | 0 => v
+    | S m' => row_sum_rot_pow_rec (v + rotate_row_right (expn_2_pos n) v (2^m')) m'
+    end.
+
+  Definition row_sum_rot_pow  {n} (v:'rV[G]_(2^n)) := row_sum_rot_pow_rec v n.
+
+  (* claim at kth iteration v is a concatenation of 2^k equal vectors each of which has the same sum as the original v. *)
+  Lemma row_sum_rot_pow_correct {n} (v:'rV[G]_(2^n))
+    : row_sum_rot_pow_rec v n = const_mx (\sum_(j < 2^n) v 0 j).
+   Proof.
+   Admitted.
+  
+End add_self_pow.
