@@ -2817,11 +2817,24 @@ Section add_self_pow.
   Lemma row_sum_rot_pow_rec_step_preserves_sum {n} (v:'rV[G]_(2^n)) (m : nat) :
     is_partitioned_in_same_bins_by_m_to v (S m) ->
     \sum_(i < 2^S m) v =
-      \sum_(i < m) (v + rotate_row_right (expn_2_pos n) v (2^m)).
+      \sum_(i < 2^m) (v + rotate_row_right (expn_2_pos n) v (2^m)).
   Proof.
   Admitted.
 
   Definition row_sum_rot_pow  {n} (v:'rV[G]_(2^n)) := row_sum_rot_pow_rec v n.
+
+  Lemma is_partitioned_in_same_bins_by_m_to0 {n} (v:'rV[G]_(2^n)) :
+    is_partitioned_in_same_bins_by_m_to v n.
+  Proof.
+    move=> i j eqq.
+    suff ->: i = j => //.
+    rewrite !modn_small in eqq.
+    - apply val_inj.
+      by apply/eqP.
+    - apply ltn_ord.
+    - apply ltn_ord.
+  Qed.
+
 
   Lemma row_sum_rot_pow_is_really_binned  {n} (v:'rV[G]_(2^n)) :
     is_partitioned_in_same_bins_by_m_to (row_sum_rot_pow v) 0.
@@ -2831,23 +2844,31 @@ Section add_self_pow.
         is_partitioned_in_same_bins_by_m_to v n' ->
         is_partitioned_in_same_bins_by_m_to (row_sum_rot_pow_rec v n') 0.
     { apply.
-      rewrite /is_partitioned_in_same_bins_by_m_to => i j eqq.
-      suff ->: i = j => //.
-      rewrite !modn_small in eqq.
-      - apply val_inj.
-        by apply/eqP.
-      - apply ltn_ord.
-      - apply ltn_ord.
+      apply is_partitioned_in_same_bins_by_m_to0.
     }
     induction n' => //= v.
     move/row_sum_rot_pow_rec_step_narrows_bins => HH.
     by apply IHn'.
   Qed.
 
+    
   Lemma row_sum_rot_pow_is_summed  {n} (v:'rV[G]_(2^n)) :
     \sum_(i < 2^n) v 0 i = (row_sum_rot_pow v) 0 (Ordinal (expn_2_pos n)).
   Proof.
-    
+    rewrite /row_sum_rot_pow.
+    suff {v} HH: forall n' (pf:2^n'<=2^n), forall v' : 'rV_(2 ^ n),
+        is_partitioned_in_same_bins_by_m_to v' n' ->
+        \sum_(i < 2^n') v' 0 (widen_ord pf i) = 
+          (row_sum_rot_pow_rec v' n') 0  (Ordinal (expn_2_pos n)).
+    {
+      rewrite <- (HH n (leqnn _) v).
+      - apply eq_big => // i _.
+        f_equal.
+        by apply ord_inj.
+      - apply is_partitioned_in_same_bins_by_m_to0.
+    }
+    induction n' => /= pf v' isp.
+
   Admitted.
      
   (* claim at kth iteration v is a concatenation of 2^k equal vectors each of which has the same sum as the original v. *)
