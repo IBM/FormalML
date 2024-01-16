@@ -2845,9 +2845,8 @@ Section add_self_pow.
     rewrite (modn_small H4) in H3.
     move /eqP in H3.
     apply (f_equal (fun z => modn (j + z) (m * n)%N)) in H3.
-    rewrite -H3.
     apply /eqP.
-    rewrite modnDmr.
+    rewrite -H3 modnDmr.
     clear H3.
     replace (j + (i - j))%N with i; trivial.
     lia.
@@ -2862,26 +2861,20 @@ Section add_self_pow.
     case (boolP (j <= i)).
     - intros; by apply vals_modn_mul_le.
     - intros.
-      move /eqP in H1.
-      symmetry in H1.
-      move /eqP in H1.
+      rewrite eq_sym in H1.
       apply (vals_modn_mul_le (n := n)) in H1; try lia.
       destruct H1 as [? [??]].
       destruct x.
       + rewrite mul0n addn0 in H2.
         exists 0%N.
         split; trivial.
-        rewrite mul0n addn0.
-        apply /eqP.
-        symmetry.
-        by apply /eqP.
+        by rewrite mul0n addn0 eq_sym.
       + exists (n - x.+1)%N.
         split; try lia.
         move /eqP in H2.
         apply (f_equal (fun z => modn (z + (n - x.+1) * m)%N (m * n)%N)) in H2.
         rewrite modnDml in H2.
-        rewrite H2.
-        rewrite modnDml.
+        rewrite H2 modnDml.
         replace (i + x.+1 * m + (n - x.+1) * m)%N with (i + m * n)%N.
         * by rewrite -modnDm modnn addn0 modn_mod.
         * clear H2.
@@ -2900,8 +2893,7 @@ Section add_self_pow.
       destruct H as [? [??]].
       destruct x.
       + rewrite mul0n addn0 in H0.
-        rewrite expnS mulnC in i0.
-        by rewrite H0 in i0.
+        by rewrite expnS mulnC H0 in i0.
       + assert (x = 0%N) by lia.
         rewrite H1 mul1n in H0.
         by rewrite expnS mulnC.
