@@ -2952,9 +2952,17 @@ Section add_self_pow.
       }
       unfold modn_ord.
       simpl.
-      
-      
-  Admitted.
+      rewrite addrC.
+      f_equal.
+      + apply H.
+        simpl.
+        rewrite (mod_mod_le (i + 2^m)%N le_Sm_n).
+        by rewrite -H2.
+      + apply H.
+        simpl.
+        rewrite (mod_mod_le (j + 2^m)%N le_Sm_n).
+        by rewrite -H1.
+  Qed.
 
   Lemma row_sum_rot_pow_rec_step_preserves_sum {n} (v:'rV[G]_(2^n)) (m : nat)
     (pf1:2^m.+1<=2^n) (pf2:2^m<=2^n):
