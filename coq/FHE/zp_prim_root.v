@@ -2804,37 +2804,97 @@ Section add_self_pow.
     | S m' => row_sum_rot_pow_rec (v + rotate_row_right (expn_2_pos n) v (2^m')) m'
     end.
 
-(*  Lemma vals_modn_mul i j m n :
-    i == j %[mod m] ->
-    exists k, k < n /\ i == j + k*n %[mod m * n].
+  Lemma vals_modn_mul_0 i m n :
+    0 < m ->
+    0 < n ->
+    i == 0 %[mod m] ->
+    exists k, k < n /\ i == k * m %[mod m * n].
   Proof.
-    rewrite !modn_def.
-    (do 3 case: edivnP) => q1 r1 -> imp1 q2 r2 -> imp2 q3 r3 eqq3 imp3 /=.
-    move/eqP => ?; subst.
-    eexists.
-    rewrite !modn_def.
-    case: edivnP => q4 r4 eqq4 imp4 => /=.
-    
-    
-    
-    
+    intros.
+    assert (exists q, i = (q * m)%N).
+    {
+      rewrite (modn_small H) in H1.
+      by move /dvdnP in H1.
+    }
+    destruct H2.
+    exists (x %% n).
+    split.
+    - by rewrite ltn_mod.
+    - apply /eqP.
+      rewrite mulnC H2.
+      rewrite muln_modl.
+      by rewrite modn_mod.
+  Qed.
 
-    
+  Lemma vals_modn_mul i j m n :
+    0 < m ->
+    0 < n ->
+    j <= i ->
+    i == j %[mod m] ->
+    exists k, k < n /\ i == j + k * m %[mod m * n].
+  Proof.
+    intros.
+    rewrite modn_sub in H2; trivial.
+    apply (vals_modn_mul_0 (n:=n)) in H2; trivial.
+    destruct H2 as [? [??]].
+    exists x.
+    split; trivial.
+    assert (x * m < m * n).
+    {
+      rewrite mulnC.
+      by rewrite ltn_pmul2l.
+    }
+    rewrite (modn_small H4) in H3.
+    move /eqP in H3.
+    apply (f_equal (fun z => modn (j + z) (m * n)%N)) in H3.
+    rewrite -H3.
+    apply /eqP.
+    rewrite modnDmr.
+    clear H3.
+    replace (j + (i - j))%N with i; trivial.
+    lia.
+  Qed.
 
   Lemma vals_mod_2_Sn i j n :
+    j <= i ->
     i == j %[mod 2^n] ->
     i == j %[mod 2^n.+1] \/ i == j + 2^n %[mod 2^n.+1].
   Proof.
-*)
-  
+    intros.
+    case (boolP (i == j %[mod 2^n.+1])).
+    - by left.
+    - right.
+      apply (vals_modn_mul (expn_2_pos n) (n := 2)) in H0; try lia.
+      destruct H0 as [? [??]].
+      destruct x.
+      + rewrite mul0n addn0 in H1.
+        rewrite expnS mulnC in i0.
+        by rewrite H1 in i0.
+      + assert (x = 0%N) by lia.
+        rewrite H2 mul1n in H1.
+        by rewrite expnS mulnC.
+   Qed.
+    
   Definition is_partitioned_in_same_bins_by_m_to {n} (v:'rV[G]_(2^n)) m :=
     (forall i j, val i == val j %[mod 2^m] -> v 0 i = v 0 j).
 
-  
   Lemma row_sum_rot_pow_rec_step_narrows_bins {n} (v:'rV[G]_(2^n)) (m : nat) :
     is_partitioned_in_same_bins_by_m_to v (S m) ->
     is_partitioned_in_same_bins_by_m_to (v + rotate_row_right (expn_2_pos n) v (2^m)) m.
   Proof.
+    unfold is_partitioned_in_same_bins_by_m_to.
+    intros.
+    rewrite !mxE /rotate_index_right_ord.
+    assert (val i == val j %[mod 2^m.+1] \/ val i + 2^m == val j %[mod 2^m.+1]).
+    {
+      admit.
+    }
+    destruct H1.
+    - rewrite (H _ _ H1).
+      f_equal.
+      f_equal.
+      admit.
+      
   Admitted.
 
   Lemma row_sum_rot_pow_rec_step_preserves_sum {n} (v:'rV[G]_(2^n)) (m : nat)
