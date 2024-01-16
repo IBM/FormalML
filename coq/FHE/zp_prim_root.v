@@ -2902,10 +2902,21 @@ Section add_self_pow.
   Definition is_partitioned_in_same_bins_by_m_to {n} (v:'rV[G]_(2^n)) m :=
     (forall i j, val i == val j %[mod 2^m] -> v 0 i = v 0 j).
 
+  Lemma mod_mod_le k m n :
+    m <= n ->
+    (k %% 2^n) %% 2^m = k %% 2^m.
+  Proof.
+    intros.
+    rewrite modn_dvdm; trivial.
+    by apply dvdn_exp2l.
+  Qed.
+
   Lemma row_sum_rot_pow_rec_step_narrows_bins {n} (v:'rV[G]_(2^n)) (m : nat) :
+    S m <= n ->
     is_partitioned_in_same_bins_by_m_to v (S m) ->
     is_partitioned_in_same_bins_by_m_to (v + rotate_row_right (expn_2_pos n) v (2^m)) m.
   Proof.
+    intro le_Sm_n.
     unfold is_partitioned_in_same_bins_by_m_to.
     intros.
     rewrite !mxE /rotate_index_right_ord.
@@ -2916,8 +2927,32 @@ Section add_self_pow.
     destruct H1.
     - rewrite (H _ _ H1).
       f_equal.
-      f_equal.
-      admit.
+      apply H.
+      simpl.
+      apply /eqP.
+      rewrite -modn_mod.
+      rewrite (mod_mod_le (i + 2^m)%N le_Sm_n).
+      rewrite (mod_mod_le (j + 2^m)%N le_Sm_n).      
+      rewrite modn_mod.
+      move /eqP in H1.
+      simpl in H1.
+      apply (f_equal (fun z => (z + 2^m)%N %% (2^m.+1))) in H1.
+      by rewrite !modnDml in H1.
+    - simpl in H1.
+      move /eqP in H1.
+      assert (j = i + 2^m %[mod 2^m.+1]).
+      {
+        apply (f_equal (fun z => (z + 2^m)%N %% (2^m.+1))) in H1.
+        rewrite !modnDml in H1.
+        rewrite H1.
+        rewrite -addnA.
+        replace (2^m + 2^m)%N with (2^m.+1).
+        - by rewrite modnDr.
+        - rewrite expnS; lia.
+      }
+      unfold modn_ord.
+      simpl.
+      
       
   Admitted.
 
@@ -2959,7 +2994,6 @@ Section add_self_pow.
     - apply ltn_ord.
   Qed.
 
-
   Lemma row_sum_rot_pow_is_really_binned  {n} (v:'rV[G]_(2^n)) :
     is_partitioned_in_same_bins_by_m_to (row_sum_rot_pow v) 0.
   Proof.
@@ -2972,9 +3006,9 @@ Section add_self_pow.
     }
     induction n' => //= v.
     move/row_sum_rot_pow_rec_step_narrows_bins => HH.
-    by apply IHn'.
-  Qed.
-
+    apply IHn'.
+    apply HH.
+  Admitted.
     
   Lemma row_sum_rot_pow_is_summed  {n} (v:'rV[G]_(2^n)) :
     \sum_(i < 2^n) v 0 i = (row_sum_rot_pow v) 0 (Ordinal (expn_2_pos n)).
