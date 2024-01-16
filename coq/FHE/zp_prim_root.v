@@ -2917,7 +2917,7 @@ Section add_self_pow.
     is_partitioned_in_same_bins_by_m_to (v + rotate_row_right (expn_2_pos n) v (2^m)) m.
   Proof.
     intro le_Sm_n.
-    unfold is_partitioned_in_same_bins_by_m_to.
+    rewrite /is_partitioned_in_same_bins_by_m_to. 
     intros.
     rewrite !mxE /rotate_index_right_ord.
     assert (val i == val j %[mod 2^m.+1] \/ val i == val j + 2^m %[mod 2^m.+1]).
