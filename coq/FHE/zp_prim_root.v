@@ -2738,6 +2738,24 @@ Section add_self.
   
   Definition modn_ord (m:nat) : 'I_n := Ordinal (@ltn_pmod m n npos).
   
+  Lemma modn_ord_inj (i : 'I_n) :
+    injective (fun j : ordinal_finType n => modn_ord (i + j)).
+  Proof.
+    rewrite /modn_ord => a b [xx].
+    have: i + a + (n-i) = i + b + (n - i) %[mod n].
+    {
+      rewrite -[addn (addn _ (nat_of_ord a)) _ %% n]modnDml.
+      rewrite -[addn (addn _ (nat_of_ord b)) _ %% n]modnDml.
+      by rewrite xx.
+    }
+    rewrite (_:(addn (addn i a) (n-i) = addn a n)).
+    - rewrite (_:(addn (addn i b) (n-i) = addn b n)).
+      + rewrite !modnDr !modn_small; try apply ltn_ord.
+        apply val_inj.
+      + move: (ltn_ord i); lia.
+    - move: (ltn_ord i); lia.
+  Qed.
+
   Definition rotate_index_right_ord (idx:'I_n) (e:nat) 
     := modn_ord (idx + e).
   
@@ -2775,17 +2793,22 @@ Section add_self.
   Definition row_sum_naive_rot (v:'rV[G]_n)
     := row_sum_naive_rot_row v 0 (Ordinal npos).
 
-  Lemma row_sum_naive_rot_correct (v:'rV[G]_n)
-    : row_sum_naive_rot v == \sum_(j < n) v 0 j.
+  Lemma row_sum_naive_rot_row_correct (v:'rV[G]_n)
+    : row_sum_naive_rot_row v = const_mx (\sum_(j < n) v 0 j).
   Proof.
-    rewrite/row_sum_naive_rot/row_sum_naive_rot_row.
-    rewrite /rotate_row_right/rotate_index_right_ord summxE /=.
-    apply/eqP.
-    apply eq_bigr=> k _.
-    rewrite !mxE.
-    f_equal.
-    apply ord_inj => /=.
-    by rewrite add0n modn_small.
+    apply/matrixP => rr i.
+    rewrite /row_sum_naive_rot_row/const_mx/rotate_row_right/rotate_index_right_ord.
+    rewrite !ord1 !mxE summxE /=.
+    rewrite [\sum_(j<n) v _ j](reindex_inj _ (h:=(fun j => modn_ord (i + nat_of_ord j)))).
+    -  apply eq_bigr => k _.
+       by rewrite !mxE.
+    - apply modn_ord_inj.
+Qed.
+
+  Lemma row_sum_naive_rot_correct (v:'rV[G]_n)
+    : row_sum_naive_rot v = \sum_(j < n) v 0 j.
+  Proof.
+    by rewrite/row_sum_naive_rot row_sum_naive_rot_row_correct/const_mx !mxE.
   Qed.
 
   Lemma row_sum_naive_rot_row_correct (v:'rV[G]_n)
