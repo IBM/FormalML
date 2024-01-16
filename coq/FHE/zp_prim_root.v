@@ -2824,7 +2824,7 @@ Section add_self_pow.
       by rewrite mulnC H2 muln_modl modn_mod.
   Qed.
 
-  Lemma vals_modn_mul i j m n :
+  Lemma vals_modn_mul_le i j m n :
     0 < m ->
     0 < n ->
     j <= i ->
@@ -2853,8 +2853,42 @@ Section add_self_pow.
     lia.
   Qed.
 
+  Lemma vals_modn_mul i j m n :
+    0 < m ->
+    0 < n ->
+    i == j %[mod m] ->
+    exists k, k < n /\ i == j + k * m %[mod m * n].
+  Proof.
+    case (boolP (j <= i)).
+    - intros; by apply vals_modn_mul_le.
+    - intros.
+      move /eqP in H1.
+      symmetry in H1.
+      move /eqP in H1.
+      apply (vals_modn_mul_le (n := n)) in H1; try lia.
+      destruct H1 as [? [??]].
+      destruct x.
+      + rewrite mul0n addn0 in H2.
+        exists 0%N.
+        split; trivial.
+        rewrite mul0n addn0.
+        apply /eqP.
+        symmetry.
+        by apply /eqP.
+      + exists (n - x.+1)%N.
+        split; try lia.
+        move /eqP in H2.
+        apply (f_equal (fun z => modn (z + (n - x.+1) * m)%N (m * n)%N)) in H2.
+        rewrite modnDml in H2.
+        rewrite H2.
+        rewrite modnDml.
+        replace (i + x.+1 * m + (n - x.+1) * m)%N with (i + m * n)%N.
+        * by rewrite -modnDm modnn addn0 modn_mod.
+        * clear H2.
+          lia.
+   Qed.
+
   Lemma vals_mod_2_Sn i j n :
-    j <= i ->
     i == j %[mod 2^n] ->
     i == j %[mod 2^n.+1] \/ i == j + 2^n %[mod 2^n.+1].
   Proof.
@@ -2862,14 +2896,14 @@ Section add_self_pow.
     case (boolP (i == j %[mod 2^n.+1])).
     - by left.
     - right.
-      apply (vals_modn_mul (expn_2_pos n) (n := 2)) in H0; try lia.
-      destruct H0 as [? [??]].
+      apply (vals_modn_mul (expn_2_pos n) (n := 2)) in H; try lia.
+      destruct H as [? [??]].
       destruct x.
-      + rewrite mul0n addn0 in H1.
+      + rewrite mul0n addn0 in H0.
         rewrite expnS mulnC in i0.
-        by rewrite H1 in i0.
+        by rewrite H0 in i0.
       + assert (x = 0%N) by lia.
-        rewrite H2 mul1n in H1.
+        rewrite H1 mul1n in H0.
         by rewrite expnS mulnC.
    Qed.
     
