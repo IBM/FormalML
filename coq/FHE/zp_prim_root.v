@@ -3068,7 +3068,7 @@ Section add_self_pow.
      
   (* claim at kth iteration v is a concatenation of 2^k equal vectors each of which has the same sum as the original v. *)
   Lemma row_sum_rot_pow_correct {n} (v:'rV[G]_(2^n))
-    : row_sum_rot_pow_rec v n = const_mx (\sum_(j < 2^n) v 0 j).
+    : row_sum_rot_pow v = const_mx (\sum_(j < 2^n) v 0 j).
   Proof.
     apply/matrixP => rr i.
     rewrite !ord1 /const_mx !mxE row_sum_rot_pow_is_summed /row_sum_rot_pow .
