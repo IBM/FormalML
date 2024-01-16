@@ -2917,9 +2917,9 @@ Section add_self_pow.
     unfold is_partitioned_in_same_bins_by_m_to.
     intros.
     rewrite !mxE /rotate_index_right_ord.
-    assert (val i == val j %[mod 2^m.+1] \/ val i + 2^m == val j %[mod 2^m.+1]).
+    assert (val i == val j %[mod 2^m.+1] \/ val i == val j + 2^m %[mod 2^m.+1]).
     {
-      admit.
+      by apply vals_mod_2_Sn.
     }
     destruct H1.
     - rewrite (H _ _ H1).
