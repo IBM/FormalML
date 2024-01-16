@@ -2821,9 +2821,7 @@ Section add_self_pow.
     split.
     - by rewrite ltn_mod.
     - apply /eqP.
-      rewrite mulnC H2.
-      rewrite muln_modl.
-      by rewrite modn_mod.
+      by rewrite mulnC H2 muln_modl modn_mod.
   Qed.
 
   Lemma vals_modn_mul i j m n :
