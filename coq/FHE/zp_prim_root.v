@@ -3000,17 +3000,19 @@ Section add_self_pow.
     is_partitioned_in_same_bins_by_m_to (row_sum_rot_pow v) 0.
   Proof.
     rewrite /row_sum_rot_pow.
-    suff {v}: forall n', forall v : 'rV_(2 ^ n),
+    suff {v}: forall n', n' <= n -> forall v : 'rV_(2 ^ n),
         is_partitioned_in_same_bins_by_m_to v n' ->
         is_partitioned_in_same_bins_by_m_to (row_sum_rot_pow_rec v n') 0.
     { apply.
-      apply is_partitioned_in_same_bins_by_m_to0.
+      - apply leqnn.
+      - apply is_partitioned_in_same_bins_by_m_to0.
     }
-    induction n' => //= v.
+    induction n' => //= n'l v.
     move/row_sum_rot_pow_rec_step_narrows_bins => HH.
     apply IHn'.
-    apply HH.
-  Admitted.
+    - by apply ltnW.
+    - by apply HH.
+  Qed.
     
   Lemma row_sum_rot_pow_is_summed  {n} (v:'rV[G]_(2^n)) :
     \sum_(i < 2^n) v 0 i = (row_sum_rot_pow v) 0 (Ordinal (expn_2_pos n)).
