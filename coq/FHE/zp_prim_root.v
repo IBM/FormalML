@@ -2811,19 +2811,6 @@ Qed.
     by rewrite/row_sum_naive_rot row_sum_naive_rot_row_correct/const_mx !mxE.
   Qed.
 
-  Lemma row_sum_naive_rot_row_correct (v:'rV[G]_n)
-    : row_sum_naive_rot_row v = const_mx (\sum_(j < n) v 0 j).
-  Proof.
-    apply/matrixP => rr i.
-    rewrite !ord1 /const_mx !mxE.
-    generalize (row_sum_naive_rot_correct v); intros.
-    move /eqP in H.
-    rewrite -H /row_sum_naive_rot.
-    rewrite /row_sum_naive_rot_row/rotate_row_right/rotate_index_right_ord.
-    rewrite summxE /=.
-    rewrite summxE /=.
-    Admitted.
-
 End add_self.
 
 Section add_self_pow.
