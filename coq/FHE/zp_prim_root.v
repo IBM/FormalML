@@ -2803,7 +2803,7 @@ Section add_self.
     -  apply eq_bigr => k _.
        by rewrite !mxE.
     - apply modn_ord_inj.
-Qed.
+  Qed.
 
   Lemma row_sum_naive_rot_correct (v:'rV[G]_n)
     : row_sum_naive_rot v = \sum_(j < n) v 0 j.
@@ -2948,21 +2948,15 @@ Section add_self_pow.
       by apply vals_mod_2_Sn.
     }
     destruct H1.
-    - rewrite (H _ _ H1).
-      f_equal.
-      apply H.
-      simpl.
-      apply /eqP.
-      rewrite -modn_mod.
-      rewrite (mod_mod_le (i + 2^m)%N le_Sm_n).
-      rewrite (mod_mod_le (j + 2^m)%N le_Sm_n).      
-      rewrite modn_mod.
-      move /eqP in H1.
-      simpl in H1.
-      apply (f_equal (fun z => (z + 2^m)%N %% (2^m.+1))) in H1.
-      by rewrite !modnDml in H1.
-    - simpl in H1.
-      move /eqP in H1.
+    - f_equal; apply H; simpl.
+      + apply H1.
+      + rewrite mod_mod_le; trivial.
+        rewrite mod_mod_le; trivial.
+        move /eqP in H1.
+        apply /eqP.
+        apply (f_equal (fun z => (z + 2^m)%N %% (2^m.+1))) in H1.
+        by rewrite !modnDml in H1.
+    - move /eqP in H1.
       assert (j = i + 2^m %[mod 2^m.+1]).
       {
         apply (f_equal (fun z => (z + 2^m)%N %% (2^m.+1))) in H1.
@@ -2973,8 +2967,6 @@ Section add_self_pow.
         - by rewrite modnDr.
         - rewrite expnS; lia.
       }
-      unfold modn_ord.
-      simpl.
       rewrite addrC.
       f_equal; apply H; simpl.
       + by rewrite (mod_mod_le (i + 2^m)%N le_Sm_n) -H2.
