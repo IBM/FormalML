@@ -2961,8 +2961,7 @@ Section add_self_pow.
       {
         apply (f_equal (fun z => (z + 2^m)%N %% (2^m.+1))) in H1.
         rewrite !modnDml in H1.
-        rewrite H1.
-        rewrite -addnA.
+        rewrite H1 -addnA.
         replace (2^m + 2^m)%N with (2^m.+1).
         - by rewrite modnDr.
         - rewrite expnS; lia.
