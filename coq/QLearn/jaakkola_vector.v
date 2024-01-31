@@ -750,3 +750,38 @@ Proof.
   - apply Rgt_not_eq.
     apply cond_pos.
 Qed.
+
+Lemma gamma_eps (gamma : posreal) :
+  gamma < 1 ->
+  exists (eps : posreal), gamma <= 1 / (1 + eps).
+Proof.
+  intros.
+  assert (0 < (1 - gamma) / (2 * gamma)).
+  {
+    assert (0 < gamma).
+    {
+      apply cond_pos.
+    }
+    apply RIneq.Rdiv_lt_0_compat; lra.
+  }
+  exists (mkposreal _ H0).
+  simpl.
+  apply Rmult_le_reg_r with (r :=  (1 + ((1 - gamma) / (2 * gamma)))).
+  - eapply Rlt_trans.
+    apply H0; lra.
+    lra.
+  - unfold Rdiv.
+    rewrite Rmult_1_l, Rinv_l; try lra.
+    rewrite Rmult_plus_distr_l, Rmult_1_r.
+    rewrite <- Rmult_assoc, Rmult_comm, <- Rmult_assoc.
+    replace (/ (2 * gamma) * gamma) with (/2).
+    + lra.
+    + rewrite Rinv_mult, Rmult_assoc, Rinv_l, Rmult_1_r; trivial.
+      apply Rgt_not_eq.
+      apply cond_pos.
+Qed.
+
+
+
+
+    
