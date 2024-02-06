@@ -751,9 +751,9 @@ Proof.
     apply cond_pos.
 Qed.
 
-Lemma gamma_eps (gamma : posreal) :
+Lemma gamma_eps_le (gamma : posreal) :
   gamma < 1 ->
-  exists (eps : posreal), gamma <= 1 / (1 + eps).
+  exists (eps : posreal), gamma <=  / (1 + eps).
 Proof.
   intros.
   assert (0 < (1 - gamma) / (2 * gamma)).
@@ -771,7 +771,7 @@ Proof.
     apply H0; lra.
     lra.
   - unfold Rdiv.
-    rewrite Rmult_1_l, Rinv_l; try lra.
+    rewrite Rinv_l; try lra.
     rewrite Rmult_plus_distr_l, Rmult_1_r.
     rewrite <- Rmult_assoc, Rmult_comm, <- Rmult_assoc.
     replace (/ (2 * gamma) * gamma) with (/2).
@@ -781,7 +781,110 @@ Proof.
       apply cond_pos.
 Qed.
 
+Lemma gamma_eps_le_alt (gamma : posreal) :
+  gamma < 1 ->
+  exists (eps : posreal),
+  forall (eps2 : posreal),
+    eps2 <= eps ->
+    gamma <= / (1 + eps2).
+Proof.
+  intros.
+  destruct (gamma_eps_le gamma H).
+  exists x.
+  intros.
+  eapply Rle_trans.
+  apply H0.
+  generalize (cond_pos x); intros.
+  generalize (cond_pos eps2); intros.
+  apply Rle_Rinv; lra.
+Qed.
 
+    Lemma conv_as_prob_1_eps_alt {prts: ProbSpace dom} (f : nat -> Ts -> R) (fstar: R)
+      {rv : forall n, RandomVariable dom borel_sa (f n)} :
+      almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
+      forall (eps1 eps2:posreal),
+        eventually (fun n => ps_P (event_lt dom (rvabs (rvminus (f n) (const fstar))) eps1) >= 1 - eps2).
+    Proof.
+      intros.
+      apply conv_as_prob_1_eps.
+      revert H.
+      apply almost_impl; apply all_almost.
+      intros ??.
+      apply is_lim_seq_plus with (l1 := fstar) (l2 := -1 * fstar); trivial.
+      - apply is_lim_seq_const.
+      - unfold is_Rbar_plus; simpl.
+        f_equal.
+        f_equal.
+        lra.
+    Qed.
 
-
+    Lemma lemma3_helper {prts: ProbSpace dom} (f : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
+      {rv : forall n, RandomVariable dom borel_sa (f n)} :
+      almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
+      Rabs fstar <= gamma * C ->
+      gamma < 1 ->
+      exists (Eps1 : posreal),
+        forall (eps1 eps2:posreal),
+          eps1 <= Eps1 ->
+          eventually (fun n => ps_P (event_lt dom (rvabs (f n)) (C / (1 + eps1))) >= 1 - eps2).
+    Proof.
+      intros H H0 gamma_1.
+      assert (0 < (1 - gamma) * C / 2).
+      {
+        apply Rmult_lt_0_compat; try lra.
+        generalize (cond_pos C); intros.
+        apply Rmult_lt_0_compat; lra.
+      }
+      pose (epsg := mkposreal _ H1).
+      assert (0 < gamma + epsg/C).
+      {
+        generalize (cond_pos gamma); intros.
+        apply Rplus_lt_0_compat; try lra.
+        apply Rdiv_lt_0_compat; apply cond_pos.
+      }
+      pose (gamma2 := mkposreal _ H2).
+      assert (gamma2 < 1).
+      {
+        unfold gamma2; simpl.
+        replace ((1 - gamma) * C / 2 / C) with ((1 - gamma) /2); try lra.
+        unfold Rdiv.
+        rewrite Rmult_assoc, Rmult_assoc.
+        f_equal.
+        rewrite Rmult_comm, Rmult_assoc.
+        generalize (cond_pos C); intros.
+        rewrite Rinv_l; lra.
+      }
+      destruct (gamma_eps_le_alt _ H3).
+      exists x.
+      intros.
+      destruct (conv_as_prob_1_eps_alt f fstar H epsg eps2).
+      exists x0.
+      intros.
+      specialize (H6 n H7).
+      eapply Rge_trans.
+      shelve.
+      apply H6.
+      Unshelve.
+      apply Rle_ge.
+      apply ps_sub.
+      unfold event_sub, pre_event_sub; simpl; intros.
+      unfold rvabs, rvminus, rvplus, rvopp, rvscale, const in H8.
+      unfold rvabs.
+      generalize (Rabs_triang_inv (f n x1) fstar); intros.
+      replace  (f n x1 + -1 * fstar) with  (f n x1 - fstar) in H8 by lra.
+      assert (Rabs(f n x1) < (1 - gamma) * C / 2 + gamma * C) by lra.
+      specialize (H4 eps1 H5).
+      unfold gamma2 in H4; simpl in H4.
+      eapply Rlt_le_trans.
+      apply H10.
+      generalize (cond_pos C); intros.
+      apply Rmult_le_compat_l with (r := C) in H4; try lra.
+      rewrite Rmult_plus_distr_l in H4.
+      replace ( C * ((1 - gamma) * C / 2 / C)) with ((1 - gamma) * C / 2) in H4; try lra.
+      rewrite (Rmult_comm C _).
+      unfold Rdiv.
+      rewrite Rmult_assoc, Rmult_assoc.
+      rewrite Rinv_l; lra.
+    Qed.
+      
     
