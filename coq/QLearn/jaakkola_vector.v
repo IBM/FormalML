@@ -818,6 +818,34 @@ Qed.
         lra.
     Qed.
 
+    Lemma lemma3_gamma_eps (gamma : posreal) :
+      gamma < 1 ->
+      exists (eps : posreal),
+      forall (eps2 : posreal), 
+        eps2 <= eps ->
+        gamma + (1 - gamma)/2 <= / (1 + eps2).
+    Proof.
+      intros.
+      assert (0 < (1 - gamma) / 2).
+      {
+        apply Rmult_lt_0_compat; lra.
+      }
+      assert (0 < gamma + mkposreal _ H0).
+      {
+        generalize (cond_pos gamma); intros.
+        apply Rplus_lt_0_compat; try lra.
+        apply cond_pos.
+      }
+      assert (mkposreal _ H1 < 1).
+      {
+        simpl.
+        lra.
+      }
+      destruct (gamma_eps_le_alt _ H2).
+      exists x.
+      now apply H3.
+    Qed.      
+
     Lemma lemma3_helper {prts: ProbSpace dom} (f : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rv : forall n, RandomVariable dom borel_sa (f n)} :
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
@@ -829,62 +857,36 @@ Qed.
           eventually (fun n => ps_P (event_lt dom (rvabs (f n)) (C / (1 + eps1))) >= 1 - eps2).
     Proof.
       intros H H0 gamma_1.
-      assert (0 < (1 - gamma) * C / 2).
+      destruct (lemma3_gamma_eps gamma gamma_1).
+      exists x.
+      assert (0 < (1 - gamma) / 2).
       {
-        apply Rmult_lt_0_compat; try lra.
-        generalize (cond_pos C); intros.
         apply Rmult_lt_0_compat; lra.
       }
-      pose (epsg := mkposreal _ H1).
-      assert (0 < gamma + epsg/C).
-      {
-        generalize (cond_pos gamma); intros.
-        apply Rplus_lt_0_compat; try lra.
-        apply Rdiv_lt_0_compat; apply cond_pos.
-      }
-      pose (gamma2 := mkposreal _ H2).
-      assert (gamma2 < 1).
-      {
-        unfold gamma2; simpl.
-        replace ((1 - gamma) * C / 2 / C) with ((1 - gamma) /2); try lra.
-        unfold Rdiv.
-        rewrite Rmult_assoc, Rmult_assoc.
-        f_equal.
-        rewrite Rmult_comm, Rmult_assoc.
-        generalize (cond_pos C); intros.
-        rewrite Rinv_l; lra.
-      }
-      destruct (gamma_eps_le_alt _ H3).
-      exists x.
       intros.
-      destruct (conv_as_prob_1_eps_alt f fstar H epsg eps2).
+      assert (epsgC: 0 < (mkposreal _ H2) * C).
+      {
+        apply Rmult_lt_0_compat; apply cond_pos.
+      }
+      destruct (conv_as_prob_1_eps_alt f fstar H (mkposreal _ epsgC) eps2).
       exists x0.
       intros.
-      specialize (H6 n H7).
-      eapply Rge_trans.
-      shelve.
-      apply H6.
-      Unshelve.
+      specialize (H4 n H5).
+      eapply Rge_trans; cycle 1.
+      apply H4.
       apply Rle_ge.
       apply ps_sub.
-      unfold event_sub, pre_event_sub; simpl; intros.
-      unfold rvabs, rvminus, rvplus, rvopp, rvscale, const in H8.
-      unfold rvabs.
+      unfold event_sub, pre_event_sub, rvabs; simpl; intros.
+      unfold rvabs, rvminus, rvplus, rvopp, rvscale, const in H6.
       generalize (Rabs_triang_inv (f n x1) fstar); intros.
-      replace  (f n x1 + -1 * fstar) with  (f n x1 - fstar) in H8 by lra.
+      replace  (f n x1 + -1 * fstar) with  (f n x1 - fstar) in H6 by lra.
       assert (Rabs(f n x1) < (1 - gamma) * C / 2 + gamma * C) by lra.
-      specialize (H4 eps1 H5).
-      unfold gamma2 in H4; simpl in H4.
+      specialize (H1 eps1 H3).
+      simpl in H4.
       eapply Rlt_le_trans.
-      apply H10.
+      apply H8.
       generalize (cond_pos C); intros.
-      apply Rmult_le_compat_l with (r := C) in H4; try lra.
-      rewrite Rmult_plus_distr_l in H4.
-      replace ( C * ((1 - gamma) * C / 2 / C)) with ((1 - gamma) * C / 2) in H4; try lra.
-      rewrite (Rmult_comm C _).
-      unfold Rdiv.
-      rewrite Rmult_assoc, Rmult_assoc.
-      rewrite Rinv_l; lra.
+      apply Rmult_le_compat_l with (r := C) in H1; try lra.
     Qed.
       
     
