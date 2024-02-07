@@ -2212,6 +2212,73 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
       apply H4.
    Qed.
 
+  Lemma lemma3_pre1_beta {n} (W : forall (i : nat),  (i < (S n))%nat -> nat -> nat -> Ts -> R)
+        (ω : Ts) (ε : posreal)
+        (α β ww : nat -> Ts -> vector R (S n)) :
+    (forall i pf t0, W i pf 0%nat t0 ω = 0) ->
+    
+    (forall i pf t, 0 <= vecrvnth i pf (α t) ω <= 1) ->
+    (forall i pf t, 0 <= vecrvnth i pf (β t) ω <= 1) ->    
+    (forall i pf t0 t,
+        W i pf (S t) t0 ω =
+        (1 - vecrvnth i pf (α (t + t0)%nat) ω) * (W i pf t t0 ω) +
+        (vecrvnth i pf (β (t + t0)%nat) ω) * (vecrvnth i pf (ww (t + t0)%nat) ω)) ->
+
+    (forall i pf, is_lim_seq (fun n : nat => W i pf n 0%nat ω) 0) ->
+
+    exists (T : nat),
+      forall i pf t0 t,
+        (t0 >= T)%nat ->
+        Rabs (W i pf t t0 ω) <= ε.
+  Proof.
+    intros.
+    assert (forall i pf,
+               exists T,
+                 forall t0 t,
+                   (t0 >= T)%nat ->
+                   Rabs (W i pf t t0 ω) <= ε).
+    {
+      intros.
+      generalize (lemma2_beta (W i pf) ω 
+                    (fun t => vecrvnth i pf (α t))
+                    (fun t => vecrvnth i pf (β t))                     
+                    (fun t => vecrvnth i pf (ww t)) 
+                    (H i pf) (H0 i pf) (H1 i pf) (H2 i pf) (H3 i pf) ε); intros.
+      destruct H4.
+      exists x.
+      intros.
+      now apply H4.
+    }
+    assert (forall (i : nat) (pf : (i < S n)%nat),
+               exists T : nat, forall t0: nat, (t0 >= T)%nat ->
+                                               forall t, Rabs (W i pf t t0 ω) <= ε).
+    {
+      intros.
+      destruct (H4 i pf).
+      exists x.
+      intros.
+      now apply H5.
+    }
+    generalize (bounded_nat_ex_choice_vector 
+                  (A := nat) (n := S n)
+                  (fun i pf N =>
+                     forall t0, (t0>=N)%nat -> 
+                                forall t,
+                                  Rabs (W i pf t t0 ω) <= ε)); intros.
+    cut_to H6.
+    - destruct H6.
+      exists (list_max (proj1_sig x)).
+      intros.
+      apply H6.
+      apply list_max_le in H7.
+      rewrite Forall_forall in H7.
+      specialize (H7 (vector_nth i pf x)).
+      apply H7.
+      apply vector_nth_In.
+    - intros.
+      apply H5.
+   Qed.
+
   Lemma lemma3 {n} (W : forall (i : nat),  (i < (S n))%nat -> nat -> nat -> Ts -> R) (ω : Ts) (ε G0 :R)
         (t0 : nat) (α x ww : nat -> Ts -> vector R (S n)) (M G : nat -> Ts -> R) 
         (XF : vector R (S n) -> vector R (S n)) :
@@ -3836,6 +3903,648 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
              ring_simplify.
              assert (Rabs (vector_nth i pf (Rvector_minus (XF (X (t + tauk x)%nat x))
                                                           x')) <=  β * D k x).
+             {
+               eapply Rle_trans.
+               apply Rvector_max_abs_nth_le.
+               eapply Rle_trans.
+               apply H6.
+               apply Rmult_le_compat_l; try lra.
+               apply H11.
+               unfold tauk; lia.
+             }
+             rewrite Rabs_le_between in H13.
+             rewrite Rvector_nth_minus in H13.
+             lra.
+           + revert H11.
+             apply almost_impl, all_almost; intros ???.
+             simpl.
+             specialize (H11 (t + tauk x)%nat).
+             unfold Xtau, X1.
+             cut_to H11; try lia.
+             eapply Rle_trans.
+             shelve.
+             apply H11.
+             unfold tauk.
+             lia.
+           + apply Y_lim with (α := αtau); try easy.
+             * intros.
+               apply H.
+             * intros.
+               apply (seq_sum_shift (fun t => α1 t ω)).
+               apply H0.
+           + revert H14.
+             apply almost_impl, all_almost; intros ??.
+             exists (N2 x).
+             intros.
+             unfold Wtau.
+             specialize (H14 (tauk x) t).
+             apply H14.
+             unfold tauk.
+             lia.
+      }               
+       apply bounded_nat_ex_choice_vector in H12.
+       destruct H12.
+       exists (fun ω => list_max (map (fun z => z ω) (proj1_sig x))).
+       intros.
+       assert (forall i pf ω,
+                  (vector_nth i pf x ω <= 
+                   list_max (map (fun z => z ω) (` x)))%nat).
+       {
+         intros.
+         generalize (vector_nth_In x _ pf); intros HH.
+         generalize (list_max_upper (map (fun z => z ω) (` x))); intros HH2.
+         rewrite Forall_forall in HH2.
+         apply HH2.
+         apply in_map_iff.
+         now exists (vector_nth i pf x).
+       }
+       
+       assert (almost prts (fun x0 =>
+                             forall i pf t,
+                               (t >= vector_nth i pf x x0)%nat ->
+                               (rvabs (vecrvnth i pf (Xx t)) x0) <=
+                               (D (S k) x0))).
+       {
+         apply almost_bounded_forall.
+         intros.
+         - apply le_dec.
+         - intros.
+           rewrite (digit_pf_irrel _ _ pf2 pf1).
+           apply H14.
+           now rewrite (digit_pf_irrel _ _ pf2 pf1) in H15.
+         - intros.
+           apply H12.
+       }
+       revert H14.
+       apply almost_impl, all_almost; intros ????.
+       unfold rvmaxabs.
+       unfold rvabs, vecrvnth in H15.
+       destruct n.
+       + assert (Rvector_max_abs (Xx t x0) = 0).
+         {
+           apply Rvector_max_abs_zero.
+           rewrite vector0_0.
+           apply (vector0_0 (Xx t x0)).
+         }
+         rewrite H16.
+         clear H11 H12 H13 H14 H15.
+         induction k.
+         * unfold D.
+           unfold rvscale.
+           apply Rmult_le_pos; trivial.
+           apply Rmult_le_pos; lra.
+           now left.
+         * simpl.
+           simpl in IHk.
+           unfold rvscale; unfold rvscale in IHk.
+           apply Rmult_le_pos; trivial.
+           apply Rmult_le_pos; lra.
+       + rewrite Rvector_max_abs_nth_Rabs_le.
+         intros.
+         apply H14.
+         specialize (H13 i pf x0).
+         lia.
+     }
+       
+   assert (almost prts
+             (fun ω =>
+                forall (k : nat),
+                exists (N : Ts -> nat),
+                forall (t : nat),
+                  (t >= N ω)%nat ->
+                  (rvmaxabs (Xx t) ω) <= (D k ω))).
+   {
+     apply almost_forall.
+     intros.
+     specialize (H11 n0).
+     destruct H11.
+     revert H11.
+     apply almost_impl, all_almost; intros ??.
+     now exists x.
+   }
+   revert H12.
+   apply almost_impl.
+   apply all_almost; intros ??.
+   specialize (H10 x).
+   apply is_lim_seq_spec.
+   apply is_lim_seq_spec in H10.
+   intros ?.
+   specialize (H10 eps0).
+   destruct H10.
+   specialize (H12 x0).
+   destruct H12.
+   exists (x1 x).
+   intros.
+   specialize (H12 n0).
+   cut_to H12; try lia.
+   rewrite Rminus_0_r.
+   specialize (H10 x0).
+   cut_to H10; try lia.
+   rewrite Rminus_0_r in H10.
+   generalize (Rle_abs (D x0 x)); intros.
+   unfold rvmaxabs, Xx in H12.
+   rewrite Rabs_right; try lra.
+   apply Rle_ge.
+   apply rvmaxabs_pos.
+   Unshelve.
+   apply Rvector_max_abs_nth_le.
+  Qed.
+
+  Theorem Tsitsiklis3_b_pos_beta {n}
+    (X w α β : nat -> Ts -> vector R n)
+    (b : R) (D0' : Ts -> R) 
+    (x' : vector R n)
+    (XF : vector R n -> vector R n)
+    {F : nat -> SigmaAlgebra Ts}
+    (isfilt : IsFiltration F) 
+    (filt_sub : forall k, sa_sub (F k) dom) 
+    (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
+    (adapt_beta : IsAdapted (Rvector_borel_sa n) β F)    
+    {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
+    {rvXF : RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) XF}
+    {posD0' : forall ω, 0 < D0' ω}
+    (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
+    {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
+    {iscond : forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (w k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k)))} 
+    (beta_bound : 
+      (forall k ω i pf, 0 <= vector_nth i pf (β k ω) <= 1))
+    (beta_inf: forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty)
+    
+    (beta_fin: (exists (C : R),
+        forall i pf,
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (β k ω))))) (Finite C))))
+:
+
+    (forall k ω i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
+(*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
+*)
+    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+
+    (exists (C : R),
+        forall i pf,
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Finite C))) ->
+    (forall k i pf, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (fun ω => vector_nth i pf (w k ω))) (const 0)) ->
+    (exists (A B : R),
+        forall k i pf, 
+          almostR2 prts Rbar_le (ConditionalExpectation 
+                                   _ (filt_sub k) 
+                                   (fun ω => Rsqr (vector_nth i pf (w k ω))))
+                   (rvplus (const (Rabs A)) 
+                           (rvscale (Rabs B) (rvmaxlist 
+                                         (fun j ω => rvsqr (rvmaxabs (X j)) ω)
+                                         k)))) ->
+    (forall k, almostR2 prts Rle (rvmaxabs (X k)) D0') ->
+    0 < b < 1 ->
+    (forall x, Rvector_max_abs (Rvector_minus (XF x) x') <=
+                 b * Rvector_max_abs (Rvector_minus x x')) ->
+    (forall k, rv_eq (X (S k)) 
+                     (vecrvplus (X k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF (X k ω)) (X k) ) (w k))))) ->
+    almost prts (fun ω => is_lim_seq (fun n => Rvector_max_abs (Rvector_minus (X n ω) x')) 0).
+ Proof.
+   intros.
+   pose (eps := (1/b-1)/3).
+   pose (Xx := fun n ω => Rvector_minus (X n ω) x').
+   assert (HH4: exists (D0 : Ts -> R),
+              (forall k, almostR2 prts Rle (rvmaxabs (Xx k)) D0) /\
+                (forall ω, 0 < D0 ω)).
+   {
+     exists (fun ω => (D0' ω) + Rvector_max_abs x').
+     split.
+     - intros.
+       specialize (H4 k).
+       revert H4.
+       apply almost_impl, all_almost; intros ??.
+       subst Xx.
+       apply Rplus_le_compat_r with (r := Rvector_max_abs x') in H4.
+       unfold rvmaxabs, Rvector_minus.
+       eapply Rle_trans.
+       apply Rvector_max_abs_triang.
+       unfold rvmaxabs in H4.
+       unfold Rvector_opp.
+       rewrite Rvector_max_abs_scale.
+       rewrite Rabs_m1.
+       now rewrite Rmult_1_l.
+     - intros.
+       eapply Rlt_le_trans.
+       apply (posD0' ω).
+       rewrite <- Rplus_0_r at 1.
+       apply Rplus_le_compat_l.
+       apply Rvector_max_abs_nonneg.
+   }
+   destruct HH4 as [D0 [HH4 posD0]].
+   assert (0 < eps).
+   {
+     unfold eps.
+     assert (1 < 1 / b).
+     {
+       apply Rmult_lt_reg_r with (r := b); try lra.
+       field_simplify; lra.
+     }
+     lra.
+   }
+   assert ((1 + 2 * eps) * b < 1).
+   {
+     unfold eps.
+     apply Rplus_lt_reg_r with (x := -1).
+     field_simplify; lra.
+   }
+   pose (D := fix D k :=
+                match k with
+                | 0%nat => D0
+                | S k' => rvscale ((1 + 2 * eps) * b) (D k')
+                end).
+   assert (Dpos : forall k ω, 0 < D k ω).
+   {
+     intros.
+     induction k.
+     - simpl; apply posD0.
+     - simpl.
+       unfold rvscale.
+       apply Rmult_lt_0_compat; try lra.
+       apply Rmult_lt_0_compat; try lra.
+   }       
+   assert (forall ω, is_lim_seq (fun k => D k ω) 0).
+   {
+     intros.
+     apply is_lim_seq_ext with
+         (u := fun n => (D0 ω) *  ((1 + 2 * eps) * b)^n).
+     - intros.
+       induction n0.
+       + unfold D.
+         rewrite pow_O.
+         now rewrite Rmult_1_r.
+       + simpl.
+         unfold rvscale.
+         rewrite <- IHn0.
+         ring.
+     - replace (Finite 0) with (Rbar_mult (D0 ω) 0) by apply Rbar_mult_0_r.
+       apply is_lim_seq_scal_l.
+       apply is_lim_seq_geom.
+       rewrite Rabs_right; trivial.
+       apply Rle_ge.
+       apply Rmult_le_pos; lra.
+   }
+   assert (forall (k : nat),
+              exists (N : Ts -> nat),
+                almost prts
+                       (fun ω =>
+                          forall (t : nat),
+                            (N ω <= t)%nat ->
+                            (rvmaxabs (Xx t) ω) <= (D k ω))).
+   {
+     induction k.
+     - exists (const 0%nat).
+       apply almost_forall in HH4.
+       revert HH4.
+       apply almost_impl, all_almost; intros ????.
+       apply H11.
+     - destruct IHk as [N ?].
+       assert (forall i pf,
+                  exists (N0 : Ts -> nat),
+                    almost prts (fun ω =>
+                                   forall t : nat, 
+                                     (N0 ω <= t)%nat ->
+                                     (rvabs (vecrvnth i pf (Xx t)) ω) <= (D (S k) ω))).
+       {
+         intros.
+
+         pose (X1 := fun t => vecrvnth i pf (Xx t)).
+         pose (α1 := fun t => vecrvnth i pf (α t)).
+         pose (β1 := fun t => vecrvnth i pf (β t)).         
+         pose (w1 := fun t => vecrvnth i pf (w t)).
+         pose (W := fix W t' :=
+                    match t' with
+                    | 0%nat => const 0
+                    | (S t) => 
+                      rvplus 
+                        (rvmult 
+                           (rvminus (const 1) (α1 t))
+                           (W t))
+                        (rvmult (β1 t) (w1 t))
+                    end).
+         pose (WW := fix WW t' t0 :=
+                    match t' with
+                    | 0%nat => const 0
+                    | (S t) => 
+                      rvplus 
+                        (rvmult 
+                           (rvminus (const 1) (α1 (t + t0)%nat))
+                           (WW t t0))
+                        (rvmult (β1 (t + t0)%nat) (w1 (t + t0)%nat))
+                    end).
+       assert (almost prts
+                      (fun ω => is_lim_seq (fun n => W n ω) 0)).
+       {
+         destruct H3 as [A [B ?]].
+         destruct H1 as [Ca ?].
+         pose (BB := fun (n : nat) =>
+                       rvplus (const (Rabs A)) 
+                              (rvscale (Rabs B)
+                                       (rvmaxlist (fun (j : nat) => rvsqr (rvmaxabs (X j))) n))).
+(*
+         pose (BB := fun (n:nat) => rvplus (const A) (rvscale (Rabs B) (rvsqr D0))).
+ *)
+         destruct beta_fin as [Cb beta_fin].
+         eapply lemma1_alpha_beta with (α := α1) (β := β1) (w := w1) (W := W) (filt_sub := filt_sub) (B := BB) (Ca := Ca) (Cb := Cb); try easy.
+         - simpl.
+           typeclasses eauto.
+         - intros ?.
+           unfold BB; simpl.
+           apply rvplus_rv; try typeclasses eauto.
+           apply rvscale_rv.
+           apply rvmaxlist_rv.
+           intros.
+           apply rvsqr_rv.
+           apply Rvector_max_abs_rv.
+           assert (sa_sub (F n1) (F n0)) by 
+               now apply is_filtration_le.
+           apply (RandomVariable_sa_sub H13).
+           clear H12 H13.
+           induction n1; trivial.
+           rewrite H7.
+           apply Rvector_plus_rv.
+           + now apply (RandomVariable_sa_sub (isfilt n1)).
+           + apply Rvector_mult_rv.
+             * now apply (RandomVariable_sa_sub (isfilt n1)).
+             * apply Rvector_plus_rv; trivial.
+               apply Rvector_minus_rv.
+               ++ apply (RandomVariable_sa_sub (isfilt n1)).
+                  now apply (compose_rv (dom2 := Rvector_borel_sa n)).
+               ++ now apply (RandomVariable_sa_sub (isfilt n1)).
+         - unfold w1.
+           intros ?.
+           now apply vecrvnth_rv.
+         - unfold α1.
+           intros ?.
+           now apply vecrvnth_rv.
+         - unfold β1.
+           intros ?.
+           now apply vecrvnth_rv.
+         - intros.
+           unfold w1.
+           apply iscond.
+         - intros.
+           unfold w1.
+           apply H2.
+         - intros.
+           unfold w1.
+           specialize (H3 n0 i pf).
+           revert H3; apply almost_impl.
+           apply almost_forall in H4.
+           revert H4; apply almost_impl.
+           apply all_almost; intros ???.
+           unfold rvsqr, vecrvnth.
+           eapply Rbar_le_trans.
+           apply H4.
+           unfold BB.
+           rv_unfold.
+           simpl.
+           lra.
+         - intros.
+           apply all_almost.
+           intros.
+           apply H.
+         - intros.
+           apply all_almost.
+           intros.
+           apply beta_bound.
+         - intros.
+           apply all_almost.
+           intros.
+           unfold α1, const.
+           specialize (H n0 x i pf).
+           unfold vecrvnth.
+           lra.
+         - intros.
+           apply all_almost.
+           intros.
+           unfold β1, const.
+           specialize (beta_bound n0 x i pf).
+           unfold vecrvnth.
+           lra.
+         - apply all_almost.
+           intros.
+           apply H0.
+         - apply all_almost.
+           intros.
+           apply beta_inf.
+         - unfold rvsqr, const.
+           unfold α1.
+           specialize (H1 i pf).
+           revert H1.
+           apply almost_impl, all_almost; intros ??.
+           apply H1.
+         - unfold rvsqr, const.
+           unfold β1.
+           specialize (beta_fin i pf).
+           revert beta_fin.
+           apply almost_impl, all_almost; intros ??.
+           apply H12.
+         - intros.
+           simpl.
+           now rv_unfold'.
+         - exists (rvplus (const (Rabs A)) (rvscale (Rabs B) (rvsqr D0'))).
+           apply almost_forall in H4.
+           revert H4.
+           apply almost_impl, all_almost; intros ???.
+           unfold BB.
+           rv_unfold.
+           assert (Rabs B * Rsqr (D0' x) = Rabs (B * Rsqr(D0' x))).
+           {
+             rewrite Rabs_mult.
+             f_equal.
+             now rewrite <- Rabs_sqr.
+           }
+           rewrite H12.
+           rewrite Rabs_plus.
+           apply Rplus_le_compat_l.
+           rewrite <- H12.
+           apply Rmult_le_compat_l.
+           + apply Rabs_pos.
+           + unfold rvmaxlist.
+             unfold Rmax_list_map.
+             apply Rmax_list_le_iff.
+             * apply map_not_nil.
+               apply seq_not_nil.
+               lia.
+             * intros.
+               apply in_map_iff in H13.
+               destruct H13 as [? [? ?]].
+               rewrite <- H13.
+               specialize (H4 x1).
+               simpl in H4.
+               apply Rsqr_le_abs_1.
+               rewrite Rabs_right.
+               -- eapply Rle_trans.
+                  ++ apply H4.
+                  ++ apply Rle_abs.
+               -- apply Rle_ge, rvmaxabs_pos.
+       }
+       assert (almost prts
+                      (fun ω => is_lim_seq (fun n => WW n 0%nat ω) 0)).
+       {
+         revert H12.
+         apply almost_impl, all_almost; unfold impl; intros ?.
+         apply is_lim_seq_ext.
+         induction n0.
+         - now simpl.
+         - simpl.
+           rv_unfold'.
+           rewrite IHn0.
+           now replace (n0 + 0)%nat with n0 by lia.
+       }
+       generalize (lemma2_almost_beta WW α1 β1 w1); intros.
+       cut_to H14; cycle 1; try easy.
+         - unfold α1.
+           intros.
+           apply H.
+         - unfold β1.
+           intros.
+           apply beta_bound.
+         - intros.
+           simpl.
+           now rv_unfold'.
+         - assert (forall ω, 0 < b * eps * (D k ω)).
+           {
+             intros.
+             apply Rmult_lt_0_compat; try easy.
+             apply Rmult_lt_0_compat; lra.
+           }
+           specialize (H14 (fun ω => mkposreal _ (H15 ω))).
+           destruct H14 as [N2 ?].
+           pose (tauk := fun ω => max (N ω) (N2 ω)) .
+           pose (αtau := fun t ω => α1 (t + tauk ω)%nat ω).
+           pose (βtau := fun t ω => β1 (t + tauk ω)%nat ω).           
+           pose (Y := fix Y t' :=
+                    match t' with
+                    | 0%nat => (D k)
+                    | (S t) =>
+                      rvplus 
+                        (rvmult 
+                           (rvminus (const 1) (αtau t))
+                           (Y t))
+                        (rvmult (βtau t) (rvscale b (D k)))
+                    end).
+           pose (Xtau := fun t ω => X1 (t + tauk ω)%nat ω).
+           pose (wtau := fun t ω => w1 (t + tauk ω)%nat ω).
+           pose (Wtau := fun t ω => WW t (tauk ω) ω).
+           generalize (lemma8_abs_combined_almost_beta Xtau Y Wtau αtau βtau wtau); intros.
+           simpl.
+           specialize (H16 (mkposreal _ H8) b (fun ω => mkposreal _ (Dpos k ω))).
+           cut_to H16; try easy; cut_to H16; try easy.
+           + destruct H16.
+             exists (fun ω => ((tauk ω) + (x ω))%nat).
+             revert H16.
+             apply almost_impl, all_almost; intros ????.
+             unfold Xtau, tauk, X1 in H16.
+             specialize (H16 (t - tauk x0)%nat).
+             cut_to H16; try lia.
+             rv_unfold'_in_hyp H16.
+             simpl in H16.
+             rv_unfold.
+             unfold tauk in H16.
+             unfold tauk in H17.
+             replace (t - Init.Nat.max (N x0) (N2 x0) + Init.Nat.max (N x0) (N2 x0))%nat with (t) in H16 by lia.
+             lra.
+           + admit.
+           + intros.
+             apply H.
+           + intros.
+             apply H.
+           + intros.
+             apply beta_bound.
+           + intros.
+             unfold Wtau, αtau, βtau, wtau.
+             simpl.
+             now rv_unfold'.
+           + intros.
+             simpl.
+             rv_unfold.
+             lra.
+           + intros.
+             clear H16 H13 H14 Wtau WW Y.
+             revert H11.
+             apply almost_impl, all_almost; intros ??.
+             unfold Xtau, X1, vecrvnth, αtau, α1, wtau, w1.
+             replace (S t + tauk x)%nat with (S (t + tauk x)) by lia.
+             subst Xx.
+             simpl.
+             rewrite H7.
+             unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vecrvmult.
+             unfold Rvector_minus.
+             rewrite Rvector_nth_plus.
+             rewrite Rvector_nth_plus, Rvector_nth_mult.
+             repeat rewrite Rvector_nth_plus.
+             rewrite Rvector_nth_scale.
+             ring_simplify.
+             unfold Rminus.
+             repeat rewrite Rplus_assoc.
+             do 2 apply Rplus_le_compat_l.
+             apply Rplus_le_reg_r with
+               (r := - vecrvnth i pf (α (t + tauk x)%nat) x * vecrvnth i pf (w (t + tauk x)%nat) x).
+             apply Rplus_le_reg_r with (r := - vector_nth i pf (Rvector_opp x')).
+             unfold Rvector_opp.
+             rewrite Rvector_nth_scale.
+             ring_simplify.
+             rewrite <- Rmult_plus_distr_l.       
+             rewrite <- Rmult_minus_distr_l.                    
+             rewrite (Rmult_comm (vector_nth i pf x')).
+             rewrite Rmult_assoc.
+             rewrite <- Rmult_plus_distr_l.       
+             apply Rmult_le_compat_l.
+             apply H.
+             unfold vecrvnth.
+             specialize (H6 (X (t + tauk x)%nat x)).
+             apply Rplus_le_reg_r with (r := - vector_nth i pf x').
+             ring_simplify.
+             rewrite <- Rvector_nth_minus.
+             eapply Rle_trans.
+             apply Rle_abs.
+             eapply Rle_trans.
+             apply Rvector_max_abs_nth_le.
+             eapply Rle_trans.
+             apply H6.
+             apply Rmult_le_compat_l; try lra.
+             apply H11.
+             unfold tauk; lia.
+           + intros.
+             clear H16 H13 H14 Wtau WW Y.
+             revert H11.
+             apply almost_impl, all_almost; intros ??.
+             unfold Xtau, X1, vecrvnth, αtau, α1, wtau, w1.
+             replace (S t + tauk x)%nat with (S (t + tauk x)) by lia.
+             subst Xx.
+             simpl.
+             rewrite H7.
+             unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vecrvmult, vecrvnth.
+             unfold Rvector_minus.
+             rewrite Rvector_nth_plus.
+             rewrite Rvector_nth_plus, Rvector_nth_mult.             
+             repeat rewrite Rvector_nth_plus.
+             rewrite Rvector_nth_scale.
+             ring_simplify.
+             apply Rplus_ge_compat_r.
+             repeat rewrite Rplus_assoc.
+             unfold Rminus.
+             repeat rewrite Rplus_assoc.             
+             do 2 apply Rplus_ge_compat_l.
+             ring_simplify.
+             rewrite <- Rmult_plus_distr_l.
+             rewrite <- Rmult_minus_distr_l.
+             rewrite Rmult_assoc.
+             rewrite <- Rmult_minus_distr_l.
+             apply Rmult_ge_compat_l.
+             apply Rle_ge, H.
+             apply Rplus_ge_reg_l with
+               (r := - vector_nth i pf (w (t + tauk x)%nat x)).
+             ring_simplify.
+             unfold Rvector_opp.
+             rewrite Rvector_nth_scale.
+             apply Rplus_ge_reg_l with
+               (r := - vector_nth i pf x').
+             ring_simplify.
+             assert (Rabs (vector_nth i pf (Rvector_minus (XF (X (t + tauk x)%nat x))
+                                                          x')) <=  b * D k x).
              {
                eapply Rle_trans.
                apply Rvector_max_abs_nth_le.

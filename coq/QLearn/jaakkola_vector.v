@@ -890,3 +890,15 @@ Qed.
         generalize (cond_pos eps); intros.
         lra.
     Qed.
+
+    Lemma lemma3_lim_eps_alt (C eps : posreal) :
+      is_lim_seq (fun n => C * (/ (1 + eps))^n) 0.
+    Proof.
+      replace (Finite 0) with (Rbar_mult C 0).
+      apply is_lim_seq_scal_l.
+      - apply lemma3_lim_eps.
+      - simpl.
+        now rewrite Rmult_0_r.
+    Qed.
+
+    
