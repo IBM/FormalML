@@ -4050,6 +4050,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
    apply Rvector_max_abs_nth_le.
   Qed.
 
+(*
   Theorem Tsitsiklis3_b_pos_beta {n}
     (X w α β : nat -> Ts -> vector R n)
     (b : R) (D0' : Ts -> R) 
@@ -4490,6 +4491,8 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
              rewrite <- Rmult_minus_distr_l.                    
              rewrite (Rmult_comm (vector_nth i pf x')).
              rewrite Rmult_assoc.
+             rewrite <- Rmult_minus_distr_l.
+             rewrite <- Rmult_minus_distr_l.                                 
              rewrite <- Rmult_plus_distr_l.       
              apply Rmult_le_compat_l.
              apply H.
@@ -4691,6 +4694,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
    Unshelve.
    apply Rvector_max_abs_nth_le.
   Qed.
+*)
 
  Theorem Tsitsiklis3_beta_0 {n}
    (X w α : nat -> Ts -> vector R n)
