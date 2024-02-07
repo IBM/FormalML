@@ -826,24 +826,16 @@ Qed.
         gamma + (1 - gamma)/2 <= / (1 + eps2).
     Proof.
       intros.
-      assert (0 < (1 - gamma) / 2).
-      {
-        apply Rmult_lt_0_compat; lra.
-      }
-      assert (0 < gamma + mkposreal _ H0).
+      assert (0 < gamma + (1 - gamma)/2).
       {
         generalize (cond_pos gamma); intros.
-        apply Rplus_lt_0_compat; try lra.
-        apply cond_pos.
+        apply Rplus_lt_0_compat; lra.
       }
-      assert (mkposreal _ H1 < 1).
+      assert (mkposreal _ H0 < 1).
       {
-        simpl.
-        lra.
+        simpl; lra.
       }
-      destruct (gamma_eps_le_alt _ H2).
-      exists x.
-      now apply H3.
+      apply (gamma_eps_le_alt _ H1).
     Qed.      
 
     Lemma lemma3_helper {prts: ProbSpace dom} (f : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
