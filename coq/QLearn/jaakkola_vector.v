@@ -877,4 +877,16 @@ Qed.
       apply Rmult_le_compat_l with (r := C) in H1; lra.
     Qed.
       
-    
+    Lemma lemma3_lim_eps (eps : posreal) :
+      is_lim_seq (fun n => (/ (1 + eps))^n) 0.
+    Proof.
+      apply is_lim_seq_geom.
+      generalize (cond_pos eps); intros.
+      rewrite Rabs_right.
+      - replace (1) with (/1) at 2 by lra.
+        apply Rinv_lt_contravar; lra.
+      - left.
+        apply Rinv_pos.
+        generalize (cond_pos eps); intros.
+        lra.
+    Qed.
