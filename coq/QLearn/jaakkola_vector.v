@@ -859,21 +859,18 @@ Qed.
       intros H H0 gamma_1.
       destruct (lemma3_gamma_eps gamma gamma_1).
       exists x.
-      assert (0 < (1 - gamma) / 2).
-      {
-        apply Rmult_lt_0_compat; lra.
-      }
       intros.
-      assert (epsgC: 0 < (mkposreal _ H2) * C).
+      assert (0 < ((1 - gamma)/2) * C).
       {
-        apply Rmult_lt_0_compat; apply cond_pos.
+        apply Rmult_lt_0_compat.
+        - apply Rmult_lt_0_compat; lra.
+        - apply cond_pos.
       }
-      destruct (conv_as_prob_1_eps_alt f fstar H (mkposreal _ epsgC) eps2).
+      destruct (conv_as_prob_1_eps_alt f fstar H (mkposreal _ H3) eps2).
       exists x0.
       intros.
-      specialize (H4 n H5).
       eapply Rge_trans; cycle 1.
-      apply H4.
+      apply (H4 _ H5).
       apply Rle_ge.
       apply ps_sub.
       unfold event_sub, pre_event_sub, rvabs; simpl; intros.
@@ -881,12 +878,11 @@ Qed.
       generalize (Rabs_triang_inv (f n x1) fstar); intros.
       replace  (f n x1 + -1 * fstar) with  (f n x1 - fstar) in H6 by lra.
       assert (Rabs(f n x1) < (1 - gamma) * C / 2 + gamma * C) by lra.
-      specialize (H1 eps1 H3).
-      simpl in H4.
+      specialize (H1 eps1 H2).
       eapply Rlt_le_trans.
       apply H8.
       generalize (cond_pos C); intros.
-      apply Rmult_le_compat_l with (r := C) in H1; try lra.
+      apply Rmult_le_compat_l with (r := C) in H1; lra.
     Qed.
       
     
