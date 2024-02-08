@@ -1085,35 +1085,50 @@ Qed.
             + now rewrite Lim_const, Lim_id.
         Qed.
 
-        Lemma Lim_exp_c_y_m1 (c : R) :
+        Lemma Lim_c_y_m1 (c : R) :
           Lim (fun y => c * (y / (1 - y))) 0 = 0.
         Proof.
-          rewrite Lim_mult.
-          - rewrite Lim_const, Lim_y_m1.
-            simpl.
-            now rewrite Rmult_0_r.
-          - apply ex_lim_const.
-          - apply ex_lim_div.
+          rewrite Lim_scal_l, Lim_y_m1.
+          simpl.
+          now rewrite Rmult_0_r.
+        Qed.
+
+        Lemma Lim_exp_c_y_m1 (c : R) :
+          c <> 0 ->
+          Lim (fun y => exp (c * (y / (1 - y)))) 0 = 1.
+        Proof.
+          intros cn0.
+          rewrite Lim_comp.
+          - rewrite Lim_c_y_m1.
+            rewrite Lim_exp.
+            now rewrite exp_0.
+          - rewrite Lim_c_y_m1.
+            apply ex_lim_exp.
+          - apply ex_lim_scal_l.
+            apply ex_lim_div.
             + apply ex_lim_id.
             + apply ex_lim_minus.
               * apply ex_lim_const.
               * apply ex_lim_id.
               * now rewrite Lim_const, Lim_id.
-            + rewrite Lim_minus, Lim_const, Lim_id.
-              * simpl.
+            + rewrite Lim_minus.
+              * rewrite Lim_const, Lim_id.
+                simpl.
                 rewrite Rbar_finite_eq; lra.
               * apply ex_lim_const.
               * apply ex_lim_id.
               * now rewrite Lim_const, Lim_id.
-            + rewrite Lim_id, Lim_minus, Lim_const, Lim_id.
-              * now simpl.
+            + rewrite Lim_id, Lim_minus.
+              * now rewrite Lim_const, Lim_id.
               * apply ex_lim_const.
               * apply ex_lim_id.
               * now rewrite Lim_const, Lim_id.
-          - now rewrite Lim_const, Lim_y_m1.
-        Qed.
+          - assert (0 < 1/2) by lra.
+            exists (mkposreal _ H).
+            intros.
+            rewrite Lim_c_y_m1.
+            unfold not; intros.
+            Admitted.
+            
 
-        
-                        
-          
        
