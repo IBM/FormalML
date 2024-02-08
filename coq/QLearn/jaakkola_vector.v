@@ -947,7 +947,7 @@ Qed.
       exists (x : posreal),
       forall y, 
         0 <= y < x ->
-        y < 1 ->
+        y <= 1 ->
         forall m,
           exp (-2 * (sum_n (fun n => y ^ S n)) m) <=
             prod_f_R0 (fun n => 1 - y ^ S n) m <=
@@ -965,7 +965,7 @@ Qed.
         apply pow_le_1.
         lra.
       }
-      assert (forall n, y^S n < 1).
+      assert (forall n, y^S n <= 1).
       {
         intros.
         specialize (H2 n).
@@ -990,3 +990,69 @@ Qed.
           apply H4.
     Qed.
     
+    Lemma lim_seq_prod_pow_m1_le :
+      exists (x : posreal),
+      forall y, 
+        0 <= y < x ->
+        y <= 1 ->
+        Rbar_le (Lim_seq (fun m => 
+                   exp (-2 * (sum_n (fun n => y ^ S n)) m)))
+          (Lim_seq (fun m => prod_f_R0 (fun n => 1 - y ^ S n) m)) /\
+          Rbar_le (Lim_seq (fun m => prod_f_R0 (fun n => 1 - y ^ S n) m))
+            (Lim_seq (fun m => exp (-1 * sum_n (fun n => y ^ S n) m))).
+      Proof.
+        destruct prod_pow_m1_le.
+        exists x.
+        intros.
+        specialize (H y H0 H1).
+        split; apply Lim_seq_le; intros; apply H.
+      Qed.
+      
+      Lemma lim_seq_prod_pow_m1_le_alt :
+        exists (x : posreal),
+        forall y, 
+          0 <= y < x ->
+          y < 1 ->
+          Rbar_le (exp (-2 * y / (1 - y)))
+            (Lim_seq (fun m => prod_f_R0 (fun n => 1 - y ^ S n) m)) /\
+            Rbar_le (Lim_seq (fun m => prod_f_R0 (fun n => 1 - y ^ S n) m))
+              (exp (-1 * y / (1 - y))).
+        Proof.
+          destruct lim_seq_prod_pow_m1_le.
+          exists x.
+          intros.
+          assert (y <= 1) by lra.
+          specialize (H y H0 H2).
+          destruct H.
+          generalize (is_series_geom_S y); intros.
+          rewrite Rabs_right in H4; try lra.
+          specialize (H4 H1).
+          rewrite series_seq in H4.
+          split.
+          - assert (is_lim_seq (fun m : nat => exp (-2 * sum_n (fun n : nat => y ^ S n) m)) (exp (-2 * y / (1 - y)))).
+            {
+              apply is_lim_seq_continuous.
+              - apply derivable_continuous_pt.
+                apply derivable_pt_exp.
+              - replace (Finite (-2 * y / (1 - y))) with
+                  (Rbar_mult (-2) (y / (1 - y))).
+                + apply is_lim_seq_scal_l; trivial.
+                + unfold Rbar_mult; simpl.
+                  f_equal; lra.
+            }
+            apply is_lim_seq_unique in H5.
+            now rewrite H5 in H.
+          - assert (is_lim_seq (fun m : nat => exp (-1 * sum_n (fun n : nat => y ^ S n) m)) (exp (-1 * y / (1 - y)))).
+            {
+              apply is_lim_seq_continuous.
+              - apply derivable_continuous_pt.
+                apply derivable_pt_exp.
+              - replace (Finite (-1 * y / (1 - y))) with
+                  (Rbar_mult (-1) (y / (1 - y))).
+                + apply is_lim_seq_scal_l; trivial.
+                + unfold Rbar_mult; simpl.
+                  f_equal; lra.
+            }
+            apply is_lim_seq_unique in H5.            
+            now rewrite H5 in H3.
+   Qed.
