@@ -1055,4 +1055,32 @@ Qed.
             }
             apply is_lim_seq_unique in H5.            
             now rewrite H5 in H3.
-   Qed.
+        Qed.
+
+        Lemma Lim_y_m1 :
+          Lim (fun y => y / (1 - y)) 0 = 0.
+        Proof.
+          rewrite Lim_div.
+          - rewrite Lim_id, Lim_minus, Lim_const, Lim_id.
+            + simpl; f_equal; lra.
+            + apply ex_lim_const.
+            + apply ex_lim_id.
+            + now rewrite Lim_const, Lim_id.
+          - apply ex_lim_id.
+          - apply ex_lim_minus.
+            + apply ex_lim_const.
+            + apply ex_lim_id.
+            + now rewrite Lim_const, Lim_id.
+          - rewrite Lim_minus.
+            + rewrite Lim_const, Lim_id.
+              simpl.
+              replace (1 + - 0) with 1 by lra.
+              rewrite Rbar_finite_eq; lra.
+            + apply ex_lim_const.
+            + apply ex_lim_id.
+            + now rewrite Lim_const, Lim_id.
+          - rewrite Lim_id, Lim_minus, Lim_const, Lim_id; try easy.
+            + apply ex_lim_const.
+            + apply ex_lim_id.
+            + now rewrite Lim_const, Lim_id.
+        Qed.
