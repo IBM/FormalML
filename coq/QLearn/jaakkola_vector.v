@@ -1128,7 +1128,23 @@ Qed.
             intros.
             rewrite Lim_c_y_m1.
             unfold not; intros.
-            Admitted.
+            unfold ball in H0.
+            simpl in H0.
+            unfold AbsRing_ball in H0.
+            unfold abs, minus,plus, opp in H0; simpl in H0.
+            replace (y + - 0) with y in H0 by lra.
+            rewrite Rbar_finite_eq in H2.
+            apply Rmult_integral in H2.
+            destruct H2; try easy.
+            unfold Rdiv in H2.
+            apply Rmult_integral in H2.
+            destruct H2; try easy.
+            rewrite <- Rinv_0 in H2.
+            apply (f_equal (fun z => /z)) in H2.
+            rewrite Rinv_inv, Rinv_inv in H2.
+            rewrite Rabs_lt_both in H0.
+            lra.
+        Qed.
             
 
        
