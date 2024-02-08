@@ -900,5 +900,93 @@ Qed.
       - simpl.
         now rewrite Rmult_0_r.
     Qed.
+    
+    Lemma is_series_geom_S (q : R):
+      Rabs q < 1 -> is_series (fun n : nat => q ^ (S n)) (q / (1 - q)).
+    Proof.
+      intros.
+      generalize (is_series_geom q H); intros.
+      apply is_series_scal_r with (c := q) in H0.
+      unfold Rdiv.
+      rewrite Rmult_comm.
+      revert H0.
+      apply is_series_ext.
+      intros.
+      now rewrite Rmult_comm, tech_pow_Rmult.
+    Qed.
 
+    Lemma xm1_exp2 :
+      exists (x : posreal),
+      forall y, 
+        0 <= y < x ->
+        exp(-2*y) <= 1-y <= exp(-y).
+    Proof.
+      destruct xm1_exp.
+      exists x.
+      intros.
+      specialize (H y H0).
+      generalize (exp_ineq (- y)); intros.
+      lra.
+    Qed.
+
+    Lemma pow_le_1 (y : R) :
+      0 <= y <= 1 ->
+      forall n,
+        y ^ S n <= y.
+    Proof.
+      induction n.
+      - now rewrite pow_1; right.
+      - rewrite <- tech_pow_Rmult.
+        destruct H.
+        apply Rmult_le_compat_l with (r := y) in IHn; trivial.
+        apply Rmult_le_compat_l with (r := y) in H0; trivial.        
+        lra.
+    Qed.
+
+    Lemma prod_pow_m1_le :
+      exists (x : posreal),
+      forall y, 
+        0 <= y < x ->
+        y < 1 ->
+        forall m,
+          exp (-2 * (sum_n (fun n => y ^ S n)) m) <=
+            prod_f_R0 (fun n => 1 - y ^ S n) m <=
+            exp (-1 * sum_n (fun n => y ^ S n) m).
+    Proof.
+      destruct xm1_exp2.
+      exists x.
+      intros.
+      rewrite Rmult_comm, slln.sum_n_Rscal_r.
+      rewrite Rmult_comm, slln.sum_n_Rscal_r.
+      rewrite exp_sum_prod_f_R0.
+      rewrite exp_sum_prod_f_R0.
+      assert (forall n, y^S n <= y).
+      {
+        apply pow_le_1.
+        lra.
+      }
+      assert (forall n, y^S n < 1).
+      {
+        intros.
+        specialize (H2 n).
+        lra.
+      }
+      assert (forall n, 0 <= y^S n < x).
+      {
+        split.
+        - apply pow_le; lra.
+        - specialize (H2 n); lra.
+      }
+      split; apply prod_SO_Rle; intros.
+      - rewrite Rmult_comm.
+        split.
+        + left; apply exp_pos.
+        + apply H.
+          apply H4.
+      - split.
+        + specialize (H2 n); lra.
+        + replace (y^S n * -1) with (- y^S n) by lra.
+          apply H.
+          apply H4.
+    Qed.
     
