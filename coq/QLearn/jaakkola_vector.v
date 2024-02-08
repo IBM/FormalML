@@ -1084,3 +1084,36 @@ Qed.
             + apply ex_lim_id.
             + now rewrite Lim_const, Lim_id.
         Qed.
+
+        Lemma Lim_exp_c_y_m1 (c : R) :
+          Lim (fun y => c * (y / (1 - y))) 0 = 0.
+        Proof.
+          rewrite Lim_mult.
+          - rewrite Lim_const, Lim_y_m1.
+            simpl.
+            now rewrite Rmult_0_r.
+          - apply ex_lim_const.
+          - apply ex_lim_div.
+            + apply ex_lim_id.
+            + apply ex_lim_minus.
+              * apply ex_lim_const.
+              * apply ex_lim_id.
+              * now rewrite Lim_const, Lim_id.
+            + rewrite Lim_minus, Lim_const, Lim_id.
+              * simpl.
+                rewrite Rbar_finite_eq; lra.
+              * apply ex_lim_const.
+              * apply ex_lim_id.
+              * now rewrite Lim_const, Lim_id.
+            + rewrite Lim_id, Lim_minus, Lim_const, Lim_id.
+              * now simpl.
+              * apply ex_lim_const.
+              * apply ex_lim_id.
+              * now rewrite Lim_const, Lim_id.
+          - now rewrite Lim_const, Lim_y_m1.
+        Qed.
+
+        
+                        
+          
+       
