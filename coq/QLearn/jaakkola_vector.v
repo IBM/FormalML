@@ -929,6 +929,20 @@ Qed.
       lra.
     Qed.
 
+    Lemma Rabs_xm1_exp2 :
+      exists (x : posreal),
+      forall y, 
+        Rabs y < x ->
+        exp(-2*(Rabs y)) <= 1-(Rabs y) <= exp(-(Rabs y)).
+     Proof.
+       destruct xm1_exp2.
+       exists x.
+       intros.
+       apply H.
+       split; trivial.
+       apply Rabs_pos.
+     Qed.
+
     Lemma pow_le_1 (y : R) :
       0 <= y <= 1 ->
       forall n,
@@ -1085,6 +1099,91 @@ Qed.
             + now rewrite Lim_const, Lim_id.
         Qed.
 
+        Lemma ex_lim_y_m1 :
+          ex_lim (fun y => (y / (1 - y))) 0.
+        Proof.
+          apply ex_lim_div.
+          + apply ex_lim_id.
+          + apply ex_lim_minus.
+            * apply ex_lim_const.
+            * apply ex_lim_id.
+            * now rewrite Lim_const, Lim_id.
+          + rewrite Lim_minus.
+            * rewrite Lim_const, Lim_id.
+              simpl.
+              rewrite Rbar_finite_eq; lra.
+            * apply ex_lim_const.
+            * apply ex_lim_id.
+            * now rewrite Lim_const, Lim_id.
+          + rewrite Lim_id, Lim_minus.
+            * now rewrite Lim_const, Lim_id.
+            * apply ex_lim_const.
+            * apply ex_lim_id.
+            * now rewrite Lim_const, Lim_id.
+        Qed.
+
+        Lemma Lim_Rabs (c : R) :
+          Lim Rabs c = Rabs c.
+        Proof.
+          apply Lim_continuity.
+          apply Rcontinuity_abs.
+        Qed.
+
+        Lemma is_lim_Rabs (c : R) :
+          is_lim Rabs c (Rabs c).
+        Proof.
+          apply is_lim_continuity.
+          apply Rcontinuity_abs.
+        Qed.
+
+        Lemma ex_lim_Rabs (c : R) :
+          ex_lim Rabs c.
+        Proof.
+          eexists.
+          apply is_lim_Rabs.
+        Qed.
+
+        Lemma ex_lim_Rabs_y_m1 :
+          ex_lim (fun y => (Rabs y / (1 - Rabs y))) 0.
+        Proof.
+          apply ex_lim_div.
+          + apply ex_lim_Rabs.
+          + apply ex_lim_minus.
+            * apply ex_lim_const.
+            * apply ex_lim_Rabs.
+            * now rewrite Lim_const, Lim_Rabs.
+          + rewrite Lim_minus.
+            * rewrite Lim_const, Lim_Rabs, Rabs_R0.
+              simpl.
+              rewrite Rbar_finite_eq; lra.
+            * apply ex_lim_const.
+            * apply ex_lim_Rabs.
+            * now rewrite Lim_const, Lim_Rabs.
+          + rewrite Lim_Rabs, Lim_minus.
+            * now rewrite Lim_const, Lim_Rabs.
+            * apply ex_lim_const.
+            * apply ex_lim_Rabs.
+            * now rewrite Lim_const, Lim_Rabs.
+        Qed.
+
+        Lemma Lim_Rabs_y_m1 :
+          Lim (fun y => Rabs y / (1 - Rabs y)) 0 = 0.
+        Proof.
+          rewrite (Lim_comp (fun y => y / (1 - y)) Rabs 0).
+          - now rewrite Lim_Rabs, Rabs_R0, Lim_y_m1.
+          - rewrite Lim_Rabs, Rabs_R0.
+            apply ex_lim_y_m1.
+          - apply ex_lim_Rabs.
+          - assert (0 < 1) by lra.
+            exists (mkposreal _ H).
+            intros.
+            rewrite Lim_Rabs, Rabs_R0.
+            unfold not; intros.
+            rewrite Rbar_finite_eq in H2.
+            apply Rabs_eq_0 in H2.
+            lra.
+        Qed.
+
         Lemma Lim_c_y_m1 (c : R) :
           Lim (fun y => c * (y / (1 - y))) 0 = 0.
         Proof.
@@ -1093,6 +1192,36 @@ Qed.
           now rewrite Rmult_0_r.
         Qed.
 
+        Lemma Lim_c_Rabs_y_m1 (c : R) :
+          Lim (fun y => c * (Rabs y / (1 - Rabs y))) 0 = 0.
+        Proof.
+          rewrite Lim_scal_l, Lim_Rabs_y_m1.
+          simpl.
+          now rewrite Rmult_0_r.
+        Qed.
+
+        Lemma ex_lim_c_y_m1 (c : R) :
+          ex_lim (fun y => c * (y / (1 - y))) 0.
+        Proof.
+          apply ex_lim_scal_l.
+          apply ex_lim_y_m1.
+        Qed.
+
+        Lemma ex_lim_c_Rabs_y_m1 (c : R) :
+          ex_lim (fun y => c * (Rabs y / (1 - Rabs y))) 0.
+        Proof.
+          apply ex_lim_scal_l.
+          apply ex_lim_Rabs_y_m1.
+        Qed.
+
+        Lemma is_lim_c_y_m1 (c : R) :
+          is_lim (fun y => c * (y / (1 - y))) 0 0.
+        Proof.
+          rewrite <- Lim_c_y_m1 at 2.
+          apply Lim_correct.
+          apply ex_lim_c_y_m1.
+        Qed.
+        
         Lemma Lim_exp_c_y_m1 (c : R) :
           c <> 0 ->
           Lim (fun y => exp (c * (y / (1 - y)))) 0 = 1.
@@ -1104,25 +1233,7 @@ Qed.
             now rewrite exp_0.
           - rewrite Lim_c_y_m1.
             apply ex_lim_exp.
-          - apply ex_lim_scal_l.
-            apply ex_lim_div.
-            + apply ex_lim_id.
-            + apply ex_lim_minus.
-              * apply ex_lim_const.
-              * apply ex_lim_id.
-              * now rewrite Lim_const, Lim_id.
-            + rewrite Lim_minus.
-              * rewrite Lim_const, Lim_id.
-                simpl.
-                rewrite Rbar_finite_eq; lra.
-              * apply ex_lim_const.
-              * apply ex_lim_id.
-              * now rewrite Lim_const, Lim_id.
-            + rewrite Lim_id, Lim_minus.
-              * now rewrite Lim_const, Lim_id.
-              * apply ex_lim_const.
-              * apply ex_lim_id.
-              * now rewrite Lim_const, Lim_id.
+          - apply ex_lim_c_y_m1.
           - assert (0 < 1/2) by lra.
             exists (mkposreal _ H).
             intros.
@@ -1145,6 +1256,163 @@ Qed.
             rewrite Rabs_lt_both in H0.
             lra.
         Qed.
-            
 
+         Lemma Lim_exp_c_Rabs_y_m1 (c : R) :
+          c <> 0 ->
+          Lim (fun y => exp (c * (Rabs y / (1 - Rabs y)))) 0 = 1.
+        Proof.
+          intros cn0.
+          rewrite Lim_comp.
+          - rewrite Lim_c_Rabs_y_m1.
+            rewrite Lim_exp.
+            now rewrite exp_0.
+          - rewrite Lim_c_Rabs_y_m1.
+            apply ex_lim_exp.
+          - apply ex_lim_c_Rabs_y_m1.
+          - assert (0 < 1/2) by lra.
+            exists (mkposreal _ H).
+            intros.
+            rewrite Lim_c_Rabs_y_m1.
+            unfold not; intros.
+            unfold ball in H0.
+            simpl in H0.
+            unfold AbsRing_ball in H0.
+            unfold abs, minus,plus, opp in H0; simpl in H0.
+            replace (y + - 0) with y in H0 by lra.
+            rewrite Rbar_finite_eq in H2.
+            apply Rmult_integral in H2.
+            destruct H2; try easy.
+            unfold Rdiv in H2.
+            apply Rmult_integral in H2.
+            destruct H2.
+            + now apply Rabs_eq_0 in H2.
+            + rewrite <- Rinv_0 in H2.
+              apply (f_equal (fun z => /z)) in H2.
+              rewrite Rinv_inv, Rinv_inv in H2.
+              lra.
+          Qed.
+
+        Lemma is_lim_exp_c_y_m1 (c : R) :
+          c <> 0 ->
+          is_lim (fun y => exp (c * (y / (1 - y)))) 0 1.
+        Proof.
+          intros cn0.
+          rewrite <- (Lim_exp_c_y_m1 c cn0).
+          apply Lim_correct.
+          apply ex_lim_comp.
+          - apply ex_lim_exp.
+          - apply ex_lim_c_y_m1.
+          - assert (0 < 1/2) by lra.
+            exists (mkposreal _ H).
+            intros.
+            rewrite Lim_c_y_m1.
+            unfold not; intros.
+            unfold ball in H0.
+            simpl in H0.
+            unfold AbsRing_ball in H0.
+            unfold abs, minus,plus, opp in H0; simpl in H0.
+            replace (y + - 0) with y in H0 by lra.
+            rewrite Rbar_finite_eq in H2.
+            apply Rmult_integral in H2.
+            destruct H2; try easy.
+            unfold Rdiv in H2.
+            apply Rmult_integral in H2.
+            destruct H2; try easy.
+            rewrite <- Rinv_0 in H2.
+            apply (f_equal (fun z => /z)) in H2.
+            rewrite Rinv_inv, Rinv_inv in H2.
+            rewrite Rabs_lt_both in H0.
+            lra.
+         Qed.
+
+        Lemma is_lim_exp_c_Rabs_y_m1 (c : R) :
+          c <> 0 ->
+          is_lim (fun y => exp (c * (Rabs y / (1 - Rabs y)))) 0 1.
+        Proof.
+          intros cn0.
+          rewrite <- (Lim_exp_c_Rabs_y_m1 c cn0).
+          apply Lim_correct.
+          apply ex_lim_comp.
+          - apply ex_lim_exp.
+          - apply ex_lim_c_Rabs_y_m1.
+          - assert (0 < 1/2) by lra.
+            exists (mkposreal _ H).
+            intros.
+            rewrite Lim_c_Rabs_y_m1.
+            unfold not; intros.
+            unfold ball in H0.
+            simpl in H0.
+            unfold AbsRing_ball in H0.
+            unfold abs, minus,plus, opp in H0; simpl in H0.
+            replace (y + - 0) with y in H0 by lra.
+            rewrite Rbar_finite_eq in H2.
+            apply Rmult_integral in H2.
+            destruct H2; try easy.
+            unfold Rdiv in H2.
+            apply Rmult_integral in H2.
+            destruct H2.
+            + now apply Rabs_eq_0 in H2.
+            + rewrite <- Rinv_0 in H2.
+              apply (f_equal (fun z => /z)) in H2.
+              rewrite Rinv_inv, Rinv_inv in H2.
+              lra.
+         Qed.
        
+       Lemma lemma3_plim_Rabs :
+         is_lim (fun y => Lim_seq (fun m => prod_f_R0 (fun n => 1 - (Rabs y) ^ S n) m)) 0 1.
+       Proof.
+         apply is_lim_le_le_loc with (f := fun y => (exp (-2 * (Rabs y) / (1 - (Rabs y)))))
+                                     (g := fun y => (exp (-1 * (Rabs y) / (1 - (Rabs y))))).
+         - destruct lim_seq_prod_pow_m1_le_alt.
+           assert (0 < Rmin x 1).
+           {
+             apply Rmin_Rgt.
+             split; try lra.
+             apply cond_pos.
+           }
+           exists (mkposreal _ H0).
+           intros.
+           unfold ball in H0.
+           simpl in H0.
+           unfold AbsRing_ball in H0.
+           unfold abs, minus,plus, opp in H0; simpl in H0.
+           replace (y + - 0) with y in H0 by lra.
+           specialize (H (Rabs y)).
+           cut_to H.
+           + destruct H.
+             generalize (bounded_is_finite _ _ _ H H3); intros.
+             rewrite <- H4 in H; simpl in H.
+             rewrite <- H4 in H3; simpl in H3.
+             split; trivial.
+           + unfold ball in H1.
+             simpl in H1.
+             unfold AbsRing_ball in H1.
+             unfold abs, minus,plus, opp in H1; simpl in H1.
+             replace (y + - 0) with y in H1 by lra.
+             split.
+             * apply Rabs_pos.
+             * apply Rmin_Rgt in H1.
+               lra.
+           + unfold ball in H1.
+             simpl in H1.
+             unfold AbsRing_ball in H1.
+             unfold abs, minus,plus, opp in H1; simpl in H1.
+             replace (y + - 0) with y in H1 by lra.
+             apply Rmin_Rgt in H1.
+             lra.
+         - assert (-2 <> 0) by lra.
+           generalize (is_lim_exp_c_Rabs_y_m1 _ H); intros.
+           revert H0.
+           apply is_lim_ext.
+           intros.
+           f_equal.
+           lra.
+         - assert (-1 <> 0) by lra.
+           generalize (is_lim_exp_c_Rabs_y_m1 _ H); intros.
+           revert H0.
+           apply is_lim_ext.
+           intros.
+           f_equal.
+           lra.
+       Qed.
+
