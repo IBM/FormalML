@@ -1003,6 +1003,32 @@ Qed.
           apply H.
           apply H4.
     Qed.
+
+     Lemma prod_pow_m1_le_alt :
+       exists (x : posreal),
+         x <= 1 /\
+           forall y, 
+             0 <= y < x ->
+             forall m,
+               exp (-2 * (sum_n (fun n => y ^ S n)) m) <=
+                 prod_f_R0 (fun n => 1 - y ^ S n) m <=
+                 exp (-1 * sum_n (fun n => y ^ S n) m).
+     Proof.
+       destruct prod_pow_m1_le.
+       assert (0 < Rmin x 1).
+       {
+         apply Rmin_Rgt.
+         split; try lra.
+         apply cond_pos.
+       }
+       exists (mkposreal _ H0).
+       split.
+       - simpl.
+         apply Rmin_r.
+       - intros.
+         specialize (H y).
+         apply H; simpl in H1; destruct H1; apply Rmin_Rgt in H2; lra.
+    Qed.         
     
     Lemma lim_seq_prod_pow_m1_le :
       exists (x : posreal),
@@ -1022,6 +1048,25 @@ Qed.
         split; apply Lim_seq_le; intros; apply H.
       Qed.
       
+    Lemma lim_seq_prod_pow_m1_le1 :
+      exists (x : posreal),
+        x <= 1 /\
+          forall y, 
+            0 <= y < x ->
+            Rbar_le (Lim_seq (fun m => 
+                                exp (-2 * (sum_n (fun n => y ^ S n)) m)))
+              (Lim_seq (fun m => prod_f_R0 (fun n => 1 - y ^ S n) m)) /\
+              Rbar_le (Lim_seq (fun m => prod_f_R0 (fun n => 1 - y ^ S n) m))
+                (Lim_seq (fun m => exp (-1 * sum_n (fun n => y ^ S n) m))).
+      Proof.
+        destruct prod_pow_m1_le_alt as [? [??]].
+        exists x.
+        split; trivial.
+        intros.
+        specialize (H0 y H1).
+        split; apply Lim_seq_le; intros; apply H0.
+      Qed.
+
       Lemma lim_seq_prod_pow_m1_le_alt :
         exists (x : posreal),
         forall y, 
@@ -1069,6 +1114,56 @@ Qed.
             }
             apply is_lim_seq_unique in H5.            
             now rewrite H5 in H3.
+        Qed.
+
+      Lemma lim_seq_prod_pow_m1_le1_alt :
+        exists (x : posreal),
+          x <= 1 /\
+            forall y, 
+              0 <= y < x ->
+              Rbar_le (exp (-2 * y / (1 - y)))
+                (Lim_seq (fun m => prod_f_R0 (fun n => 1 - y ^ S n) m)) /\
+                Rbar_le (Lim_seq (fun m => prod_f_R0 (fun n => 1 - y ^ S n) m))
+                  (exp (-1 * y / (1 - y))).
+        Proof.
+          destruct lim_seq_prod_pow_m1_le1 as [? [??]].
+          exists x.
+          split; trivial.
+          intros.
+          specialize (H0 y H1).
+          destruct H0.
+          generalize (is_series_geom_S y); intros.
+          rewrite Rabs_right in H3; try lra.
+          assert ( y < 1) by lra.
+          specialize (H3 H4).
+          rewrite series_seq in H3.
+          split.
+          - assert (is_lim_seq (fun m : nat => exp (-2 * sum_n (fun n : nat => y ^ S n) m)) (exp (-2 * y / (1 - y)))).
+            {
+              apply is_lim_seq_continuous.
+              - apply derivable_continuous_pt.
+                apply derivable_pt_exp.
+              - replace (Finite (-2 * y / (1 - y))) with
+                  (Rbar_mult (-2) (y / (1 - y))).
+                + apply is_lim_seq_scal_l; trivial.
+                + unfold Rbar_mult; simpl.
+                  f_equal; lra.
+            }
+            apply is_lim_seq_unique in H5.
+            now rewrite H5 in H0.
+          - assert (is_lim_seq (fun m : nat => exp (-1 * sum_n (fun n : nat => y ^ S n) m)) (exp (-1 * y / (1 - y)))).
+            {
+              apply is_lim_seq_continuous.
+              - apply derivable_continuous_pt.
+                apply derivable_pt_exp.
+              - replace (Finite (-1 * y / (1 - y))) with
+                  (Rbar_mult (-1) (y / (1 - y))).
+                + apply is_lim_seq_scal_l; trivial.
+                + unfold Rbar_mult; simpl.
+                  f_equal; lra.
+            }
+            apply is_lim_seq_unique in H5.            
+            now rewrite H5 in H2.
         Qed.
 
         Lemma Lim_y_m1 :
@@ -1363,25 +1458,19 @@ Qed.
        Proof.
          apply is_lim_le_le_loc with (f := fun y => (exp (-2 * (Rabs y) / (1 - (Rabs y)))))
                                      (g := fun y => (exp (-1 * (Rabs y) / (1 - (Rabs y))))).
-         - destruct lim_seq_prod_pow_m1_le_alt.
-           assert (0 < Rmin x 1).
-           {
-             apply Rmin_Rgt.
-             split; try lra.
-             apply cond_pos.
-           }
-           exists (mkposreal _ H0).
+         - destruct lim_seq_prod_pow_m1_le1_alt as [? [??]].
+           exists x.
            intros.
-           unfold ball in H0.
-           simpl in H0.
-           unfold AbsRing_ball in H0.
-           unfold abs, minus,plus, opp in H0; simpl in H0.
-           replace (y + - 0) with y in H0 by lra.
-           specialize (H (Rabs y)).
-           cut_to H.
-           + destruct H.
-             generalize (bounded_is_finite _ _ _ H H3); intros.
-             rewrite <- H4 in H; simpl in H.
+           unfold ball in H1.
+           simpl in H1.
+           unfold AbsRing_ball in H1.
+           unfold abs, minus,plus, opp in H1; simpl in H1.
+           replace (y + - 0) with y in H1 by lra.
+           specialize (H0 (Rabs y)).
+           cut_to H0.
+           + destruct H0.
+             generalize (bounded_is_finite _ _ _ H0 H3); intros.
+             rewrite <- H4 in H0; simpl in H0.
              rewrite <- H4 in H3; simpl in H3.
              split; trivial.
            + unfold ball in H1.
@@ -1389,17 +1478,8 @@ Qed.
              unfold AbsRing_ball in H1.
              unfold abs, minus,plus, opp in H1; simpl in H1.
              replace (y + - 0) with y in H1 by lra.
-             split.
-             * apply Rabs_pos.
-             * apply Rmin_Rgt in H1.
-               lra.
-           + unfold ball in H1.
-             simpl in H1.
-             unfold AbsRing_ball in H1.
-             unfold abs, minus,plus, opp in H1; simpl in H1.
-             replace (y + - 0) with y in H1 by lra.
-             apply Rmin_Rgt in H1.
-             lra.
+             split; trivial.
+             apply Rabs_pos.
          - assert (-2 <> 0) by lra.
            generalize (is_lim_exp_c_Rabs_y_m1 _ H); intros.
            revert H0.
