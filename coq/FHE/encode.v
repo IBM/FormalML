@@ -1190,12 +1190,15 @@ Qed.
 
 Canonical map_RtoC_rmorphism := RMorphism map_RtoC_is_rmorphism.
 
-Lemma ev_C_is_rmorphism (x:R[i]) :
-  rmorphism (fun (p : {poly R}) => (map_poly RtoC p).[x]).
-Proof.
+Definition peval_C (p : {poly R}) (x : C) : C :=
+  (map_poly RtoC p).[x].
 
+Lemma ev_C_is_rmorphism (x:C) :
+  rmorphism (fun (p : {poly R}) => peval_C p x).
+Proof.
   destruct map_RtoC_is_rmorphism.
   destruct (horner_eval_is_lrmorphism x) as [[??] ?].
+  unfold peval_C.
   constructor.
   - intros ??.
     rewrite  -horner_evalE base base0 //.
@@ -1206,6 +1209,170 @@ Proof.
 Qed.
 
 Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
+
+ Lemma ev_C_1 :
+   forall (x : C), peval_C 1 x = 1.
+  Proof.
+    apply ev_C_is_rmorphism.
+  Qed.
+
+  Definition peval_C_ker_pred (x : C) : pred {poly R} :=
+    fun p => peval_C p x == 0.
+
+  Lemma peval_C_ker_proper (x : C) :
+    proper_ideal (peval_C_ker_pred x).
+  Proof.
+    split.
+    - by rewrite /peval_C_ker_pred /in_mem /mem /= ev_C_1 oner_neq0.
+    - move => a b.
+      rewrite /in_mem /=.
+      rewrite /peval_C_ker_pred.
+      case: (ev_C_is_rmorphism x) => _ -> /eqP->.
+      by rewrite mulr0.
+  Qed.
+
+  Lemma peval_C_ker_zmod (x : C) :
+    zmodPred (peval_C_ker_pred x).
+  Proof.
+    constructor.
+    - constructor; [constructor|].
+      constructor.
+      + rewrite /in_mem //= /peval_C_ker_pred /peval_C.
+        unfold map_poly.
+        rewrite poly_size_0.
+        rewrite (eq_poly (fun _ => 0)).
+        * rewrite -{2}(horner0 x).
+          apply /eqP.
+          f_equal.
+          apply /polyP => i /=.          
+          rewrite coef_poly coefC /=.
+          f_equal.
+          by case: (i == 0)%nat.
+        * move=> i ilt.
+          rewrite coefC.
+          by case: (i == 0)%nat.
+      + rewrite /in_mem //= /prop_in2 /peval_C_ker_pred => a b.
+        rewrite /in_mem /mem /= .
+        generalize (raddfD (ev_C_rmorphism x)); intros.
+        simpl in H; rewrite H.
+        revert H0 H1.
+        move => /eqP -> /eqP->.
+        rewrite add0r //.
+    - rewrite /Pred.Exports.oppr_closed /mem /= /peval_C_ker_pred => a.
+      rewrite /in_mem /= => /eqP-eqq1.
+      generalize (raddfN (ev_C_rmorphism x) a); intros.
+      simpl in H.
+      rewrite H eqq1 oppr0 //.
+  Qed.
+
+  Definition peval_C_ker_is_ideal (x:C) :
+    idealr (peval_C_ker_pred x)
+    := MkIdeal (peval_C_ker_zmod x) (peval_C_ker_proper x).
+
+  Canonical peval_C_ker_ideal (x:C) := KeyedPred (peval_C_ker_is_ideal x).
+
+  Definition peval_C_ker_quot_ring (x:C)
+    := { ideal_quot (peval_C_ker_ideal x) }.
+
+  Local Open Scope quotient_scope.
+
+  Definition peval_C_quot (x:C) : peval_C_ker_quot_ring x -> C
+    := lift_fun1 (peval_C_ker_quot_ring x) (fun p => peval_C p x).
+
+  Lemma pi_peval_C_quot x : {mono (\pi_(peval_C_ker_quot_ring x)) : p / peval_C p x >-> peval_C_quot x p}.
+  Proof.
+    move=> p.
+    rewrite /peval_C_quot -eq_lock.
+    case piP => a /EquivQuot.eqmodP.
+    rewrite /Quotient.equiv_equiv /Quotient.equiv /in_mem /mem /= /peval_C_ker_pred.
+    destruct (ev_C_is_rmorphism x).
+    rewrite base => eqq.
+    move=> /eqP in eqq.
+    apply (f_equal (fun z => z + peval_C a x)) in eqq.
+    by rewrite -addrA add0r (addrC _ (peval_C a x)) addrN addr0 in eqq.
+  Qed.
+
+(*
+  Lemma peval_C_quotC c x :
+    peval_C_quot (\pi_({ideal_quot (peval_C_ker_ideal x)}) c%:P) = (RtoC c)%:P.
+  Proof.
+    by rewrite pi_mx_eval_quot mx_evalC.
+  Qed.
+*)
+  Lemma mx_eval_quot1 x : peval_C_quot x 1 = 1.
+  Proof.
+    rewrite /one /= /Quotient.one /= /one /= /locked.
+    destruct master_key.
+    rewrite pi_peval_C_quot /peval_C.
+    unfold map_poly.
+  Admitted.
+
+  Lemma peval_quot_C_is_rmorphism (c:C): rmorphism (peval_C_quot c).
+  Proof.
+    split => [x|].
+    - apply quotP=> y <-.
+      revert x.
+      apply quotP => x <-.
+      rewrite !reprK.
+      rewrite !pi_peval_C_quot.
+      rewrite /peval_C_quot -!eq_lock.
+      rewrite -pi_is_additive.
+      case: piP => y' /eqquotP.
+      rewrite /peval_C_ker_pred /in_mem/mem/= => /eqP.
+      generalize (raddfD (ev_C_rmorphism c)); intros peval_C_add.
+      generalize (raddfN (ev_C_rmorphism c)); intros peval_C_opp.
+      generalize (peval_C_add (x-y) (-y')); intros add1.
+      simpl in add1; rewrite add1.
+      specialize (peval_C_add x (-y)); simpl in peval_C_add.
+      rewrite peval_C_add.
+      generalize (peval_C_opp y); intro opp1.
+      simpl in opp1; rewrite opp1.
+      specialize (peval_C_opp y'); simpl in peval_C_opp.
+      rewrite peval_C_opp.
+      intro HH.
+      apply (f_equal (fun z => z + peval_C y' c)) in HH.
+      rewrite add0r -!addrA in HH.
+      rewrite (addrC _ (peval_C y' c)) addrN addr0 in HH.
+      by rewrite -HH.
+    - constructor.
+      + move => x.
+        apply quotP=> y <-.
+        revert x.
+        apply quotP => x <-.
+        rewrite !reprK.
+        rewrite !pi_peval_C_quot.
+        rewrite /peval_C_quot -!eq_lock.
+        rewrite -pi_is_multiplicative.
+        case: piP => y' /eqquotP.
+        rewrite /peval_C_ker_pred /in_mem/mem/= => /eqP.
+        destruct (ev_C_is_rmorphism c) as [? [??]].
+        specialize (base (x * y) y'); simpl in base.
+        rewrite base.
+        specialize (m x y); simpl in m.
+        rewrite m.
+        intro HH.
+        apply (f_equal (fun z => z + peval_C y' c)) in HH.
+        rewrite add0r -!addrA in HH.
+        rewrite (addrC _ (peval_C y' c)) addrN addr0 in HH.
+        by rewrite -HH.
+      + by apply mx_eval_quot1.
+  Qed.
+
+  Lemma peval_C_quot_is_injective (c:C) (x y : peval_C_ker_quot_ring c) :
+    peval_C_quot c x = peval_C_quot c y -> x = y.
+  Proof.
+    rewrite /peval_C_quot -!eq_lock.
+    rewrite -{2}[x]reprK -{2}[y]reprK.
+    move: (repr x) (repr y) => {x} {y} x y eqq.
+    apply/eqquotP.
+    rewrite /Quotient.equiv/=.
+    rewrite /peval_C_ker_pred /in_mem/mem/=.
+    apply/eqP.
+    destruct (ev_C_is_rmorphism c).
+    specialize (base x y).
+    simpl in base.
+    by rewrite eqq addrN in base.
+ Qed.
 
 End rmorphism.
 
