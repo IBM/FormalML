@@ -1299,7 +1299,7 @@ Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
     by rewrite pi_mx_eval_quot mx_evalC.
   Qed.
 *)
-  Lemma mx_eval_quot1 x : peval_C_quot x 1 = 1.
+  Lemma peval_C_quot1 x : peval_C_quot x 1 = 1.
   Proof.
     rewrite /one /= /Quotient.one /= /one /= /locked.
     destruct master_key.
@@ -1355,7 +1355,7 @@ Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
         rewrite add0r -!addrA in HH.
         rewrite (addrC _ (peval_C y' c)) addrN addr0 in HH.
         by rewrite -HH.
-      + by apply mx_eval_quot1.
+      + by apply peval_C_quot1.
   Qed.
 
   Lemma peval_C_quot_is_injective (c:C) (x y : peval_C_ker_quot_ring c) :
