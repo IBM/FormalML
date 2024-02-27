@@ -1304,8 +1304,10 @@ Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
     rewrite /one /= /Quotient.one /= /one /= /locked.
     destruct master_key.
     rewrite pi_peval_C_quot /peval_C.
-    unfold map_poly.
-  Admitted.
+    rewrite /map_poly size_poly1.
+    rewrite horner_poly big_ord1 expr0 mulr1.
+    by rewrite -horner_coef0 hornerC.
+  Qed.
 
   Lemma peval_quot_C_is_rmorphism (c:C): rmorphism (peval_C_quot c).
   Proof.
