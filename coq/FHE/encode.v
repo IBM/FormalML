@@ -1415,6 +1415,7 @@ Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
     - intros.
       rewrite /map_poly size_addl size_scale //; rewrite size_polyX.
       + rewrite horner_poly.
+        rewrite big_ord_recl big_ord1 /= expr0 mulr1 /bump /= addn0 expr1.
         admit.
       + rewrite size_polyC.
         by case: (eqVneq x0 0).
