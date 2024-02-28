@@ -1292,13 +1292,6 @@ Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
     by rewrite -addrA add0r (addrC _ (peval_C a x)) addrN addr0 in eqq.
   Qed.
 
-(*
-  Lemma peval_C_quotC c x :
-    peval_C_quot (\pi_({ideal_quot (peval_C_ker_ideal x)}) c%:P) = (RtoC c)%:P.
-  Proof.
-    by rewrite pi_mx_eval_quot mx_evalC.
-  Qed.
-*)
   Lemma peval_C_quot1 x : peval_C_quot x 1 = 1.
   Proof.
     rewrite /one /= /Quotient.one /= /one /= /locked.
@@ -1374,7 +1367,58 @@ Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
     specialize (base x y).
     simpl in base.
     by rewrite eqq addrN in base.
- Qed.
+  Qed.
+
+  Lemma cval_decomp (c1 c2 : C) :
+    Im c1 != 0 ->
+    exists (a b : R),
+      (a%:C * c1 + b%:C)%C = c2.
+  Proof.
+    intros.
+    exists (Im c2/Im c1).
+    exists (Re c2 - (Im c2 / Im c1)*Re c1).
+    apply /eqP.
+    rewrite eq_complex.
+    apply /andP.
+    destruct c1.
+    destruct c2.
+    simpl.
+    rewrite !mul0r !addr0 subr0.
+    - split.
+      + apply /eqP.
+        rewrite addrC.
+        generalize (subrKA (Im0 / Im * Re) Re0 0); intros.
+        by rewrite !addr0 in H0.
+      + rewrite -mulrA.
+        rewrite (mulrC _ Im).
+        rewrite divff //.
+        by rewrite mulr1.
+  Qed.
+
+  Lemma peval_C_decomp (c1 c2 : C) :
+    Im c1 != 0 ->
+    exists (p : {poly R}),
+      peval_C p c1 = c2.
+  Proof.
+    intros.
+    destruct (cval_decomp c1 c2 H) as [? [??]].
+    exists (x *: 'X + x0 %:P).
+    rewrite /peval_C -H0.
+    case: (eqVneq x 0) => [-> |].
+    - rewrite scale0r add0r /map_poly.
+      rewrite horner_poly mul0r add0r.
+      case: (eqVneq x0 0) => [-> |].
+      + by rewrite size_poly0 big_ord0.
+      + intros.
+        rewrite size_polyC.
+        rewrite i // big_ord1 expr0 mulr1 coefC //.
+    - intros.
+      rewrite /map_poly size_addl size_scale //; rewrite size_polyX.
+      + rewrite horner_poly.
+        admit.
+      + rewrite size_polyC.
+        by case: (eqVneq x0 0).
+  Admitted.
 
 End rmorphism.
 
