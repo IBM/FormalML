@@ -1825,6 +1825,66 @@ Proof.
   by rewrite <- H.
 Qed.
 
+Lemma odd_nth_roots_minpoly_complex n :
+  forall (c : R[i]),
+    root ('X^(2^(S n)) + 1%:P) c ->
+    Im c <> 0.
+Proof.
+  intros.
+  unfold root in H.
+  rewrite hornerD hornerXn hornerC in H.
+  move /eqP in H.
+  unfold not; intros.
+  destruct c.
+  simpl in H0.
+  rewrite H0 in H.
+  assert (forall x:R, x^+2 + 1 <> 0).
+  {
+    intros.
+    apply Rgt_not_eq.
+    generalize (pow2_ge_0 x); intros.
+    rewrite /one /add /zero /= -RpowE.
+    lra.
+  }
+  assert (forall x:R, x^+(2^(S n)) + 1 <> 0).
+  {
+    intros.
+    by rewrite expnS mulnC exprM.
+  }
+  clear H0 H1.
+  replace ((Re +i* 0)%C ^+ (2 ^ n.+1)) with (RtoC (Re ^+ (2 ^ n.+1))) in H.
+  - unfold RtoC in H.
+    move /eqP in H.
+    rewrite eq_complex in H.
+    move /andP in H.
+    destruct H.
+    simpl in H.
+    move /eqP in H.
+    by specialize (H2 Re).
+  - clear H H2.
+    assert (forall n,
+               RtoC (Re ^+ n) = (Re +i* 0)%C ^+n).
+    {
+      induction n0.
+      - by rewrite !expr0.
+      - rewrite !exprS.
+        assert (forall (x y : R),
+                   RtoC (x * y) = RtoC x * RtoC y).
+        {
+          intros.
+          unfold RtoC.
+          unfold mul; simpl.
+          apply /eqP.
+          rewrite eq_complex.
+          apply /andP.
+          simpl.
+          by rewrite !mulr0 !mul0r !addr0 subr0 /mul /=.
+        }
+        by rewrite H IHn0.
+    }
+    apply H.
+ Qed.
+
 Lemma minpoly_mult_odd_nth_roots n (p : {poly R[i]}) :
   Pdiv.Ring.rmodp p ('X^(2^n) + 1%:P) = 0 ->
   forall i, root p (odd_nth_roots n 0 i).
