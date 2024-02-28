@@ -1861,8 +1861,7 @@ Proof.
     simpl in H.
     move /eqP in H.
     by specialize (H2 Re).
-  - clear H H2.
-    assert (forall n,
+  - assert (forall n,
                RtoC (Re ^+ n) = (Re +i* 0)%C ^+n).
     {
       induction n0.
@@ -1871,18 +1870,11 @@ Proof.
         assert (forall (x y : R),
                    RtoC (x * y) = RtoC x * RtoC y).
         {
-          intros.
-          unfold RtoC.
-          unfold mul; simpl.
-          apply /eqP.
-          rewrite eq_complex.
-          apply /andP.
-          simpl.
-          by rewrite !mulr0 !mul0r !addr0 subr0 /mul /=.
+          apply RtoC_is_rmorphism.
         }
-        by rewrite H IHn0.
+        by rewrite H0 IHn0.
     }
-    apply H.
+    apply H0.
  Qed.
 
 Lemma minpoly_mult_odd_nth_roots n (p : {poly R[i]}) :
