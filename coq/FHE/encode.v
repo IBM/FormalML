@@ -1423,6 +1423,18 @@ Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
         by case: (eqVneq x0 0).
   Qed.
 
+  Lemma peval_C_quot_is_surjective (c c2 :C) :
+    Im c != 0 ->
+      exists (p: peval_C_ker_quot_ring c),
+        peval_C_quot c p = c2.
+  Proof.
+    intros.
+    destruct (peval_C_decomp c c2); trivial.
+    exists (\pi_(peval_C_ker_quot_ring c) x).
+    rewrite -H0.
+    apply pi_peval_C_quot.
+  Qed.
+
 End rmorphism.
 
 Module matrix_ring.
