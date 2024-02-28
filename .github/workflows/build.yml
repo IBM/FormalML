@@ -17,7 +17,7 @@ jobs:
       image: ${{ matrix.coq_container }}
       options: --user root
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         persist-credentials: false
     - name: Fix permissions
