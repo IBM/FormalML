@@ -231,6 +231,54 @@ Proof.
   coq_lra.
 Qed.  
 
+(*
+Lemma cos_sin0_alt (x : R) :
+  sin x = 0 <->
+    Rsqr(cos x) = 1.
+Proof.
+  split; intro eqq.
+  - generalize (sin2_cos2 x); intros.
+    rewrite eqq in H.
+    rewrite Rsqr_0 in H.
+    now rewrite Rplus_0_l in H.
+  - generalize (sin2 x); intros.
+    rewrite eqq in H.
+    rewrite Rminus_eq_0 in H.
+    now apply Rsqr_0_uniq in H.
+Qed.
+
+Lemma Rsqr_1 (x : R) :
+  Rsqr x = 1 <->
+    x = 1 \/ x = -1.
+Proof.
+  generalize (Rsqr_eq x 1); intros.
+  rewrite Rsqr_1 in H.
+  split; intros.
+  - specialize (H H0).
+    destruct H.
+    + now left.
+    + right.
+      rewrite H.
+      now rewrite IZR_NEG.      
+  - destruct H0; rewrite H0.
+    + now rewrite Rsqr_1.
+    + rewrite IZR_NEG.
+      rewrite <- Rsqr_neg.
+      now rewrite Rsqr_1.
+Qed.      
+
+Lemma cos_sin0 (x : R) :
+  sin x = 0 <->
+   cos x = 1 \/ cos x = -1.
+Proof.
+  split; intros.
+  - apply cos_sin0_alt in H.
+    now apply Rsqr_1 in H.
+  - apply Rsqr_1 in H.
+    now apply cos_sin0_alt in H.
+Qed.    
+*)
+
 Lemma cos_eq_1_aux_pos (x : R) :
   cos x = 1 ->
   exists k, x = (PI * IZR(k))%R.
@@ -256,66 +304,18 @@ Proof.
 Qed.
 
 (*
-Lemma cos_eq_1 (x : R) :
-  cos x = R1 ->
-  exists k, x = (2 * PI * IZR(k))%R.
+Lemma sin_eq_0_aux (x : R) :
+  sin x = 0 ->
+  exists k, x = (PI * IZR(k))%R.
 Proof.
-  intros eqq1.
-  destruct (cos_eq_1_aux_pos _ eqq1) as [kk eqq2]; subst.
-  assert (cutter:(forall kk, ((0 <= kk)%Z ->  cos (PI * IZR kk) = R1 -> exists k : Z, (PI * IZR kk)%R = (2 * PI * IZR k)%R)) ->  (forall kk, (cos (PI * IZR kk) = R1 -> (exists k : Z, (PI * IZR kk)%R = (2 * PI * IZR k)%R
-         )))).
-  {
-    clear.
-    intros HH kk eqq1.
-    destruct (Z_le_gt_dec 0 kk); [eauto |].
-    destruct (HH (Z.opp kk)%Z).
-    - lia.
-    - rewrite opp_IZR.
-      replace (PI * - IZR kk)%R with (- (PI * IZR kk))%R by lra.
-      now rewrite cos_neg.
-    - exists (Z.opp x).
-      rewrite opp_IZR in H |- *.
-      lra.
-  }
-
-  apply cutter; trivial; clear.
-  intros kk kk_nneg eqq1.
-  destruct (Zeven_odd_dec kk).
-  - destruct (Zeven_ex _ z); subst.
-    exists x.
-    rewrite mult_IZR.
-    lra.
-  - destruct (Zodd_ex _ z); subst.
-    rewrite plus_IZR, mult_IZR in eqq1.
-    replace ((PI * (2 * IZR x + 1))%R) with
-      (2 * IZR x * PI + PI)%R in eqq1 by lra.
-    rewrite neg_cos in eqq1.
-    assert (eqq2: cos (2 * IZR x * PI)%R = Ropp R1) by lra.
-    generalize (cos_period 0 (Z.to_nat x)); intros HH.
-    rewrite cos_0 in HH.
-    rewrite INR_IZR_INZ in HH.
-    rewrite Z2Nat.id in HH by lia.
-    replace (2 * IZR x * PI)%R with (0 + 2 * IZR x * PI)%R in eqq2 by lra.
-    lra.
+  intros.
+  apply cos_sin0 in H.
+  destruct H.
+  - now apply cos_eq_1_aux_pos.
+  - now apply cos_eq_1_aux_neg.
 Qed.
 *)
 
-(*
-Lemma cos_eq_neg1 (x : R) :
-  cos x = Ropp R1 ->
-  exists k, x = (2 * PI * IZR(k) + PI)%R.
-Proof.
-  intros eqq1.
-  generalize (Rtrigo_facts.cos_pi_plus x); intros eqq2.
-  rewrite eqq1 in eqq2.
-  rewrite Ropp_involutive in eqq2.
-  apply cos_eq_1 in eqq2.
-  destruct eqq2 as [k eqq2].
-  exists (k-1)%Z.
-  rewrite minus_IZR.
-  lra.
-Qed.
- *)
 
 Lemma cos_eq_1_1 : forall x:R, (exists k : Z, x = (IZR k * 2 * PI)%R) -> cos x = 1.
 Proof.
@@ -410,6 +410,23 @@ Proof.
     rewrite mult_IZR.
     coq_lra.
  Qed.
+
+(*
+Lemma cos_eq_neg1 (x : R) :
+  cos x = Ropp R1 ->
+  exists k, x = (2 * PI * IZR(k) + PI)%R.
+Proof.
+  intros eqq1.
+  generalize (Rtrigo_facts.cos_pi_plus x); intros eqq2.
+  rewrite eqq1 in eqq2.
+  rewrite Ropp_involutive in eqq2.
+  apply cos_eq_1 in eqq2.
+  destruct eqq2 as [k eqq2].
+  exists (k-1)%Z.
+  rewrite minus_IZR.
+  lra.
+Qed.
+*)
 
 Lemma cos_eq_1_nneg (x : R) :
   cos x = R1 ->
