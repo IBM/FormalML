@@ -10,7 +10,7 @@ From mathcomp Require Import lra.
 Set Bullet Behavior "Strict Subproofs".
 
 Lemma S_INR_not_0 n :
-  INR (S n) <> R0.
+  INR (S n) <> Rdefinitions.R0.
 Proof.
   rewrite S_INR.
   generalize (pos_INR n).
@@ -33,9 +33,9 @@ Local Open Scope ring_scope.
 Delimit Scope complex_scope with C.
 Local Open Scope complex_scope.
 
-Definition RtoC (x : R) := Complex x R0.
-Definition C1 := Complex R1 R0.
-Definition C0 := Complex R0 R0.
+Definition RtoC (x : R) := Complex x Rdefinitions.R0.
+Definition C1 := Complex R1 Rdefinitions.R0.
+Definition C0 := Complex Rdefinitions.R0 Rdefinitions.R0.
 Definition C := ComplexField.complex_ringType R_fieldType.
 
 Lemma nth_root_0 n :
@@ -190,7 +190,7 @@ Proof.
  Qed.
 
 Lemma nth_root_not_0 j n :
-  nth_root j (S n) <> RtoC R0.
+  nth_root j (S n) <> RtoC Rdefinitions.R0.
 Proof.
   unfold nth_root.
   unfold RtoC.
@@ -206,7 +206,7 @@ Proof.
 
 Lemma cos1_sin0 (x : R) :
   cos x = R1 ->
-  sin x = R0.
+  sin x = Rdefinitions.R0.
 Proof.
   intros eqq1.
   generalize (cos2 x).
@@ -321,7 +321,7 @@ Lemma cos_eq_1_1 : forall x:R, (exists k : Z, x = (IZR k * 2 * PI)%R) -> cos x =
 Proof.
   assert (forall n, cos (INR n * 2 * PI) = 1%R). {
     intros n;induction n as [|n IHn].
-    { change (INR 0) with R0.
+    { change (INR 0) with Rdefinitions.R0.
       rewrite !Rmult_0_l.
       exact cos_0. }
     rewrite S_INR !Rmult_plus_distr_r cos_plus IHn.
