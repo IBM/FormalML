@@ -231,7 +231,6 @@ Proof.
   coq_lra.
 Qed.  
 
-(*
 Lemma cos_sin0_alt (x : R) :
   sin x = 0 <->
     Rsqr(cos x) = 1.
@@ -247,7 +246,7 @@ Proof.
     now apply Rsqr_0_uniq in H.
 Qed.
 
-Lemma Rsqr_1 (x : R) :
+Lemma Rsqr_1_iff (x : R) :
   Rsqr x = 1 <->
     x = 1 \/ x = -1.
 Proof.
@@ -273,11 +272,11 @@ Lemma cos_sin0 (x : R) :
 Proof.
   split; intros.
   - apply cos_sin0_alt in H.
-    now apply Rsqr_1 in H.
-  - apply Rsqr_1 in H.
+    now apply Rsqr_1_iff in H.
+  - apply Rsqr_1_iff in H.
     now apply cos_sin0_alt in H.
 Qed.    
-*)
+
 
 Lemma cos_eq_1_aux_pos (x : R) :
   cos x = 1 ->
@@ -303,7 +302,6 @@ Proof.
   unfold mul; simpl; coq_lra.
 Qed.
 
-(*
 Lemma sin_eq_0_aux (x : R) :
   sin x = 0 ->
   exists k, x = (PI * IZR(k))%R.
@@ -314,8 +312,6 @@ Proof.
   - now apply cos_eq_1_aux_pos.
   - now apply cos_eq_1_aux_neg.
 Qed.
-*)
-
 
 Lemma cos_eq_1_1 : forall x:R, (exists k : Z, x = (IZR k * 2 * PI)%R) -> cos x = 1.
 Proof.
@@ -422,7 +418,7 @@ Proof.
   rewrite Ropp_involutive in eqq2.
   apply cos_eq_1 in eqq2.
   destruct eqq2 as [k eqq2].
-  exists (k-1)%Z.
+  exists (Z.sub k 1)%Z.
   rewrite minus_IZR.
   lra.
 Qed.
