@@ -1288,12 +1288,12 @@ Proof.
   - rewrite size_addl.
     + rewrite size_scale.
       * rewrite size_polyX //.
-      * admit.
+      * by rewrite -eqr_opp opprK oppr0.
     + rewrite size_scale.
       * rewrite size_polyX size_polyC.
-        case : (eqVneq (cnorm c) 0); rewrite //.  
-      * admit.
-Admitted.
+        case : (eqVneq (cnorm c) 0); rewrite //.
+      * by rewrite -eqr_opp opprK oppr0.
+Qed.
 
 Lemma characteristic_polynomial_correct (c : R[i]) :
   (map_poly RtoC (characteristic_polynomial c)).[c] = 0.
