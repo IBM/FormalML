@@ -1310,6 +1310,112 @@ Proof.
   by rewrite sub_x_x mul0r add0r mulrC -mulrDl sub_x_x mul0r.
 Qed.
 
+Lemma trace_conj (c : R[i]) :
+  ctrace c = ctrace (conjc c).
+Proof.
+  by rewrite /ctrace conjcK addrC.
+Qed.
+
+Lemma norm_conj (c : R[i]) :
+  cnorm c = cnorm (conjc c).
+Proof.
+  by rewrite /cnorm conjcK mulrC.
+Qed.
+
+Lemma char_poly_conj (c : R[i]) :
+  characteristic_polynomial c = characteristic_polynomial (conjc c).
+Proof.
+  by rewrite /characteristic_polynomial trace_conj norm_conj.
+Qed.
+
+Lemma char_poly_conj_alt (c : R[i]) :
+  (map_poly RtoC (characteristic_polynomial c)).[conjc c] = 0.
+Proof.
+  rewrite char_poly_conj.
+  apply characteristic_polynomial_correct.
+Qed.
+
+Lemma ctrace_eq (c1 c2 : R[i]) :
+  ctrace c1 = ctrace c2 <-> c1 + conjc c1 = c2 + conjc c2.
+Proof.
+  rewrite /ctrace.
+  split; intros.
+  - apply /eqP.
+    rewrite eq_complex.
+    apply /andP.
+    split.
+    + now apply /eqP.
+    + by rewrite !ctrace_correct.
+  - by rewrite H.
+Qed.
+
+Lemma cnorm_eq (c1 c2 : R[i]) :
+  cnorm c1 = cnorm c2 <-> c1 * conjc c1 = c2 * conjc c2.
+Proof.
+  rewrite /cnorm.
+  split; intros.
+  - apply /eqP.
+    rewrite eq_complex.
+    apply /andP.
+    split.
+    + now apply /eqP.
+    + by rewrite !cnorm_correct.
+  - by rewrite H.
+Qed.
+
+
+Lemma norm_trace_eq (c1 c2 : R[i]) :
+  ctrace c1 = ctrace c2 /\ cnorm c1 = cnorm c2 <->
+    c1 = c2 \/ c1 = conjc c2.
+Proof.
+  split; intros.
+  - destruct H.
+    destruct c1; destruct c2.
+    rewrite /ctrace /= in H.
+    rewrite /cnorm /= in H0.
+    assert (Re = Re0) by lra.
+    rewrite H1 in H0.
+    assert (Im *Im = Im0 * Im0) by lra.
+    rewrite /conjc.
+    rewrite H1.
+    assert (Im = Im0 \/ Im = -Im0).
+    {
+      rewrite -!expr2 in H2.
+      move /eqP in H2.
+      rewrite eqf_sqr in H2.
+      move /orP in H2.
+      destruct H2.
+      - by move /eqP in H2; left.
+      - by move /eqP in H2; right.
+    }
+    destruct H3.
+    + by rewrite H3; left.
+    + by rewrite H3; right.
+  - destruct H; rewrite H; try easy.
+    by rewrite trace_conj norm_conj conjcK.
+Qed.
+
+Lemma charpoly_eq (c1 c2 : R[i]) :
+  characteristic_polynomial c1 = characteristic_polynomial c2 <->
+    c1 = c2 \/ c1 = conjc c2.
+Proof.
+  split; intros.
+  - rewrite /characteristic_polynomial in H.
+    apply polyP in H.
+    generalize (H 0%N); intros.
+    generalize (H 1%N); intros.
+    rewrite !coefD !coefZ !coefC !coefX !coefXn /= in H0.
+    rewrite !coefD !coefZ !coefC !coefX !coefXn /= in H1.
+    rewrite !mulr0 addr0 !add0r in H0.
+    rewrite !addr0 !add0r !mulr1 in H1.
+    apply norm_trace_eq.
+    split; trivial.
+    lra.
+  - destruct H.
+    + by rewrite H.
+    + by rewrite H char_poly_conj conjcK.
+Qed.
+
  Lemma ev_C_1 :
    forall (x : C), peval_C 1 x = 1.
   Proof.
