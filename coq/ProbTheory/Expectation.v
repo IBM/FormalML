@@ -1173,7 +1173,7 @@ Section Expectation_sec.
       + split; intros.
         * field_simplify in H.
           -- now apply INR_eq.
-          -- revert H.
+          -- try revert H.
              now apply pow_nzero.
         * subst.
           field_simplify; trivial.
@@ -4730,8 +4730,7 @@ Section EventRestricted.
       + typeclasses eauto.
       + intro z.
         unfold lift_event_restricted_domain_fun.
-        match_destr.
-        apply H5.
+        match_destr; try apply H5.
       + subst.
         erewrite event_restricted_SimpleExpectation; eauto.
         apply SimpleExpectation_ext.
@@ -4927,7 +4926,7 @@ Section indep.
         ; lra.
       } 
 
-      generalize (simple_approx_rv
+      generalize (simple_approx_rv (dom:= borel_sa)
                     (rvchoice (fun x => if Req_EM_T (c x) 0 then false else true)
                                        (fun x => x)
                                        (fun _ => 0)) n).

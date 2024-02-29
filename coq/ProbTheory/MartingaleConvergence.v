@@ -167,7 +167,7 @@ Section mct.
                                    end)))).
             
     Lemma upcrossing_bound_is_predictable a b :
-      is_predictable (upcrossing_bound a b) sas.
+      is_predictable (saD:=borel_sa) (upcrossing_bound a b) sas.
     Proof.
       intros m.
       unfold upcrossing_bound.
@@ -2390,7 +2390,7 @@ Section mct.
       apply Rbar_plus_le_compat
       ; [| now rewrite IsFiniteNonnegExpectation; try reflexivity].
 
-      assert (ispredminus1:is_predictable (fun k : nat => rvminus (const 1) (upcrossing_bound Y a b k)) sas).
+      assert (ispredminus1:is_predictable (saD:=borel_sa) (fun k : nat => rvminus (const 1) (upcrossing_bound Y a b k)) sas).
       {
         red.
         apply is_adapted_minus.

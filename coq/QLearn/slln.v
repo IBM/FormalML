@@ -3192,8 +3192,8 @@ Qed.
   Proof.
     intros.
     assert (forall n,
-               sa_equiv (filtration_history_sa X n)
-                        (filtration_history_sa (fun n0 => (rvscale (/ b n0) (X n0))) n)).
+               sa_equiv (filtration_history_sa (cod:=borel_sa) X n)
+                        (filtration_history_sa (cod:=borel_sa) (fun n0 => (rvscale (/ b n0) (X n0))) n)).
     {
       intros.
       apply filtrate_sa_proper.
@@ -4296,7 +4296,8 @@ Qed.
       revert H.
       now apply independent_rv_collection_proper.
     }
-    generalize (filtration_history_sa_sub X); intros fsub.
+    generalize (filtration_history_sa_sub X (cod:=borel_sa)); intros fsub.
+
     generalize (independent_sas_split1 _ fsub H0 n); intros.
     unfold is_sub_algebras in H1.
     unfold independent_sas in *.
@@ -4315,7 +4316,7 @@ Qed.
     intros.
     apply independent_rv_sas.
     generalize (filtration_history_pullback_independent X H); intros.
-    assert (RandomVariable (filtration_history_sa X n) borel_sa (rvsum X n)).
+    assert (RandomVariable (filtration_history_sa (cod:=borel_sa) X n) borel_sa (rvsum X n)).
     {
       apply rvsum_rv_loc.
       intros.
@@ -4544,14 +4545,14 @@ Qed.
         {rv : forall n, RandomVariable dom borel_sa (X n)} 
         {rvdec : RandomVariable dom borel_sa (EventIndicator dec)} :
     independent_rv_collection Prts (const borel_sa) X ->    
-    sa_sigma (filtration_history_sa X n) P ->
+    sa_sigma (filtration_history_sa (cod:=borel_sa) X n) P ->
     independent_rvs Prts borel_sa borel_sa (X (S n)) (EventIndicator dec).
   Proof.
     intros.
     apply independent_rvs_symm.
     apply independent_rv_sas.
     generalize (filtration_history_pullback_independent X H n); intros.
-    assert (RandomVariable (filtration_history_sa X n) borel_sa (EventIndicator dec)) by
+    assert (RandomVariable (filtration_history_sa (cod:=borel_sa) X n) borel_sa (EventIndicator dec)) by
         now apply EventIndicator_pre_rv.
     generalize (pullback_rv_sub _ _ _ H2); intros.
     revert H1.

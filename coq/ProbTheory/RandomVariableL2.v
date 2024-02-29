@@ -768,7 +768,7 @@ Section L2.
   Proof.
     unfold Hnorm; simpl.
     LpRRVq_simpl.
-    rewrite LpRRVq_normE.
+    try rewrite LpRRVq_normE.
     unfold LpRRVnorm.
     unfold L2RRVinner.
     rewrite power_sqrt.
@@ -789,7 +789,7 @@ Section L2.
     rewrite LpRRVq_ballE.
     unfold minus, plus, opp; simpl.
     autorewrite with quot.
-    rewrite LpRRVq_normE.
+    try rewrite LpRRVq_normE.
     unfold LpRRVball.
     now rewrite LpRRVminus_plus.
   Qed.
@@ -815,7 +815,7 @@ Section L2.
     rewrite LpRRVq_ballE.
     unfold minus, plus, opp; simpl.
     autorewrite with quot.
-    rewrite LpRRVq_normE.
+    try rewrite LpRRVq_normE.
     unfold LpRRVball.
     erewrite LpRRV_norm_proper; [reflexivity |].
     rewrite LpRRVminus_plus.
@@ -859,7 +859,8 @@ Section L2.
       destruct (Quot_inv x); subst; simpl in *.
       unfold minus, plus, opp; simpl.
       autorewrite with quot.
-      rewrite LpRRVq_ballE, LpRRVq_normE.
+      rewrite LpRRVq_ballE.
+      try rewrite LpRRVq_normE.
       unfold LpRRVball.
       erewrite LpRRV_norm_proper; [reflexivity |].
       rewrite LpRRVminus_plus.

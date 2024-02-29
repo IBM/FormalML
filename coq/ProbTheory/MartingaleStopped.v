@@ -166,7 +166,8 @@ Section stopped_process.
       forall n, RandomVariable dom borel_sa (process_stopped_at Y T n).
     Proof.
       intros.
-      eapply RandomVariable_proper; try apply process_stopped_at_as_alt; try reflexivity.
+      cut (RandomVariable dom borel_sa (process_stopped_at_alt Y T n))
+      ; [apply RandomVariable_proper; try reflexivity; apply process_stopped_at_as_alt; try reflexivity |].
       destruct n; simpl; trivial.
       apply rvplus_rv.
       - apply rvsum_rv; intros.
@@ -186,14 +187,17 @@ Section stopped_process.
       IsAdapted borel_sa (process_stopped_at Y T) F.
     Proof.
       intros n.
-      eapply (RandomVariable_proper _ (F n)); try apply process_stopped_at_as_alt; try reflexivity.
+      cut (RandomVariable (F n) borel_sa (process_stopped_at_alt Y T n))
+      ; [apply RandomVariable_proper; try reflexivity; apply process_stopped_at_as_alt; try reflexivity |].
       destruct n; simpl; trivial.
       apply rvplus_rv.
       - apply rvsum_rv_loc; intros.
         apply rvmult_rv; trivial.
-        + eapply (RandomVariable_proper_le (F m) _); try reflexivity.
-          * apply is_filtration_le; trivial; lia.
-          * apply adapt.
+        + cut (RandomVariable (F m) borel_sa (Y m)).
+          { eapply (RandomVariable_proper_le (F m) _); try reflexivity.
+            apply is_filtration_le; trivial; lia.
+          } 
+          apply adapt.
         + apply EventIndicator_pre_rv.
           generalize (is_stop m).
           apply is_filtration_le; trivial; lia.

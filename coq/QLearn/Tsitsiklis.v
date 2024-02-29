@@ -7436,7 +7436,7 @@ End FixedPoint_contract.
     }
     apply rv_vecrvnth; intros.
     unfold vecrvnth.
-    eapply RandomVariable_proper; [reflexivity | reflexivity | ..].
+    eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _)).
     - intros ?.
       unfold our_iso_f; simpl.
       unfold finite_fun_to_vector.
@@ -7717,7 +7717,7 @@ End FixedPoint_contract.
          intros.
          typeclasses eauto.
        } 
-       eapply RandomVariable_proper; [reflexivity | reflexivity | ..].
+       eapply (RandomVariable_proper _ _ (reflexivity _) _ _ (reflexivity _)).
        {
          intros ?.
          rewrite (FiniteExpectation_simple _ _).

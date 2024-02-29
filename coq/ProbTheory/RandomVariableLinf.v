@@ -2348,7 +2348,7 @@ End Linf.
       apply LiRRV_norm_sproper.
       intros ?; simpl.
       rv_unfold; lra.
-    - revert HH.
+    - try revert HH.
       apply pow_nzero.
       lra.
   Qed.

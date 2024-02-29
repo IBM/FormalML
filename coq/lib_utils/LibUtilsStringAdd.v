@@ -258,6 +258,8 @@ Module StringOrder <: OrderedTypeFull with Definition t:=string.
 
 End StringOrder.
 
+Global Existing Instance StringOrder.lt_strorder.
+
 (** * String prefixes *)
 
 Section Prefix.
@@ -342,11 +344,8 @@ Section Prefix.
     append (substring s n l) (substring (s+n) m l) = substring s (n+m) l.
   Proof.
     revert n m s.
-    induction l; simpl; destruct s; destruct n; simpl; trivial.
-    - f_equal.
-      apply IHl.
-    - rewrite IHl; simpl; trivial.
-    - rewrite IHl. simpl; trivial.
+    induction l; simpl; destruct s; destruct n; simpl; trivial
+    ; now rewrite IHl.
   Qed.
 
   Lemma substring_all l :
@@ -359,14 +358,8 @@ Section Prefix.
     substring s n l = substring s (min n (String.length l - s)) l.
   Proof.
     revert s n.
-    induction l; destruct s; destruct n; simpl; trivial.
-    - rewrite IHl; simpl.
-      f_equal.
-      f_equal.
-      f_equal.
-      lia.
-    - rewrite IHl.
-      match_case.
+    induction l; destruct s; destruct n; simpl; trivial
+    ; rewrite IHl; try rewrite Nat.sub_0_r; trivial.
   Qed.
 
   Lemma substring_le_prefix s n m l :
@@ -558,11 +551,11 @@ Section AsciiToString.
     StringOrder.lt s1 s2 -> ~StringOrder.eq s1 s2.
   Proof.
     compare s1 s2.
-    intros. rewrite e in *; clear e.
-    unfold not; intros.
-    apply asymmetry with (x := s2) (y := s2); assumption.
-    intros. assumption.
-    apply ascii_dec.
+    - intros. rewrite e in *; clear e.
+      intros ?.
+      apply asymmetry with (x := s2) (y := s2); assumption.
+    - intros. assumption.
+    - apply ascii_dec.
   Qed.
 
   Lemma lt_contr3 s :
