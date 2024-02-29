@@ -7,6 +7,9 @@ From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool div
 Import ssralg.GRing.
 Require Import nth_root.
 
+Ltac coq_lra := lra.
+From mathcomp Require Import lra.
+
 Set Bullet Behavior "Strict Subproofs".
 
 Local Open Scope ring_scope.
@@ -172,7 +175,7 @@ Lemma sub_x_x (x : R[i]) :
 Proof.
   destruct x.
   vm_compute.
-  f_equal; lra.
+  f_equal; coq_lra.
 Qed.
 
 Lemma sub_x_x_l (x : R[i]) :
@@ -249,7 +252,7 @@ Proof.
   destruct c1; destruct c2.
   unfold conjc.
   vm_compute.
-  f_equal; lra.
+  f_equal; coq_lra.
 Qed.
 
 Lemma exp_conj (c : R[i]) n :
@@ -260,7 +263,7 @@ Proof.
     vm_compute.
     apply f_equal.
     unfold opp; simpl.
-    lra.
+    coq_lra.
   - by rewrite !exprS -IHn -mul_conj.
 Qed.
 
@@ -456,7 +459,7 @@ Proof.
   destruct c1; destruct c2.
   unfold conjc.
   vm_compute.
-  f_equal; lra.
+  f_equal; coq_lra.
 Qed.
 
 Lemma vector_rev_conj_plus {n} (v1 v2 : 'rV[R[i]]_n) :
@@ -496,7 +499,7 @@ Proof.
   unfold conjc, RtoC.
   apply f_equal.
   unfold opp; simpl.
-  lra.
+  coq_lra.
 Qed.
 
 Lemma vector_rev_conj_const_R n (r : R) :
@@ -507,7 +510,7 @@ Proof.
   unfold conjc.
   apply f_equal.
   unfold opp; simpl.
-  lra.
+  coq_lra.
 Qed.
 
 Lemma vector_rev_conj_conj {n} (v : 'rV[R[i]]_n) :
@@ -539,7 +542,7 @@ Proof.
   apply (f_equal (fun z => z + Im)) in H0.
   unfold add, opp in H0; simpl in H0.
   unfold zero; simpl.
-  lra.
+  coq_lra.
 Qed.
 
 
@@ -608,7 +611,7 @@ Proof.
     rewrite -vector_sum_rev.
     destruct (vector_sum v); simpl.
     rewrite /add /zero/=.
-    lra.
+    coq_lra.
   }
   rewrite -vector_sum_add vector_sum_reals//.
   now apply vector_rev_sum_rev.
@@ -705,7 +708,7 @@ Proof.
   split; intros.
   - now rewrite H.
   - inversion H.
-    unfold zero; simpl; lra.
+    unfold zero; simpl; coq_lra.
 Qed.
 
 Lemma mat_encode_real_alt {n} (cl : 'cV[R[i]]_(2^(S n))) :
@@ -775,12 +778,9 @@ Definition int_to_zmodp (i : int) (p : nat) : 'Z_p := i %:~R.
 Definition col_to_poly {n} (cl : 'cV[R]_n) := rVpoly (cl^T).
 Definition col_to_poly2 {n} (cl : 'cV[int]_n) := rVpoly (cl^T).
 
+
 Definition red_poly (pol : {poly int}) p' :=
   map_poly (fun c => int_to_zmodp c p') pol.
-
-Definition mx_round {n m} (mat : 'M[R]_(n,m)) : 'M[int]_(n,m) :=
-  map_mx (fun r => ssrZ.int_of_Z (up r)) mat.
-
 
 From mathcomp Require Import order.
 
@@ -788,6 +788,11 @@ From mathcomp Require Import order.
 Definition ran_round (x rand : R) :=
   let hi := up x in
   if (Order.lt (Rminus (IZR hi) x) rand)%R then hi else (Zminus hi 1).
+
+Definition nearest_round (x : R) := ran_round x (1/2).
+
+Definition mx_round {n m} (mat : 'M[R]_(n,m)) : 'M[int]_(n,m) :=
+  map_mx (fun r => ssrZ.int_of_Z (nearest_round r)) mat.
 
 Definition CKKS_poly_encode_Z {n} (cl : 'cV[R[i]]_(2^n)) : 'cV[int]_(2^(S n)) :=
   mx_round (CKKS_poly_encode cl).
@@ -1209,6 +1214,101 @@ Proof.
 Qed.
 
 Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
+
+Definition ctrace (c : R[i]) := Re (c + conjc c).
+Definition cnorm (c : R[i]) := Re (c * conjc c).
+
+Lemma ctrace_correct (c : R[i]) :
+  Im (c + conjc c) = 0.
+Proof.
+  destruct c.
+  simpl.
+  lra.
+Qed.
+
+Lemma cnorm_correct (c : R[i]) :
+  Im (c * conjc c) = 0.
+Proof.
+  destruct c.
+  simpl.
+  lra.
+Qed.
+
+Lemma RtoC_cnorm (c : R[i]) :
+  RtoC (cnorm c) = c * conjc c.
+Proof.
+  rewrite /RtoC /cnorm.
+  destruct c.
+  simpl.
+  vm_compute.
+  apply /eqP.
+  rewrite eq_complex /=.
+  apply /andP; split.
+  - apply /eqP; lra.
+  - apply /eqP; coq_lra.
+Qed.
+
+Lemma RtoC_ctrace (c : R[i]) :
+  RtoC (ctrace c) = c + conjc c.
+Proof.
+  rewrite /RtoC /ctrace.
+  destruct c.
+  simpl.
+  apply /eqP.
+  rewrite eq_complex /=.
+  apply /andP; split; apply /eqP.
+  - by [].
+  - rewrite /add /opp /=.
+    coq_lra.
+Qed.
+
+Lemma RtoC_opp (r : R) :
+  RtoC (- r) = - RtoC r.
+Proof.
+  rewrite /RtoC /=.
+  apply /eqP.
+  rewrite eq_complex /=.
+  apply /andP; split; apply /eqP.
+  - by rewrite /opp /=.
+  - by rewrite /opp /=; coq_lra.
+Qed.
+
+Definition characteristic_polynomial (c : R[i]) : {poly R} :=
+  'X^2 + (- ctrace c) *: 'X + (cnorm c)%:P.
+
+Lemma size_charpoly (c : R[i]) :
+  size (characteristic_polynomial c) = 3%N.
+Proof.
+  rewrite /characteristic_polynomial.
+  rewrite -addrA size_addl size_polyXn //.
+  case : (eqVneq (ctrace c) 0); intros.
+  - rewrite e oppr0 scale0r add0r.
+    rewrite size_polyC.
+    case : (eqVneq (cnorm c) 0); rewrite //.
+  - rewrite size_addl.
+    + rewrite size_scale.
+      * rewrite size_polyX //.
+      * admit.
+    + rewrite size_scale.
+      * rewrite size_polyX size_polyC.
+        case : (eqVneq (cnorm c) 0); rewrite //.  
+      * admit.
+Admitted.
+
+Lemma characteristic_polynomial_correct (c : R[i]) :
+  (map_poly RtoC (characteristic_polynomial c)).[c] = 0.
+Proof.
+  rewrite /map_poly size_charpoly /characteristic_polynomial.
+  rewrite horner_poly.
+  rewrite big_ord_recl big_ord_recl big_ord1 /= expr0 mulr1 /bump addn0 expr1 /=.
+  replace (addn (S 0) (S 0)) with 2%N by lia.
+  rewrite !coefD !coefZ !coefX !coefC !coefXn /=.
+  rewrite mulr0 mulr1 !addr0 !add0r.
+  destruct RtoC_is_rmorphism.
+  rewrite mixin RtoC_cnorm RtoC_opp RtoC_ctrace mul1r expr2 opprD mulrDl.
+  rewrite -addrA (addrC _ (c * c)) (addrA _ (c * c) _) -mulrDl (addrC _ c).
+  by rewrite sub_x_x mul0r add0r mulrC -mulrDl sub_x_x mul0r.
+Qed.
 
  Lemma ev_C_1 :
    forall (x : C), peval_C 1 x = 1.
@@ -1844,7 +1944,7 @@ Proof.
     apply Rgt_not_eq.
     generalize (pow2_ge_0 x); intros.
     rewrite /one /add /zero /= -RpowE.
-    lra.
+    coq_lra.
   }
   assert (forall x:R, x^+(2^(S n)) + 1 <> 0).
   {
@@ -2567,7 +2667,7 @@ Section norms.
     apply big_rec.
     - apply /RlebP.
       unfold zero; simpl.
-      lra.
+      coq_lra.
     - intros.
       assert  ((zero R_ringType) <= Order.max (v i) x)%O.
       {
@@ -2594,7 +2694,7 @@ Section norms.
     apply big_rec.
     - apply /RlebP.
       unfold zero; simpl.
-      lra.
+      coq_lra.
     - intros.
       apply /RlebP.
       rewrite /add /=.
@@ -2628,7 +2728,7 @@ Section norms.
     - rewrite !big_ord_recl.
       rewrite -IHn.
       rewrite /add /=.
-      lra.
+      coq_lra.
   Qed.
 
   Lemma exchange_sums {n m} (a : 'I_n -> 'I_m -> R) :
@@ -2740,7 +2840,7 @@ Section norms.
     intros.
     rewrite /norm_inf.
     apply big_max_const_fun; trivial.
-    rewrite /one /=; lra.
+    rewrite /one /=; coq_lra.
   Qed.
 
   Lemma pow2n0 n : (2 ^ n)%N != 0%N.
@@ -2756,7 +2856,7 @@ Section norms.
     rewrite /norm_inf /nth_roots_half.
     apply big_max_const_fun.
     - apply pow2n0.
-    - rewrite /one/=; lra.
+    - rewrite /one/=; coq_lra.
     - intros.
       by rewrite !mxE -normc_conj normc_nth_root // pow2n0.
   Qed.
@@ -2799,7 +2899,7 @@ Section norms.
       apply matrix_norm_inf_sub_mult.
     - rewrite -norm_inf_diag norm_inf_conj_half_roots Rmult_1_l.
       rewrite norm_inf_peval_mat_conj_even_roots.
-      lra.
+      coq_lra.
   Qed.
 
   Lemma norm_inf_triang {n} (v1 v2 : 'rV[R[i]]_n) :
