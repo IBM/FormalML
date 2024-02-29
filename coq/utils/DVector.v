@@ -311,8 +311,8 @@ Lemma vector_list_create_const_Forall {A} (c:A) start len :
 Proof.
   revert start.
   induction len; simpl; trivial; intros.
-  constructor; trivial.
-  now specialize (IHlen (S start)).
+  specialize (IHlen (S start)).
+  now constructor.
 Qed.
 
 Program Lemma vector_const_Forall {A} (c:A) n : Forall (fun a => a = c) (vector_const c n).

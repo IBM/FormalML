@@ -444,10 +444,11 @@ Qed.
   Proof.
     destruct (is_nil_dec l); try now subst.
     apply Rle_antisym.
-    + rewrite Rmax_list_le_iff; try rewrite map_not_nil; try easy.
-      intros x Hx. rewrite in_map_iff in Hx.
-      destruct Hx as [x0 [Hx0 Hx0']].
-      now subst. congruence.
+    + rewrite Rmax_list_le_iff; try rewrite map_not_nil.
+      * intros x Hx. rewrite in_map_iff in Hx.
+        destruct Hx as [x0 [Hx0 Hx0']].
+        now subst.
+      * congruence.
     + apply Rmax_spec.
       rewrite in_map_iff.
       rewrite BasicUtils.ne_symm in n.

@@ -1509,7 +1509,7 @@ Section stuff.
     intros.
     f_equal.
     generalize (ivector_sa_product vecps); intros.
-    pose (ve := ivector_create n (fun j _ => if i == j then (preimage_singleton (fun t : T => g t) a) else  Ω)).
+    pose (ve := ivector_create n (fun j _ => if i == j then (preimage_singleton (σd :=borel_sa) (fun t : T => g t) a) else  Ω)).
     specialize (H ve).
     rewrite (ivector_fold_left_Rmult_allbut_ident i pf) in H.
     - rewrite ivector_nth_map, ivector_nth_zip in H.
@@ -3039,6 +3039,7 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
           subst kstar.
           field_simplify; try lra.
       + subst khat.
+        try intros H0.
         rewrite INR_up_pos in H0; try lra.
         generalize (up_pos _ r); intros.        
         assert (0 < up kstar)%Z by lia.

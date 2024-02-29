@@ -1845,8 +1845,8 @@ Section EventRestricted.
       + typeclasses eauto.
       + intro z.
         unfold lift_event_restricted_domain_fun.
-        match_destr.
-        apply H5.
+        match_destr
+        ; try apply H5.
       + subst.
         erewrite event_restricted_SimpleExpectation; eauto.
         apply SimpleExpectation_ext.
@@ -4709,7 +4709,7 @@ Section rv_expressible.
           (X : nat -> Ts -> R) (n : nat) 
           (Y : Ts -> R)
           {rv_X : forall n, RandomVariable dom borel_sa (X n)}
-          {rv_y : RandomVariable (filtration_history_sa X n) borel_sa Y} :
+          {rv_y : RandomVariable (filtration_history_sa (cod:=borel_sa) X n) borel_sa Y} :
       exists g : vector R (S n) -> R,
          RandomVariable (Rvector_borel_sa (S n)) borel_sa g /\
          rv_eq Y (g ∘ (make_vector_from_seq X (S n))).
@@ -4736,7 +4736,7 @@ Section rv_expressible.
           (X : nat -> Ts -> R) (n : nat) 
           (g : vector R (S n) -> R)
           {rv_g : RandomVariable (Rvector_borel_sa (S n)) borel_sa g} :
-      RandomVariable (filtration_history_sa X n) borel_sa (g ∘ (make_vector_from_seq X (S n) )).
+      RandomVariable (filtration_history_sa (cod:=borel_sa) X n) borel_sa (g ∘ (make_vector_from_seq X (S n) )).
     Proof.
       rewrite filtrate_history_vector_equiv.
       now apply pullback_compose_rv.

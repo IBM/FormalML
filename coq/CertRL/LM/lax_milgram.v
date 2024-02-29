@@ -1005,11 +1005,10 @@ intro x; field.
 repeat (rewrite Hx1 in HU0).
 rewrite Rmult_comm.
 trivial.
-absurd (norm u0 = 0).
+try revert HU0.
 apply Rgt_not_eq.
 apply Rlt_gt.
 apply norm_gt_0.
-trivial.
 trivial.
 apply norm_ge_0.
 simpl.

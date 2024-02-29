@@ -1385,7 +1385,7 @@ Section martingale.
   Global Instance martingale_transform_adapted (H X : nat -> Ts -> R) sas
          {adapt:IsAdapted borel_sa X sas}
          {filt:IsFiltration sas} :
-    is_predictable H sas ->
+    is_predictable (saD:=borel_sa) H sas ->
     IsAdapted borel_sa (martingale_transform H X) sas.
   Proof.
     intros is_pre [|n]; simpl.
@@ -1419,7 +1419,7 @@ Section martingale.
         {isfeS:forall n, IsFiniteExpectation prts (rvmult (H (S n)) (rvminus (X (S n)) (X n)))}
         {isfe : forall n : nat, IsFiniteExpectation prts (martingale_transform H X n)}
         {adapt:IsAdapted borel_sa (martingale_transform H X) sas}
-        (predict: is_predictable H sas)
+        (predict: is_predictable (saD:=borel_sa) H sas)
         {mart:IsMartingale eq X sas} :
     IsMartingale eq (martingale_transform H X) sas.
   Proof.
@@ -1560,7 +1560,7 @@ Section martingale.
         {isfeS:forall n, IsFiniteExpectation prts (rvmult (H (S n)) (rvminus (X (S n)) (X n)))}
         {isfe : forall n : nat, IsFiniteExpectation prts (martingale_transform H X n)}
         {adapt:IsAdapted borel_sa (martingale_transform H X) sas}
-        (predict: is_predictable H sas)
+        (predict: is_predictable (saD:=borel_sa) H sas)
         (Hpos: forall n, almostR2 prts Rle (const 0) (H n))
         {mart:IsMartingale Rle X sas} :
     IsMartingale Rle (martingale_transform H X) sas.

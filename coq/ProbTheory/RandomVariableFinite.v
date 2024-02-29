@@ -1310,7 +1310,7 @@ Lemma Fatou_FiniteExpectation
 
 End fe.
 
-Hint Rewrite FiniteExpectation_const FiniteExpectation_plus FiniteExpectation_scale FiniteExpectation_opp FiniteExpectation_minus: prob.
+Hint Rewrite @FiniteExpectation_const @FiniteExpectation_plus @FiniteExpectation_scale @FiniteExpectation_opp @FiniteExpectation_minus: prob.
 
 Section ExpNonNeg.
   Context {Ts:Type} 

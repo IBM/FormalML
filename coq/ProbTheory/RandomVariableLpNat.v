@@ -1630,12 +1630,6 @@ Section Lp.
   
 End Lp.
 
-Hint Rewrite LpRRVq_constE : quot.
-Hint Rewrite LpRRVq_zeroE : quot.
-Hint Rewrite LpRRVq_scaleE : quot.
-Hint Rewrite LpRRVq_oppE : quot.
-Hint Rewrite LpRRVq_plusE : quot.
-Hint Rewrite LpRRVq_minusE : quot.
 Hint Rewrite @LpRRVq_constE : quot.
 Hint Rewrite @LpRRVq_zeroE : quot.
 Hint Rewrite @LpRRVq_scaleE : quot.
@@ -1643,7 +1637,13 @@ Hint Rewrite @LpRRVq_oppE : quot.
 Hint Rewrite @LpRRVq_plusE : quot.
 Hint Rewrite @LpRRVq_minusE : quot.
 Hint Rewrite @LpRRVq_constE : quot.
-Hint Rewrite LpRRVq_normE : quot.
+Hint Rewrite @LpRRVq_zeroE : quot.
+Hint Rewrite @LpRRVq_scaleE : quot.
+Hint Rewrite @LpRRVq_oppE : quot.
+Hint Rewrite @LpRRVq_plusE : quot.
+Hint Rewrite @LpRRVq_minusE : quot.
+Hint Rewrite @LpRRVq_constE : quot.
+Hint Rewrite @LpRRVq_normE : quot.
 
 Global Arguments LpRRVq_AbelianGroup {Ts} {dom} prts p.
 Global Arguments LpRRVq_ModuleSpace {Ts} {dom} prts p.

@@ -1283,7 +1283,7 @@ Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
   Proof.
     move=> p.
     rewrite /peval_C_quot -eq_lock.
-    case piP => a /EquivQuot.eqmodP.
+    case: piP => a /EquivQuot.eqmodP.
     rewrite /Quotient.equiv_equiv /Quotient.equiv /in_mem /mem /= /peval_C_ker_pred.
     destruct (ev_C_is_rmorphism x).
     rewrite base => eqq.
@@ -1713,7 +1713,7 @@ Section eval_vectors.
   Proof.
     move=> x.
     rewrite /mx_eval_quot -eq_lock.
-    case piP => a /EquivQuot.eqmodP.
+    case: piP => a /EquivQuot.eqmodP.
     rewrite /Quotient.equiv_equiv /Quotient.equiv /in_mem /mem /= /mx_eval_ker_pred.
     destruct mx_eval_is_rmorphism.
     rewrite base => eqq.

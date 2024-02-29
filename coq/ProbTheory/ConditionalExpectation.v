@@ -4293,7 +4293,7 @@ Section cond_exp_l2.
     unfold norm, minus, plus, opp in *; simpl in *.
     rewrite L2RRVq_norm_norm in HH2.
     autorewrite with quot in HH2.
-    rewrite LpRRVq_normE in HH2.
+    try rewrite LpRRVq_normE in HH2.
     rewrite LpRRVminus_plus.
     unfold nonneg in HH2 |- *; simpl in *.
     rewrite HH2.
@@ -4315,7 +4315,7 @@ Section cond_exp_l2.
         exists w'.
         split; trivial.
         autorewrite with quot.
-        rewrite LpRRVq_normE.
+        try rewrite LpRRVq_normE.
         now rewrite LpRRVminus_plus.
       + subst.
         exists (Quot _ w).
@@ -4324,7 +4324,7 @@ Section cond_exp_l2.
           split; trivial.
         * rewrite L2RRVq_norm_norm.
           autorewrite with quot.
-          rewrite LpRRVq_normE.
+          try rewrite LpRRVq_normE.
           now rewrite LpRRVminus_plus.
     } 
     repeat split.
@@ -4360,7 +4360,7 @@ Section cond_exp_l2.
           eauto.
         * rewrite L2RRVq_norm_norm.
           autorewrite with quot.
-          rewrite LpRRVq_normE.
+          try rewrite LpRRVq_normE.
           rewrite <- LpRRVminus_plus.
           unfold nonneg in *; simpl in *.
           rewrite xeqq.
@@ -4490,7 +4490,7 @@ Section cond_exp_l2.
         rewrite L2RRVq_norm_norm.
         unfold minus, plus, opp; simpl.
         LpRRVq_simpl.
-        rewrite LpRRVq_normE.
+        try rewrite LpRRVq_normE.
         now rewrite LpRRVminus_plus.
     - intros [?[??]]; subst.
       destruct H0 as [?[??]]; subst.
@@ -4500,7 +4500,7 @@ Section cond_exp_l2.
       rewrite L2RRVq_norm_norm.
       unfold minus, plus, opp; simpl.
       LpRRVq_simpl.
-      rewrite LpRRVq_normE.
+      try rewrite LpRRVq_normE.
       now rewrite LpRRVminus_plus.
   Qed.
 

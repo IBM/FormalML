@@ -165,7 +165,7 @@ End Tensor.
 
 Inductive NumericType
   := FloatType
-   | IntTYpe.
+   | IntType.
 
 
 Definition ntype_interp (n:NumericType) : Type

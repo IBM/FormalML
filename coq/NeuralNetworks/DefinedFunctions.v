@@ -11783,8 +11783,8 @@ Tactic Notation "DefinedFunction_scalar_cases" tactic(first) ident(c) :=
       intros fa.
       do 2 (apply functional_extensionality; intro).
       unfold scaleUnitVector; simpl.
-      match_destr.
-      now specialize (fa x1); simpl in fa.
+      match_destr
+      ; try now specialize (fa x1); simpl in fa.
     Qed.
 
 

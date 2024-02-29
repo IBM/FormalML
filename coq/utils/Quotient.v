@@ -16,7 +16,7 @@ Section quotient.
        | (y::l)::ll' =>
          match x == y with
          | left _ => (x::y::l)::ll'
-         | right_ => (y::l)::(add_to_bucket x ll')
+         | _right_ => (y::l)::(add_to_bucket x ll')
          end
        end.
 

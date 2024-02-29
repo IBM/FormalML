@@ -357,8 +357,7 @@ Lemma interleave_length_eq {A:Type} (l1 l2 : list A) :
   length (interleave l1 l2) = length l1 + length l2.
 Proof.
   revert l2.
-  induction l1; destruct l2; simpl in *; trivial.
-  - auto.
+  induction l1; destruct l2; simpl in *; auto.
   - rewrite IHl1.
     lia.
 Qed.

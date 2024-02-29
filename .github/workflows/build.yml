@@ -13,6 +13,7 @@ jobs:
         coq_container:
 #        - coqorg/coq:8.12.2
         - coqorg/coq:8.16.1-ocaml-4.13.1-flambda
+        - coqorg/coq:8.18.0-ocaml-4.13.1-flambda
     container:
       image: ${{ matrix.coq_container }}
       options: --user root
