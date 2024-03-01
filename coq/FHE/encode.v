@@ -1474,7 +1474,8 @@ Proof.
     replace (i == 1%N) with false by lia.
     replace (i == 0%N) with false by lia.
     rewrite /= mulr0 mulr0n oppr0 !addr0.
-    admit.
+    rewrite nth_default //.
+    by rewrite size_map sz.
   - rewrite (nth_map 0); [| by rewrite sz].
     rewrite !(coefD, coefZ, coefC, coefN, coefX, coefXn).
     rewrite !(rmorphD, rmorphM, rmorphN) /=.
@@ -1510,7 +1511,7 @@ Proof.
     + case : (eqVneq i 0%N).
       * by rewrite H0.
       * rewrite /RtoC //.
-  Admitted.
+ Qed.
 
 
 Lemma charpoly_irreducible (c : R[i]) :
