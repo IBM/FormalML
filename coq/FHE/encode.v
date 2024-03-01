@@ -1470,6 +1470,10 @@ Proof.
   rewrite coef_Poly.
   case/orP: (leqVgt 3 i)=>ibd.
   - rewrite !(coefD, coefZ, coefC, coefN, coefX, coefXn).
+    replace (i == 2%N) with false by lia.
+    replace (i == 1%N) with false by lia.
+    replace (i == 0%N) with false by lia.
+    rewrite /= mulr0 mulr0n oppr0 !addr0.
     admit.
   - rewrite (nth_map 0); [| by rewrite sz].
     rewrite !(coefD, coefZ, coefC, coefN, coefX, coefXn).
