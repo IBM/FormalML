@@ -68,7 +68,7 @@ Qed.
 
 Definition ConstVector n (c : R[i]) : 'rV[R[i]]_n:= const_mx c.
 
-Definition RtoC (x : R):R[i] := Complex x R0.
+Definition RtoC (x : R):R[i] := Complex x 0%R.
 
 (* Coercion RtoC : R >-> complex. *)
 
@@ -498,8 +498,7 @@ Proof.
   f_equal.
   unfold conjc, RtoC.
   apply f_equal.
-  unfold opp; simpl.
-  coq_lra.
+  lra.
 Qed.
 
 Lemma vector_rev_conj_const_R n (r : R) :
@@ -509,8 +508,7 @@ Proof.
   do 2 rewrite mxE.
   unfold conjc.
   apply f_equal.
-  unfold opp; simpl.
-  coq_lra.
+  lra.
 Qed.
 
 Lemma vector_rev_conj_conj {n} (v : 'rV[R[i]]_n) :
@@ -1258,8 +1256,7 @@ Proof.
   rewrite eq_complex /=.
   apply /andP; split; apply /eqP.
   - by [].
-  - rewrite /add /opp /=.
-    coq_lra.
+  - lra.
 Qed.
 
 Lemma RtoC_opp (r : R) :
@@ -1270,7 +1267,7 @@ Proof.
   rewrite eq_complex /=.
   apply /andP; split; apply /eqP.
   - by rewrite /opp /=.
-  - by rewrite /opp /=; coq_lra.
+  - lra.
 Qed.
 
 Definition characteristic_polynomial (c : R[i]) : {poly R} :=
@@ -1293,6 +1290,29 @@ Proof.
       * rewrite size_polyX size_polyC.
         case : (eqVneq (cnorm c) 0); rewrite //.
       * by rewrite -eqr_opp opprK oppr0.
+Qed.
+
+Lemma monic_charpoly (c : R[i]) :
+  characteristic_polynomial c \is monic.
+Proof.
+  apply /monicP.
+  rewrite /characteristic_polynomial.
+  rewrite -addrA.
+  rewrite lead_coefDl.
+  - apply lead_coefXn.
+  - rewrite size_polyXn.
+    case : (eqVneq (ctrace c) 0); intros.
+    + rewrite e oppr0 scale0r add0r.
+      rewrite size_polyC.
+      case : (eqVneq (cnorm c) 0); rewrite //.
+    + rewrite size_addl.
+      * rewrite size_scale.
+        -- rewrite size_polyX //.
+        -- by rewrite -eqr_opp opprK oppr0.
+      * rewrite size_scale.
+        -- rewrite size_polyX size_polyC.
+           case : (eqVneq (cnorm c) 0); rewrite //.
+        -- by rewrite -eqr_opp opprK oppr0.
 Qed.
 
 Lemma characteristic_polynomial_correct (c : R[i]) :
@@ -1363,7 +1383,6 @@ Proof.
   - by rewrite H.
 Qed.
 
-
 Lemma norm_trace_eq (c1 c2 : R[i]) :
   ctrace c1 = ctrace c2 /\ cnorm c1 = cnorm c2 <->
     c1 = c2 \/ c1 = conjc c2.
@@ -1415,6 +1434,117 @@ Proof.
     + by rewrite H.
     + by rewrite H char_poly_conj conjcK.
 Qed.
+
+Lemma poly2_expand {S:comRingType} (c1 c2 : S) :
+  'X^2 - (c1 + c2)*: 'X + (c1*c2)%:P =
+    ('X - c1%:P) * ('X - c2%:P).
+Proof.
+  rewrite mulrDr !mulrDl addrA.
+  f_equal.
+  - rewrite scalerDl -expr2 -addrA.
+    f_equal.
+    rewrite (mulrC 'X _) opprD -!scaleNr -!mul_polyC.
+    by f_equal; rewrite polyCN.
+  - by rewrite mulrNN -scale_polyC mul_polyC.
+Qed.
+
+Lemma charpoly_factor (c : R[i]) :
+  map_poly RtoC (characteristic_polynomial c) =
+    ('X - c%:P) * ('X - (conjc c)%:P).
+Proof.
+  rewrite -poly2_expand /characteristic_polynomial /ctrace /cnorm.
+  
+  Admitted.
+
+
+Lemma charpoly_irreducible (c : R[i]) :
+  c != conjc c ->
+  irreducible_poly (characteristic_polynomial c).
+Proof.
+  intros.
+  assert (1 < size (characteristic_polynomial c) <= 4).
+  {
+    rewrite size_charpoly //.
+  }
+  apply (cubic_irreducible H0).
+  intros.
+  apply /negP.
+  unfold not; intros.
+  assert (root (map_poly RtoC (characteristic_polynomial c)) (RtoC x)).
+  {
+    by apply rmorph_root.
+  }
+  rewrite charpoly_factor in H2.
+  unfold root in H2.
+  rewrite hornerM hornerD mulf_eq0 in H2.
+  move /orP in H2.
+  destruct H2.
+  - move /eqP in H2.
+    rewrite hornerX hornerN hornerC in H2.
+    apply (f_equal (fun z => z+ c)) in H2.
+    rewrite -addrA add0r (addrC _ c) sub_x_x addr0 in H2.
+    by rewrite -H2 /RtoC /= eq_complex /= oppr0 !eq_refl /= in H.
+  - move /eqP in H2.
+    rewrite hornerD hornerX hornerN hornerC in H2.
+    apply (f_equal (fun z => z+ conjc c)) in H2.
+    rewrite -addrA add0r (addrC _ (conjc c)) sub_x_x addr0 in H2.
+    apply (f_equal (fun z => conjc z)) in H2.
+    rewrite conjcK /RtoC /= in H2.
+    by rewrite -H2 /RtoC /= eq_complex /= opprK oppr0 !eq_refl /= in H.
+ Qed.
+
+Lemma charpoly_square (c : R[i]) :
+  c == conjc c ->
+  characteristic_polynomial c = ('X - (Re c)%:P)^+2.
+Proof.
+  intros.
+  move /eqP in H.
+  rewrite expr2 /characteristic_polynomial /ctrace /cnorm H conjcK /= -H -poly2_expand.
+  f_equal.
+  - f_equal.
+    rewrite -scaleNr.
+    f_equal.
+    f_equal.
+    destruct c.
+    by simpl.
+  - f_equal.
+    destruct c.
+    simpl.
+    move /eqP in H.
+    rewrite eq_complex /= in H.
+    move /andP in H.
+    destruct H.
+    move /eqP in H0.
+    assert (Im = 0) by lra.
+    rewrite H1.
+    lra.
+Qed.
+
+Lemma charpoly_coprime_case1 (c1 c2 : R[i]) :
+  c1 != conjc c1 ->
+  c2 != conjc c2 ->
+  characteristic_polynomial c1 != characteristic_polynomial c2 ->
+  coprimep (characteristic_polynomial c1) (characteristic_polynomial c2).
+Proof.
+  intros.
+  apply /coprimepP.
+  intros.
+  apply charpoly_irreducible in H.
+  apply charpoly_irreducible in H0.
+  specialize (H d); intros.
+  specialize (H0 d); intros.
+  rewrite -size_poly_eq1.
+  case : (eqVneq (size d) 1%N); trivial.
+  intros.
+  specialize (H4 i H2).
+  specialize (H5 i H3).
+  rewrite eqp_sym in H4.
+  generalize (eqp_trans H4 H5); intros.
+  rewrite eqp_monic in H6.
+  - admit.
+  - apply monic_charpoly.
+  - apply monic_charpoly.    
+  Admitted.
 
  Lemma ev_C_1 :
    forall (x : C), peval_C 1 x = 1.
@@ -3066,7 +3196,7 @@ Section norms.
   Lemma normc_Rabs (r : R) :
     normc (RtoC r) = Rabs r.
   Proof.
-    rewrite /normc /RtoC R00 (expr2 0) mulr0 addr0.
+    rewrite /normc /RtoC (expr2 0) mulr0 addr0.
     by rewrite ssrnum.Num.Theory.sqrtr_sqr.
   Qed.
 
@@ -3307,7 +3437,7 @@ Section norms.
 
   Lemma RtoC0E (c:R) : (RtoC c == 0) = (c == 0).
   Proof.
-    by rewrite /RtoC !eqE /= !eqE /= R00 eqxx !andbT.
+    by rewrite /RtoC !eqE /= !eqE /= eqxx !andbT.
   Qed.
 
   Lemma RtoC_real a : RtoC a \is ssrnum.Num.real.
