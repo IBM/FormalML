@@ -1448,12 +1448,31 @@ Proof.
   - by rewrite mulrNN -scale_polyC mul_polyC.
 Qed.
 
+Lemma RtoCR n : RtoC n%:R = n%:R.
+Proof.
+  unfold RtoC.
+  induction n.
+  - now rewrite mulr0n.
+  - rewrite mulrSr /=.
+    
+Admitted.
+
+
 Lemma charpoly_factor (c : R[i]) :
   map_poly RtoC (characteristic_polynomial c) =
     ('X - c%:P) * ('X - (conjc c)%:P).
 Proof.
+  move: (size_charpoly c).
   rewrite -poly2_expand /characteristic_polynomial /ctrace /cnorm.
-  
+  rewrite map_polyE=>sz.
+  apply/polyP=>i.
+  rewrite coef_Poly.
+  case/orP: (leqVgt 3 i)=>ibd.
+  - admit.
+  - rewrite (nth_map 0); [| by rewrite sz].
+    rewrite !(coefD, coefZ, coefC, coefN, coefX, coefXn).
+    rewrite !(rmorphD, rmorphM, rmorphN) /=.
+    rewrite !RtoCR.
   Admitted.
 
 
@@ -1541,10 +1560,10 @@ Proof.
   rewrite eqp_sym in H4.
   generalize (eqp_trans H4 H5); intros.
   rewrite eqp_monic in H6.
-  - admit.
+  - by rewrite H6 in H1.
   - apply monic_charpoly.
   - apply monic_charpoly.    
-  Admitted.
+Qed.
 
  Lemma ev_C_1 :
    forall (x : C), peval_C 1 x = 1.
