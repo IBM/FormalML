@@ -1453,10 +1453,11 @@ Proof.
   unfold RtoC.
   induction n.
   - now rewrite mulr0n.
-  - rewrite mulrSr /=.
-    
-Admitted.
-
+  - rewrite mulrSr /= mulrS -IHn.
+    apply /eqP.
+    rewrite eq_complex /= addrC addr0 /=.
+    by apply /andP.
+Qed.
 
 Lemma charpoly_factor (c : R[i]) :
   map_poly RtoC (characteristic_polynomial c) =
@@ -1468,11 +1469,43 @@ Proof.
   apply/polyP=>i.
   rewrite coef_Poly.
   case/orP: (leqVgt 3 i)=>ibd.
-  - admit.
+  - rewrite !(coefD, coefZ, coefC, coefN, coefX, coefXn).
+    admit.
   - rewrite (nth_map 0); [| by rewrite sz].
     rewrite !(coefD, coefZ, coefC, coefN, coefX, coefXn).
     rewrite !(rmorphD, rmorphM, rmorphN) /=.
     rewrite !RtoCR.
+    assert (RtoC (Re (c + conjc c)) = c + conjc c).
+    {
+      rewrite /RtoC.
+      destruct c; simpl.
+      apply /eqP.
+      rewrite eq_complex.
+      rewrite /=.
+      apply /andP.
+      split; trivial.
+      apply /eqP.
+      lra.
+    }
+    assert (RtoC (Re (c * conjc c)) = c * conjc c).
+    {
+      rewrite /RtoC.
+      destruct c; simpl.
+      apply /eqP.
+      rewrite eq_complex.
+      rewrite /=.
+      apply /andP.
+      split; trivial.
+      apply /eqP.
+      lra.
+    }
+    rewrite H.
+    f_equal.
+    + f_equal.
+      by rewrite mulNr.
+    + case : (eqVneq i 0%N).
+      * by rewrite H0.
+      * rewrite /RtoC //.
   Admitted.
 
 
