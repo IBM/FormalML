@@ -1603,6 +1603,76 @@ Proof.
   - apply monic_charpoly.    
 Qed.
 
+Lemma charpoly_coprime_case2 (c1 c2 : R[i]) :
+  c1 != conjc c1 ->
+  c2 == conjc c2 ->
+  characteristic_polynomial c1 != characteristic_polynomial c2 ->
+  coprimep (characteristic_polynomial c1) (characteristic_polynomial c2).
+Proof.
+  intros.
+  apply /coprimepP.
+  intros.
+  apply charpoly_irreducible in H.
+  specialize (H d); intros.
+  rewrite -size_poly_eq1.
+  case : (eqVneq (size d) 1%N); trivial.
+  intros.
+  specialize (H4 i H2).
+  apply charpoly_square in H0.
+  assert (size d == size (characteristic_polynomial c2)).
+  {
+    generalize (eqp_size H4); intros.
+    rewrite size_charpoly.
+    rewrite size_charpoly in H5.
+    by rewrite H5.
+  }
+  rewrite Pdiv.CommonIdomain.dvdp_size_eqp in H5; trivial.
+  rewrite eqp_sym in H4.
+  generalize (eqp_trans H4 H5); intros.
+  rewrite eqp_monic in H6.
+  - by rewrite H6 in H1.
+  - apply monic_charpoly.
+  - apply monic_charpoly.    
+Qed.
+  
+Lemma charpoly_coprime_case3 (c1 c2 : R[i]) :
+  c1 == conjc c1 ->
+  c2 == conjc c2 ->
+  characteristic_polynomial c1 != characteristic_polynomial c2 ->
+  coprimep (characteristic_polynomial c1) (characteristic_polynomial c2).
+Proof.
+  intros.
+  apply charpoly_square in H.
+  apply charpoly_square in H0.
+  rewrite H H0.
+  rewrite H H0 in H1.
+  apply coprimep_expl.
+  apply coprimep_expr.
+  apply coprimep_XsubC2.
+  apply /negP.
+  unfold not; intros.
+  rewrite subr_eq0 in H2.
+  move /eqP in H2.
+  rewrite H2 in H1.
+  move /negP in H1.
+  by apply H1.
+Qed.
+
+Lemma charpoly_comprime (c1 c2 : R[i]) :
+  characteristic_polynomial c1 != characteristic_polynomial c2 ->
+  coprimep (characteristic_polynomial c1) (characteristic_polynomial c2).
+Proof.
+  case : (boolP (c1 == conjc c1)); intros.
+  - case : (boolP (c2 == conjc c2)); intros.
+    + by apply charpoly_coprime_case3.
+    + rewrite coprimep_sym.
+      rewrite eq_sym in H.
+      by apply charpoly_coprime_case2.
+  - case : (boolP (c2 == conjc c2)); intros.
+    + by apply charpoly_coprime_case2.
+    + by apply charpoly_coprime_case1.
+Qed.
+
  Lemma ev_C_1 :
    forall (x : C), peval_C 1 x = 1.
   Proof.
