@@ -1232,31 +1232,41 @@ Proof.
   lra.
 Qed.
 
+Lemma RtoC_Re_Im0 (c : R[i]) :
+  Im c = 0 ->
+  RtoC (Re c) = c.
+Proof.  
+  intros.
+  rewrite /RtoC.
+  destruct c; simpl.
+  apply /eqP.
+  rewrite eq_complex.
+  rewrite /=.
+  apply /andP.
+  split; trivial.
+  apply /eqP.
+  simpl in H.
+  by rewrite H.
+Qed.
+
 Lemma RtoC_cnorm (c : R[i]) :
   RtoC (cnorm c) = c * conjc c.
 Proof.
-  rewrite /RtoC /cnorm.
+  rewrite /cnorm.
+  apply RtoC_Re_Im0.
   destruct c.
   simpl.
-  vm_compute.
-  apply /eqP.
-  rewrite eq_complex /=.
-  apply /andP; split.
-  - apply /eqP; lra.
-  - apply /eqP; coq_lra.
+  lra.
 Qed.
 
 Lemma RtoC_ctrace (c : R[i]) :
   RtoC (ctrace c) = c + conjc c.
 Proof.
-  rewrite /RtoC /ctrace.
+  rewrite /ctrace.
+  apply RtoC_Re_Im0.
   destruct c.
   simpl.
-  apply /eqP.
-  rewrite eq_complex /=.
-  apply /andP; split; apply /eqP.
-  - by [].
-  - lra.
+  lra.
 Qed.
 
 Lemma RtoC_opp (r : R) :
@@ -1479,40 +1489,12 @@ Proof.
   - rewrite (nth_map 0); [| by rewrite sz].
     rewrite !(coefD, coefZ, coefC, coefN, coefX, coefXn).
     rewrite !(rmorphD, rmorphM, rmorphN) /=.
-    rewrite !RtoCR.
-    assert (RtoC (Re (c + conjc c)) = c + conjc c).
-    {
-      rewrite /RtoC.
-      destruct c; simpl.
-      apply /eqP.
-      rewrite eq_complex.
-      rewrite /=.
-      apply /andP.
-      split; trivial.
-      apply /eqP.
-      lra.
-    }
-    assert (RtoC (Re (c * conjc c)) = c * conjc c).
-    {
-      rewrite /RtoC.
-      destruct c; simpl.
-      apply /eqP.
-      rewrite eq_complex.
-      rewrite /=.
-      apply /andP.
-      split; trivial.
-      apply /eqP.
-      lra.
-    }
-    rewrite H.
+    rewrite !RtoCR RtoC_ctrace mulNr.
     f_equal.
-    + f_equal.
-      by rewrite mulNr.
-    + case : (eqVneq i 0%N).
-      * by rewrite H0.
-      * rewrite /RtoC //.
+    case : (eqVneq i 0%N).
+    + by rewrite RtoC_cnorm.
+    + by rewrite /RtoC.
  Qed.
-
 
 Lemma charpoly_irreducible (c : R[i]) :
   c != conjc c ->
