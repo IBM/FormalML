@@ -54,6 +54,52 @@ Proof.
     lia.
 Qed.
 
+Lemma pow2_S (j:nat) :
+  { k : nat | (2^j)%nat == S k}.
+Proof.
+  exists (2^j-1)%nat.
+  induction j.
+  - now simpl.
+  - simpl.
+    rewrite expnS (eqP IHj).
+    lia.
+Defined.
+
+Lemma primitive_root_odd_nth_root (j n : nat) :
+  (2^(n.+1)).-primitive_root ((nth_root 1 (2^n.+1)) ^+ (2 * j + 1)).
+Proof.
+  intros.
+  rewrite prim_root_exp_coprime.
+  - assert (forall j0, coprime (2 * j0 + 1) 2).
+    {
+      intros.
+      rewrite coprimen2.
+      induction j0.
+      * by rewrite muln0 add0n /=.
+      * replace (2 * j0.+1 + 1)%N with (2 + (2 * j0 + 1))%N by lia.
+        by rewrite oddD IHj0 /=.
+    }
+    induction n.
+    + rewrite expn1.
+      apply H.
+    + rewrite expnS coprimeMr IHn.
+      by rewrite H.
+  - destruct (pow2_S (S n)).
+    move /eqP in i.
+    rewrite i.
+    apply primitive_root_nth_root.
+Qed.
+
+Lemma primitive_root_odd_nth_root_alt (j n : nat) :
+  (2^(n.+1)).-primitive_root (nth_root (2 * j + 1) (2^n.+1)).
+Proof.
+  generalize (primitive_root_odd_nth_root j n); intros.
+  destruct (pow2_S (S n)).
+  move /eqP in i.
+  rewrite i.
+  by rewrite i Cpow_nth_root muln1 in H.
+Qed.
+
 Lemma mul_INR n m :
   INR(n * m) = INR n * INR m.
 Proof.
@@ -224,16 +270,6 @@ Proof.
 Qed.
 
 
-Lemma pow2_S (j:nat) :
-  { k : nat | (2^j)%nat == S k}.
-Proof.
-  exists (2^j-1)%nat.
-  induction j.
-  - now simpl.
-  - simpl.
-    rewrite expnS (eqP IHj).
-    lia.
-Defined.
 
 Lemma decode_encode_on_diag (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
