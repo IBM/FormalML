@@ -23,6 +23,37 @@ Definition even_nth_roots (n : nat) :=
 Definition nth_roots_half (n : nat) :=
   \row_(j < 2^n) (nth_root j (2 ^ (S n))).
 
+Lemma unity_root_nth_root (j n : nat) :
+  n.+1.-unity_root (nth_root j n.+1).
+Proof.
+  apply /unity_rootP.
+  rewrite nth_root_npow.
+  by rewrite /RtoC /=.
+Qed.
+
+Lemma primitive_root_nth_root (n : nat) :
+  n.+1.-primitive_root (nth_root 1 n.+1).
+Proof.
+  intros.
+  rewrite /primitive_root_of_unity.
+  apply /andP.
+  split; try lia.
+  apply /forallP; intros.
+  apply /eqP.
+  apply /unity_rootP.
+  case (eqVneq x.+1 n.+1); intros.
+  - rewrite e nth_root_npow.
+    by rewrite /RtoC /=.
+  - rewrite Cpow_nth_root muln1.
+    apply nth_root_not_1.
+    unfold not; intros.
+    rewrite Nat.mod_small in H; try lia.
+    destruct x.
+    simpl.
+    simpl in i.
+    lia.
+Qed.
+
 Lemma mul_INR n m :
   INR(n * m) = INR n * INR m.
 Proof.
