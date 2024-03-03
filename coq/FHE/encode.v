@@ -2758,7 +2758,7 @@ Section norms.
   Lemma maxrM (c a b : R) : Rle 0 c -> Order.max (c * a) (c * b)  = c * Order.max a b.
   Proof.
     rewrite /Order.max /Order.lt /=.
-    (repeat case: RltbP); try lra; intros.
+    (repeat case: RltbP); [lra | | | lra]; intros.
     - destruct H.
       + apply Rmult_lt_reg_l in p => //.
       + subst.
@@ -2773,7 +2773,7 @@ Section norms.
   Lemma maxrM_l (c a b : R) : Rle 0 c -> Order.max (a * c) (b * c)  = (Order.max a b)*c.
   Proof.
     rewrite /Order.max /Order.lt /=.
-    (repeat case: RltbP); try lra; intros.
+    (repeat case: RltbP); [lra | | | lra]; intros.
     - destruct H.
       + apply Rmult_lt_reg_r in p => //.
       + subst.
