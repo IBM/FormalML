@@ -23,6 +23,68 @@ Definition even_nth_roots (n : nat) :=
 Definition nth_roots_half (n : nat) :=
   \row_(j < 2^n) (nth_root j (2 ^ (S n))).
 
+Lemma mul_INR n m :
+  INR(n * m) = INR n * INR m.
+Proof.
+  by rewrite mult_INR /mul /=.
+Qed.
+
+Lemma even_nth_root_half (j n : nat) :
+  nth_root (2 * j) (2 ^ (S n)) = nth_root j (2^n).
+Proof.
+  rewrite /nth_root.
+  apply /eqP.
+  rewrite eq_complex /=.
+  apply /andP.
+  assert (INR 2 != 0).
+  {
+    simpl.
+    case eqP; simpl; trivial.
+    intros.
+    rewrite /zero /= in e.
+    coq_lra.
+  }
+  assert (INR 2 \is a unit).
+  {
+    by rewrite unitfE.
+  }
+  assert (INR (2 ^ n) \is a unit).
+  {
+    rewrite unitfE.
+    case eqP; trivial.
+    simpl.
+    generalize (not_0_INR (2^n)); intros.
+    rewrite e in H1.
+    rewrite /zero /= in H1.
+    assert ((2^n)%N <> 0%N) by lia.
+    specialize (H1 H2).
+    coq_lra.
+  }
+  assert (inv (INR 2) * (INR 2) = 1).
+  {
+    rewrite mulrC divff //.
+  }
+  split.
+  - apply /eqP.
+    f_equal.
+    rewrite -!(mulrA (2 * PI) _ _).
+    f_equal.
+    rewrite expnS.
+    rewrite !mul_INR invrM //.
+    rewrite (mulrC (INR 2) _) -mulrA.
+    f_equal.
+    by rewrite mulrC -mulrA H2 mulr1.
+  - apply /eqP.
+    f_equal.
+    rewrite -!(mulrA (2 * PI) _ _).
+    f_equal.
+    rewrite expnS.
+    rewrite !mul_INR invrM //.
+    rewrite (mulrC (INR 2) _) -mulrA.
+    f_equal.
+    by rewrite mulrC -mulrA H2 mulr1.
+Qed.
+
 Lemma lt_0_1 :
   is_true (0 < 1).
 Proof.

@@ -2426,6 +2426,153 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
       apply H0.
    Qed.
 
+(*
+  Lemma lemma3_beta {n} (W : forall (i : nat),  (i < (S n))%nat -> nat -> nat -> Ts -> R) (ω : Ts) (ε G0 :R)
+        (t0 : nat) (α β x ww : nat -> Ts -> vector R (S n)) (M G : nat -> Ts -> R) 
+        (XF : vector R (S n) -> vector R (S n)) :
+    (forall i pf, W i pf 0%nat t0 ω = 0) ->
+    M t0 ω <= G t0 ω ->
+    (forall t, M (S t) ω <= (1 + ε) * G t ω -> G (S t) ω = G t ω) ->
+    (forall t, M t ω <= (1 + ε) * G t ω) ->
+    (forall t, M (S t) ω = Rmax (M t ω) (rvmaxabs (x (S t)) ω)) ->
+    (forall t i pf, Rabs (vecrvnth i pf (x t) ω) <= M t ω) -> 
+    (forall t i pf, 0 <= vecrvnth i pf (α t) ω <= 1) ->
+    (forall t i pf, 0 <= vecrvnth i pf (β t) ω <= 1) ->    
+    (forall t i pf,
+        W i pf (S t) t0 ω =
+        (1 - vecrvnth i pf (α (t + t0)%nat) ω) * (W i pf t t0 ω) +
+        (vecrvnth i pf (β (t + t0)%nat) ω) * (vecrvnth i pf (ww (t + t0)%nat) ω)) ->
+    (forall k, rv_eq (x (S k)) 
+                     (vecrvplus (vecrvminus (x k) (vecrvmult (α k) (x k))) (vecrvmult (β k) (vecrvplus (fun ω => XF (x k ω)) (vecrvscalerv (G k) (ww k)))))) ->
+    (forall k i pf, rv_le (rvabs (vecrvnth i pf (fun ω => XF (x k ω)))) (G k)) ->
+    (forall t i pf, Rabs (W i pf t t0 ω) <= ε) -> 
+    forall t i pf,
+      (-1 + (W i pf t t0 ω)) * (G t0 ω) <= vecrvnth i pf (x (t + t0)%nat) ω <= (1 + (W i pf t t0 ω)) * (G t0 ω) /\
+      G (t + t0)%nat ω = G t0 ω.
+  Proof.
+    intros W0 MleGt0 MGprop MGprop2 Mxprop Mprop alphaprop betaprop Wprop xdef XFle (* xbounds *) Weps.
+    induction t.
+    - intros; simpl; split; trivial.
+      rewrite W0.
+      do 2 rewrite Rplus_0_r.
+      rewrite Rmult_1_l.
+      split.
+      + specialize (Mprop t0 i pf).
+        assert (Rabs (vecrvnth i pf (x t0) ω) <= G t0 ω) by lra.
+        rewrite Rabs_le_between in H.
+        lra.
+      + apply Rle_trans with (r2 := Rabs (vecrvnth i pf (x t0) ω)).
+        * apply Rle_abs.
+        * now eapply Rle_trans.
+    - replace (S t + t0)%nat with (S (t + t0)) by lia.
+      assert (xbounds1 : (forall t i pf,
+        (1 - vecrvnth i pf (α t) ω) * (vecrvnth i pf (x t) ω) + 
+        (vecrvnth i pf (β t) ω) * ((-G t ω) + (vecrvnth i pf (ww t) ω) * (G t ω)) <= 
+        vecrvnth i pf (x (S t)) ω <= 
+        (1 - vecrvnth i pf (α t) ω) * (vecrvnth i pf (x t) ω) + 
+        (vecrvnth i pf (β t) ω) * (G t ω + (vecrvnth i pf (ww t) ω) * (G t ω)))).
+      {
+        intros.
+        unfold vecrvnth.
+        rewrite xdef.
+        specialize (XFle t1 i pf ω).
+        unfold rvabs in XFle.
+        rewrite Rabs_le_between in XFle.
+        unfold vecrvminus, vecrvplus, vecrvmult, vecrvopp, vecrvscalerv, vecrvscale.
+        rewrite Rvector_nth_plus, Rvector_nth_mult.
+        rewrite Rvector_nth_plus, Rvector_nth_plus, Rvector_nth_scale.
+        rewrite Rvector_nth_mult, Rvector_nth_scale.
+        split.
+        - rewrite Rmult_minus_distr_r, Rmult_1_l.
+          apply Rplus_le_reg_l with (r := vector_nth i pf (α t1 ω) * vector_nth i pf (x t1 ω)).
+          ring_simplify.
+          apply Rplus_le_compat_l.
+          rewrite Ropp_mult_distr_r.
+          apply Rmult_le_compat_l.
+          + apply betaprop.
+          + apply XFle.
+        - ring_simplify.
+          unfold Rminus.
+          do 4 rewrite Rplus_assoc.
+          do 2 apply Rplus_le_compat_l.
+          rewrite Rplus_comm.
+          apply Rplus_le_compat_l.
+          apply Rmult_le_compat_l.
+          + apply betaprop.
+          + apply XFle.
+      }
+                
+      assert (forall i pf, (-1 + (W i pf(S t) t0 ω)) * G t0 ω <= vecrvnth i pf (x (S (t + t0))) ω <= (1 + (W i pf (S t) t0 ω)) * G t0 ω).
+      {
+        intros.
+        split.
+        - eapply Rle_trans; cycle 1.
+          apply xbounds1.
+          specialize (alphaprop (t + t0)%nat i pf).
+          destruct (IHt i pf).
+          destruct H.
+          apply Rmult_le_compat_l with (r := (1 - vecrvnth i pf (α (t + t0)%nat) ω)) in H; try lra.
+          apply Rplus_le_compat_r with (r :=  vecrvnth i pf (α (t + t0)%nat) ω * (-G (t + t0)%nat ω + vecrvnth i pf (ww (t + t0)%nat) ω * G t0 ω)) in H.
+          eapply Rle_trans.
+          shelve.
+          rewrite H0 at 2.
+          apply H.
+          Unshelve.
+          rewrite Wprop, H0.
+          ring_simplify.
+          lra.
+        - eapply Rle_trans.
+          apply xbounds1.
+          specialize (alphaprop (t + t0)%nat i pf).
+          destruct (IHt i pf).
+          destruct H.
+          apply Rmult_le_compat_l with (r := (1 - vecrvnth i pf (α (t + t0)%nat) ω)) in H1; try lra.
+          rewrite H0.
+          apply Rplus_le_compat_r with (r :=  vecrvnth i pf (α (t + t0)%nat) ω * (G t0 ω + (vecrvnth i pf (ww (t + t0)%nat) ω) * (G t0 ω))) in H1.
+          eapply Rle_trans.
+          apply H1.
+          rewrite Wprop.
+          ring_simplify.
+          lra.
+      }
+      intros.
+      split;trivial.
+      assert (forall i pf,
+                 Rabs (vecrvnth i pf (x (S (t + t0))) ω) <= (G t0 ω) * (1 + ε)).
+      {
+        intros.
+        rewrite Rabs_le_between.
+        destruct (H i0 pf0).
+        specialize (Weps (S t) i0 pf0).
+        apply Rabs_le_between in Weps.
+        split.
+        - eapply Rle_trans.
+          shelve.
+          apply H0.
+          Unshelve.
+          replace (- (G t0 ω * (1 + ε))) with ((- (1 + ε)) * (G t0 ω)) by lra.
+          apply Rmult_le_compat_r; try lra.          
+        - eapply Rle_trans.
+          apply H1.
+          rewrite Rmult_comm.
+          apply Rmult_le_compat_l; try lra.
+      }
+      destruct (IHt i pf).
+      rewrite <- H2.
+      apply MGprop.
+      rewrite H2.
+      specialize (MGprop2 (t + t0)%nat).
+      rewrite H2 in MGprop2.
+      rewrite Mxprop.
+      apply Rmax_lub; trivial.
+      rewrite Rmult_comm.
+      unfold rvmaxabs.
+      apply Rvector_max_abs_nth_Rabs_le.
+      intros.
+      apply H0.
+   Qed.
+ *)
+  
    Lemma lemma3_almost {n} (W : forall (i : nat),  (i < (S n))%nat -> nat -> nat -> Ts -> R) (ε G0 :R)
          (α x ww : nat -> Ts -> vector R (S n)) (M G : nat -> Ts -> R) 
         (XF : vector R (S n) -> vector R (S n)) :

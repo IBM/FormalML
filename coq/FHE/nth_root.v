@@ -101,11 +101,8 @@ Proof.
     now rewrite cos_0; rewrite sin_0.
   - simpl iter.
     rewrite IHn S_INR Rmult_plus_distr_r Rmult_1_l.
-    rewrite cos_plus sin_plus.
-    unfold mul; simpl.
-    unfold add; simpl.
-    unfold opp; simpl.
-    unfold mul; simpl.
+    rewrite cos_plus sin_plus /= /mul /=.
+    rewrite /mul /add /opp /=.
     f_equal; ring.
   Qed.
 
