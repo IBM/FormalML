@@ -170,21 +170,6 @@ Proof.
   rewrite !mxE//.
 Qed.
 
-Lemma sub_x_x (x : R[i]) :
-  x - x = 0.
-Proof.
-  destruct x.
-  vm_compute.
-  f_equal; coq_lra.
-Qed.
-
-Lemma sub_x_x_l (x : R[i]) :
-  -x + x = 0.
-Proof.
-  rewrite addrC.
-  apply sub_x_x.
-Qed.
-
 Lemma telescope_mult_bigop_aux (c : R[i]) (n : nat) :
   (c - 1) * (\sum_(0 <= j < S n) (c ^+ j)) = 
   \sum_(0 <= j < S n) ((c^+(S j)) - (c ^+ j)).
@@ -223,7 +208,7 @@ Proof.
     clear H0.
     replace C0 with (zero C) in H1 by reflexivity.
     apply (f_equal (fun cc => add cc 1)) in H1.
-    by rewrite add0r -addrA (addrC _ 1) sub_x_x addr0 in H1.
+    by rewrite add0r -addrA (addrC _ 1) addrN addr0 in H1.
 Qed.
 
 Lemma telescope_pow_0_nat (c : R[i]) (n : nat) :
@@ -233,7 +218,7 @@ Lemma telescope_pow_0_nat (c : R[i]) (n : nat) :
 Proof.
   intros.
   rewrite telescope_div; trivial.
-  by rewrite H0 sub_x_x mul0r.
+  by rewrite H0 addrN mul0r.
 Qed.
 
 Lemma telescope_pow_0_ord (c : R[i]) (n : nat) :
@@ -246,25 +231,22 @@ Proof.
   by rewrite /= big_mkord.
 Qed.
 
+Lemma add_conj (c1 c2 : R[i]) :
+  (conjc c1) + (conjc c2) = conjc (c1 + c2).
+Proof.
+  by rewrite rmorphD.
+Qed.
+
 Lemma mul_conj (c1 c2 : R[i]) :
   (conjc c1) * (conjc c2) = conjc (c1 * c2).
 Proof.
-  destruct c1; destruct c2.
-  unfold conjc.
-  vm_compute.
-  f_equal; coq_lra.
+  by rewrite rmorphM.
 Qed.
 
 Lemma exp_conj (c : R[i]) n :
   conjc (c ^+ n) = (conjc c)^+n.
 Proof.
-  induction n.
-  - unfold conjc.
-    vm_compute.
-    apply f_equal.
-    unfold opp; simpl.
-    coq_lra.
-  - by rewrite !exprS -IHn -mul_conj.
+  by rewrite rmorphXn.
 Qed.
 
 Lemma modulo_modn n m : (n mod m)%nat = div.modn n m.
@@ -408,8 +390,6 @@ Proof.
   now rewrite mul_scalar_mx.
 Qed.
 
-
-
 (* shows evaluation can be done by modified FFT of half size*)
 Lemma peval_mat_prod (n : nat) :
   peval_mat (odd_nth_roots (S n)) =
@@ -453,15 +433,6 @@ Definition vector_rev_conj {n} (v : 'rV[R[i]]_n) :=
   forall i,
     v 0 i = conjc (v 0 (rev_ord i)).
   
-Lemma add_conj (c1 c2 : R[i]) :
-  (conjc c1) + (conjc c2) = conjc (c1 + c2).
-Proof.
-  destruct c1; destruct c2.
-  unfold conjc.
-  vm_compute.
-  f_equal; coq_lra.
-Qed.
-
 Lemma vector_rev_conj_plus {n} (v1 v2 : 'rV[R[i]]_n) :
   vector_rev_conj v1 ->
   vector_rev_conj v2 ->
@@ -471,7 +442,7 @@ Proof.
   do 2 rewrite mxE.
   rewrite H.
   rewrite H0.
-  now rewrite add_conj.
+  now rewrite -rmorphD.
 Qed.
 
 Lemma vector_rev_conj_mult {n} (v1 v2 : 'rV[R[i]]_n) :
@@ -482,7 +453,7 @@ Proof.
   unfold vector_rev_conj; intros.
   do 2 rewrite mxE.
   rewrite H; rewrite H0.
-  now rewrite mul_conj.
+  now rewrite -rmorphM.
 Qed.
 
 Lemma vector_rev_conj_scale {n} (r : R) (v : 'rV[R[i]]_n) :
@@ -533,16 +504,15 @@ Qed.
 Lemma Cconj_im_0 (c : C) :
   conjc c = c -> Im c = 0%R.
 Proof.
-  destruct c.
-  unfold conjc; simpl.
   intros.
-  injection H; intros.
-  apply (f_equal (fun z => z + Im)) in H0.
-  unfold add, opp in H0; simpl in H0.
-  unfold zero; simpl.
-  coq_lra.
+  destruct c.
+  move /eqP in H.
+  rewrite /conjc eq_complex /= in H.
+  move /andP in H.
+  destruct H.
+  simpl.
+  lra.
 Qed.
-
 
 Lemma vector_rev_sum_rev {n} (v : 'rV[R[i]]_n) :
   vector_rev_conj v ->
@@ -552,7 +522,7 @@ Proof.
   intros.
   rewrite /vector_rev !mxE H rev_ordK.
   apply Cconj_im_0.
-  rewrite -add_conj conjcK addrC//.
+  rewrite rmorphD /= conjcK addrC//.
 Qed.
 
 Lemma vector_rev_reflect {n} (v : 'rV[R[i]]_n) i :
@@ -1199,16 +1169,14 @@ Definition peval_C (p : {poly R}) (x : C) : C :=
 Lemma ev_C_is_rmorphism (x:C) :
   rmorphism (fun (p : {poly R}) => peval_C p x).
 Proof.
-  destruct map_RtoC_is_rmorphism.
-  destruct (horner_eval_is_lrmorphism x) as [[??] ?].
   unfold peval_C.
   constructor.
   - intros ??.
-    rewrite  -horner_evalE base base0 //.
+    rewrite -horner_evalE !rmorphB //.
   - split.
     + intros ??.
-      rewrite -horner_evalE mixin mixin0 //.
-    + rewrite -horner_evalE mixin mixin0 //.
+      rewrite -horner_evalE !rmorphM //.
+    + rewrite -horner_evalE !rmorph1 //.
 Qed.
 
 Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
@@ -1334,10 +1302,9 @@ Proof.
   replace (addn (S 0) (S 0)) with 2%N by lia.
   rewrite !coefD !coefZ !coefX !coefC !coefXn /=.
   rewrite mulr0 mulr1 !addr0 !add0r.
-  destruct RtoC_is_rmorphism.
-  rewrite mixin RtoC_cnorm RtoC_opp RtoC_ctrace mul1r expr2 opprD mulrDl.
+  rewrite rmorph1 RtoC_cnorm RtoC_opp RtoC_ctrace mul1r expr2 opprD mulrDl.
   rewrite -addrA (addrC _ (c * c)) (addrA _ (c * c) _) -mulrDl (addrC _ c).
-  by rewrite sub_x_x mul0r add0r mulrC -mulrDl sub_x_x mul0r.
+  by rewrite addrN mul0r add0r mulrC -mulrDl addrN mul0r.
 Qed.
 
 Lemma trace_conj (c : R[i]) :
@@ -1521,12 +1488,12 @@ Proof.
   - move /eqP in H2.
     rewrite hornerX hornerN hornerC in H2.
     apply (f_equal (fun z => z+ c)) in H2.
-    rewrite -addrA add0r (addrC _ c) sub_x_x addr0 in H2.
+    rewrite -addrA add0r (addrC _ c) addrN addr0 in H2.
     by rewrite -H2 /RtoC /= eq_complex /= oppr0 !eq_refl /= in H.
   - move /eqP in H2.
     rewrite hornerD hornerX hornerN hornerC in H2.
     apply (f_equal (fun z => z+ conjc c)) in H2.
-    rewrite -addrA add0r (addrC _ (conjc c)) sub_x_x addr0 in H2.
+    rewrite -addrA add0r (addrC _ (conjc c)) addrN addr0 in H2.
     apply (f_equal (fun z => conjc z)) in H2.
     rewrite conjcK /RtoC /= in H2.
     by rewrite -H2 /RtoC /= eq_complex /= opprK oppr0 !eq_refl /= in H.
@@ -1592,6 +1559,7 @@ Lemma charpoly_coprime_case2 (c1 c2 : R[i]) :
   coprimep (characteristic_polynomial c1) (characteristic_polynomial c2).
 Proof.
   intros.
+  apply charpoly_square in H0.
   apply /coprimepP.
   intros.
   apply charpoly_irreducible in H.
@@ -1600,7 +1568,6 @@ Proof.
   case : (eqVneq (size d) 1%N); trivial.
   intros.
   specialize (H4 i H2).
-  apply charpoly_square in H0.
   assert (size d == size (characteristic_polynomial c2)).
   {
     generalize (eqp_size H4); intros.
@@ -3296,7 +3263,6 @@ Section norms.
     move/RlebP => HH.
     rewrite [v 0 b]ComplexField.eq0_normC ?mxE//.
     move: (normc_nnegR (v 0 b)) => HH2.
-    rewrite R00 in HH2.
     rewrite /zero /=.
     f_equal.
     now apply Rle_antisym.
@@ -3530,13 +3496,13 @@ Section norms.
   Lemma normc_conj_add (r : R) (x y : R[i]) :
     normc (x + y) = normc (conjc x + conjc y).
   Proof.
-    by rewrite add_conj normc_conj.
+    by rewrite -rmorphD normc_conj.
   Qed.
 
   Lemma normc_conj_exp (x : R[i]) n :
     normc (x ^+ n) = normc ((conjc x) ^+ n).
   Proof.
-    by rewrite -exp_conj normc_conj.
+    by rewrite -rmorphXn normc_conj.
   Qed.
 
   Lemma RtoC1 : RtoC 1 = 1.
@@ -3582,7 +3548,7 @@ Section norms.
     elim: l => /=.
     - by rewrite oppr0.
     - move=> a l <-.
-      by rewrite -add_conj -mul_conj conjc_RtoC.
+      by rewrite -add_conj -rmorphM conjc_RtoC.
   Qed.
 
   Lemma rpoly_eval_conj_R (p : {poly R}) (x : R[i]) :
