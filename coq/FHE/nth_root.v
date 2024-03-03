@@ -250,17 +250,9 @@ Proof.
   generalize (Rsqr_eq x 1); intros.
   rewrite Rsqr_1 in H.
   split; intros.
-  - specialize (H H0).
-    destruct H.
-    + now left.
-    + right.
-      rewrite H.
-      now rewrite IZR_NEG.      
-  - destruct H0; rewrite H0.
-    + now rewrite Rsqr_1.
-    + rewrite IZR_NEG.
-      rewrite <- Rsqr_neg.
-      now rewrite Rsqr_1.
+  - now apply H.
+  - unfold Rsqr.
+    destruct H0; rewrite H0; coq_lra.
 Qed.      
 
 Lemma cos_sin0 (x : R) :
@@ -787,43 +779,50 @@ Proof.
   by rewrite Ropp_involutive.
 Qed.
 
+Lemma cmult_real (c : R[i]) :
+  Im (c * c) = 0 <->
+  Re c = 0 \/ Im c = 0.
+Proof.
+  destruct c.
+  simpl.
+  split; intros.
+  - assert (Re * Im = 0) by lra.
+    rewrite /mul /zero /= in H0.
+    apply Rmult_integral in H0.
+    by rewrite /zero /=.
+  - destruct H; rewrite H; lra.
+Qed.                  
+
 Lemma Cpow_2 (c : R[i]) :
   exp c 2 = 1 -> c = 1 \/ c = - 1.
 Proof.
-  rewrite expr2.
-  intros.
+  rewrite expr2; intros.
+  assert (Im (c * c) = 0).
+  {
+    by rewrite H /=.
+  }
+  rewrite cmult_real in H0.
   destruct c.
-  unfold mul in H; simpl in H.
-  unfold add in H; simpl in H.
-  unfold mul, opp, RtoC in H; simpl in H.
-  injection H; intros; clear H.
-  ring_simplify in H0.
-  apply (f_equal (fun z => (Rinv 2 * z)%R)) in H0.
-  do 2 rewrite <- Rmult_assoc in H0.
-  unfold mul in H0; simpl in H0.
-  rewrite <- Rinv_l_sym in H0.
-  - rewrite Rmult_1_l Rmult_0_r in H0.
-    apply Rmult_integral in H0.
-    destruct H0; subst; ring_simplify in H1.
-    + generalize (pow2_ge_0 Im); intros.
-      apply (f_equal (@opp _)) in H1.
-      rewrite opprK in H1.
-      rewrite H1 in H.
-      rewrite /opp/= -opp_IZR in H.
-      apply le_IZR in H.
-      lia.
-    + rewrite RpowE in H1.
-      apply pow2_inv in H1.
-      rewrite sqrt_1 in H1.
-      apply Rabs_pm_r in H1.
-      unfold RtoC, opp; simpl.
-      unfold opp; simpl.
-      destruct H1; [left|right]; f_equal; trivial.
-      * rewrite H //.
-      * rewrite Ropp_0 //.
-  - unfold not; intros.
-    apply eq_IZR in H.
-    lia.
+  simpl in H0.
+  destruct H0.
+  - rewrite H0 /mul /= !mul0r mulr0 !add0r in H.
+    injection H; intros.
+    rewrite /mul /one /opp /= in H1.
+    generalize (pow2_ge_0 Im); intros.
+    rewrite /pow Rmult_1_r in H2.
+    coq_lra.
+  - rewrite H0 /mul /= !mul0r !mulr0 oppr0 !addr0 in H.
+    rewrite H0.
+    injection H; intros.
+    generalize (Rsqr_1_iff Re); intros.
+    unfold Rsqr in H2.
+    rewrite /one /mul /= in  H1.
+    rewrite H2 in H1.
+    destruct H1.
+    + left.
+      by rewrite H1 /one /=.
+    + right.
+      by rewrite H1 /one /= /opp /= oppr0 /opp /one /= -IZR_NEG.
 Qed.
 
 Lemma nth_root_half_pow n :
