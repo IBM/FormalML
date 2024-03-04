@@ -302,8 +302,11 @@ Proof.
   - now apply cos_eq_1_aux_neg.
 Qed.
 
-Lemma cos_eq_1_1 : forall x:R, (exists k : Z, x = (IZR k * 2 * PI)%R) -> cos x = 1.
+Lemma cos_eq_1_1 :
+  forall k:Z,
+    cos (IZR k * 2 * PI)%R = 1.
 Proof.
+  intros k.
   assert (forall n, cos (INR n * 2 * PI) = 1%R). {
     intros n;induction n as [|n IHn].
     { change (INR 0) with Rdefinitions.R0.
@@ -313,8 +316,6 @@ Proof.
     rewrite !Rmult_1_l cos_2PI sin_2PI Rmult_0_r Rminus_0_r.    
     reflexivity.
   }
-  intros x [k Hx].
-  rewrite Hx;clear x Hx.
   destruct (Z.abs_or_opp_abs k).
   - replace (IZR k) with (INR (Z.to_nat k)).
     { apply H. }
@@ -593,16 +594,10 @@ Proof.
     by rewrite !INRE ssrnum.Num.Theory.eqr_nat.
 Qed.
 
-Lemma pow_nth_root_prim_exp n :
-  exp (nth_root 1 (S n)) (S n) = RtoC R1.  
-Proof.
-  apply pow_nth_root_prim.
-Qed.
-
 Lemma pow_nth_root j n :
   exp (nth_root j (S n)) (S n) = RtoC R1.
 Proof.
-  by rewrite prim_nth_root -exprM mulnC exprM pow_nth_root_prim_exp expr1n.
+  by rewrite prim_nth_root -exprM mulnC exprM pow_nth_root_prim expr1n.
 Qed.
 
 Lemma nth_root_mul j k n :
