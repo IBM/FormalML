@@ -54,6 +54,24 @@ Proof.
     lia.
 Qed.
 
+Lemma primitive_root_nth_root_coprime (j n : nat) :
+  coprime j n.+1 ->
+  n.+1.-primitive_root ((nth_root 1 n.+1) ^+ j).
+Proof.
+  intros.
+  rewrite prim_root_exp_coprime //.
+  apply primitive_root_nth_root.
+Qed.
+
+Lemma primitive_root_nth_root_coprime_alt (j n : nat) :
+  coprime j n.+1 ->
+  n.+1.-primitive_root (nth_root j n.+1).
+Proof.
+  intros.
+  generalize (primitive_root_nth_root_coprime j n H); intros.
+  by rewrite Cpow_nth_root muln1 in H0.
+Qed.
+
 Lemma pow2_S (j:nat) :
   { k : nat | (2^j)%nat == S k}.
 Proof.
@@ -68,26 +86,24 @@ Defined.
 Lemma primitive_root_odd_nth_root (j n : nat) :
   (2^(n.+1)).-primitive_root ((nth_root 1 (2^n.+1)) ^+ (2 * j + 1)).
 Proof.
-  intros.
-  rewrite prim_root_exp_coprime.
-  - assert (forall j0, coprime (2 * j0 + 1) 2).
-    {
-      intros.
-      rewrite coprimen2.
-      induction j0.
-      * by rewrite muln0 add0n /=.
-      * replace (2 * j0.+1 + 1)%N with (2 + (2 * j0 + 1))%N by lia.
-        by rewrite oddD IHj0 /=.
-    }
-    induction n.
-    + rewrite expn1.
-      apply H.
-    + rewrite expnS coprimeMr IHn.
-      by rewrite H.
-  - destruct (pow2_S (S n)).
-    move /eqP in i.
-    rewrite i.
-    apply primitive_root_nth_root.
+  destruct (pow2_S (S n)).
+  rewrite (eqP i).
+  apply primitive_root_nth_root_coprime.
+  rewrite -(eqP i); clear i.
+  assert (forall j0, coprime (2 * j0 + 1) 2).
+  {
+    intros.
+    rewrite coprimen2.
+    induction j0.
+    * by rewrite muln0 add0n /=.
+    * replace (2 * j0.+1 + 1)%N with (2 + (2 * j0 + 1))%N by lia.
+      by rewrite oddD IHj0 /=.
+  }
+  induction n.
+  - rewrite expn1.
+    apply H.
+  - rewrite expnS coprimeMr IHn //.
+    by rewrite H.
 Qed.
 
 Lemma primitive_root_odd_nth_root_alt (j n : nat) :
@@ -95,9 +111,8 @@ Lemma primitive_root_odd_nth_root_alt (j n : nat) :
 Proof.
   generalize (primitive_root_odd_nth_root j n); intros.
   destruct (pow2_S (S n)).
-  move /eqP in i.
-  rewrite i.
-  by rewrite i Cpow_nth_root muln1 in H.
+  rewrite (eqP i).
+  by rewrite (eqP i) Cpow_nth_root muln1 in H.
 Qed.
 
 Lemma mul_INR n m :
@@ -3562,28 +3577,24 @@ Section norms.
     rewrite /Order.le /Order.POrder.le /=.
     apply /RlebP.
     right.
-    apply eq_big_seq.
-    intros ??.
+    apply eq_big_seq => ??.
     by rewrite canon_norm_inf_C_pow.
   Qed.
 
   Lemma canon_norm_inf_val n (p : {poly R}) (i : 'I_(2^n-1).+1) :
     (normc ((map_poly RtoC p).[odd_nth_roots' n 0 i]) <= canon_norm_inf n p)%O.
   Proof.
-    unfold canon_norm_inf, norm_inf.
-    simpl.
-    generalize (@bigmaxr_le (2^n-1).+1 (odd_nth_roots' n) 0 (fun c => normc (map_poly RtoC p).[c]) i); intros.
+    rewrite /canon_norm_inf /norm_inf /=.
+    generalize (@bigmaxr_le (2^n-1).+1 (odd_nth_roots' n) 0 (fun c => normc (map_poly RtoC p).[c]) i) => HH.
     eapply Order.POrderTheory.le_trans.
     - rewrite /Order.le/=.
-      apply H.
+      apply HH.
     - rewrite /Order.le/=.
       apply /RlebP.
       right.
-      apply eq_big_seq.
-      intros ??.
+      apply eq_big_seq => ??.
       f_equal.
-      unfold mx_eval.
-      by rewrite !mxE.
+      by rewrite /mx_eval !mxE.
   Qed.
 
   Lemma canon_norm_zero_mod_qpoly n (p : {poly R}) :
