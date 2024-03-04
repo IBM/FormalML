@@ -36,21 +36,18 @@ Lemma primitive_root_nth_root (n : nat) :
 Proof.
   intros.
   rewrite /primitive_root_of_unity.
-  apply /andP.
+  apply/andP.
   split; try lia.
   apply /forallP; intros.
   apply /eqP.
   apply /unity_rootP.
-  case (eqVneq x.+1 n.+1); intros.
+  case: (eqVneq x.+1 n.+1); intros.
   - rewrite e nth_root_npow.
     by rewrite /RtoC /=.
   - rewrite Cpow_nth_root muln1.
     apply nth_root_not_1.
-    unfold not; intros.
-    rewrite Nat.mod_small in H; try lia.
-    destruct x.
-    simpl.
-    simpl in i.
+    rewrite Nat.mod_small; try lia.
+    destruct x; simpl in *.
     lia.
 Qed.
 
@@ -132,12 +129,10 @@ Proof.
   apply /andP.
   assert (INR 2 != 0).
   {
-    simpl.
-    case eqP; simpl; trivial.
-    intros.
-    rewrite /zero /= in e.
+    rewrite /zero/=.
+    apply/eqP.
     coq_lra.
-  }
+  } 
   assert (INR 2 \is a unit).
   {
     by rewrite unitfE.
@@ -145,15 +140,10 @@ Proof.
   assert (INR n \is a unit).
   {
     rewrite unitfE.
-    case eqP; trivial.
-    simpl.
-    generalize (not_0_INR n); intros.
-    rewrite e in H2.
-    rewrite /zero /= in H2.
-    assert ( n <> 0%N) by lia.
-    specialize (H2 H3).
-    coq_lra.
-  }
+    apply/eqP.
+    apply (not_0_INR n).
+    lia.
+  } 
   assert (inv (INR 2) * (INR 2) = 1).
   {
     rewrite mulrC divff //.
@@ -161,18 +151,18 @@ Proof.
   split.
   - apply /eqP.
     f_equal.
-    rewrite -!(mulrA (2 * PI) _ _).
+    rewrite -![2 * PI * _ * _]mulrA.
     f_equal.
     rewrite !mul_INR invrM //.
-    rewrite (mulrC (INR 2) _) -mulrA.
+    rewrite [INR 2 * _]mulrC -mulrA.
     f_equal.
     by rewrite mulrC -mulrA H3 mulr1.
   - apply /eqP.
     f_equal.
-    rewrite -!(mulrA (2 * PI) _ _).
+    rewrite -![2 * PI * _ * _]mulrA.
     f_equal.
     rewrite !mul_INR invrM //.
-    rewrite (mulrC (INR 2) _) -mulrA.
+    rewrite [INR 2 * _]mulrC -mulrA.
     f_equal.
     by rewrite mulrC -mulrA H3 mulr1.
 Qed.
