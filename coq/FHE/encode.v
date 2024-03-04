@@ -122,8 +122,10 @@ Proof.
 Qed.
 
 Lemma even_nth_root_half (j n : nat) :
-  nth_root (2 * j) (2 ^ (S n)) = nth_root j (2^n).
+  0 < n ->
+  nth_root (2 * j) (2 * n) = nth_root j n.
 Proof.
+  intros.
   rewrite /nth_root.
   apply /eqP.
   rewrite eq_complex /=.
@@ -140,16 +142,16 @@ Proof.
   {
     by rewrite unitfE.
   }
-  assert (INR (2 ^ n) \is a unit).
+  assert (INR n \is a unit).
   {
     rewrite unitfE.
     case eqP; trivial.
     simpl.
-    generalize (not_0_INR (2^n)); intros.
-    rewrite e in H1.
-    rewrite /zero /= in H1.
-    assert ((2^n)%N <> 0%N) by lia.
-    specialize (H1 H2).
+    generalize (not_0_INR n); intros.
+    rewrite e in H2.
+    rewrite /zero /= in H2.
+    assert ( n <> 0%N) by lia.
+    specialize (H2 H3).
     coq_lra.
   }
   assert (inv (INR 2) * (INR 2) = 1).
@@ -161,22 +163,29 @@ Proof.
     f_equal.
     rewrite -!(mulrA (2 * PI) _ _).
     f_equal.
-    rewrite expnS.
     rewrite !mul_INR invrM //.
     rewrite (mulrC (INR 2) _) -mulrA.
     f_equal.
-    by rewrite mulrC -mulrA H2 mulr1.
+    by rewrite mulrC -mulrA H3 mulr1.
   - apply /eqP.
     f_equal.
     rewrite -!(mulrA (2 * PI) _ _).
     f_equal.
-    rewrite expnS.
     rewrite !mul_INR invrM //.
     rewrite (mulrC (INR 2) _) -mulrA.
     f_equal.
-    by rewrite mulrC -mulrA H2 mulr1.
+    by rewrite mulrC -mulrA H3 mulr1.
 Qed.
 
+Lemma even_nth_root_half_pow (j n : nat) :
+  nth_root (2 * j) (2 ^ (S n)) = nth_root j (2^n).
+Proof.
+  destruct (pow2_S n).
+  move /eqP in i.
+  rewrite expnS i.
+  apply even_nth_root_half; lia.
+Qed.  
+  
 Lemma lt_0_1 :
   is_true (0 < 1).
 Proof.
