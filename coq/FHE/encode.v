@@ -3593,12 +3593,24 @@ Section norms.
     - rewrite e /=.
       apply eq_big_seq => ??.
       by rewrite fintype.ord1.
-    - pose n1 := (size p).-1.
-      replace (size p) with (n1.+1) by lia.
-      rewrite (big_ord_widen_leq n.+1); try lia.
-      simpl.
-    Admitted.
-    
+    - transitivity (\sum_(i0 < (size p + (n.+1-size p))%nat)
+                      (map_poly (aR:=R_ringType) (rR:=ComplexField.complex_ringType R_fieldType) RtoC p)`_i0 * v 0 k ^+ i0);
+        [| by have ->: (size p + (n.+1 - size p) = n.+1)%nat by lia].
+      rewrite big_split_ord /=.
+      rewrite !fintype.ord1.
+      suff ->: ( \sum_(i0 < n.+1 - size p)
+                   (map_poly (aR:=R_ringType) (rR:=ComplexField.complex_ringType R_fieldType) RtoC p)`_
+                   (size p + i0) * v 0 k ^+ (size p + i0) = 0).
+      { by rewrite addr0. }
+
+      under eq_bigr => si _.
+      { rewrite nth_default ?mul0r.
+        - over.
+        - rewrite -map_RtoC_size.
+          lia.
+      }
+      by rewrite big_const_seq iter_addr_0 mul0rn.
+  Qed.
 
   Lemma encmat_pmat (n : nat) :
     let pmat := peval_mat (odd_nth_roots' n) in
