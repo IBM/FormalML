@@ -27,8 +27,7 @@ Lemma unity_root_nth_root (j n : nat) :
   n.+1.-unity_root (nth_root j n.+1).
 Proof.
   apply /unity_rootP.
-  rewrite nth_root_npow.
-  by rewrite /RtoC /=.
+  by rewrite nth_root_npow /RtoC /=.
 Qed.
 
 Lemma primitive_root_nth_root (n : nat) :
@@ -42,8 +41,7 @@ Proof.
   apply /eqP.
   apply /unity_rootP.
   case: (eqVneq x.+1 n.+1); intros.
-  - rewrite e nth_root_npow.
-    by rewrite /RtoC /=.
+  - by rewrite e nth_root_npow /RtoC /=.
   - rewrite Cpow_nth_root muln1.
     apply nth_root_not_1.
     rewrite Nat.mod_small; try lia.
@@ -75,9 +73,7 @@ Proof.
   exists (2^j-1)%nat.
   induction j.
   - now simpl.
-  - simpl.
-    rewrite expnS (eqP IHj).
-    lia.
+  - rewrite /= expnS (eqP IHj); lia.
 Defined.
 
 Lemma primitive_root_odd_nth_root (j n : nat) :
@@ -97,10 +93,8 @@ Proof.
       by rewrite oddD IHj0 /=.
   }
   induction n.
-  - rewrite expn1.
-    apply H.
-  - rewrite expnS coprimeMr IHn //.
-    by rewrite H.
+  - by rewrite expn1 H.
+  - by rewrite expnS coprimeMr IHn // H.
 Qed.
 
 Lemma primitive_root_odd_nth_root_alt (j n : nat) :
@@ -148,22 +142,9 @@ Proof.
   {
     rewrite mulrC divff //.
   }
-  split.
-  - apply /eqP.
-    f_equal.
-    rewrite -![2 * PI * _ * _]mulrA.
-    f_equal.
-    rewrite !mul_INR invrM //.
-    rewrite [INR 2 * _]mulrC -mulrA.
-    f_equal.
-    by rewrite mulrC -mulrA H3 mulr1.
-  - apply /eqP.
-    f_equal.
-    rewrite -![2 * PI * _ * _]mulrA.
-    f_equal.
-    rewrite !mul_INR invrM //.
-    rewrite [INR 2 * _]mulrC -mulrA.
-    f_equal.
+  split; apply /eqP; f_equal;
+    rewrite -![2 * PI * _ * _]mulrA; f_equal;
+    rewrite !mul_INR invrM // [INR 2 * _]mulrC -mulrA; f_equal; 
     by rewrite mulrC -mulrA H3 mulr1.
 Qed.
 
@@ -171,8 +152,7 @@ Lemma even_nth_root_half_pow (j n : nat) :
   nth_root (2 * j) (2 ^ (S n)) = nth_root j (2^n).
 Proof.
   destruct (pow2_S n).
-  move /eqP in i.
-  rewrite expnS i.
+  rewrite expnS (eqP i).
   apply even_nth_root_half; lia.
 Qed.  
   
@@ -3357,6 +3337,7 @@ Section norms.
       coq_lra.
   Qed.
 
+
   Lemma norm_inf_triang {n} (v1 v2 : 'rV[R[i]]_n) :
     (norm_inf (v1 + v2) <= norm_inf v1 + norm_inf v2)%O.
   Proof.
@@ -3595,6 +3576,64 @@ Section norms.
       f_equal.
       by rewrite /mx_eval !mxE.
   Qed.
+
+  Lemma peval_mx_eval {n} (v :'rV[R[i]]_n.+1) (p : {poly R}) :
+    0 < size p <= n.+1 ->
+    let pmat := peval_mat v in
+    let pC := map_poly RtoC p in
+    mx_eval v p = (pmat *m (poly_rV pC)^T)^T.
+  Proof.
+    intros.
+    rewrite /mx_eval /peval_mat /map_mx trmx_mul trmxK /poly_rV /= /mulmx.
+    apply matrixP => j k.
+    rewrite !mxE /= horner_coef -map_RtoC_size.
+    unfold pmat, peval_mat, pC.
+    under [RHS]eq_bigr do rewrite !mxE.
+    case : (eqVneq (size p) n.+1); intros.
+    - rewrite e /=.
+      apply eq_big_seq => ??.
+      by rewrite fintype.ord1.
+    - pose n1 := (size p).-1.
+      replace (size p) with (n1.+1) by lia.
+      rewrite (big_ord_widen_leq n.+1); try lia.
+      simpl.
+    Admitted.
+    
+
+  Lemma encmat_pmat (n : nat) :
+    let pmat := peval_mat (odd_nth_roots' n) in
+    let encmat := (conj_mat (pmat^T)) in
+    pmat *m ((RtoC (inv (2^S n)%:R)) *: encmat) = scalar_mx 1.
+  Proof.
+    intros.
+    rewrite -scalemxAr.
+    generalize (decode_encode_scalar_mx n); intros.
+    Admitted.
+
+  Lemma coef_from_canonical (n : nat) (p : {poly R}) :
+    let pmat := peval_mat (odd_nth_roots' n) in
+    let inv_pmat := (RtoC (inv (2^S n)%:R)) *: (conj_mat (pmat^T)) in
+    map_poly RtoC p = rVpoly ((inv_pmat *m (mx_eval (odd_nth_roots' n) p)^T)^T).
+  Proof.
+    Admitted.
+
+  Lemma coef_maxnorm_le_canon_norm_inf n (p : {poly R}) :
+    Rleb (coef_maxnorm p) (canon_norm_inf n p).
+  Proof.
+    rewrite /canon_norm_inf /coef_maxnorm.
+(*    
+    rewrite peval_mx_eval.
+    generalize (@matrix_vec_norm_inf_sub_mult); intros.
+    apply /RlebP.
+    generalize (matrix_vec_norm_inf_sub_mult
+                  (peval_mat (odd_nth_roots' n)) 
+                  (poly_rV (d := (sval (pow2_S n)).+1)
+                     (map_poly (aR:=R_ringType)
+                        (rR:=ComplexField.complex_ringType
+                               R_fieldType) RtoC p))); intros.
+    move /RlebP in H0.
+*)
+    Admitted.
 
   Lemma canon_norm_zero_mod_qpoly n (p : {poly R}) :
     canon_norm_inf n p = 0 ->
