@@ -3621,17 +3621,13 @@ Proof.
     move/matrixP: (decode_encode_scalar_mx n) => H i j.
     have eqq: (sval (pow2_S n.+1)).+1 = (2^n.+1)%nat by (simpl; lia).
     move: (H (cast_ord eqq i) (cast_ord eqq j)).
-    rewrite !mxE; simpl in *.
-    intros HH.
-    rewrite -HH.
+    rewrite !mxE /= => <-.
     rewrite (big_ord_widen_leq (2^n.+1)%N); try lia.
     apply eq_big.
-    - intros ?.
-      destruct x.
-      simpl.
-      lia.
+    - move=> [??] /=.
+      by lia.
     - intros.
-      rewrite !mxE inordK //.
+      by rewrite !mxE inordK.
   Qed.
 
   Lemma encmat_pmat (n : nat) :
@@ -3641,8 +3637,7 @@ Proof.
   Proof.
     intros.
     rewrite -scalemxAr /encmat /pmat' decode_encode_scalar_mx'.
-    apply /matrixP.
-    intros ??.
+    apply /matrixP => i j.
     rewrite !mxE mulrnAr -RtoCR -rmorphM /= mulrC divrr // unitfE.
     apply/eqP.
     rewrite -INRE.
