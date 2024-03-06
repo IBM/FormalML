@@ -3622,23 +3622,17 @@ Proof.
     have eqq: (sval (pow2_S n.+1)).+1 = (2^n.+1)%nat by (simpl; lia).
     move: (H (cast_ord eqq i) (cast_ord eqq j)).
     rewrite !mxE; simpl in *.
-  Admitted.
-  (*under eq_bigr => ind _ do rewrite !mxE /=.                         
-                             rewrite eqE /=.
-
     intros HH.
-
-    rewrite  (big_ord_widen (n1:= 2 ^ n.+1) ((2 ^ n.+1 - 1).+1)%N)  in HH.
-
-
-    rewrite !big_seq.
-    under congr_big.
-
-     -!big_enum /=.
-    
-    red in H.
-    *)
-    
+    rewrite -HH.
+    rewrite (big_ord_widen_leq (2^n.+1)%N); try lia.
+    apply eq_big.
+    - intros ?.
+      destruct x.
+      simpl.
+      lia.
+    - intros.
+      rewrite !mxE inordK //.
+  Qed.
 
   Lemma encmat_pmat (n : nat) :
     let pmat' := peval_mat (odd_nth_roots' n) in
