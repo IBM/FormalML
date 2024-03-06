@@ -135,7 +135,7 @@ Proof.
   {
     rewrite unitfE.
     apply/eqP.
-    apply (not_0_INR n).
+    apply not_0_INR.
     lia.
   } 
   assert (inv (INR 2) * (INR 2) = 1).
@@ -3635,15 +3635,20 @@ Proof.
   Qed.
 
   Lemma encmat_pmat (n : nat) :
-    let pmat' := peval_mat (odd_nth_roots' n) in
+    let pmat' := peval_mat (odd_nth_roots' (S n)) in
     let encmat := (conj_mat (pmat'^T)) in
     pmat' *m ((RtoC (inv (2^S n)%:R)) *: encmat) = scalar_mx 1.
   Proof.
     intros.
-    rewrite -scalemxAr.
-    generalize (decode_encode_scalar_mx' n); intros.
-    
-    Admitted.
+    rewrite -scalemxAr /encmat /pmat' decode_encode_scalar_mx'.
+    apply /matrixP.
+    intros ??.
+    rewrite !mxE mulrnAr -RtoCR -rmorphM /= mulrC divrr // unitfE.
+    apply/eqP.
+    rewrite -INRE.
+    apply not_0_INR.
+    lia.
+  Qed.    
 
   Lemma coef_from_canonical (n : nat) (p : {poly R}) :
     let pmat := peval_mat (odd_nth_roots' n) in
