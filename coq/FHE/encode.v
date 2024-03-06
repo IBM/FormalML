@@ -3612,14 +3612,43 @@ Section norms.
       by rewrite big_const_seq iter_addr_0 mul0rn.
   Qed.
 
+Lemma decode_encode_scalar_mx' (n : nat):
+  let pmat := (peval_mat (odd_nth_roots' (S n))) in
+  pmat *m (conj_mat (pmat^T)) = scalar_mx (2^S n)%:R.
+Proof.
+  Proof.
+    apply/matrixP.
+    move/matrixP: (decode_encode_scalar_mx n) => H i j.
+    have eqq: (sval (pow2_S n.+1)).+1 = (2^n.+1)%nat by (simpl; lia).
+    move: (H (cast_ord eqq i) (cast_ord eqq j)).
+    rewrite !mxE; simpl in *.
+  Admitted.
+  (*under eq_bigr => ind _ do rewrite !mxE /=.                         
+                             rewrite eqE /=.
+
+    intros HH.
+
+    rewrite  (big_ord_widen (n1:= 2 ^ n.+1) ((2 ^ n.+1 - 1).+1)%N)  in HH.
+
+
+    rewrite !big_seq.
+    under congr_big.
+
+     -!big_enum /=.
+    
+    red in H.
+    *)
+    
+
   Lemma encmat_pmat (n : nat) :
-    let pmat := peval_mat (odd_nth_roots' n) in
-    let encmat := (conj_mat (pmat^T)) in
-    pmat *m ((RtoC (inv (2^S n)%:R)) *: encmat) = scalar_mx 1.
+    let pmat' := peval_mat (odd_nth_roots' n) in
+    let encmat := (conj_mat (pmat'^T)) in
+    pmat' *m ((RtoC (inv (2^S n)%:R)) *: encmat) = scalar_mx 1.
   Proof.
     intros.
     rewrite -scalemxAr.
-    generalize (decode_encode_scalar_mx n); intros.
+    generalize (decode_encode_scalar_mx' n); intros.
+    
     Admitted.
 
   Lemma coef_from_canonical (n : nat) (p : {poly R}) :
