@@ -3708,7 +3708,82 @@ Proof.
   Proof.
     by rewrite /= encmat_pmat_alt mul1mx.
   Qed.
-  
+
+
+    Lemma big_max_nneg_with_trailing_zeros_aux {k1 k2} (le12: k1 <= k2+k1) (F: 'I_(k2+k1) -> R) :
+    (forall i, Rle 0 (F i)) ->
+    (forall i: 'I_(k2+k1) , k1 < i -> F i = 0%R) ->
+    \big[Order.max/0]_(j < (k2+k1)) F j = \big[Order.max/0]_(j < k1) F (widen_ord le12 j).
+  Proof.
+    move=> Fnneg Ftrail0.
+    induction k2.
+    - rewrite /zero /= /addn /=.
+      apply eq_bigr => i _.
+      f_equal.
+      by apply ord_inj.
+    - transitivity (\big[Order.max/0]_(j < (k2 + k1).+1) F j) => //.
+  Admitted.
+
+  Lemma big_max_nneg_with_trailing_zeros_aux {k1 k2} (le12: k1 <= k1+k2) (F: 'I_(k1+k2) -> R) :
+    (forall i, Rle 0 (F i)) ->
+    (forall i: 'I_(k1+k2) , k1 < i -> F i = 0%R) ->
+    \big[Order.max/0]_(j < (k1+k2)) F j = \big[Order.max/0]_(j < k1) F (widen_ord le12 j).
+  Proof.
+    move=> Fnneg Ftrail0.
+    induction k2.
+    - destruct k1.
+      + rewrite big_ord0.
+        have: (0 + 0 = 0)%nat by lia.
+        destruct (0 + 0)%nat.
+        * by rewrite big_ord0.
+        * lia.
+      + rewrite [RHS](big_ord_widen_leq (k1.+1+0)%nat).
+        apply eq_big.
+        * move => i /=.
+          destruct i => /=.
+          lia.
+        * intros.
+          f_equal.
+          apply ord_inj => /=.
+          rewrite inordK //.
+          destruct i => /=.
+          lia.
+        * lia.
+    - transitivity (\big[Order.max/0]_(j < (k1 + k2).+1) F j).
+  Qed.
+
+  Lemma big_max_nneg_with_trailing_zeros {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) :
+    (forall i, Rle 0 (F i)) ->
+    (forall i: 'I_k2 , k1 < i -> F i = 0%R) ->
+    \big[Order.max/0]_(j < k2) F j = \big[Order.max/0]_(j < k1) F (widen_ord le12 j).
+  Proof.
+    move=> Fnneg Ftrail0.
+    have eqq: (k1 + (k2 - k1))%nat = k2 by lia.
+    transitivity (\big[Order.max/0]_(j < (k1 + (k2 - k1))%nat) F (cast_ord eqq j)).
+    - destruct k2.
+      + rewrite big_ord0.
+        destruct (k1 + (0 - k1))%nat.
+        * by rewrite big_ord0.
+        * lia.
+      + rewrite (big_ord_widen_leq (k1 + (k2.+1 - k1))%nat); [| lia].
+        apply eq_big.
+        * move => i /=.
+          destruct i => /=.
+          lia.
+        * intros.
+          f_equal.
+          apply ord_inj => /=.
+          by rewrite inordK.
+    - rewrite big_max_nneg_with_trailing_zeros_aux //.
+      + lia.
+      + intros.
+        apply eq_bigr => i _.
+        f_equal.
+        by apply ord_inj.
+      + intros.
+        by apply Ftrail0.
+  Qed.
+   
   (* like peval_mx_eval *)
   Lemma coef_maxnorm_pvec n (p : {poly R}) :
     size p <= 2^n.+1 ->
@@ -3730,8 +3805,27 @@ Proof.
       apply eq_big_seq => k HH.
       rewrite /pvec !mxE.
       rewrite /map_poly coef_poly /=.
-      admit.
-    - admit.
+      case: ltP; rewrite normc_Rabs // => kbig.
+      rewrite nth_default //.
+      lia.
+    - have le1: (size p <= (sval (pow2_S n.+1)).+1) by lia.
+      rewrite (big_max_nneg_with_trailing_zeros le1).
+      + apply eq_bigr => j _.
+        admit.
+      + intros.
+        apply/RleP.
+        apply normc_nneg.
+      + intros.
+        rewrite /pvec /= /poly_rV.
+        rewrite !mxE /= map_polyE.
+        rewrite nth_default.
+        * by rewrite ComplexField.Normc.normc0.
+        * eapply leq_trans.
+          -- apply size_Poly.
+          -- rewrite size_map.
+             by rewrite ltnW.
+  Qed.
+
     
   Admitted.
 
