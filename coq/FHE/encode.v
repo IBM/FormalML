@@ -3708,7 +3708,8 @@ Proof.
   Proof.
     by rewrite /= encmat_pmat_alt mul1mx.
   Qed.
-
+  
+  (* like peval_mx_eval *)
   Lemma coef_maxnorm_pvec n (p : {poly R}) :
     size p <= 2^n.+1 ->
     let pvec := (poly_rV (d := (sval (pow2_S n.+1)).+1)
@@ -3717,17 +3718,73 @@ Proof.
                                R_fieldType) RtoC p))^T in
     coef_maxnorm p = cvec_norm_inf pvec.
   Proof.
+    intros.
+    rewrite /coef_maxnorm /cvec_norm_inf /norm_inf.
+    assert ((sval (pow2_S n.+1)).+1 = (2^n.+1)%N).
+    {
+      simpl.
+      lia.
+    }
+    case : (eqVneq (size p) (sval (pow2_S n.+1)).+1); intros.
+    - rewrite e /=.
+      apply eq_big_seq => k HH.
+      rewrite /pvec !mxE.
+      rewrite map_polyE coef_Poly /=.
+      admit.
+      (*
+      by rewrite fintype.ord1.
+      *)
+    - admit.      
+    
   Admitted.
 
   Lemma canon_norm_inf_pvec n (p : {poly R}) :
-    size p <= 2^n.+1 ->    
-    let pmat' := peval_mat (odd_nth_roots' (S n)) in
-    let pvec := (poly_rV (d := (sval (pow2_S n.+1)).+1)
+    size p <= 2^n ->
+    let pmat' := peval_mat (odd_nth_roots'  n) in
+    let pvec := (poly_rV (d := (sval (pow2_S n)).+1)
                    (map_poly (aR:=R_ringType)
                       (rR:=ComplexField.complex_ringType
                              R_fieldType) RtoC p))^T in
     canon_norm_inf n p = cvec_norm_inf (pmat' *m pvec).
   Proof.
+    intros.
+    rewrite /canon_norm_inf /cvec_norm_inf /norm_inf.
+    apply eq_big; trivial; intros.
+    f_equal.
+    rewrite /odd_nth_roots' /pmat' /pvec /peval_mat !mxE /map_poly horner_poly.
+    rewrite /odd_nth_roots'.
+    under [RHS]eq_bigr do rewrite !mxE mulrC coef_poly.
+    simpl.
+    case : (eqVneq (size p) (2^n-1).+1); intros.
+    - rewrite e.
+      apply eq_big_seq => k HH.
+      f_equal.
+      assert (k < (2 ^ n - 1).+1).
+      {
+        admit.
+      }
+      by rewrite H1.
+    - transitivity (\sum_(i1 < size p + ((2^n-1).+1-size p)%nat)
+                       (if i1 < size p then RtoC p`_i1 else 0) *
+                      nth_root (2 * i + 1) (2 ^ n.+1) ^+ i1);
+                [| by have ->: (size p + ((2^n-1).+1 - size p) = (2^n-1).+1)%nat by lia].
+      rewrite big_split_ord /=.
+      assert (\sum_(i1 < (2 ^ n - 1).+1 - size p)
+                (if size p + i1 < size p then RtoC p`_(size p + i1) else 0) *
+                nth_root (2 * i + 1) (2 ^ n.+1) ^+ (size p + i1) = 0).
+      {
+         under eq_bigr => si _.
+         { 
+           assert (~ (size p + si < size p)) by lia.
+           admit.
+         }
+         admit.
+      }
+      rewrite H1 addr0.
+      apply eq_big; trivial; intros.
+      case (boolP (i1 < size p)); intros.
+      * by rewrite i2.
+      * admit.
     Admitted.
 
   Lemma matrix_norm_inf_pmat_inv n :
@@ -3790,7 +3847,7 @@ Proof.
 
   Theorem coef_maxnorm_le_canon_norm_inf n (p : {poly R}) :
     size p <= 2^n.+1 ->
-    Rle (coef_maxnorm p) (canon_norm_inf n p).
+    Rle (coef_maxnorm p) (canon_norm_inf n.+1 p).
   Proof.
     intros.
     rewrite (coef_maxnorm_pvec n) //.
