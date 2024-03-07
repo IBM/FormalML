@@ -3729,11 +3729,8 @@ Proof.
     - rewrite e /=.
       apply eq_big_seq => k HH.
       rewrite /pvec !mxE.
-      rewrite map_polyE coef_Poly /=.
+      rewrite /map_poly coef_poly /=.
       admit.
-      (*
-      by rewrite fintype.ord1.
-      *)
     - admit.      
     
   Admitted.
