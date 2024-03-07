@@ -3709,7 +3709,7 @@ Proof.
     by rewrite /= encmat_pmat_alt mul1mx.
   Qed.
 
-
+(*
     Lemma big_max_nneg_with_trailing_zeros_aux {k1 k2} (le12: k1 <= k2+k1) (F: 'I_(k2+k1) -> R) :
     (forall i, Rle 0 (F i)) ->
     (forall i: 'I_(k2+k1) , k1 < i -> F i = 0%R) ->
@@ -3723,6 +3723,7 @@ Proof.
       by apply ord_inj.
     - transitivity (\big[Order.max/0]_(j < (k2 + k1).+1) F j) => //.
   Admitted.
+*)
 
   Lemma big_max_nneg_with_trailing_zeros_aux {k1 k2} (le12: k1 <= k1+k2) (F: 'I_(k1+k2) -> R) :
     (forall i, Rle 0 (F i)) ->
@@ -3749,8 +3750,11 @@ Proof.
           destruct i => /=.
           lia.
         * lia.
+  Admitted.
+(*
     - transitivity (\big[Order.max/0]_(j < (k1 + k2).+1) F j).
   Qed.
+*)
 
   Lemma big_max_nneg_with_trailing_zeros {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) :
     (forall i, Rle 0 (F i)) ->
@@ -3784,7 +3788,6 @@ Proof.
         by apply Ftrail0.
   Qed.
    
-  (* like peval_mx_eval *)
   Lemma coef_maxnorm_pvec n (p : {poly R}) :
     size p <= 2^n.+1 ->
     let pvec := (poly_rV (d := (sval (pow2_S n.+1)).+1)
@@ -3811,7 +3814,11 @@ Proof.
     - have le1: (size p <= (sval (pow2_S n.+1)).+1) by lia.
       rewrite (big_max_nneg_with_trailing_zeros le1).
       + apply eq_bigr => j _.
-        admit.
+        rewrite /pvec /poly_rV !mxE.
+        rewrite /= /map_poly coef_poly.
+        destruct j.
+        simpl in i0.
+        by rewrite /= i0 normc_Rabs.
       + intros.
         apply/RleP.
         apply normc_nneg.
@@ -3825,9 +3832,6 @@ Proof.
           -- rewrite size_map.
              by rewrite ltnW.
   Qed.
-
-    
-  Admitted.
 
   Lemma canon_norm_inf_pvec n (p : {poly R}) :
     size p <= 2^n ->
