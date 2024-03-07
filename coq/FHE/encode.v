@@ -3731,7 +3731,7 @@ Proof.
       rewrite /pvec !mxE.
       rewrite /map_poly coef_poly /=.
       admit.
-    - admit.      
+    - admit.
     
   Admitted.
 
@@ -3758,7 +3758,7 @@ Proof.
       f_equal.
       assert (k < (2 ^ n - 1).+1).
       {
-        admit.
+        by destruct k; simpl.
       }
       by rewrite H1.
     - transitivity (\sum_(i1 < size p + ((2^n-1).+1-size p)%nat)
@@ -3771,18 +3771,16 @@ Proof.
                 nth_root (2 * i + 1) (2 ^ n.+1) ^+ (size p + i1) = 0).
       {
          under eq_bigr => si _.
-         { 
-           assert (~ (size p + si < size p)) by lia.
-           admit.
-         }
-         admit.
+         {
+           have ->: ((size p + si < size p) = false) by lia.
+           rewrite mul0r.
+           over.
+         } 
+         by rewrite big_const_seq iter_addr_0 mul0rn.
       }
       rewrite H1 addr0.
-      apply eq_big; trivial; intros.
-      case (boolP (i1 < size p)); intros.
-      * by rewrite i2.
-      * admit.
-    Admitted.
+      by apply eq_big => // [[? /= ->]].
+  Qed.
 
   Lemma matrix_norm_inf_pmat_inv n :
     let pmat' := peval_mat (odd_nth_roots' (S n)) in
