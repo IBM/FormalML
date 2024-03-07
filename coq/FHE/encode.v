@@ -3578,7 +3578,7 @@ Section norms.
   Qed.
 
   Lemma peval_mx_eval {n} (v :'rV[R[i]]_n.+1) (p : {poly R}) :
-    0 < size p <= n.+1 ->
+    size p <= n.+1 ->
     let pmat := peval_mat v in
     let pC := map_poly RtoC p in
     mx_eval v p = (pmat *m (poly_rV pC)^T)^T.
@@ -3630,6 +3630,35 @@ Proof.
       by rewrite !mxE inordK.
   Qed.
 
+  Lemma encode_mat_norm_inf' (n : nat) :
+    let pmat' := peval_mat (odd_nth_roots' (S n)) in
+    let encmat' := (conj_mat (pmat'^T)) in
+    Rleb (matrix_norm_inf encmat') (2^S n)%:R.
+  Proof.
+    generalize (encode_mat_norm_inf n); intros.
+    unfold matrix_norm_inf in *; simpl in *.
+    rewrite (big_ord_widen_leq (2^n.+1)%N); try lia.
+    apply /RlebP.
+    move /RlebP in H.
+    eapply Rle_trans; cycle 1.
+    apply H.
+    right.
+    apply eq_big.
+    - intros ?.
+      destruct x.
+      simpl.
+      lia.
+    - intros.
+      rewrite (big_ord_widen_leq (2^n.+1)%N); try lia.
+      apply eq_big.
+      + intros ?.
+        destruct x.
+        simpl.
+        lia.
+      + intros.
+        rewrite /odd_nth_roots /odd_nth_roots' !mxE !inordK //.
+  Qed.
+
   Lemma encmat_pmat (n : nat) :
     let pmat' := peval_mat (odd_nth_roots' (S n)) in
     let encmat := (conj_mat (pmat'^T)) in
@@ -3645,30 +3674,138 @@ Proof.
     lia.
   Qed.    
 
-  Lemma coef_from_canonical (n : nat) (p : {poly R}) :
-    let pmat := peval_mat (odd_nth_roots' n) in
-    let inv_pmat := (RtoC (inv (2^S n)%:R)) *: (conj_mat (pmat^T)) in
-    map_poly RtoC p = rVpoly ((inv_pmat *m (mx_eval (odd_nth_roots' n) p)^T)^T).
+  Lemma invmx_comm (n : nat) (A B : 'M[R[i]]_n) :
+    A *m B = scalar_mx 1 ->
+    B *m A = scalar_mx 1.
+   Proof.
+     intros.
+     destruct (mulmx1_unit H).
+     generalize (mulmxV H1); intros.
+     generalize H2; intros.
+     apply (f_equal (fun z => A *m z)) in H2.
+     rewrite mulmxA H mul1mx mulmx1 in H2.
+     by rewrite H2 in H3.
+  Qed.
+
+  Lemma encmat_pmat_alt (n : nat) :
+    let pmat' := peval_mat (odd_nth_roots' (S n)) in
+    let encmat := (conj_mat (pmat'^T)) in
+    ((RtoC (inv (2^S n)%:R)) *: encmat) *m pmat' = scalar_mx 1.
+  Proof.
+    intros.
+    apply invmx_comm.
+    apply encmat_pmat.
+  Qed.
+
+  Lemma encmat_pmat_pvec (n : nat) (p : {poly R}) :
+    let pmat' := peval_mat (odd_nth_roots' (S n)) in
+    let encmat := (conj_mat (pmat'^T)) in
+    let pvec := (poly_rV (d := (sval (pow2_S n.+1)).+1)
+                   (map_poly (aR:=R_ringType)
+                      (rR:=ComplexField.complex_ringType
+                               R_fieldType) RtoC p))^T in
+    (((RtoC (inv (2^S n)%:R)) *: encmat) *m pmat') *m pvec = pvec.
+  Proof.
+    by rewrite /= encmat_pmat_alt mul1mx.
+  Qed.
+
+  Lemma coef_maxnorm_pvec n (p : {poly R}) :
+    size p <= 2^n.+1 ->
+    let pvec := (poly_rV (d := (sval (pow2_S n.+1)).+1)
+                   (map_poly (aR:=R_ringType)
+                      (rR:=ComplexField.complex_ringType
+                               R_fieldType) RtoC p))^T in
+    coef_maxnorm p = cvec_norm_inf pvec.
+  Proof.
+  Admitted.
+
+  Lemma canon_norm_inf_pvec n (p : {poly R}) :
+    size p <= 2^n.+1 ->    
+    let pmat' := peval_mat (odd_nth_roots' (S n)) in
+    let pvec := (poly_rV (d := (sval (pow2_S n.+1)).+1)
+                   (map_poly (aR:=R_ringType)
+                      (rR:=ComplexField.complex_ringType
+                             R_fieldType) RtoC p))^T in
+    canon_norm_inf n p = cvec_norm_inf (pmat' *m pvec).
   Proof.
     Admitted.
 
-  Lemma coef_maxnorm_le_canon_norm_inf n (p : {poly R}) :
-    Rleb (coef_maxnorm p) (canon_norm_inf n p).
+  Lemma matrix_norm_inf_pmat_inv n :
+    let pmat' := peval_mat (odd_nth_roots' (S n)) in
+    let encmat := (conj_mat (pmat'^T)) in
+    Rle (matrix_norm_inf ((RtoC (inv (2^S n)%:R)) *: encmat)) 1.
   Proof.
-    rewrite /canon_norm_inf /coef_maxnorm.
-(*    
-    rewrite peval_mx_eval.
-    generalize (@matrix_vec_norm_inf_sub_mult); intros.
+    generalize (encode_mat_norm_inf' n); intros.
+    simpl in H.
+    move /RlebP in H.
+    rewrite matrix_norm_inf_scale normc_Rabs.
+    apply Rmult_le_compat_l with (r := Rabs (2 ^ n.+1)%:R^-1) in H.
+    - eapply Rle_trans.
+      apply H.
+      right.
+      assert (Rlt 0  (2 ^ n.+1)%:R).
+      {
+        rewrite -INRE.
+        apply lt_0_INR.
+        lia.
+      }
+      rewrite Rabs_right.
+      + rewrite /inv/= RmultRinvx // unitrE divff //.
+        rewrite /zero/=.
+        apply/eqP.
+        apply Rgt_not_eq.
+        apply H0.
+      + left.
+        rewrite -RinvE.
+        * apply Rinv_0_lt_compat; trivial.
+        * rewrite /zero/=.
+          apply/eqP.
+          apply Rgt_not_eq.
+          apply H0.
+   - apply Rabs_pos.    
+  Qed.
+
+  Lemma Rmult_le_1 (r1 r2 : R) :
+    Rle r1 1 ->
+    Rle 0 r2 ->
+    Rle (r1 * r2) r2.
+  Proof.
+    intros.
+    apply Rmult_le_compat_r with (r := r2) in H; trivial.
+    by rewrite Rmult_1_l in H.
+  Qed.
+  
+  Lemma matrix_norm_inf_pos {n m} (A : 'M[R[i]]_(n,m)) :
+    Rle 0 (matrix_norm_inf A).
+  Proof.
+    rewrite /matrix_norm_inf.
     apply /RlebP.
-    generalize (matrix_vec_norm_inf_sub_mult
-                  (peval_mat (odd_nth_roots' n)) 
-                  (poly_rV (d := (sval (pow2_S n)).+1)
-                     (map_poly (aR:=R_ringType)
-                        (rR:=ComplexField.complex_ringType
-                               R_fieldType) RtoC p))); intros.
-    move /RlebP in H0.
-*)
-    Admitted.
+    apply bigmax_nneg.
+    intros.
+    apply sum_nneg.
+    intros.
+    apply /RlebP.
+    apply normc_nnegR.
+  Qed.
+
+  Theorem coef_maxnorm_le_canon_norm_inf n (p : {poly R}) :
+    size p <= 2^n.+1 ->
+    Rle (coef_maxnorm p) (canon_norm_inf n p).
+  Proof.
+    intros.
+    rewrite (coef_maxnorm_pvec n) //.
+    rewrite canon_norm_inf_pvec //.
+    rewrite -{1}encmat_pmat_pvec /cvec_norm_inf.
+    rewrite !mat_vec_norm_inf !trmxK.
+    eapply Rle_trans.
+    - rewrite -mulmxA.
+      apply /RlebP.
+      apply matrix_norm_inf_sub_mult.
+    - generalize (matrix_norm_inf_pmat_inv n); intros.
+      simpl in H0.
+      apply Rmult_le_1; trivial.
+      apply matrix_norm_inf_pos.
+  Qed.
 
   Lemma canon_norm_zero_mod_qpoly n (p : {poly R}) :
     canon_norm_inf n p = 0 ->
