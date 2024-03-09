@@ -3756,6 +3756,64 @@ Proof.
   Qed.
 *)
 
+  Lemma omax_eq (a1 a2 b1 b2 : R) :
+    a1 = b1 ->
+    a2 = b2 ->
+    Order.max a1 a2 = Order.max b1 b2.
+  Proof.
+    intros.
+    by rewrite H H0.
+  Qed.
+
+
+
+  Lemma big_max_nneg_with_trailing_zeros_aux1 {k1 k2} (le12: k1 <= k2+k1) (F: 'I_(k2+k1) -> R) :
+    (forall i, Rle 0 (F i)) ->
+    (forall i: 'I_(k2+k1) , k1 <= i -> F i = 0%R) ->
+    \big[Order.max/0]_(j < (k2+k1)) F j = \big[Order.max/0]_(j < k1) F (widen_ord le12 j).
+  Proof.
+    move=> Fnneg Ftrail0.
+    induction k1.
+    - under [LHS]eq_bigr.
+      intros.
+      rewrite Ftrail0; try lia.
+      over.
+      rewrite big_const_ord big_ord0 addn0.
+      clear F Fnneg Ftrail0 le12.
+      induction k2.
+      + by simpl.
+      + simpl.
+        rewrite IHk2.
+        rewrite -RmaxE.
+        unfold Rmax.
+        by case: (Rle_dec 0 0).
+    - assert ((k2 + k1).+1 <= k2 +k1.+1)%N by lia.
+      assert (\big[Order.max/0]_(j < k2 + k1.+1) F j =
+                \big[Order.max/0]_(j < (k2 + k1).+1) F (widen_ord H j)).
+      {
+        rewrite [RHS](big_ord_widen_leq (k2 + k1.+1)%nat); try lia.
+        apply eq_big.
+        * move => i /=.
+          destruct i => /=.
+          lia.
+        * intros.
+          f_equal.
+          apply ord_inj => /=.
+          rewrite inordK //.
+          destruct i => /=.
+          lia.
+      }
+      rewrite H0.
+      rewrite big_ord_recl.
+      rewrite big_ord_recl.
+      apply omax_eq.
+      + f_equal.
+        admit.
+      + admit.
+  Admitted.
+
+
+
   Lemma big_max_nneg_with_trailing_zeros {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) :
     (forall i, Rle 0 (F i)) ->
     (forall i: 'I_k2 , k1 < i -> F i = 0%R) ->
@@ -3788,6 +3846,71 @@ Proof.
         by apply Ftrail0.
   Qed.
    
+  Lemma big_max_split {k2 : nat} (k1 : nat) (F : 'I_k2 -> R) :
+    \big[Order.max/0]_(j < k2)  F j =
+      Order.max
+        (\big[Order.max/0]_(j < k2 | true && (j < k1)%N) F j)
+        (\big[Order.max/0]_(j < k2 | true && ~~(j < k1)) F j).
+  Proof.
+    intros.
+    rewrite -Order.TotalTheory.bigmaxID.
+    apply eq_bigr.
+    by intros.
+  Qed.
+
+  Lemma max0 (c : R) :
+    Rle 0 c ->
+    Order.max c 0 = c.
+  Proof.
+    intros.
+    rewrite -RmaxE.
+    by apply Rmax_left.
+  Qed.
+
+Lemma big_max_nneg_with_trailing_zerosx {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) :
+    (forall i, Rle 0 (F i)) ->
+    (forall i: 'I_k2 , k1 <= i -> F i = 0%R) ->
+    \big[Order.max/0]_(j < k2) F j = \big[Order.max/0]_(j < k1) F (widen_ord le12 j).
+ Proof.
+   intros Fnneg Ftrail0.
+   rewrite (big_max_split k1).
+   assert (\big[Order.max/0]_(j < k2 | true && ~~ (j < k1)) F j = 0).
+   {
+     under eq_bigr.
+     intros.
+     rewrite Ftrail0; try lia.
+     over.
+     rewrite big_const_seq.
+     clear F Fnneg Ftrail0 le12.
+     induction k2.
+     + simpl.
+       admit.
+     + admit.
+   }
+   rewrite H max0.
+   destruct k1.
+   - rewrite big_ord0.
+     admit.
+   - rewrite [RHS](big_ord_widen_leq k2); trivial.
+     apply eq_bigr.
+     intros.
+     admit.
+   - pose G : ('I_k2 -> R_orderType) :=  fun=> 0%R.
+     assert ((\big[Order.max/0]_(j < k2 | true && (j < k1)%N) (G j)) = IZR Z0)%R.
+     {
+       rewrite /G.
+       rewrite big_const_seq.
+       admit.
+     }
+     apply /RleP.
+     rewrite -H0.
+     apply (@Order.TotalTheory.le_bigmax2 _ R_orderType).
+     intros.
+     rewrite /G.
+     apply /RleP.
+     apply Fnneg.
+  Admitted.
+
   Lemma coef_maxnorm_pvec n (p : {poly R}) :
     size p <= 2^n.+1 ->
     let pvec := (poly_rV (d := (sval (pow2_S n.+1)).+1)
@@ -3812,7 +3935,7 @@ Proof.
       rewrite nth_default //.
       lia.
     - have le1: (size p <= (sval (pow2_S n.+1)).+1) by lia.
-      rewrite (big_max_nneg_with_trailing_zeros le1).
+      rewrite (big_max_nneg_with_trailing_zerosx le1).
       + apply eq_bigr => j _.
         rewrite /pvec /poly_rV !mxE.
         rewrite /= /map_poly coef_poly.
@@ -3829,8 +3952,7 @@ Proof.
         * by rewrite ComplexField.Normc.normc0.
         * eapply leq_trans.
           -- apply size_Poly.
-          -- rewrite size_map.
-             by rewrite ltnW.
+          -- by rewrite size_map.
   Qed.
 
   Lemma canon_norm_inf_pvec n (p : {poly R}) :
