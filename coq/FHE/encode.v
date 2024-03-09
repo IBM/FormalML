@@ -3893,8 +3893,7 @@ Lemma big_max_nneg_with_trailing_zerosx {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R)
    - pose G : ('I_k2 -> R_orderType) :=  fun=> 0%R.
      assert ((\big[Order.max/0]_(j < k2 | true && (j < k1)%N) (G j)) = IZR Z0)%R.
      {
-       rewrite /G.
-       rewrite big_const_seq iter_fix // -RmaxE /zero/= Rmax_left //; coq_lra.
+       rewrite /G big_const_seq iter_fix // -RmaxE /zero/= Rmax_left //; coq_lra.
      }
      rewrite -H0.
      apply /RleP.
