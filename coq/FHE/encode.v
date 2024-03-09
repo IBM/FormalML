@@ -3880,12 +3880,7 @@ Lemma big_max_nneg_with_trailing_zerosx {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R)
      intros.
      rewrite Ftrail0; try lia.
      over.
-     rewrite big_const_seq.
-     clear F Fnneg Ftrail0 le12.
-     induction k2.
-     + simpl.
-       admit.
-     + admit.
+     rewrite big_const_seq iter_fix // -RmaxE /zero/= Rmax_left //; coq_lra.
    }
    rewrite H max0.
    destruct k1.
@@ -3899,11 +3894,10 @@ Lemma big_max_nneg_with_trailing_zerosx {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R)
      assert ((\big[Order.max/0]_(j < k2 | true && (j < k1)%N) (G j)) = IZR Z0)%R.
      {
        rewrite /G.
-       rewrite big_const_seq.
-       admit.
+       rewrite big_const_seq iter_fix // -RmaxE /zero/= Rmax_left //; coq_lra.
      }
-     apply /RleP.
      rewrite -H0.
+     apply /RleP.
      apply (@Order.TotalTheory.le_bigmax2 _ R_orderType).
      intros.
      rewrite /G.
