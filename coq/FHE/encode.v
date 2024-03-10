@@ -3898,7 +3898,9 @@ Lemma big_max_nneg_with_trailing_zerosx {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R)
    - rewrite [RHS](big_ord_widen_leq k2); trivial.
      apply eq_bigr.
      intros.
-     admit.
+     f_equal.
+     apply ord_inj => /=.
+     by rewrite inordK.
    - pose G : ('I_k2 -> R_orderType) :=  fun=> 0%R.
      assert ((\big[Order.max/0]_(j < k2 | true && (j < k1)%N) (G j)) = IZR Z0)%R.
      {
@@ -3911,7 +3913,7 @@ Lemma big_max_nneg_with_trailing_zerosx {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R)
      rewrite /G.
      apply /RleP.
      apply Fnneg.
-  Admitted.
+ Qed.
 
   Lemma coef_maxnorm_pvec n (p : {poly R}) :
     size p <= 2^n.+1 ->
