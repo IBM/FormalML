@@ -3721,15 +3721,6 @@ Proof.
     by intros.
   Qed.
 
-  Lemma max0 (c : R) :
-    Rle 0 c ->
-    Order.max c 0 = c.
-  Proof.
-    intros.
-    rewrite -RmaxE.
-    by apply Rmax_left.
-  Qed.
-
 Lemma big_max_nneg_with_trailing_zeros {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) :
     (forall i, Rle 0 (F i)) ->
     (forall i: 'I_k2 , k1 <= i -> F i = 0%R) ->
@@ -3745,7 +3736,7 @@ Lemma big_max_nneg_with_trailing_zeros {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) 
      over.
      rewrite big_const_seq iter_fix // -RmaxE /zero/= Rmax_left //; coq_lra.
    }
-   rewrite H max0.
+   rewrite H -RmaxE Rmax_left.
    destruct k1.
    - rewrite big_ord0.
      pose G : ('I_k2 -> R_orderType) :=  fun=> 0%R.
@@ -3765,11 +3756,11 @@ Lemma big_max_nneg_with_trailing_zeros {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) 
      apply ord_inj => /=.
      by rewrite inordK.
    - pose G : ('I_k2 -> R_orderType) :=  fun=> 0%R.
-     assert ((\big[Order.max/0]_(j < k2 | true && (j < k1)%N) (G j)) = IZR Z0)%R.
+     assert ((\big[Order.max/0]_(j < k2 | true && (j < k1)%N) (G j)) = 0)%R.
      {
        rewrite /G big_const_seq iter_fix // -RmaxE /zero/= Rmax_left //; coq_lra.
      }
-     rewrite -H0.
+     rewrite -{1}H0.
      apply /RleP.
      apply (@Order.TotalTheory.le_bigmax2 _ R_orderType).
      intros.
