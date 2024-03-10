@@ -3709,143 +3709,6 @@ Proof.
     by rewrite /= encmat_pmat_alt mul1mx.
   Qed.
 
-(*
-    Lemma big_max_nneg_with_trailing_zeros_aux {k1 k2} (le12: k1 <= k2+k1) (F: 'I_(k2+k1) -> R) :
-    (forall i, Rle 0 (F i)) ->
-    (forall i: 'I_(k2+k1) , k1 < i -> F i = 0%R) ->
-    \big[Order.max/0]_(j < (k2+k1)) F j = \big[Order.max/0]_(j < k1) F (widen_ord le12 j).
-  Proof.
-    move=> Fnneg Ftrail0.
-    induction k2.
-    - rewrite /zero /= /addn /=.
-      apply eq_bigr => i _.
-      f_equal.
-      by apply ord_inj.
-    - transitivity (\big[Order.max/0]_(j < (k2 + k1).+1) F j) => //.
-  Admitted.
-*)
-
-  Lemma big_max_nneg_with_trailing_zeros_aux {k1 k2} (le12: k1 <= k1+k2) (F: 'I_(k1+k2) -> R) :
-    (forall i, Rle 0 (F i)) ->
-    (forall i: 'I_(k1+k2) , k1 < i -> F i = 0%R) ->
-    \big[Order.max/0]_(j < (k1+k2)) F j = \big[Order.max/0]_(j < k1) F (widen_ord le12 j).
-  Proof.
-    move=> Fnneg Ftrail0.
-    induction k2.
-    - destruct k1.
-      + rewrite big_ord0.
-        have: (0 + 0 = 0)%nat by lia.
-        destruct (0 + 0)%nat.
-        * by rewrite big_ord0.
-        * lia.
-      + rewrite [RHS](big_ord_widen_leq (k1.+1+0)%nat).
-        apply eq_big.
-        * move => i /=.
-          destruct i => /=.
-          lia.
-        * intros.
-          f_equal.
-          apply ord_inj => /=.
-          rewrite inordK //.
-          destruct i => /=.
-          lia.
-        * lia.
-  Admitted.
-(*
-    - transitivity (\big[Order.max/0]_(j < (k1 + k2).+1) F j).
-  Qed.
-*)
-
-  Lemma omax_eq (a1 a2 b1 b2 : R) :
-    a1 = b1 ->
-    a2 = b2 ->
-    Order.max a1 a2 = Order.max b1 b2.
-  Proof.
-    intros.
-    by rewrite H H0.
-  Qed.
-
-
-
-  Lemma big_max_nneg_with_trailing_zeros_aux1 {k1 k2} (le12: k1 <= k2+k1) (F: 'I_(k2+k1) -> R) :
-    (forall i, Rle 0 (F i)) ->
-    (forall i: 'I_(k2+k1) , k1 <= i -> F i = 0%R) ->
-    \big[Order.max/0]_(j < (k2+k1)) F j = \big[Order.max/0]_(j < k1) F (widen_ord le12 j).
-  Proof.
-    move=> Fnneg Ftrail0.
-    induction k1.
-    - under [LHS]eq_bigr.
-      intros.
-      rewrite Ftrail0; try lia.
-      over.
-      rewrite big_const_ord big_ord0 addn0.
-      clear F Fnneg Ftrail0 le12.
-      induction k2.
-      + by simpl.
-      + simpl.
-        rewrite IHk2.
-        rewrite -RmaxE.
-        unfold Rmax.
-        by case: (Rle_dec 0 0).
-    - assert ((k2 + k1).+1 <= k2 +k1.+1)%N by lia.
-      assert (\big[Order.max/0]_(j < k2 + k1.+1) F j =
-                \big[Order.max/0]_(j < (k2 + k1).+1) F (widen_ord H j)).
-      {
-        rewrite [RHS](big_ord_widen_leq (k2 + k1.+1)%nat); try lia.
-        apply eq_big.
-        * move => i /=.
-          destruct i => /=.
-          lia.
-        * intros.
-          f_equal.
-          apply ord_inj => /=.
-          rewrite inordK //.
-          destruct i => /=.
-          lia.
-      }
-      rewrite H0.
-      rewrite big_ord_recl.
-      rewrite big_ord_recl.
-      apply omax_eq.
-      + f_equal.
-        admit.
-      + admit.
-  Admitted.
-
-
-
-  Lemma big_max_nneg_with_trailing_zeros {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) :
-    (forall i, Rle 0 (F i)) ->
-    (forall i: 'I_k2 , k1 < i -> F i = 0%R) ->
-    \big[Order.max/0]_(j < k2) F j = \big[Order.max/0]_(j < k1) F (widen_ord le12 j).
-  Proof.
-    move=> Fnneg Ftrail0.
-    have eqq: (k1 + (k2 - k1))%nat = k2 by lia.
-    transitivity (\big[Order.max/0]_(j < (k1 + (k2 - k1))%nat) F (cast_ord eqq j)).
-    - destruct k2.
-      + rewrite big_ord0.
-        destruct (k1 + (0 - k1))%nat.
-        * by rewrite big_ord0.
-        * lia.
-      + rewrite (big_ord_widen_leq (k1 + (k2.+1 - k1))%nat); [| lia].
-        apply eq_big.
-        * move => i /=.
-          destruct i => /=.
-          lia.
-        * intros.
-          f_equal.
-          apply ord_inj => /=.
-          by rewrite inordK.
-    - rewrite big_max_nneg_with_trailing_zeros_aux //.
-      + lia.
-      + intros.
-        apply eq_bigr => i _.
-        f_equal.
-        by apply ord_inj.
-      + intros.
-        by apply Ftrail0.
-  Qed.
-   
   Lemma big_max_split {k2 : nat} (k1 : nat) (F : 'I_k2 -> R) :
     \big[Order.max/0]_(j < k2)  F j =
       Order.max
@@ -3867,7 +3730,7 @@ Proof.
     by apply Rmax_left.
   Qed.
 
-Lemma big_max_nneg_with_trailing_zerosx {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) :
+Lemma big_max_nneg_with_trailing_zeros {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) :
     (forall i, Rle 0 (F i)) ->
     (forall i: 'I_k2 , k1 <= i -> F i = 0%R) ->
     \big[Order.max/0]_(j < k2) F j = \big[Order.max/0]_(j < k1) F (widen_ord le12 j).
@@ -3939,7 +3802,7 @@ Lemma big_max_nneg_with_trailing_zerosx {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R)
       rewrite nth_default //.
       lia.
     - have le1: (size p <= (sval (pow2_S n.+1)).+1) by lia.
-      rewrite (big_max_nneg_with_trailing_zerosx le1).
+      rewrite (big_max_nneg_with_trailing_zeros le1).
       + apply eq_bigr => j _.
         rewrite /pvec /poly_rV !mxE.
         rewrite /= /map_poly coef_poly.
