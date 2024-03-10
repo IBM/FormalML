@@ -168,7 +168,7 @@ Section chinese.
     coprime a (\prod_(i <- l) i).
   Proof.
     intros.
-+    rewrite big_seq.
+    rewrite big_seq.
     apply big_rec.
     - apply coprimen1.
     - intros.

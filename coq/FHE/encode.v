@@ -2337,6 +2337,129 @@ Section eval_vectors.
     by rewrite eqq addrN in base.
  Qed.
 
+  Section Chinese.
+
+(*   The chinese remainder theorem *)
+Variables F : fieldType.
+
+Definition chinesep (m1 m2 r1 r2 : {poly F}) :=
+  r1 * m2 * (egcdp m2 m1).1 + r2 * m1 * (egcdp m1 m2).1.
+
+Lemma chinesep_exists (m1 m2 r1 r2 : {poly F}) (co_m12 : coprimep m1 m2) :
+  exists (e : {poly F}),
+    e %% m1 = r1 %% m1 /\
+      e %% m2 = r2 %% m2.
+Proof.
+  move /Bezout_eq1_coprimepP in co_m12.
+  destruct co_m12.
+  exists (r2 * x.1 * m1 + r1 * x.2 * m2).
+  split. 
+  - rewrite modpD modp_mull add0r.
+    apply (f_equal (fun z => z %% m1)) in H.
+    rewrite modpD modp_mull add0r in H.
+    by rewrite -mulrA -modp_mul H modp_mul mulr1.
+  - rewrite modpD modp_mull addr0.
+    apply (f_equal (fun z => z %% m2)) in H.
+    rewrite modpD modp_mull addr0 in H.    
+    by rewrite -mulrA -modp_mul H modp_mul mulr1.
+Qed.    
+
+ Lemma all_coprimep_prod (a : {poly F}) (l : seq {poly F}) :
+    all (coprimep a) l ->
+    coprimep a (\prod_(i <- l) i).
+  Proof.
+    intros.
+    rewrite big_seq.
+    apply big_rec.
+    - apply coprimep1.
+    - intros.
+      move/allP/(_ _ H0): H.
+      by rewrite coprimepMr H1 => ->.
+  Qed.
+
+  Lemma mod_mul_mod_r (a p q : {poly F}) :
+    (a %% (p * q))%%q = a%%q.
+  Proof.
+    generalize (divp_eq a (p * q)); intros.
+    apply (f_equal (fun z => z %% q)) in H.
+    rewrite H.
+    by rewrite modpD mulrA modp_mull add0r.
+  Qed.
+
+  Lemma mod_mul_mod_l (a p q : {poly F}) :
+    (a %% (p * q))%%p = a%%p.
+  Proof.
+    rewrite mulrC.
+    apply mod_mul_mod_r.
+  Qed.
+
+  Lemma prod_mod (a b : {poly F}) (l : seq {poly F}) :
+    a %% (\prod_(q <- l) q) = b %% (\prod_(q <- l) q) ->
+    forall p,
+      p \in l -> a %% p = b %% p.
+  Proof.
+    induction l.
+    - intros.
+      by rewrite in_nil in H0.
+    - intros.
+      rewrite in_cons in H0.
+      move /orP in H0.
+      rewrite !big_cons in H.
+      destruct H0.
+      + rewrite (eqP H0).
+        simpl in H.
+        apply (f_equal (fun z => z %% a0)) in H.
+        by rewrite !mod_mul_mod_l in H.
+      + apply (f_equal (fun z => z %% (\prod_(j <- l) j))) in H.
+        rewrite !mod_mul_mod_r in H.
+        specialize (IHl H).
+        by apply IHl.
+  Qed.
+
+Lemma chinesep_list_exists (l : seq ({poly F} * {poly F})) :
+  pairwise (coprimep (R := F)) (map snd l) ->
+  exists (e : {poly F}),
+  forall p,
+    p \in l -> e %% p.2 = p.1 %% p.2.
+Proof.
+  induction l.
+  - simpl.
+    intros.
+    exists 0.
+    intros.
+    by rewrite in_nil in H0.
+  - intros.
+    rewrite map_cons pairwise_cons in H.
+    move /andP in H.
+    destruct H.
+    specialize (IHl H0).
+    destruct IHl.
+    assert (coprimep a.2 (\prod_(q <- l) q.2)).
+    {
+      generalize (all_coprimep_prod a.2 [seq i.2 | i <- l] H); intros.
+      by rewrite big_map in H2.
+    }
+    destruct (chinesep_exists a.2 (\prod_(q <- l) q.2) a.1 x H2) as [? [??]].
+    exists x0.
+    intros.
+    rewrite in_cons in H5.
+    move /orP in H5.
+    destruct H5.
+    + by rewrite (eqP H5).
+    + specialize (H1 p H5).
+      rewrite -H1.
+      assert (\prod_(q <- l) q.2 = \prod_(q <-  [seq i.2 | i <- l]) q).
+      {
+        by rewrite big_map.
+      }
+      rewrite H6 in H4.
+      generalize (prod_mod x0 x [seq i.2 | i <- l] H4 p.2); intros.
+      apply H7.
+      by apply map_f.
+ Qed.
+
+End Chinese.
+
 End eval_vectors.
 
 Definition odd_nth_roots' n :=
@@ -3715,10 +3838,8 @@ Proof.
         (\big[Order.max/0]_(j < k2 | true && (j < k1)%N) F j)
         (\big[Order.max/0]_(j < k2 | true && ~~(j < k1)) F j).
   Proof.
-    intros.
     rewrite -Order.TotalTheory.bigmaxID.
-    apply eq_bigr.
-    by intros.
+    by apply eq_bigr.
   Qed.
 
 Lemma big_max_nneg_with_trailing_zeros {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) :
@@ -3935,6 +4056,18 @@ Lemma big_max_nneg_with_trailing_zeros {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) 
       simpl in H0.
       apply Rmult_le_1; trivial.
       apply matrix_norm_inf_pos.
+  Qed.
+
+  Theorem canon_norm_inf_bounds n (p : {poly R}) :
+    size p <= 2^n.+1 ->
+    (coef_maxnorm p <= canon_norm_inf n.+1 p <= coef_norm1 p)%O.
+  Proof.
+    intros.
+    apply /andP.
+    split.
+    - apply /RleP.
+      by apply coef_maxnorm_le_canon_norm_inf.
+    - apply canon_norm_inf_le_norm1.
   Qed.
 
   Lemma canon_norm_zero_mod_qpoly n (p : {poly R}) :
