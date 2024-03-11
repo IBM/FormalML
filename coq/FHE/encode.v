@@ -2582,9 +2582,10 @@ Section eval_vectors.
       + by apply mx_eval_quot1.
   Qed.
 
-  Lemma mx_eval_quot_is_injective (x y : mx_eval_ker_quot_ring) :
-    mx_eval_quot x = mx_eval_quot y -> x = y.
+  Lemma mx_eval_quot_is_injective :
+    injective mx_eval_quot.
   Proof.
+    intros x y.
     rewrite /mx_eval_quot -!eq_lock.
     rewrite -{2}[x]reprK -{2}[y]reprK.
     move: (repr x) (repr y) => {x} {y} x y eqq.
@@ -2596,7 +2597,7 @@ Section eval_vectors.
     specialize (base x y).
     simpl in base.
     by rewrite eqq addrN in base.
- Qed.
+  Qed.
 
   Lemma poly_eval_mod (a b p : {poly R}) (c : R[i]) :
     a %% p = b %% p ->
@@ -2700,6 +2701,31 @@ Section eval_vectors.
     exists (\pi_mx_eval_ker_quot_ring x).
     by rewrite pi_mx_eval_quot.
   Qed.
+
+  Lemma mx_eval_quot_is_bijective :
+    let charvals := [seq characteristic_polynomial (vals 0 j) | j  : 'I_n.+1] in
+    pairwise (coprimep (R := R_fieldType)) charvals  ->
+    (forall j, Im (vals 0 j) != 0) ->   
+    bijective mx_eval_quot.
+  Proof.
+    intros charvals cop imn0.
+    pose g : MR_comRingType 0 n -> mx_eval_ker_quot_ring :=
+      fun c => sval (mx_eval_quot_is_surjective cop imn0 c).
+    apply Bijective with (g := g).
+    - intros ?.
+      assert (mx_eval_quot (g (mx_eval_quot x)) = mx_eval_quot x).
+      {
+        rewrite /g.
+        destruct (mx_eval_quot_is_surjective cop imn0 (mx_eval_quot x)).
+        by simpl.
+      }
+      by apply mx_eval_quot_is_injective in H.
+    - intros ?.
+      rewrite /g.
+      destruct (mx_eval_quot_is_surjective cop imn0 x).
+      by simpl.
+  Qed.
+      
 
 End eval_vectors.
 
