@@ -2603,7 +2603,11 @@ Section eval_vectors.
     (map_poly RtoC p).[c] = 0 ->
     (map_poly RtoC a).[c] = (map_poly RtoC b).[c].
   Proof.
-    Admitted.
+    intros.
+    rewrite (divp_eq a p).
+    rewrite (divp_eq b p) H.
+    by rewrite !rmorphD !rmorphM !hornerD !hornerM H0 !mulr0 !add0r.
+  Qed.
 
   Lemma mx_eval_is_surjective :
     let charvals := [seq characteristic_polynomial (vals 0 j) | j  : 'I_n.+1] in
