@@ -2610,7 +2610,7 @@ Section eval_vectors.
     pairwise (coprimep (R := R_fieldType)) charvals  ->
     (forall j, Im (vals 0 j) != 0) ->              
     forall (c : MR_comRingType 0 n),
-    exists (x : {poly R}), mx_eval x = c.
+    {x : {poly R} | mx_eval x = c}.
   Proof.
     intros charvals cop imn0 c.
 
