@@ -2613,29 +2613,64 @@ Section eval_vectors.
     exists (x : {poly R}), mx_eval x = c.
   Proof.
     intros charvals cop imn0 c.
+
     pose rvals := [seq sval (peval_C_decomp2 (vals 0 j) (c 0 j) (imn0 j)) | j : 'I_n.+1].
-    generalize (chinesep_list_prop R_fieldType (zip rvals charvals)); intros.
-    assert (pairwise (coprimep (R:=R_fieldType)) [seq i.2 | i <- zip rvals charvals]).
+    have rvals_prop: forall (j:'I_n.+1), peval_C (rvals`_j) (vals 0 j) = (c 0 j).
     {
-      admit.
+      subst rvals=>j.
+      rewrite (nth_map 0)/=.
+      - move: (svalP (peval_C_decomp2 (vals 0 (enum 'I_n.+1)`_j) (c 0 (enum 'I_n.+1)`_j) (imn0 (enum 'I_n.+1)`_j))).
+        by rewrite !nth_ord_enum.        
+      - rewrite size_enum_ord.
+        by destruct j.
     }
-    specialize (X H).
+
+    have eqsize: size rvals = size charvals.
+    {
+      subst rvals charvals.
+      by rewrite !size_map -enumT size_enum_ord.
+    }  
+    
+    generalize (chinesep_list_prop R_fieldType (zip rvals charvals)); intros.
+    assert ([seq i.2 | i <- zip rvals charvals] = charvals).
+    {
+      apply (@eq_from_nth _ 0).
+      - by rewrite size_map size_zip eqsize ?minnn.
+      - intros.
+        rewrite size_map in H.
+        rewrite (nth_map 0) //.
+        by rewrite nth_zip_cond H.
+    }
+    rewrite -H in cop.
+    specialize (X cop).
     destruct X.
     exists x.
     apply /matrixP.
     intros ??.
-    pose p := (sval (peval_C_decomp2 (vals 0 y) (c 0 y) (imn0 y)),
-                 characteristic_polynomial (vals 0 y)).
+    pose p := (zip rvals charvals)`_y.
     assert (p \in zip rvals charvals).
     {
-      unfold p, charvals, rvals.
-      admit.
-    }
+      subst p.
+      apply/(nthP 0).
+      subst rvals charvals.
+      exists y => //.
+      by rewrite size_zip eqsize minnn size_map size_enum_ord ltn_ord.
+    } 
     specialize (e p H0).
-    generalize (peval_C_decomp2 (vals 0 y) (c 0 y) (imn0 y)); intros.
-    rewrite mxE.
-    unfold peval_C in X.
-     Admitted.
+    rewrite ord1 -(rvals_prop y).
+    rewrite /mx_eval /peval_C.
+    rewrite !mxE.
+    have eqq1: charvals`_y = p.2.
+    {
+      subst p.
+      by rewrite nth_zip.
+    }
+    have eqq2: rvals`_y = p.1.
+    {
+      subst p.
+      by rewrite nth_zip.
+    }
+  Admitted.
 
 
   Lemma mx_eval_quot_is_surjective (lvals : seq R[i]) :
