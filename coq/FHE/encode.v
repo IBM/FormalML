@@ -2598,12 +2598,12 @@ Section eval_vectors.
     by rewrite eqq addrN in base.
  Qed.
 
-  Lemma peval_C_decomp2_pack (cprop : { cc : C * C | Im cc.1 != 0}) :
-    {p : {poly R} | peval_C p (sval cprop).1 = (sval cprop).2}.
+  Lemma poly_eval_mod (a b p : {poly R}) (c : R[i]) :
+    a %% p = b %% p ->
+    (map_poly RtoC p).[c] = 0 ->
+    (map_poly RtoC a).[c] = (map_poly RtoC b).[c].
   Proof.
-    destruct cprop.
-    exact (peval_C_decomp2 x.1 x.2 i).
-  Qed.
+    Admitted.
 
   Lemma mx_eval_is_surjective :
     let charvals := [seq characteristic_polynomial (vals 0 j) | j  : 'I_n.+1] in
@@ -2670,8 +2670,19 @@ Section eval_vectors.
       subst p.
       by rewrite nth_zip.
     }
-  Admitted.
-
+    rewrite eqq2.
+    apply (poly_eval_mod _ _ _ _ e).
+    rewrite -eqq1.
+    assert (charvals`_y = characteristic_polynomial (vals 0 y)).
+    {
+      unfold charvals.
+      rewrite (nth_map 0)/=.
+      - by rewrite nth_ord_enum. 
+      - by rewrite size_enum_ord ltn_ord.
+    }
+    rewrite H1.
+    apply characteristic_polynomial_correct.
+  Qed.
 
   Lemma mx_eval_quot_is_surjective (lvals : seq R[i]) :
     let lvals := [seq (vals 0 j) | j : 'I_n.+1] in
