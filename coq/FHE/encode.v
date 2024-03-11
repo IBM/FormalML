@@ -86,6 +86,132 @@ Section construct.
 
 End construct.
 
+  Section Chinese.
+
+(*   The chinese remainder theorem for polynomials overa a field *)
+Variables F : fieldType.
+
+Definition chinesep (m1 m2 r1 r2 : {poly F}) (co_m12: coprimep (R:=F) m1 m2) :=
+  let u := sval (Bezout_eq1_coprimepP_w m1 m2 co_m12) in
+  r1 * m2 * u.1 + r2 * m1 * u.2.
+
+ Lemma chinesep_prop (m1 m2 r1 r2 : {poly F}) :
+    coprimep (R:=F) m1 m2 ->
+    {e : poly_ringType F |
+      e %% m1 = r1 %% m1 /\ e %% m2 = r2 %% m2}.
+ Proof.
+   intros co_m12.
+   destruct (Bezout_eq1_coprimepP_w  m1 m2 co_m12).
+   pose c := r2 * x.1 * m1 + r1 * x.2 * m2.
+   exists c.
+  split. 
+  - rewrite modpD modp_mull add0r.
+    apply (f_equal (fun z => z %% m1)) in e.
+    rewrite modpD modp_mull add0r in e.
+    by rewrite -mulrA -modp_mul e modp_mul mulr1.
+  - rewrite modpD modp_mull addr0.
+    apply (f_equal (fun z => z %% m2)) in e.
+    rewrite modpD modp_mull addr0 in e.    
+    by rewrite -mulrA -modp_mul e modp_mul mulr1.
+Qed.
+
+ Lemma all_coprimep_prod (a : {poly F}) (l : seq {poly F}) :
+    all (coprimep a) l ->
+    coprimep a (\prod_(i <- l) i).
+  Proof.
+    intros.
+    rewrite big_seq.
+    apply big_rec.
+    - apply coprimep1.
+    - intros.
+      move/allP/(_ _ H0): H.
+      by rewrite coprimepMr H1 => ->.
+  Qed.
+
+  Lemma mod_mul_mod_r (a p q : {poly F}) :
+    (a %% (p * q))%%q = a%%q.
+  Proof.
+    generalize (divp_eq a (p * q)); intros.
+    apply (f_equal (fun z => z %% q)) in H.
+    rewrite H.
+    by rewrite modpD mulrA modp_mull add0r.
+  Qed.
+
+  Lemma mod_mul_mod_l (a p q : {poly F}) :
+    (a %% (p * q))%%p = a%%p.
+  Proof.
+    rewrite mulrC.
+    apply mod_mul_mod_r.
+  Qed.
+
+  Lemma prod_mod (a b : {poly F}) (l : seq {poly F}) :
+    a %% (\prod_(q <- l) q) = b %% (\prod_(q <- l) q) ->
+    forall p,
+      p \in l -> a %% p = b %% p.
+  Proof.
+    induction l.
+    - intros.
+      by rewrite in_nil in H0.
+    - intros.
+      rewrite in_cons in H0.
+      move /orP in H0.
+      rewrite !big_cons in H.
+      destruct H0.
+      + rewrite (eqP H0).
+        simpl in H.
+        apply (f_equal (fun z => z %% a0)) in H.
+        by rewrite !mod_mul_mod_l in H.
+      + apply (f_equal (fun z => z %% (\prod_(j <- l) j))) in H.
+        rewrite !mod_mul_mod_r in H.
+        specialize (IHl H).
+        by apply IHl.
+  Qed.
+
+Lemma chinesep_list_prop (l : seq ({poly F} * {poly F})) :
+  pairwise (coprimep (R := F)) (map snd l) ->
+  { e : {poly F} |
+    forall p,
+      p \in l -> e %% p.2 = p.1 %% p.2}.
+Proof.
+  induction l.
+  - simpl.
+    intros.
+    exists 0.
+    intros.
+    by rewrite in_nil in H0.
+  - intros.
+    rewrite map_cons pairwise_cons in H.
+    move /andP in H.
+    destruct H.
+    specialize (IHl H0).
+    destruct IHl.
+    assert (coprimep a.2 (\prod_(q <- l) q.2)).
+    {
+      generalize (all_coprimep_prod a.2 [seq i.2 | i <- l] H); intros.
+      by rewrite big_map in H1.
+    }
+    destruct (chinesep_prop a.2 (\prod_(q <- l) q.2) a.1 x H1) as [? [??]].
+    exists x0.
+    intros.
+    rewrite in_cons in H4.
+    move /orP in H4.
+    destruct H4.
+    + by rewrite (eqP H4).
+    + specialize (e p H4).
+      rewrite -e.
+      assert (\prod_(q <- l) q.2 = \prod_(q <-  [seq i.2 | i <- l]) q).
+      {
+        by rewrite big_map.
+      }
+      rewrite H5 in H3.
+      generalize (prod_mod x0 x [seq i.2 | i <- l] H3 p.2); intros.
+      apply H6.
+      by apply map_f.
+ Qed.
+
+End Chinese.
+
+
 Definition odd_nth_roots (n : nat) :=
   \row_(j < 2^n) (nth_root (2 * j + 1) (2 ^ (S n))).
 
@@ -2002,6 +2128,30 @@ Qed.
         by rewrite mulr1.
   Qed.
 
+  Lemma cval_decomp2 (c1 c2 : C) :
+    Im c1 != 0 ->
+    {a : R * R | (a.1%:C * c1 + a.2%:C)%C = c2}.
+  Proof.
+    intros.
+    exists ((Im c2/Im c1), (Re c2 - (Im c2 / Im c1)*Re c1)).
+    apply /eqP.
+    rewrite eq_complex.
+    apply /andP.
+    destruct c1.
+    destruct c2.
+    simpl.
+    rewrite !mul0r !addr0 subr0.
+    - split.
+      + apply /eqP.
+        rewrite addrC.
+        generalize (subrKA (Im0 / Im * Re) Re0 0); intros.
+        by rewrite !addr0 in H0.
+      + rewrite -mulrA.
+        rewrite (mulrC _ Im).
+        rewrite divff //.
+        by rewrite mulr1.
+  Qed.
+
   Lemma peval_C_decomp (c1 c2 : C) :
     Im c1 != 0 ->
     exists (p : {poly R}),
@@ -2030,6 +2180,34 @@ Qed.
         by case: (eqVneq x0 0).
   Qed.
 
+  Lemma peval_C_decomp2 (c1 c2 : C) :
+    Im c1 != 0 ->
+    {p : {poly R} | peval_C p c1 = c2}.
+  Proof.
+    intros.
+    destruct (cval_decomp2 c1 c2 H).
+    exists (x.1 *: 'X + x.2 %:P).
+    rewrite /peval_C -e.
+    case: (eqVneq x.1 0) => [-> |].
+    - rewrite scale0r add0r /map_poly.
+      rewrite horner_poly mul0r add0r.
+      case: (eqVneq x.2 0) => [-> |].
+      + by rewrite size_poly0 big_ord0.
+      + intros.
+        rewrite size_polyC.
+        rewrite i // big_ord1 expr0 mulr1 coefC //.
+    - intros.
+      rewrite /map_poly size_addl size_scale //; rewrite size_polyX.
+      + rewrite horner_poly.
+        rewrite big_ord_recl big_ord1 /= expr0 mulr1 /bump /= addn0 expr1.
+        rewrite !coefD !coefZ !coefX !coefC /=.
+        rewrite mulr0 mulr1 addr0 add0r.
+        by rewrite addrC mulrC.
+      + rewrite size_polyC.
+        by case: (eqVneq x.2 0).
+  Qed.
+
+
   Lemma peval_C_quot_is_surjective (c c2 :C) :
     Im c != 0 ->
       exists (p: peval_C_ker_quot_ring c),
@@ -2039,6 +2217,17 @@ Qed.
     destruct (peval_C_decomp c c2); trivial.
     exists (\pi_(peval_C_ker_quot_ring c) x).
     rewrite -H0.
+    apply pi_peval_C_quot.
+  Qed.
+
+  Lemma peval_C_quot_is_surjective2 (c c2 :C) :
+    Im c != 0 ->
+    {p: peval_C_ker_quot_ring c | peval_C_quot c p = c2}.
+  Proof.
+    intros.
+    destruct (peval_C_decomp2 c c2); trivial.
+    exists (\pi_(peval_C_ker_quot_ring c) x).
+    rewrite -e.
     apply pi_peval_C_quot.
   Qed.
 
@@ -2409,128 +2598,55 @@ Section eval_vectors.
     by rewrite eqq addrN in base.
  Qed.
 
-  Section Chinese.
-
-(*   The chinese remainder theorem *)
-Variables F : fieldType.
-
-Definition chinesep (m1 m2 r1 r2 : {poly F}) :=
-  r1 * m2 * (egcdp m2 m1).1 + r2 * m1 * (egcdp m1 m2).1.
-
-Lemma chinesep_exists (m1 m2 r1 r2 : {poly F}) (co_m12 : coprimep m1 m2) :
-  exists (e : {poly F}),
-    e %% m1 = r1 %% m1 /\
-      e %% m2 = r2 %% m2.
-Proof.
-  move /Bezout_eq1_coprimepP in co_m12.
-  destruct co_m12.
-  exists (r2 * x.1 * m1 + r1 * x.2 * m2).
-  split. 
-  - rewrite modpD modp_mull add0r.
-    apply (f_equal (fun z => z %% m1)) in H.
-    rewrite modpD modp_mull add0r in H.
-    by rewrite -mulrA -modp_mul H modp_mul mulr1.
-  - rewrite modpD modp_mull addr0.
-    apply (f_equal (fun z => z %% m2)) in H.
-    rewrite modpD modp_mull addr0 in H.    
-    by rewrite -mulrA -modp_mul H modp_mul mulr1.
-Qed.    
-
- Lemma all_coprimep_prod (a : {poly F}) (l : seq {poly F}) :
-    all (coprimep a) l ->
-    coprimep a (\prod_(i <- l) i).
+  Lemma peval_C_decomp2_pack (cprop : { cc : C * C | Im cc.1 != 0}) :
+    {p : {poly R} | peval_C p (sval cprop).1 = (sval cprop).2}.
   Proof.
-    intros.
-    rewrite big_seq.
-    apply big_rec.
-    - apply coprimep1.
-    - intros.
-      move/allP/(_ _ H0): H.
-      by rewrite coprimepMr H1 => ->.
+    destruct cprop.
+    exact (peval_C_decomp2 x.1 x.2 i).
   Qed.
 
-  Lemma mod_mul_mod_r (a p q : {poly F}) :
-    (a %% (p * q))%%q = a%%q.
+  Lemma mx_eval_is_surjective :
+    let charvals := [seq characteristic_polynomial (vals 0 j) | j  : 'I_n.+1] in
+    pairwise (coprimep (R := R_fieldType)) charvals  ->
+    (forall j, Im (vals 0 j) != 0) ->              
+    forall (c : MR_comRingType 0 n),
+    exists (x : {poly R}), mx_eval x = c.
   Proof.
-    generalize (divp_eq a (p * q)); intros.
-    apply (f_equal (fun z => z %% q)) in H.
-    rewrite H.
-    by rewrite modpD mulrA modp_mull add0r.
-  Qed.
-
-  Lemma mod_mul_mod_l (a p q : {poly F}) :
-    (a %% (p * q))%%p = a%%p.
-  Proof.
-    rewrite mulrC.
-    apply mod_mul_mod_r.
-  Qed.
-
-  Lemma prod_mod (a b : {poly F}) (l : seq {poly F}) :
-    a %% (\prod_(q <- l) q) = b %% (\prod_(q <- l) q) ->
-    forall p,
-      p \in l -> a %% p = b %% p.
-  Proof.
-    induction l.
-    - intros.
-      by rewrite in_nil in H0.
-    - intros.
-      rewrite in_cons in H0.
-      move /orP in H0.
-      rewrite !big_cons in H.
-      destruct H0.
-      + rewrite (eqP H0).
-        simpl in H.
-        apply (f_equal (fun z => z %% a0)) in H.
-        by rewrite !mod_mul_mod_l in H.
-      + apply (f_equal (fun z => z %% (\prod_(j <- l) j))) in H.
-        rewrite !mod_mul_mod_r in H.
-        specialize (IHl H).
-        by apply IHl.
-  Qed.
-
-Lemma chinesep_list_exists (l : seq ({poly F} * {poly F})) :
-  pairwise (coprimep (R := F)) (map snd l) ->
-  exists (e : {poly F}),
-  forall p,
-    p \in l -> e %% p.2 = p.1 %% p.2.
-Proof.
-  induction l.
-  - simpl.
-    intros.
-    exists 0.
-    intros.
-    by rewrite in_nil in H0.
-  - intros.
-    rewrite map_cons pairwise_cons in H.
-    move /andP in H.
-    destruct H.
-    specialize (IHl H0).
-    destruct IHl.
-    assert (coprimep a.2 (\prod_(q <- l) q.2)).
+    intros charvals cop imn0 c.
+    pose rvals := [seq sval (peval_C_decomp2 (vals 0 j) (c 0 j) (imn0 j)) | j : 'I_n.+1].
+    generalize (chinesep_list_prop R_fieldType (zip rvals charvals)); intros.
+    assert (pairwise (coprimep (R:=R_fieldType)) [seq i.2 | i <- zip rvals charvals]).
     {
-      generalize (all_coprimep_prod a.2 [seq i.2 | i <- l] H); intros.
-      by rewrite big_map in H2.
+      admit.
     }
-    destruct (chinesep_exists a.2 (\prod_(q <- l) q.2) a.1 x H2) as [? [??]].
-    exists x0.
-    intros.
-    rewrite in_cons in H5.
-    move /orP in H5.
-    destruct H5.
-    + by rewrite (eqP H5).
-    + specialize (H1 p H5).
-      rewrite -H1.
-      assert (\prod_(q <- l) q.2 = \prod_(q <-  [seq i.2 | i <- l]) q).
-      {
-        by rewrite big_map.
-      }
-      rewrite H6 in H4.
-      generalize (prod_mod x0 x [seq i.2 | i <- l] H4 p.2); intros.
-      apply H7.
-      by apply map_f.
- Qed.
+    specialize (X H).
+    destruct X.
+    exists x.
+    apply /matrixP.
+    intros ??.
+    pose p := (sval (peval_C_decomp2 (vals 0 y) (c 0 y) (imn0 y)),
+                 characteristic_polynomial (vals 0 y)).
+    assert (p \in zip rvals charvals).
+    {
+      unfold p, charvals, rvals.
+      admit.
+    }
+    specialize (e p H0).
+    generalize (peval_C_decomp2 (vals 0 y) (c 0 y) (imn0 y)); intros.
+    rewrite mxE.
+    unfold peval_C in X.
+     Admitted.
 
-End Chinese.
+
+  Lemma mx_eval_quot_is_surjective (lvals : seq R[i]) :
+    let lvals := [seq (vals 0 j) | j : 'I_n.+1] in
+    pairwise (coprimep (R := R_fieldType)) (map characteristic_polynomial lvals) ->
+    (forall c, c \in lvals -> Im c <> 0) ->              
+    forall (c : MR_comRingType 0 n),
+    exists (x :  mx_eval_ker_quot_ring),
+      mx_eval_quot x = c.
+   Proof.
+     Admitted.
 
 End eval_vectors.
 
