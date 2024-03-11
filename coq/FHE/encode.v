@@ -14,6 +14,78 @@ Set Bullet Behavior "Strict Subproofs".
 
 Local Open Scope ring_scope.
 
+Section construct.
+
+  
+  Import Ring ComRing UnitRing Pdiv.IdomainDefs Pdiv.WeakIdomain.
+
+  Lemma size_poly1P_w [R : Exports.ringType] (p : {poly R}) :
+    size p == 1%nat -> {c | c != 0 & p = c%:P}.
+  Proof.
+    move/eqP=> pC.
+    have def_p: p = (p`_0)%:P
+      by rewrite -size1_polyC ?pC.
+    by exists p`_0; rewrite // -polyC_eq0 -def_p -size_poly_eq0 pC.
+  Qed.
+
+  Lemma eqpP_w [R : idomainType] (m n : {poly R}) :
+    (m %= n) ->
+    {c12 |  (c12.1 != 0) && (c12.2 != 0) & c12.1 *: m = c12.2 *: n}.
+  Proof.
+    case: (eqVneq m 0) => [-> /andP [/dvd0pP -> _] | m_nz].
+    { by exists (1, 1); rewrite ?scaler0 // oner_eq0. }
+    case: (eqVneq n 0) => [-> /andP [_ /dvd0pP ->] | n_nz /andP []].
+    { by exists (1, 1); rewrite ?scaler0 // oner_eq0. }
+    rewrite !dvdp_eq; set c1 := _ ^+ _; set c2 := _ ^+ _.
+    set q1 := _ %/ _; set q2 := _ %/ _; move/eqP => Hq1 /eqP Hq2;
+                                                   have Hc1 : c1 != 0 by rewrite expf_eq0 lead_coef_eq0 negb_and m_nz orbT.
+    have Hc2 : c2 != 0 by rewrite expf_eq0 lead_coef_eq0 negb_and n_nz orbT.
+    have def_q12: q1 * q2 = (c1 * c2)%:P.
+    apply: (mulIf m_nz); rewrite mulrAC mulrC -Hq1 -scalerAr -Hq2 scalerA.
+    by rewrite -mul_polyC.
+    have: q1 * q2 != 0 by rewrite def_q12 -size_poly_eq0 size_polyC mulf_neq0.
+    rewrite mulf_eq0; case/norP=> nz_q1 nz_q2.
+    have: size q2 <= 1.
+    have:= size_mul nz_q1 nz_q2; rewrite def_q12 size_polyC mulf_neq0 //=.
+    by rewrite polySpred // => ->; rewrite leq_addl.
+    rewrite leq_eqVlt ltnS size_poly_leq0 (negPf nz_q2) orbF.
+    case/size_poly1P_w=> c cn0 cqe; exists (c2, c); first by rewrite Hc2.
+    by rewrite Hq2 -mul_polyC -cqe.
+  Qed.
+
+  Lemma Bezoutp_w [R : idomainType] (p q : {poly R}) : {u | u.1 * p + u.2 * q %= (gcdp p q)}.
+  Proof.
+    have [-> | pn0] := eqVneq p 0.
+    - by rewrite gcd0p; exists (0, 1); rewrite mul0r mul1r add0r eqpxx.
+    - have [-> | qn0] := eqVneq q 0.
+      + by rewrite gcdp0; exists (1, 0); rewrite mul0r mul1r addr0 eqpxx.
+      + pose e := egcdp p q; exists e; rewrite eqp_sym.
+        by case: (egcdpP pn0 qn0).
+  Qed.
+  
+  Lemma Bezout_coprimepP_w [R : idomainType] (p q : {poly R}) :
+    coprimep p q ->
+    {u | u.1 * p + u.2 * q %= 1}.
+  Proof.
+    rewrite -gcdp_eqp1.
+    case: (Bezoutp_w p q) => [[u v] Puv].
+    intros g1.
+    by exists (u, v); apply: eqp_trans g1.
+  Qed.
+
+  Lemma Bezout_eq1_coprimepP_w [F : fieldType] (p q : {poly F}) :
+    coprimep (R:=F) p q ->
+    {u : poly_ringType F * poly_ringType F | u.1 * p + u.2 * q = 1}.
+  Proof.
+    move/ Bezout_coprimepP_w.
+    case=> [[u v]] /=.
+    case/eqpP_w=> [[c1 c2]] /andP /= [c1n0 c2n0] e.
+    exists (c2^-1 *: (c1 *: u), c2^-1 *: (c1 *: v)); rewrite /= -!scalerAl.
+    by rewrite -!scalerDr e scalerA mulVf // scale1r.
+  Qed.
+
+End construct.
+
 Definition odd_nth_roots (n : nat) :=
   \row_(j < 2^n) (nth_root (2 * j + 1) (2 ^ (S n))).
 
@@ -3889,6 +3961,10 @@ Lemma big_max_nneg_with_trailing_zeros {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) 
      apply /RleP.
      apply Fnneg.
  Qed.
+
+
+
+         
 
   Lemma coef_maxnorm_pvec n (p : {poly R}) :
     size p <= 2^n.+1 ->
