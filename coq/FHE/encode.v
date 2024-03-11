@@ -2688,15 +2688,18 @@ Section eval_vectors.
     apply characteristic_polynomial_correct.
   Qed.
 
-  Lemma mx_eval_quot_is_surjective (lvals : seq R[i]) :
-    let lvals := [seq (vals 0 j) | j : 'I_n.+1] in
-    pairwise (coprimep (R := R_fieldType)) (map characteristic_polynomial lvals) ->
-    (forall c, c \in lvals -> Im c <> 0) ->              
+  Lemma mx_eval_quot_is_surjective  :
+    let charvals := [seq characteristic_polynomial (vals 0 j) | j  : 'I_n.+1] in
+    pairwise (coprimep (R := R_fieldType)) charvals  ->
+    (forall j, Im (vals 0 j) != 0) ->   
     forall (c : MR_comRingType 0 n),
-    exists (x :  mx_eval_ker_quot_ring),
-      mx_eval_quot x = c.
-   Proof.
-     Admitted.
+    {x :  mx_eval_ker_quot_ring | mx_eval_quot x = c}.
+  Proof.
+    intros.
+    destruct (mx_eval_is_surjective H H0 c).
+    exists (\pi_mx_eval_ker_quot_ring x).
+    by rewrite pi_mx_eval_quot.
+  Qed.
 
 End eval_vectors.
 
