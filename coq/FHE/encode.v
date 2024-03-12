@@ -2086,9 +2086,10 @@ Qed.
       + by apply peval_C_quot1.
   Qed.
 
-  Lemma peval_C_quot_is_injective (c:C) (x y : peval_C_ker_quot_ring c) :
-    peval_C_quot c x = peval_C_quot c y -> x = y.
+  Lemma peval_C_quot_is_injective (c:C) :
+    injective (peval_C_quot c).
   Proof.
+    intros x y.
     rewrite /peval_C_quot -!eq_lock.
     rewrite -{2}[x]reprK -{2}[y]reprK.
     move: (repr x) (repr y) => {x} {y} x y eqq.
@@ -2103,32 +2104,6 @@ Qed.
   Qed.
 
   Lemma cval_decomp (c1 c2 : C) :
-    Im c1 != 0 ->
-    exists (a b : R),
-      (a%:C * c1 + b%:C)%C = c2.
-  Proof.
-    intros.
-    exists (Im c2/Im c1).
-    exists (Re c2 - (Im c2 / Im c1)*Re c1).
-    apply /eqP.
-    rewrite eq_complex.
-    apply /andP.
-    destruct c1.
-    destruct c2.
-    simpl.
-    rewrite !mul0r !addr0 subr0.
-    - split.
-      + apply /eqP.
-        rewrite addrC.
-        generalize (subrKA (Im0 / Im * Re) Re0 0); intros.
-        by rewrite !addr0 in H0.
-      + rewrite -mulrA.
-        rewrite (mulrC _ Im).
-        rewrite divff //.
-        by rewrite mulr1.
-  Qed.
-
-  Lemma cval_decomp2 (c1 c2 : C) :
     Im c1 != 0 ->
     {a : R * R | (a.1%:C * c1 + a.2%:C)%C = c2}.
   Proof.
@@ -2154,38 +2129,10 @@ Qed.
 
   Lemma peval_C_decomp (c1 c2 : C) :
     Im c1 != 0 ->
-    exists (p : {poly R}),
-      peval_C p c1 = c2.
-  Proof.
-    intros.
-    destruct (cval_decomp c1 c2 H) as [? [??]].
-    exists (x *: 'X + x0 %:P).
-    rewrite /peval_C -H0.
-    case: (eqVneq x 0) => [-> |].
-    - rewrite scale0r add0r /map_poly.
-      rewrite horner_poly mul0r add0r.
-      case: (eqVneq x0 0) => [-> |].
-      + by rewrite size_poly0 big_ord0.
-      + intros.
-        rewrite size_polyC.
-        rewrite i // big_ord1 expr0 mulr1 coefC //.
-    - intros.
-      rewrite /map_poly size_addl size_scale //; rewrite size_polyX.
-      + rewrite horner_poly.
-        rewrite big_ord_recl big_ord1 /= expr0 mulr1 /bump /= addn0 expr1.
-        rewrite !coefD !coefZ !coefX !coefC /=.
-        rewrite mulr0 mulr1 addr0 add0r.
-        by rewrite addrC mulrC.
-      + rewrite size_polyC.
-        by case: (eqVneq x0 0).
-  Qed.
-
-  Lemma peval_C_decomp2 (c1 c2 : C) :
-    Im c1 != 0 ->
     {p : {poly R} | peval_C p c1 = c2}.
   Proof.
     intros.
-    destruct (cval_decomp2 c1 c2 H).
+    destruct (cval_decomp c1 c2 H).
     exists (x.1 *: 'X + x.2 %:P).
     rewrite /peval_C -e.
     case: (eqVneq x.1 0) => [-> |].
@@ -2207,29 +2154,40 @@ Qed.
         by case: (eqVneq x.2 0).
   Qed.
 
-
   Lemma peval_C_quot_is_surjective (c c2 :C) :
-    Im c != 0 ->
-      exists (p: peval_C_ker_quot_ring c),
-        peval_C_quot c p = c2.
-  Proof.
-    intros.
-    destruct (peval_C_decomp c c2); trivial.
-    exists (\pi_(peval_C_ker_quot_ring c) x).
-    rewrite -H0.
-    apply pi_peval_C_quot.
-  Qed.
-
-  Lemma peval_C_quot_is_surjective2 (c c2 :C) :
     Im c != 0 ->
     {p: peval_C_ker_quot_ring c | peval_C_quot c p = c2}.
   Proof.
     intros.
-    destruct (peval_C_decomp2 c c2); trivial.
+    destruct (peval_C_decomp c c2); trivial.
     exists (\pi_(peval_C_ker_quot_ring c) x).
     rewrite -e.
     apply pi_peval_C_quot.
   Qed.
+
+
+  Lemma peval_C_quot_is_bijective (c :C) :
+    Im c != 0 ->
+    bijective (peval_C_quot c).
+  Proof.
+    intros imn0.
+    pose g : R[i] -> peval_C_ker_quot_ring c :=
+      fun c2 => sval (peval_C_quot_is_surjective c c2 imn0).
+    apply Bijective with (g := g).
+    - intros ?.
+      assert (peval_C_quot c (g (peval_C_quot c x)) = peval_C_quot c x).
+      {
+        rewrite /g.
+        destruct (peval_C_quot_is_surjective c (peval_C_quot c x) imn0).
+        by simpl.
+      }
+      by apply peval_C_quot_is_injective in H.
+    - intros ?.
+      rewrite /g.
+      destruct (peval_C_quot_is_surjective c x imn0).
+      by simpl.
+   Qed.
+
 
 End rmorphism.
 
@@ -2619,12 +2577,12 @@ Section eval_vectors.
   Proof.
     intros charvals cop imn0 c.
 
-    pose rvals := [seq sval (peval_C_decomp2 (vals 0 j) (c 0 j) (imn0 j)) | j : 'I_n.+1].
+    pose rvals := [seq sval (peval_C_decomp (vals 0 j) (c 0 j) (imn0 j)) | j : 'I_n.+1].
     have rvals_prop: forall (j:'I_n.+1), peval_C (rvals`_j) (vals 0 j) = (c 0 j).
     {
       subst rvals=>j.
       rewrite (nth_map 0)/=.
-      - move: (svalP (peval_C_decomp2 (vals 0 (enum 'I_n.+1)`_j) (c 0 (enum 'I_n.+1)`_j) (imn0 (enum 'I_n.+1)`_j))).
+      - move: (svalP (peval_C_decomp (vals 0 (enum 'I_n.+1)`_j) (c 0 (enum 'I_n.+1)`_j) (imn0 (enum 'I_n.+1)`_j))).
         by rewrite !nth_ord_enum.        
       - rewrite size_enum_ord.
         by destruct j.
