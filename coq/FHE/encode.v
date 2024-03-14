@@ -1507,7 +1507,7 @@ Lemma sum_conj (n : nat) (F : 'I_n -> R[i]) :
 Proof.
   induction n.
   - by rewrite !big_ord0 conjc0.
-  - by rewrite !big_ord_recr /= -add_conj IHn.
+  - by rewrite !big_ord_recr rmorphD /= IHn.
 Qed.
 
 Lemma peval_C_conj (p : {poly R}) (c : C) :
@@ -4409,7 +4409,7 @@ Lemma big_max_nneg_with_trailing_zeros {k1 k2} (le12: k1 <= k2) (F: 'I_k2 -> R) 
     elim: l => /=.
     - by rewrite oppr0.
     - move=> a l <-.
-      by rewrite -add_conj -rmorphM conjc_RtoC.
+      by rewrite rmorphD rmorphM /RtoC /= oppr0.
   Qed.
 
   Lemma rpoly_eval_conj_R (p : {poly R}) (x : R[i]) :
