@@ -1502,6 +1502,25 @@ Qed.
 
 Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
 
+Lemma sum_conj (n : nat) (F : 'I_n -> R[i]) :
+  conjc (\sum_(i < n) (F i)) = \sum_(i<n) conjc (F i).
+Proof.
+  induction n.
+  - by rewrite !big_ord0 conjc0.
+  - by rewrite !big_ord_recr /= -add_conj IHn.
+Qed.
+
+Lemma peval_C_conj (p : {poly R}) (c : C) :
+  peval_C p (conjc c) = conjc (peval_C p c).
+Proof.
+  rewrite /peval_C /map_poly !horner_poly sum_conj.
+  apply eq_bigr.
+  intros.
+  rewrite rmorphM rmorphXn /= /RtoC.
+  f_equal; f_equal.
+  lra.
+Qed.
+
 Definition ctrace (c : R[i]) := Re (c + conjc c).
 Definition cnorm (c : R[i]) := Re (c * conjc c).
 
