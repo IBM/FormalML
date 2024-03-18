@@ -1659,6 +1659,12 @@ Proof.
   by rewrite /cnorm conjcK mulrC.
 Qed.
 
+Lemma cnorm_peval_C_conj (p : {poly R}) (c : C) :
+  cnorm (peval_C p c) = cnorm (peval_C p (conjc c)).
+Proof.
+  by rewrite norm_conj peval_C_conj.
+Qed.
+
 Lemma char_poly_conj (c : R[i]) :
   characteristic_polynomial c = characteristic_polynomial (conjc c).
 Proof.
