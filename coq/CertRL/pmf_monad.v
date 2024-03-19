@@ -412,7 +412,7 @@ Proof.
   now rewrite Pmf_ret_of_bind.
 Qed.
 
-Lemma Pmf_map_ret {A B : Type} (a : A) (f : A -> B) : f <$> (ret a) = ret (f a).
+Lemma Pmf_map_ret {A B : Type} (a : A) (f : A -> B) : f <$> (ret a) = ret (Monad:=Monad_Pmf) (f a).
 Proof.
   simpl.
   unfold Pmf_map.
@@ -420,7 +420,7 @@ Proof.
   now unfold comp.
 Qed.
 
-Lemma Pmf_map_bind {A B : Type} (p : Pmf A)  (f : A -> B) : p >>= (ret \o f) = f <$> p.
+Lemma Pmf_map_bind {A B : Type} (p : Pmf A)  (f : A -> B) : p >>= (ret (Monad:=Monad_Pmf) \o f) = f <$> p.
 Proof.
   reflexivity.
 Qed.
