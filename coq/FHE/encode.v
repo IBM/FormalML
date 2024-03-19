@@ -21,6 +21,11 @@ Proof.
   - by apply not_0_INR.
 Qed.
 
+Lemma natmul0eq (n : nat) : ((n%:R)%R == 0%R :> R) = (n == 0%nat).
+Proof.
+  by rewrite -INRE INR0eq.
+Qed.
+
 Local Open Scope ring_scope.
 
 Section construct.
@@ -341,10 +346,7 @@ Proof.
   }
   assert (INR n \is a unit).
   {
-    rewrite unitfE.
-    apply/eqP.
-    apply not_0_INR.
-    lia.
+    rewrite unitfE INR0eq; lia.
   } 
   assert (inv (INR 2) * (INR 2) = 1).
   {
@@ -4052,7 +4054,7 @@ Proof.
     rewrite -scalemxAr /encmat /pmat' decode_encode_scalar_mx'.
     apply /matrixP => i j.
     rewrite !mxE mulrnAr -RtoCR -rmorphM /= mulrC divrr // unitfE.
-    by rewrite -INRE INR0eq pow2n0.
+    by rewrite natmul0eq pow2n0.
   Qed.
 
   Lemma invmx_comm (n : nat) (A B : 'M[R[i]]_n) :
@@ -4096,9 +4098,7 @@ Proof.
     case: (eqVneq n1 n2); intros.
     + by rewrite e in H.
     + by rewrite /= mulr0n.
-  - rewrite -rmorphM /= divff // -INRE.
-    apply/eqP.
-    apply not_0_INR.
+  - rewrite -rmorphM /= divff // natmul0eq.
     lia.
 Qed.
 
