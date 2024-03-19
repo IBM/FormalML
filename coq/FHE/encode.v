@@ -4070,6 +4070,22 @@ Proof.
      by rewrite H2 in H3.
   Qed.
 
+   Lemma scalar_prod_comm (n : nat) (A B : 'M[R[i]]_n) (c : R[i]) :
+     c != 0 ->
+     A *m B = scalar_mx c ->
+     B *m A = scalar_mx c.
+   Proof.
+     intros.
+     apply (f_equal (fun z => (inv c) *: z)) in H0.
+     rewrite scalemxAl scale_scalar_mx mulrC divff // in H0.
+     apply invmx_comm in H0.
+     rewrite -scalemxAr in H0.
+     apply (f_equal (fun z => c *: z)) in H0.
+     rewrite scalerA divff // scalemx1 in H0.
+     generalize (scale1mx (B *m A)); intros.
+     by rewrite -H1 -H0.
+  Qed.     
+
   Lemma encmat_pmat_alt (n : nat) :
     let pmat' := peval_mat (odd_nth_roots' (S n)) in
     let encmat := (conj_mat (pmat'^T)) in
