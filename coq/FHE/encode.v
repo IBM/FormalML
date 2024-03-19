@@ -12,6 +12,15 @@ From mathcomp Require Import lra.
 
 Set Bullet Behavior "Strict Subproofs".
 
+
+Lemma INR0eq (n:nat) : (INR n == 0%R) = (n == 0%nat).
+Proof.
+  apply/eqP.
+  case: eqP.
+  - by move=> ->.
+  - by apply not_0_INR.
+Qed.
+
 Local Open Scope ring_scope.
 
 Section construct.
@@ -90,6 +99,7 @@ End construct.
 
 (*   The chinese remainder theorem for polynomials overa a field *)
 Variables F : fieldType.
+
 
 Definition chinesep (m1 m2 r1 r2 : {poly F}) (co_m12: coprimep (R:=F) m1 m2) :=
   let u := sval (Bezout_eq1_coprimepP_w m1 m2 co_m12) in
@@ -4032,6 +4042,7 @@ Proof.
         rewrite /odd_nth_roots /odd_nth_roots' !mxE !inordK //.
   Qed.
 
+  
   Lemma encmat_pmat (n : nat) :
     let pmat' := peval_mat (odd_nth_roots' (S n)) in
     let encmat := (conj_mat (pmat'^T)) in
@@ -4041,11 +4052,8 @@ Proof.
     rewrite -scalemxAr /encmat /pmat' decode_encode_scalar_mx'.
     apply /matrixP => i j.
     rewrite !mxE mulrnAr -RtoCR -rmorphM /= mulrC divrr // unitfE.
-    apply/eqP.
-    rewrite -INRE.
-    apply not_0_INR.
-    lia.
-  Qed.    
+    by rewrite -INRE INR0eq pow2n0.
+  Qed.
 
   Lemma invmx_comm (n : nat) (A B : 'M[R[i]]_n) :
     A *m B = scalar_mx 1 ->
