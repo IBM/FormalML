@@ -698,7 +698,7 @@ Proof.
       apply ssrbool.in1W; intros.
       now repeat rewrite mxE.
 Qed.
-    
+
 Lemma decode_mat_encode_mat (n : nat) (cl : 'cV[R[i]]_(2^(S n))) :
   let pmat := peval_mat (odd_nth_roots (S n)) in
   let encmat := conj_mat (pmat^T) in
@@ -4069,6 +4069,30 @@ Proof.
     apply invmx_comm.
     apply encmat_pmat.
   Qed.
+
+Lemma decode_encode_off_diag_T (n : nat):
+  let pmat := (peval_mat (odd_nth_roots' (S n))) in
+  forall n1 n2,
+    n1 <> n2 ->
+    H_inner_prod (col n1 pmat)^T (col n2 pmat)^T = C0.
+Proof.
+  intros.
+  rewrite !tr_col -H_inner_prod_mat trmxK.
+  generalize (encmat_pmat_alt n); intros.
+  simpl in H0.
+  apply (f_equal (fun m => trmx ((RtoC (2 ^ n.+1)%:R) *: m))) in H0.
+  rewrite scalemxAl scalerA in H0.
+  replace ((RtoC (2 ^ n.+1)%:R * RtoC (2 ^ n.+1)%:R^-1)) with (RtoC 1) in H0.
+  - rewrite trmx_mul scale1r conj_transpose trmxK scalemx1 in H0.
+    rewrite /pmat H0 tr_scalar_mx mxE.
+    case: (eqVneq n1 n2); intros.
+    + by rewrite e in H.
+    + by rewrite /= mulr0n.
+  - rewrite -rmorphM /= divff // -INRE.
+    apply/eqP.
+    apply not_0_INR.
+    lia.
+Qed.
 
   Lemma encmat_pmat_pvec (n : nat) (p : {poly R}) :
     let pmat' := peval_mat (odd_nth_roots' (S n)) in
