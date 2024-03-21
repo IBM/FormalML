@@ -514,51 +514,26 @@ Proof.
       * by rewrite Zdiv.Z_mod_plus_full.
 Qed.
 
+Lemma nth_root_pow_eq (n j k : nat) :
+  0%N <> n ->
+  forall (e1 e2 : nat),
+    (nth_root j n) ^+ e1 = 
+    (nth_root k n) ^+ e2 <->
+      (e1 * j) mod n = (e2 * k) mod n.
+Proof.
+  intros.
+  destruct n; try lia.
+  by rewrite !Cpow_nth_root -nth_root_eq.
+Qed.
+
 Lemma nth_root_not_1 j n :
   j mod (S n) <> 0%N ->
-  nth_root j (S n) <> RtoC R1.
+  nth_root j (S n) <> 1.
 Proof.
-  unfold nth_root.
-  intros.
-  unfold RtoC.
-  unfold not.
-  intros.
-  replace (S n) with (n + 1)%nat in H0 by lia.
-  inversion H0; clear H0.
-  assert (xnneg :(Rle 0 (2 * PI * INR j / INR (n + 1)))).
-  {
-    apply Rmult_le_pos.
-    - generalize (pos_INR j); intros.
-      apply Rmult_le_pos; trivial.
-      generalize PI_RGT_0; intros.
-      apply Rmult_le_pos.
-      + simpl.
-        rewrite /IZR -INR_IPR.
-        apply pos_INR.
-      + apply Rlt_le.
-        by apply Rgt_lt.
-    - left.
-      apply Rinv_0_lt_compat.
-      apply lt_0_INR.
-      lia.
-  }
-  apply cos_eq_1_nneg in H2; trivial.
-  - case: H2 => [k eqq].
-    move: eqq.
-    rewrite -mulrA.
-    move/mulrI.
-    rewrite ssrbool.unfold_in /= /unit_R Pi2_neq0_alt // => /(_ ssrbool.isT).
-    move/(f_equal (fun x => x * (INR (n + 1)))).
-    rewrite -mulrA [_ * INR (n + 1)]mulrC mulrA.
-    rewrite mulfK.
-    + rewrite /mul /= -mult_INR.
-      move/INR_eq => eqq.
-      rewrite {}eqq in H.
-      move: H.
-      by rewrite addn1 Nat.mod_mul.
-    + by rewrite addn1 S_INR_n0.
-  - move: xnneg.
-    by rewrite -RinvE// addn1 S_INR_n0.
+  intros ??.
+  rewrite -(nth_root_0 n) -nth_root_eq in H0.
+  rewrite H0 in H.
+  rewrite Nat.mod_small in H; lia.
 Qed.
 
 Lemma nth_root_1 j n :

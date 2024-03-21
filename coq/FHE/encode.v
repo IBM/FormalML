@@ -366,8 +366,9 @@ Lemma pow2_nth_root_pow_eq (n j : nat) :
       (e1 * j) = (e2 * j) %[mod (2^n.+1)].
 Proof.
   intros.
-  destruct (pow2_S n.+1).
-  by rewrite (eqP i) !Cpow_nth_root -nth_root_eq !modulo_modn.
+  rewrite -!modulo_modn.
+  apply nth_root_pow_eq.
+  lia.
 Qed.
 
 Lemma mul_INR n m :
