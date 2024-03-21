@@ -28,8 +28,23 @@ Qed.
 
 Local Open Scope ring_scope.
 
-Section construct.
+(*
+Record ENCODE : Type :=
+  mkENCODE
+    { clear : {poly int} ;
+      scale : nat
+    }.
 
+Record FHE : Type := 
+  mkFHE
+    { q : nat; 
+      cypher : {poly {poly 'Z_q}} ;
+      norm_bound : R ; 
+      noise_bound : R
+    }.
+*)
+
+Section construct.
   
   Import Ring ComRing UnitRing Pdiv.IdomainDefs Pdiv.WeakIdomain.
 
@@ -317,6 +332,27 @@ Proof.
   destruct (pow2_S (S n)).
   rewrite (eqP i).
   by rewrite (eqP i) Cpow_nth_root muln1 in H.
+Qed.
+
+Lemma pow2_nth_root_pow1 (n j : nat) :
+  forall (e : nat),
+    (nth_root j (2^n.+1)) ^+ e = 1 <->
+      (e * j) mod (2^n.+1) = 0%N.
+Proof.
+  intros.
+  destruct (pow2_S n.+1).
+  by rewrite (eqP i) Cpow_nth_root nth_root_1_iff.
+Qed.
+
+Lemma pow2_nth_root_pow_eq (n j : nat) :
+  forall (e1 e2 : nat),
+    (nth_root j (2^n.+1)) ^+ e1 = 
+    (nth_root j (2^n.+1)) ^+ e2 <->
+      (e1 * j) mod (2^n.+1) = (e2 * j) mod (2^n.+1).
+Proof.
+  intros.
+  destruct (pow2_S n.+1).
+  by rewrite (eqP i) !Cpow_nth_root -nth_root_eq.
 Qed.
 
 Lemma mul_INR n m :
@@ -4082,8 +4118,7 @@ Proof.
      rewrite -scalemxAr in H0.
      apply (f_equal (fun z => c *: z)) in H0.
      rewrite scalerA divff // scalemx1 in H0.
-     generalize (scale1mx (B *m A)); intros.
-     by rewrite -H1 -H0.
+     by rewrite -(scale1mx (B *m A)) -H0.
   Qed.     
 
   Lemma encmat_pmat_alt (n : nat) :
