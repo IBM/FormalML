@@ -363,11 +363,11 @@ Lemma pow2_nth_root_pow_eq (n j : nat) :
   forall (e1 e2 : nat),
     (nth_root j (2^n.+1)) ^+ e1 = 
     (nth_root j (2^n.+1)) ^+ e2 <->
-      (e1 * j) mod (2^n.+1) = (e2 * j) mod (2^n.+1).
+      (e1 * j) = (e2 * j) %[mod (2^n.+1)].
 Proof.
   intros.
   destruct (pow2_S n.+1).
-  by rewrite (eqP i) !Cpow_nth_root -nth_root_eq.
+  by rewrite (eqP i) !Cpow_nth_root -nth_root_eq !modulo_modn.
 Qed.
 
 Lemma mul_INR n m :
@@ -631,21 +631,6 @@ Lemma exp_conj (c : R[i]) n :
   conjc (c ^+ n) = (conjc c)^+n.
 Proof.
   by rewrite rmorphXn.
-Qed.
-
-Lemma modulo_modn n m : (n mod m)%nat = div.modn n m.
-Proof.
-  unfold Nat.modulo.
-  destruct m; simpl; trivial.
-  generalize (Nat.divmod_spec n m 0 m (le_refl _)); intros HH.
-  simpl in HH.
-  destruct (Nat.divmod n m 0 m); simpl in *.
-  rewrite !plusE !multE !minusE in HH*.
-  rewrite !muln0 subnn !addn0 in HH.
-  destruct HH; subst.
-  replace (n0 + m * n0 + (m - n1))%nat with (n0 * m.+1 + (m - n1))%nat by lia.
-  rewrite modnMDl modn_small//.
-  lia.
 Qed.
 
 Lemma decode_encode_off_diag (n : nat):
