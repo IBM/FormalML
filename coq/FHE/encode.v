@@ -26,6 +26,21 @@ Proof.
   by rewrite -INRE INR0eq.
 Qed.
 
+Lemma modulo_modn (a b : nat) :
+  Nat.modulo a b = modn a b.
+Proof.
+  case: b => [| b].
+  - by rewrite modn0.
+  - rewrite modn_def /Nat.modulo.
+    move: (Nat.divmod_spec a b 0 b (le_refl _)).
+    case: Nat.divmod => q u [].
+    rewrite Nat.mul_0_r Nat.sub_diag !Nat.add_0_r /= => eqq _.
+    rewrite (_:(edivn a b.+1) = (q, (b - u)%coq_nat)) // -(@edivn_eq b.+1); try lia.
+    rewrite eqq.
+    f_equal; lia.
+Qed.
+  
+  
 Local Open Scope ring_scope.
 
 (*
