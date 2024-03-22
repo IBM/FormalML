@@ -391,9 +391,8 @@ Proof.
     coq_lra.
  Qed.
 
-(*
 Lemma cos_eq_neg1 (x : R) :
-  cos x = Ropp R1 ->
+  cos x = -1 ->
   exists k, x = (2 * PI * IZR(k) + PI)%R.
 Proof.
   intros eqq1.
@@ -404,9 +403,12 @@ Proof.
   destruct eqq2 as [k eqq2].
   exists (Z.sub k 1)%Z.
   rewrite minus_IZR.
-  lra.
+  replace (Rplus PI x) with (PI + x)%R in eqq2.
+  - replace (Rminus (IZR k) 1) with ((IZR k) - 1)%R.
+    + lra.
+    + unfold add, opp, one; simpl; coq_lra.
+  - unfold add; simpl; coq_lra.
 Qed.
-*)
 
 Lemma cos_eq_1_nneg (x : R) :
   cos x = 1 ->
