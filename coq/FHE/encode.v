@@ -285,7 +285,7 @@ Proof.
   apply /unity_rootP.
   case: (eqVneq x.+1 n.+1); intros.
   - by rewrite e nth_root_npow /RtoC /=.
-  - rewrite Cpow_nth_root muln1.
+  - rewrite exp_nth_root muln1.
     apply nth_root_not_1.
     rewrite Nat.mod_small; try lia.
     destruct x; simpl in *.
@@ -307,7 +307,7 @@ Lemma primitive_root_nth_root_coprime_alt (j n : nat) :
 Proof.
   intros.
   generalize (primitive_root_nth_root_coprime j n H); intros.
-  by rewrite Cpow_nth_root muln1 in H0.
+  by rewrite exp_nth_root muln1 in H0.
 Qed.
 
 Lemma pow2_S (j:nat) :
@@ -346,7 +346,7 @@ Proof.
   generalize (primitive_root_odd_nth_root j n); intros.
   destruct (pow2_S (S n)).
   rewrite (eqP i).
-  by rewrite (eqP i) Cpow_nth_root muln1 in H.
+  by rewrite (eqP i) exp_nth_root muln1 in H.
 Qed.
 
 Lemma pow2_nth_root_pow1 (n j : nat) :
@@ -356,7 +356,7 @@ Lemma pow2_nth_root_pow1 (n j : nat) :
 Proof.
   intros.
   destruct (pow2_S n.+1).
-  by rewrite (eqP i) Cpow_nth_root nth_root_1_iff.
+  by rewrite (eqP i) exp_nth_root nth_root_1_iff.
 Qed.
 
 Lemma pow2_nth_root_pow_eq (n j : nat) :
@@ -514,7 +514,7 @@ Qed.
 Lemma pow_nth_root j n e :
   (nth_root j (S n)) ^+ e = nth_root (e * j) (S n).
 Proof.
-  apply Cpow_nth_root.
+  apply exp_nth_root.
 Qed.
 
 Lemma pow_nth_root' j n e :
@@ -684,7 +684,7 @@ Proof.
       * rewrite intdiv.modz_small/=; lia.
     + lia.
   - destruct (pow2_S (S (S n))).
-    rewrite (eqP i0) nth_root_conj_alt nth_root_mul Cpow_nth_root.
+    rewrite (eqP i0) nth_root_conj_alt nth_root_mul exp_nth_root.
     apply nth_root_1_iff.
     rewrite -(eqP i0) -(eqP i).
     clear H0 i i0 pmat x x0.
@@ -861,7 +861,7 @@ Proof.
   now rewrite H.
 Qed.
 
-Lemma vector_rev_conj_Cpow {n} i (v : 'rV[R[i]]_n) :
+Lemma vector_rev_conj_exp {n} i (v : 'rV[R[i]]_n) :
   vector_rev_conj v ->
   vector_rev_conj (map_mx (fun c => exp c i) v).
 Proof.
@@ -1034,7 +1034,7 @@ Proof.
   rewrite <- map_row.
   apply vector_rev_conj_conj; simpl.
   rewrite encode_mat_pow_odd_roots.
-  apply vector_rev_conj_Cpow.
+  apply vector_rev_conj_exp.
   apply vector_rev_conj_odd_nth_roots.
 Qed.
 
@@ -4529,7 +4529,7 @@ Proof.
   rewrite !mxE.
   destruct (pow2_S (n.+2)).
   move => /eqP in i0.
-  by rewrite i0 Cpow_nth_root nth_root_Cmod.
+  by rewrite i0 exp_nth_root nth_root_Cmod.
 Qed.
 
 Definition coefE :=

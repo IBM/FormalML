@@ -87,9 +87,6 @@ Qed.
 Definition nth_roots (n:nat) :=
   map (fun j => nth_root j n) (seq 0 n).
 
-(*
-Definition Cpow (x : R[i]) (n : nat) : R[i] := exp x n.
-*)
 
 Lemma de_moivre (x : R) (n : nat) :
   exp (cos x +i* sin x) n = (cos ((INR n) * x)%R +i* sin ((INR n) * x)%R).
@@ -106,7 +103,7 @@ Proof.
     f_equal; ring.
   Qed.
 
-Lemma Cpow_nth_root j n e :
+Lemma exp_nth_root j n e :
   exp (nth_root j (S n)) e = nth_root (e * j) (S n).
 Proof.
   unfold nth_root.
@@ -120,10 +117,10 @@ Proof.
   by rewrite -H.
 Qed.
 
-Lemma Cpow_nth_root_comm j n e :
+Lemma exp_nth_root_comm j n e :
   exp (nth_root j (S n)) e = exp (nth_root e (S n)) j.
 Proof.
-  do 2 rewrite Cpow_nth_root.
+  do 2 rewrite exp_nth_root.
   f_equal.
   apply mulnC.
 Qed.
@@ -131,7 +128,7 @@ Qed.
 Lemma nth_root_npow j n :
   exp (nth_root j (S n)) (S n) = 1.
 Proof.
-  by rewrite Cpow_nth_root mulnC nth_root_2PI.
+  by rewrite exp_nth_root mulnC nth_root_2PI.
 Qed.
 
 Lemma minus_mod (j1 j2 n : nat) :
@@ -181,7 +178,7 @@ Proof.
 Lemma prim_nth_root j n :
   nth_root j (S n) = exp (nth_root 1 (S n)) j.
 Proof.
-  rewrite Cpow_nth_root.
+  rewrite exp_nth_root.
   f_equal.
   lia.
  Qed.
@@ -520,7 +517,7 @@ Lemma nth_root_pow_eq (n j k : nat) :
 Proof.
   intros.
   destruct n; try lia.
-  by rewrite !Cpow_nth_root -nth_root_eq.
+  by rewrite !exp_nth_root -nth_root_eq.
 Qed.
 
 Lemma nth_root_1_iff  n j :
@@ -594,7 +591,7 @@ Proof.
   rewrite mulrC Cinv_r //.
 Qed.  
 
-Lemma Cpow_sub_r (c : R[i]) (n m : nat):
+Lemma exp_sub_r (c : R[i]) (n m : nat):
   (le m n) ->
   c <> 0 ->
   exp c (n - m) = (exp c n) / (exp  c m).
@@ -619,7 +616,7 @@ Proof.
   rewrite (prim_nth_root k _).
   rewrite (prim_nth_root j _).
   rewrite (prim_nth_root (k-j) _).
-  rewrite Cpow_sub_r; trivial.
+  rewrite exp_sub_r; trivial.
   apply nth_root_not_0.
 Qed.
 
@@ -699,7 +696,7 @@ Lemma nth_root_half_pow_aux n :
   exp (nth_root (S n) (2 * (S n))) 2 = 1.
 Proof.
   replace (muln 2 (S n)) with (S (2 * n + 1)) by lia.
-  rewrite Cpow_nth_root.
+  rewrite exp_nth_root.
   do 2 replace (muln 2 (S n)) with (S (2 * n + 1)) by lia.
   now rewrite nth_root_Sn.
 Qed.
@@ -800,7 +797,7 @@ Proof.
   generalize (pow2_S (S n)); intros.
   destruct H.
   rewrite H.
-  rewrite Cpow_nth_root.
+  rewrite exp_nth_root.
   rewrite <- H.
   assert ((2 ^ n * (2 * j + 1) mod (2 ^ S n)) =
            (2 ^ n mod (2 ^ S n)))%N.
@@ -834,7 +831,7 @@ Lemma nth_root_half n :
 Proof.
   destruct (pow2_S (S n)).
   generalize (odd_roots_prim 0 n); intros.
-  rewrite H Cpow_nth_root -H in H0.
+  rewrite H exp_nth_root -H in H0.
   by rewrite muln0 add0n muln1 in H0.
 Qed.
 
@@ -850,7 +847,7 @@ Definition Nat2Zinj := (Nat2Z.inj_mod, Nat2Z.inj_mul, Nat2Z.inj_add, Nat2Z.inj_s
 Lemma inv_pow_nth_root j k :
   exp (nth_root j (S k)) k = inv (nth_root j (S k)).
 Proof.
-  rewrite nth_root_inv Cpow_nth_root -nth_root_eq.
+  rewrite nth_root_inv exp_nth_root -nth_root_eq.
   apply Nat2Z.inj.
   rewrite !Nat2Zinj.
   - rewrite Zdiv.Zmult_mod Zdiv.Zminus_mod.
