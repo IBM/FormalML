@@ -129,7 +129,7 @@ Proof.
 Qed.
 
 Lemma nth_root_npow j n :
-  exp (nth_root j (S n)) (S n) = RtoC R1.
+  exp (nth_root j (S n)) (S n) = 1.
 Proof.
   by rewrite Cpow_nth_root mulnC nth_root_2PI.
 Qed.
@@ -187,14 +187,11 @@ Proof.
  Qed.
 
 Lemma nth_root_not_0 j n :
-  nth_root j (S n) <> RtoC Rdefinitions.R0.
+  nth_root j (S n) <> 0.
 Proof.
-  unfold nth_root.
-  unfold RtoC.
-  generalize cos_sin_0; intros.
-  specialize (H (2 * PI * INR j / INR (S n))%R).
-  unfold not.
-  intros.
+  rewrite /nth_root.
+  generalize (cos_sin_0 (2 * PI * INR j / INR (S n))%R); intros.
+  intros ?.
   apply H.
   split.
   - by apply (f_equal (fun c => Re c)) in H0.
@@ -202,8 +199,8 @@ Proof.
  Qed.
 
 Lemma cos1_sin0 (x : R) :
-  cos x = R1 ->
-  sin x = Rdefinitions.R0.
+  cos x = 1 ->
+  sin x = 0.
 Proof.
   intros eqq1.
   generalize (cos2 x).
@@ -415,7 +412,7 @@ Qed.
 *)
 
 Lemma cos_eq_1_nneg (x : R) :
-  cos x = R1 ->
+  cos x = 1 ->
   0 <= x ->
   exists (k:nat), x = (2 * PI * INR(k))%R.
 Proof.
@@ -538,7 +535,7 @@ Qed.
 
 Lemma nth_root_1 j n :
   j mod (S n) = 0%N ->
-  nth_root j (S n) = RtoC R1.
+  nth_root j (S n) = 1.
 Proof.
   intros.
   rewrite (nth_root_mod j 0 n).
@@ -556,7 +553,7 @@ Proof.
 Qed.
 
 Lemma pow_nth_root_prim n :
-  exp (nth_root 1 (S n)) (S n) = RtoC R1.  
+  exp (nth_root 1 (S n)) (S n) = 1.  
 Proof.
   unfold nth_root.
   rewrite de_moivre.
@@ -570,7 +567,7 @@ Proof.
 Qed.
 
 Lemma pow_nth_root j n :
-  exp (nth_root j (S n)) (S n) = RtoC R1.
+  exp (nth_root j (S n)) (S n) = 1.
 Proof.
   by rewrite prim_nth_root -exprM mulnC exprM pow_nth_root_prim expr1n.
 Qed.
@@ -586,19 +583,21 @@ Proof.
  Qed.
 
 Lemma nth_root_Sn n :
-  nth_root (S n) (S n) = RtoC 1%R.
+  nth_root (S n) (S n) = 1.
 Proof.
   by rewrite prim_nth_root nth_root_npow.
 Qed.
 
 Definition Cdiv (x y : R[i]) := x * (inv y).
 
+(*
 Lemma Cinv_1_r :
   inv 1 = RtoC 1%R.
 Proof.
   unfold RtoC.
   now rewrite Theory.invr1.
 Qed.
+*)
 
 Lemma Cinv_r (x : R[i]) :
   x <> 0 ->
