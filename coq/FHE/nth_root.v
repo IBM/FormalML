@@ -523,26 +523,6 @@ Proof.
   by rewrite !Cpow_nth_root -nth_root_eq.
 Qed.
 
-Lemma nth_root_not_1 j n :
-  j mod (S n) <> 0%N ->
-  nth_root j (S n) <> 1.
-Proof.
-  intros ??.
-  rewrite -(nth_root_0 n) -nth_root_eq in H0.
-  rewrite H0 in H.
-  rewrite Nat.mod_small in H; lia.
-Qed.
-
-Lemma nth_root_1 j n :
-  j mod (S n) = 0%N ->
-  nth_root j (S n) = 1.
-Proof.
-  intros.
-  rewrite (nth_root_mod j 0 n).
-  - by rewrite nth_root_0.
-  - by rewrite H Nat.mod_small; lia.
-Qed.
-
 Lemma nth_root_1_iff  n j :
   nth_root j (S n) = 1 <-> j mod (S n) = 0%N.
 Proof.
@@ -550,6 +530,15 @@ Proof.
   rewrite <- nth_root_eq.
   replace (0 mod S n) with 0%N; try easy.
   rewrite Nat.mod_small; lia.
+Qed.
+
+Lemma nth_root_not_1 j n :
+  j mod (S n) <> 0%N ->
+  nth_root j (S n) <> 1.
+Proof.
+  intros ??.
+  rewrite nth_root_1_iff in H0.
+  by rewrite H0 in H.
 Qed.
 
 Lemma pow_nth_root_prim n :
@@ -587,17 +576,6 @@ Lemma nth_root_Sn n :
 Proof.
   by rewrite prim_nth_root nth_root_npow.
 Qed.
-
-Definition Cdiv (x y : R[i]) := x * (inv y).
-
-(*
-Lemma Cinv_1_r :
-  inv 1 = RtoC 1%R.
-Proof.
-  unfold RtoC.
-  now rewrite Theory.invr1.
-Qed.
-*)
 
 Lemma Cinv_r (x : R[i]) :
   x <> 0 ->
