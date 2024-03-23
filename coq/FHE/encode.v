@@ -463,7 +463,7 @@ Qed.
 
 Definition ConstVector n (c : R[i]) : 'rV[R[i]]_n:= const_mx c.
 
-Definition RtoC (x : R):R[i] := Complex x 0%R.
+Definition RtoC (x : R):R[i] := Complex x 0.
 
 (* Coercion RtoC : R >-> complex. *)
 
@@ -1550,6 +1550,20 @@ Proof.
 Qed.
 
 Canonical ev_C_rmorphism (x:R[i]) := RMorphism (ev_C_is_rmorphism x).
+
+Lemma comp_poly_is_rmorphism (p : {poly R}) :
+  rmorphism (fun (q : {poly R}) => comp_poly p q).
+Proof.
+  constructor.
+  - intros ??.
+    by rewrite comp_polyB.
+  - split.
+    + intros ??.
+      by rewrite comp_polyM.
+    + by rewrite comp_polyC.
+Qed.
+
+Canonical comp_poly_rmorphism (p : {poly R}) := RMorphism (comp_poly_is_rmorphism p).
 
 Lemma sum_conj (n : nat) (F : 'I_n -> R[i]) :
   conjc (\sum_(i < n) (F i)) = \sum_(i<n) conjc (F i).
