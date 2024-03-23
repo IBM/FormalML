@@ -525,7 +525,26 @@ Proof.
   apply pow_nth_root.
 Qed.
 
-
+Lemma odd_nth_roots_pow (n : nat) (c : R[i]) :
+  c ^+ (2 ^ (S n)) = -1 ->
+  forall j,
+    (c ^+ (2 * j + 1)) ^+ (2 ^ (S n)) = -1.
+Proof.
+  intros.
+  by rewrite exprAC -exprM exprM H exprD exprM expr1 expr2 mulrNN mulr1 expr1n mul1r.
+Qed.
+  
+Lemma odd_nth_roots_powk (n : nat) (c : R[i]) :
+  c ^+ (2 ^ (S n)) = -1 ->
+  forall j k,
+    (c ^+ ((2 * j + 1)^k)) ^+ (2 ^ (S n)) = -1.
+Proof.
+  intros.
+  rewrite -exprM mulnC exprM H.
+  induction k.
+  - by rewrite expn0 expr1.
+  - by rewrite expnS mulnC exprM IHk exprD exprM expr1 expr2 mulrNN mulr1 expr1n mul1r.
+Qed.
 
 Lemma decode_encode_on_diag (n : nat):
   let pmat := (peval_mat (odd_nth_roots (S n))) in
