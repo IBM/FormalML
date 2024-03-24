@@ -43,21 +43,6 @@ Qed.
   
 Local Open Scope ring_scope.
 
-(*
-Record ENCODE : Type :=
-  mkENCODE
-    { clear : {poly int} ;
-      scale : nat
-    }.
-
-Record FHE : Type := 
-  mkFHE
-    { q : nat; 
-      cypher : {poly {poly 'Z_q}} ;
-      norm_bound : R ; 
-      noise_bound : R
-    }.
-*)
 
 Section construct.
   
@@ -544,6 +529,14 @@ Proof.
   induction k.
   - by rewrite expn0 expr1.
   - by rewrite expnS mulnC exprM IHk exprD exprM expr1 expr2 mulrNN mulr1 expr1n mul1r.
+Qed.
+
+Lemma odd_nth_roots_conj (n : nat) (c : R[i]) :
+  c ^+ (2 ^ n.+1) = -1 ->
+  (conjc c) ^+ (2^n.+1) = -1.
+Proof.
+  intros.
+  by rewrite -rmorphXn /= H rmorphN1.
 Qed.
 
 Lemma decode_encode_on_diag (n : nat):
