@@ -54,6 +54,9 @@ Definition polyR_divz (a : {poly R}) (d : int) : {poly int} :=
 Definition div_round (p : {poly int}) (den : int) : {poly int} :=
   polyR_divz (rlift p) den.
 
+Definition div_round_q {q : nat} (p : {poly 'Z_q}) (den : int) : {poly int} :=
+  div_round (zlift p) den.
+
 Definition q_reduce (q : nat) (p : {poly int}) : {poly 'Z_q} :=
   map_poly (fun c => c%:~R) p.
 
@@ -69,11 +72,11 @@ Definition ev_key {q p : nat} (s e : {poly int}) (a : {poly 'Z_(p*q)}) :=
 Definition linearize {q p : nat} (c0 c1 c2 : {poly 'Z_q}) 
   (evkey : {poly {poly 'Z_(p*q)}}) :=
   Poly [:: c0; c1] +
-    map_poly (fun P => q_reduce q (div_round (zlift ((plift p c2) * P)) (p%:Z)))
+    map_poly (fun P => q_reduce q (div_round_q ((plift p c2) * P) (p%:Z)))
                                evkey.
 
 Definition rescale {q1 q2 : nat} (p : {poly 'Z_(q1 * q2)}) : {poly 'Z_q2} :=
-  q_reduce q2 (div_round (zlift p) q1%:Z).
+  q_reduce q2 (div_round_q p q1%:Z).
 
 Definition FHE_mult  {q p : nat} (P Q : {poly {poly 'Z_q}}) 
   (evkey : {poly {poly 'Z_(p*q)}}) :=
@@ -82,13 +85,14 @@ Definition FHE_mult  {q p : nat} (P Q : {poly {poly 'Z_q}})
 
 Definition key_switch {q p : nat} (c0 c1 : {poly 'Z_q})
   (ks_key : {poly {poly 'Z_(p*q)}}) : {poly {poly 'Z_q}} :=
-  c0%:P + map_poly (fun P => q_reduce q (div_round (zlift ((plift p c1) * P)) (p%:Z)))
+  c0%:P + map_poly (fun P => q_reduce q (div_round_q ((plift p c1) * P) (p%:Z)))
                    ks_key.
   
-Definition FHE_auto  {q p : nat} (P : {poly {poly 'Z_q}}) (j : nat)
-  (ks_key : {poly {poly 'Z_(p*q)}}) : {poly {poly 'Z_q}} :=
-  key_switch (comp_poly ('X^ (2*j+1)) P`_0)
-    (comp_poly ('X^ (2*j+1)) P`_1)
-    ks_key. (* associated to 2*j+1 *)
+Definition FHE_automorph  {q p : nat} (s e : {poly int}) 
+                     (a : {poly 'Z_(p*q)}) (P : {poly {poly 'Z_q}}) (j : nat) :=
+  key_switch (comp_poly 'X^(2*j+1) P`_0)
+    (comp_poly 'X^(2*j+1) P`_1)
+    (key_switch_key s (comp_poly 'X^(2*j+1) s) e a).
+
 
 
