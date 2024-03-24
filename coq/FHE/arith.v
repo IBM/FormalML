@@ -85,3 +85,10 @@ Definition key_switch {q p : nat} (c0 c1 : {poly 'Z_q})
   c0%:P + map_poly (fun P => q_reduce q (div_round (zlift ((plift p c1) * P)) (p%:Z)))
                    ks_key.
   
+Definition FHE_auto  {q p : nat} (P : {poly {poly 'Z_q}}) (j : nat)
+  (ks_key : {poly {poly 'Z_(p*q)}}) : {poly {poly 'Z_q}} :=
+  key_switch (comp_poly ('X^ (2*j+1)) P`_0)
+    (comp_poly ('X^ (2*j+1)) P`_1)
+    ks_key. (* associated to 2*j+1 *)
+
+
