@@ -123,7 +123,8 @@ FHE = \
       nth_root \
       encode \
       encrypt \
-      zp_prim_root
+      zp_prim_root \
+      arith
 
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	$(addprefix CertRL/LM/,$(ELFIC_UTILS)) \
