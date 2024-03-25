@@ -62,6 +62,15 @@ Definition div_round_q {q : nat} (p : {poly 'Z_q}) (den : int) : {poly int} :=
 Definition q_reduce (q : nat) (p : {poly int}) : {poly 'Z_q} :=
   map_poly (fun c => c%:~R) p.
 
+Lemma q_reduce_is_rmorphism (q : nat) :
+  rmorphism (q_reduce q).
+Proof.
+  unfold q_reduce.
+  apply map_poly_is_rmorphism.
+Qed.        
+
+Canonical q_reduce_rmorphism (q : nat) := RMorphism (q_reduce_is_rmorphism q).
+
 Definition public_key {q : nat} (e s : {poly int}) (a : {poly 'Z_q})  : {poly {poly 'Z_q}} :=
   Poly [:: (- a * (q_reduce q s) + (q_reduce q e)); a].
 
@@ -114,6 +123,12 @@ Definition linearize {q p : nat} (c0 c1 c2 : {poly 'Z_q})
     map_poly (fun P => q_reduce q (div_round_q ((plift p c2) * P) (p%:Z)))
                                evkey.
 
+Lemma linearize_prop  {q p : nat} (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
+  (map_poly (fun P => q_reduce q (div_round_q ((plift p c2) * P) (p%:Z)))
+     (ev_key s e a)).[q_reduce q s] = c2 * (q_reduce q (exp s 2)).
+Proof.
+  Admitted.
+
 Definition rescale {q1 q2 : nat} (p : {poly 'Z_(q1 * q2)}) : {poly 'Z_q2} :=
   q_reduce q2 (div_round_q p q1%:Z).
 
@@ -121,6 +136,44 @@ Definition FHE_mult  {q p : nat} (P Q : {poly {poly 'Z_q}})
   (evkey : {poly {poly 'Z_(p*q)}}) :=
   let PQ := FHE_mult_base P Q in
   linearize (PQ`_0) (PQ`_1) (PQ`_2) evkey.
+
+Lemma decrypt_mult {p q : nat} (P Q : {poly 'Z_q}) (PP QQ : {poly {poly 'Z_q}}) 
+  (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
+  FHE_decrypt s PP = P ->
+  FHE_decrypt s QQ = Q ->
+  size PP = 2%N ->
+  size QQ = 2%N ->
+  FHE_decrypt s (FHE_mult PP QQ (ev_key s e a)) = P * Q.
+Proof.
+  intros.
+  rewrite -(decrypt_mult_base P Q PP QQ s) //.
+  rewrite /FHE_mult /linearize /FHE_mult_base /FHE_decrypt hornerD.
+  rewrite linearize_prop.
+  assert (size (PP * QQ) <= 3%N).
+  {
+    generalize (size_mul_leq PP QQ); intros.
+    by rewrite H1 H2 in H3.
+  }
+  replace (q_reduce q (s ^+ 2)) with
+    ((q_reduce q s) ^+ 2).
+  - assert (PP * QQ = Poly [:: (PP * QQ)`_0; (PP * QQ)`_1; (PP * QQ)`_2]).
+    {
+      replace (PP * QQ) with (take_poly 3 (PP * QQ)) at 1.
+      - unfold take_poly.
+        rewrite -polyP.
+        intros ?.
+        rewrite coef_poly.
+        admit.
+      - rewrite take_poly_id //.
+    }
+    rewrite {4}H4.
+    rewrite !horner_Poly /= mul0r !add0r.
+    rewrite mulrDl.
+    rewrite addrC -!addrA.
+    f_equal.
+    by rewrite expr2 mulrA.
+  - by rewrite rmorphXn.
+  Admitted.
 
 Definition key_switch {q p : nat} (c0 c1 : {poly 'Z_q})
   (ks_key : {poly {poly 'Z_(p*q)}}) : {poly {poly 'Z_q}} :=
@@ -133,7 +186,7 @@ Definition FHE_automorphism  {q p : nat} (s e : {poly int})
     (comp_poly 'X^(2*j+1) P`_1)
     (key_switch_key s (comp_poly 'X^(2*j+1) s) e a).
 
-Lemma FHE_automorphism_base  {q p : nat} (s : {poly int}) (P : {poly 'Z_q})
+Lemma decrypt_FHE_automorphism_base  {q p : nat} (s : {poly int}) (P : {poly 'Z_q})
   (PP : {poly {poly 'Z_q}}) (j : nat) :
   FHE_decrypt s PP = P ->
   comp_poly 'X^(2*j+1) P = FHE_decrypt (comp_poly 'X^(2*j+1) s)
