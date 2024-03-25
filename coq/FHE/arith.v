@@ -91,6 +91,16 @@ Proof.
   by rewrite hornerD H H0.
 Qed.
 
+Lemma decrypt_mult_base {q : nat} (P Q : {poly 'Z_q}) (PP QQ : {poly {poly 'Z_q}}) (s : {poly int}) :
+  FHE_decrypt s PP = P ->
+  FHE_decrypt s QQ = Q ->
+  FHE_decrypt s (FHE_mult_base PP QQ) = P * Q.
+Proof.
+  rewrite /FHE_decrypt /FHE_mult_base.
+  intros.
+  by rewrite hornerM H H0.
+Qed.
+
 Definition key_switch_key {q p : nat} (s s2 e : {poly int}) (a : {poly 'Z_(p*q)}) : {poly {poly 'Z_(p*q)}} := 
   Poly [:: (-a * (q_reduce (p * q) s) + (q_reduce (p * q) e) + (q_reduce (p * q) (s2 *+ p))); a].
 
