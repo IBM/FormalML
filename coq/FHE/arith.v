@@ -31,6 +31,8 @@ Record FHE : Type :=
     }.
 
 
+
+
 Definition FHE_add {q : nat}  (P Q : {poly {poly 'Z_q}} ) := P + Q.
 
 Definition FHE_mult_base {q : nat} (P Q : {poly {poly 'Z_q}} ) := P * Q.
@@ -63,6 +65,32 @@ Definition q_reduce (q : nat) (p : {poly int}) : {poly 'Z_q} :=
 Definition public_key {q : nat} (e s : {poly int}) (a : {poly 'Z_q})  : {poly {poly 'Z_q}} :=
   Poly [:: (- a * (q_reduce q s) + (q_reduce q e)); a].
 
+Definition FHE_encrypt {q : nat} (p : {poly 'Z_q}) (evkey : {poly {poly 'Z_q}}) :=
+  p %:P + evkey.
+
+Definition FHE_decrypt {q : nat} (s : {poly int}) (pp : {poly {poly 'Z_q}}) :=
+  pp.[q_reduce q s].
+
+Lemma decrypt_encrypt {q : nat} (e s : {poly int}) (a p : {poly 'Z_q}) :
+  FHE_decrypt s (FHE_encrypt p (public_key e s a)) = p + (q_reduce q e).
+Proof.
+  rewrite /FHE_decrypt /FHE_encrypt /public_key.
+  rewrite hornerD hornerC.
+  f_equal.
+  rewrite horner_Poly /= mul0r add0r.
+  by rewrite addrA -mulrDl subrr mul0r add0r.
+Qed.  
+
+Lemma decrypt_add {q : nat} (P Q : {poly 'Z_q}) (PP QQ : {poly {poly 'Z_q}}) (s : {poly int}) :
+  FHE_decrypt s PP = P ->
+  FHE_decrypt s QQ = Q ->
+  FHE_decrypt s (FHE_add PP QQ) = P + Q.
+Proof.
+  rewrite /FHE_decrypt /FHE_add.
+  intros.
+  by rewrite hornerD H H0.
+Qed.
+
 Definition key_switch_key {q p : nat} (s s2 e : {poly int}) (a : {poly 'Z_(p*q)}) : {poly {poly 'Z_(p*q)}} := 
   Poly [:: (-a * (q_reduce (p * q) s) + (q_reduce (p * q) e) + (q_reduce (p * q) (s2 *+ p))); a].
 
@@ -88,7 +116,7 @@ Definition key_switch {q p : nat} (c0 c1 : {poly 'Z_q})
   c0%:P + map_poly (fun P => q_reduce q (div_round_q ((plift p c1) * P) (p%:Z)))
                    ks_key.
   
-Definition FHE_automorph  {q p : nat} (s e : {poly int}) 
+Definition FHE_automorphism  {q p : nat} (s e : {poly int}) 
                      (a : {poly 'Z_(p*q)}) (P : {poly {poly 'Z_q}}) (j : nat) :=
   key_switch (comp_poly 'X^(2*j+1) P`_0)
     (comp_poly 'X^(2*j+1) P`_1)
