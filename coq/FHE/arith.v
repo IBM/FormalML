@@ -133,5 +133,19 @@ Definition FHE_automorphism  {q p : nat} (s e : {poly int})
     (comp_poly 'X^(2*j+1) P`_1)
     (key_switch_key s (comp_poly 'X^(2*j+1) s) e a).
 
-
-
+Lemma FHE_automorphism_base  {q p : nat} (s : {poly int}) (P : {poly 'Z_q})
+  (PP : {poly {poly 'Z_q}}) (j : nat) :
+  FHE_decrypt s PP = P ->
+  comp_poly 'X^(2*j+1) P = FHE_decrypt (comp_poly 'X^(2*j+1) s)
+                                       (map_poly (comp_poly 'X^(2*j+1)) PP).
+Proof.
+  rewrite /FHE_decrypt.
+  intros.
+  replace (q_reduce q (s \Po 'X^(2 * j + 1))) with
+    (comp_poly 'X^(2*j+1) (q_reduce q s)).
+  - by rewrite horner_map /= H.
+  - rewrite /q_reduce map_comp_poly /=.
+    f_equal.
+    by rewrite map_polyXn.
+Qed.
+    
