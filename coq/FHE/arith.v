@@ -162,8 +162,10 @@ Proof.
       - unfold take_poly.
         rewrite -polyP.
         intros ?.
-        rewrite coef_poly.
-        admit.
+        rewrite coef_poly coef_Poly.
+        case: leqP => ineq.
+        + by rewrite nth_default.
+        + by rewrite -(nth_mkseq 0 (fun i => (PP * QQ)`_i) ineq).
       - rewrite take_poly_id //.
     }
     rewrite {4}H4.
@@ -173,7 +175,8 @@ Proof.
     f_equal.
     by rewrite expr2 mulrA.
   - by rewrite rmorphXn.
-  Admitted.
+Qed.
+
 
 Definition key_switch {q p : nat} (c0 c1 : {poly 'Z_q})
   (ks_key : {poly {poly 'Z_(p*q)}}) : {poly {poly 'Z_q}} :=
