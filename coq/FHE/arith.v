@@ -65,20 +65,21 @@ Definition q_reduce (q : nat) (p : {poly int}) : {poly 'Z_q} :=
 Definition public_key {q : nat} (e s : {poly int}) (a : {poly 'Z_q})  : {poly {poly 'Z_q}} :=
   Poly [:: (- a * (q_reduce q s) + (q_reduce q e)); a].
 
-Definition FHE_encrypt {q : nat} (p : {poly 'Z_q}) (evkey : {poly {poly 'Z_q}}) :=
-  p %:P + evkey.
+Definition FHE_encrypt {q : nat} (p : {poly 'Z_q}) (v e0 e1 : {poly int}) (evkey : {poly {poly 'Z_q}}) :=
+  Poly [:: (p + q_reduce q e0); q_reduce q e1] + (q_reduce q v) *: evkey.
 
 Definition FHE_decrypt {q : nat} (s : {poly int}) (pp : {poly {poly 'Z_q}}) :=
   pp.[q_reduce q s].
 
-Lemma decrypt_encrypt {q : nat} (e s : {poly int}) (a p : {poly 'Z_q}) :
-  FHE_decrypt s (FHE_encrypt p (public_key e s a)) = p + (q_reduce q e).
+Lemma decrypt_encrypt {q : nat} (e s v e0 e1 : {poly int}) (a p : {poly 'Z_q}) :
+  FHE_decrypt s (FHE_encrypt p v e0 e1 (public_key e s a)) = 
+    p + (q_reduce q e0) + q_reduce q e1 * q_reduce q s + q_reduce q v * q_reduce q e.
 Proof.
   rewrite /FHE_decrypt /FHE_encrypt /public_key.
-  rewrite hornerD hornerC.
+  rewrite hornerD hornerZ !horner_Poly /= mul0r !add0r.
+  rewrite !mulrDr !addrA.
   f_equal.
-  rewrite horner_Poly /= mul0r add0r.
-  by rewrite addrA -mulrDl subrr mul0r add0r.
+  by rewrite -addrA -mulrDr -mulrDl subrr mul0r mulr0 addr0 -addrA addrC.
 Qed.  
 
 Lemma decrypt_add {q : nat} (P Q : {poly 'Z_q}) (PP QQ : {poly {poly 'Z_q}}) (s : {poly int}) :
