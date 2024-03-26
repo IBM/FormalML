@@ -54,17 +54,21 @@ Proof.
   apply map_poly0.
 Qed.  
 
+Lemma zlift0_alt {q : nat} :
+  zlift (zero (poly_zmodType (Zp_ringType (Zp_trunc q)))) = 0.
+Proof.
+  rewrite /zlift.
+  apply map_poly0.
+Qed.  
+
 Definition rlift (a : {poly int}) : {poly R} :=
   map_poly (fun c => c%:~R) a.
 
-Lemma rlift0 (a : {poly int}) :
-  a = 0 -> 
-  rlift a = 0.
+Lemma rlift0 :
+  rlift (zero (poly_zmodType int_Ring)) = 0.
 Proof.
-  intros.
-  rewrite /rlift H.
-  apply map_poly0.
-Qed.  
+  by apply map_poly0.
+Qed.
 
 Definition nearest_round_int (c : R) : int := ssrZ.int_of_Z (nearest_round c).
 
@@ -74,24 +78,15 @@ Definition polyR_divz (a : {poly R}) (d : int) : {poly int} :=
 Definition div_round (p : {poly int}) (den : int) : {poly int} :=
   polyR_divz (rlift p) den.
 
-Lemma div_round0 (p : {poly int}) (den : int) :
-  p = 0 -> div_round p den = 0.
+Lemma div_round0 (den : int) :
+  div_round (zero (poly_zmodType int_Ring)) den = 0.
 Proof.
-  intros.
-  rewrite /div_round H rlift0 // /polyR_divz.
+  rewrite /div_round rlift0 /polyR_divz.
   apply map_poly0.
 Qed.
 
 Definition div_round_q {q : nat} (p : {poly 'Z_q}) (den : int) : {poly int} :=
   div_round (zlift p) den.
-
-Lemma div_round_q_0 {q : nat} (p : {poly 'Z_q}) (den : int) :
-  p = 0 -> div_round_q p den = 0.
-Proof.
-  intros.
-  rewrite /div_round_q H zlift0 //.
-  by apply div_round0.
-Qed.
 
 Definition q_reduce (q : nat) (p : {poly int}) : {poly 'Z_q} :=
   map_poly (fun c => c%:~R) p.
@@ -166,7 +161,7 @@ Proof.
   rewrite map_Poly_id0.
   - rewrite horner_Poly /= mul0r add0r.
     admit.
-  - by rewrite mulr0 div_round_q_0 // rmorph0.
+  - by rewrite mulr0 /div_round_q zlift0 // div_round0 rmorph0.
 Admitted.
 
 Definition rescale {q1 q2 : nat} (p : {poly 'Z_(q1 * q2)}) : {poly 'Z_q2} :=
