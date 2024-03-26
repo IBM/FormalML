@@ -125,8 +125,27 @@ Definition linearize {q p : nat} (c0 c1 c2 : {poly 'Z_q})
 
 Lemma linearize_prop  {q p : nat} (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   (map_poly (fun P => q_reduce q (div_round_q ((plift p c2) * P) (p%:Z)))
-     (ev_key s e a)).[q_reduce q s] = c2 * (q_reduce q (exp s 2)).
+     (ev_key s e a)).[q_reduce q s] = 
+    c2 * (q_reduce q (exp s 2)) + q_reduce q (div_round_q ((plift p c2) * (q_reduce (p * q) e)) p). 
 Proof.
+  rewrite /ev_key /key_switch_key.
+  rewrite map_polyE.
+  
+  rewrite horner_coef.
+  rewrite /map_poly.
+  generalize coefK; intros.
+(*
+  rewrite coefK.
+  unfold horner_rec.
+  simpl.
+  simpl.
+  Search (Poly _).[_].
+  rewrite
+  rewrite horner_poly.
+  rewrite /map_poly horner_poly.
+
+  rewrite coef_poly.
+*)
   Admitted.
 
 Definition rescale {q1 q2 : nat} (p : {poly 'Z_(q1 * q2)}) : {poly 'Z_q2} :=
@@ -143,7 +162,8 @@ Lemma decrypt_mult {p q : nat} (P Q : {poly 'Z_q}) (PP QQ : {poly {poly 'Z_q}})
   FHE_decrypt s QQ = Q ->
   size PP = 2%N ->
   size QQ = 2%N ->
-  FHE_decrypt s (FHE_mult PP QQ (ev_key s e a)) = P * Q.
+  FHE_decrypt s (FHE_mult PP QQ (ev_key s e a)) = 
+    P * Q + q_reduce q (div_round_q ((plift p (PP * QQ)`_2) * (q_reduce (p * q) e)) p). 
 Proof.
   intros.
   rewrite -(decrypt_mult_base P Q PP QQ s) //.
@@ -170,13 +190,14 @@ Proof.
     }
     rewrite {4}H4.
     rewrite !horner_Poly /= mul0r !add0r.
+(*
     rewrite mulrDl.
     rewrite addrC -!addrA.
     f_equal.
     by rewrite expr2 mulrA.
   - by rewrite rmorphXn.
-Qed.
-
+*)
+Admitted.
 
 Definition key_switch {q p : nat} (c0 c1 : {poly 'Z_q})
   (ks_key : {poly {poly 'Z_(p*q)}}) : {poly {poly 'Z_q}} :=
