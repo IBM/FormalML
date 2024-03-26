@@ -129,24 +129,13 @@ Lemma linearize_prop  {q p : nat} (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {po
     c2 * (q_reduce q (exp s 2)) + q_reduce q (div_round_q ((plift p c2) * (q_reduce (p * q) e)) p). 
 Proof.
   rewrite /ev_key /key_switch_key.
-  rewrite map_polyE.
-  
-  rewrite horner_coef.
-  rewrite /map_poly.
-  generalize coefK; intros.
-(*
-  rewrite coefK.
-  unfold horner_rec.
-  simpl.
-  simpl.
-  Search (Poly _).[_].
-  rewrite
-  rewrite horner_poly.
-  rewrite /map_poly horner_poly.
-
-  rewrite coef_poly.
-*)
-  Admitted.
+  rewrite map_Poly_id0.
+  - rewrite horner_Poly /= mul0r add0r.
+    admit.
+  - rewrite mulr0.
+    rewrite /div_round_q.
+    admit.
+Admitted.
 
 Definition rescale {q1 q2 : nat} (p : {poly 'Z_(q1 * q2)}) : {poly 'Z_q2} :=
   q_reduce q2 (div_round_q p q1%:Z).
