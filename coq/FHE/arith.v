@@ -152,6 +152,19 @@ Definition linearize {q p : nat} (c0 c1 c2 : {poly 'Z_q})
     map_poly (fun P => q_reduce q (div_round_q ((plift p c2) * P) (p%:Z)))
                                evkey.
 
+Lemma q_div_round_is_rmorphism (q p : nat) :
+  rmorphism (fun P : {poly 'Z_(p*q)} => q_reduce q (div_round_q P p)).
+Proof.
+  constructor.
+  - admit.
+  - constructor.
+    + admit.
+    + rewrite /q_reduce /div_round_q /zlift /div_round /polyR_divz /rlift.
+      generalize map_polyC; intros.
+  Admitted.
+
+Canonical q_div_round_rmorphism (q p : nat) := RMorphism (q_div_round_is_rmorphism q p).
+
 Lemma linearize_prop  {q p : nat} (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   (map_poly (fun P => q_reduce q (div_round_q ((plift p c2) * P) (p%:Z)))
      (ev_key s e a)).[q_reduce q s] = 
@@ -159,7 +172,16 @@ Lemma linearize_prop  {q p : nat} (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {po
 Proof.
   rewrite /ev_key /key_switch_key.
   rewrite map_Poly_id0.
-  - rewrite horner_Poly /= mul0r add0r.
+  - rewrite horner_Poly /= mul0r add0r mulrDr.
+    generalize (rmorphD (q_div_round_rmorphism q p)); intros.
+    generalize (H  (plift p c2 * (- a * q_reduce (p * q) s + q_reduce (p * q) e))
+                   (plift p c2 * q_reduce (p * q) (s ^+ 2 *+ p))); intros.
+    simpl in H0; rewrite H0.
+    rewrite mulrDr.
+    specialize (H (plift p c2 * (- a * q_reduce (p * q) s))
+                  (plift p c2 * q_reduce (p * q) e)).
+    simpl in H; rewrite H.
+    
     admit.
   - by rewrite mulr0 /div_round_q zlift0 // div_round0 rmorph0.
 Admitted.
@@ -179,7 +201,7 @@ Lemma decrypt_mult {p q : nat} (P Q : {poly 'Z_q}) (PP QQ : {poly {poly 'Z_q}})
   size PP = 2%N ->
   size QQ = 2%N ->
   FHE_decrypt s (FHE_mult PP QQ (ev_key s e a)) = 
-    P * Q + q_reduce q (div_round_q ((plift p (PP * QQ)`_2) * (q_reduce (p * q) e)) p). 
+    P * Q + q_reduce q (div_round_q (plift p (PP * QQ)`_2 * q_reduce (p * q) e) p).
 Proof.
   intros.
   rewrite -(decrypt_mult_base P Q PP QQ s) //.
@@ -204,16 +226,12 @@ Proof.
         + by rewrite -(nth_mkseq 0 (fun i => (PP * QQ)`_i) ineq).
       - rewrite take_poly_id //.
     }
-    rewrite {4}H4.
-    rewrite !horner_Poly /= mul0r !add0r.
-(*
-    rewrite mulrDl.
-    rewrite addrC -!addrA.
+    rewrite {5}H4 !horner_Poly /= mul0r !add0r mulrDl addrC -!addrA.
     f_equal.
-    by rewrite expr2 mulrA.
+    + by rewrite expr2 mulrA.
+    + by rewrite addrC addrA.
   - by rewrite rmorphXn.
-*)
-Admitted.
+Qed.
 
 Definition key_switch {q p : nat} (c0 c1 : {poly 'Z_q})
   (ks_key : {poly {poly 'Z_(p*q)}}) : {poly {poly 'Z_q}} :=
