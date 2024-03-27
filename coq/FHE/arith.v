@@ -66,6 +66,14 @@ Qed.
 
 Definition nearest_round_int (n d : int) : int := ssrZ.int_of_Z (nearest_round ((n %:~R)/(d %:~R))).
 
+Lemma up_int_add (n : Z) (c : R) :
+  up (Rplus (IZR n) c) = Zplus n (up c).
+Proof.
+  symmetry.
+  destruct (archimed c).
+  apply tech_up; rewrite plus_IZR; coq_lra.
+Qed.  
+
 Lemma nearest_round_int_add (n1 : int) (c : R) :
   ssrZ.int_of_Z (nearest_round (n1 %:~R + c)) = n1 + ssrZ.int_of_Z (nearest_round c).
 Proof.
