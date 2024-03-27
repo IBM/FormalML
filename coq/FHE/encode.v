@@ -1137,7 +1137,7 @@ From mathcomp Require Import order.
 (* 0 <= rand < 1 *)
 Definition ran_round (x rand : R) :=
   let hi := up x in
-  if (Order.lt (Rminus (IZR hi) x) rand)%R then hi else (Zminus hi 1).
+  if (Order.lt ((IZR hi) - x) rand)%R then hi else (Zminus hi 1).
 
 Definition nearest_round (x : R) := ran_round x (1/2).
 
