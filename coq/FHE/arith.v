@@ -45,7 +45,6 @@ Definition plift {q : nat} (p : nat) (s : {poly 'Z_q}) : {poly 'Z_(p*q)} :=
 Definition zliftc {q : nat} (c : 'Z_q) : int :=
   if (c <= q/2) then c%:Z else c%:Z - q%:Z.
 
-
 Lemma modp_small_eq (q : nat) (m : nat) :
   m < (Zp_trunc q).+2 ->
   m = intmul (one (Zp_ringType (Zp_trunc q))) (Posz m).
@@ -60,9 +59,15 @@ Proof.
   - destruct c.
     apply ord_inj => /=.
     by apply modp_small_eq.
-
   - destruct c.
-    admit.
+    rewrite intrD.
+    assert (intmul (one (Zp_ringType (Zp_trunc q))) (opp (Posz q)) = 0).
+    {
+      admit.
+    }
+    rewrite H addr0.
+    apply ord_inj => /=.
+    by apply modp_small_eq.    
 Admitted.
 
 Definition zlift {q : nat} (a : {poly 'Z_q}) : {poly int} :=
@@ -116,16 +121,23 @@ Qed.
 Lemma upi_intl (n : int) (c : R) :
   upi ((n%:~R) + c) = n + upi c.
 Proof.
-  rewrite /upi.
-  rewrite !IZREb.
-  rewrite up_int_add.
+  rewrite /upi !IZREb up_int_add.
+  lia.
+Qed.
+
+Lemma upi0 :
+  upi 0 = 1.
+Proof.
+  rewrite /upi -(tech_up 0 1); try coq_lra.
   lia.
 Qed.
 
 Lemma nearest_round_int0 (d : int) :
   nearest_round_int 0 d = 0.
 Proof.
-  Admitted.
+  rewrite /nearest_round_int /nearest_round /ran_round.
+  rewrite mul0r upi0 oppr0 addr0 addrN.
+Admitted.
 
 Lemma nearest_round_int_add (n1 : int) (c : R) :
   nearest_round (n1 %:~R + c)%R = n1 + nearest_round c.
@@ -178,19 +190,19 @@ Proof.
   rewrite /div_round /map_poly -polyP.
   intros ?.
   rewrite !coefD !coef_poly coefD coefZ.
-  rewrite nearest_round_int_mul_add_r //.
   case: ltP.
-  - case : ltP; intros.
+  - rewrite nearest_round_int_mul_add_r //.
+    case : ltP; intros.
     + by [].
     + rewrite nth_default /=.
       * by rewrite nearest_round_int0.
       * apply/leP.
         by apply Nat.nlt_ge.
-  - case : ltP; intros.
+  - intros.
+    case : ltP; intros.
     + admit.
     + admit.
  Admitted.
-  
 
 Definition div_round_q {q : nat} (p : {poly 'Z_q}) (den : int) : {poly int} :=
   div_round (zlift p) den.
@@ -264,16 +276,6 @@ Definition linearize {q p : nat} (c0 c1 c2 : {poly 'Z_q})
     map_poly (fun P => q_reduce q (div_round_q ((plift p c2) * P) (p%:Z)))
                                evkey.
 
-Lemma q_div_round_is_additive (q p : nat) :
-  additive (fun P : {poly 'Z_(p*q)} => q_reduce q (div_round_q P p)).
-Proof.
-  intros ??.
-  Admitted.
-
-(*
-Canonical q_div_round_additive (q p : nat) := isAdditive (q_div_round_is_additive q p).
-*)
-
 
 Lemma linearize_prop  {q p : nat} (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   (map_poly (fun P => q_reduce q (div_round_q ((plift p c2) * P) (p%:Z)))
@@ -283,19 +285,6 @@ Proof.
   rewrite /ev_key /key_switch_key.
   rewrite map_Poly_id0.
   - rewrite horner_Poly /= mul0r add0r mulrDr.
-(*
-    generalize (raddfD (q_div_round_is_additive q p)); intros.
-    generalize (H  (plift p c2 * (- a * q_reduce (p * q) s + q_reduce (p * q) e))
-                   (plift p c2 * q_reduce (p * q) (s ^+ 2 *+ p))); intros.
-    simpl in H0; rewrite H0.
-    rewrite mulrDr.
-    specialize (H (plift p c2 * (- a * q_reduce (p * q) s))
-                  (plift p c2 * q_reduce (p * q) e)).
-    simpl in H; rewrite H.
-    
-    admit.
-  - by rewrite mulr0 /div_round_q zlift0 // div_round0 rmorph0.
-*)
 Admitted.
 
 Definition rescale {q1 q2 : nat} (p : {poly 'Z_(q1 * q2)}) : {poly 'Z_q2} :=
