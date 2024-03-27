@@ -105,9 +105,16 @@ Definition nearest_round_int (n d : int) : int := nearest_round ((n %:~R)/(d %:~
 
 Lemma IZRE (n : Z) : IZR n = (ssrZ.int_of_Z n)%:~R.
 Proof.
-Admitted.
+  destruct n.
+  - by rewrite /intmul /= /IZR R00.
+  - by rewrite /IZR -INR_IPR INRE /ssrZ.int_of_Z /intmul.
+  - rewrite /IZR -INR_IPR INRE /ssrZ.int_of_Z /intmul /opp /=.
+    f_equal; f_equal.
+    lia.
+Qed.    
 
 Lemma IZREb (n : int) :  n%:~R = IZR (ssrZ.Z_of_int n).
+Proof.
 Admitted.
 
 Lemma up_int_add (n : Z) (c : R) :
