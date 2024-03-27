@@ -64,7 +64,25 @@ Proof.
   apply map_poly0.
 Qed.  
 
-Definition nearest_round_int (n d : int) : int := ssrZ.int_of_Z (nearest_round ((n %:~R)/(d %:~R))).
+(* 0 <= rand < 1 *)
+
+From mathcomp Require Import order.
+
+Definition upi (c:R) : int := ssrZ.int_of_Z (up c).
+
+Definition ran_round (x rand : R) : int :=
+  let hi := upi x in
+  if (Order.lt (hi%:~R - x) rand)%R then hi else (hi - 1).
+
+Definition nearest_round (x : R) : int := ran_round x (1/2)%R.
+
+Definition nearest_round_int (n d : int) : int := nearest_round ((n %:~R)/(d %:~R))%R.
+
+Lemma IZRE (n : Z) : IZR n = (ssrZ.int_of_Z n)%:~R.
+Admitted.
+
+Lemma IZREb (n : int) :  n%:~R = IZR (ssrZ.Z_of_int n).
+Admitted.
 
 Lemma up_int_add (n : Z) (c : R) :
   up (Rplus (IZR n) c) = Zplus n (up c).
@@ -72,14 +90,27 @@ Proof.
   symmetry.
   destruct (archimed c).
   apply tech_up; rewrite plus_IZR; coq_lra.
-Qed.  
+Qed.
+
+Lemma upi_intl (n : int) (c : R) :
+  upi ((n%:~R) + c) = n + upi c.
+Proof.
+  rewrite /upi.
+  rewrite !IZREb.
+  rewrite up_int_add.
+  lia.
+Qed.
 
 Lemma nearest_round_int_add (n1 : int) (c : R) :
-  ssrZ.int_of_Z (nearest_round (n1 %:~R + c)) = n1 + ssrZ.int_of_Z (nearest_round c).
+  nearest_round (n1 %:~R + c)%R = n1 + nearest_round c.
 Proof.
   rewrite /nearest_round /ran_round.
-  
-  Admitted.
+  have ->: (upi (n1%:~R + c))%:~R - (n1%:~R + c)%R = ((upi c)%:~R - c).
+  {
+    rewrite upi_intl; lra.
+  }
+  case: Order.TotalTheory.ltP => _ ; by rewrite upi_intl; lra.
+Qed.
 
 Lemma nearest_round_int_mul_add (n1 n2 d : int) :
   d <> 0 ->
@@ -87,18 +118,12 @@ Lemma nearest_round_int_mul_add (n1 n2 d : int) :
 Proof.
   intros.
   rewrite /nearest_round_int -nearest_round_int_add.
-  f_equal.
-  f_equal.
-  replace (n1%:~R) with (Rdiv (n1 * d)%:~R d%:~R).
-  - admit.
-  - unfold Rdiv.
-    replace (n1 * d)%:~R with (Rmult (n1 %:~R) (d %:~R)).
-    + rewrite Rmult_assoc Rinv_r.
-      * admit.
-      * intros ?.
-        admit.
-    + admit.
-Admitted.
+  rewrite intrD intrM mulrDl.
+  rewrite -mulrA divff.
+  - f_equal; lra.
+  - rewrite intr_eq0.
+    by apply/eqP.
+Qed.
 
 Definition div_round (a : {poly int}) (d : int) : {poly int} :=
   map_poly (fun c => nearest_round_int c d) a.
