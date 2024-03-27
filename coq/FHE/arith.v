@@ -45,6 +45,19 @@ Definition plift {q : nat} (p : nat) (s : {poly 'Z_q}) : {poly 'Z_(p*q)} :=
 Definition zliftc {q : nat} (c : 'Z_q) : int :=
   if (c <= q/2) then c%:Z else c%:Z - q%:Z.
 
+Lemma zliftc_valid {q : nat} (c : 'Z_q) :
+  c = (zliftc c) %:~R.
+Proof.
+  unfold zliftc.
+  case: (c <= q/2).
+  - destruct c.
+    simpl.
+    apply ord_inj.
+    admit.
+  - destruct c.
+    admit.
+Admitted.
+
 Definition zlift {q : nat} (a : {poly 'Z_q}) : {poly int} :=
   map_poly zliftc a.
 
@@ -79,6 +92,7 @@ Definition nearest_round (x : R) : int := ran_round x (1/2)%R.
 Definition nearest_round_int (n d : int) : int := nearest_round ((n %:~R)/(d %:~R))%R.
 
 Lemma IZRE (n : Z) : IZR n = (ssrZ.int_of_Z n)%:~R.
+Proof.
 Admitted.
 
 Lemma IZREb (n : int) :  n%:~R = IZR (ssrZ.Z_of_int n).
@@ -100,6 +114,11 @@ Proof.
   rewrite up_int_add.
   lia.
 Qed.
+
+Lemma nearest_round_int0 (d : int) :
+  nearest_round_int 0 d = 0.
+Proof.
+  Admitted.
 
 Lemma nearest_round_int_add (n1 : int) (c : R) :
   nearest_round (n1 %:~R + c)%R = n1 + nearest_round c.
@@ -125,6 +144,15 @@ Proof.
     by apply/eqP.
 Qed.
 
+Lemma nearest_round_int_mul_add_r (n1 n2 d : int) :
+  d <> 0 ->
+  nearest_round_int (n1 + d * n2) d = nearest_round_int n1 d + n2.
+Proof.
+  intros.
+  rewrite mulrC addrC nearest_round_int_mul_add //.
+  lia.
+Qed.
+
 Definition div_round (a : {poly int}) (d : int) : {poly int} :=
   map_poly (fun c => nearest_round_int c d) a.
 
@@ -134,6 +162,28 @@ Proof.
   rewrite /div_round.
   apply map_poly0.
 Qed.
+
+Lemma div_round_mul_add (a b : {poly int}) (d : int) :
+  d <> 0 ->
+  div_round (a + d *: b) d = div_round a d + b.
+Proof.
+  intros.
+  rewrite /div_round /map_poly -polyP.
+  intros ?.
+  rewrite !coefD !coef_poly coefD coefZ.
+  rewrite nearest_round_int_mul_add_r //.
+  case: ltP.
+  - case : ltP; intros.
+    + by [].
+    + rewrite nth_default.
+      * by rewrite nearest_round_int0.
+      * simpl.
+        admit.
+  - case : ltP; intros.
+    + admit.
+    + admit.
+ Admitted.
+  
 
 Definition div_round_q {q : nat} (p : {poly 'Z_q}) (den : int) : {poly int} :=
   div_round (zlift p) den.
