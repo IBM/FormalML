@@ -45,15 +45,22 @@ Definition plift {q : nat} (p : nat) (s : {poly 'Z_q}) : {poly 'Z_(p*q)} :=
 Definition zliftc {q : nat} (c : 'Z_q) : int :=
   if (c <= q/2) then c%:Z else c%:Z - q%:Z.
 
+
+Lemma modp_small_eq (q : nat) (m : nat) :
+  m < (Zp_trunc q).+2 ->
+  m = intmul (one (Zp_ringType (Zp_trunc q))) (Posz m).
+Proof.
+Admitted.
+
 Lemma zliftc_valid {q : nat} (c : 'Z_q) :
   c = (zliftc c) %:~R.
 Proof.
   unfold zliftc.
   case: (c <= q/2).
   - destruct c.
-    simpl.
-    apply ord_inj.
-    admit.
+    apply ord_inj => /=.
+    by apply modp_small_eq.
+
   - destruct c.
     admit.
 Admitted.
@@ -175,10 +182,10 @@ Proof.
   case: ltP.
   - case : ltP; intros.
     + by [].
-    + rewrite nth_default.
+    + rewrite nth_default /=.
       * by rewrite nearest_round_int0.
-      * simpl.
-        admit.
+      * apply/leP.
+        by apply Nat.nlt_ge.
   - case : ltP; intros.
     + admit.
     + admit.
