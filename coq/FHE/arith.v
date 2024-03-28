@@ -214,9 +214,9 @@ Proof.
   - rewrite H.
     replace (Z.sub (Z.add (up r1) (up r2)) (Z.add (up r1) (up r2))) with Z0.
     + simpl; lia.
-    + admit.
+    + by rewrite Z.sub_diag.
   - rewrite H.
-    replace (Z.sub (Z.sub (Z.add (up r1) (up r2)) (Zpos xH)) (Z.add (up r1) (up r2))) with (Zpos xH).
+    replace (Z.sub (Z.sub (Z.add (up r1) (up r2)) (Zpos xH)) (Z.add (up r1) (up r2))) with (Zneg xH).
     + simpl; lia.
     + admit.
 Admitted.
