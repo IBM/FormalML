@@ -123,18 +123,7 @@ Qed.
 
 Lemma IZREb (n : int) :  n%:~R = IZR (ssrZ.Z_of_int n).
 Proof.
-  destruct n.
-  - destruct n.
-    + by rewrite /IZR /intmul /= R00.
-    + rewrite /IZR /= -INR_IPR /= /intmul INRE.
-      f_equal.
-      lia.
-  - rewrite /IZR /= /Z.opp /Z.of_nat /intmul /=.
-    replace (n + 1)%N with (S n) by lia.
-    rewrite -INR_IPR INRE /opp /=.
-    f_equal.
-    f_equal.
-    lia.
+  by rewrite -{1}(ssrZ.Z_of_intK n) -IZRE.
 Qed.
 
 Lemma up_int_add (n : Z) (c : R) :
