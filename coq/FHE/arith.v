@@ -193,13 +193,20 @@ Qed.
 Lemma up_add2 (n1 n2 : R) :
   (Z.abs_nat (Z.sub (up (n1 + n2)) (up n1 + up n2))%Z) <= 1.
 Proof.
+  generalize tech_up; intros.
+  generalize up_tech; intros.
+  generalize archimed; intros.
+  
 Admitted.  
 
-Lemma int_of_Z_abs x : `|ssrZ.int_of_Z x| = Z.abs_nat x.
-Proof.
-Admitted.
-
 Import ssrZ.
+Lemma int_of_Z_abs x : `|int_of_Z x| = Z.abs_nat x.
+Proof.
+  rewrite /int_of_Z /absz /Z.abs_nat.
+  destruct x; trivial.
+  lia.
+Qed.  
+
 Lemma upi_add2 (n1 n2 : R) :
    `|upi (n1 + n2) - (upi n1 + upi n2)%R| <= 1.
 Proof.
@@ -223,7 +230,7 @@ Proof.
   rewrite /ran_round.
   case: Order.TotalTheory.ltP=>lt1 ; case: Order.TotalTheory.ltP => lt2 ; case: Order.TotalTheory.ltP => lt3.
   - apply upi_add2.
-  -
+  - 
 
   
 Admitted.
@@ -339,9 +346,7 @@ Lemma decrypt_encrypt {q : nat} (e s v e0 e1 : {poly int}) (a p : {poly 'Z_q}) :
 Proof.
   rewrite /FHE_decrypt /FHE_encrypt /public_key.
   rewrite hornerD hornerZ !horner_Poly /= mul0r !add0r.
-  rewrite !mulrDr !addrA.
-  f_equal.
-  by rewrite -addrA -mulrDr -mulrDl subrr mul0r mulr0 addr0 -addrA addrC.
+  ring.
 Qed.  
 
 Lemma decrypt_add {q : nat} (P Q : {poly 'Z_q}) (PP QQ : {poly {poly 'Z_q}}) (s : {poly int}) :
