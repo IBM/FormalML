@@ -245,8 +245,8 @@ Proof.
   rewrite coefD !coef_Poly.
   rewrite !(nth_map0 0 0); try by rewrite nearest_round_int0.
   rewrite coefD /=.
-Admitted.  
-  
+  by rewrite -nearest_round_int_mul_add_r // coefZ.
+Qed.  
 
 Lemma div_round_add2 (a b : {poly int}) (d : int) :
   d <> 0 ->
