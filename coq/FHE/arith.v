@@ -190,7 +190,7 @@ Proof.
   lia.
 Qed.
 
-Lemma up_add2 (r1 r2 : R) :
+Lemma up_add2' (r1 r2 : R) :
   (up(r1 + r2) = Z.add (up r1) (up r2) \/ up(r1 + r2) = Z.sub (Z.add (up r1) (up r2)) 1)%Z.
 Proof.
   destruct (archimed r1).
@@ -207,10 +207,10 @@ Proof.
     by rewrite (tech_up (r1 + r2) (up r1 + up r2 - 1)) // !plus_IZR opp_IZR; coq_lra.
 Qed.
 
-Lemma up_add2' (r1 r2 : R) :
+Lemma up_add2 (r1 r2 : R) :
   Z.abs_nat (Z.sub (up (r1 + r2)) (Z.add (up r1) (up r2))) <= 1.
 Proof.
-  destruct (up_add2 r1 r2); rewrite H; lia.
+  destruct (up_add2' r1 r2); rewrite H; lia.
 Qed.
 
 Import ssrZ.
@@ -221,6 +221,20 @@ Proof.
   lia.
 Qed.  
 
+Lemma upi_add2' (n1 n2 : R) :
+  upi (n1 + n2) = (upi n1 + upi n2) \/
+   upi (n1 + n2) = (upi n1 + upi n2) -1.
+Proof.
+  rewrite /upi.
+  destruct (up_add2' n1 n2).
+  - left.
+    by rewrite H raddfD /=.
+  - right.
+    rewrite H.
+    rewrite -Z.add_opp_r !raddfD /=.
+    lra.
+Qed.
+
 Lemma upi_add2 (n1 n2 : R) :
    `|upi (n1 + n2) - (upi n1 + upi n2)%R| <= 1.
 Proof.
@@ -229,7 +243,7 @@ Proof.
             ssrZ.int_of_Z (up (n1 + n2)) - (ssrZ.int_of_Z (up n1) + ssrZ.int_of_Z (up n2))%R =
               ssrZ.int_of_Z (Z.sub (up (n1 + n2)) (Z.add (up n1) (up n2)))%Z).
   - rewrite int_of_Z_abs.
-    apply up_add2'.
+    apply up_add2.
   - rewrite -Z.add_opp_r !raddfD /= raddfN /= raddfD /=.
     lra.
 Qed.
