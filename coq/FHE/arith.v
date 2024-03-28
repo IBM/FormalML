@@ -190,14 +190,48 @@ Proof.
   lia.
 Qed.
 
-Lemma up_add2 (n1 n2 : R) :
-  (Z.abs_nat (Z.sub (up (n1 + n2)) (up n1 + up n2))%Z) <= 1.
+Lemma up_add2 (r1 r2 : R) :
+  (up(r1 + r2) = Z.add (up r1) (up r2) \/ up(r1 + r2) = Z.sub (Z.add (up r1) (up r2)) 1)%Z.
 Proof.
-  generalize tech_up; intros.
-  generalize up_tech; intros.
-  generalize archimed; intros.
-  
-Admitted.  
+  destruct (archimed r1).
+  destruct (archimed r2).
+  destruct (archimed (r1 + r2)).  
+  assert (Rgt (IZR (up r1) + IZR (up r2)) (r1 + r2)).
+  {
+    coq_lra.
+  }
+  assert (Rle ((IZR (up r1) + IZR (up r2)) - (r1 + r2)) 2).
+  {
+    coq_lra.
+  }
+  case: (boolP (Rleb ((IZR (up r1) + IZR (up r2)) - (r1 + r2)) 1)).
+  - intros.
+    left.
+    move /RlebP in p.
+    rewrite (tech_up (r1 + r2) (up r1 + up r2)) //; rewrite plus_IZR; coq_lra.
+  - intros.
+    right.
+    move /RlebP in i.
+    rewrite (tech_up (r1 + r2) (up r1 + up r2 - 1)) //.
+    + rewrite !plus_IZR opp_IZR.
+      coq_lra.
+    + rewrite !plus_IZR opp_IZR.
+      coq_lra.
+Qed.
+
+Lemma up_add2' (r1 r2 : R) :
+  Z.abs_nat (Z.sub (up (r1 + r2)) (Z.add (up r1) (up r2))) <= 1.
+Proof.
+  destruct (up_add2 r1 r2).
+  - rewrite H.
+    replace (Z.sub (Z.add (up r1) (up r2)) (Z.add (up r1) (up r2))) with Z0.
+    + simpl; lia.
+    + admit.
+  - rewrite H.
+    replace (Z.sub (Z.sub (Z.add (up r1) (up r2)) (Zpos xH)) (Z.add (up r1) (up r2))) with (Zpos xH).
+    + simpl; lia.
+    + admit.
+Admitted.
 
 Import ssrZ.
 Lemma int_of_Z_abs x : `|int_of_Z x| = Z.abs_nat x.
@@ -215,7 +249,7 @@ Proof.
             ssrZ.int_of_Z (up (n1 + n2)) - (ssrZ.int_of_Z (up n1) + ssrZ.int_of_Z (up n2))%R =
               ssrZ.int_of_Z (Z.sub (up (n1 + n2)) (Z.add (up n1) (up n2)))%Z).
   - rewrite int_of_Z_abs.
-    apply up_add2.
+    apply up_add2'.
   - rewrite -Z.add_opp_r !raddfD /= raddfN /= raddfD /=.
     lra.
 Qed.
