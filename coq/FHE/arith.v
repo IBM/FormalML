@@ -259,16 +259,26 @@ Proof.
   case: Order.TotalTheory.ltP=>lt1 ; case: Order.TotalTheory.ltP => lt2 ; case: Order.TotalTheory.ltP => lt3.
   - apply upi_add2.
   - destruct (upi_add2' n1 n2); rewrite H.
-    + replace ((upi n1 + upi n2) - (upi n1 + (upi n2 - 1))) with (1 : int) by lia.
-      simpl; lia.
-    + replace ((upi n1 + upi n2 - 1) - (upi n1 + (upi n2 - 1))) with (0 : int) by lia.
-      simpl; lia.
+    + rewrite [`|_|](_:`|_| = `|1|); simpl; lia.
+    + rewrite [`|_|](_:`|_| = `|0|); simpl; lia.
   - destruct (upi_add2' n1 n2); rewrite H.
-    + replace ((upi n1 + upi n2) - (upi n1 + (upi n2 - 1))) with (1 : int) by lia.
-      simpl; lia.
-    + replace ((upi n1 + upi n2 - 1) - (upi n1 + (upi n2 - 1))) with (0 : int) by lia.
-      simpl; lia.
-  
+    + rewrite [`|_|](_:`|_| = `|1|); simpl; lia.
+    + rewrite [`|_|](_:`|_| = `|0|); simpl; lia.
+  - destruct (upi_add2' n1 n2); rewrite H.
+    + admit.
+    + rewrite [`|_|](_:`|_| = `|1|); simpl; lia.
+  - destruct (upi_add2' n1 n2); rewrite H.
+    + rewrite [`|_|](_:`|_| = `|-1|); simpl; lia.
+    + admit.
+  - destruct (upi_add2' n1 n2); rewrite H.
+    + rewrite [`|_|](_:`|_| = `|0|); simpl; lia.
+    + rewrite [`|_|](_:`|_| = `|-1|); simpl; lia.
+  - destruct (upi_add2' n1 n2); rewrite H.
+    + rewrite [`|_|](_:`|_| = `|0|); simpl; lia.
+    + rewrite [`|_|](_:`|_| = `|-1|); simpl; lia.
+  - destruct (upi_add2' n1 n2); rewrite H.
+    + rewrite [`|_|](_:`|_| = `|1|); simpl; lia.
+    + rewrite [`|_|](_:`|_| = `|0|); simpl; lia.      
 Admitted.
 
 Lemma nearest_round_add2 (n1 n2 : R) :
