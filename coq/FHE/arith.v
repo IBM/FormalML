@@ -39,21 +39,21 @@ Definition zliftc {q : nat} (c : 'Z_q) : int :=
 
 Lemma modp_small (q : nat) (m : nat) :
   m < (Zp_trunc q).+2 ->
-  nat_of_ord (intmul (one (Zp_ringType (Zp_trunc q))) (Posz m)) = m.
+  nat_of_ord (intmul (1 : 'Z_q) (Posz m)) = m.
 Proof.
   rewrite /intmul Zp_nat /=.
   by apply/modn_small.
 Qed.
 
 Lemma modpp (q : nat) :
-  nat_of_ord (intmul (one (Zp_ringType (Zp_trunc q))) (Posz (Zp_trunc q).+2)) = 0%nat.
+  nat_of_ord (intmul (1 : 'Z_q) (Posz (Zp_trunc q).+2)) = 0%nat.
 Proof.
   by rewrite /intmul Zp_nat /= modnn.
 Qed.
 
 Lemma modpp' (q : nat) :
   1 < q ->
-  intmul (one (Zp_ringType (Zp_trunc q))) (Posz q) = 0.
+  intmul (1 : 'Z_q) (Posz q) = 0.
 Proof.
   intros.
   apply ord_inj. 
@@ -89,7 +89,7 @@ Proof.
 Qed.  
 
 Lemma zlift0_alt {q : nat} :
-  zlift (zero (poly_zmodType (Zp_ringType (Zp_trunc q)))) = 0.
+  zlift (0 : {poly 'Z_q}) = 0.
 Proof.
   rewrite /zlift /zliftc.
   apply map_poly0.
@@ -219,7 +219,7 @@ Definition div_round (a : {poly int}) (d : int) : {poly int} :=
   map_poly (fun c => nearest_round_int c d) a.
 
 Lemma div_round0 (den : int) :
-  div_round (zero (poly_zmodType int_Ring)) den = 0.
+  div_round (0 : {poly int}) den = 0.
 Proof.
   rewrite /div_round.
   apply map_poly0.
