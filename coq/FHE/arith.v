@@ -45,11 +45,19 @@ Definition plift {q : nat} (p : nat) (s : {poly 'Z_q}) : {poly 'Z_(p*q)} :=
 Definition zliftc {q : nat} (c : 'Z_q) : int :=
   if (c <= q/2) then c%:Z else c%:Z - q%:Z.
 
-Lemma modp_small_eq (q : nat) (m : nat) :
+Lemma modp_small (q : nat) (m : nat) :
   m < (Zp_trunc q).+2 ->
-  m = intmul (one (Zp_ringType (Zp_trunc q))) (Posz m).
+  nat_of_ord (intmul (one (Zp_ringType (Zp_trunc q))) (Posz m)) = m.
 Proof.
-Admitted.
+  rewrite /intmul Zp_nat /=.
+  by apply/modn_small.
+Qed.
+
+Lemma modpp (q : nat) :
+  nat_of_ord (intmul (one (Zp_ringType (Zp_trunc q))) (Posz (Zp_trunc q).+2)) = 0%nat.
+Proof.
+  by rewrite /intmul Zp_nat /= modnn.
+Qed.
 
 Lemma zliftc_valid {q : nat} (c : 'Z_q) :
   c = (zliftc c) %:~R.
@@ -58,7 +66,7 @@ Proof.
   case: (c <= q/2).
   - destruct c.
     apply ord_inj => /=.
-    by apply modp_small_eq.
+    by rewrite modp_small.
   - destruct c.
     rewrite intrD.
     assert (intmul (one (Zp_ringType (Zp_trunc q))) (opp (Posz q)) = 0).
@@ -67,7 +75,7 @@ Proof.
     }
     rewrite H addr0.
     apply ord_inj => /=.
-    by apply modp_small_eq.    
+    by rewrite modp_small.
 Admitted.
 
 Definition zlift {q : nat} (a : {poly 'Z_q}) : {poly int} :=
