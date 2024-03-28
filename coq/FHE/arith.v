@@ -210,16 +210,8 @@ Qed.
 Lemma up_add2' (r1 r2 : R) :
   Z.abs_nat (Z.sub (up (r1 + r2)) (Z.add (up r1) (up r2))) <= 1.
 Proof.
-  destruct (up_add2 r1 r2).
-  - rewrite H.
-    replace (Z.sub (Z.add (up r1) (up r2)) (Z.add (up r1) (up r2))) with Z0.
-    + simpl; lia.
-    + by rewrite Z.sub_diag.
-  - rewrite H.
-    replace (Z.sub (Z.sub (Z.add (up r1) (up r2)) (Zpos xH)) (Z.add (up r1) (up r2))) with (Zneg xH).
-    + simpl; lia.
-    + admit.
-Admitted.
+  destruct (up_add2 r1 r2); rewrite H; lia.
+Qed.
 
 Import ssrZ.
 Lemma int_of_Z_abs x : `|int_of_Z x| = Z.abs_nat x.
