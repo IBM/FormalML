@@ -267,12 +267,12 @@ Proof.
   split.
   - ring.
   - rewrite /coef_maxnorm /div_round.
-    apply /bigmax_leqP.
-    intros.
-    rewrite !coefD !coefN !coef_poly !coefD !coef_poly.
-    generalize (nearest_round_int_add2 a`_i b`_i d H); intros.
-    simpl in H1.
-  Admitted.
+    apply /bigmax_leqP => i _.
+    rewrite !(coefD,coefN).
+    rewrite !coef_map_id0; try by rewrite nearest_round_int0.
+    rewrite !coefD.
+    by apply nearest_round_int_add2.
+Qed.
 
 Definition q_reduce (q : nat) (p : {poly int}) : {poly 'Z_q} :=
   map_poly (fun c => c%:~R) p.
