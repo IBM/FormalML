@@ -222,8 +222,8 @@ Proof.
 Qed.  
 
 Lemma upi_add2' (n1 n2 : R) :
-  upi (n1 + n2) = (upi n1 + upi n2) \/
-   upi (n1 + n2) = (upi n1 + upi n2) -1.
+  (upi (n1 + n2) = (upi n1 + upi n2))%R \/
+    (upi (n1 + n2) = (upi n1 + upi n2) -1)%R.
 Proof.
   rewrite /upi.
   destruct (up_add2' n1 n2).
@@ -252,7 +252,7 @@ Lemma ran_round_add2 (n1 n2 cutoff : R) :
   ((0 : R) < cutoff)%O ->
   (cutoff < (1 : R))%O ->
   let sum := ran_round n1 cutoff + ran_round n2 cutoff  in
-  `|ran_round (n1 + n2) cutoff - sum| <= 1.
+  `|ran_round (n1 + n2)%R cutoff - sum| <= 1.
 Proof.
   move=> cutoff_big cutoff_small.
   rewrite /ran_round.
@@ -265,11 +265,13 @@ Proof.
     + rewrite [`|_|](_:`|_| = `|1|); simpl; lia.
     + rewrite [`|_|](_:`|_| = `|0|); simpl; lia.
   - destruct (upi_add2' n1 n2); rewrite H.
-    + admit.
+    + rewrite H raddfD /= in lt1.
+      lra.
     + rewrite [`|_|](_:`|_| = `|1|); simpl; lia.
   - destruct (upi_add2' n1 n2); rewrite H.
     + rewrite [`|_|](_:`|_| = `|-1|); simpl; lia.
-    + admit.
+    + rewrite H !raddfD /= in lt1.
+      lra.
   - destruct (upi_add2' n1 n2); rewrite H.
     + rewrite [`|_|](_:`|_| = `|0|); simpl; lia.
     + rewrite [`|_|](_:`|_| = `|-1|); simpl; lia.
@@ -279,7 +281,7 @@ Proof.
   - destruct (upi_add2' n1 n2); rewrite H.
     + rewrite [`|_|](_:`|_| = `|1|); simpl; lia.
     + rewrite [`|_|](_:`|_| = `|0|); simpl; lia.      
-Admitted.
+Qed.
 
 Lemma nearest_round_add2 (n1 n2 : R) :
   let sum := nearest_round n1 + nearest_round n2 in
