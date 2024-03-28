@@ -196,27 +196,15 @@ Proof.
   destruct (archimed r1).
   destruct (archimed r2).
   destruct (archimed (r1 + r2)).  
-  assert (Rgt (IZR (up r1) + IZR (up r2)) (r1 + r2)).
-  {
-    coq_lra.
-  }
-  assert (Rle ((IZR (up r1) + IZR (up r2)) - (r1 + r2)) 2).
-  {
-    coq_lra.
-  }
   case: (boolP (Rleb ((IZR (up r1) + IZR (up r2)) - (r1 + r2)) 1)).
   - intros.
     left.
     move /RlebP in p.
-    rewrite (tech_up (r1 + r2) (up r1 + up r2)) //; rewrite plus_IZR; coq_lra.
+    by rewrite (tech_up (r1 + r2) (up r1 + up r2)) // plus_IZR; coq_lra.
   - intros.
     right.
     move /RlebP in i.
-    rewrite (tech_up (r1 + r2) (up r1 + up r2 - 1)) //.
-    + rewrite !plus_IZR opp_IZR.
-      coq_lra.
-    + rewrite !plus_IZR opp_IZR.
-      coq_lra.
+    by rewrite (tech_up (r1 + r2) (up r1 + up r2 - 1)) // !plus_IZR opp_IZR; coq_lra.
 Qed.
 
 Lemma up_add2' (r1 r2 : R) :
