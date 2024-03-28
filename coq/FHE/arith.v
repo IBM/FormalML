@@ -30,9 +30,6 @@ Record FHE : Type :=
       noise_bound : R
     }.
 
-
-
-
 Definition FHE_add {q : nat}  (P Q : {poly {poly 'Z_q}} ) := P + Q.
 
 Definition FHE_mult_base {q : nat} (P Q : {poly {poly 'Z_q}} ) := P * Q.
@@ -59,24 +56,31 @@ Proof.
   by rewrite /intmul Zp_nat /= modnn.
 Qed.
 
+Lemma modpp' (q : nat) :
+  1 < q ->
+  intmul (one (Zp_ringType (Zp_trunc q))) (Posz q) = 0.
+Proof.
+  intros.
+  rewrite /intmul Zp_nat /=.
+  apply ord_inj => /=.
+  by rewrite Zp_cast // modnn.
+Qed.
+  
 Lemma zliftc_valid {q : nat} (c : 'Z_q) :
+  1 < q ->
   c = (zliftc c) %:~R.
 Proof.
-  unfold zliftc.
+  intros.
+  rewrite /zliftc.
   case: (c <= q/2).
   - destruct c.
     apply ord_inj => /=.
     by rewrite modp_small.
   - destruct c.
-    rewrite intrD.
-    assert (intmul (one (Zp_ringType (Zp_trunc q))) (opp (Posz q)) = 0).
-    {
-      admit.
-    }
-    rewrite H addr0.
+    rewrite intrD mulrNz modpp' // oppr0 addr0.
     apply ord_inj => /=.
     by rewrite modp_small.
-Admitted.
+ Qed.
 
 Definition zlift {q : nat} (a : {poly 'Z_q}) : {poly int} :=
   map_poly zliftc a.
@@ -198,7 +202,20 @@ Lemma nearest_round_int_add2 (n1 n2 d : int) :
 Proof.
   intros.
   rewrite /= /nearest_round_int /nearest_round /ran_round.
-  Admitted.
+Admitted.
+
+Lemma nearest_round_int_add2' (n1 n2 d : int) : 
+  d <> 0 ->
+  let sum := nearest_round_int n1 d + nearest_round_int n2 d in
+  { n3 : int |
+    nearest_round_int (n1 + n2) d = sum + n3 /\
+      `|n3| <= 1}.
+Proof.
+  intros.
+  exists (nearest_round_int (n1 + n2) d - sum).
+  split; try lia.
+  by apply nearest_round_int_add2.
+Qed.
 
 Definition div_round (a : {poly int}) (d : int) : {poly int} :=
   map_poly (fun c => nearest_round_int c d) a.
