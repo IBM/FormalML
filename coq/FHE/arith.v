@@ -196,6 +196,10 @@ Lemma nearest_round_int_add2 (n1 n2 d : int) :
 Proof.
   intros.
   rewrite /= /nearest_round_int /nearest_round /ran_round.
+  case: Order.TotalTheory.ltP => lt1.
+  - case: Order.TotalTheory.ltP => lt2.
+    + case: Order.TotalTheory.ltP => lt3.
+      
 Admitted.
 
 Lemma nearest_round_int_add2' (n1 n2 d : int) : 
