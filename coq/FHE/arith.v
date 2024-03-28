@@ -225,27 +225,28 @@ Proof.
   apply map_poly0.
 Qed.
 
+Lemma nth_map0:
+  forall [T1 : Type] (x1 : T1) [T2 : Type] (x2 : T2) (f : T1 -> T2) [n : nat] [s : seq T1],
+    f x1 = x2 ->
+    nth x2 [seq f i | i <- s] n = f (nth x1 s n).
+Proof.
+  intros.
+  case/orP: (leqVgt (size s) n) => ineq.
+  - by rewrite !nth_default // size_map.
+  - by rewrite (nth_map x1).
+Qed.
+                                              
 Lemma div_round_mul_add (a b : {poly int}) (d : int) :
   d <> 0 ->
   div_round (a + d *: b) d = div_round a d + b.
 Proof.
   intros.
-  rewrite /div_round /map_poly -polyP.
-  intros ?.
-  rewrite !coefD !coef_poly coefD coefZ.
-  case: ltP.
-  - rewrite nearest_round_int_mul_add_r //.
-    case : ltP; intros.
-    + by [].
-    + rewrite nth_default /=.
-      * by rewrite nearest_round_int0.
-      * apply/leP.
-        by apply Nat.nlt_ge.
-  - intros.
-    case : ltP; intros.
-    + admit.
-    + admit.
-Admitted.
+  rewrite /div_round !map_polyE -polyP => i.
+  rewrite coefD !coef_Poly.
+  rewrite !(nth_map0 0 0); try by rewrite nearest_round_int0.
+  rewrite coefD /=.
+Admitted.  
+  
 
 Lemma div_round_add2 (a b : {poly int}) (d : int) :
   d <> 0 ->
