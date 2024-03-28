@@ -190,24 +190,62 @@ Proof.
   lia.
 Qed.
 
-Lemma upi_add2 (n1 n2 d : int) :
-   `|upi ((n1 + n2)%:~R / d%:~R)%R -
-    (upi (n1%:~R / d%:~R)%R + upi (n2%:~R / d%:~R)%R)%R| <= 1.
+Lemma up_add2 (n1 n2 : R) :
+  (Z.abs_nat (Z.sub (up (n1 + n2)) (up n1 + up n2))%Z) <= 1.
 Proof.
-  Admitted.
+Admitted.  
+
+Lemma int_of_Z_abs x : `|ssrZ.int_of_Z x| = Z.abs_nat x.
+Proof.
+Admitted.
+
+Import ssrZ.
+Lemma upi_add2 (n1 n2 : R) :
+   `|upi (n1 + n2) - (upi n1 + upi n2)%R| <= 1.
+Proof.
+  rewrite /upi.
+  rewrite (_:
+            ssrZ.int_of_Z (up (n1 + n2)) - (ssrZ.int_of_Z (up n1) + ssrZ.int_of_Z (up n2))%R =
+              ssrZ.int_of_Z (Z.sub (up (n1 + n2)) (Z.add (up n1) (up n2)))%Z).
+  - rewrite int_of_Z_abs.
+    apply up_add2.
+  - rewrite -Z.add_opp_r !raddfD /= raddfN /= raddfD /=.
+    lra.
+Qed.
+
+Lemma ran_round_add2 (n1 n2 cutoff : R) :
+  ((0 : R) < cutoff)%O ->
+  (cutoff < (1 : R))%O ->
+  let sum := ran_round n1 cutoff + ran_round n2 cutoff  in
+  `|ran_round (n1 + n2) cutoff - sum| <= 1.
+Proof.
+  move=> cutoff_big cutoff_small.
+  rewrite /ran_round.
+  case: Order.TotalTheory.ltP=>lt1 ; case: Order.TotalTheory.ltP => lt2 ; case: Order.TotalTheory.ltP => lt3.
+  - apply upi_add2.
+  -
+
+  
+Admitted.
+
+Lemma nearest_round_add2 (n1 n2 : R) :
+  let sum := nearest_round n1 + nearest_round n2 in
+  `|nearest_round (n1 + n2) - sum| <= 1.
+Proof.
+  rewrite /nearest_round.
+  apply ran_round_add2; lra.
+Qed.
 
 Lemma nearest_round_int_add2 (n1 n2 d : int) :
   d <> 0 ->
   let sum := nearest_round_int n1 d + nearest_round_int n2 d in
   `|nearest_round_int (n1 + n2) d - sum| <= 1.
 Proof.
-  intros.
-  rewrite /= /nearest_round_int /nearest_round /ran_round.
-  case: Order.TotalTheory.ltP => lt1.
-  - case: Order.TotalTheory.ltP => lt2.
-    + case: Order.TotalTheory.ltP => lt3.
-      * admit.
-      * 
+  move=> dn0.
+  rewrite /= /nearest_round_int.
+  rewrite (_:((n1 + n2)%:~R / d%:~R)%R = ((n1%:~R / d%:~R) + (n2%:~R / d%:~R))%R).
+  - apply nearest_round_add2.
+  - admit.    
 Admitted.
 
 Lemma nearest_round_int_add2' (n1 n2 d : int) : 
