@@ -2,7 +2,7 @@ Require Import Reals Lra Lia List Permutation.
 From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix Rstruct complex seq fingroup.
 From mathcomp Require Import ssralg ssrfun.
 From mathcomp Require Import generic_quotient ring_quotient.
-From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool div.
+From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool div order.
 
 Import ssralg.GRing.
 Require Import nth_root encode.
@@ -34,11 +34,6 @@ Definition FHE_add {q : nat}  (P Q : {poly {poly 'Z_q}} ) := P + Q.
 
 Definition FHE_mult_base {q : nat} (P Q : {poly {poly 'Z_q}} ) := P * Q.
 
-Definition pliftc {q : nat} (p : nat) (c : 'Z_q) : 'Z_(p*q) := inZp c.
-
-Definition plift {q : nat} (p : nat) (s : {poly 'Z_q}) : {poly 'Z_(p*q)} :=
-  map_poly (pliftc p) s.
-
 Definition zliftc {q : nat} (c : 'Z_q) : int :=
   if (c <= q/2) then c%:Z else c%:Z - q%:Z.
 
@@ -61,9 +56,8 @@ Lemma modpp' (q : nat) :
   intmul (one (Zp_ringType (Zp_trunc q))) (Posz q) = 0.
 Proof.
   intros.
-  rewrite /intmul Zp_nat /=.
-  apply ord_inj => /=.
-  by rewrite Zp_cast // modnn.
+  apply ord_inj. 
+  by rewrite /intmul Zp_nat /= Zp_cast // modnn.
 Qed.
   
 Lemma zliftc_valid {q : nat} (c : 'Z_q) :
@@ -103,8 +97,6 @@ Qed.
 
 (* 0 <= rand < 1 *)
 
-From mathcomp Require Import order.
-
 Definition upi (c:R) : int := ssrZ.int_of_Z (up c).
 
 Definition ran_round (x rand : R) : int :=
@@ -114,6 +106,8 @@ Definition ran_round (x rand : R) : int :=
 Definition nearest_round (x : R) : int := ran_round x (1/2)%R.
 
 Definition nearest_round_int (n d : int) : int := nearest_round ((n %:~R)/(d %:~R))%R.
+
+Definition coef_maxnorm (p : {poly int}):nat := \max_(j < seq.size p) `|p`_ j|.
 
 Lemma IZRE (n : Z) : IZR n = (ssrZ.int_of_Z n)%:~R.
 Proof.
@@ -247,10 +241,15 @@ Proof.
     case : ltP; intros.
     + admit.
     + admit.
- Admitted.
+Admitted.
 
-Definition div_round_q {q : nat} (p : {poly 'Z_q}) (den : int) : {poly int} :=
-  div_round (zlift p) den.
+Lemma div_round_add2 (a b : {poly int}) (d : int) :
+  d <> 0 ->
+  { c : {poly int} |
+    div_round (a + b) d = div_round a d + div_round b d + c /\
+      coef_maxnorm c <= 1}.
+Proof.
+  Admitted.
 
 Definition q_reduce (q : nat) (p : {poly int}) : {poly 'Z_q} :=
   map_poly (fun c => c%:~R) p.
@@ -263,11 +262,6 @@ Proof.
 Qed.        
 
 Canonical q_reduce_rmorphism (q : nat) := RMorphism (q_reduce_is_rmorphism q).
-
-From mathcomp Require Import order.
-Definition zabs (c : int):int := (absz c)%:Z.
-
-Definition int_coef_maxnorm (p : {poly int}):int := \big[Order.max/0]_(j < seq.size p)  zabs p`_ j.
 
 Definition public_key {q : nat} (e s : {poly int}) (a : {poly 'Z_q})  : {poly {poly 'Z_q}} :=
   Poly [:: (- a * (q_reduce q s) + (q_reduce q e)); a].
@@ -318,22 +312,31 @@ Definition ev_key {q p : nat} (s e : {poly int}) (a : {poly 'Z_(p*q)}) :=
 Definition linearize {q p : nat} (c0 c1 c2 : {poly 'Z_q}) 
   (evkey : {poly {poly 'Z_(p*q)}}) :=
   Poly [:: c0; c1] +
-    map_poly (fun P => q_reduce q (div_round_q ((plift p c2) * P) (p%:Z)))
+    map_poly (fun P => q_reduce q (div_round ((zlift c2) * (zlift P)) (p%:Z)))
                                evkey.
 
-
 Lemma linearize_prop  {q p : nat} (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
-  (map_poly (fun P => q_reduce q (div_round_q ((plift p c2) * P) (p%:Z)))
+  { e2 : {poly int} |
+    (map_poly (fun P => q_reduce q (div_round ((zlift c2) * (zlift P)) (p%:Z)))
      (ev_key s e a)).[q_reduce q s] = 
-    c2 * (q_reduce q (exp s 2)) + q_reduce q (div_round_q ((plift p c2) * (q_reduce (p * q) e)) p). 
+      c2 * (q_reduce q (exp s 2)) + q_reduce q (div_round ((zlift c2) * e) p + e2) /\
+  coef_maxnorm e2 <= 1}. 
 Proof.
-  rewrite /ev_key /key_switch_key.
-  rewrite map_Poly_id0.
-  - rewrite horner_Poly /= mul0r add0r mulrDr.
+  eexists; split.
+  - rewrite /ev_key /key_switch_key.
+    rewrite map_Poly_id0.
+(*
+    + rewrite horner_Poly /= mul0r add0r mulrDr.
+    assert (div_round_q
+              (plift p c2 * (- a * q_reduce (p * q) s + q_reduce (p * q) e) +
+                 plift p c2 * q_reduce (p * q) (s ^+ 2 *+ p)) p) =
+             div_round_q (plift p c2 * (- a * q_reduce (p * q) s + q_reduce (p * q) e)) p
+                         + plift p c2 * q_reduce (p * q) (s ^+ 2 *+ p)) p) =
+  *)              
 Admitted.
 
 Definition rescale {q1 q2 : nat} (p : {poly 'Z_(q1 * q2)}) : {poly 'Z_q2} :=
-  q_reduce q2 (div_round_q p q1%:Z).
+  q_reduce q2 (div_round (zlift p) q1%:Z).
 
 Definition FHE_mult  {q p : nat} (P Q : {poly {poly 'Z_q}}) 
   (evkey : {poly {poly 'Z_(p*q)}}) :=
@@ -346,9 +349,12 @@ Lemma decrypt_mult {p q : nat} (P Q : {poly 'Z_q}) (PP QQ : {poly {poly 'Z_q}})
   FHE_decrypt s QQ = Q ->
   size PP = 2%N ->
   size QQ = 2%N ->
-  FHE_decrypt s (FHE_mult PP QQ (ev_key s e a)) = 
-    P * Q + q_reduce q (div_round_q (plift p (PP * QQ)`_2 * q_reduce (p * q) e) p).
+  {R : {poly int} |
+     FHE_decrypt s (FHE_mult PP QQ (ev_key s e a)) = 
+       P * Q + q_reduce q (div_round (zlift (PP * QQ)`_2 * e) p + R) /\
+       coef_maxnorm R <= 1 }.
 Proof.
+(*
   intros.
   rewrite -(decrypt_mult_base P Q PP QQ s) //.
   rewrite /FHE_mult /linearize /FHE_mult_base /FHE_decrypt hornerD.
@@ -378,10 +384,12 @@ Proof.
     + by rewrite addrC addrA.
   - by rewrite rmorphXn.
 Qed.
+ *)
+  Admitted.
 
 Definition key_switch {q p : nat} (c0 c1 : {poly 'Z_q})
   (ks_key : {poly {poly 'Z_(p*q)}}) : {poly {poly 'Z_q}} :=
-  c0%:P + map_poly (fun P => q_reduce q (div_round_q ((plift p c1) * P) (p%:Z)))
+  c0%:P + map_poly (fun P => q_reduce q (div_round ((zlift c1) * (zlift P)) (p%:Z)))
                    ks_key.
   
 Definition FHE_automorphism  {q p : nat} (s e : {poly int}) 
