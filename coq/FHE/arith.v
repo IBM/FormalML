@@ -190,6 +190,12 @@ Proof.
   lia.
 Qed.
 
+Lemma upi_add2 (n1 n2 d : int) :
+   `|upi ((n1 + n2)%:~R / d%:~R)%R -
+    (upi (n1%:~R / d%:~R)%R + upi (n2%:~R / d%:~R)%R)%R| <= 1.
+Proof.
+  Admitted.
+
 Lemma nearest_round_int_add2 (n1 n2 d : int) :
   d <> 0 ->
   let sum := nearest_round_int n1 d + nearest_round_int n2 d in
@@ -200,7 +206,8 @@ Proof.
   case: Order.TotalTheory.ltP => lt1.
   - case: Order.TotalTheory.ltP => lt2.
     + case: Order.TotalTheory.ltP => lt3.
-      
+      * admit.
+      * 
 Admitted.
 
 Lemma nearest_round_int_add2' (n1 n2 d : int) : 
