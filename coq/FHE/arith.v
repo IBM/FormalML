@@ -115,7 +115,19 @@ Qed.
 
 Lemma IZREb (n : int) :  n%:~R = IZR (ssrZ.Z_of_int n).
 Proof.
-Admitted.
+  destruct n.
+  - destruct n.
+    + by rewrite /IZR /intmul /= R00.
+    + rewrite /IZR /= -INR_IPR /= /intmul INRE.
+      f_equal.
+      lia.
+  - rewrite /IZR /= /Z.opp /Z.of_nat /intmul /=.
+    replace (n + 1)%N with (S n) by lia.
+    rewrite -INR_IPR INRE /opp /=.
+    f_equal.
+    f_equal.
+    lia.
+Qed.
 
 Lemma up_int_add (n : Z) (c : R) :
   up (Rplus (IZR n) c) = Zplus n (up c).
@@ -178,6 +190,15 @@ Proof.
   rewrite mulrC addrC nearest_round_int_mul_add //.
   lia.
 Qed.
+
+Lemma nearest_round_int_add2 (n1 n2 d : int) :
+  d <> 0 ->
+  let sum := nearest_round_int n1 d + nearest_round_int n2 d in
+  `|nearest_round_int (n1 + n2) d - sum| <= 1.
+Proof.
+  intros.
+  rewrite /= /nearest_round_int /nearest_round /ran_round.
+  Admitted.
 
 Definition div_round (a : {poly int}) (d : int) : {poly int} :=
   map_poly (fun c => nearest_round_int c d) a.
