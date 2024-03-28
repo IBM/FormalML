@@ -3,6 +3,7 @@ From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix Rstruc
 From mathcomp Require Import ssralg ssrfun.
 From mathcomp Require Import generic_quotient ring_quotient.
 From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool div order.
+From mathcomp Require Import ring.
 
 Import ssralg.GRing.
 Require Import nth_root encode.
@@ -225,7 +226,7 @@ Proof.
   apply map_poly0.
 Qed.
 
-Lemma nth_map0:
+Lemma nth_map_default:
   forall [T1 : Type] (x1 : T1) [T2 : Type] (x2 : T2) (f : T1 -> T2) [n : nat] [s : seq T1],
     f x1 = x2 ->
     nth x2 [seq f i | i <- s] n = f (nth x1 s n).
@@ -243,10 +244,11 @@ Proof.
   intros.
   rewrite /div_round !map_polyE -polyP => i.
   rewrite coefD !coef_Poly.
-  rewrite !(nth_map0 0 0); try by rewrite nearest_round_int0.
+  rewrite !(nth_map_default 0 0); try by rewrite nearest_round_int0.
   rewrite coefD /=.
   by rewrite -nearest_round_int_mul_add_r // coefZ.
 Qed.  
+
 
 Lemma div_round_add2 (a b : {poly int}) (d : int) :
   d <> 0 ->
@@ -254,6 +256,15 @@ Lemma div_round_add2 (a b : {poly int}) (d : int) :
     div_round (a + b) d = div_round a d + div_round b d + c /\
       coef_maxnorm c <= 1}.
 Proof.
+  exists (div_round (a + b) d - (div_round a d + div_round b d)).
+  split.
+  - ring.
+  - rewrite /coef_maxnorm /div_round.
+    apply /bigmax_leqP.
+    intros.
+    rewrite !coefD !coefN !coef_poly !coefD !coef_poly.
+    generalize (nearest_round_int_add2 a`_i b`_i d H); intros.
+    simpl in H1.
   Admitted.
 
 Definition q_reduce (q : nat) (p : {poly int}) : {poly 'Z_q} :=
