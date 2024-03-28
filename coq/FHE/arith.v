@@ -249,8 +249,8 @@ Proof.
 Qed.
 
 Lemma ran_round_add2 (n1 n2 cutoff : R) :
-  ((0 : R) < cutoff)%O ->
-  (cutoff < (1 : R))%O ->
+  ((0 : R) < cutoff)%O -> 
+  (cutoff < (1 : R))%O -> 
   let sum := ran_round n1 cutoff + ran_round n2 cutoff  in
   `|ran_round (n1 + n2)%R cutoff - sum| <= 1.
 Proof.
@@ -288,8 +288,8 @@ Proof.
   rewrite /= /nearest_round_int.
   rewrite (_:((n1 + n2)%:~R / d%:~R)%R = ((n1%:~R / d%:~R) + (n2%:~R / d%:~R))%R).
   - apply nearest_round_add2.
-  - admit.    
-Admitted.
+  - ring.
+Qed.
 
 Lemma nearest_round_int_add2' (n1 n2 d : int) : 
   d <> 0 ->
