@@ -75,7 +75,7 @@ Proof.
     rewrite intrD mulrNz modpp' // oppr0 addr0.
     apply ord_inj => /=.
     by rewrite modp_small.
- Qed.
+Qed.
 
 Lemma zliftc_add2 {q : nat} (a b : 'Z_q) :
   1 < q ->
@@ -83,6 +83,8 @@ Lemma zliftc_add2 {q : nat} (a b : 'Z_q) :
   let sum := zliftc a + zliftc b in
   `|zliftc ab - sum | <= q.
 Proof.
+  have diveq: (Nat.divmod q 1 0 1).1 = (q / 2)%nat by [].
+
   move=> qbig.
   rewrite /zliftc /=.
   Ltac t1 C :=
@@ -115,17 +117,15 @@ Proof.
     rewrite {3}Zp_cast //.
     by t1 (Posz q).
   - case: (boolP ((Zp_trunc q).+1 < a + b)).
-    + rewrite mul1n {1}Zp_cast //.
-      case: (boolP ((@add int_ZmodType
-             (add (Posz
-                     (subn
-                        (addn a b)
-                        q))
-                (opp (Posz q)))
-             (opp (add (Posz a) (Posz b )))) >= (0 : int))%O).
-      * lia.
-      * rewrite -abszN.
-        admit.
+    + rewrite mul1n {1}Zp_cast // => ineq2.
+      simpl in lta.
+      rewrite diveq in lta ltb ltab.
+      case: (eqVneq q (nat_of_ord a + nat_of_ord b))%nat =>eqq2.
+      * case/negP: ltab.
+        by rewrite {3}Zp_cast // {3}eqq2 modnn.
+      * suff: 2 * (q / 2)%nat <= q by lia.
+        apply/leP.
+        apply Nat.Div0.mul_div_le.
     + rewrite mul0n => _.
       t1 (opp (Posz q)).
       by rewrite abszN.
@@ -142,7 +142,7 @@ Proof.
     rewrite eqq mul1n.
     rewrite {1}Zp_cast // in eqq.
     rewrite {3}Zp_cast //; lia.
-Admitted.
+Qed.
 
 
 Definition zlift {q : nat} (a : {poly 'Z_q}) : {poly int} :=
