@@ -122,8 +122,8 @@ Proof.
       * case/negP: ltab.
         by rewrite {3}Zp_cast // {3}eqq2 modnn.
       * suff: 2 * (q / 2)%nat <= q by lia.
-        apply/leP.
-        apply Nat.Div0.mul_div_le.
+        apply /leP.
+        by apply Nat.mul_div_le.
     + rewrite mul0n => _.
       t1 (opp (Posz q)).
       by rewrite abszN.
@@ -141,7 +141,6 @@ Proof.
     rewrite {1}Zp_cast // in eqq.
     rewrite {3}Zp_cast //; lia.
 Qed.
-
 
 Definition zlift {q : nat} (a : {poly 'Z_q}) : {poly int} :=
   map_poly zliftc a.
