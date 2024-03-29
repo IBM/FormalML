@@ -83,13 +83,40 @@ Lemma zliftc_add2 {q : nat} (a b : 'Z_q) :
   let sum := zliftc a + zliftc b in
   `|zliftc ab - sum | <= q.
 Proof.
-  intros.
+  move=> qbig.
   rewrite /zliftc /=.
+  Ltac t1 C :=
+    match goal with
+    | [|- is_true (leq (absz ?x) _) ] =>
+        have ->: x = C by lia
+    end.
+
+  Ltac t2 C := t1 C
+    ; case: (boolP (((Zp_trunc q).+1 < _ + _))) => // _
+                                                  ; (rewrite ?mul0n ?mul1n ?Zp_cast // ?distnn); lia.
+
   case: (boolP ( (a + b) %% (Zp_trunc q).+2 <= (Nat.divmod q 1 0 1).1)) => ltab
-   ;case: (boolP (a <= (Nat.divmod q 1 0 1).1)) => lta
-   ;case: (boolP (b <= (Nat.divmod q 1 0 1).1)) => ltb.
-  - rewrite modnD // /Zp_cast.
-    Admitted.
+   ; case: (boolP (a <= (Nat.divmod q 1 0 1).1)) => lta
+   ; case: (boolP (b <= (Nat.divmod q 1 0 1).1)) => ltb
+                                                  ; rewrite modnD // [modn a _]modn_small ?[modn b _]modn_small; try apply ltn_ord.
+  - t2 (opp (Posz (muln (leq (S (S (Zp_trunc q))) (addn a b)) (S (S (Zp_trunc q)))))).
+  - t2 (add (V:=int_ZmodType) q (opp (Posz (muln (leq (S (S (Zp_trunc q))) (addn a b)) (S (S (Zp_trunc q))))))).
+  - t2 (add (V:=int_ZmodType) (Posz q) (opp (Posz (muln (leq (S (S (Zp_trunc q))) (addn a b)) (S (S (Zp_trunc q))))))).
+  - have eqq: ((Zp_trunc q).+1 < a + b).
+    { move: (Nat.divmod_spec q 1 0 1) lta ltb.
+      case: (Nat.divmod q 1 0 1) => /= x u.
+      move/(_ (le_n _)) => [eqq1 eqq2] lta ltb.
+      rewrite !Nat.add_0_r in eqq1.
+      rewrite {1}Zp_cast //.
+      destruct u; simpl in *; lia.
+    }
+    rewrite eqq mul1n.
+    rewrite {1}Zp_cast // in eqq.
+    rewrite {3}Zp_cast //.
+    by t1 (Posz q).
+  -  
+    
+Admitted.
 
 
 Definition zlift {q : nat} (a : {poly 'Z_q}) : {poly int} :=
@@ -270,19 +297,8 @@ Lemma ran_round_add2 (n1 n2 cutoff : R) :
 Proof.
   move=> cutoff_big cutoff_small.
   rewrite /ran_round.
-  case: Order.TotalTheory.ltP=>lt1 ; case: Order.TotalTheory.ltP => lt2 ; case: Order.TotalTheory.ltP => lt3.
-  - apply upi_add2.
-  - destruct (upi_add2' n1 n2); rewrite H; lia.
-  - destruct (upi_add2' n1 n2); rewrite H; lia.
-  - destruct (upi_add2' n1 n2); rewrite H; try lia.
-    rewrite H raddfD /= in lt1.
-    lra.
-  - destruct (upi_add2' n1 n2); rewrite H; try lia.
-    rewrite H !raddfD /= in lt1.
-    lra.
-  - destruct (upi_add2' n1 n2); rewrite H; lia.
-  - destruct (upi_add2' n1 n2); rewrite H; lia.
-  - destruct (upi_add2' n1 n2); rewrite H; lia.
+  case: Order.TotalTheory.ltP=>lt1 ; case: Order.TotalTheory.ltP => lt2 ; case: Order.TotalTheory.ltP => lt3
+                                                                                                      ; try (destruct (upi_add2' n1 n2); rewrite H; try lia; rewrite H raddfD /= in lt1; lra).
 Qed.
 
 Lemma nearest_round_add2 (n1 n2 : R) :
