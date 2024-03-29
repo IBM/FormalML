@@ -145,6 +145,12 @@ Qed.
 Definition zlift {q : nat} (a : {poly 'Z_q}) : {poly int} :=
   map_poly zliftc a.
 
+Lemma zliftc0 (q : nat) :
+  zliftc (0 : 'Z_q) = 0.
+Proof.
+  by rewrite /zliftc.
+Qed.  
+
 Lemma zlift0 {q : nat} (a : {poly 'Z_q}) :
   a = 0 -> 
   zlift a = 0.
@@ -161,6 +167,25 @@ Proof.
   apply map_poly0.
 Qed.  
 
+Definition coef_maxnorm (p : {poly int}):nat := \max_(j < seq.size p) `|p`_ j|.
+
+Lemma zlift_add2 {q : nat} (a b : {poly 'Z_q}) :
+  (1 < q) ->
+  { c : {poly int} |
+    zlift  (a + b) = zlift a + zlift b + c /\
+      coef_maxnorm c <= q}.
+Proof.
+  exists (zlift (a + b) - (zlift a + zlift b)).
+  split.
+  - ring.
+  - rewrite /coef_maxnorm /zlift.
+    apply /bigmax_leqP => i _.
+    rewrite !(coefD,coefN).
+    rewrite !coef_map_id0; try apply zliftc0.
+    rewrite !coefD; try apply zlift0_alt.
+    by apply zliftc_add2.
+Qed.
+
 Definition upi (c:R) : int := ssrZ.int_of_Z (up c).
 
 (* 0 <= rand < 1 *)
@@ -172,7 +197,7 @@ Definition nearest_round (x : R) : int := ran_round x (1/2)%R.
 
 Definition nearest_round_int (n d : int) : int := nearest_round ((n %:~R)/(d %:~R))%R.
 
-Definition coef_maxnorm (p : {poly int}):nat := \max_(j < seq.size p) `|p`_ j|.
+
 
 Lemma IZRE (n : Z) : IZR n = (ssrZ.int_of_Z n)%:~R.
 Proof.
