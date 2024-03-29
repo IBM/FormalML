@@ -114,8 +114,20 @@ Proof.
     rewrite {1}Zp_cast // in eqq.
     rewrite {3}Zp_cast //.
     by t1 (Posz q).
-  -  
-    
+  - admit.
+  - t2 (opp (Posz (muln (leq (S (S (Zp_trunc q))) (addn a b)) (S (S (Zp_trunc q)))))).
+  - t2 (opp (Posz (muln (leq (S (S (Zp_trunc q))) (addn a b)) (S (S (Zp_trunc q)))))).
+  - have eqq: ((Zp_trunc q).+1 < a + b).
+    { move: (Nat.divmod_spec q 1 0 1) lta ltb.
+      case: (Nat.divmod q 1 0 1) => /= x u.
+      move/(_ (le_n _)) => [eqq1 eqq2] lta ltb.
+      rewrite !Nat.add_0_r in eqq1.
+      rewrite {1}Zp_cast //.
+      destruct u; simpl in *; lia.
+    }
+    rewrite eqq mul1n.
+    rewrite {1}Zp_cast // in eqq.
+    rewrite {3}Zp_cast //.
 Admitted.
 
 
