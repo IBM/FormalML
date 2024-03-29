@@ -115,7 +115,17 @@ Proof.
     rewrite {3}Zp_cast //.
     by t1 (Posz q).
   - case: (boolP ((Zp_trunc q).+1 < a + b)).
-    + admit.
+    + rewrite mul1n {1}Zp_cast //.
+      case: (boolP ((@add int_ZmodType
+             (add (Posz
+                     (subn
+                        (addn a b)
+                        q))
+                (opp (Posz q)))
+             (opp (add (Posz a) (Posz b )))) >= (0 : int))%O).
+      * lia.
+      * rewrite -abszN.
+        admit.
     + rewrite mul0n => _.
       t1 (opp (Posz q)).
       by rewrite abszN.
@@ -131,7 +141,7 @@ Proof.
     }
     rewrite eqq mul1n.
     rewrite {1}Zp_cast // in eqq.
-    rewrite {3}Zp_cast //.
+    rewrite {3}Zp_cast //; lia.
 Admitted.
 
 
