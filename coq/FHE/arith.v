@@ -3,7 +3,7 @@ From mathcomp Require Import common ssreflect fintype bigop ssrnat matrix Rstruc
 From mathcomp Require Import ssralg ssrfun.
 From mathcomp Require Import generic_quotient ring_quotient.
 From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool div order.
-From mathcomp Require Import ring.
+From mathcomp Require Import ring ssrZ.
 
 Import ssralg.GRing.
 Require Import nth_root encode.
@@ -77,6 +77,21 @@ Proof.
     by rewrite modp_small.
  Qed.
 
+Lemma zliftc_add2 {q : nat} (a b : 'Z_q) :
+  1 < q ->
+  let ab := a + b in 
+  let sum := zliftc a + zliftc b in
+  `|zliftc ab - sum | <= q.
+Proof.
+  intros.
+  rewrite /zliftc /=.
+  case: (boolP ( (a + b) %% (Zp_trunc q).+2 <= (Nat.divmod q 1 0 1).1)) => ltab
+   ;case: (boolP (a <= (Nat.divmod q 1 0 1).1)) => lta
+   ;case: (boolP (b <= (Nat.divmod q 1 0 1).1)) => ltb.
+  - rewrite modnD // /Zp_cast.
+    Admitted.
+
+
 Definition zlift {q : nat} (a : {poly 'Z_q}) : {poly int} :=
   map_poly zliftc a.
 
@@ -96,10 +111,9 @@ Proof.
   apply map_poly0.
 Qed.  
 
-(* 0 <= rand < 1 *)
-
 Definition upi (c:R) : int := ssrZ.int_of_Z (up c).
 
+(* 0 <= rand < 1 *)
 Definition ran_round (x rand : R) : int :=
   let hi := upi x in
   if (Order.lt (hi%:~R - x) rand)%R then hi else (hi - 1).
@@ -213,7 +227,7 @@ Proof.
   destruct (up_add2' r1 r2); rewrite H; lia.
 Qed.
 
-Import ssrZ.
+
 Lemma int_of_Z_abs x : `|int_of_Z x| = Z.abs_nat x.
 Proof.
   rewrite /int_of_Z /absz /Z.abs_nat.
@@ -427,6 +441,17 @@ Proof.
   eexists; split.
   - rewrite /ev_key /key_switch_key.
     rewrite map_Poly_id0.
+    + rewrite horner_Poly /= mul0r add0r.
+(*
+      assert (div_round
+       (zlift c2 *
+        zlift
+          (- a * q_reduce (p * q) s + q_reduce (p * q) e +
+             q_reduce (p * q) (s ^+ 2 *+ p))) p =
+*)                
+      admit.
+    + by rewrite [zlift 0]zlift0 // mulr0 div_round0 rmorph0.
+
 (*
     + rewrite horner_Poly /= mul0r add0r mulrDr.
     assert (div_round_q
