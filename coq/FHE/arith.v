@@ -79,9 +79,7 @@ Qed.
 
 Lemma zliftc_add2 {q : nat} (a b : 'Z_q) :
   1 < q ->
-  let ab := a + b in 
-  let sum := zliftc a + zliftc b in
-  `|zliftc ab - sum | <= q.
+  `|zliftc (a + b)%R -  ((zliftc a) + (zliftc b))%R  | <= q.
 Proof.
   have diveq: (Nat.divmod q 1 0 1).1 = (q / 2)%nat by [].
 
