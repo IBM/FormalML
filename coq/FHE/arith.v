@@ -114,7 +114,11 @@ Proof.
     rewrite {1}Zp_cast // in eqq.
     rewrite {3}Zp_cast //.
     by t1 (Posz q).
-  - admit.
+  - case: (boolP ((Zp_trunc q).+1 < a + b)).
+    + admit.
+    + rewrite mul0n => _.
+      t1 (opp (Posz q)).
+      by rewrite abszN.
   - t2 (opp (Posz (muln (leq (S (S (Zp_trunc q))) (addn a b)) (S (S (Zp_trunc q)))))).
   - t2 (opp (Posz (muln (leq (S (S (Zp_trunc q))) (addn a b)) (S (S (Zp_trunc q)))))).
   - have eqq: ((Zp_trunc q).+1 < a + b).
