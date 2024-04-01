@@ -390,7 +390,7 @@ Proof.
   - ring.
 Qed.
 
-Lemma nearest_round_int_add2' (n1 n2 d : int) : 
+Lemma nearest_round_int_add2_ex (n1 n2 d : int) : 
   d <> 0 ->
   let sum := nearest_round_int n1 d + nearest_round_int n2 d in
   { n3 : int |
@@ -437,7 +437,7 @@ Proof.
 Qed.  
 
 
-Lemma div_round_add2 (a b : {poly int}) (d : int) :
+Lemma div_round_add2_ex (a b : {poly int}) (d : int) :
   d <> 0 ->
   { c : {poly int} |
     div_round (a + b) d = div_round a d + div_round b d + c /\
@@ -452,6 +452,28 @@ Proof.
     rewrite !coef_map_id0; try by rewrite nearest_round_int0.
     rewrite !coefD.
     by apply nearest_round_int_add2.
+Qed.
+
+Definition div_round_add2_perturb (a b : {poly int}) (d : int) (dn0 : d <> 0) :  {poly int}
+  := sval (div_round_add2_ex a b d dn0).
+
+Lemma div_round_add2_eq (a b : {poly int}) (d : int) (dn0 : d <> 0)   
+  : div_round (a + b) d = div_round a d + div_round b d + 
+                            div_round_add2_perturb a b d dn0.
+Proof.
+  rewrite /div_round_add2_perturb.
+  case: (div_round_add2_perturb a b d dn0).
+  case: div_round_add2_ex; intros; simpl.
+  tauto.
+Qed.
+
+Lemma div_round_add2_perturb_small (a b : {poly int}) (d : int) (dn0 : d <> 0)
+  : icoef_maxnorm (div_round_add2_perturb a b d dn0) <= 1.
+Proof.
+  rewrite /div_round_add2_perturb.
+  case: (div_round_add2_perturb a b d dn0).
+  case: div_round_add2_ex; intros; simpl.
+  tauto.
 Qed.
 
 Definition q_reduce (q : nat) (p : {poly int}) : {poly 'Z_q} :=
@@ -530,67 +552,39 @@ Ltac extend_as_perturb P :=
   let x := (fresh "perturb_small") in
   intros x.
 
-Ltac perturb_facts
+Ltac perturb_zlift_facts
   := repeat match goal with
        | [|- context [zlift_add2_perturb ?a ?b ?c]] =>
            extend_as_perturb (zlift_add2_perturb_small a b c)
        end.
 
+Ltac perturb_div_round_facts
+  := repeat match goal with
+       | [|- context [div_round_add2_perturb ?a ?b ?c ?d]] =>
+           extend_as_perturb (div_round_add2_perturb_small a b c d)
+       end.
 
-Lemma linearize_prop  {q p : nat} (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
-  1 < p * q ->
+Lemma linearize_prop  {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   { e2 : {poly int} |
     (map_poly (fun P => q_reduce q (div_round ((zlift c2) * (zlift P)) (p%:Z)))
      (ev_key s e a)).[q_reduce q s] = 
       c2 * (q_reduce q (exp s 2)) + q_reduce q (div_round ((zlift c2) * e) p + e2) /\
   icoef_maxnorm e2 <= 1}. 
 Proof.
-  intros qpbig.
-  assert (qbig: (1 < q)).
-  {
-    admit.
-  }
+  assert (pqbig: (1 < p * q)) by lia.
   assert (pno: (Posz p <> 0)) by lia.
   eexists; split.
   - rewrite /ev_key /key_switch_key.
     rewrite map_Poly_id0.
     + rewrite horner_Poly /= mul0r add0r.
       rewrite !(zlift_add2_eq,mulrDr).
-      perturb_facts.
-      destruct (div_round_add2 (zlift c2 * zlift (- a * q_reduce (p * q) s + q_reduce (p * q) e))
-                  (zlift c2 * zlift (q_reduce (p * q) (s ^+ 2 *+ p))) p) as [? [??]]; trivial.
-(*      rewrite H3.
-      destruct  (div_round_add2
-                   (zlift c2 * zlift (- a * q_reduce (p * q) s + q_reduce (p * q) e))
-                   (zlift c2 * zlift (q_reduce (p * q) (s ^+ 2 *+ p))) p) as [? [??]]; trivial.
-      destruct (zlift_add2 (- a * q_reduce (p * q) s) (q_reduce (p * q) e)) as [? [??]]; trivial.
-      rewrite H7 !mulrDr.
-      destruct (div_round_add2   (zlift c2 * zlift (- a * q_reduce (p * q) s) +
-        zlift c2 * zlift (q_reduce (p * q) e)) (zlift c2 * x3) p) as [? [??]]; trivial.
-      rewrite H9.
-      destruct (div_round_add2 (zlift c2 * zlift (- a * q_reduce (p * q) s)) 
-                  (zlift c2 * zlift (q_reduce (p * q) e)) p) as [? [??]]; trivial.
-      rewrite H11 !rmorphD.
-      
- *)
-(*
-      assert (div_round
-       (zlift c2 *
-        zlift
-          (- a * q_reduce (p * q) s + q_reduce (p * q) e +
-             q_reduce (p * q) (s ^+ 2 *+ p))) p =
-*)                
+      perturb_zlift_facts.
+      rewrite !div_round_add2_eq.
+      perturb_div_round_facts.
+      rewrite !rmorphD /=.
       admit.
     + by rewrite [zlift 0]zlift0 // mulr0 div_round0 rmorph0.
-
-(*
-    + rewrite horner_Poly /= mul0r add0r mulrDr.
-    assert (div_round_q
-              (plift p c2 * (- a * q_reduce (p * q) s + q_reduce (p * q) e) +
-                 plift p c2 * q_reduce (p * q) (s ^+ 2 *+ p)) p) =
-             div_round_q (plift p c2 * (- a * q_reduce (p * q) s + q_reduce (p * q) e)) p
-                         + plift p c2 * q_reduce (p * q) (s ^+ 2 *+ p)) p) =
-  *)              
+  - admit.
 Admitted.
 
 Definition rescale {q1 q2 : nat} (p : {poly 'Z_(q1 * q2)}) : {poly 'Z_q2} :=
