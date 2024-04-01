@@ -167,18 +167,18 @@ Proof.
   apply map_poly0.
 Qed.  
 
-Definition coef_maxnorm (p : {poly int}):nat := \max_(j < seq.size p) `|p`_ j|.
+Definition icoef_maxnorm (p : {poly int}):nat := \max_(j < seq.size p) `|p`_ j|.
 
 Lemma zlift_add2 {q : nat} (a b : {poly 'Z_q}) :
   (1 < q) ->
   { c : {poly int} |
     zlift  (a + b) = zlift a + zlift b + c /\
-      coef_maxnorm c <= q}.
+      icoef_maxnorm c <= q}.
 Proof.
   exists (zlift (a + b) - (zlift a + zlift b)).
   split.
   - ring.
-  - rewrite /coef_maxnorm /zlift.
+  - rewrite /icoef_maxnorm /zlift.
     apply /bigmax_leqP => i _.
     rewrite !(coefD,coefN).
     rewrite !coef_map_id0; try apply zliftc0.
@@ -420,12 +420,12 @@ Lemma div_round_add2 (a b : {poly int}) (d : int) :
   d <> 0 ->
   { c : {poly int} |
     div_round (a + b) d = div_round a d + div_round b d + c /\
-      coef_maxnorm c <= 1}.
+      icoef_maxnorm c <= 1}.
 Proof.
   exists (div_round (a + b) d - (div_round a d + div_round b d)).
   split.
   - ring.
-  - rewrite /coef_maxnorm /div_round.
+  - rewrite /icoef_maxnorm /div_round.
     apply /bigmax_leqP => i _.
     rewrite !(coefD,coefN).
     rewrite !coef_map_id0; try by rewrite nearest_round_int0.
@@ -495,17 +495,49 @@ Definition linearize {q p : nat} (c0 c1 c2 : {poly 'Z_q})
     map_poly (fun P => q_reduce q (div_round ((zlift c2) * (zlift P)) (p%:Z)))
                                evkey.
 
+(* evkey = [:: (-a * (q_reduce (p * q) s) + (q_reduce (p * q) e) + (q_reduce (p * q) (s^2 *+ p))); a]
+*)
 Lemma linearize_prop  {q p : nat} (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
+  1 < p * q ->
   { e2 : {poly int} |
     (map_poly (fun P => q_reduce q (div_round ((zlift c2) * (zlift P)) (p%:Z)))
      (ev_key s e a)).[q_reduce q s] = 
       c2 * (q_reduce q (exp s 2)) + q_reduce q (div_round ((zlift c2) * e) p + e2) /\
-  coef_maxnorm e2 <= 1}. 
+  icoef_maxnorm e2 <= 1}. 
 Proof.
+  intros qpbig.
+  assert (qbig: (1 < q)).
+  {
+    admit.
+  }
+  assert (pno: (Posz p <> 0)) by lia.
   eexists; split.
   - rewrite /ev_key /key_switch_key.
     rewrite map_Poly_id0.
     + rewrite horner_Poly /= mul0r add0r.
+      destruct (zlift_add2 (- a * q_reduce (p * q) s + q_reduce (p * q) e)
+                  (q_reduce (p * q) (s ^+ 2 *+ p))) as [? [??]]; trivial.
+      rewrite H !mulrDr.
+      destruct (div_round_add2 (zlift c2 * zlift (- a * q_reduce (p * q) s + q_reduce (p * q) e) +
+                                   zlift c2 * zlift (q_reduce (p * q) (s ^+ 2 *+ p)))
+                  (zlift c2 * x) p ) as [? [??]]; trivial.
+      rewrite H1.
+      destruct (div_round_add2 (zlift c2 * zlift (- a * q_reduce (p * q) s + q_reduce (p * q) e))
+                  (zlift c2 * zlift (q_reduce (p * q) (s ^+ 2 *+ p))) p) as [? [??]]; trivial.
+      rewrite H3.
+      destruct  (div_round_add2
+                   (zlift c2 * zlift (- a * q_reduce (p * q) s + q_reduce (p * q) e))
+                   (zlift c2 * zlift (q_reduce (p * q) (s ^+ 2 *+ p))) p) as [? [??]]; trivial.
+      destruct (zlift_add2 (- a * q_reduce (p * q) s) (q_reduce (p * q) e)) as [? [??]]; trivial.
+      rewrite H7 !mulrDr.
+      destruct (div_round_add2   (zlift c2 * zlift (- a * q_reduce (p * q) s) +
+        zlift c2 * zlift (q_reduce (p * q) e)) (zlift c2 * x3) p) as [? [??]]; trivial.
+      rewrite H9.
+      destruct (div_round_add2 (zlift c2 * zlift (- a * q_reduce (p * q) s)) 
+                  (zlift c2 * zlift (q_reduce (p * q) e)) p) as [? [??]]; trivial.
+      rewrite H11 !rmorphD.
+      
+
 (*
       assert (div_round
        (zlift c2 *
@@ -543,7 +575,7 @@ Lemma decrypt_mult {p q : nat} (P Q : {poly 'Z_q}) (PP QQ : {poly {poly 'Z_q}})
   {R : {poly int} |
      FHE_decrypt s (FHE_mult PP QQ (ev_key s e a)) = 
        P * Q + q_reduce q (div_round (zlift (PP * QQ)`_2 * e) p + R) /\
-       coef_maxnorm R <= 1 }.
+       icoef_maxnorm R <= 1 }.
 Proof.
 (*
   intros.
