@@ -585,6 +585,8 @@ Lemma lift_reduce_prod2 (p q : nat) (a : {poly int}) :
 Proof.
   rewrite /zlift -polyP => i.
   rewrite coefMn !coef_map_id0 // coefMn.
+  rewrite /q_reduce.
+  rewrite coef_map_id0 //.
 Admitted.
 
 Lemma zlift_valid {q : nat} (c : {poly 'Z_q}) :
