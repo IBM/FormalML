@@ -598,24 +598,17 @@ Lemma reduce_prod2 (p q : nat) (a : int) :
   nat_of_ord ((a %:~R : 'Z_(p*q))*+ p) = ((a%:~R : 'Z_q) * p)%N.
 Proof.
   intros.
-  simpl.
-  rewrite /intmul.
-  destruct a; simpl.
-  - rewrite !Zp_mulrn mul1n.
-    rewrite /inZp /= !Zp_cast //.
+  destruct a; rewrite /intmul !Zp_mulrn mul1n /inZp /= !Zp_cast //.
     by apply modn_prod2.
-  - rewrite !Zp_mulrn mul1n.
-    rewrite /inZp /= !Zp_cast //.
-    rewrite modn_prod2 //.
+  - rewrite modn_prod2 //.
     f_equal.    
-    rewrite modnB; [|lia|lia].
-    rewrite [RHS]modnB; [|lia|lia].
+    rewrite !modnB; [|lia|lia|lia|lia].
     rewrite modnMl modnn !addn0.
     replace (modn (modn (S n) (muln p q)) q) with
       (modn (modn (S n) q) q); trivial.
     rewrite modn_mod modn_dvdm //.
     apply dvdn_mull.
-    apply dvdnn.
+    by apply dvdnn.
 Qed.
 
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
@@ -628,20 +621,23 @@ Proof.
   have ->: ((a %:~R : 'Z_(p*q))*+ p <= p * q / 2) = (((a%:~R : 'Z_q)) <= q /2).
   {
     rewrite -mulr_natl.
-    Unset Printing Notations.
     admit.
+(*    Unset Printing Notations. *)
   }
   case: leqP; rewrite reduce_prod2 //; lia.
 Admitted.
 
 Lemma lift_reduce_prod2 (p q : nat) (a : {poly int}) :
+  1 < q ->
+  1 < p*q ->
   zlift (q_reduce (p * q) a *+ p) =
     zlift (q_reduce q a) *+p.
 Proof.
+  intros.
   rewrite /zlift -polyP => i.
   rewrite coefMn !coef_map_id0 // coefMn.
   rewrite /q_reduce coef_map_id0 //.
-  apply liftc_reduce_prod2.
+  by apply liftc_reduce_prod2.
 Qed.
 
 Lemma zlift_valid {q : nat} (c : {poly 'Z_q}) :
@@ -668,7 +664,7 @@ Proof.
     + rewrite horner_Poly /= mul0r add0r.
       rewrite !(zlift_add2_eq,mulrDr) rmorphMn /=.
       rewrite div_round_add2_eq.
-      rewrite lift_reduce_prod2 mulrnAr /=.
+      rewrite lift_reduce_prod2 // mulrnAr /=.
       rewrite div_round_muln_add; try lia.
       rewrite !rmorphD /=.
       rewrite rmorphM /=.
