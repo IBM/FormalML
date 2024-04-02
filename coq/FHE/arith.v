@@ -580,48 +580,43 @@ Proof.
 Qed.
 
 Lemma modn_mul2 (p q r: nat) : 
-  0 < q ->
   p %% q * r = (p * r) %[mod q].
 Proof.
-  intros.
-  rewrite -!modulo_modn -multE.
-  rewrite Nat.mul_mod_idemp_l //.
-  lia.
+  by rewrite modnMml.
 Qed.
 
 Lemma modn_prod2 (p q n : nat) :
-  1 < q ->
-  1 < p * q ->
   ((n %% (p * q) * p) %% (p * q))%N = (n %% q * p)%N.
 Proof.
-  intros.
   rewrite modn_mul2 (mulnC p _); try lia.
-  rewrite -!modulo_modn -multE.
-  rewrite Nat.mul_mod_distr_r //; lia.
+  by rewrite muln_modl.
 Qed.
 
 Lemma reduce_prod2 (p q : nat) (a : int) :
   1 < q ->
   1 < p*q ->
-  nat_of_ord ((a %:~R : 'Z_(p*q))*+ p) = ((nat_of_ord ((a%:~R : 'Z_q))) * p)%N.
+  nat_of_ord ((a %:~R : 'Z_(p*q))*+ p) = ((a%:~R : 'Z_q) * p)%N.
 Proof.
   intros.
   simpl.
   rewrite /intmul.
   destruct a; simpl.
   - rewrite !Zp_mulrn mul1n.
-    rewrite /inZp /=.
-    rewrite Zp_cast //.
-    rewrite Zp_cast //.
+    rewrite /inZp /= !Zp_cast //.
     by apply modn_prod2.
   - rewrite !Zp_mulrn mul1n.
-    rewrite /inZp /=.
-    rewrite Zp_cast //.
-    rewrite Zp_cast //.
+    rewrite /inZp /= !Zp_cast //.
     rewrite modn_prod2 //.
-    move: modnB.
     f_equal.    
-Admitted.
+    rewrite modnB; [|lia|lia].
+    rewrite [RHS]modnB; [|lia|lia].
+    rewrite modnMl modnn !addn0.
+    replace (modn (modn (S n) (muln p q)) q) with
+      (modn (modn (S n) q) q); trivial.
+    rewrite modn_mod modn_dvdm //.
+    apply dvdn_mull.
+    apply dvdnn.
+Qed.
 
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
   1 < q ->
