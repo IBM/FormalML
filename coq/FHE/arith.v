@@ -618,20 +618,26 @@ Proof.
     rewrite /inZp /=.
     rewrite Zp_cast //.
     rewrite Zp_cast //.
-    Admitted.
+    rewrite modn_prod2 //.
+    move: modnB.
+    f_equal.    
+Admitted.
 
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
+  1 < q ->
+  1 < p*q ->
   zliftc ((a %:~R : 'Z_(p*q))*+ p) = (zliftc (a%:~R : 'Z_q)) *+p.
 Proof.
+  move=> qbig pqbig.
   rewrite /zliftc.
-  case: (boolP ((a%:~R : 'Z_q) <= (q / 2))).
-  - assert ((a %:~R : 'Z_(p*q))*+ p <= p * q / 2).
-    {
-      admit.
-    }
-    rewrite H.
-    intros.
-    Admitted.
+  have ->: ((a %:~R : 'Z_(p*q))*+ p <= p * q / 2) = (((a%:~R : 'Z_q)) <= q /2).
+  {
+    rewrite -mulr_natl.
+    Unset Printing Notations.
+    admit.
+  }
+  case: leqP; rewrite reduce_prod2 //; lia.
+Admitted.
 
 Lemma lift_reduce_prod2 (p q : nat) (a : {poly int}) :
   zlift (q_reduce (p * q) a *+ p) =
