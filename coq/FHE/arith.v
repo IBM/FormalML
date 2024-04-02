@@ -63,7 +63,7 @@ Qed.
   
 Lemma zliftc_valid {q : nat} (c : 'Z_q) :
   1 < q ->
-  c = (zliftc c) %:~R.
+  (zliftc c) %:~R = c.
 Proof.
   intros.
   rewrite /zliftc.
@@ -590,15 +590,9 @@ Lemma zlift_valid {q : nat} (c : {poly 'Z_q}) :
   q_reduce q (zlift c) = c.
 Proof.
   intros.
-  rewrite /q_reduce /zlift.
-  rewrite !map_polyE -polyP => i.
-  rewrite coef_Poly (zliftc_valid c`_i) //.
-  rewrite (nth_map 0).
-  - rewrite coef_Poly.
-    rewrite (nth_map 0) //.
-    admit.
-  - admit.
-  Admitted.
+  rewrite /q_reduce /zlift -polyP => i.
+  by rewrite !coef_map_id0 // zliftc_valid.
+Qed.
 
 Lemma linearize_prop  {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   { e2 : {poly int} |
