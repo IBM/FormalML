@@ -579,15 +579,69 @@ Proof.
   by rewrite rmorphMn.
 Qed.
 
+Lemma modn_mul2 (p q r: nat) : 
+  0 < q ->
+  p %% q * r = (p * r) %[mod q].
+Proof.
+  intros.
+  rewrite -!modulo_modn -multE.
+  rewrite Nat.mul_mod_idemp_l //.
+  lia.
+Qed.
+
+Lemma modn_prod2 (p q n : nat) :
+  1 < q ->
+  1 < p * q ->
+  ((n %% (p * q) * p) %% (p * q))%N = (n %% q * p)%N.
+Proof.
+  intros.
+  rewrite modn_mul2 (mulnC p _); try lia.
+  rewrite -!modulo_modn -multE.
+  rewrite Nat.mul_mod_distr_r //; lia.
+Qed.
+
+Lemma reduce_prod2 (p q : nat) (a : int) :
+  1 < q ->
+  1 < p*q ->
+  nat_of_ord ((a %:~R : 'Z_(p*q))*+ p) = ((nat_of_ord ((a%:~R : 'Z_q))) * p)%N.
+Proof.
+  intros.
+  simpl.
+  rewrite /intmul.
+  destruct a; simpl.
+  - rewrite !Zp_mulrn mul1n.
+    rewrite /inZp /=.
+    rewrite Zp_cast //.
+    rewrite Zp_cast //.
+    by apply modn_prod2.
+  - rewrite !Zp_mulrn mul1n.
+    rewrite /inZp /=.
+    rewrite Zp_cast //.
+    rewrite Zp_cast //.
+    Admitted.
+
+Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
+  zliftc ((a %:~R : 'Z_(p*q))*+ p) = (zliftc (a%:~R : 'Z_q)) *+p.
+Proof.
+  rewrite /zliftc.
+  case: (boolP ((a%:~R : 'Z_q) <= (q / 2))).
+  - assert ((a %:~R : 'Z_(p*q))*+ p <= p * q / 2).
+    {
+      admit.
+    }
+    rewrite H.
+    intros.
+    Admitted.
+
 Lemma lift_reduce_prod2 (p q : nat) (a : {poly int}) :
   zlift (q_reduce (p * q) a *+ p) =
     zlift (q_reduce q a) *+p.
 Proof.
   rewrite /zlift -polyP => i.
   rewrite coefMn !coef_map_id0 // coefMn.
-  rewrite /q_reduce.
-  rewrite coef_map_id0 //.
-Admitted.
+  rewrite /q_reduce coef_map_id0 //.
+  apply liftc_reduce_prod2.
+Qed.
 
 Lemma zlift_valid {q : nat} (c : {poly 'Z_q}) :
   1 < q ->
