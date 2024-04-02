@@ -167,6 +167,7 @@ Proof.
   apply map_poly0.
 Qed.  
 
+
 Definition icoef_maxnorm (p : {poly int}):nat := \max_(j < seq.size p) `|p`_ j|.
 
 Lemma zlift_add2_ex {q : nat} (a b : {poly 'Z_q}) :
@@ -436,6 +437,14 @@ Proof.
   by rewrite -nearest_round_int_mul_add_r // coefZ.
 Qed.  
 
+Lemma div_round_muln_add (a b : {poly int}) (d : nat) :
+  d <> 0%N ->
+  div_round (a + b *+ d) d = div_round a d + b.
+Proof.
+  intros.
+  rewrite -div_round_mul_add; try lia.
+  by rewrite -scaler_nat /GRing.scale /= !scale_polyE natz.
+Qed.
 
 Lemma div_round_add2_ex (a b : {poly int}) (d : int) :
   d <> 0 ->
@@ -527,7 +536,7 @@ Proof.
 Qed.
 
 Definition key_switch_key {q p : nat} (s s2 e : {poly int}) (a : {poly 'Z_(p*q)}) : {poly {poly 'Z_(p*q)}} := 
-  Poly [:: (-a * (q_reduce (p * q) s) + (q_reduce (p * q) e) + (q_reduce (p * q) (s2 *+ p))); a].
+  Poly [:: (-a * (q_reduce (p * q) s) + (q_reduce (p * q) e) + q_reduce (p * q) (s2 *+ p)); a].
 
 Definition ev_key {q p : nat} (s e : {poly int}) (a : {poly 'Z_(p*q)}) :=
   key_switch_key s (exp s 2) e a.
@@ -564,6 +573,33 @@ Ltac perturb_div_round_facts
            extend_as_perturb (div_round_add2_perturb_small a b c d)
        end.
 
+Lemma reduce_prod1 (p q : nat) (a : {poly int}) :
+  q_reduce (q) (a *+ p) = (q_reduce q a) *+ p.
+Proof.
+  by rewrite rmorphMn.
+Qed.
+
+Lemma lift_reduce_prod2 (p q : nat) (a : {poly int}) :
+  zlift (q_reduce (p * q) a *+ p) =
+    zlift (q_reduce q a) *+p.
+Proof.
+  Admitted.
+
+Lemma zlift_valid {q : nat} (c : {poly 'Z_q}) :
+  1 < q ->
+  q_reduce q (zlift c) = c.
+Proof.
+  intros.
+  rewrite /q_reduce /zlift.
+  rewrite !map_polyE -polyP => i.
+  rewrite coef_Poly (zliftc_valid c`_i) //.
+  rewrite (nth_map 0).
+  - rewrite coef_Poly.
+    rewrite (nth_map 0) //.
+    admit.
+  - admit.
+  Admitted.
+
 Lemma linearize_prop  {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   { e2 : {poly int} |
     (map_poly (fun P => q_reduce q (div_round ((zlift c2) * (zlift P)) (p%:Z)))
@@ -577,11 +613,14 @@ Proof.
   - rewrite /ev_key /key_switch_key.
     rewrite map_Poly_id0.
     + rewrite horner_Poly /= mul0r add0r.
-      rewrite !(zlift_add2_eq,mulrDr).
-      perturb_zlift_facts.
-      rewrite !div_round_add2_eq.
-      perturb_div_round_facts.
+      rewrite !(zlift_add2_eq,mulrDr) rmorphMn /=.
+      rewrite div_round_add2_eq.
+      rewrite lift_reduce_prod2 mulrnAr /=.
+      rewrite div_round_muln_add; try lia.
       rewrite !rmorphD /=.
+      rewrite rmorphM /=.
+      rewrite !zlift_valid //.
+      rewrite !div_round_add2_eq !rmorphD /=.
       admit.
     + by rewrite [zlift 0]zlift0 // mulr0 div_round0 rmorph0.
   - admit.
