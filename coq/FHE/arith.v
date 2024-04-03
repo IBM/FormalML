@@ -38,6 +38,31 @@ Definition FHE_mult_base {q : nat} (P Q : {poly {poly 'Z_q}} ) := P * Q.
 Definition zliftc {q : nat} (c : 'Z_q) : int :=
   if (c <= q/2) then c%:Z else c%:Z - q%:Z.
 
+Lemma zliftc_bound {q : nat} (c : 'Z_q) :
+  1 < q ->
+  `| zliftc c | <= q/2.
+Proof.
+  intros.
+  rewrite /zliftc.
+  case: (boolP (c <= q/2)); intros.
+  - by destruct c.
+  - destruct c.
+    simpl in *.
+    move /negP in i.
+    assert (m > (Nat.divmod q 1 0 1).1) by lia.
+    rewrite Zp_cast // in i0.
+    replace `|m-q| with (q - m)%N by (rewrite distnEr; lia).
+    assert (q <= 2*(Nat.divmod q 1 0 1).1 + 1).
+    {
+      move: (Nat.divmod_spec q 1 0 1 (le_refl _)) => /=.
+      case: (Nat.divmod q 1 0 1) => /= x u.
+      rewrite !Nat.add_0_r.
+      move=> [-> ubound].
+      destruct u; lia.
+    }
+    lia.
+ Qed.
+
 Lemma modp_small (q : nat) (m : nat) :
   m < (Zp_trunc q).+2 ->
   nat_of_ord (intmul (1 : 'Z_q) (Posz m)) = m.
@@ -141,6 +166,49 @@ Proof.
     rewrite {1}Zp_cast // in eqq.
     rewrite {3}Zp_cast //; lia.
 Qed.
+
+Lemma bounded_div (a : int) (q : nat) :
+  1 < q ->
+  intdiv.dvdz q a ->
+  `|a| <= 3*q/2 ->
+       { c : nat |
+         `| a | = (c * q)%N /\ `|c| <= 1}.
+Proof.
+  Admitted.
+       
+
+Lemma zliftc_add2_ex {q : nat} (a b : 'Z_q) :
+  1 < q ->
+  { c : nat |
+    `|zliftc (a + b)%R -  ((zliftc a) + (zliftc b))%R  | = (c * q)%N /\
+                                                           `|c| <= 1}.
+Proof.
+  intros.
+  apply bounded_div; trivial.
+  - assert ((zliftc (a + b)%R - (zliftc a + zliftc b)%R) %:~R = (0 : 'Z_q)).
+    {
+      rewrite rmorphD rmorphN !rmorphD /=.
+      rewrite !zliftc_valid //.
+      ring.
+    }
+    admit.
+  - 
+  
+Admitted.
+
+Lemma zliftc_mul2 {q : nat} (a b : 'Z_q) :
+  1 < q ->
+  `|zliftc (a * b)%R -  ((zliftc a) * (zliftc b))%R  | <= ((q/2) * q)%N.
+Proof.
+  Admitted.
+
+Lemma zliftc_mul2_ex {q : nat} (a b : 'Z_q) :
+  1 < q ->
+  { c : nat |
+    `|zliftc (a * b)%R -  ((zliftc a) * (zliftc b))%R  | = (c * q)%N /\
+                                                           `|c| <= q/2}.
+Proof.
+  Admitted.
 
 Definition zlift {q : nat} (a : {poly 'Z_q}) : {poly int} :=
   map_poly zliftc a.
@@ -633,22 +701,6 @@ Proof.
   destruct u; lia.
 Qed.
 
-Lemma mul_le_alt (p q r : nat) :
-  (q <= r)%N = (p.+1 * q <= p.+1 * r)%N.
-Proof.
-  induction p; lia.
-Qed.
-
-Lemma mul_le (p q r : nat) :
-  0 < p ->
-  (q <= r)%N = (p * q <= p * r)%N.
-Proof.
-  intros.
-  destruct p.
-  - lia.
-  - apply mul_le_alt.
-Qed.
-
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
   1 < q ->
   1 < p*q ->
@@ -664,7 +716,7 @@ Proof.
       rewrite [modn (S 0) q]modn_small // !mul1n.
       rewrite modn_mul2 modn_prod2r.
       rewrite mulnA (mulnC 2%N p) -mulnA.
-      rewrite -mul_le //.
+      rewrite leq_pmul2l //.
       lia.
     - rewrite !modnB; [|lia|lia|lia|lia].
       rewrite !modnn.
@@ -719,6 +771,7 @@ Proof.
       rewrite rmorphM /=.
       rewrite !zlift_valid //.
       rewrite !div_round_add2_eq !rmorphD /=.
+      
       admit.
     + by rewrite [zlift 0]zlift0 // mulr0 div_round0 rmorph0.
   - admit.
