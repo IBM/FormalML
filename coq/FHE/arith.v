@@ -585,11 +585,23 @@ Proof.
   by rewrite modnMml.
 Qed.
 
+Lemma modn_mul2r (p q r: nat) : 
+  r * (p %% q) = r * p %[mod q].
+Proof.
+  by rewrite modnMmr.
+Qed.
+
 Lemma modn_prod2 (p q n : nat) :
   ((n %% (p * q) * p) %% (p * q))%N = (n %% q * p)%N.
 Proof.
-  rewrite modn_mul2 (mulnC p _); try lia.
+  rewrite modn_mul2 (mulnC p _).
   by rewrite muln_modl.
+Qed.
+
+Lemma modn_prod2r (p q n : nat) :
+  ((p * (n %% (p * q))) %% (p * q))%N = (p * (n %% q))%N.
+Proof.
+  by rewrite modn_mul2r muln_modr.
 Qed.
 
 Lemma reduce_prod2 (p q : nat) (a : int) :
@@ -620,7 +632,14 @@ Proof.
   move=> [-> ubound].
   destruct u; lia.
 Qed.
-  
+
+Lemma mul2_le (p q r : nat) :
+  0 < p ->
+  (q <= r)%N = (p * q <= p * r)%N.
+Proof.
+  intros.
+  Admitted.
+
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
   1 < q ->
   1 < p*q ->
@@ -630,9 +649,21 @@ Proof.
   rewrite /zliftc.
   have ->: ((a %:~R : 'Z_(p*q))*+ p <= p * q / 2) = (((a%:~R : 'Z_q)) <= q /2).
   {
-    rewrite -mulr_natl.
-    admit.
-(*    Unset Printing Notations. *)
+    rewrite -mulr_natl !div2_le.
+    destruct a; rewrite /intmul !Zp_mulrn mul1n /inZp /= !Zp_cast //.
+    - rewrite [modn (S 0) (muln p q)]modn_small //.
+      rewrite [modn (S 0) q]modn_small // !mul1n.
+      rewrite modn_mul2 modn_prod2r.
+      rewrite mulnA (mulnC 2%N p) -mulnA.
+      generalize mul2_le; intros.
+      rewrite -mul2_le //.
+      lia.
+    - rewrite !modnB; [|lia|lia|lia|lia].
+      rewrite !modnn.
+      rewrite [modn (S 0) (muln p q)]modn_small //.
+      rewrite [modn (S 0) q]modn_small // !mul1n !addn0.
+      rewrite !modn_mod.
+      admit.
   }
   case: leqP; rewrite reduce_prod2 //; lia.
 Admitted.
