@@ -216,7 +216,7 @@ Lemma zliftc_add2_ex {q : nat} (a b : 'Z_q) :
   1 < q ->
   { c : nat |
     `|zliftc (a + b)%R -  ((zliftc a) + (zliftc b))%R  | = (c * q)%N /\
-                                                           `|c| <= 1}.
+                                                           c <= 1}.
 Proof.
   intros.
   apply bounded_divi; trivial.
