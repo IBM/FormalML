@@ -167,6 +167,21 @@ Proof.
     rewrite {3}Zp_cast //; lia.
 Qed.
 
+
+Lemma bounded_dvdn_cases (a q : nat) :
+  1 < q ->
+  (q %| a)%N ->
+  a < 2 * q ->
+  (a == q) || (a == 0%nat).
+Proof.
+  move=> qbig.
+  move/dvdnP => [k ->].
+  rewrite ltn_mul2r.
+  move/andP=>[_ -].
+  case: k; [| case]; lia.
+Qed.
+
+
 Lemma bounded_dvdn (a q : nat) :
   1 < q ->
   (q %| a)%N ->
@@ -174,7 +189,12 @@ Lemma bounded_dvdn (a q : nat) :
   { c : nat |
     a = (c * q)%N /\ c <= 1}.
 Proof.
-Admitted.
+  move=> qbig qdiva asmall.
+  move: (bounded_dvdn_cases a q qbig qdiva asmall).
+  case: (eqVneq a q) => /=.
+  - exists 1%nat. lia.
+  - exists 0%nat. lia.
+Qed.
 
 Lemma bounded_divi (a : int) (q : nat) :
   1 < q ->
@@ -189,7 +209,8 @@ Qed.
 Lemma absz_triang (a b : int) :
   `|a + b| <= `|a| + `|b|.
 Proof.
-  Admitted.
+  lia.
+Qed.
 
 Lemma zliftc_add2_ex {q : nat} (a b : 'Z_q) :
   1 < q ->
@@ -199,13 +220,25 @@ Lemma zliftc_add2_ex {q : nat} (a b : 'Z_q) :
 Proof.
   intros.
   apply bounded_divi; trivial.
-  - assert ((zliftc (a + b)%R - (zliftc a + zliftc b)%R) %:~R = (0 : 'Z_q)).
+  - have: ((zliftc (a + b)%R - (zliftc a + zliftc b)%R) %:~R = (0 : 'Z_q)).
     {
       rewrite rmorphD rmorphN !rmorphD /=.
       rewrite !zliftc_valid //.
       ring.
     }
-    admit.
+    case: (zliftc (a + b)%R - (zliftc a + zliftc b))%R => n.
+    + simpl.
+      rewrite /intmul Zp_nat.
+      move/(f_equal val) => /=.
+      rewrite Zp_cast //.
+      by move/eqP.
+    + simpl.
+      rewrite /intmul Zp_nat.
+      move/(f_equal val) => /=.
+      rewrite Zp_cast //.
+      rewrite modnB; try lia.
+      rewrite modnn modn_mod.
+      lia.
   - move: (zliftc_bound a H) => a_bound.
     move: (zliftc_bound b H) => b_bound.
     move: (zliftc_bound (a + b) H) => ab_bound.    
@@ -214,10 +247,14 @@ Proof.
     rewrite -abszN in triang_ab.
     assert (q/2 + q/2 + q/2 < 2 * q)%N.
     {
-      admit.
+      move: (Nat.divmod_spec q 1 0 1 (le_refl _)) => /=.
+      case: Nat.divmod => /= x y.
+      rewrite !Nat.add_0_r.
+      move=> [qeq ubound]; subst.
+      destruct y; lia.
     }
     lia.
-Admitted.
+Qed.
 
 Lemma zliftc_mul2 {q : nat} (a b : 'Z_q) :
   1 < q ->
