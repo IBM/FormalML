@@ -167,15 +167,29 @@ Proof.
     rewrite {3}Zp_cast //; lia.
 Qed.
 
-Lemma bounded_div (a : int) (q : nat) :
+Lemma bounded_dvdn (a q : nat) :
   1 < q ->
-  intdiv.dvdz q a ->
-  `|a| <= 3*q/2 ->
+  (q %| a)%N ->
+  a < 2 * q ->
+  { c : nat |
+    a = (c * q)%N /\ c <= 1}.
+Proof.
+Admitted.
+
+Lemma bounded_divi (a : int) (q : nat) :
+  1 < q ->
+  (q %| `|a|)%N ->
+  `|a| < 2 * q ->
        { c : nat |
-         `| a | = (c * q)%N /\ `|c| <= 1}.
+         `| a | = (c * q)%N /\ c <= 1}.
+Proof.
+  by apply bounded_dvdn.
+Qed.
+
+Lemma absz_triang (a b : int) :
+  `|a + b| <= `|a| + `|b|.
 Proof.
   Admitted.
-       
 
 Lemma zliftc_add2_ex {q : nat} (a b : 'Z_q) :
   1 < q ->
@@ -184,7 +198,7 @@ Lemma zliftc_add2_ex {q : nat} (a b : 'Z_q) :
                                                            `|c| <= 1}.
 Proof.
   intros.
-  apply bounded_div; trivial.
+  apply bounded_divi; trivial.
   - assert ((zliftc (a + b)%R - (zliftc a + zliftc b)%R) %:~R = (0 : 'Z_q)).
     {
       rewrite rmorphD rmorphN !rmorphD /=.
@@ -192,8 +206,17 @@ Proof.
       ring.
     }
     admit.
-  - 
-  
+  - move: (zliftc_bound a H) => a_bound.
+    move: (zliftc_bound b H) => b_bound.
+    move: (zliftc_bound (a + b) H) => ab_bound.    
+    move: (absz_triang (zliftc a) (zliftc b)) => triang_ab.
+    move: (absz_triang (zliftc (a+b)) (- (zliftc a + zliftc b))) => triang_abc.    
+    rewrite -abszN in triang_ab.
+    assert (q/2 + q/2 + q/2 < 2 * q)%N.
+    {
+      admit.
+    }
+    lia.
 Admitted.
 
 Lemma zliftc_mul2 {q : nat} (a b : 'Z_q) :
