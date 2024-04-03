@@ -633,20 +633,20 @@ Proof.
   destruct u; lia.
 Qed.
 
-Lemma mul2_le_alt (p q r : nat) :
+Lemma mul_le_alt (p q r : nat) :
   (q <= r)%N = (p.+1 * q <= p.+1 * r)%N.
 Proof.
   induction p; lia.
 Qed.
 
-Lemma mul2_le (p q r : nat) :
+Lemma mul_le (p q r : nat) :
   0 < p ->
   (q <= r)%N = (p * q <= p * r)%N.
 Proof.
   intros.
   destruct p.
   - lia.
-  - apply mul2_le_alt.
+  - apply mul_le_alt.
 Qed.
 
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
@@ -664,8 +664,7 @@ Proof.
       rewrite [modn (S 0) q]modn_small // !mul1n.
       rewrite modn_mul2 modn_prod2r.
       rewrite mulnA (mulnC 2%N p) -mulnA.
-      generalize mul2_le; intros.
-      rewrite -mul2_le //.
+      rewrite -mul_le //.
       lia.
     - rewrite !modnB; [|lia|lia|lia|lia].
       rewrite !modnn.
