@@ -611,6 +611,16 @@ Proof.
     by apply dvdnn.
 Qed.
 
+Lemma div2_le (p q : nat) :
+  (p <= q/2)%N = (2 * p <= q)%N.
+Proof.
+  move: (Nat.divmod_spec q 1 0 1 (le_refl _)) => /=.
+  case: (Nat.divmod q 1 0 1) => /= x u.
+  rewrite !Nat.add_0_r.
+  move=> [-> ubound].
+  destruct u; lia.
+Qed.
+  
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
   1 < q ->
   1 < p*q ->
