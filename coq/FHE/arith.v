@@ -266,7 +266,7 @@ Lemma zliftc_mul2_ex {q : nat} (a b : 'Z_q) :
   1 < q ->
   { c : nat |
     `|zliftc (a * b)%R -  ((zliftc a) * (zliftc b))%R  | = (c * q)%N /\
-                                                           `|c| <= q/2}.
+                                                           c <= q/2}.
 Proof.
   Admitted.
 
