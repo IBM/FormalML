@@ -206,11 +206,52 @@ Proof.
   by apply bounded_dvdn.
 Qed.
 
+Lemma bounded_divn_alt (a : nat) (q k : nat) :
+  1 < q ->
+  (q %| a)%N ->
+  a <= k * q ->
+  { c : nat | a = (c * q)%N /\ c <= k}.
+Proof.
+  move=> qbig.
+  move/dvdnP => kp.
+  
+Admitted.
+
+Lemma bounded_divi_alt (a : int) (q k : nat) :
+  1 < q ->
+  (q %| `|a|)%N ->
+  `|a| <= k * q ->
+       { c : nat | `| a | = (c * q)%N /\ c <= k}.
+Proof.
+  apply bounded_divn_alt.
+Qed.
+
 Lemma absz_triang (a b : int) :
   `|a + b| <= `|a| + `|b|.
 Proof.
   lia.
 Qed.
+
+Lemma Z_q_0_dvd_abs {q : nat} (a : int) :
+  1 < q ->
+  a %:~R = (0 : 'Z_q) ->
+  (q %| `|a|)%N.
+Proof.
+  move => qbig.
+  case: a => n.
+  - simpl.
+    rewrite /intmul Zp_nat.
+    move/(f_equal val) => /=.
+    rewrite Zp_cast //.
+    by move/eqP.
+  - simpl.
+    rewrite /intmul Zp_nat.
+    move/(f_equal val) => /=.
+    rewrite Zp_cast //.
+    rewrite modnB; try lia.
+    rewrite modnn modn_mod.
+    lia.
+ Qed.
 
 Lemma zliftc_add2_ex {q : nat} (a b : 'Z_q) :
   1 < q ->
@@ -220,25 +261,10 @@ Lemma zliftc_add2_ex {q : nat} (a b : 'Z_q) :
 Proof.
   intros.
   apply bounded_divi; trivial.
-  - have: ((zliftc (a + b)%R - (zliftc a + zliftc b)%R) %:~R = (0 : 'Z_q)).
-    {
-      rewrite rmorphD rmorphN !rmorphD /=.
-      rewrite !zliftc_valid //.
-      ring.
-    }
-    case: (zliftc (a + b)%R - (zliftc a + zliftc b))%R => n.
-    + simpl.
-      rewrite /intmul Zp_nat.
-      move/(f_equal val) => /=.
-      rewrite Zp_cast //.
-      by move/eqP.
-    + simpl.
-      rewrite /intmul Zp_nat.
-      move/(f_equal val) => /=.
-      rewrite Zp_cast //.
-      rewrite modnB; try lia.
-      rewrite modnn modn_mod.
-      lia.
+  - apply Z_q_0_dvd_abs; trivial.
+    rewrite rmorphD rmorphN !rmorphD /=.
+    rewrite !zliftc_valid //.
+    ring.
   - move: (zliftc_bound a H) => a_bound.
     move: (zliftc_bound b H) => b_bound.
     move: (zliftc_bound (a + b) H) => ab_bound.    
@@ -258,9 +284,21 @@ Qed.
 
 Lemma zliftc_mul2 {q : nat} (a b : 'Z_q) :
   1 < q ->
-  `|zliftc (a * b)%R -  ((zliftc a) * (zliftc b))%R  | <= ((q/2) * q)%N.
+  `|(zliftc (a * b) - (zliftc a) * (zliftc b))%R  | <= (q/2 * (1 + q/2))%N.
 Proof.
-  Admitted.
+  intros.
+  move: (zliftc_bound a H) => a_bound.
+  move: (zliftc_bound b H) => b_bound.
+  move: (zliftc_bound (a * b) H) => ab_bound.
+  move: (absz_triang (zliftc (a*b)) (- (zliftc a * zliftc b))) => triang.
+  rewrite abszN in triang.
+  assert (`|zliftc a * zliftc b| <= (q/2) * (q/2)).
+  {
+    rewrite abszM.
+    by apply leq_mul.
+  }
+  lia.
+  Qed.
 
 Lemma zliftc_mul2_ex {q : nat} (a b : 'Z_q) :
   1 < q ->
@@ -268,7 +306,21 @@ Lemma zliftc_mul2_ex {q : nat} (a b : 'Z_q) :
     `|zliftc (a * b)%R -  ((zliftc a) * (zliftc b))%R  | = (c * q)%N /\
                                                            c <= q/2}.
 Proof.
-  Admitted.
+  intros.
+  apply bounded_divi_alt; trivial.
+  - apply Z_q_0_dvd_abs; trivial.
+    rewrite rmorphD rmorphN rmorphM /=.
+    rewrite !zliftc_valid //.
+    ring.
+  - generalize (zliftc_mul2 a b H); intros.
+    assert ((q / 2) * (1 + q / 2) <= (q/2) * q).
+    {
+       rewrite -Nat.div2_div leq_pmul2l.
+      - generalize (Nat.lt_div2 q); lia.
+      - generalize (div2_not_R0 q); lia.
+    }
+    lia.
+Qed.
 
 Definition zlift {q : nat} (a : {poly 'Z_q}) : {poly int} :=
   map_poly zliftc a.
@@ -519,6 +571,12 @@ Proof.
   - ring.
 Qed.
 
+Lemma nearest_round_mul (n1 n2 d : int) :
+  d <> 0 ->
+  (`|(nearest_round_int (n1 * n2) d - nearest_round_int n1 d * n2)%R|) <= (`|n2| + 1)/2.
+Proof.
+  Admitted.
+
 Lemma nearest_round_int_add2_ex (n1 n2 d : int) : 
   d <> 0 ->
   let sum := nearest_round_int n1 d + nearest_round_int n2 d in
@@ -530,6 +588,18 @@ Proof.
   exists (nearest_round_int (n1 + n2) d - sum).
   split; try lia.
   by apply nearest_round_int_add2.
+Qed.
+
+Lemma nearest_round_int_mul_ex (n1 n2 d : int) : 
+  d <> 0 ->
+  { n3 : int |
+    nearest_round_int (n1 * n2) d = nearest_round_int n1 d * n2 + n3 /\
+      `|n3| <= (`|n2|+1)/2}.
+Proof.
+  intros.
+  exists (nearest_round_int (n1 * n2) d - nearest_round_int n1 d * n2).
+  split; try lia.
+  by apply nearest_round_mul.
 Qed.
 
 Definition div_round (a : {poly int}) (d : int) : {poly int} :=
