@@ -858,7 +858,17 @@ Proof.
       | [|- (?x <= ?y) = (?z <= ?y) ] =>
           suff: x = z by move=> ->
       end.
-      admit.
+      rewrite [RHS]mulnA (mulnC p 2%N) -[RHS]mulnA.
+      f_equal.
+      rewrite modn_mul2 -muln_modr.
+      f_equal.
+      case: ltP; intros.
+      + rewrite mul1n.
+        case: ltP; intros.
+        * rewrite mul1n.
+          admit.
+        * admit.
+      + admit.
   }
   case: leqP; rewrite reduce_prod2 //; lia.
 Admitted.
