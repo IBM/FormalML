@@ -213,9 +213,9 @@ Lemma bounded_divn_alt (a : nat) (q k : nat) :
   { c : nat | a = (c * q)%N /\ c <= k}.
 Proof.
   move=> qbig.
-  move/dvdnP => kp.
-  
-Admitted.
+  exists (a %/ q)%nat.
+  by rewrite divnK //  leq_divLR.
+Qed.
 
 Lemma bounded_divi_alt (a : int) (q k : nat) :
   1 < q ->
