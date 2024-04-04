@@ -853,6 +853,11 @@ Proof.
       rewrite [modn (S 0) (muln p q)]modn_small //.
       rewrite [modn (S 0) q]modn_small // !mul1n !addn0.
       rewrite !modn_mod.
+      rewrite -[RHS](@leq_pmul2l p); [| lia].
+      match goal with
+      | [|- (?x <= ?y) = (?z <= ?y) ] =>
+          suff: x = z by move=> ->
+      end.
       admit.
   }
   case: leqP; rewrite reduce_prod2 //; lia.
