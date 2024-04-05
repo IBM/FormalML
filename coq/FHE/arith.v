@@ -1042,9 +1042,26 @@ Proof.
   move=> qbig.
   case: (boolP (intdiv.dvdz q (2 * a))) => div; [by left|].
   right.
-  apply liftc_neg_alt; trivial.
-  move /negP in div.
-  Admitted.
+  apply liftc_neg_alt => //.
+  move: div.
+  apply contraNN => eqq.
+  apply/intdiv.dvdzP.
+  have: 2 * (a%:~R : 'Z_q) == 0.
+  {
+    move: eqq.
+    move/eqP/(f_equal (fun x:nat => x + (a%:~R : 'Z_q)))%nat.
+    have aqsmall:  (a%:~R : 'Z_q) < q by apply Z_q_small.
+    rewrite (_:(q - (a%:~R : 'Z_q) + (a%:~R : 'Z_q))%N =  q); [| lia].
+    move => eqq.    
+    suff: (a%:~R + a%:~R) == ( 0 : 'Z_q).
+    {
+      move/eqP => <-.
+      apply/eqP.
+      ring.
+    }
+    by rewrite /eq_op/= -eqq Zp_cast // modnn.
+  }
+Admitted.
   
 
 
