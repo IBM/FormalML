@@ -1034,6 +1034,20 @@ Proof.
   case: leqP => /=; intros; rewrite {1 3}Zp_cast // modn_small //; lia.
 Qed.
 
+Lemma liftc_neg_alt_alt (q : nat) (a : int) :
+  1 < q ->
+  intdiv.dvdz q (2 * a) \/
+    zliftc ((-a)%:~R : 'Z_q) = - zliftc (a %:~R : 'Z_q).
+Proof.
+  move=> qbig.
+  case: (boolP (intdiv.dvdz q (2 * a))) => div; [by left|].
+  right.
+  apply liftc_neg_alt; trivial.
+  move /negP in div.
+  Admitted.
+  
+
+
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
   1 < q ->
   1 < p*q ->
