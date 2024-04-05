@@ -953,15 +953,15 @@ Proof.
   simpl in H0.
   rewrite Zp_cast // in i.
   case: (boolP  (q - m <= q/2)); intros.
-  - case (boolP (m <= q/2)); intros i0; rewrite i0; try tauto.
-    assert (q <= q/2 + q/2) by lia.
-    assert (q = 2*(q/2))%N by admit.
-    lia.
+  - case (boolP (m <= q/2)); intros i0; rewrite i0; lia.
   - case (boolP (m <= q/2)); intros i1; rewrite i1; try tauto.
-    assert (q > 2*(q/2)+1) by lia.
-    assert ((q mod 2)%coq_nat < 2) by admit.
+    assert ((q mod 2)%coq_nat < 2).
+    {
+      rewrite modulo_modn.
+      by rewrite ltn_mod.
+    }
     lia.
-Admitted.
+Qed.
 
 Lemma Z_q_small {q:nat} (c : 'Z_q) :
   1 < q ->
