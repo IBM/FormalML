@@ -896,11 +896,26 @@ Proof.
 Qed.
  *)
 
+Lemma Nat_even_even (x : nat) : Nat.even x = ~~ odd x.
+Proof.
+  induction x => //=.
+  destruct x; [lia |].
+  by rewrite -IHx Nat.even_succ Nat.negb_odd.
+Qed.  
+
+Lemma Nat_odd_odd (x : nat) : Nat.odd x = odd x.
+Proof.
+  by rewrite -Nat.negb_even Nat_even_even negbK.
+Qed.
+  
 Lemma qodd_half (q : nat) :
   odd q ->
   (q = q/2 + q/2 + 1)%N.
 Proof.
-Admitted.
+  rewrite -!Nat.div2_div => qodd.
+  rewrite [LHS]Nat.div2_odd Nat_odd_odd qodd /=.
+  lia.
+Qed.
 
 Lemma liftc_neg0 (q : nat) (a : int) :
   1 < q ->
@@ -949,8 +964,10 @@ Proof.
   intros.
   assert (apos: 0 < (a%:~R : 'Z_q)).
   {
-    admit.
-  }
+    have anneg: 0 <= (a%:~R : 'Z_q) by lia.
+    by rewrite Order.NatOrder.ltn_def i anneg.
+  } 
+
   have ->: (((- a)%:~R : 'Z_q) <= q / 2) = (~~ ((a%:~R : 'Z_q) <= q / 2)).
   {
     rewrite rmorphN /=.
@@ -967,7 +984,7 @@ Proof.
   }
   rewrite rmorphN /=.
   case: leqP => /=; intros; rewrite {1 3}Zp_cast // modn_small //; lia.
-Admitted.
+Qed.
 
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
   1 < q ->
