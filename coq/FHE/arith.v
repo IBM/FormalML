@@ -865,12 +865,13 @@ Proof.
   case: leqP; rewrite reduce_prod2 //; lia.
 Qed.
 
-Lemma qodd2lt (q : nat) (a : int) :
+(*
+Lemma qodd2lt (q : nat) :
   1 < q ->
   odd q ->
   (q/2 + q/2 < q).
 Proof.
-Admitted.
+*)
 
 (*Lemma Zp_int_opp (p:nat) (a : int) (pbig:1<p) :
   ((- a) %:~R : 'Z_p) = match a
@@ -895,6 +896,45 @@ Proof.
 Qed.
  *)
 
+Lemma qodd_half (q : nat) :
+  odd q ->
+  (q = q/2 + q/2 + 1)%N.
+Proof.
+Admitted.
+
+Lemma liftc_neg0 (q : nat) (a : int) :
+  1 < q ->
+  (a %:~R : 'Z_q) = 0 ->
+  zliftc ((-a)%:~R : 'Z_q) = - zliftc (a %:~R : 'Z_q).
+Proof.
+  intros.
+  rewrite /zliftc.
+  assert (((-a) %:~R : 'Z_q) = 0).
+  {
+    apply (f_equal (fun z => opp z)) in H0.
+    rewrite -rmorphN /= in H0.
+    by rewrite H0 oppr0.
+  }
+  rewrite H0 H1 /=; lia.
+Qed.
+
+Lemma liftc_neg_prop (q : nat) (a : 'Z_q) :
+  (q = q/2 + q/2 + 1)%N ->
+  q - a <= q/2 = ~~ (a <= q/2).
+Proof.
+  lia.
+Qed.
+
+Lemma Z_q_small {q:nat} (c : 'Z_q) :
+  1 < q ->
+  c < q.
+Proof.
+  intros.
+  destruct c.
+  simpl.
+  rewrite Zp_cast // in i.
+Qed.
+
 Lemma liftc_neg (q : nat) (a : int) :
   1 < q ->
   odd q ->
@@ -902,39 +942,31 @@ Lemma liftc_neg (q : nat) (a : int) :
   zliftc ((-a)%:~R : 'Z_q) = - zliftc (a %:~R : 'Z_q).
 Proof.
   rewrite /zliftc.
+  intros qbig qodd.
+  move: (qodd_half q qodd) => qsum.
+  move : (Z_q_small (a%:~R : 'Z_q) qbig) => asmall.
+  case: (eqVneq (a %:~R : 'Z_q) 0); [by apply liftc_neg0|].
   intros.
-  case: (eqVneq a 0); [by move=> -> |] => ane0.
+  assert (apos: 0 < (a%:~R : 'Z_q)).
+  {
+    admit.
+  }
   have ->: (((- a)%:~R : 'Z_q) <= q / 2) = (~~ ((a%:~R : 'Z_q) <= q / 2)).
   {
-    rewrite !Zp_int //.
-    case: a ane0 => n /=.
-    - case n; [lia |] => /= {n}.
-      move=> n _.
-      rewrite !Zp_cast //.
-      admit.
-    - move=> _.
-      rewrite !Zp_cast //.
-      admit.
-  } 
-  case: leqP => /=.
-  - rewrite !Zp_int //.
-    case: a ane0 => n /=.
-    + case n; [lia |] => /= {n}.
-      move=> n _.
-      rewrite !Zp_cast //.
-      admit.
-    + move=> _.
-      rewrite !Zp_cast //.
-      admit.
-  - rewrite !Zp_int //.
-    case: a ane0 => n /=.
-    + case n; [lia |] => /= {n}.
-      move=> n _.
-      rewrite !Zp_cast //.
-      admit.
-    + move=> _.
-      rewrite !Zp_cast //.
-      admit.
+    rewrite rmorphN /=.
+    rewrite {1 3}Zp_cast //.
+    rewrite modnB; [|lia|lia].
+    rewrite modnn.
+    assert (0 < (a%:~R : 'Z_q) %% q).
+    {
+      rewrite modn_small //.
+    }
+    rewrite H mul1n addn0.
+    rewrite modn_small //.
+    by apply liftc_neg_prop.
+  }
+  rewrite rmorphN /=.
+  case: leqP => /=; intros; rewrite {1 3}Zp_cast // modn_small //; lia.
 Admitted.
 
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
