@@ -1004,6 +1004,36 @@ Proof.
   case: leqP => /=; intros; rewrite {1 3}Zp_cast // modn_small //; lia.
 Qed.
 
+Lemma liftc_neg_alt (q : nat) (a : int) :
+  1 < q ->
+  (q - (a%:~R : 'Z_q) != (a%:~R : 'Z_q))%N ->
+  zliftc ((-a)%:~R : 'Z_q) = - zliftc (a %:~R : 'Z_q).
+Proof.
+  move=> qbig not_ahalf.
+  rewrite /zliftc.
+  move : (Z_q_small (a%:~R : 'Z_q) qbig) => asmall.
+  case: (eqVneq (a %:~R : 'Z_q) 0)=>i; [by apply liftc_neg0|].
+  assert (apos: 0 < (a%:~R : 'Z_q)).
+  {
+    have anneg: 0 <= (a%:~R : 'Z_q) by lia.
+    by rewrite Order.NatOrder.ltn_def i anneg.
+  } 
+
+  have ->: (((- a)%:~R : 'Z_q) <= q / 2) = (~~ ((a%:~R : 'Z_q) <= q / 2)).
+  {
+    rewrite rmorphN /= {1 3}Zp_cast //.
+    rewrite modnB; [|lia|lia].
+    assert (0 < (a%:~R : 'Z_q) %% q).
+    {
+      rewrite modn_small //.
+    }
+    rewrite modnn H mul1n addn0 modn_small //.
+    by apply liftc_neg_prop_alt.
+  }
+  rewrite rmorphN /=.
+  case: leqP => /=; intros; rewrite {1 3}Zp_cast // modn_small //; lia.
+Qed.
+
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
   1 < q ->
   1 < p*q ->
