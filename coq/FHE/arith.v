@@ -898,6 +898,7 @@ Qed.
 Lemma liftc_neg (q : nat) (a : int) :
   1 < q ->
   odd q ->
+  (* ~~ intdiv.dvdz q (2 * a) *)
   zliftc ((-a)%:~R : 'Z_q) = - zliftc (a %:~R : 'Z_q).
 Proof.
   rewrite /zliftc.
