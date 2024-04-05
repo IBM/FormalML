@@ -940,14 +940,36 @@ Proof.
   lia.
 Qed.
 
+Lemma liftc_neg_prop_alt (q : nat) (a : 'Z_q) :
+  1 < q ->
+  (q - a != a)%N ->
+  q - a <= q/2 = ~~ (a <= q/2).
+Proof.
+  intros.
+  generalize (Nat.div_mod_eq q 2); intros.
+  assert (2 * (q/2) <= q)%coq_nat by lia.
+  destruct a.
+  simpl.
+  simpl in H0.
+  rewrite Zp_cast // in i.
+  case: (boolP  (q - m <= q/2)); intros.
+  - case (boolP (m <= q/2)); intros i0; rewrite i0; try tauto.
+    assert (q <= q/2 + q/2) by lia.
+    assert (q = 2*(q/2))%N by admit.
+    lia.
+  - case (boolP (m <= q/2)); intros i1; rewrite i1; try tauto.
+    assert (q > 2*(q/2)+1) by lia.
+    assert ((q mod 2)%coq_nat < 2) by admit.
+    lia.
+Admitted.
+
 Lemma Z_q_small {q:nat} (c : 'Z_q) :
   1 < q ->
   c < q.
 Proof.
-  intros.
-  destruct c.
-  simpl.
-  rewrite Zp_cast // in i.
+  move=> qbig.
+  case: c => m i /=.
+  by rewrite Zp_cast // in i.
 Qed.
 
 Lemma liftc_neg (q : nat) (a : int) :
@@ -956,12 +978,11 @@ Lemma liftc_neg (q : nat) (a : int) :
   (* ~~ intdiv.dvdz q (2 * a) *)
   zliftc ((-a)%:~R : 'Z_q) = - zliftc (a %:~R : 'Z_q).
 Proof.
+  move=> qbig qodd.
   rewrite /zliftc.
-  intros qbig qodd.
   move: (qodd_half q qodd) => qsum.
   move : (Z_q_small (a%:~R : 'Z_q) qbig) => asmall.
-  case: (eqVneq (a %:~R : 'Z_q) 0); [by apply liftc_neg0|].
-  intros.
+  case: (eqVneq (a %:~R : 'Z_q) 0)=>i; [by apply liftc_neg0|].
   assert (apos: 0 < (a%:~R : 'Z_q)).
   {
     have anneg: 0 <= (a%:~R : 'Z_q) by lia.
@@ -970,16 +991,13 @@ Proof.
 
   have ->: (((- a)%:~R : 'Z_q) <= q / 2) = (~~ ((a%:~R : 'Z_q) <= q / 2)).
   {
-    rewrite rmorphN /=.
-    rewrite {1 3}Zp_cast //.
+    rewrite rmorphN /= {1 3}Zp_cast //.
     rewrite modnB; [|lia|lia].
-    rewrite modnn.
     assert (0 < (a%:~R : 'Z_q) %% q).
     {
       rewrite modn_small //.
     }
-    rewrite H mul1n addn0.
-    rewrite modn_small //.
+    rewrite modnn H mul1n addn0 modn_small //.
     by apply liftc_neg_prop.
   }
   rewrite rmorphN /=.
