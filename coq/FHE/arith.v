@@ -1132,7 +1132,7 @@ Proof.
   rewrite {1}eqq2.
   suff ->:(intdiv.modz (2%Z*a) q = 0).
   - by rewrite addr0.
-  - rewrite -intrM in a0.
+  - rewrite -(intrM  (Zp_ringType (Zp_trunc q)) (2%Z) a) in a0.
     move /eqP in a0.
     by apply int_Zp_0.
 Qed.    
