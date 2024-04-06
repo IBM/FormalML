@@ -1034,6 +1034,10 @@ Proof.
   case: leqP => /=; intros; rewrite {1 3}Zp_cast // modn_small //; lia.
 Qed.
 
+Lemma int_Zp_0 {q : nat} (a : int) :
+  (a%:~R : 'Z_q) = 0 ->
+  intdiv.modz a q = 0.
+Admitted.
 
 Lemma liftc_neg_alt_alt (q : nat) (a : int) :
   1 < q ->
@@ -1067,9 +1071,12 @@ Proof.
   rewrite {1}eqq2.
   suff ->:(intdiv.modz (2%Z*a) q = 0).
   - by rewrite addr0.
-  - clear eqq eqq2.
-    rewrite -intrM in a0.
+  - rewrite -intrM in a0.
     move /eqP in a0.
+    by apply int_Zp_0.
+Qed.    
+(*
+
     rewrite /intmul in a0.
     destruct (2%Z * a).
     + rewrite Zp_nat /inZp /zero /= in a0.
@@ -1081,8 +1088,7 @@ Proof.
       rewrite Zp_nat /inZp /zero /opp /= in a0.
       apply (f_equal val) in a0.
       rewrite /= Zp_cast // in a0.
-Admitted.
-  
+*)
 
 
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
