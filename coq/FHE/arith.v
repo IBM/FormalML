@@ -6,7 +6,7 @@ From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool div
 From mathcomp Require Import ring ssrZ.
 
 Import ssralg.GRing.
-Require Import nth_root encode.
+Require Import nth_root encode zp_prim_root.
 
 Ltac coq_lra := lra.
 From mathcomp Require Import lra.
@@ -1106,14 +1106,6 @@ Proof.
     by apply int_Zp_0.
 Qed.    
 
-Lemma modn_prod_modn (a p q :nat) :
-  1 < p ->
-  1 < q ->
-  ((a %% (p * q)) %% q = a %% q)%N.
-Proof.
-  intros.
-  Admitted.
-
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
   1 < q ->
   1 < p ->
@@ -1144,10 +1136,10 @@ Proof.
       assert ((((p * q - n.+1 %% (p * q)) %% (p * q)) %% q) =
                 ((q - n.+1 %% q) %% q))%N.
       {
-        rewrite modn_prod_modn //.
+        rewrite modn_muln_r //.
         rewrite modnB; [|lia|lia].
         rewrite modnMl addn0.
-        rewrite modn_prod_modn //.
+        rewrite modn_muln_r //.
         case: ltP; intros.
         - rewrite mul1n.
           assert (q - n.+1 %% q < q) by lia.
