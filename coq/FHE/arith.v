@@ -1137,12 +1137,21 @@ Proof.
     by apply int_Zp_0.
 Qed.    
 
+Lemma modn_prod_modn (a p q :nat) :
+  1 < p ->
+  1 < q ->
+  ((a %% (p * q)) %% q = a %% q)%N.
+Proof.
+  intros.
+  Admitted.
+
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
   1 < q ->
-  1 < p*q ->
+  1 < p ->
   zliftc ((a %:~R : 'Z_(p*q))*+ p) = (zliftc (a%:~R : 'Z_q)) *+p.
 Proof.
-  move=> qbig pqbig.
+  move=> qbig pbig.
+  assert (pqbig : 1 < p*q) by lia.
   rewrite /zliftc.
   have ->: ((a %:~R : 'Z_(p*q))*+ p <= p * q / 2) = (((a%:~R : 'Z_q)) <= q /2).
   {
@@ -1154,30 +1163,34 @@ Proof.
       rewrite mulnA (mulnC 2%N p) -mulnA.
       rewrite leq_pmul2l //.
       lia.
-    - rewrite !modnB; [|lia|lia|lia|lia].
-      rewrite !modnn.
-      rewrite [modn (S 0) (muln p q)]modn_small //.
-      rewrite [modn (S 0) q]modn_small // !mul1n !addn0.
-      rewrite !modn_mod.
-      rewrite -[RHS](@leq_pmul2l p); [| lia].
-      match goal with
-      | [|- (?x <= ?y) = (?z <= ?y) ] =>
-          suff: x = z by move=> ->
-      end.
-      rewrite [RHS]mulnA (mulnC p 2%N) -[RHS]mulnA.
-      f_equal.
-      rewrite modn_mul2 -muln_modr.
-      f_equal.
-      case: ltP; intros.
-      + rewrite mul1n.
+    - rewrite (modn_small pqbig) (modn_small qbig) !mul1n.
+      assert (p < p*q).
+      {
+        replace (p) with (p*1)%N at 1 by lia.
+        rewrite ltn_pmul2l //; lia.
+      }
+      rewrite (modn_small H) -muln_modr.
+      rewrite mulnA (mulnC 2%N p) -mulnA.
+      rewrite leq_pmul2l; [| lia].
+      assert ((((p * q - n.+1 %% (p * q)) %% (p * q)) %% q) =
+                ((q - n.+1 %% q) %% q))%N.
+      {
+        rewrite modn_prod_modn //.
+        rewrite modnB; [|lia|lia].
+        rewrite modnMl addn0.
+        rewrite modn_prod_modn //.
         case: ltP; intros.
-        * rewrite mul1n.
-          admit.
-        * admit.
-      + admit.
+        - rewrite mul1n.
+          assert (q - n.+1 %% q < q) by lia.
+          by rewrite (modn_small H0).
+        - rewrite mul0n sub0n.
+          assert (n.+1 %% q = 0)%N by lia.
+          by rewrite H0 subn0 modnn.
+      }
+      by rewrite H0.
   }
   case: leqP; rewrite reduce_prod2 //; lia.
-Admitted.
+Qed.
 
 Lemma lift_reduce_prod2 (p q : nat) (a : {poly int}) :
   1 < q ->
