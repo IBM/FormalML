@@ -1035,8 +1035,16 @@ Proof.
 Qed.
 
 Lemma int_Zp_0 {q : nat} (a : int) :
+  1 < q ->
   (a%:~R : 'Z_q) = 0 ->
   intdiv.modz a q = 0.
+Proof.
+  intros qbig a0.
+  rewrite Zp_int // in a0.
+  apply (f_equal val) in a0.
+  destruct a; rewrite /inZp /= Zp_cast // in a0.
+  - rewrite intdiv.modz_nat a0; lia.
+  - rewrite intdiv.modNz_nat; try lia.
 Admitted.
 
 Lemma liftc_neg_alt_alt (q : nat) (a : int) :
@@ -1075,21 +1083,6 @@ Proof.
     move /eqP in a0.
     by apply int_Zp_0.
 Qed.    
-(*
-
-    rewrite /intmul in a0.
-    destruct (2%Z * a).
-    + rewrite Zp_nat /inZp /zero /= in a0.
-      apply (f_equal val) in a0.
-      rewrite /= Zp_cast // in a0.
-      rewrite intdiv.modz_nat a0.
-      lia.
-    + rewrite intdiv.modNz_nat; try lia.
-      rewrite Zp_nat /inZp /zero /opp /= in a0.
-      apply (f_equal val) in a0.
-      rewrite /= Zp_cast // in a0.
-*)
-
 
 Lemma liftc_reduce_prod2 (p q : nat) (a : int) :
   1 < q ->
