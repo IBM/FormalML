@@ -1039,7 +1039,7 @@ Lemma int_Zp_0 {q : nat} (a : int) :
   (a%:~R : 'Z_q) = 0 ->
   intdiv.modz a q = 0.
 Proof.
-  intros qbig a0.
+  move => qbig a0.
   rewrite Zp_int // in a0.
   apply (f_equal val) in a0.
   destruct a; rewrite /inZp /= Zp_cast // in a0.
@@ -1065,6 +1065,41 @@ Proof.
       rewrite modn_small in a0; lia.
  Qed.
 
+Lemma int_Zp_0_alt {q : nat} (a : int) :
+  1 < q ->
+  intdiv.modz a q = 0 ->
+  (a%:~R : 'Z_q) = 0.
+Proof.
+  move => qbig qmod.
+  rewrite Zp_int //.
+  destruct a.
+  - rewrite intdiv.modz_nat in qmod.
+    apply ord_inj.
+    rewrite /= Zp_cast //.
+    lia.
+  - rewrite intdiv.modNz_nat in qmod; try lia.
+    apply ord_inj.
+    rewrite /= Zp_cast //.
+    rewrite modnS.
+    case: (boolP (q %| n.+1)%N) => pred.
+    + by rewrite subn0 modnn.
+    + assert ((n%% q)%N = q-1)%N by lia.
+      rewrite H.
+      replace ((q-1).+1) with q by lia.
+      by rewrite subnn mod0n.
+Qed.    
+
+Lemma int_Zp_0_iff (q : nat) (a : int) :
+  1 < q ->
+  intdiv.modz a q = 0 <->
+  (a%:~R : 'Z_q) = 0.
+Proof.
+  move => qbig.
+  split.
+  - by apply int_Zp_0_alt.
+  - by apply int_Zp_0.
+Qed.
+  
 Lemma liftc_neg_alt_alt (q : nat) (a : int) :
   1 < q ->
   intdiv.dvdz q (2 * a) \/
