@@ -865,37 +865,6 @@ Proof.
   case: leqP; rewrite reduce_prod2 //; lia.
 Qed.
 
-(*
-Lemma qodd2lt (q : nat) :
-  1 < q ->
-  odd q ->
-  (q/2 + q/2 < q).
-Proof.
-*)
-
-(*Lemma Zp_int_opp (p:nat) (a : int) (pbig:1<p) :
-  ((- a) %:~R : 'Z_p) = match a
-
-                    with
-                    | Negz n => inZp n.+1
-                    | Posz 0 => 0
-                    | Posz (n.+1) => inZp (p - modn n.+1 p)
-                    end.
-Proof.
-  destruct a.
-  - rewrite /intmul.
-    case n => /=.
-    + admit.
-    + intros.
-      rewrite /intmul Zp_nat.
-      rewrite /opp /= /Zp_opp /=.
-      apply ord_inj => /=.
-      rewrite Zp_cast //.
-  - case n => /=. rewrite /intmul Zp_nat.
-    by rewrite opprK.
-Qed.
- *)
-
 Lemma Nat_even_even (x : nat) : Nat.even x = ~~ odd x.
 Proof.
   induction x => //=.
@@ -1194,7 +1163,7 @@ Qed.
 
 Lemma lift_reduce_prod2 (p q : nat) (a : {poly int}) :
   1 < q ->
-  1 < p*q ->
+  1 < p ->
   zlift (q_reduce (p * q) a *+ p) =
     zlift (q_reduce q a) *+p.
 Proof.
