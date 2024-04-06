@@ -1045,7 +1045,25 @@ Proof.
   destruct a; rewrite /inZp /= Zp_cast // in a0.
   - rewrite intdiv.modz_nat a0; lia.
   - rewrite intdiv.modNz_nat; try lia.
-Admitted.
+    rewrite modnS in a0.
+    case: (boolP (q %| n.+1)%N) => pred.
+    + assert ((n %% q)%N = (q-1)%N).
+      {
+        move /dvdnP in pred.
+        destruct pred.
+        assert (n + q = x * q + (q-1))%N by lia.
+        assert ((n + q) %% q = (x * q + (q - 1)) %% q)%N.
+        {
+          by rewrite H0.
+        }
+        rewrite -modnDm -[RHS]modnDm modnn addn0 modnMl add0n modn_mod in H1.
+        rewrite H1 modn_mod modn_small; lia.
+      }
+      rewrite H.
+      lia.
+    + replace (q %| n.+1)%N with false in a0 by lia.
+      rewrite modn_small in a0; lia.
+ Qed.
 
 Lemma liftc_neg_alt_alt (q : nat) (a : int) :
   1 < q ->
