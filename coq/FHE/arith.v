@@ -1034,6 +1034,7 @@ Proof.
   case: leqP => /=; intros; rewrite {1 3}Zp_cast // modn_small //; lia.
 Qed.
 
+
 Lemma liftc_neg_alt_alt (q : nat) (a : int) :
   1 < q ->
   intdiv.dvdz q (2 * a) \/
@@ -1046,6 +1047,7 @@ Proof.
   move: div.
   apply contraNN => eqq.
   apply/intdiv.dvdzP.
+  exists (intdiv.divz (2%Z * a) q).  
   have: 2 * (a%:~R : 'Z_q) == 0.
   {
     move: eqq.
@@ -1061,6 +1063,24 @@ Proof.
     }
     by rewrite /eq_op/= -eqq Zp_cast // modnn.
   }
+  generalize (intdiv.divz_eq (2%Z*a) q); intros eqq2 a0.
+  rewrite {1}eqq2.
+  suff ->:(intdiv.modz (2%Z*a) q = 0).
+  - by rewrite addr0.
+  - clear eqq eqq2.
+    rewrite -intrM in a0.
+    move /eqP in a0.
+    rewrite /intmul in a0.
+    destruct (2%Z * a).
+    + rewrite Zp_nat /inZp /zero /= in a0.
+      apply (f_equal val) in a0.
+      rewrite /= Zp_cast // in a0.
+      rewrite intdiv.modz_nat a0.
+      lia.
+    + rewrite intdiv.modNz_nat; try lia.
+      rewrite Zp_nat /inZp /zero /opp /= in a0.
+      apply (f_equal val) in a0.
+      rewrite /= Zp_cast // in a0.
 Admitted.
   
 
