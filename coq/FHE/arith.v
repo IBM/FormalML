@@ -1233,6 +1233,17 @@ Proof.
   rewrite /q_reduce in H.
   rewrite coefMn coef_map_id0; [|by rewrite intdiv.div0z].
   rewrite [LHS](intdiv.divz_eq _ q).
+  assert (intdiv.modz p`_x q = 0).
+  {
+    rewrite map_polyE in H.
+    apply polyP in H.
+    specialize (H x).
+    rewrite coef0 in H.
+    rewrite coef_Poly in H.
+    
+    admit.
+  }
+  lia.
   Admitted.
 
 Lemma poly_Zq_muln_q {q : nat} (a : {poly 'Z_q}) :
