@@ -591,9 +591,14 @@ Proof.
   rewrite /nearest_round_int intrM.
   rewrite (_: (n1%:~R * n2%:~R / d%:~R) = ((n1%:~R / d%:~R)%R * n2%:~R )); last by lra.
   move: {n1} (((n1%:~R / d%:~R)%R)) => n1 _ {d}.
-
   rewrite /nearest_round/ran_round.
-    
+  case: (boolP (Order.lt _ _)) => pred1.
+  - case: (boolP (Order.lt _ _)) => pred2.
+    + admit.
+    + admit.
+  - case: (boolP (Order.lt _ _)) => pred2.
+    + admit.
+    + admit.
   Admitted.
 
 Lemma nearest_round_int_add2_ex (n1 n2 d : int) : 
@@ -618,7 +623,7 @@ Proof.
   intros.
   exists (nearest_round_int (n1 * n2) d - nearest_round_int n1 d * n2).
   split; try lia.
-  by apply nearest_round_mul.
+  by apply nearest_round_int_mul.
 Qed.
 
 Definition div_round (a : {poly int}) (d : int) : {poly int} :=
@@ -661,6 +666,24 @@ Proof.
   intros.
   rewrite -div_round_mul_add; try lia.
   by rewrite -scaler_nat /GRing.scale /= !scale_polyE natz.
+Qed.
+
+Lemma div_round_muln (b : {poly int}) (d : nat) :
+  d <> 0%N ->
+  div_round (b *+ d) d = b.
+Proof.
+  intros.
+  generalize (div_round_muln_add 0 b d H); intros.
+  by rewrite add0r div_round0 add0r in H0.
+Qed.
+
+Lemma div_round_muln_add_l (a b : {poly int}) (d : nat) :
+  d <> 0%N ->
+  div_round (b *+ d + a) d = b + div_round a d.
+Proof.
+  intros.
+  rewrite addrC div_round_muln_add //.
+  by rewrite addrC.
 Qed.
 
 Lemma div_round_add2_ex (a b : {poly int}) (d : int) :
@@ -1175,6 +1198,90 @@ Proof.
   rewrite /q_reduce /zlift -polyP => i.
   by rewrite !coef_map_id0 // zliftc_valid.
 Qed.
+
+Lemma linearize_prop_mult {q p : nat} (c2 : {poly 'Z_q})
+  (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
+  let c2' := q_reduce (p*q) (zlift c2) in 
+  (map_poly (fun P => c2' * P) (ev_key s e a)).[q_reduce (p * q) s] = 
+    c2' * (q_reduce (p*q) (exp s 2) *+ p) + c2' * (q_reduce (p * q) e).
+Proof.
+  rewrite /ev_key /key_switch_key.
+  rewrite map_Poly_id0; [|by rewrite mulr0].
+  rewrite horner_Poly /= mul0r add0r.  
+  rewrite !(zlift_add2_eq,mulrDr) rmorphMn /=.
+  ring.
+Qed.
+
+Lemma linearize_prop_div {q p : nat} (c2 : {poly 'Z_q})
+  (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
+  let c2' := q_reduce (p*q) (zlift c2) in 
+  q_reduce q (div_round (zlift ((map_poly (fun P => c2' * P) (ev_key s e a)).[q_reduce (p * q) s])) p) = 
+    q_reduce q (div_round (zlift (c2' * (q_reduce (p*q) (exp s 2) *+ p) + c2' * (q_reduce (p * q) e))) p).
+Proof.
+  simpl.
+  by rewrite linearize_prop_mult.
+Qed.
+
+Lemma q_reduce_0_div (q : nat) (p : {poly int}) :
+  q_reduce q p = 0 ->
+  { e : {poly int} | p = e *+ q}.
+Proof.
+  Admitted.
+
+Lemma zlift_red (q : nat) (p : {poly int}) :
+  1 < q ->
+  { e : {poly int} |
+    zlift (q_reduce q p) = p + e *+q}.
+Proof.
+  intros.
+  assert (q_reduce q (zlift (q_reduce q p) - p) = 0).
+  {
+    rewrite rmorphD rmorphN /= zlift_valid //.
+    ring.
+  }
+  apply q_reduce_0_div in H0.
+  destruct H0.
+  exists x.
+  rewrite -e.
+  ring.
+Qed.
+
+Lemma linearize_prop_div2 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q})
+  (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
+  let c2' := q_reduce (p*q) (zlift c2) in 
+  { e2 : {poly int} |
+    q_reduce q (div_round (zlift (c2' * (q_reduce (p*q) (exp s 2) *+ p) + c2' * (q_reduce (p * q) e))) p) =
+    c2 * (q_reduce q (exp s 2)) + q_reduce q (div_round ((zlift c2) * e) p + e2)}.
+Proof.
+  assert (pqbig: (1 < p * q)) by lia.
+  assert (pno: (Posz p <> 0)) by lia.
+  destruct (zlift_red (p * q) (zlift c2 * e) pqbig).
+  exists
+    (
+     div_round_add2_perturb (zlift c2 * e) (x *+ (p * q)) p pno +
+     div_round
+       (zlift_add2_perturb pqbig (q_reduce (p * q) (zlift c2 * s ^+ 2) *+ p)
+          (q_reduce (p * q) (zlift c2 * e))) p +
+     div_round_add2_perturb
+       (zlift (c2 * q_reduce q (s ^+ 2)) *+ p + zlift c2 * e + x *+ (p * q))
+       (zlift_add2_perturb pqbig (q_reduce (p * q) (zlift c2 * s ^+ 2) *+ p)
+          (q_reduce (p * q) (zlift c2 * e))) p pno).
+  rewrite (zlift_add2_eq,mulrDr) //.
+  rewrite div_round_add2_eq //.
+  rewrite !rmorphD /= -rmorphMn -rmorphM /=.
+  rewrite mulrnAr rmorphMn /=.
+  rewrite lift_reduce_prod2 //.
+  rewrite div_round_muln_add_l; [|lia].
+  rewrite rmorphD /=.
+  rewrite zlift_valid // rmorphM /= zlift_valid // -!addrA.
+  f_equal.
+  rewrite -rmorphM /=.
+  rewrite e0.
+  rewrite div_round_add2_eq // !rmorphD /= -!addrA.
+  replace (q_reduce q (div_round (x *+ (p * q)) p)) with (0 : {poly 'Z_q}).
+  - by rewrite add0r.
+  - rewrite mulnC mulrnA.
+    Admitted.
 
 Lemma linearize_prop  {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   { e2 : {poly int} |
