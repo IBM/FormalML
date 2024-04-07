@@ -1226,12 +1226,28 @@ Lemma q_reduce_0_div (q : nat) (p : {poly int}) :
   q_reduce q p = 0 ->
   { e : {poly int} | p = e *+ q}.
 Proof.
+  intros.
+  exists (map_poly (fun c => intdiv.divz c q) p).
+  apply polyP.
+  intros ?.
+  rewrite /q_reduce in H.
+  rewrite coefMn coef_map_id0; [|by rewrite intdiv.div0z].
+  rewrite [LHS](intdiv.divz_eq _ q).
+  Admitted.
+
+Lemma poly_Zq_muln_q {q : nat} (a : {poly 'Z_q}) :
+  a *+ q = 0.
+Proof.
+  rewrite -polyP => i.
+  rewrite coefMn coef0.
+  apply ord_inj.
   Admitted.
 
 Lemma q_reduce_muln_q (q : nat) (a : {poly int}) :
   q_reduce q (a *+ q) = 0.
 Proof.
-  Admitted.
+  by rewrite reduce_prod1 poly_Zq_muln_q.
+Qed.
 
 Lemma zlift_red (q : nat) (p : {poly int}) :
   1 < q ->
@@ -1298,6 +1314,10 @@ Lemma lineariz_prop_div3 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly '
       (map_poly (fun P => q_reduce q (div_round ((zlift c2) * (zlift P)) (p%:Z)))
          (ev_key s e a)).[q_reduce q s] + q_reduce q e2}.
 Proof.
+  assert (pqbig: (1 < p * q)) by lia.
+  assert (pno: (Posz p <> 0)) by lia.
+  eexists.
+  
   Admitted.
 
 Lemma linearize_prop  {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
