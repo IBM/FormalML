@@ -1246,6 +1246,16 @@ Proof.
   ring.
 Qed.
 
+Lemma div_round_muln_p (p : nat) (a : {poly int}) :
+  div_round (a *+ p) p = a.
+Proof.
+  Admitted.
+
+Lemma q_reduce_muln_q (q : nat) (a : {poly int}) :
+  q_reduce q (a *+ q) = 0.
+Proof.
+  Admitted.
+
 Lemma linearize_prop_div2 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q})
   (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   let c2' := q_reduce (p*q) (zlift c2) in 
@@ -1281,7 +1291,8 @@ Proof.
   replace (q_reduce q (div_round (x *+ (p * q)) p)) with (0 : {poly 'Z_q}).
   - by rewrite add0r.
   - rewrite mulnC mulrnA.
-    Admitted.
+    by rewrite div_round_muln_p q_reduce_muln_q.
+Qed.
 
 Lemma linearize_prop  {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   { e2 : {poly int} |
