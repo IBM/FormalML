@@ -1228,6 +1228,11 @@ Lemma q_reduce_0_div (q : nat) (p : {poly int}) :
 Proof.
   Admitted.
 
+Lemma q_reduce_muln_q (q : nat) (a : {poly int}) :
+  q_reduce q (a *+ q) = 0.
+Proof.
+  Admitted.
+
 Lemma zlift_red (q : nat) (p : {poly int}) :
   1 < q ->
   { e : {poly int} |
@@ -1245,16 +1250,6 @@ Proof.
   rewrite -e.
   ring.
 Qed.
-
-Lemma div_round_muln_p (p : nat) (a : {poly int}) :
-  div_round (a *+ p) p = a.
-Proof.
-  Admitted.
-
-Lemma q_reduce_muln_q (q : nat) (a : {poly int}) :
-  q_reduce q (a *+ q) = 0.
-Proof.
-  Admitted.
 
 Lemma linearize_prop_div2 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q})
   (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
@@ -1291,8 +1286,19 @@ Proof.
   replace (q_reduce q (div_round (x *+ (p * q)) p)) with (0 : {poly 'Z_q}).
   - by rewrite add0r.
   - rewrite mulnC mulrnA.
-    by rewrite div_round_muln_p q_reduce_muln_q.
+    assert (p <> 0%N) by lia.
+    by rewrite div_round_muln // q_reduce_muln_q.
 Qed.
+
+Lemma lineariz_prop_div3 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q})
+  (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
+  let c2' := q_reduce (p*q) (zlift c2) in 
+  { e2 : {poly int} |
+    q_reduce q (div_round (zlift ((map_poly (fun P => c2' * P) (ev_key s e a)).[q_reduce (p * q) s])) p) =
+      (map_poly (fun P => q_reduce q (div_round ((zlift c2) * (zlift P)) (p%:Z)))
+         (ev_key s e a)).[q_reduce q s] + q_reduce q e2}.
+Proof.
+  Admitted.
 
 Lemma linearize_prop  {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   { e2 : {poly int} |
