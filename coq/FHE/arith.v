@@ -1008,30 +1008,25 @@ Lemma int_Zp_0 {q : nat} (a : int) :
   (a%:~R : 'Z_q) = 0 ->
   intdiv.modz a q = 0.
 Proof.
-  move => qbig a0.
-  rewrite Zp_int // in a0.
-  apply (f_equal val) in a0.
-  destruct a; rewrite /inZp /= Zp_cast // in a0.
-  - rewrite intdiv.modz_nat a0; lia.
+  move => qbig.
+  rewrite Zp_int //.
+  move/(f_equal val).
+  case: a => n ; rewrite /inZp /= Zp_cast //.
+  - rewrite intdiv.modz_nat => ->; lia.
   - rewrite intdiv.modNz_nat; try lia.
-    rewrite modnS in a0.
-    case: (boolP (q %| n.+1)%N) => pred.
-    + assert ((n %% q)%N = (q-1)%N).
+    rewrite modnS.
+    case: (boolP (q %| n.+1)%N) => pred a0.
+    + suff: ((n %% q)%N = (q-1)%N) by lia.
+      move /dvdnP in pred.
+      case: pred => x xeq.
+      have HH: (n + q = x * q + (q-1))%N by lia.
+      have: ((n + q) %% q = (x * q + (q - 1)) %% q)%N.
       {
-        move /dvdnP in pred.
-        destruct pred.
-        assert (n + q = x * q + (q-1))%N by lia.
-        assert ((n + q) %% q = (x * q + (q - 1)) %% q)%N.
-        {
-          by rewrite H0.
-        }
-        rewrite -modnDm -[RHS]modnDm modnn addn0 modnMl add0n modn_mod in H1.
-        rewrite H1 modn_mod modn_small; lia.
+        by rewrite HH.
       }
-      rewrite H.
-      lia.
-    + replace (q %| n.+1)%N with false in a0 by lia.
-      rewrite modn_small in a0; lia.
+      rewrite -modnDm -[RHS]modnDm modnn addn0 modnMl add0n modn_mod => ->.
+      rewrite modn_mod modn_small; lia.
+    + rewrite modn_small in a0; lia.
  Qed.
 
 Lemma int_Zp_0_alt {q : nat} (a : int) :
@@ -1068,7 +1063,7 @@ Proof.
   - by apply int_Zp_0_alt.
   - by apply int_Zp_0.
 Qed.
-  
+
 Lemma liftc_neg_alt_alt (q : nat) (a : int) :
   1 < q ->
   intdiv.dvdz q (2 * a) \/
