@@ -584,10 +584,16 @@ Proof.
   - ring.
 Qed.
 
-Lemma nearest_round_mul (n1 n2 d : int) :
+Lemma nearest_round_int_mul (n1 n2 d : int) :
   d <> 0 ->
   (`|(nearest_round_int (n1 * n2) d - nearest_round_int n1 d * n2)%R|) <= (`|n2| + 1)/2.
 Proof.
+  rewrite /nearest_round_int intrM.
+  rewrite (_: (n1%:~R * n2%:~R / d%:~R) = ((n1%:~R / d%:~R)%R * n2%:~R )); last by lra.
+  move: {n1} (((n1%:~R / d%:~R)%R)) => n1 _ {d}.
+
+  rewrite /nearest_round/ran_round.
+    
   Admitted.
 
 Lemma nearest_round_int_add2_ex (n1 n2 d : int) : 
@@ -1191,7 +1197,6 @@ Proof.
       rewrite rmorphM /=.
       rewrite !zlift_valid //.
       rewrite !div_round_add2_eq !rmorphD /=.
-      
       admit.
     + by rewrite [zlift 0]zlift0 // mulr0 div_round0 rmorph0.
   - admit.
