@@ -1247,13 +1247,14 @@ Proof.
   lia.
 Qed.
 
-Lemma poly_Zq_muln_q {q : nat} (a : {poly 'Z_q}) :
+Lemma poly_Zq_muln_q {q : nat} (qbig:1 < q) (a : {poly 'Z_q}) :
   a *+ q = 0.
 Proof.
   rewrite -polyP => i.
-  rewrite coefMn coef0.
-  apply ord_inj.
-  Admitted.
+  rewrite coefMn coef0 Zp_mulrn.
+  apply ord_inj => /=.
+  by rewrite {3}Zp_cast // modnMl.
+Qed.
 
 Lemma q_reduce_muln_q (q : nat) (a : {poly int}) :
   q_reduce q (a *+ q) = 0.
