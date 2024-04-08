@@ -1222,7 +1222,7 @@ Proof.
   by rewrite linearize_prop_mult.
 Qed.
 
-Lemma q_reduce_0_div (q : nat) (p : {poly int}) :
+Lemma q_reduce_0_div (q : nat) (qbig: 1 < q) (p : {poly int}) :
   q_reduce q p = 0 ->
   { e : {poly int} | p = e *+ q}.
 Proof.
@@ -1235,16 +1235,17 @@ Proof.
   rewrite [LHS](intdiv.divz_eq _ q).
   assert (intdiv.modz p`_x q = 0).
   {
-    rewrite map_polyE in H.
-    apply polyP in H.
-    specialize (H x).
-    rewrite coef0 in H.
-    rewrite coef_Poly in H.
-    
-    admit.
-  }
+    move: H.
+    rewrite -(map_poly0 [eta intr]).
+    move/polyP/(_ x).
+    rewrite !coef_map_id0 //.
+    rewrite coef0 /=.
+    move/(f_equal val)=> /= HH.
+    apply int_Zp_0 => //.
+    by apply ord_inj.
+  } 
   lia.
-  Admitted.
+Qed.
 
 Lemma poly_Zq_muln_q {q : nat} (a : {poly 'Z_q}) :
   a *+ q = 0.
