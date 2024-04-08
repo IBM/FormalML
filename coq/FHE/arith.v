@@ -1256,7 +1256,7 @@ Proof.
   by rewrite {3}Zp_cast // modnMl.
 Qed.
 
-Lemma q_reduce_muln_q (q : nat) (a : {poly int}) :
+Lemma q_reduce_muln_q (q : nat) (qbig:1 < q) (a : {poly int}) :
   q_reduce q (a *+ q) = 0.
 Proof.
   by rewrite reduce_prod1 poly_Zq_muln_q.
@@ -1273,7 +1273,7 @@ Proof.
     rewrite rmorphD rmorphN /= zlift_valid //.
     ring.
   }
-  apply q_reduce_0_div in H0.
+  apply q_reduce_0_div in H0 => //.
   destruct H0.
   exists x.
   rewrite -e.
