@@ -1279,7 +1279,6 @@ Proof.
   rewrite -e.
   ring.
 Qed.
-
 Lemma linearize_prop_div2 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q})
   (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   let c2' := q_reduce (p*q) (zlift c2) in 
@@ -1322,15 +1321,19 @@ Qed.
 Lemma lineariz_prop_div3 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q})
   (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   let c2' := q_reduce (p*q) (zlift c2) in 
-  { e2 : {poly int} |
+  { e2 : {poly 'Z_q} |
     q_reduce q (div_round (zlift ((map_poly (fun P => c2' * P) (ev_key s e a)).[q_reduce (p * q) s])) p) =
       (map_poly (fun P => q_reduce q (div_round ((zlift c2) * (zlift P)) (p%:Z)))
-         (ev_key s e a)).[q_reduce q s] + q_reduce q e2}.
+         (ev_key s e a)).[q_reduce q s] + e2}.
 Proof.
   assert (pqbig: (1 < p * q)) by lia.
   assert (pno: (Posz p <> 0)) by lia.
   eexists.
-  
+  rewrite !map_Poly_id0.
+  + rewrite !horner_Poly /= !mul0r !add0r.
+    admit.
+  + by rewrite zlift0_alt mulr0 div_round0 rmorph0.
+  + by rewrite mulr0.
   Admitted.
 
 Lemma linearize_prop  {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
