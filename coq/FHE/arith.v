@@ -1331,7 +1331,12 @@ Proof.
   eexists.
   rewrite !map_Poly_id0.
   + rewrite !horner_Poly /= !mul0r !add0r.
-    admit.
+    rewrite zlift_add2_eq.
+    rewrite !div_round_add2_eq !rmorphD /=.
+    rewrite -!addrA.
+    f_equal.
+    * admit.
+    * admit.
   + by rewrite zlift0_alt mulr0 div_round0 rmorph0.
   + by rewrite mulr0.
   Admitted.
