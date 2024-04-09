@@ -593,16 +593,34 @@ Proof.
 Qed.
 
 Lemma int_to_R_lt :
-  {mono ((fun a => a%:~R): int -> R) : x y / (x < y)%O}.
+  {mono (intmul (1 : R)) : x y / (x < y)%O}.
 Proof.
-  move => x y.
+  rewrite /intmul.
+  case=> x; case=> y; rewrite -!INRE /Order.lt /=.
+  - case: leP.
+    + move/lt_INR=> ineq1.
+      by apply/RltbP.
+    + move=> ineq1.
+      apply/RltbP.
+      by move/INR_lt.
+  - apply/RltbP.
+    case: y.
+    + have: Rle 0 (INR x) by apply pos_INR.
+      admit.
+    + move=> n.
+      rewrite S_INR.
+      move: (pos_INR x) (pos_INR n) => posx posn.
+      admit.
+  - 
+      
 Admitted.
 
 Lemma int_to_R_le :
-  {mono ((fun a => a%:~R): int -> R) : x y / (x <= y)%O}.
+  {mono (intr: int -> R) : x y / (x <= y)%O}.
 Proof.
   move => x y.
-Admitted.
+  by rewrite !Order.POrderTheory.le_eqVlt int_to_R_lt eqr_int.
+Qed.
 
 Lemma upi_nat_mul (r : R) (n : nat) :
   `|upi (r *+ n) - upi(r)*+n| <= n+1.
