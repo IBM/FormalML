@@ -584,6 +584,49 @@ Proof.
   - ring.
 Qed.
 
+Lemma upi_bound (r : R) :
+  let diff := (upi r)%:~R - r in 
+  Rlt 0%R diff /\ Rle diff 1%R.
+Proof.
+  rewrite /upi -IZRE.
+  apply for_base_fp.
+Qed.
+
+Definition int_to_R (a : int):R := a%:~R.
+
+Lemma int_to_R_lt :
+  {mono int_to_R : x y / (x < y)%O}.
+Proof.
+  move => x y.
+Admitted.
+
+Lemma int_to_R_le :
+  {mono int_to_R : x y / (x <= y)%O}.
+Proof.
+  move => x y.
+Admitted.
+
+Lemma upi_nat_mul (r : R) (n : nat) :
+  `|upi (r *+ n) - upi(r)*+n| <= n+1.
+Proof.
+  destruct (upi_bound r).
+  destruct (upi_bound (r *+ n)).
+  assert (((upi r)%:~R *+n - r*+n) <= n%:R)%O.
+  {
+    move /RleP in H0.
+    assert ((0 : R) <= n%:R)%O.
+    {
+      rewrite (int_to_R_le 0 n).
+      lia.
+    }
+    apply (ssrnum.Num.Theory.ler_wpM2r H3) in H0.
+    rewrite mul1r mulrBl in H0.
+    by replace  ((upi r)%:~R *+ n - r *+ n ) with
+      ((upi r)%:~R * n%:R - r * n%:R) by ring.
+  }
+  move /RleP in H2.
+  Admitted.
+
 Lemma nearest_round_int_mul (n1 n2 d : int) :
   d <> 0 ->
   (`|(nearest_round_int (n1 * n2) d - nearest_round_int n1 d * n2)%R|) <= (`|n2| + 1)/2.
