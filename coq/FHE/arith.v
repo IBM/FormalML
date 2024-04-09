@@ -614,8 +614,10 @@ Proof.
   assert (((upi r)%:~R *+n - r*+n) <= n%:R)%O.
   {
     move /RleP in H0.
-    assert ((((0%nat)%:~R : R))%R <= n%:~R)%O
-      by by rewrite ler_int.
+    assert ((0 : R) <= n%:R)%O.
+    {
+      by rewrite (ler_int _ 0 n).
+    }
     apply (ssrnum.Num.Theory.ler_wpM2r H3) in H0.
     rewrite mul1r mulrBl in H0.
     by replace  ((upi r)%:~R *+ n - r *+ n ) with
