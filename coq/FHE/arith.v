@@ -592,16 +592,14 @@ Proof.
   apply for_base_fp.
 Qed.
 
-Definition int_to_R (a : int):R := a%:~R.
-
 Lemma int_to_R_lt :
-  {mono int_to_R : x y / (x < y)%O}.
+  {mono ((fun a => a%:~R): int -> R) : x y / (x < y)%O}.
 Proof.
   move => x y.
 Admitted.
 
 Lemma int_to_R_le :
-  {mono int_to_R : x y / (x <= y)%O}.
+  {mono ((fun a => a%:~R): int -> R) : x y / (x <= y)%O}.
 Proof.
   move => x y.
 Admitted.
