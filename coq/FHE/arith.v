@@ -718,21 +718,14 @@ Qed.
 
 Definition upiR (r: R) : R := (upi r) %:~R.
 
-Lemma eq_le_R {a b c d : R} :
-  (a <= b)%O ->
+Lemma eq_lt_R {a b c d : R} :
+  (a < b)%O ->
   a = c ->
   b = d ->
-  (c <= d)%O.
+  (c < d)%O.
 Proof.
   intros.
   by rewrite H0 H1 in H.
-Qed.
-
-Lemma minus_pos_lt_le (a b : R) :
-  ((0 : R) < b)%O ->
-  (a - b <= a)%O.
-Proof.
-  lra.
 Qed.
 
 Lemma minus_pos_lt (a b : R) :
@@ -743,26 +736,26 @@ Proof.
 Qed.
 
 Lemma upi_nat_mul (r : R) (n : nat) :
-  (upi(r)*+n.+1 - upi (r *+ n.+1) <= n.+1%:R)%O.
+  (upi(r)*+n.+1 - upi (r *+ n.+1) < n.+1%:R)%O.
 Proof.
   destruct (upi_bound (r *+ n.+1)).
   generalize (upi_nat_mul_bound_R r n.+1); intros.
-  assert ((upiR r) *+ n.+1 - (upiR (r*+n.+1)) <= (n.+1%:R))%O.
+  assert ((upiR r) *+ n.+1 - (upiR (r*+n.+1)) < (n.+1%:R))%O.
   {
     replace  ((upiR r) *+ n.+1 - upiR (r *+ n.+1)) with
       ( (upiR r) *+ n.+1 - r*+n.+1 - (upiR (r *+ n.+1) - r*+n.+1)) by ring.
-    apply /RleP.
-    eapply Rle_trans; cycle 1.
+    apply /RltP.
+    eapply Rlt_le_trans; cycle 1.
     move /RleP in H1.
     apply H1.
     rewrite /upiR.
-    apply /RleP.
+    apply /RltP.
     move /RltP in H.
-    by apply minus_pos_lt_le.
+    by apply minus_pos_lt.
   }
   rewrite /upiR in H2.
-  rewrite -int_to_R_le.
-  apply (eq_le_R H2); ring.
+  rewrite -int_to_R_lt.
+  apply (eq_lt_R H2); ring.
 Qed.
 
 Lemma upi_nat_mul_abs (r : R) (n : nat) :
