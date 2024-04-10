@@ -592,6 +592,15 @@ Proof.
   apply for_base_fp.
 Qed.
 
+Lemma upi_bound_O (r : R) :
+  let diff := (upi r)%:~R - r in 
+  ((0 : R) < diff)%O /\ (diff <= 1%R)%O.
+Proof.
+  destruct (upi_bound r).
+  move /RltP in H.
+  by move /RleP in H0.
+Qed.
+
 Lemma int_to_R_lt :
   {mono (intmul (1 : R)) : x y / (x < y)%O}.
 Proof.
@@ -606,24 +615,163 @@ Proof.
   apply ler_int.
 Qed.
 
-Lemma upi_nat_mul (r : R) (n : nat) :
-  `|upi (r *+ n) - upi(r)*+n| <= n+1.
+Lemma upi_nat_mul_bound_R (r : R) (n : nat) :
+  (((upi r)%:~R *+n - r*+n) <= n%:R)%O.
 Proof.
-  destruct (upi_bound r).
-  destruct (upi_bound (r *+ n)).
-  assert (((upi r)%:~R *+n - r*+n) <= n%:R)%O.
+  destruct (upi_bound_O r).
+  assert ((0 : R) <= n%:R)%O.
   {
-    move /RleP in H0.
-    assert ((0 : R) <= n%:R)%O.
-    {
-      by rewrite (ler_int _ 0 n).
-    }
-    apply (ssrnum.Num.Theory.ler_wpM2r H3) in H0.
-    rewrite mul1r mulrBl in H0.
-    by replace  ((upi r)%:~R *+ n - r *+ n ) with
-      ((upi r)%:~R * n%:R - r * n%:R) by ring.
+    by rewrite (ler_int _ 0 n).
   }
-  move /RleP in H2.
+  apply (ssrnum.Num.Theory.ler_wpM2r H1) in H0.
+  rewrite mul1r mulrBl in H0.
+  by replace  ((upi r)%:~R *+ n - r *+ n ) with
+    ((upi r)%:~R * n%:R - r * n%:R) by ring.
+Qed.
+
+Lemma upi_nat_mul_bound_R0_lt (r : R) (n : nat) :
+  ((0 : R) < ((upi r)%:~R *+n.+1 - r*+n.+1))%O.
+Proof.
+  destruct (upi_bound_O r).
+  assert (0 < n.+1) by lia.
+  apply (ssrnum.Num.Theory.ltr_wpMn2r H1 (R := R_numDomainType)) in H.
+  rewrite mul0rn in H.
+  by replace  ((upi r)%:~R *+ n.+1 - r *+ n.+1 ) with
+    (((upi r)%:~R - r) *+ n.+1) by ring.
+Qed.
+
+Lemma upi_nat_mul_bound_R0_lt_alt (r : R) (n : nat) :
+  (r *+ n.+1 < (upi r)%:~R *+n.+1)%O.
+Proof.
+  generalize (upi_nat_mul_bound_R0_lt r n); intros.
+  lra.
+Qed.
+
+Lemma upi_nat_mul_bound_R0_lt_alt_alt (r : R) (n : nat) :
+  (r *+ n.+1 < ((upi r)*+n.+1)%:~R)%O.
+Proof.
+  generalize (upi_nat_mul_bound_R0_lt_alt r n); intros.
+  by replace ((upi r *+ n.+1)%:~R)%R with ((((upi r)%:~R) : R) *+ n.+1) by ring.
+Qed.
+
+Lemma up_lt_le (r : R) (i : Z) :
+  (Rlt r  (IZR i)) ->
+  Z.le (up r) i.
+Proof.
+  intros.
+  destruct (archimed r); intros.
+  assert (Rle (IZR (up r) - 1) r) by coq_lra.
+  assert (IZR (up r) - 1 = IZR ((up r) - 1)).
+  {
+    rewrite /opp /add /one /=.
+    rewrite minus_IZR.
+    coq_lra.
+  }
+  assert (~(Z.lt i (up r))).
+  {
+    intros ?.
+    assert (Z.le i ((up r) - 1)) by lia.
+    assert (Rle (IZR i) (IZR ((up r) -1))).
+    {
+      by apply IZR_le.
+    }
+    rewrite -H3 in H6.
+    assert (Rle (IZR i) r).
+    {
+      eapply Rle_trans.
+      apply H6.
+      apply H2.
+    }
+    coq_lra.
+  }
+  lia.
+Qed.
+
+Lemma upi_lt_le (r : R) (i : int) :
+  (r < i%:~R)%O ->
+  (upi r <= i)%O.
+Proof.
+  intros.
+  generalize (up_lt_le r (Z_of_int i)); intros.
+  rewrite -IZREb in H0.
+  move /RltP in H.
+  specialize (H0 H).
+  rewrite /upi.
+  lia.
+Qed.
+
+Lemma upi_nat_mul_bound_R0_le (r : R) (n : nat) :
+  ((0 : R) <= ((upi r)%:~R *+n - r*+n))%O.
+Proof.
+  destruct n.
+  - lra.
+  - apply Order.POrderTheory.ltW.
+    apply upi_nat_mul_bound_R0_lt.
+Qed.
+
+Lemma upi_nat_mul_le (r : R) (n : nat) :
+  (upi (r *+ n.+1) <= upi(r)*+n.+1)%O.
+Proof.
+  apply upi_lt_le.
+  apply upi_nat_mul_bound_R0_lt_alt_alt.
+Qed.  
+
+Definition upiR (r: R) : R := (upi r) %:~R.
+
+Lemma eq_le_R {a b c d : R} :
+  (a <= b)%O ->
+  a = c ->
+  b = d ->
+  (c <= d)%O.
+Proof.
+  intros.
+  by rewrite H0 H1 in H.
+Qed.
+
+Lemma minus_pos_lt_le (a b : R) :
+  ((0 : R) < b)%O ->
+  (a - b <= a)%O.
+Proof.
+  lra.
+Qed.
+
+Lemma minus_pos_lt (a b : R) :
+  ((0 : R) < b)%O ->
+  (a - b < a)%O.
+Proof.
+  lra.
+Qed.
+
+Lemma upi_nat_mul (r : R) (n : nat) :
+  (upi(r)*+n.+1 - upi (r *+ n.+1) <= n.+1%:R)%O.
+Proof.
+  destruct (upi_bound (r *+ n.+1)).
+  generalize (upi_nat_mul_bound_R r n.+1); intros.
+  assert ((upiR r) *+ n.+1 - (upiR (r*+n.+1)) <= (n.+1%:R))%O.
+  {
+    replace  ((upiR r) *+ n.+1 - upiR (r *+ n.+1)) with
+      ( (upiR r) *+ n.+1 - r*+n.+1 - (upiR (r *+ n.+1) - r*+n.+1)) by ring.
+    apply /RleP.
+    eapply Rle_trans; cycle 1.
+    move /RleP in H1.
+    apply H1.
+    rewrite /upiR.
+    apply /RleP.
+    move /RltP in H.
+    by apply minus_pos_lt_le.
+  }
+  rewrite /upiR in H2.
+  rewrite -int_to_R_le.
+  apply (eq_le_R H2); ring.
+Qed.
+
+Lemma upi_nat_mul_abs (r : R) (n : nat) :
+  `|upi (r *+ n) - upi(r)*+n| <= n.+1.
+Proof.
+  destruct n.
+  - by rewrite !mulr0n addr0 upi0 /=.
+  - rewrite -abszN.
+    generalize (upi_nat_mul r n); intros.
   Admitted.
 
 Lemma nearest_round_int_mul (n1 n2 d : int) :
