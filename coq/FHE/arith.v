@@ -735,7 +735,7 @@ Proof.
   lra.
 Qed.
 
-Lemma upi_nat_mul (r : R) (n : nat) :
+Lemma upi_nat_mul' (r : R) (n : nat) :
   (upi(r)*+n.+1 - upi (r *+ n.+1) < n.+1%:R)%O.
 Proof.
   destruct (upi_bound (r *+ n.+1)).
@@ -758,14 +758,52 @@ Proof.
   apply (eq_lt_R H2); ring.
 Qed.
 
+Lemma upi_nat_mul'' (r : R) (n : nat) :
+  ((0:int) <= upi(r)*+n.+1 - upi (r *+ n.+1) < n.+1%:R)%O.
+Proof.
+  apply /andP.
+  split.
+  - generalize (upi_nat_mul_le r n); intros.
+    lia.
+  - apply upi_nat_mul'.
+Qed.
+
+Lemma upi_nat_mul (r : R) (n : nat) :
+  (upi(r)*+n - upi (r *+ n) < n%:R)%O.
+Proof.
+  destruct n.
+  - by rewrite !mulr0n upi0 add0r.
+  - apply upi_nat_mul'.
+Qed.
+
+Lemma upi_nat_mul_pos (r : R) (n : nat) :
+  ((0 : int) <= upi(r)*+n.+1 - upi (r *+ n.+1))%O.
+Proof.
+  generalize (upi_nat_mul_le r n); intros.
+  lia.
+Qed.
+
 Lemma upi_nat_mul_abs (r : R) (n : nat) :
+  `|upi (r *+ n.+1) - upi(r)*+n.+1| < n.+1.
+Proof.
+  rewrite distnC.
+  assert (Posz `|upi r *+ n.+1 - upi (r *+ n.+1)| < Posz n.+1)%O. 
+  {
+    rewrite gez0_abs; [| apply (upi_nat_mul_pos r n)].
+    generalize (upi_nat_mul' r n); intros.
+    lia.
+  }
+  lia.
+Qed.
+
+Lemma upi_nat_mul_abs' (r : R) (n : nat) :
   `|upi (r *+ n) - upi(r)*+n| <= n.+1.
 Proof.
   destruct n.
-  - by rewrite !mulr0n addr0 upi0 /=.
-  - rewrite -abszN.
-    generalize (upi_nat_mul r n); intros.
-  Admitted.
+  - by rewrite !mulr0n upi0 addr0.
+  - generalize (upi_nat_mul_abs r n).
+    lia.
+Qed.
 
 Lemma nearest_round_int_mul (n1 n2 d : int) :
   d <> 0 ->
