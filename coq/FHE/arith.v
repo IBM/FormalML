@@ -728,13 +728,6 @@ Proof.
   by rewrite H0 H1 in H.
 Qed.
 
-Lemma minus_pos_lt (a b : R) :
-  ((0 : R) < b)%O ->
-  (a - b < a)%O.
-Proof.
-  lra.
-Qed.
-
 Lemma upi_nat_mul' (r : R) (n : nat) :
   (upi(r)*+n.+1 - upi (r *+ n.+1) < n.+1%:R)%O.
 Proof.
@@ -751,7 +744,8 @@ Proof.
     rewrite /upiR.
     apply /RltP.
     move /RltP in H.
-    by apply minus_pos_lt.
+    assert (forall (a b : R), ((0 : R) < b)%O -> (a - b < a)%O) by (intros; lra).
+    by apply H2.
   }
   rewrite /upiR in H2.
   rewrite -int_to_R_lt.
