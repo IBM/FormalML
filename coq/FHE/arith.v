@@ -772,7 +772,7 @@ Proof.
   lia.
 Qed.
 
-Lemma upi_nat_mul_abs (r : R) (n : nat) :
+Lemma upi_nat_mul_abs_S (r : R) (n : nat) :
   `|upi (r *+ n.+1) - upi(r)*+n.+1| < n.+1.
 Proof.
   rewrite distnC.
@@ -785,14 +785,83 @@ Proof.
   lia.
 Qed.
 
-Lemma upi_nat_mul_abs' (r : R) (n : nat) :
+Lemma upi_nat_mul_abs (r : R) (n : nat) :
   `|upi (r *+ n) - upi(r)*+n| <= n.+1.
 Proof.
   destruct n.
   - by rewrite !mulr0n upi0 addr0.
-  - generalize (upi_nat_mul_abs r n).
+  - generalize (upi_nat_mul_abs_S r n).
     lia.
 Qed.
+
+(*
+ r = IZR (Int_part r) + frac_part r.
+ 0 <= frac_part r < 1.
+*)
+
+Lemma up_opp_Z (r : R) :
+  IZR (up r) = Rplus r 1 ->
+  up (-r) = Zplus (- (up r)) (Zpos 2).
+Proof.
+  intros.
+  symmetry.
+  apply tech_up.
+  - rewrite plus_IZR opp_IZR H.
+    coq_lra.
+  - rewrite plus_IZR opp_IZR H.
+    coq_lra.
+Qed.
+
+Lemma up_opp_nZ (r : R) :
+  IZR (up r) <> Rplus r 1 -> 
+  up (-r) = Zplus (- (up r)) (Zpos 1).
+Proof.
+  intros.
+  symmetry.
+  destruct (archimed r).
+  apply tech_up.
+  - rewrite plus_IZR opp_IZR.
+    coq_lra.
+  - rewrite plus_IZR opp_IZR.
+    coq_lra.
+Qed.
+
+Lemma upi_opp_int (r : R) :
+  (upi r)%:~R = r + 1 ->
+  upi (- r) = - (upi r) + 2.
+Proof.
+  intros.
+  rewrite /upi up_opp_Z.
+  - lia.
+  - by rewrite -IZRE /add /one /= in H.
+Qed.
+
+Lemma upi_opp_nint (r : R) :
+  (upi r)%:~R <> r + 1 ->
+  upi (- r) = - (upi r) + 1.
+Proof.
+  intros.
+  rewrite /upi up_opp_nZ.
+  - lia.
+  - by rewrite -IZRE /add /one /= in H.
+Qed.
+
+Lemma upi_mul_abs (r : R) (n : int) :
+  `|upi (r *~ n) - (upi r) *~n| <= `|n+1|.
+Proof.
+  destruct n; simpl.
+  - rewrite -!pmulrn.
+    generalize (upi_nat_mul_abs r n); intros.
+    lia.
+  - rewrite distnC /intmul /=  NegzE.
+    rewrite -(mulNrn r _).
+    destruct (upi_bound_O r).
+    destruct (upi_bound_O ((-r) *+ n.+1)).
+    rewrite -mulNrn opprK in H1.
+    rewrite -mulNrn opprK in H2.
+    generalize (upi_nat_mul_bound_R r n.+1); intros.
+    Admitted.
+
 
 Lemma nearest_round_int_mul (n1 n2 d : int) :
   d <> 0 ->
