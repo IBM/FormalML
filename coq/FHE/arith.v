@@ -663,11 +663,26 @@ Proof.
     rewrite Rabs_left_O; lra.
 Qed.
 
-Lemma nearest_round_nat_mul_bound_R (r : R) (n : nat) :
- (Rabs ((nearest_round r)%:~R *+n - r*+n) <= n%:R/2)%O.
+Lemma Rabs_n (r : R) (n : nat) :
+  (Rabs r) *+n = Rabs (r *+ n).
 Proof.
+  rewrite -mulr_natr -(mulr_natr r n) RnormM.
+  
   Admitted.
 
+Lemma nearest_round_nat_mul_bound_R (r : R) (n : nat) :
+ (Rabs (add ((nearest_round r)%:~R *+n) (opp r*+n)) <= (1/2)*+n)%O.
+Proof.
+  generalize (nearest_round_bound_O r); intros.
+  apply (ssrnum.Num.Theory.ler_wMn2r (R := R_numDomainType) n) in H.
+  apply /RleP.
+  move /RleP in H.
+  eapply Rle_trans; [|apply H].
+  right.
+  rewrite Rabs_n.
+  f_equal.
+  ring.
+Qed.
 
 Lemma upi_nat_mul_bound_R0_lt (r : R) (n : nat) :
   ((0 : R) < ((upi r)%:~R *+n.+1 - r*+n.+1))%O.
@@ -934,7 +949,7 @@ Qed.
 
 Lemma nearest_round_int_mul (n1 n2 d : int) :
   d <> 0 ->
-  (`|(nearest_round_int (n1 * n2) d - nearest_round_int n1 d * n2)%R|) <= `|n2| + 1.
+  (`|(nearest_round_int (n1 * n2) d - nearest_round_int n1 d * n2)%R|) <= (`|n2| + 1)/2.
 Proof.
   rewrite /nearest_round_int intrM.
   rewrite (_: (n1%:~R * n2%:~R / d%:~R) = ((n1%:~R / d%:~R)%R * n2%:~R )); last by lra.
@@ -942,7 +957,7 @@ Proof.
   rewrite /nearest_round/ran_round.
   case: (boolP (Order.lt _ _)) => pred1.
   - case: (boolP (Order.lt _ _)) => pred2.
-    + apply upi_mul_abs_alt.
+    + admit.
     + admit.
   - case: (boolP (Order.lt _ _)) => pred2.
     + admit.
