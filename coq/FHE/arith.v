@@ -629,6 +629,46 @@ Proof.
     ((upi r)%:~R * n%:R - r * n%:R) by ring.
 Qed.
 
+Lemma Rabs_left_O (r : R) :
+  (r <= 0)%O -> Rabs r = -r.
+Proof.
+  intros.
+  move /RleP in H.
+  rewrite /opp /=.
+  rewrite /zero /= in H.
+  case: (boolP (r == 0)); intros.
+  - rewrite (eqP p) Rabs_R0 /zero /=.
+    coq_lra.
+  - move /eqP in i.
+    apply Rabs_left.
+    rewrite /zero /= in i.
+    coq_lra.
+Qed.
+
+Lemma nearest_round_bound_O (r : R) :
+  let diff := (nearest_round r)%:~R - r in   
+  (Rabs diff <= 1/2)%O.
+Proof.
+  rewrite /nearest_round /ran_round.
+  destruct (upi_bound_O r).
+  case: (boolP (Order.lt _ _)); intros.
+  - rewrite Rabs_right.
+    + by apply Order.POrderTheory.ltW.
+    + apply Rle_ge.
+      left.
+      apply /RltP.
+      by rewrite /zero /= in H.
+  - rewrite Order.TotalTheory.ltNge in i.
+    apply negbNE in i.
+    rewrite Rabs_left_O; lra.
+Qed.
+
+Lemma nearest_round_nat_mul_bound_R (r : R) (n : nat) :
+ (Rabs ((nearest_round r)%:~R *+n - r*+n) <= n%:R/2)%O.
+Proof.
+  Admitted.
+
+
 Lemma upi_nat_mul_bound_R0_lt (r : R) (n : nat) :
   ((0 : R) < ((upi r)%:~R *+n.+1 - r*+n.+1))%O.
 Proof.
@@ -794,6 +834,19 @@ Proof.
     lia.
 Qed.
 
+Lemma nearest_round_mul_abs (r : R) (n : nat) :
+  `|nearest_round (r *+ n) - nearest_round(r)*+n| <= (n.+1)/2.
+Proof.
+  rewrite /nearest_round /ran_round.
+  case: (boolP (Order.lt _ _)) => pred1.
+  - case: (boolP (Order.lt _ _)) => pred2.
+    + admit.
+    + admit.
+  - case: (boolP (Order.lt _ _)) => pred2.
+    + admit.
+    + admit.
+Admitted.  
+
 (*
  r = IZR (Int_part r) + frac_part r.
  0 <= frac_part r < 1.
@@ -828,7 +881,7 @@ Qed.
 
 Lemma upi_opp_int (r : R) :
   (upi r)%:~R = r + 1 ->
-  upi (- r) = - (upi r) + 2.
+  upi (opp r) = - (upi r) + 2.
 Proof.
   intros.
   rewrite /upi up_opp_Z.
@@ -838,7 +891,7 @@ Qed.
 
 Lemma upi_opp_nint (r : R) :
   (upi r)%:~R <> r + 1 ->
-  upi (- r) = - (upi r) + 1.
+  upi (opp r) = - (upi r) + 1.
 Proof.
   intros.
   rewrite /upi up_opp_nZ.
@@ -847,25 +900,41 @@ Proof.
 Qed.
 
 Lemma upi_mul_abs (r : R) (n : int) :
-  `|upi (r *~ n) - (upi r) *~n| <= `|n+1|.
+  `|upi (r *~ n) - (upi r) *~n| <= `|n|+1.
 Proof.
   destruct n; simpl.
   - rewrite -!pmulrn.
     generalize (upi_nat_mul_abs r n); intros.
     lia.
-  - rewrite distnC /intmul /=  NegzE.
-    rewrite -(mulNrn r _).
-    destruct (upi_bound_O r).
-    destruct (upi_bound_O ((-r) *+ n.+1)).
-    rewrite -mulNrn opprK in H1.
-    rewrite -mulNrn opprK in H2.
-    generalize (upi_nat_mul_bound_R r n.+1); intros.
-    Admitted.
+  - rewrite distnC /intmul /=.
+    generalize (upi_nat_mul_abs_S r n); intros.
+    rewrite distnC in H.
+    case: (boolP ((upi (r *+ n.+1))%:~R == (r*+n.+1)+1)); intros.
+    + rewrite (upi_opp_int _ (eqP p)) opprD opprK addrC distnC.
+      rewrite opprB (addrC 2 _) addrA.
+      generalize (absz_triang (upi r *+ n.+1 - upi (r *+ n.+1)) 2); intros.
+      lia.
+    + move /eqP in i.
+      rewrite (upi_opp_nint _ i) opprD opprK addrC distnC.
+      rewrite opprB (addrC 1 _) addrA.
+      generalize (absz_triang (upi r *+ n.+1 - upi (r *+ n.+1)) 1); intros.      
+      lia.
+Qed.
 
+Lemma upi_mul_abs_alt (r : R) (n : int) :
+  `|(upi (mul r n%:~R) - (upi r) * n)%Z| <= `|n|+1.
+Proof.
+  generalize (upi_mul_abs r n); intros.
+  replace (upi (mul r n%:~R) - upi r * n)%R with
+    (upi (r *~ n) - upi r *~ n); trivial.
+  f_equal.
+  - f_equal; lra.
+  - f_equal; f_equal; lia.
+Qed.
 
 Lemma nearest_round_int_mul (n1 n2 d : int) :
   d <> 0 ->
-  (`|(nearest_round_int (n1 * n2) d - nearest_round_int n1 d * n2)%R|) <= (`|n2| + 1)/2.
+  (`|(nearest_round_int (n1 * n2) d - nearest_round_int n1 d * n2)%R|) <= `|n2| + 1.
 Proof.
   rewrite /nearest_round_int intrM.
   rewrite (_: (n1%:~R * n2%:~R / d%:~R) = ((n1%:~R / d%:~R)%R * n2%:~R )); last by lra.
@@ -873,7 +942,7 @@ Proof.
   rewrite /nearest_round/ran_round.
   case: (boolP (Order.lt _ _)) => pred1.
   - case: (boolP (Order.lt _ _)) => pred2.
-    + admit.
+    + apply upi_mul_abs_alt.
     + admit.
   - case: (boolP (Order.lt _ _)) => pred2.
     + admit.
