@@ -883,6 +883,12 @@ Proof.
   by rewrite /mul /=.
 Qed.
 
+Lemma Rabs_absz_half (j : int) (n : nat) :
+  (Rabs (j %:~R) <= (1/2 : R) *+ n)%O <->
+    (`|j| <= (n/2)%N)%O.
+Proof.
+  Admitted.
+
 Lemma nearest_round_mul_abs (r : R) (n : nat) :
   `|nearest_round (r *+ n) - nearest_round(r)*+n| <= (n.+1)/2.
 Proof.
@@ -903,10 +909,17 @@ Proof.
        (nearest_round (r *+ n))%:~R)%R in H4.
   - rewrite distnC.
     rewrite -mulrSr in H4.
-    admit.
+    assert
+      (((nearest_round r)%:~R *+ n -
+          (nearest_round (r *+ n))%:~R)%R =
+      ((nearest_round r *+ n - nearest_round (r *+ n))%:~R : R)) by ring.
+    rewrite H5 in H4.
+    move /RleP in H4.
+    rewrite Rabs_absz_half in H4.
+    apply H4.
   - rewrite Rplus_add.
     ring.
-  Admitted.  
+Qed.
 
 (*
  r = IZR (Int_part r) + frac_part r.
