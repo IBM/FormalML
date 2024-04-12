@@ -667,8 +667,16 @@ Lemma Rabs_n (r : R) (n : nat) :
   (Rabs r) *+n = Rabs (r *+ n).
 Proof.
   rewrite -mulr_natr -(mulr_natr r n) RnormM.
-  
-  Admitted.
+  rewrite /mul /=.
+  f_equal.
+  rewrite Rabs_right //.
+  apply Rle_ge.
+  apply /RleP.
+  replace (IZR Z0) with (0%:R : R).
+  - rewrite  ssrnum.Num.Theory.ler_nat.
+    lia.
+  - by rewrite mulr0n /zero /=.
+ Qed.
 
 Lemma nearest_round_nat_mul_bound_R (r : R) (n : nat) :
  (Rabs (add ((nearest_round r)%:~R *+n) (opp r*+n)) <= (1/2)*+n)%O.
@@ -849,18 +857,56 @@ Proof.
     lia.
 Qed.
 
+Lemma Rabs_opp_sym (x y : R) :
+  Rabs (add x (opp y)) = Rabs (add y (opp x)).
+Proof.
+  generalize (Rabs_minus_sym x y); intros.
+  rewrite /add /opp /=.
+  by rewrite /Rminus in H.
+Qed.
+
+Lemma Rplus_add (x y : R) :
+  Rplus x y = add x y.
+Proof.
+  by rewrite /add /=.
+Qed.
+
+Lemma Ropp_opp(x : R) :
+  Ropp x = opp x.
+Proof.
+  by rewrite /opp /=.
+Qed.
+
+Lemma Rmult_mul (x y : R) :
+  Rmult x y = mul x y.
+Proof.
+  by rewrite /mul /=.
+Qed.
+
 Lemma nearest_round_mul_abs (r : R) (n : nat) :
   `|nearest_round (r *+ n) - nearest_round(r)*+n| <= (n.+1)/2.
 Proof.
-  rewrite /nearest_round /ran_round.
-  case: (boolP (Order.lt _ _)) => pred1.
-  - case: (boolP (Order.lt _ _)) => pred2.
-    + admit.
-    + admit.
-  - case: (boolP (Order.lt _ _)) => pred2.
-    + admit.
-    + admit.
-Admitted.  
+  generalize (nearest_round_nat_mul_bound_R r n); intros.
+  generalize (nearest_round_bound_O (r *+ n)); intros.
+  simpl in H0.
+  generalize Rleb_norm_add; intros.
+  rewrite Rabs_opp_sym in H0.
+  generalize (ssrnum.Num.Theory.lerD H H0); intros.
+  generalize (Rabs_triang
+                ((nearest_round r)%:~R *+ n + - r *+ n)%R
+                (r *+ n - (nearest_round (r *+ n))%:~R)%R ); intros.
+  move /RleP in H2.
+  generalize (Rle_trans _ _ _ H3 H2); intros.
+  replace  (Rplus ((nearest_round r)%:~R *+ n + - r *+ n)%R
+              (r *+ n - (nearest_round (r *+ n))%:~R)%R) with
+    ((((nearest_round r)%:~R : R)*+ n) -
+       (nearest_round (r *+ n))%:~R)%R in H4.
+  - rewrite distnC.
+    rewrite -mulrSr in H4.
+    admit.
+  - rewrite Rplus_add.
+    ring.
+  Admitted.  
 
 (*
  r = IZR (Int_part r) + frac_part r.
