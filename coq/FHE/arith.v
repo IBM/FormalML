@@ -883,6 +883,31 @@ Proof.
   by rewrite /mul /=.
 Qed.
 
+Lemma Rabs_absz (j : int) (n : nat) :
+  (Rabs (j %:~R) <= n %:~R)%O ->
+    (`|j| <= n)%O.
+Proof.
+  rewrite /absz.
+  destruct j.
+  - rewrite Rabs_right.
+    + intros.
+      by rewrite int_to_R_le in H.
+    + apply Rle_ge.
+      apply /RleP.
+      replace (IZR Z0) with ((0 %:~R):R).
+      * rewrite int_to_R_le; lia.
+      * by rewrite /zero /=.
+  - rewrite NegzE Rabs_left.
+    + intros.
+      rewrite Ropp_opp in H.
+      rewrite mulrNz opprK in H.
+      by rewrite int_to_R_le in H.
+    + apply /RltP.
+      replace (IZR Z0) with ((0 %:~R):R).
+      * rewrite int_to_R_lt; lia.
+      * by rewrite /zero /=.
+ Qed.
+
 Lemma Rabs_absz_half (j : int) (n : nat) :
   (Rabs (j %:~R) <= (1/2 : R) *+ n)%O <->
     (`|j| <= (n/2)%N)%O.
