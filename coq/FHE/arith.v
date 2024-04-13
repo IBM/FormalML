@@ -1127,7 +1127,6 @@ Proof.
       lia.
 Admitted.      
     
-
 Lemma nearest_round_int_mul (n1 n2 d : int) :
   d <> 0 ->
   (`|(nearest_round_int (n1 * n2) d - nearest_round_int n1 d * n2)%R|) <= (`|n2| + 1)/2.
@@ -1135,15 +1134,12 @@ Proof.
   rewrite /nearest_round_int intrM.
   rewrite (_: (n1%:~R * n2%:~R / d%:~R) = ((n1%:~R / d%:~R)%R * n2%:~R )); last by lra.
   move: {n1} (((n1%:~R / d%:~R)%R)) => n1 _ {d}.
-  rewrite /nearest_round/ran_round.
-  case: (boolP (Order.lt _ _)) => pred1.
-  - case: (boolP (Order.lt _ _)) => pred2.
-    + admit.
-    + admit.
-  - case: (boolP (Order.lt _ _)) => pred2.
-    + admit.
-    + admit.
-  Admitted.
+  generalize (nearest_round_mul_abs n1 n2); intros.
+  replace (n1 * n2%:~R) with (n1*~n2) by ring.
+  replace (nearest_round n1 * n2) with (nearest_round n1 *~ n2).
+  apply nearest_round_mul_abs.
+  destruct n2; simpl; ring.
+Qed.
 
 Lemma nearest_round_int_add2_ex (n1 n2 d : int) : 
   d <> 0 ->
