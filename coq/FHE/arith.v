@@ -883,36 +883,41 @@ Proof.
   by rewrite /mul /=.
 Qed.
 
-Lemma Rabs_absz (j : int) (n : nat) :
-  (Rabs (j %:~R) <= n %:~R)%O ->
-    (`|j| <= n)%O.
+Lemma Rabs_absz (j : int) :
+  Rabs (j %:~R) = (`|j|%:~R).
 Proof.
   rewrite /absz.
   destruct j.
-  - rewrite Rabs_right.
-    + intros.
-      by rewrite int_to_R_le in H.
-    + apply Rle_ge.
-      apply /RleP.
-      replace (IZR Z0) with ((0 %:~R):R).
-      * rewrite int_to_R_le; lia.
-      * by rewrite /zero /=.
+  - rewrite Rabs_right //.
+    apply Rle_ge.
+    apply /RleP.
+    replace (IZR Z0) with ((0 %:~R):R).
+    + rewrite int_to_R_le; lia.
+    + by rewrite /zero /=.
   - rewrite NegzE Rabs_left.
-    + intros.
-      rewrite Ropp_opp in H.
-      rewrite mulrNz opprK in H.
-      by rewrite int_to_R_le in H.
+    + rewrite Ropp_opp.
+      by rewrite mulrNz opprK.
     + apply /RltP.
       replace (IZR Z0) with ((0 %:~R):R).
       * rewrite int_to_R_lt; lia.
       * by rewrite /zero /=.
- Qed.
+Qed.
 
-Lemma Rabs_absz_half (j : int) (n : nat) :
-  (Rabs (j %:~R) <= (1/2 : R) *+ n)%O <->
-    (`|j| <= (n/2)%N)%O.
+Lemma half_int_to_R_le (j : int) (n : nat):
+  ((j %:~R : R) <= (1/2 : R) *+ n)%O ->
+  (j <= (n / 2)%N)%O.                           
 Proof.
   Admitted.
+
+Lemma Rabs_absz_half (j : int) (n : nat) :
+  (Rabs (j %:~R) <= (1/2 : R) *+ n)%O ->
+    (`|j| <= (n/2)%N)%O.
+Proof.
+  intros.
+  rewrite Rabs_absz in H.
+  apply half_int_to_R_le in H.
+  apply H.
+Qed.
 
 Lemma nearest_round_mul_abs (r : R) (n : nat) :
   `|nearest_round (r *+ n) - nearest_round(r)*+n| <= (n.+1)/2.
@@ -940,7 +945,7 @@ Proof.
       ((nearest_round r *+ n - nearest_round (r *+ n))%:~R : R)) by ring.
     rewrite H5 in H4.
     move /RleP in H4.
-    rewrite Rabs_absz_half in H4.
+    apply Rabs_absz_half in H4.
     apply H4.
   - rewrite Rplus_add.
     ring.
