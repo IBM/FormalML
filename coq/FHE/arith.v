@@ -909,21 +909,9 @@ Lemma half_lt (j : int) (n : nat) :
 Proof.
   intros.
   generalize (Nat.div_mod_eq n 2); intros.
-  case: (boolP (n mod 2 == 0%N)); intros.
-  - move /eqP in p.
-    rewrite p in H0.
-    assert (n = ((2 * (n/2))%coq_nat)) by lia.
-    rewrite H1.
-    lia.
-  - move /eqP in i.
-    assert (n mod 2 = 1%N).
-    {
-      generalize (Nat.mod_upper_bound n 2); intros.
-      lia.
-    }
-    rewrite H1 in H0.
-    rewrite H0.
-    lia.
+  case: (boolP (n mod 2 == 0%N)); intros; try lia.
+  generalize (Nat.mod_upper_bound n 2); intros.
+  lia.
 Qed.
 
 Lemma half_int_to_R_le (j : int) (n : nat):
