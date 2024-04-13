@@ -946,7 +946,7 @@ Proof.
   apply H.
 Qed.
 
-Lemma nearest_round_mul_abs (r : R) (n : nat) :
+Lemma nearest_round_mul_abs_nat (r : R) (n : nat) :
   `|nearest_round (r *+ n) - nearest_round(r)*+n| <= (n.+1)/2.
 Proof.
   generalize (nearest_round_nat_mul_bound_R r n); intros.
@@ -1101,6 +1101,32 @@ Proof.
   - f_equal; lra.
   - f_equal; f_equal; lia.
 Qed.
+
+Lemma nearest_round_mul_abs (r : R) (n : int) :
+  `|nearest_round (r *~ n) - nearest_round(r)*~n| <= (`|n|+1)/2.
+Proof.
+  destruct n.
+  - rewrite -!pmulrn.
+    generalize (nearest_round_mul_abs_nat r n); intros.
+    replace (`|n| + 1)%N with (n.+1) by lia.
+    lia.
+  - rewrite distnC /intmul NegzE.
+    generalize (nearest_round_mul_abs_nat r n.+1); intros.
+    replace (`|-(Posz n.+1)|+1)%N with (n.+2) by lia.
+    rewrite distnC in H.
+    case: (boolP ((upi (r *+ n.+1))%:~R - r*+n.+1 == 1/2)); intros.
+    + move /eqP in p.
+      rewrite (nearest_round_opp_half _ p) opprD opprK addrC distnC.
+      rewrite opprB (addrC (-(one int_Ring)) _) addrA.
+      generalize (absz_triang (nearest_round r *+ n.+1 - nearest_round (r *+ n.+1)) (- (one int_Ring))); intros.
+      replace (`|-1|) with (1%N) in H0 by lia.
+      assert (`|(nearest_round r *+ n.+1 - nearest_round (r *+ n.+1) - 1)%R| <= n.+2/2 + 1) by lia.
+      admit.
+    + move /eqP in i.
+      rewrite (nearest_round_opp_not_half _ i) opprK addrC distnC.
+      lia.
+Admitted.      
+    
 
 Lemma nearest_round_int_mul (n1 n2 d : int) :
   d <> 0 ->
