@@ -903,11 +903,36 @@ Proof.
       * by rewrite /zero /=.
 Qed.
 
+Lemma half_lt (j : int) (n : nat) :
+  (Posz (n/2)%N < j)%O ->
+  (Posz n < 2 * j)%O.
+Proof.
+  intros.
+  generalize (Nat.div_mod_eq n 2); intros.
+  
+  Admitted.
+
 Lemma half_int_to_R_le (j : int) (n : nat):
   ((j %:~R : R) <= (1/2 : R) *+ n)%O ->
   (j <= (n / 2)%N)%O.                           
 Proof.
-  Admitted.
+  intros.
+  case: (boolP (Order.le _ _)); intros; trivial.
+  rewrite -Order.TotalTheory.ltNge in i.
+  assert ((n : int) < 2*j)%O.
+  {
+    by apply half_lt.
+  }
+  rewrite -(@ltr_int R_numDomainType) in H0.
+  assert ( (n%:~R : R) / 2 < j%:~R)%O by lra.
+  rewrite -(@ltr_int R_numDomainType) in i.
+  assert ( (1 / 2 : R) *+ n < j%:~R)%O.
+  {
+    assert ((1 / 2 : R) *+ n = (n%:~R : R) / 2) by ring.
+    by rewrite H2.
+  }
+  lra.
+Qed.
 
 Lemma Rabs_absz_half (j : int) (n : nat) :
   (Rabs (j %:~R) <= (1/2 : R) *+ n)%O ->
