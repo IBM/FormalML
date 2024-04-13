@@ -1140,16 +1140,9 @@ Proof.
     replace (`|n| + 1)%N with (n.+1) by lia.
     lia.
   - rewrite distnC /intmul NegzE.
-    generalize (nearest_round_mul_abs_nat r n.+1); intros.
     replace (`|-(Posz n.+1)|+1)%N with (n.+2) by lia.
-    rewrite distnC in H.
-    case: (boolP ((upi (r *+ n.+1))%:~R - r*+n.+1 == 1/2)); intros.
-    + move /eqP in p.
-      rewrite -opprD abszN.
-      apply nearest_round_mul_abs_nat_opp.
-    + move /eqP in i.
-      rewrite (nearest_round_opp_not_half _ i) opprK addrC distnC.
-      lia.
+    rewrite -opprD abszN.
+    apply nearest_round_mul_abs_nat_opp.
 Qed.
     
 Lemma nearest_round_int_mul (n1 n2 d : int) :
