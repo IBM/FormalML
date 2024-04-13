@@ -1030,6 +1030,45 @@ Proof.
   - by rewrite -IZRE /add /one /= in H.
 Qed.
 
+Lemma nearest_round_opp_not_half (r : R) :
+  (upi r)%:~R - r <> 1/2 ->
+  nearest_round (opp r) = - nearest_round r.
+Proof.
+  rewrite /nearest_round /ran_round.
+  case: (boolP ((upi r)%:~R == r + 1)); intros.
+  - move /eqP in p.
+    rewrite (upi_opp_int r p) opprK rmorphD rmorphN /= p.
+    case: (boolP (Order.lt _ _)); intros.
+    + by assert false by lra.
+    + case: (boolP (Order.lt _ _)); intros.
+      * by assert false by lra.
+      * ring.
+  - move /eqP in i.
+    rewrite (upi_opp_nint r i) opprK rmorphD rmorphN /=.
+    case: (boolP (Order.lt _ _)); intros.
+    + case: (boolP (Order.lt _ _)); intros.
+      * by assert false by lra.
+      * ring.
+    + case: (boolP (Order.lt _ _)); intros.
+      * ring.
+      * by assert false by lra.
+Qed.
+
+Lemma nearest_round_opp_half (r : R) :
+  (upi r)%:~R - r = 1/2 ->
+  nearest_round (-r) = - nearest_round r - 1.
+Proof.
+  rewrite /nearest_round /ran_round.
+  intros.
+  assert( (upi r)%:~R <> r + 1 ) by lra.
+  rewrite (upi_opp_nint r H0) rmorphD rmorphN /= opprK.
+  case : (boolP (Order.lt _ _)); intros.
+  - by assert false by lra.
+  - case : (boolP (Order.lt _ _)); intros.
+    + by assert false by lra.
+    + ring.
+Qed.
+
 Lemma upi_mul_abs (r : R) (n : int) :
   `|upi (r *~ n) - (upi r) *~n| <= `|n|+1.
 Proof.
