@@ -1052,23 +1052,59 @@ Proof.
 Qed.
 
 Lemma nearest_round_half (r : R) :
-  Rabs ((nearest_round r)%:~R - r) = 1 / 2  ->
-  forall (n : nat),
-    odd n ->
-    (Rabs ((nearest_round (r *+ n.+1))%:~R - r *+ n.+1)%R =
-       1 / 2).
+  (upi r)%:~R - r = 1 / 2 <->
+    Rabs ((nearest_round r)%:~R - r) = 1 / 2.
 Proof.  
-  intros.
+  rewrite /nearest_round /ran_round.
+  split; intros.
+  - rewrite H.
+    assert ((((1 / 2):R) < 1 / 2)%O = false) by lra.
+    rewrite H0 rmorphD /= /Rminus Rplus_add Ropp_opp.
+    rewrite -addrA addrC -addrA (addrC (- r) _) H.
+    replace ( ((-1)%:~R : R) + 1 / 2) with (- (1 / 2):R) by lra.
+    rewrite -Ropp_opp Rabs_Ropp Rabs_right // mul1r.
+    apply Rle_ge; left.
+    apply /RltP.
+    rewrite ssrnum.Num.Theory.invr_gt0.
+    admit.
+  - case: (boolP ((upi r)%:~R - r < 1 / 2)%O); intros.
+    + rewrite p in H.
+      rewrite /Rminus Ropp_opp Rplus_add in H.
+      rewrite Rabs_right // in H.
+      left.
+      apply upi_bound.
+    + assert (((upi r)%:~R - r < 1 / 2)%O = false) by lra.
+      rewrite H0 in H.
+      rewrite rmorphD rmorphN /= in H.
+      destruct (upi_bound_O r).
+      rewrite /Rminus Ropp_opp Rplus_add in H.
+      case: (boolP (Order.le (0 : R) ((upi r)%:~R - 1%:~R - r)%R )); intros.
+      * move /RleP in p.
+        rewrite Rabs_right in H.
+        -- move /RleP in p.
+           lra.
+        -- by apply Rle_ge.
+      * rewrite -Order.TotalTheory.ltNge in i0.
+        rewrite Rabs_left in H.
+        -- rewrite Ropp_opp in H.
+           lra.
+        -- by apply /RltP.
   Admitted.
 
 Lemma nearest_round_not_half (r : R) :
-  Rabs ((nearest_round r)%:~R - r) <> 1 / 2  ->
-  forall (n : nat),
-    (Rabs ((nearest_round (r *+ n.+1))%:~R - r *+ n.+1)%R <>
-       1 / 2).
+    (upi r)%:~R - r <> 1 / 2 ->
+  (Rabs ((nearest_round r)%:~R - r) < 1 / 2)%O.
 Proof.
   intros.
-Admitted.
+  rewrite Order.POrderTheory.lt_def.
+  apply /andP.
+  split.
+  - apply /eqP.
+    intros ?.
+    symmetry in H0.
+    by rewrite -nearest_round_half in H0.
+  - apply nearest_round_bound_O.
+Qed.
 
 Lemma nearest_round_mul_abs_nat_half (r : R) (n : nat) :
   (upi r)%:~R - r = 1 / 2 ->
