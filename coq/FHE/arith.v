@@ -1066,7 +1066,7 @@ Proof.
     apply Rle_ge; left.
     apply /RltP.
     rewrite ssrnum.Num.Theory.invr_gt0.
-    admit.
+    lra.
   - case: (boolP ((upi r)%:~R - r < 1 / 2)%O); intros.
     + rewrite p in H.
       rewrite /Rminus Ropp_opp Rplus_add in H.
@@ -1089,7 +1089,7 @@ Proof.
         -- rewrite Ropp_opp in H.
            lra.
         -- by apply /RltP.
-  Admitted.
+Qed.
 
 Lemma nearest_round_not_half (r : R) :
     (upi r)%:~R - r <> 1 / 2 ->
