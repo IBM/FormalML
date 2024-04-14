@@ -457,9 +457,8 @@ Proof.
   rewrite /nearest_round_int /nearest_round /ran_round.
   rewrite mul0r upi0 oppr0 addr0 addrN.
   rewrite /intmul /=.
-  rewrite ssrnum.Num.Theory.ltr_pdivlMr //.
-  - by rewrite mul1r /natmul/= ssrnum.Num.Theory.gtrDl ssrnum.Num.Theory.ltr10.    
-  - by lra.
+  rewrite ssrnum.Num.Theory.ltr_pdivlMr; last by lra.
+  by rewrite mul1r /natmul/= ssrnum.Num.Theory.gtrDl ssrnum.Num.Theory.ltr10.    
 Qed.
 
 Lemma nearest_round_int_add (n1 : int) (c : R) :
