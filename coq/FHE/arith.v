@@ -1031,6 +1031,45 @@ Proof.
     ring.
 Qed.
 
+
+Lemma nearest_round_0 :
+  nearest_round 0 = 0.
+Proof.
+  rewrite /nearest_round /ran_round upi0 oppr0 addr0.
+  replace  (((1%:~R : R )< 1 / 2)%O) with false by lra.
+  lia.
+Qed.
+
+Lemma nearest_round_int_val (n : int) :
+  nearest_round (n %:~R) = n.
+Proof.
+  rewrite /nearest_round /ran_round.
+  generalize (upi_intl n 0); intros.
+  rewrite Rplus_add addr0 upi0 in H.
+  rewrite H intrD addrC addrA addNr add0r.
+  replace  ((1%:~R : R) < 1 / 2)%O with false by lra.
+  lia.
+Qed.
+
+Lemma nearest_round_half (r : R) :
+  Rabs ((nearest_round r)%:~R - r) = 1 / 2  ->
+  forall (n : nat),
+    odd n ->
+    (Rabs ((nearest_round (r *+ n.+1))%:~R - r *+ n.+1)%R =
+       1 / 2).
+Proof.  
+  intros.
+  Admitted.
+
+Lemma nearest_round_not_half (r : R) :
+  Rabs ((nearest_round r)%:~R - r) <> 1 / 2  ->
+  forall (n : nat),
+    (Rabs ((nearest_round (r *+ n.+1))%:~R - r *+ n.+1)%R <>
+       1 / 2).
+Proof.
+  intros.
+Admitted.
+
 Lemma nearest_round_mul_abs_nat_half (r : R) (n : nat) :
   (upi r)%:~R - r = 1 / 2 ->
   `|nearest_round (r *+ n) - nearest_round(r)*+n| <= n/2.
@@ -1073,24 +1112,6 @@ Proof.
  *)
   Admitted.
 
-Lemma nearest_round_0 :
-  nearest_round 0 = 0.
-Proof.
-  rewrite /nearest_round /ran_round upi0 oppr0 addr0.
-  replace  (((1%:~R : R )< 1 / 2)%O) with false by lra.
-  lia.
-Qed.
-
-Lemma nearest_round_int_val (n : int) :
-  nearest_round (n %:~R) = n.
-Proof.
-  rewrite /nearest_round /ran_round.
-  generalize (upi_intl n 0); intros.
-  rewrite Rplus_add addr0 upi0 in H.
-  rewrite H intrD addrC addrA addNr add0r.
-  replace  ((1%:~R : R) < 1 / 2)%O with false by lra.
-  lia.
-Qed.
 
 Lemma nearest_round_mul_abs_nat_0 (r : R) (n : nat) :
   `|nearest_round (r *+ 0) - nearest_round(r)*+0| = 0%N.
