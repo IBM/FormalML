@@ -457,7 +457,7 @@ Proof.
   rewrite /nearest_round_int /nearest_round /ran_round.
   rewrite mul0r upi0 oppr0 addr0 addrN.
   rewrite /intmul /=.
-  rewrite ssrnum.Num.Theory.ltr_pdivlMr //; try lra.
+  rewrite ssrnum.Num.Theory.ltr_pdivlMr //; [|lra].
   by rewrite mul1r /natmul/= ssrnum.Num.Theory.gtrDl ssrnum.Num.Theory.ltr10.    
 Qed.
 
@@ -663,6 +663,18 @@ Proof.
     rewrite Rabs_left_O; lra.
 Qed.
 
+Lemma nearest_round_bound_O' (r : R) :
+  let diff := (nearest_round r)%:~R - r in   
+  Rabs diff <> 1/2 ->
+  (Rabs diff < 1/2)%O.
+Proof.
+  generalize (nearest_round_bound_O r); intros.
+  rewrite Order.POrderTheory.lt_neqAle.
+  unfold diff in *.
+  move /eqP in H0.
+  by apply /andP.
+Qed.
+
 Lemma Rabs_n (r : R) (n : nat) :
   (Rabs r) *+n = Rabs (r *+ n).
 Proof.
@@ -686,6 +698,24 @@ Proof.
   apply /RleP.
   move /RleP in H.
   eapply Rle_trans; [|apply H].
+  right.
+  rewrite Rabs_n.
+  f_equal.
+  ring.
+Qed.
+
+Lemma nearest_round_nat_mul_bound_R'_S (r : R) (n : nat) :
+  Rabs ((nearest_round r)%:~R - r) <> 1/2 ->
+ (Rabs (add ((nearest_round r)%:~R *+n.+1) (opp r*+n.+1)) < (1/2)*+n.+1)%O.
+Proof.
+  intros.
+  generalize (nearest_round_bound_O' r H); intros.
+  apply (ssrnum.Num.Theory.ltr_wMn2r (R := R_numDomainType) n.+1) in H0.
+  apply /RltP.
+  assert (0 < n.+1) by lia.
+  rewrite H1 in H0.
+  move /RltP in H0.
+  eapply Rle_lt_trans; [|apply H0].
   right.
   rewrite Rabs_n.
   f_equal.
@@ -936,6 +966,30 @@ Proof.
   lra.
 Qed.
 
+(*
+Lemma half_int_to_R_lt (j : int) (n : nat):
+  ((j %:~R : R) < (1/2 : R) *+ n)%O ->
+  (j < (n / 2)%N)%O.                           
+Proof.
+  intros.
+  case: (boolP (Order.lt _ _)); intros; trivial.
+  rewrite -Order.TotalTheory.leNgt in i.
+  assert ((n : int) <= 2*j)%O.
+  {
+    by apply half_le.
+  }
+  rewrite -(@ltr_int R_numDomainType) in H0.
+  assert ( (n%:~R : R) / 2 < j%:~R)%O by lra.
+  rewrite -(@ltr_int R_numDomainType) in i.
+  assert ( (1 / 2 : R) *+ n < j%:~R)%O.
+  {
+    assert ((1 / 2 : R) *+ n = (n%:~R : R) / 2) by ring.
+    by rewrite H2.
+  }
+  lra.
+Qed.
+*)
+
 Lemma Rabs_absz_half (j : int) (n : nat) :
   (Rabs (j %:~R) <= (1/2 : R) *+ n)%O ->
     (`|j| <= (n/2)%N)%O.
@@ -975,6 +1029,73 @@ Proof.
     apply H3.
   - rewrite Rplus_add.
     ring.
+Qed.
+
+Lemma nearest_round_mul_abs_nat_half (r : R) (n : nat) :
+  (upi r)%:~R - r = 1 / 2 ->
+  `|nearest_round (r *+ n) - nearest_round(r)*+n| <= n/2.
+Proof.  
+  Admitted.
+
+Lemma nearest_round_mul_abs_nat_not_half (r : R) (n : nat) :
+  Rabs ((nearest_round r)%:~R - r) <> 1 / 2  ->
+  `|nearest_round (r *+ n.+1) - nearest_round(r)*+n.+1| < n.+2/2.
+Proof.
+  intros.
+  generalize (nearest_round_nat_mul_bound_R'_S r n H); intros.
+  assert  (Rabs ((nearest_round (r *+ n.+1))%:~R - r *+ n.+1)%R <>
+       1 / 2).
+  {
+    admit.
+  }
+  generalize (nearest_round_bound_O' (r *+ n.+1) H1); intros.
+  rewrite Rabs_opp_sym in H2.
+  generalize (ssrnum.Num.Theory.ltrD H0 H2); intros.  
+  generalize (Rabs_triang
+                ((nearest_round r)%:~R *+ n.+1 + - r *+ n.+1)%R
+                (r *+ n.+1 - (nearest_round (r *+ n.+1))%:~R)%R ); intros.
+  move /RltP in H3.
+  generalize (Rle_lt_trans _ _ _ H4 H3); intros.
+  rewrite Rplus_add in H5.
+  rewrite -addrA (addrA _ (r *+ n.+1) _) in H5.
+  replace (- r *+ n.+1 + r *+ n.+1) with (0:R) in H5 by ring.
+  rewrite add0r -mulrSr in H5.
+  rewrite distnC.
+  assert
+    (((nearest_round r)%:~R *+ n.+1 -
+        (nearest_round (r *+ n.+1))%:~R)%R =
+       ((nearest_round r *+ n.+1 - nearest_round (r *+ n.+1))%:~R : R)) by ring.
+  rewrite H6 in H5.
+  move /RltP in H5.
+(*
+  apply Rabs_absz_half in H5.
+    apply H3.
+ *)
+  Admitted.
+
+Lemma nearest_round_0 :
+  nearest_round 0 = 0.
+Proof.
+  rewrite /nearest_round /ran_round upi0 oppr0 addr0.
+  replace  (((1%:~R : R )< 1 / 2)%O) with false by lra.
+  lia.
+Qed.
+
+Lemma nearest_round_int_val (n : int) :
+  nearest_round (n %:~R) = n.
+Proof.
+  rewrite /nearest_round /ran_round.
+  generalize (upi_intl n 0); intros.
+  rewrite Rplus_add addr0 upi0 in H.
+  rewrite H intrD addrC addrA addNr add0r.
+  replace  ((1%:~R : R) < 1 / 2)%O with false by lra.
+  lia.
+Qed.
+
+Lemma nearest_round_mul_abs_nat_0 (r : R) (n : nat) :
+  `|nearest_round (r *+ 0) - nearest_round(r)*+0| = 0%N.
+Proof.
+  by rewrite mulr0n nearest_round_0 mulr0n oppr0 addr0 /=.
 Qed.
 
 Lemma nearest_round_mul_abs_nat_opp (r : R) (n : nat) :
