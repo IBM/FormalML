@@ -972,21 +972,15 @@ Lemma half_int_to_R_le_alt (j : int) (n : nat):
 Proof.
   intros.
   case: (boolP (Order.le _ _)); intros; trivial.
-  rewrite -Order.TotalTheory.ltNge in i.
-  assert ((n : int) < 2*j)%O.
-  {
-    lia.
-  }
+  assert ((n : int) < 2*j)%O by lia.
   rewrite -(@ltr_int R_numDomainType) in H0.
-  assert ( (n%:~R : R) / 2 < j%:~R)%O by lra.
-  rewrite -(@ltr_int R_numDomainType) in i.
   assert ( (1 / 2 : R) *+ n < j%:~R)%O.
   {
     assert ((1 / 2 : R) *+ n = (n%:~R : R) / 2) by ring.
-    by rewrite H2.
+    lra.
   }
-  generalize (Order.POrderTheory.le_lt_trans H H2); intros.
-  by rewrite Order.POrderTheory.ltxx in H3.
+  generalize (Order.POrderTheory.le_lt_trans H H1).
+  by rewrite Order.POrderTheory.ltxx.
 Qed.
 
 Lemma half_int_to_R_lt (j : int) (n : nat):
@@ -1007,8 +1001,7 @@ Proof.
     }
     rewrite H0 in H.
     assert (1 / 2 *+ (2 * (n.+1 %/ 2)) = ((Posz (n.+1%/2))%:~R : R)) by (by field).
-    rewrite H1 in H.
-    rewrite ltr_int in H.
+    rewrite H1 ltr_int in H.
     lia.
   - apply Order.POrderTheory.ltW in H.
     generalize (half_int_to_R_le_alt _ _ H); intros.
