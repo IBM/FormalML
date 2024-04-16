@@ -663,6 +663,7 @@ Proof.
     rewrite Rabs_left_O; lra.
 Qed.
 
+
 Lemma nearest_round_bound_O' (r : R) :
   let diff := (nearest_round r)%:~R - r in   
   Rabs diff <> 1/2 ->
@@ -1014,8 +1015,25 @@ Lemma Rabs_absz_half (j : int) (n : nat) :
 Proof.
   intros.
   rewrite Rabs_absz in H.
-  apply half_int_to_R_le in H.
-  apply H.
+  by apply half_int_to_R_le in H.
+Qed.
+
+Lemma Rabs_absz_half_le (j : int) (n : nat) :
+  (Rabs (j %:~R) <= (1/2 : R) *+ n)%O ->
+    (`|j| <= (n./2)%N)%O.
+Proof.
+  intros.
+  rewrite Rabs_absz in H.
+  by apply half_int_to_R_le_alt in H.
+Qed.
+
+Lemma Rabs_absz_half_lt (j : int) (n : nat) :
+  (Rabs (j %:~R) < (1/2 : R) *+ n.+1)%O ->
+    (`|j| <= (n./2)%N)%O.
+Proof.
+  intros.
+  rewrite Rabs_absz in H.
+  by apply half_int_to_R_lt in H.
 Qed.
 
 Lemma nearest_round_mul_abs_nat (r : R) (n : nat) :
@@ -1044,6 +1062,37 @@ Proof.
     rewrite H4 in H3.
     move /RleP in H3.
     apply Rabs_absz_half in H3.
+    apply H3.
+  - rewrite Rplus_add.
+    ring.
+Qed.
+
+Lemma nearest_round_mul_abs_nat_alt (r : R) (n : nat) :
+  `|nearest_round (r *+ n) - nearest_round(r)*+n| <= (n.+1)./2.
+Proof.
+  generalize (nearest_round_nat_mul_bound_R r n); intros.
+  generalize (nearest_round_bound_O (r *+ n)); intros.
+  simpl in H0.
+  rewrite Rabs_opp_sym in H0.
+  generalize (ssrnum.Num.Theory.lerD H H0); intros.
+  generalize (Rabs_triang
+                ((nearest_round r)%:~R *+ n + - r *+ n)%R
+                (r *+ n - (nearest_round (r *+ n))%:~R)%R ); intros.
+  move /RleP in H1.
+  generalize (Rle_trans _ _ _ H2 H1); intros.
+  replace  (Rplus ((nearest_round r)%:~R *+ n + - r *+ n)%R
+              (r *+ n - (nearest_round (r *+ n))%:~R)%R) with
+    ((((nearest_round r)%:~R : R)*+ n) -
+       (nearest_round (r *+ n))%:~R)%R in H3.
+  - rewrite distnC.
+    rewrite -mulrSr in H3.
+    assert
+      (((nearest_round r)%:~R *+ n -
+          (nearest_round (r *+ n))%:~R)%R =
+      ((nearest_round r *+ n - nearest_round (r *+ n))%:~R : R)) by ring.
+    rewrite H4 in H3.
+    move /RleP in H3.
+    apply Rabs_absz_half_le in H3.
     apply H3.
   - rewrite Rplus_add.
     ring.
@@ -1136,94 +1185,91 @@ Proof.
   - apply nearest_round_bound_O.
 Qed.
 
+Lemma nearest_round_half_val (r : R) :
+  Rabs ((nearest_round r)%:~R - r) = 1 / 2 ->
+  (nearest_round r)%:~R - r = -(1 / 2).
+Proof.
+  intros.
+  rewrite -nearest_round_half in H.
+  rewrite /nearest_round /ran_round.
+  rewrite H.
+  case: (boolP (Order.lt _ _)); lra.
+Qed.
+
 Lemma nearest_round_mul_abs_nat_half (r : R) (n : nat) :
   Rabs ((nearest_round r)%:~R - r) = 1 / 2 ->
-  Rabs ((nearest_round (r *+ n))%:~R - r *+ n)%R = 1 / 2 ->
-  `|nearest_round (r *+ n) - nearest_round(r)*+n| <= n/2.
+  Rabs ((nearest_round (r *+ n.+1))%:~R - r *+ n.+1)%R = 1 / 2 ->
+  (`|nearest_round (r *+ n.+1) - nearest_round(r)*+n.+1| <= n./2)%O.
 Proof.  
   intros.
   rewrite /Rminus Ropp_opp Rplus_add in H.
-  generalize (nearest_round_nat_mul_bound_R r n); intros.
-  assert (Rabs ((nearest_round (r *+ n))%:~R - r *+ n)%R <= 1 / 2)%O by lra.
-  generalize (ssrnum.Num.Theory.lerD H1 H2); intros.    
-  generalize (Rabs_triang
-                ((nearest_round r)%:~R *+ n + - r *+ n)%R
-                ((nearest_round (r *+ n))%:~R - r *+ n)%R); intros.
-  move /RleP in H4.
-  rewrite Rplus_add in H4.
-  
+  apply nearest_round_half_val in H0.
+  apply nearest_round_half_val in H.
+  apply (f_equal (fun z => z *+ n.+1)) in H.
+  assert (((nearest_round (r *+ n.+1))%:~R:R) - (nearest_round r)%:~R *+ n.+1 = -(- (1 / 2) *+ n.+1) - (1 / 2)).
+  {
+    rewrite -H -H0.
+    ring.
+  }
+  replace ( - (1 / 2) *- n.+1 - 1 / 2) with (((1 / 2) *+ n):R) in H1 by ring.
+  rewrite -rmorphMn -rmorphN -rmorphD /= in H1.
+  apply (f_equal (fun z => Rabs z)) in H1.
+  rewrite (Rabs_right (1 / 2 *+ n)) in H1.
+  - move /eqP in H1.
+    rewrite Order.POrderTheory.eq_le in H1.
+    move /andP in H1.
+    destruct H1.
+    by apply Rabs_absz_half_le in H1.
+  - apply Rle_ge.
+    apply /RleP.
+    admit.
   Admitted.
 
 Lemma nearest_round_mul_abs_nat_not_half1 (r : R) (n : nat) :
   Rabs ((nearest_round r)%:~R - r) <> 1 / 2  ->
-  `|nearest_round (r *+ n.+1) - nearest_round(r)*+n.+1| < n.+2/2.
+  `|nearest_round (r *+ n.+1) - nearest_round(r)*+n.+1| <= n.+1./2.
 Proof.
   intros.
   generalize (nearest_round_nat_mul_bound_R'_S r n H); intros.
-  assert  (Rabs ((nearest_round (r *+ n.+1))%:~R - r *+ n.+1)%R <>
-       1 / 2).
-  {
-    admit.
-  }
-  generalize (nearest_round_bound_O' (r *+ n.+1) H1); intros.
-  rewrite Rabs_opp_sym in H2.
-  generalize (ssrnum.Num.Theory.ltrD H0 H2); intros.  
+  generalize (nearest_round_bound_O (r *+ n.+1)); intros.
+  simpl in H1.
+  rewrite Rabs_opp_sym in H1.
+  generalize (ssrnum.Num.Theory.ltr_leD H0 H1); intros.  
   generalize (Rabs_triang
                 ((nearest_round r)%:~R *+ n.+1 + - r *+ n.+1)%R
                 (r *+ n.+1 - (nearest_round (r *+ n.+1))%:~R)%R ); intros.
-  move /RltP in H3.
-  generalize (Rle_lt_trans _ _ _ H4 H3); intros.
-  rewrite Rplus_add in H5.
-  rewrite -addrA (addrA _ (r *+ n.+1) _) in H5.
-  replace (- r *+ n.+1 + r *+ n.+1) with (0:R) in H5 by ring.
-  rewrite add0r -mulrSr in H5.
+  move /RleP in H3.
+  generalize (Order.POrderTheory.le_lt_trans H3 H2); intros.
+  rewrite Rplus_add in H4.
+  rewrite -addrA (addrA _ (r *+ n.+1) _) in H4.
+  replace (- r *+ n.+1 + r *+ n.+1) with (0:R) in H4 by ring.
+  rewrite add0r -mulrSr in H4.
   rewrite distnC.
-  assert
-    (((nearest_round r)%:~R *+ n.+1 -
-        (nearest_round (r *+ n.+1))%:~R)%R =
-       ((nearest_round r *+ n.+1 - nearest_round (r *+ n.+1))%:~R : R)) by ring.
-  rewrite H6 in H5.
-  move /RltP in H5.
-(*
-  apply Rabs_absz_half in H5.
-    apply H3.
- *)
-  Admitted.
+  rewrite -rmorphMn -rmorphN -rmorphD /= in H4.  
+  by apply Rabs_absz_half_lt in H4.
+Qed.
 
 Lemma nearest_round_mul_abs_nat_not_half2 (r : R) (n : nat) :
-  (Rabs ((nearest_round (r *+ n))%:~R - r *+ n)%R < 1 / 2)%O ->
-  `|nearest_round (r *+ n) - nearest_round(r)*+n| < n.+1/2.
+  Rabs ((nearest_round (r *+ n.+1))%:~R - r *+ n.+1)%R <> 1 / 2 ->
+  `|nearest_round (r *+ n.+1) - nearest_round(r)*+n.+1| <= n.+1./2.
 Proof.
   intros.
-  generalize (nearest_round_bound_O r); intros.
-  simpl in H0.
-(*
-
-  rewrite Rabs_opp_sym in H2.
-
-  
-  generalize (ssrnum.Num.Theory.ltrD H0 H2); intros.  
+  generalize (nearest_round_nat_mul_bound_R r n.+1); intros.
+  generalize (nearest_round_bound_O' (r *+ n.+1) H); intros.  
+  rewrite mulNrn Rabs_opp_sym in H0.
+  generalize (ssrnum.Num.Theory.ltr_leD H1 H0); intros.  
   generalize (Rabs_triang
-                ((nearest_round r)%:~R *+ n.+1 + - r *+ n.+1)%R
-                (r *+ n.+1 - (nearest_round (r *+ n.+1))%:~R)%R ); intros.
-  move /RltP in H3.
-  generalize (Rle_lt_trans _ _ _ H4 H3); intros.
-  rewrite Rplus_add in H5.
-  rewrite -addrA (addrA _ (r *+ n.+1) _) in H5.
-  replace (- r *+ n.+1 + r *+ n.+1) with (0:R) in H5 by ring.
-  rewrite add0r -mulrSr in H5.
-  rewrite distnC.
-  assert
-    (((nearest_round r)%:~R *+ n.+1 -
-        (nearest_round (r *+ n.+1))%:~R)%R =
-       ((nearest_round r *+ n.+1 - nearest_round (r *+ n.+1))%:~R : R)) by ring.
-  rewrite H6 in H5.
-  move /RltP in H5.
-  apply Rabs_absz_half in H5.
-    apply H3.
- *)
-  Admitted.
-
+                ((nearest_round (r *+ n.+1))%:~R - r *+ n.+1)%R
+                (r *+ n.+1 - (nearest_round r)%:~R *+ n.+1)%R ); intros.
+  move /RleP in H3.
+  generalize (Order.POrderTheory.le_lt_trans H3 H2); intros.
+  rewrite Rplus_add in H4.
+  rewrite -addrA (addrA _ (r *+ n.+1) _) in H4.
+  replace (r *- n.+1 + r *+ n.+1) with (0:R) in H4 by ring.
+  rewrite add0r (addrC (1 / 2) _) -mulrSr in H4.
+  rewrite -rmorphMn -rmorphN -rmorphD /= in H4.  
+  by apply Rabs_absz_half_lt in H4.
+Qed.  
 
 Lemma nearest_round_mul_abs_nat_0 (r : R) (n : nat) :
   `|nearest_round (r *+ 0) - nearest_round(r)*+0| = 0%N.
