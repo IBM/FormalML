@@ -1054,12 +1054,7 @@ Proof.
     ((((nearest_round r)%:~R : R)*+ n) -
        (nearest_round (r *+ n))%:~R)%R in H3.
   - rewrite distnC.
-    rewrite -mulrSr in H3.
-    assert
-      (((nearest_round r)%:~R *+ n -
-          (nearest_round (r *+ n))%:~R)%R =
-      ((nearest_round r *+ n - nearest_round (r *+ n))%:~R : R)) by ring.
-    rewrite H4 in H3.
+    rewrite -mulrSr -rmorphMn -rmorphN -rmorphD /= in H3.  
     move /RleP in H3.
     apply Rabs_absz_half in H3.
     apply H3.
@@ -1085,19 +1080,13 @@ Proof.
     ((((nearest_round r)%:~R : R)*+ n) -
        (nearest_round (r *+ n))%:~R)%R in H3.
   - rewrite distnC.
-    rewrite -mulrSr in H3.
-    assert
-      (((nearest_round r)%:~R *+ n -
-          (nearest_round (r *+ n))%:~R)%R =
-      ((nearest_round r *+ n - nearest_round (r *+ n))%:~R : R)) by ring.
-    rewrite H4 in H3.
+    rewrite -mulrSr -rmorphMn -rmorphN -rmorphD /= in H3.  
     move /RleP in H3.
     apply Rabs_absz_half_le in H3.
     apply H3.
   - rewrite Rplus_add.
     ring.
 Qed.
-
 
 Lemma nearest_round_0 :
   nearest_round 0 = 0.
@@ -1320,12 +1309,7 @@ Proof.
   rewrite -addrA (addrC (-r *+ n) _) -addrA in H3.
   replace (r *+ n + (-r) *+n) with (0 : R) in H3 by ring.
   rewrite addr0 -mulrSr in H3.
-  assert
-    ((((nearest_round r)%:~R *+ n +
-            (nearest_round (- r *+ n))%:~R)%R) =
-       ((((nearest_round r) *+ n +
-              (nearest_round (- r *+ n)))%:~R) : R))  by ring.
-  rewrite H4 in H3.
+  rewrite -rmorphMn -rmorphD /= in H3.  
   move /RleP in H3.
   apply Rabs_absz_half in H3.
   apply H3.
