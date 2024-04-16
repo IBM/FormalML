@@ -1221,9 +1221,12 @@ Proof.
     destruct H1.
     by apply Rabs_absz_half_le in H1.
   - apply Rle_ge.
+    rewrite -mulrnAl.
     apply /RleP.
-    admit.
-  Admitted.
+    apply ssrnum.Num.Theory.mulr_ge0.
+    + apply ssrnum.Num.Theory.mulrn_wge0; lra.
+    + lra.
+ Qed.
 
 Lemma nearest_round_mul_abs_nat_not_half1 (r : R) (n : nat) :
   Rabs ((nearest_round r)%:~R - r) <> 1 / 2  ->
@@ -1271,10 +1274,31 @@ Proof.
   by apply Rabs_absz_half_lt in H4.
 Qed.  
 
-Lemma nearest_round_mul_abs_nat_0 (r : R) (n : nat) :
+Lemma nearest_round_mul_abs_nat_0 (r : R) :
   `|nearest_round (r *+ 0) - nearest_round(r)*+0| = 0%N.
 Proof.
   by rewrite mulr0n nearest_round_0 mulr0n oppr0 addr0 /=.
+Qed.
+
+Lemma nearest_round_mul_abs_nat' (r : R) (n : nat) :
+  `|nearest_round (r *+ n) - nearest_round(r)*+n| <= n./2.
+Proof.
+  destruct n.
+  - rewrite nearest_round_mul_abs_nat_0.
+    lia.
+  - case: (boolP (Rabs ((nearest_round r)%:~R - r) == 1 / 2)).
+    + case: (boolP (Rabs ((nearest_round (r *+ n.+1))%:~R - r *+ n.+1)%R == 1 / 2)).
+      * intros.
+        move /eqP in p.
+        move /eqP in p0.
+        generalize (nearest_round_mul_abs_nat_half r n p0 p).
+        lia.
+      * intros.
+        move /eqP in i.
+        by apply nearest_round_mul_abs_nat_not_half2.
+    + intros.
+      move /eqP in i.
+      by apply nearest_round_mul_abs_nat_not_half1.
 Qed.
 
 Lemma nearest_round_mul_abs_nat_opp (r : R) (n : nat) :
