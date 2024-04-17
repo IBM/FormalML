@@ -1280,19 +1280,15 @@ Proof.
   simpl in H0.
   replace (opp (natmul (opp r) n)) with (natmul r n) in H0 by ring.
   generalize (lerD H H0); intros.
-  generalize (Rabs_triang                
+  generalize (ler_normD
                 ((nearest_round r)%:~R *+ n + - r *+ n)%R
                  ((nearest_round (- r *+ n))%:~R + r *+ n)%R); intros.
-  move /RleP in H1.
-  generalize (Rle_trans _ _ _ H2 H1); intros.
-  rewrite Rplus_add in H3.
+  generalize (Order.POrderTheory.le_trans H2 H1); intros.
   rewrite -addrA (addrC (-r *+ n) _) -addrA in H3.
   replace (r *+ n + (-r) *+n) with (0 : R) in H3 by ring.
   rewrite addr0 -mulrSr in H3.
   rewrite -rmorphMn -rmorphD /= in H3.  
-  move /RleP in H3.
-  apply Rabs_absz_half in H3.
-  apply H3.
+  by apply Rabs_absz_half in H3.
 Qed.
 
 Lemma nearest_round_mul_abs_nat_opp_not_half1 (r : R) (n : nat) :
@@ -1311,8 +1307,7 @@ Proof.
   generalize (Order.POrderTheory.le_lt_trans H3 H2); intros.
   rewrite -addrA (addrC _(r *+ n.+1)) (addrA (r*-n.+1) _ _) addNr add0r in H4.
   rewrite -mulrSr -rmorphMn -rmorphD /= in H4.  
-  apply Rabs_absz_half_lt in H4.
-  lia.
+  by apply Rabs_absz_half_lt in H4.
 Qed.  
 
 Lemma nearest_round_mul_abs_nat_opp_not_half2 (r : R) (n : nat) :
