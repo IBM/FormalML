@@ -6,6 +6,7 @@ From mathcomp Require Import poly mxpoly polydiv ssrint zmodp eqtype ssrbool div
 From mathcomp Require Import ring ssrZ.
 
 Import ssralg.GRing.
+Import ssrnum.Num.Theory.
 Require Import nth_root encode zp_prim_root.
 
 Ltac coq_lra := lra.
@@ -457,8 +458,8 @@ Proof.
   rewrite /nearest_round_int /nearest_round /ran_round.
   rewrite mul0r upi0 oppr0 addr0 addrN.
   rewrite /intmul /=.
-  rewrite ssrnum.Num.Theory.ltr_pdivlMr; last by lra.
-  by rewrite mul1r /natmul/= ssrnum.Num.Theory.gtrDl ssrnum.Num.Theory.ltr10.    
+  rewrite ltr_pdivlMr; last by lra.
+  by rewrite mul1r /natmul/= gtrDl ltr10.    
 Qed.
 
 Lemma nearest_round_int_add (n1 : int) (c : R) :
@@ -623,7 +624,7 @@ Proof.
   {
     by rewrite (ler_int _ 0 n).
   }
-  apply (ssrnum.Num.Theory.ler_wpM2r H1) in H0.
+  apply (ler_wpM2r H1) in H0.
   rewrite mul1r mulrBl in H0.
   by replace  ((upi r)%:~R *+ n - r *+ n ) with
     ((upi r)%:~R * n%:R - r * n%:R) by ring.
@@ -686,7 +687,7 @@ Proof.
   apply Rle_ge.
   apply /RleP.
   replace (IZR Z0) with (0%:R : R).
-  - rewrite  ssrnum.Num.Theory.ler_nat.
+  - rewrite ler_nat.
     lia.
   - by rewrite mulr0n /zero /=.
  Qed.
@@ -695,7 +696,7 @@ Lemma nearest_round_nat_mul_bound_R (r : R) (n : nat) :
  (Rabs (add ((nearest_round r)%:~R *+n) (opp r*+n)) <= (1/2)*+n)%O.
 Proof.
   generalize (nearest_round_bound_O r); intros.
-  apply (ssrnum.Num.Theory.ler_wMn2r (R := R_numDomainType) n) in H.
+  apply (ler_wMn2r (R := R_numDomainType) n) in H.
   apply /RleP.
   move /RleP in H.
   eapply Rle_trans; [|apply H].
@@ -711,7 +712,7 @@ Lemma nearest_round_nat_mul_bound_R'_S (r : R) (n : nat) :
 Proof.
   intros.
   generalize (nearest_round_bound_O' r H); intros.
-  apply (ssrnum.Num.Theory.ltr_wMn2r (R := R_numDomainType) n.+1) in H0.
+  apply (ltr_wMn2r (R := R_numDomainType) n.+1) in H0.
   apply /RltP.
   assert (0 < n.+1) by lia.
   rewrite H1 in H0.
@@ -728,7 +729,7 @@ Lemma upi_nat_mul_bound_R0_lt (r : R) (n : nat) :
 Proof.
   destruct (upi_bound_O r).
   assert (0 < n.+1) by lia.
-  apply (ssrnum.Num.Theory.ltr_wpMn2r H1 (R := R_numDomainType)) in H.
+  apply (ltr_wpMn2r H1 (R := R_numDomainType)) in H.
   rewrite mul0rn in H.
   by replace  ((upi r)%:~R *+ n.+1 - r *+ n.+1 ) with
     (((upi r)%:~R - r) *+ n.+1) by ring.
@@ -1043,7 +1044,7 @@ Proof.
   generalize (nearest_round_bound_O (r *+ n)); intros.
   simpl in H0.
   rewrite Rabs_opp_sym in H0.
-  generalize (ssrnum.Num.Theory.lerD H H0); intros.
+  generalize (lerD H H0); intros.
   generalize (Rabs_triang
                 ((nearest_round r)%:~R *+ n + - r *+ n)%R
                 (r *+ n - (nearest_round (r *+ n))%:~R)%R ); intros.
@@ -1225,13 +1226,12 @@ Proof.
   generalize (nearest_round_bound_O (r *+ n.+1)); intros.
   simpl in H1.
   rewrite Rabs_opp_sym in H1.
-  generalize (ssrnum.Num.Theory.ltr_leD H0 H1); intros.  
-  generalize (Rabs_triang
+  generalize (ltr_leD H0 H1); intros.  
+  generalize (ler_normD
                 ((nearest_round r)%:~R *+ n.+1 + - r *+ n.+1)%R
-                (r *+ n.+1 - (nearest_round (r *+ n.+1))%:~R)%R ); intros.
-  move /RleP in H3.
+                (r *+ n.+1 - (nearest_round (r *+ n.+1))%:~R)%R ).
+  rewrite /ssrnum.Num.Def.normr /=; intros.
   generalize (Order.POrderTheory.le_lt_trans H3 H2); intros.
-  rewrite Rplus_add in H4.
   rewrite -addrA (addrA _ (r *+ n.+1) _) in H4.
   replace (- r *+ n.+1 + r *+ n.+1) with (0:R) in H4 by ring.
   rewrite add0r -mulrSr in H4.
@@ -1249,12 +1249,11 @@ Proof.
   generalize (nearest_round_bound_O' (r *+ n.+1) H); intros.  
   rewrite mulNrn Rabs_opp_sym in H0.
   generalize (ssrnum.Num.Theory.ltr_leD H1 H0); intros.  
-  generalize (Rabs_triang
+  generalize (ler_normD
                 ((nearest_round (r *+ n.+1))%:~R - r *+ n.+1)%R
-                (r *+ n.+1 - (nearest_round r)%:~R *+ n.+1)%R ); intros.
-  move /RleP in H3.
+                (r *+ n.+1 - (nearest_round r)%:~R *+ n.+1)%R ).
+  rewrite /ssrnum.Num.Def.normr /=; intros.  
   generalize (Order.POrderTheory.le_lt_trans H3 H2); intros.
-  rewrite Rplus_add in H4.
   rewrite -addrA (addrA _ (r *+ n.+1) _) in H4.
   replace (r *- n.+1 + r *+ n.+1) with (0:R) in H4 by ring.
   rewrite add0r (addrC (1 / 2) _) -mulrSr in H4.
@@ -1298,7 +1297,7 @@ Proof.
   generalize (nearest_round_bound_O ((opp r) *+ n)); intros.
   simpl in H0.
   replace (opp (natmul (opp r) n)) with (natmul r n) in H0 by ring.
-  generalize (ssrnum.Num.Theory.lerD H H0); intros.
+  generalize (lerD H H0); intros.
   generalize (Rabs_triang                
                 ((nearest_round r)%:~R *+ n + - r *+ n)%R
                  ((nearest_round (- r *+ n))%:~R + r *+ n)%R); intros.
@@ -1322,19 +1321,14 @@ Proof.
   generalize (nearest_round_nat_mul_bound_R'_S r n H); intros.
   generalize (nearest_round_bound_O ((opp r) *+ n.+1)); intros.
   rewrite mulNrn in H0.
-  rewrite mulNrn opprK in H1.
-  simpl in H1.
-  generalize (ssrnum.Num.Theory.ltr_leD H0 H1); intros.
-  generalize (Rleb_norm_add 
+  rewrite mulNrn opprK /= in H1.
+  generalize (ltr_leD H0 H1); intros.
+  generalize (ler_normD
                 ((nearest_round r)%:~R *+ n.+1 - r *+ n.+1)%R
-                ((nearest_round (r *- n.+1))%:~R + r *+ n.+1)%R); intros.
-  rewrite !Rplus_add in H3.
-  move /RleP in H3.
-  move /RleP in H3.
+                ((nearest_round (r *- n.+1))%:~R + r *+ n.+1)%R).
+  rewrite /ssrnum.Num.Def.normr/=; intros.
   generalize (Order.POrderTheory.le_lt_trans H3 H2); intros.
-  rewrite -addrA (addrC _(r *+ n.+1)) in H4.
-  replace (r *- n.+1 + (r *+ n.+1 + (nearest_round (r *- n.+1))%:~R))%R with
-    ((nearest_round (r *- n.+1))%:~R : R) in H4 by ring.
+  rewrite -addrA (addrC _(r *+ n.+1)) (addrA (r*-n.+1) _ _) addNr add0r in H4.
   rewrite -mulrSr -rmorphMn -rmorphD /= in H4.  
   apply Rabs_absz_half_lt in H4.
   lia.
@@ -1350,17 +1344,15 @@ Proof.
   generalize (nearest_round_bound_O' ((opp r) *+ n.+1) H); intros.
   rewrite mulNrn in H0.
   rewrite mulNrn opprK in H1.
-  generalize (ssrnum.Num.Theory.ltr_leD H1 H0); intros.
-  generalize (Rleb_norm_add 
+  generalize (ltr_leD H1 H0); intros.
+  generalize (ler_normD
                 ((nearest_round (r *- n.+1))%:~R + r *+ n.+1)%R
-                ((nearest_round r)%:~R *+ n.+1 - r *+ n.+1)%R); intros.
-  rewrite !Rplus_add in H3.
-  move /RleP in H3.
-  move /RleP in H3.
+                ((nearest_round r)%:~R *+ n.+1 - r *+ n.+1)%R).
+  rewrite /ssrnum.Num.Def.normr/=; intros.
   generalize (Order.POrderTheory.le_lt_trans H3 H2); intros.
   rewrite -addrA in H4.
-  replace (r *+ n.+1 + ((nearest_round r)%:~R *+ n.+1 - r *+ n.+1))%R with
-    (((nearest_round r)%:~R *+ n.+1)%R : R) in H4 by ring.
+  rewrite (addrC ((nearest_round r)%:~R *+ n.+1) _) in H4.
+  rewrite (addrA (r*+n.+1) _ _) addrN add0r in H4.
   rewrite -rmorphMn -rmorphD -mulrS in H4.
   apply Rabs_absz_half_lt in H4.  
   lia.
