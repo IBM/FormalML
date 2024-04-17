@@ -1106,7 +1106,7 @@ Proof.
     rewrite -Ropp_opp Rabs_Ropp Rabs_right // mul1r.
     apply Rle_ge; left.
     apply /RltP.
-    rewrite ssrnum.Num.Theory.invr_gt0.
+    rewrite invr_gt0.
     lra.
   - case: (boolP ((upi r)%:~R - r < 1 / 2)%O); intros.
     + rewrite p in H.
@@ -1197,8 +1197,8 @@ Proof.
   - apply Rle_ge.
     rewrite -mulrnAl.
     apply /RleP.
-    apply ssrnum.Num.Theory.mulr_ge0; [|lra].
-    apply ssrnum.Num.Theory.mulrn_wge0; lra.
+    apply mulr_ge0; [|lra].
+    apply mulrn_wge0; lra.
  Qed.
 
 Lemma nearest_round_mul_abs_nat_not_half1 (r : R) (n : nat) :
@@ -1231,7 +1231,7 @@ Proof.
   generalize (nearest_round_nat_mul_bound_R r n.+1); intros.
   generalize (nearest_round_bound_O' (r *+ n.+1) H); intros.  
   rewrite mulNrn Rabs_opp_sym in H0.
-  generalize (ssrnum.Num.Theory.ltr_leD H1 H0); intros.  
+  generalize (ltr_leD H1 H0); intros.  
   generalize (ler_normD
                 ((nearest_round (r *+ n.+1))%:~R - r *+ n.+1)%R
                 (r *+ n.+1 - (nearest_round r)%:~R *+ n.+1)%R ); intros.
