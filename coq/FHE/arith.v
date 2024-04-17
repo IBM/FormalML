@@ -1042,25 +1042,17 @@ Lemma nearest_round_mul_abs_nat (r : R) (n : nat) :
 Proof.
   generalize (nearest_round_nat_mul_bound_R r n); intros.
   generalize (nearest_round_bound_O (r *+ n)); intros.
-  simpl in H0.
-  rewrite Rabs_opp_sym in H0.
+  rewrite /= Rabs_opp_sym in H0.
   generalize (lerD H H0); intros.
-  generalize (Rabs_triang
+  generalize (ler_normD
                 ((nearest_round r)%:~R *+ n + - r *+ n)%R
                 (r *+ n - (nearest_round (r *+ n))%:~R)%R ); intros.
-  move /RleP in H1.
-  generalize (Rle_trans _ _ _ H2 H1); intros.
-  replace  (Rplus ((nearest_round r)%:~R *+ n + - r *+ n)%R
-              (r *+ n - (nearest_round (r *+ n))%:~R)%R) with
-    ((((nearest_round r)%:~R : R)*+ n) -
-       (nearest_round (r *+ n))%:~R)%R in H3.
-  - rewrite distnC.
-    rewrite -mulrSr -rmorphMn -rmorphN -rmorphD /= in H3.  
-    move /RleP in H3.
-    apply Rabs_absz_half in H3.
-    apply H3.
-  - rewrite Rplus_add.
-    ring.
+  generalize (Order.POrderTheory.le_trans H2 H1); intros.
+  rewrite -!addrA (addrA (-r*+n) _ _) in H3.
+  rewrite mulNrn addNr add0r in H3.
+  rewrite distnC.
+  rewrite -mulrSr -rmorphMn -rmorphN -rmorphD /= in H3.  
+  by apply Rabs_absz_half in H3.
 Qed.
 
 Lemma nearest_round_mul_abs_nat_alt (r : R) (n : nat) :
@@ -1068,25 +1060,17 @@ Lemma nearest_round_mul_abs_nat_alt (r : R) (n : nat) :
 Proof.
   generalize (nearest_round_nat_mul_bound_R r n); intros.
   generalize (nearest_round_bound_O (r *+ n)); intros.
-  simpl in H0.
-  rewrite Rabs_opp_sym in H0.
-  generalize (ssrnum.Num.Theory.lerD H H0); intros.
-  generalize (Rabs_triang
+  rewrite /= Rabs_opp_sym in H0.
+  generalize (lerD H H0); intros.
+  generalize (ler_normD
                 ((nearest_round r)%:~R *+ n + - r *+ n)%R
                 (r *+ n - (nearest_round (r *+ n))%:~R)%R ); intros.
-  move /RleP in H1.
-  generalize (Rle_trans _ _ _ H2 H1); intros.
-  replace  (Rplus ((nearest_round r)%:~R *+ n + - r *+ n)%R
-              (r *+ n - (nearest_round (r *+ n))%:~R)%R) with
-    ((((nearest_round r)%:~R : R)*+ n) -
-       (nearest_round (r *+ n))%:~R)%R in H3.
-  - rewrite distnC.
-    rewrite -mulrSr -rmorphMn -rmorphN -rmorphD /= in H3.  
-    move /RleP in H3.
-    apply Rabs_absz_half_le in H3.
-    apply H3.
-  - rewrite Rplus_add.
-    ring.
+  generalize (Order.POrderTheory.le_trans H2 H1); intros.
+  rewrite -!addrA (addrA (-r*+n) _ _) in H3.
+  rewrite mulNrn addNr add0r in H3.
+  rewrite distnC.
+  rewrite -mulrSr -rmorphMn -rmorphN -rmorphD /= in H3.  
+  by apply Rabs_absz_half_le in H3.
 Qed.
 
 Lemma nearest_round_0 :
@@ -1229,8 +1213,7 @@ Proof.
   generalize (ltr_leD H0 H1); intros.  
   generalize (ler_normD
                 ((nearest_round r)%:~R *+ n.+1 + - r *+ n.+1)%R
-                (r *+ n.+1 - (nearest_round (r *+ n.+1))%:~R)%R ).
-  rewrite /ssrnum.Num.Def.normr /=; intros.
+                (r *+ n.+1 - (nearest_round (r *+ n.+1))%:~R)%R ); intros.
   generalize (Order.POrderTheory.le_lt_trans H3 H2); intros.
   rewrite -addrA (addrA _ (r *+ n.+1) _) in H4.
   replace (- r *+ n.+1 + r *+ n.+1) with (0:R) in H4 by ring.
@@ -1251,8 +1234,7 @@ Proof.
   generalize (ssrnum.Num.Theory.ltr_leD H1 H0); intros.  
   generalize (ler_normD
                 ((nearest_round (r *+ n.+1))%:~R - r *+ n.+1)%R
-                (r *+ n.+1 - (nearest_round r)%:~R *+ n.+1)%R ).
-  rewrite /ssrnum.Num.Def.normr /=; intros.  
+                (r *+ n.+1 - (nearest_round r)%:~R *+ n.+1)%R ); intros.
   generalize (Order.POrderTheory.le_lt_trans H3 H2); intros.
   rewrite -addrA (addrA _ (r *+ n.+1) _) in H4.
   replace (r *- n.+1 + r *+ n.+1) with (0:R) in H4 by ring.
@@ -1325,8 +1307,7 @@ Proof.
   generalize (ltr_leD H0 H1); intros.
   generalize (ler_normD
                 ((nearest_round r)%:~R *+ n.+1 - r *+ n.+1)%R
-                ((nearest_round (r *- n.+1))%:~R + r *+ n.+1)%R).
-  rewrite /ssrnum.Num.Def.normr/=; intros.
+                ((nearest_round (r *- n.+1))%:~R + r *+ n.+1)%R); intros.
   generalize (Order.POrderTheory.le_lt_trans H3 H2); intros.
   rewrite -addrA (addrC _(r *+ n.+1)) (addrA (r*-n.+1) _ _) addNr add0r in H4.
   rewrite -mulrSr -rmorphMn -rmorphD /= in H4.  
@@ -1347,8 +1328,7 @@ Proof.
   generalize (ltr_leD H1 H0); intros.
   generalize (ler_normD
                 ((nearest_round (r *- n.+1))%:~R + r *+ n.+1)%R
-                ((nearest_round r)%:~R *+ n.+1 - r *+ n.+1)%R).
-  rewrite /ssrnum.Num.Def.normr/=; intros.
+                ((nearest_round r)%:~R *+ n.+1 - r *+ n.+1)%R); intros.
   generalize (Order.POrderTheory.le_lt_trans H3 H2); intros.
   rewrite -addrA in H4.
   rewrite (addrC ((nearest_round r)%:~R *+ n.+1) _) in H4.
