@@ -2233,7 +2233,25 @@ Proof.
     {
       admit.
     }
-    rewrite H0 -sum_list_const.
+    rewrite H0.
+    move: (@big_sum_le_const _ (index_enum (ordinal_finType (size b)))
+                             (fun j => (absz
+             (mul (R:=int_Ring) (nth (zero int_Ring) a (subn i j))
+                (nth (zero int_Ring) b j))))
+                             ((\max_(j < size a) `|a`_j|) * (\max_(j < size b) `|b`_j|))).
+    rewrite  /index_enum /= -!enumT !size_enum_ord.
+    apply=> p _.
+    rewrite abszM.
+    apply leq_mul.
+    + admit.
+    + admit.
+    eapply leq_trans.
+    + apply big_sum_le_const=> j jin.
+    rewrite sum_list_const.
+    rewrite -sum_list_const.
+    
+    
+    
     rewrite !big_seq.
     generalize leq_sum; intros.
   
