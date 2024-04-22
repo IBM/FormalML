@@ -1473,7 +1473,7 @@ Qed.
     
 Lemma nearest_round_int_mul (n1 n2 d : int) :
   d <> 0 ->
-  (`|(nearest_round_int (n1 * n2) d - nearest_round_int n1 d * n2)%R|) <= (`|n2| + 1)/2.
+  `|(nearest_round_int (n1 * n2) d - nearest_round_int n1 d * n2)%R| <= (`|n2| + 1)/2.
 Proof.
   rewrite /nearest_round_int intrM.
   rewrite (_: (n1%:~R * n2%:~R / d%:~R) = ((n1%:~R / d%:~R)%R * n2%:~R )); last by lra.
@@ -1481,7 +1481,7 @@ Proof.
   replace (n1 * n2%:~R) with (n1*~n2) by ring.
   replace (nearest_round n1 * n2) with (nearest_round n1 *~ n2).
   apply nearest_round_mul_abs.
-  destruct n2; simpl; ring.
+  destruct n2; ring.
 Qed.
 
 Lemma nearest_round_int_add2_ex (n1 n2 d : int) : 
@@ -1515,7 +1515,6 @@ Definition div_round (a : {poly int}) (d : int) : {poly int} :=
 Lemma div_round0 (den : int) :
   div_round (0 : {poly int}) den = 0.
 Proof.
-  rewrite /div_round.
   apply map_poly0.
 Qed.
 
@@ -1538,8 +1537,7 @@ Proof.
   rewrite /div_round !map_polyE -polyP => i.
   rewrite coefD !coef_Poly.
   rewrite !(nth_map_default 0 0); try by rewrite nearest_round_int0.
-  rewrite coefD /=.
-  by rewrite -nearest_round_int_mul_add_r // coefZ.
+  by rewrite coefD  -nearest_round_int_mul_add_r // coefZ.
 Qed.  
 
 Lemma div_round_muln_add (a b : {poly int}) (d : nat) :
@@ -1614,7 +1612,6 @@ Definition q_reduce (q : nat) (p : {poly int}) : {poly 'Z_q} :=
 Lemma q_reduce_is_rmorphism (q : nat) :
   rmorphism (q_reduce q).
 Proof.
-  unfold q_reduce.
   apply map_poly_is_rmorphism.
 Qed.        
 
@@ -2201,6 +2198,47 @@ Proof.
     by rewrite div_round_muln // q_reduce_muln_q.
 Qed.
 
+Lemma absz_triang_sum {n} (a : 'I_n -> int) :
+  `|\sum_(j<n) (a j)| <= \sum_(j<n) `|a j|.
+Proof.
+  induction n.
+  - rewrite !big_ord0 /=; lia.
+  - rewrite !big_ord_recl.
+    eapply leq_trans.
+    apply absz_triang.
+    specialize (IHn (fun z => a (fintype.lift ord0 z))).
+    lia.
+Qed.
+
+Lemma delta_maxnorm (n : nat) (a b : {poly int}) :
+  icoef_maxnorm (a * b) <= (size b) * icoef_maxnorm a * icoef_maxnorm b.
+Proof.
+  rewrite /icoef_maxnorm.
+  apply /bigmax_leqP.
+  intros.
+  rewrite coefMr.
+  eapply leq_trans.
+  apply absz_triang_sum.
+  rewrite /= -mulnA.
+  case: (boolP (i < size b)); intros.
+  - assert (\sum_(j < i.+1) `|(a`_(i - j) * b`_j)%R| <=
+                   \sum_(j < size b) `|(a`_(i - j) * b`_j)%R|)%N.
+    {
+      admit.
+    }
+    eapply leq_trans; [apply H0 |].
+    admit.
+  - assert (\sum_(j < i.+1) `|(a`_(i - j) * b`_j)%R| =
+                 \sum_(j < size b) `|(a`_(i - j) * b`_j)%R|)%N.
+    {
+      admit.
+    }
+    rewrite H0 -sum_list_const.
+    rewrite !big_seq.
+    generalize leq_sum; intros.
+  
+Admitted.
+
 Lemma lineariz_prop_div3 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q})
   (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   let c2' := q_reduce (p*q) (zlift c2) in 
@@ -2214,7 +2252,9 @@ Proof.
   eexists.
   rewrite !map_Poly_id0.
   + rewrite !horner_Poly /= !mul0r !add0r.
+    rewrite -!rmorphM -rmorphD /=.
     rewrite zlift_add2_eq.
+    rewrite -rmorphD.
     rewrite !div_round_add2_eq !rmorphD /=.
     rewrite -!addrA.
     f_equal.
