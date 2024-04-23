@@ -2271,6 +2271,15 @@ Lemma nearest_round_int_le (n1 n2 d : int) :
   `|n1| <= `|n2| ->
                  `|nearest_round_int n1 d| <= `|nearest_round_int n2 d|.
 Proof.
+  intros.
+  rewrite /nearest_round_int /nearest_round /ran_round.
+  case: (Order.lt).
+  - case: Order.lt.
+    + admit.
+    + admit.
+  - case: Order.lt.
+    + admit.
+    + admit.
   Admitted.
 
 Lemma div_round_eq (p : nat) (a : {poly int}) :
