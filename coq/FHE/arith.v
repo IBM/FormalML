@@ -2267,12 +2267,82 @@ Proof.
   
 Admitted.
 
+Lemma nearest_round_int_le (n1 n2 d : int) :
+  `|n1| <= `|n2| ->
+                 `|nearest_round_int n1 d| <= `|nearest_round_int n2 d|.
+Proof.
+  Admitted.
+
+Lemma div_round_eq (p : nat) (a : {poly int}) :
+  { c : {poly int} |
+    a = (div_round a p)*+p + c /\
+      icoef_maxnorm c <= p./2}.
+Proof.
+  Admitted.
+
+Lemma div_round_maxnorm_le (p : nat) (a : {poly int}):
+  p <> 0%N ->
+  icoef_maxnorm (div_round a p) <= `|nearest_round_int (icoef_maxnorm a) p|.
+Proof.
+  intros.
+  rewrite /icoef_maxnorm /div_round.
+  apply /bigmax_leqP; intros.
+  rewrite coef_poly.
+  case: (boolP (i < size a)); intros; try lia.
+  apply nearest_round_int_le.
+  simpl.
+  admit.
+  Admitted.
+
+Lemma icoef_maxnorm_triang (a b : {poly int}) :
+  icoef_maxnorm (a + b) <= icoef_maxnorm a + icoef_maxnorm b.
+Proof.
+  rewrite /icoef_maxnorm.
+  
+  Admitted.
+
+Lemma icoef_maxnorm_neg (a : {poly int}) :
+  icoef_maxnorm (-a) = icoef_maxnorm a.
+Proof.
+  Admitted.
+
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
+  p <> 0%N ->
   { c : {poly int} |
       (div_round a p) * b =
         (div_round (a * b) p) + c  /\
         icoef_maxnorm c <= ((size b) * icoef_maxnorm b + 1)./2}.
 Proof.
+  intros pno.
+  destruct (div_round_eq p a) as [?[??]].
+  destruct (div_round_eq p (a * b)) as [?[??]].
+  apply (f_equal (fun z => z * b)) in H.
+  rewrite mulrDl in H.
+  rewrite {1}H mulrnAl in H1.
+  apply (f_equal (fun z => z - x * b)) in H1.
+  rewrite -!addrA subrr addr0 in H1.
+  apply (f_equal (fun z => div_round z p)) in H1.
+  rewrite div_round_muln //  addrC in H1.
+  rewrite div_round_muln_add // addrC in H1.
+  exists (div_round (x0 - x * b) p).
+  split; trivial.
+  eapply leq_trans.
+  apply div_round_maxnorm_le; trivial.
+  (*
+  eapply leq_trans.
+  apply icoef_maxnorm_triang.
+  rewrite icoef_maxnorm_neg.
+  assert (icoef_maxnorm (x * b) <= (size b * icoef_maxnorm b) ./2).
+  {
+    eapply leq_trans.
+    apply delta_maxnorm.
+    apply (leq_trans (n:= (size b * icoef_maxnorm b * 1./2))).
+    - 
+    
+    admit.
+  }
+  lia.
+  *)
   Admitted.
 
 Lemma lineariz_prop_div3 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q})
@@ -2290,6 +2360,7 @@ Proof.
   + rewrite !horner_Poly /= !mul0r !add0r.
     rewrite -!rmorphM -rmorphD /=.
     destruct (div_round_mul_ex p (zlift c2 * zlift a) s) as [?[??]].
+(*
     rewrite H.
     destruct (div_round_add2_ex (zlift c2 * zlift a * s)
                                    (zlift c2 *
@@ -2301,6 +2372,7 @@ Proof.
     rewrite -!addrA (addrC x _) !addrA.
     apply (f_equal (fun z => z + x)) in H1.
     apply (f_equal (fun z => q_reduce q z)) in H1.
+*)
 (*    
     simpl.
     Set Printing All.
