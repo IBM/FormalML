@@ -2217,7 +2217,7 @@ Proof.
   lia.
 Qed.
 
-Lemma delta_maxnorm (n : nat) (a b : {poly int}) :
+Lemma delta_maxnorm (a b : {poly int}) :
   icoef_maxnorm (a * b) <= (size b) * icoef_maxnorm a * icoef_maxnorm b.
 Proof.
   rewrite /icoef_maxnorm.
@@ -2257,15 +2257,23 @@ Proof.
                         (mul (R:=int_Ring) (nth (zero int_Ring) a (subn i j))
                            (nth (zero int_Ring) b j))))
            ((\max_(j < size a) `|a`_j|) * (\max_(j < size b) `|b`_j|))).
-    rewrite  /index_enum /= -!enumT !size_enum_ord.
-    apply => p _.
-    rewrite abszM.
-    generalize leq_bigmax_seq; intros.
-    apply leq_mul; simpl.
-    + admit.
-    + admit.
+  rewrite  /index_enum /= -!enumT !size_enum_ord.
+  apply => p _.
+  rewrite abszM.
+  apply leq_mul; simpl.
+  clear H0.
+  - admit.
+  - admit.
   
 Admitted.
+
+Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
+  { c : {poly int} |
+      (div_round a p) * b =
+        (div_round (a * b) p) + c  /\
+        icoef_maxnorm c <= ((size b) * icoef_maxnorm b + 1)./2}.
+Proof.
+  Admitted.
 
 Lemma lineariz_prop_div3 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q})
   (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
@@ -2281,6 +2289,22 @@ Proof.
   rewrite !map_Poly_id0.
   + rewrite !horner_Poly /= !mul0r !add0r.
     rewrite -!rmorphM -rmorphD /=.
+    destruct (div_round_mul_ex p (zlift c2 * zlift a) s) as [?[??]].
+    rewrite H.
+    destruct (div_round_add2_ex (zlift c2 * zlift a * s)
+                                   (zlift c2 *
+        zlift
+          (- a * q_reduce (p * q) s + q_reduce (p * q) e +
+           q_reduce (p * q) (s ^+ 2 *+ p))) p pno) as [?[??]].
+    apply (f_equal (fun z => z - x0)) in H1.
+    rewrite -!addrA subrr addr0 in H1.
+    rewrite -!addrA (addrC x _) !addrA.
+    apply (f_equal (fun z => z + x)) in H1.
+    apply (f_equal (fun z => q_reduce q z)) in H1.
+(*    
+    simpl.
+    Set Printing All.
+pno
     rewrite zlift_add2_eq.
     rewrite -rmorphD.
     rewrite !div_round_add2_eq !rmorphD /=.
@@ -2290,6 +2314,7 @@ Proof.
     * admit.
   + by rewrite zlift0_alt mulr0 div_round0 rmorph0.
   + by rewrite mulr0.
+*)
   Admitted.
 
 Lemma linearize_prop  {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
