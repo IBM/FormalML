@@ -2210,6 +2210,13 @@ Proof.
     lia.
 Qed.
 
+Lemma add_zero (a b : nat) :
+  b = 0%N ->
+  a + b <= a.
+Proof.
+  lia.
+Qed.
+
 Lemma delta_maxnorm (n : nat) (a b : {poly int}) :
   icoef_maxnorm (a * b) <= (size b) * icoef_maxnorm a * icoef_maxnorm b.
 Proof.
@@ -2220,40 +2227,43 @@ Proof.
   eapply leq_trans.
   apply absz_triang_sum.
   rewrite /= -mulnA.
-  case: (boolP (i < size b)); intros.
-  - assert (\sum_(j < i.+1) `|(a`_(i - j) * b`_j)%R| <=
+  assert (\sum_(j < i.+1) `|(a`_(i - j) * b`_j)%R| <=
                    \sum_(j < size b) `|(a`_(i - j) * b`_j)%R|)%N.
-    {
-      admit.
-    }
-    eapply leq_trans; [apply H0 |].
-    admit.
-  - assert (\sum_(j < i.+1) `|(a`_(i - j) * b`_j)%R| =
-                 \sum_(j < size b) `|(a`_(i - j) * b`_j)%R|)%N.
-    {
-      admit.
-    }
-    rewrite H0.
-    move: (@big_sum_le_const _ (index_enum (ordinal_finType (size b)))
-                             (fun j => (absz
-             (mul (R:=int_Ring) (nth (zero int_Ring) a (subn i j))
-                (nth (zero int_Ring) b j))))
-                             ((\max_(j < size a) `|a`_j|) * (\max_(j < size b) `|b`_j|))).
+  {
+    case: (boolP (i < size b)); intros.
+   - replace (size b) with (i.+1 + (size b - i.+1))%nat by lia.
+     rewrite big_split_ord /=.
+     assert (0 <= \sum_(i0 < size b - i.+1) `|(a`_(i - (i.+1 + i0)) * b`_(i.+1 + i0))%R|).
+     {
+       apply big_ind; lia.
+     }
+     lia.
+  - replace (i.+1) with (size b + (i.+1 - size b))%nat by lia.
+    rewrite big_split_ord /=.
+    apply add_zero.
+    under eq_big_seq.
+    + intros.
+      rewrite abszM.
+      rewrite [b`_ _]nth_default /=.
+      * rewrite muln0.
+        over.
+      * simpl.
+        lia.
+    + by rewrite sum_nat_const muln0.
+  }
+  eapply leq_trans; [apply H0 |].
+  move: (@big_sum_le_const _ (index_enum (ordinal_finType (size b)))
+           (fun j => (absz
+                        (mul (R:=int_Ring) (nth (zero int_Ring) a (subn i j))
+                           (nth (zero int_Ring) b j))))
+           ((\max_(j < size a) `|a`_j|) * (\max_(j < size b) `|b`_j|))).
     rewrite  /index_enum /= -!enumT !size_enum_ord.
-    apply=> p _.
+    apply => p _.
     rewrite abszM.
-    apply leq_mul.
+    generalize leq_bigmax_seq; intros.
+    apply leq_mul; simpl.
     + admit.
     + admit.
-    eapply leq_trans.
-    + apply big_sum_le_const=> j jin.
-    rewrite sum_list_const.
-    rewrite -sum_list_const.
-    
-    
-    
-    rewrite !big_seq.
-    generalize leq_sum; intros.
   
 Admitted.
 
