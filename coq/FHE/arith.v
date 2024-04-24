@@ -2262,7 +2262,8 @@ Proof.
   rewrite abszM.
   apply leq_mul; simpl.
   clear H0.
-  - admit.
+  - generalize (@leq_bigmax_seq nat_eqType); intros.
+    admit.
   - admit.
   
 Admitted.
@@ -2282,11 +2283,70 @@ Proof.
     + admit.
   Admitted.
 
+Lemma nearest_round_eq (r : R) :
+  { c : R |
+    r = (nearest_round r)%:~R + c /\
+      (Rabs c <= 1 / 2)%O}.
+Proof.
+  rewrite /nearest_round /ran_round.
+  case_eq (Order.lt ((upi r)%:~R -r) (1 / 2)); intros.
+  - exists (r - (upi r)%:~R).
+    split; [lra |].
+    rewrite Rabs_minus_sym.
+    rewrite Rabs_right.
+    + rewrite /Rminus Rplus_add Ropp_opp.
+      lra.
+    + destruct (upi_bound r).
+      rewrite /Rminus Rplus_add Ropp_opp.
+      apply Rle_ge.
+      apply /RleP.
+      move /RltP in H0.
+      replace (IZR Z0) with (zero R_zmodType).
+      * lra.
+      * by rewrite /zero /=.
+  - exists (r - (upi r - 1)%:~R).
+    split; [lra |].
+    rewrite Rabs_right.
+    + lra.
+    + destruct (upi_bound r).
+      apply Rle_ge.
+      apply /RleP.
+      move /RleP in H1.
+      replace (IZR Z0) with (zero R_zmodType).    
+      * lra.
+      * by rewrite /zero /=.
+Qed.
+
+Lemma nearest_round_int_eq (p : nat) (a : int) :
+  p != 0%N ->
+  { c : int |
+    a = (nearest_round_int a p)*+p + c /\
+      `|c| <= p./2}.
+Proof.
+  intros.
+  rewrite /nearest_round_int.
+  destruct (nearest_round_eq (a%:~R / p%:~R)%R) as [? [??]].
+  apply (f_equal (fun z => z *+ p)) in H0.
+  assert ((a%:~R : R) / p%:~R *+ p = a %:~R).
+  {
+    field.
+    rewrite natf_neq0.
+    simpl.
+    rewrite /char.
+    admit.
+  }
+  rewrite H2 in H0.
+  assert (((nearest_round (a%:~R / p%:~R)%R)%:~R + x) *+ p =
+            ((nearest_round (a%:~R / p%:~R)%R)%:~R *+p + x*+p)) by ring.
+  rewrite H3 in H0.
+  Admitted.
+
 Lemma div_round_eq (p : nat) (a : {poly int}) :
   { c : {poly int} |
     a = (div_round a p)*+p + c /\
       icoef_maxnorm c <= p./2}.
 Proof.
+  rewrite /div_round.
   Admitted.
 
 Lemma div_round_maxnorm_le (p : nat) (a : {poly int}):
@@ -2313,7 +2373,11 @@ Proof.
 Lemma icoef_maxnorm_neg (a : {poly int}) :
   icoef_maxnorm (-a) = icoef_maxnorm a.
 Proof.
-  Admitted.
+  rewrite /icoef_maxnorm size_opp.
+  apply eq_big; trivial.
+  intros.
+  by rewrite coefE abszN.
+Qed.
 
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
   p <> 0%N ->
@@ -2337,7 +2401,7 @@ Proof.
   split; trivial.
   eapply leq_trans.
   apply div_round_maxnorm_le; trivial.
-  (*
+(*  
   eapply leq_trans.
   apply icoef_maxnorm_triang.
   rewrite icoef_maxnorm_neg.
