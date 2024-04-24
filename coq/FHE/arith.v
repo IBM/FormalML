@@ -2283,16 +2283,12 @@ Proof.
     + admit.
   Admitted.
 
-Lemma nearest_round_eq (r : R) :
-  { c : R |
-    r = (nearest_round r)%:~R + c /\
-      (Rabs c <= 1 / 2)%O}.
+Lemma nearest_round_leq (r : R) :
+  (Rabs(r - (nearest_round r)%:~R) <= 1 / 2)%O.
 Proof.
   rewrite /nearest_round /ran_round.
   case_eq (Order.lt ((upi r)%:~R -r) (1 / 2)); intros.
-  - exists (r - (upi r)%:~R).
-    split; [lra |].
-    rewrite Rabs_minus_sym.
+  - rewrite Rabs_minus_sym.
     rewrite Rabs_right.
     + rewrite /Rminus Rplus_add Ropp_opp.
       lra.
@@ -2304,8 +2300,7 @@ Proof.
       replace (IZR Z0) with (zero R_zmodType).
       * lra.
       * by rewrite /zero /=.
-  - exists (r - (upi r - 1)%:~R).
-    split; [lra |].
+  - rewrite /Rminus Rplus_add Ropp_opp.
     rewrite Rabs_right.
     + lra.
     + destruct (upi_bound r).
@@ -2317,28 +2312,36 @@ Proof.
       * by rewrite /zero /=.
 Qed.
 
-Lemma nearest_round_int_eq (p : nat) (a : int) :
+Lemma nearest_round_int_leq (p : nat) (a : int) :
   p != 0%N ->
-  { c : int |
-    a = (nearest_round_int a p)*+p + c /\
-      `|c| <= p./2}.
+  `|a - (nearest_round_int a p)*+p| <= p./2.
 Proof.
   intros.
   rewrite /nearest_round_int.
-  destruct (nearest_round_eq (a%:~R / p%:~R)%R) as [? [??]].
+  generalize (nearest_round_leq (a%:~R / p%:~R)%R); intros.
+(*
   apply (f_equal (fun z => z *+ p)) in H0.
   assert ((a%:~R : R) / p%:~R *+ p = a %:~R).
   {
     field.
-    rewrite natf_neq0.
-    simpl.
-    rewrite /char.
-    admit.
+    apply /eqP.
+    intros ?.
+    move /eqP in H2.
+    rewrite mulrn_eq0 in H2.
+    move /orP in H2.
+    destruct H2.
+    + lia.
+    + lra.
   }
   rewrite H2 in H0.
   assert (((nearest_round (a%:~R / p%:~R)%R)%:~R + x) *+ p =
-            ((nearest_round (a%:~R / p%:~R)%R)%:~R *+p + x*+p)) by ring.
+            ((nearest_round (a%:~R / p%:~R)%R)*+p)%:~R + x*+p) by ring.
   rewrite H3 in H0.
+*)
+  assert (((a - nearest_round (a%:~R / p%:~R) *+ p)%:~R : R)<= p%:R / 2)%O.
+  {
+    admit.
+  }
   Admitted.
 
 Lemma div_round_eq (p : nat) (a : {poly int}) :
