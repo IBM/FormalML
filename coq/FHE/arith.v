@@ -2267,6 +2267,77 @@ Proof.
   
 Admitted.
 
+Lemma Rabs_mul (a b : R) :
+  Rabs a * Rabs b = Rabs (a * b)%R.
+Proof.
+  by rewrite /mul /= Rabs_mult.
+Qed.
+
+
+Lemma nearest_round_pos (r : R) :
+  ((0 : R) <= r)%O ->
+  ((0 : int) <= nearest_round r)%O.
+Proof.
+  intros.
+  rewrite /nearest_round /ran_round.
+  destruct (upi_bound_O r).
+  rewrite -(ler_int R_numDomainType).
+  case : (boolP (Order.lt _ _)); intros.
+  - lra.
+  - rewrite rmorphD rmorphN /=.
+    assert ((1 : int) <= upi r)%O.
+    {
+      assert ((0 : int) < upi r)%O.
+      {
+        rewrite -(ltr_int R_numDomainType).
+        lra.
+      }
+      lia.
+    }
+    rewrite -(ler_int R_numDomainType) in H2.
+    lra.
+Qed.
+
+Lemma nearest_round_neg (r : R) :
+  (r <= 0 )%O ->
+  (nearest_round r <= 0)%O.
+Proof.
+  intros.
+  rewrite /nearest_round /ran_round.
+  destruct (upi_bound_O r).
+  rewrite -(ler_int R_numDomainType).
+  case : (boolP (Order.lt _ _)); intros.
+  - assert (upi r <= 0)%O.
+    {
+      assert (upi r < 1)%O.
+      {
+        rewrite -(ltr_int R_numDomainType).
+        lra.
+      }
+      lia.
+    }
+    rewrite -(ler_int R_numDomainType) in H2.    
+    lra.
+  - lra.
+Qed.
+
+Lemma nearest_round_pos_le (r1 r2 : R) :
+  ((0 : R) <= r1)%O ->
+  ((0 : R) <= r2)%O ->  
+  (r1 <= r2)%O ->
+  (nearest_round r1 <= nearest_round r2)%O.
+Proof.
+  intros.
+  rewrite /nearest_round /ran_round.
+  case : (boolP (Order.lt _ _)); intros.
+  - case : (boolP (Order.lt _ _)); intros.
+    + admit.
+    + admit.
+  - case : (boolP (Order.lt _ _)); intros.      
+    + admit.
+    + admit.
+  Admitted.
+
 Lemma nearest_round_int_le (n1 n2 d : int) :
   `|n1| <= `|n2| ->
                  `|nearest_round_int n1 d| <= `|nearest_round_int n2 d|.
@@ -2311,11 +2382,6 @@ Proof.
       * by rewrite /zero /=.
 Qed.
 
-Lemma Rabs_mul (a b : R) :
-  Rabs a * Rabs b = Rabs (a * b)%R.
-Proof.
-  by rewrite /mul /= Rabs_mult.
-Qed.
 
 Lemma nearest_round_int_leq (p : nat) (a : int) :
   p != 0%N ->
