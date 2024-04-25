@@ -2262,8 +2262,7 @@ Proof.
   rewrite abszM.
   apply leq_mul; simpl.
   clear H0.
-  - generalize (@leq_bigmax_seq nat_eqType); intros.
-    admit.
+  - admit.
   - admit.
   
 Admitted.
@@ -2274,11 +2273,11 @@ Lemma nearest_round_int_le (n1 n2 d : int) :
 Proof.
   intros.
   rewrite /nearest_round_int /nearest_round /ran_round.
-  case: (Order.lt).
-  - case: Order.lt.
+  case : (boolP (Order.lt _ _)); intros.
+  - case : (boolP (Order.lt _ _)); intros.
     + admit.
     + admit.
-  - case: Order.lt.
+  - case : (boolP (Order.lt _ _)); intros.      
     + admit.
     + admit.
   Admitted.
@@ -2312,6 +2311,12 @@ Proof.
       * by rewrite /zero /=.
 Qed.
 
+Lemma Rabs_mul (a b : R) :
+  Rabs a * Rabs b = Rabs (a * b)%R.
+Proof.
+  by rewrite /mul /= Rabs_mult.
+Qed.
+
 Lemma nearest_round_int_leq (p : nat) (a : int) :
   p != 0%N ->
   `|a - (nearest_round_int a p)*+p| <= p./2.
@@ -2319,30 +2324,74 @@ Proof.
   intros.
   rewrite /nearest_round_int.
   generalize (nearest_round_leq (a%:~R / p%:~R)%R); intros.
-(*
-  apply (f_equal (fun z => z *+ p)) in H0.
-  assert ((a%:~R : R) / p%:~R *+ p = a %:~R).
+  assert (Rabs ((a - nearest_round (a%:~R / p%:~R)%R *+ p)%:~R : R)<= p%:R / 2)%O.
   {
-    field.
-    apply /eqP.
-    intros ?.
-    move /eqP in H2.
-    rewrite mulrn_eq0 in H2.
-    move /orP in H2.
-    destruct H2.
-    + lia.
-    + lra.
+    rewrite -mulr_natl.
+    assert ((0 : R) < p%:R)%O.
+    {
+      rewrite pmulrn_rgt0; [lia|lra].
+    }
+    rewrite -(ler_pM2l H1) in H0.
+    assert (Rabs (p%:R) = p%:R).
+    {
+      rewrite Rabs_right //.
+      apply Rle_ge.
+      apply /RleP.
+      replace (IZR Z0) with (zero R_zmodType); trivial.
+      lra.
+    }
+    rewrite -{1}H2 Rabs_mul mulrDr in H0.
+    assert (Rabs (a - nearest_round (a%:~R / p%:~R)%R *+ p)%:~R =
+              Rabs (p%:R * (a%:~R / p%:~R) + p%:R * (- (nearest_round (a%:~R / p%:~R)%R)%:~R)%R)%R).
+    {
+      f_equal.
+      field.
+      lra.
+    }
+    rewrite -H3 in H0.
+    rewrite -mulrA.
+    apply H0.
   }
-  rewrite H2 in H0.
-  assert (((nearest_round (a%:~R / p%:~R)%R)%:~R + x) *+ p =
-            ((nearest_round (a%:~R / p%:~R)%R)*+p)%:~R + x*+p) by ring.
-  rewrite H3 in H0.
-*)
-  assert (((a - nearest_round (a%:~R / p%:~R) *+ p)%:~R : R)<= p%:R / 2)%O.
+  assert ((Rabs (((a - nearest_round (a%:~R / p%:~R)%R *+ p)%:~R ) : R)) *+2 <= (p%:R/2) *+2)%O.
   {
-    admit.
+    rewrite lerMn2r.
+    apply /orP.
+    by right.
   }
+  replace (p%:R / 2 *+ 2) with ((p%:R):R) in H2 by (by field).
+  case: (boolP ((0 : R) <=  (a - nearest_round (a%:~R / p%:~R)%R *+ p)%:~R *+ 2)%O); intros.
+  - rewrite Rabs_right in H2.
+    + rewrite -rmorphMn /= in H2.
+      replace (p%:R) with ((p%:~R):R) in H2 by ring.
+      rewrite ler_int in H2.
+      rewrite -rmorphMn ler0z in p0.
+      assert ((0 : int) <= (a - nearest_round (a%:~R / p%:~R)%R *+ p))%O by lia.
+      assert ((a - nearest_round (a%:~R / p%:~R)%R *+ p) <= p./2)%O by lia.
+      by rewrite -(gez0_abs H3) in H4.
+    + apply Rle_ge.
+      apply /RleP.
+      replace (IZR Z0) with (zero R_zmodType); trivial.
+      lra.
+  - rewrite Rabs_left in H2.
+    + rewrite Ropp_opp -rmorphN -rmorphMn /= in H2.
+      replace (p%:R) with ((p%:~R):R) in H2 by ring.      
+      rewrite ler_int in H2.
+      rewrite -Order.TotalTheory.ltNge in i.
+      assert (((a - nearest_round (a%:~R / p%:~R)%R *+ p)%:~R : R) < 0%:~R )%O by lra.
+      rewrite ltr_int in H3.
+      assert (-(a - nearest_round (a%:~R / p%:~R)%R *+ p) <= p./2)%O by lia.      
+      by rewrite -(ltz0_abs H3) in H4.
+    + apply /RltP.
+      replace (IZR Z0) with (zero R_zmodType); trivial.
+      lra.
+ Qed.
+
+Lemma div_round_leq (p : nat) (a : {poly int}) :
+  icoef_maxnorm (a - (div_round a p)*+p) <= p./2.
+Proof.
+  rewrite /div_round.
   Admitted.
+
 
 Lemma div_round_eq (p : nat) (a : {poly int}) :
   { c : {poly int} |
