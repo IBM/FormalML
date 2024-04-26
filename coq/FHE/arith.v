@@ -2229,8 +2229,10 @@ Proof.
 Qed.
 
 Lemma delta_maxnorm (a b : {poly int}) :
+  0 < size a ->
   icoef_maxnorm (a * b) <= (size b) * icoef_maxnorm a * icoef_maxnorm b.
 Proof.
+  intros abig.
   rewrite /icoef_maxnorm.
   apply /bigmax_leqP.
   intros.
@@ -2278,19 +2280,22 @@ Proof.
       2: apply leq_bigmax_seq=> //.
       { by rewrite (_:(nat_of_ord i - nat_of_ord p)%nat=(nat_of_ord ((Ordinal (ineq))))) ?leqnn.
       }
-      admit.
+      by rewrite mem_enum.
     + assert (a`_(i - p) = 0).
       {
         by apply nth_default.
       }
       rewrite H0 /=.
-      admit.
+      assert (Ordinal (n:=size a) (m:=0) abig \in enum 'I_(size a)).
+      {
+        by rewrite mem_enum.
+      }
+      by apply (bigmax_sup_seq _ H1).
   - eapply leq_trans.
     2 : apply leq_bigmax_seq=> //.
     easy.
-    admit.
-  
-Admitted.
+    by rewrite mem_enum.
+Qed.
 
 Lemma Rabs_mul (a b : R) :
   Rabs a * Rabs b = Rabs (a * b)%R.
