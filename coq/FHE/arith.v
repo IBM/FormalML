@@ -362,6 +362,8 @@ Proof.
 Qed.  
 
 
+Definition icoef_maxnorm_ord (p : {poly int}):nat := \max_(j < seq.size p) `|p`_ j|.
+Definition icoef_maxnorm_nat (p : {poly int}):nat := \max_(0 <= j < seq.size p) `|p`_ j|.
 Definition icoef_maxnorm (p : {poly int}):nat := \max_(j < seq.size p) `|p`_ j|.
 
 Lemma zlift_add2_ex {q : nat} (a b : {poly 'Z_q}) :
@@ -518,6 +520,15 @@ Proof.
   destruct (up_add2' r1 r2); rewrite H; lia.
 Qed.
 
+Lemma up_le (r1 r2 : R) :
+  (r1 <= r2)%O ->
+  (up r1 <= up r2)%O.
+Proof.
+  intros.
+  destruct (archimed r1).
+  destruct (archimed r2).
+
+Admitted.
 
 Lemma int_of_Z_abs x : `|int_of_Z x| = Z.abs_nat x.
 Proof.
@@ -2262,8 +2273,22 @@ Proof.
   rewrite abszM.
   apply leq_mul; simpl.
   clear H0.
-  - admit.
-  - admit.
+  - case (ltnP (i - p) (size a)) => ineq.
+    + eapply leq_trans.
+      2: apply leq_bigmax_seq=> //.
+      { by rewrite (_:(nat_of_ord i - nat_of_ord p)%nat=(nat_of_ord ((Ordinal (ineq))))) ?leqnn.
+      }
+      admit.
+    + assert (a`_(i - p) = 0).
+      {
+        by apply nth_default.
+      }
+      rewrite H0 /=.
+      admit.
+  - eapply leq_trans.
+    2 : apply leq_bigmax_seq=> //.
+    easy.
+    admit.
   
 Admitted.
 
@@ -2321,17 +2346,24 @@ Proof.
   - lra.
 Qed.
 
-Lemma nearest_round_pos_le (r1 r2 : R) :
-  ((0 : R) <= r1)%O ->
-  ((0 : R) <= r2)%O ->  
+Lemma nearest_round_le (r1 r2 : R) :
   (r1 <= r2)%O ->
   (nearest_round r1 <= nearest_round r2)%O.
 Proof.
   intros.
+  set h := r2 - r1.
+  assert ((0:R) <= h)%O.
+  {
+    rewrite /h.
+    lra.
+  }
+  generalize (nearest_round_add2 r1 h); intros.
+  simpl in H1.
   rewrite /nearest_round /ran_round.
   case : (boolP (Order.lt _ _)); intros.
   - case : (boolP (Order.lt _ _)); intros.
-    + admit.
+    + rewrite -(ler_int R_numDomainType).
+      admit.
     + admit.
   - case : (boolP (Order.lt _ _)); intros.      
     + admit.
@@ -2478,7 +2510,13 @@ Proof.
   case: (boolP (i < size a)); intros; try lia.
   apply nearest_round_int_le.
   simpl.
-  admit.
+  eapply leq_trans.
+  2 : apply leq_bigmax_seq=> //.
+  - apply eq_leq.
+    f_equal.
+    f_equal.
+    admit.
+  - admit.
   Admitted.
 
 Lemma icoef_maxnorm_triang (a b : {poly int}) :
