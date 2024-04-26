@@ -2309,25 +2309,19 @@ Proof.
   apply leq_mul; simpl.
   clear H0.
   - case (ltnP (i - p) (size a)) => ineq.
-    + eapply leq_trans.
-      2: apply leq_bigmax_seq=> //.
-      { by rewrite (_:(nat_of_ord i - nat_of_ord p)%nat=(nat_of_ord ((Ordinal (ineq))))) ?leqnn.
-      }
-      by rewrite mem_enum.
+    + eapply leq_trans; cycle 1.
+      by apply leq_bigmax_seq; rewrite ?mem_enum.
+      by rewrite (_:(nat_of_ord i - nat_of_ord p)%nat=(nat_of_ord ((Ordinal (ineq))))) ?leqnn.
     + assert (a`_(i - p) = 0).
       {
         by apply nth_default.
       }
       rewrite H0 /=.
-      assert (Ordinal (n:=size a) (m:=0) abig \in enum 'I_(size a)).
-      {
-        by rewrite mem_enum.
-      }
-      by apply (bigmax_sup_seq _ H1).
-  - eapply leq_trans.
-    2 : apply leq_bigmax_seq=> //.
+      have/(bigmax_sup_seq _): (Ordinal (n:=size a) (m:=0) abig \in enum 'I_(size a)) by rewrite mem_enum.
+      by apply.
+  - eapply leq_trans; cycle 1.
+    by apply leq_bigmax_seq; rewrite ?mem_enum.
     easy.
-    by rewrite mem_enum.
 Qed.
 
 Lemma Rabs_mul (a b : R) :
