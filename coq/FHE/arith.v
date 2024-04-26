@@ -2389,24 +2389,19 @@ Lemma nearest_round_le (r1 r2 : R) :
   (nearest_round r1 <= nearest_round r2)%O.
 Proof.
   intros.
-  set h := r2 - r1.
-  assert ((0:R) <= h)%O.
-  {
-    rewrite /h.
-    lra.
-  }
-  generalize (nearest_round_add2 r1 h); intros.
-  simpl in H1.
   rewrite /nearest_round /ran_round.
+  generalize (upi_le r1 r2 H); intros.
   case : (boolP (Order.lt _ _)); intros.
-  - case : (boolP (Order.lt _ _)); intros.
-    + rewrite -(ler_int R_numDomainType).
-      admit.
-    + admit.
-  - case : (boolP (Order.lt _ _)); intros.      
-    + admit.
-    + admit.
-  Admitted.
+  - case : (boolP (Order.lt _ _)); intros; trivial.
+    assert (upi r1 < upi r2)%O.
+    {
+      rewrite -(ltr_int R_numDomainType).
+      rewrite -(ler_int R_numDomainType) in H0.      
+      lra.
+    }
+    lia.
+  - case : (boolP (Order.lt _ _)); lia.
+Qed.
 
 Lemma nearest_round_int_le (n1 n2 d : int) :
   `|n1| <= `|n2| ->
