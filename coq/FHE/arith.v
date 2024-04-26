@@ -366,6 +366,12 @@ Definition icoef_maxnorm_ord (p : {poly int}):nat := \max_(j < seq.size p) `|p`_
 Definition icoef_maxnorm_nat (p : {poly int}):nat := \max_(0 <= j < seq.size p) `|p`_ j|.
 Definition icoef_maxnorm (p : {poly int}):nat := \max_(j < seq.size p) `|p`_ j|.
 
+Lemma icoef_maxnorm_conv (p : {poly int}) :
+  \max_(j < seq.size p) `|p`_ j| = \max_(0 <= j < seq.size p) `|p`_ j|.
+Proof.
+  by rewrite big_mkord.
+Qed.                                   
+
 Lemma zlift_add2_ex {q : nat} (a b : {poly 'Z_q}) :
   (1 < q) ->
   { c : {poly int} |
@@ -521,14 +527,41 @@ Proof.
 Qed.
 
 Lemma up_le (r1 r2 : R) :
+  Rle r1 r2 ->
+  Z.le (up r1) (up r2).
+Proof.
+  case: (boolP (Rleb (IZR (up r1)) (IZR(up r2)))).
+  - intros.
+    apply le_IZR.
+    by move /RlebP in p.
+  - intros.
+    move /RlebP in i.
+    assert (Rlt (IZR (up r2)) (IZR (up r1))).
+    {
+      coq_lra.
+    }
+    apply lt_IZR in H0.
+    assert (Z.le (Z.add (up r2) (1 : Z)) (up r1)).
+    {
+      lia.
+    }
+    apply IZR_le in H1.
+    rewrite /one /= plus_IZR in H1.  
+    destruct (archimed r1). 
+    destruct (archimed r2).
+    coq_lra.
+Qed.
+
+Lemma upi_le (r1 r2 : R) :
   (r1 <= r2)%O ->
-  (up r1 <= up r2)%O.
+  (upi r1 <= upi r2)%O.
 Proof.
   intros.
-  destruct (archimed r1).
-  destruct (archimed r2).
-
-Admitted.
+  move /RlebP in H.
+  apply up_le in H.
+  rewrite /upi.
+  lia.
+Qed.
 
 Lemma int_of_Z_abs x : `|int_of_Z x| = Z.abs_nat x.
 Proof.
@@ -556,8 +589,8 @@ Lemma upi_add2 (n1 n2 : R) :
 Proof.
   rewrite /upi.
   rewrite (_:
-            ssrZ.int_of_Z (up (n1 + n2)) - (ssrZ.int_of_Z (up n1) + ssrZ.int_of_Z (up n2))%R =
-              ssrZ.int_of_Z (Z.sub (up (n1 + n2)) (Z.add (up n1) (up n2)))%Z).
+            int_of_Z (up (n1 + n2)) - (int_of_Z (up n1) + int_of_Z (up n2))%R =
+              int_of_Z (Z.sub (up (n1 + n2)) (Z.add (up n1) (up n2)))%Z).
   - rewrite int_of_Z_abs.
     apply up_add2.
   - rewrite -Z.add_opp_r !raddfD /= raddfN /= raddfD /=.
@@ -2515,14 +2548,12 @@ Proof.
   case: (boolP (i < size a)); intros; try lia.
   apply nearest_round_int_le.
   simpl.
+  rewrite icoef_maxnorm_conv.
   eapply leq_trans.
   2 : apply leq_bigmax_seq=> //.
-  - apply eq_leq.
-    f_equal.
-    f_equal.
-    admit.
-  - admit.
-  Admitted.
+  - easy.
+  - by rewrite mem_index_iota.
+Qed.
 
 Lemma icoef_maxnorm_triang (a b : {poly int}) :
   icoef_maxnorm (a + b) <= icoef_maxnorm a + icoef_maxnorm b.
