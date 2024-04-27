@@ -2564,6 +2564,26 @@ Proof.
       * by rewrite /zero /=.
 Qed.
 
+Lemma nearest_round_sgn_leq (r : R) :
+  (Rabs(r - (nearest_round_sgn r)%:~R) <= 1 / 2)%O.
+Proof.
+  rewrite /nearest_round_sgn.
+  case: (boolP (Order.lt _ _)); intros.
+  - generalize (nearest_round_leq (- r)); intros.
+    rewrite -Rabs_Ropp in H.
+    rewrite /Rminus Rplus_add !Ropp_opp in H.
+    rewrite opprD !opprK in H.
+    rewrite /Rminus Rplus_add !Ropp_opp.
+    eapply Order.POrderTheory.le_trans; cycle 1.
+    apply H.
+    rewrite Order.POrderTheory.le_eqVlt.
+    apply /orP.
+    left.
+    apply /eqP.
+    f_equal.
+    ring.
+  - apply nearest_round_leq.
+Qed.
 
 Lemma nearest_round_int_leq (p : nat) (a : int) :
   p != 0%N ->
