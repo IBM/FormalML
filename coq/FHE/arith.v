@@ -410,32 +410,34 @@ Proof.
   tauto.
 Qed.
 
-Definition upi (c:R) : int := ssrZ.int_of_Z (up c).
+Definition upi (c:R) : int := int_of_Z (up c).
 
 (* 0 <= rand < 1 *)
 Definition ran_round (x rand : R) : int :=
   let hi := upi x in
-  if (Order.lt (hi%:~R - x) rand)%R then hi else (hi - 1).
+  if (hi%:~R - x < rand)%O then hi else (hi - 1).
 
 Definition nearest_round (x : R) : int := ran_round x (1/2)%R.
 
+Definition nearest_round_sgn (x : R) : int :=
+  if (x < 0)%O then - (nearest_round (-x)) else nearest_round x.
+
 Definition nearest_round_int (n d : int) : int := nearest_round ((n %:~R)/(d %:~R))%R.
+Definition nearest_round_int_sgn (n d : int) : int := nearest_round_sgn ((n %:~R)/(d %:~R))%R.
 
-
-
-Lemma IZRE (n : Z) : IZR n = (ssrZ.int_of_Z n)%:~R.
+Lemma IZRE (n : Z) : IZR n = (int_of_Z n)%:~R.
 Proof.
   destruct n.
   - by rewrite /intmul /= /IZR R00.
-  - by rewrite /IZR -INR_IPR INRE /ssrZ.int_of_Z /intmul.
-  - rewrite /IZR -INR_IPR INRE /ssrZ.int_of_Z /intmul /opp /=.
+  - by rewrite /IZR -INR_IPR INRE /int_of_Z /intmul.
+  - rewrite /IZR -INR_IPR INRE /int_of_Z /intmul /opp /=.
     f_equal; f_equal.
     lia.
 Qed.    
 
 Lemma IZREb (n : int) :  n%:~R = IZR (ssrZ.Z_of_int n).
 Proof.
-  by rewrite -{1}(ssrZ.Z_of_intK n) -IZRE.
+  by rewrite -{1}(Z_of_intK n) -IZRE.
 Qed.
 
 Lemma up_int_add (n : Z) (c : R) :
@@ -2330,54 +2332,6 @@ Proof.
   by rewrite /mul /= Rabs_mult.
 Qed.
 
-
-Lemma nearest_round_pos (r : R) :
-  ((0 : R) <= r)%O ->
-  ((0 : int) <= nearest_round r)%O.
-Proof.
-  intros.
-  rewrite /nearest_round /ran_round.
-  destruct (upi_bound_O r).
-  rewrite -(ler_int R_numDomainType).
-  case : (boolP (Order.lt _ _)); intros.
-  - lra.
-  - rewrite rmorphD rmorphN /=.
-    assert ((1 : int) <= upi r)%O.
-    {
-      assert ((0 : int) < upi r)%O.
-      {
-        rewrite -(ltr_int R_numDomainType).
-        lra.
-      }
-      lia.
-    }
-    rewrite -(ler_int R_numDomainType) in H2.
-    lra.
-Qed.
-
-Lemma nearest_round_neg (r : R) :
-  (r <= 0 )%O ->
-  (nearest_round r <= 0)%O.
-Proof.
-  intros.
-  rewrite /nearest_round /ran_round.
-  destruct (upi_bound_O r).
-  rewrite -(ler_int R_numDomainType).
-  case : (boolP (Order.lt _ _)); intros.
-  - assert (upi r <= 0)%O.
-    {
-      assert (upi r < 1)%O.
-      {
-        rewrite -(ltr_int R_numDomainType).
-        lra.
-      }
-      lia.
-    }
-    rewrite -(ler_int R_numDomainType) in H2.    
-    lra.
-  - lra.
-Qed.
-
 Lemma nearest_round_le (r1 r2 : R) :
   (r1 <= r2)%O ->
   (nearest_round r1 <= nearest_round r2)%O.
@@ -2397,20 +2351,189 @@ Proof.
   - case : (boolP (Order.lt _ _)); lia.
 Qed.
 
-Lemma nearest_round_int_le (n1 n2 d : int) :
-  `|n1| <= `|n2| ->
-                 `|nearest_round_int n1 d| <= `|nearest_round_int n2 d|.
+Lemma nearest_round_pos (r : R) :
+  ((0 : R) <= r)%O ->
+  ((0 : int) <= nearest_round r)%O.
 Proof.
   intros.
-  rewrite /nearest_round_int /nearest_round /ran_round.
-  case : (boolP (Order.lt _ _)); intros.
-  - case : (boolP (Order.lt _ _)); intros.
-    + admit.
-    + admit.
-  - case : (boolP (Order.lt _ _)); intros.      
-    + admit.
-    + admit.
-  Admitted.
+  rewrite -nearest_round_0.
+  by apply nearest_round_le.
+Qed.
+  
+Lemma nearest_round_sgn_pos (r : R) :
+  ((0 : R) <= r)%O ->
+  ((0 : int) <= nearest_round_sgn r)%O.
+Proof.
+  intros.
+  rewrite /nearest_round_sgn.
+  case: (boolP (Order.lt _ _)); intros.
+  - assert ((0 : R) < 0)%O by lra.
+    by rewrite Order.POrderTheory.ltxx in H0.
+  - apply nearest_round_pos.
+    lra.
+Qed.
+
+Lemma nearest_round_neg (r : R) :
+  (r <= 0 )%O ->
+  (nearest_round r <= 0)%O.
+Proof.
+  intros.
+  rewrite -nearest_round_0.
+  by apply nearest_round_le.
+Qed.
+
+Lemma nearest_round_sgn_neg (r : R) :
+  (r <= 0)%O ->
+  (nearest_round_sgn r <= 0)%O.
+Proof.
+  intros.
+  rewrite /nearest_round_sgn.
+  case: (boolP (Order.lt _ _)); intros.
+  - assert (-r >= (0 : R))%O by lra.
+    apply nearest_round_pos in H0.
+    rewrite Ropp_opp.
+    lra.
+  - assert (r = 0) by lra.
+    rewrite H0 nearest_round_0.
+    lra.
+Qed.
+
+Lemma nearest_round_sgn_le' (r1 r2 : R) :
+  (Rabs r1 <= Rabs r2)%O ->
+  (Posz `|nearest_round_sgn r1| <= Posz `|nearest_round_sgn r2|)%O.
+Proof.
+  intros.
+  rewrite /nearest_round_sgn.
+  case: (boolP (Order.lt _ _)); intros.
+  - rewrite Rabs_left in H; [|apply /RltP; rewrite /zero /= in p; lra].
+    case: (boolP (Order.lt _ _)); intros.
+    + rewrite Rabs_left in H; [|apply /RltP; rewrite /zero /= in p0; lra].
+      rewrite !lez0_abs.
+      * rewrite !opprK.
+        by apply nearest_round_le.
+      * assert ((0 : R) <= (- r2)%R)%O by lra.
+        generalize (nearest_round_pos (- r2) H0); lra.
+      * assert ((0 : R) <= (- r1)%R)%O by lra.
+        generalize (nearest_round_pos (- r1) H0); lra.
+    + rewrite Rabs_right in H; cycle 1.
+      * rewrite /zero /= in i.
+        apply Rle_ge.
+        apply /RleP.
+        lra.
+      * rewrite abszN !gez0_abs.
+        -- by apply nearest_round_le.
+        -- apply nearest_round_pos; lra.
+        -- apply nearest_round_pos.
+           rewrite Ropp_opp; lra.
+  - rewrite Rabs_right in H; cycle 1.
+    + move /RltP in i.
+      rewrite /zero /= in i.
+      coq_lra.
+    + case: (boolP (Order.lt _ _)); intros.
+      * rewrite Rabs_left in H; [|apply /RltP; rewrite /zero /= in p; lra].
+        rewrite abszN !gez0_abs.
+        -- by apply nearest_round_le.
+        -- apply nearest_round_pos; lra.
+        -- apply nearest_round_pos; lra.
+      * rewrite Rabs_right in H; cycle 1.
+        -- rewrite /zero /= in i0.
+           apply Rle_ge.
+           apply /RleP.
+           lra.
+        -- rewrite !gez0_abs.
+           ++ by apply nearest_round_le.
+           ++ apply nearest_round_pos; lra.
+           ++ apply nearest_round_pos; lra.              
+Qed.
+
+Lemma nearest_round_sgn_le (r1 r2 : R) :
+  (Rabs r1 <= Rabs r2)%O ->
+  `|nearest_round_sgn r1| <= `|nearest_round_sgn r2|.
+Proof.
+  intros.
+  apply nearest_round_sgn_le' in H.
+  lia.
+Qed.
+
+Lemma Rzero_0 :
+  (0 : R) = IZR Z0.
+Proof.
+  by rewrite /zero /=.
+Qed.
+
+Lemma nearest_round_int_sgn_le (n1 n2 d : int) :
+  ((0 : int) < d)%O ->
+  `|n1| <= `|n2| ->
+  `|nearest_round_int_sgn n1 d| <= `|nearest_round_int_sgn n2 d|.
+Proof.
+  intros.
+  assert ((0 : R) < d%:~R)%O.
+  {
+    replace (0 : R) with (((0 : int)%:~R):R) by ring.
+    by rewrite ltr_int.
+  }
+  assert (d%:~R != (0 : R))%O.
+  {
+    assert (d != 0) by lia.
+    by rewrite -(eqr_int R_numDomainType) in H2.
+  }
+  rewrite /nearest_round_int_sgn.
+  apply nearest_round_sgn_le.
+  case: (boolP ((0 : int) <= n1)%O); intros.
+  - rewrite Rabs_right; cycle 1.
+    + apply Rle_ge.
+      apply /RleP.
+      rewrite -(ler_pM2r H1) mul0r -mulrA (mulrC _ d%:~R) divff; [|apply H2].
+      rewrite mulr1.
+      rewrite -(ler_int R_numDomainType) in p.
+      lra.
+    + case: (boolP ((0 : int) <= n2)%O); intros.
+      * rewrite Rabs_right; cycle 1.
+        -- apply Rle_ge.
+           apply /RleP.
+           rewrite -(ler_pM2r H1) mul0r -mulrA (mulrC _ d%:~R) divff; [|apply H2].
+           rewrite mulr1.
+           rewrite -(ler_int R_numDomainType) in p0.
+           lra.
+        -- rewrite -(ler_pM2r H1) -!mulrA !(mulrC _ d%:~R) !divff; [|apply H2].
+           rewrite !mulr1 ler_int.
+           lia.
+      * rewrite Rabs_left; cycle 1.
+        -- apply /RltP.
+           rewrite -(ltr_pM2r H1) -!mulrA !(mulrC _ d%:~R) !divff; [|apply H2].
+           rewrite mulr1 mulr0.
+           rewrite -Order.TotalTheory.ltNge -(ltr_int R_numDomainType) in i.
+           lra.
+        -- rewrite -(ler_pM2r H1) Ropp_opp mulNr -!mulrA !(mulrC _ d%:~R) !divff; [|apply H2].
+           rewrite !mulr1 -mulrNz ler_int.
+           lia.
+  - rewrite Rabs_left; cycle 1. 
+    + apply /RltP.
+      rewrite -(ltr_pM2r H1) -!mulrA !(mulrC _ d%:~R) !divff; [|apply H2].
+      rewrite mulr1 mulr0.
+      rewrite -Order.TotalTheory.ltNge -(ltr_int R_numDomainType) in i.
+      lra.
+    + case: (boolP ((0 : int) <= n2)%O); intros.
+      * rewrite Rabs_right; cycle 1.
+        -- apply Rle_ge.
+           apply /RleP.
+           rewrite -(ler_pM2r H1) mul0r -mulrA (mulrC _ d%:~R) divff; [|apply H2].
+           rewrite mulr1.
+           rewrite -(ler_int R_numDomainType) in p.
+           lra.
+        -- rewrite -(ler_pM2r H1) Ropp_opp mulNr -!mulrA !(mulrC _ d%:~R) !divff; [|apply H2].
+           rewrite !mulr1 -mulrNz ler_int.
+           lia.
+     * rewrite Rabs_left; cycle 1.
+       -- apply /RltP.
+          rewrite -(ltr_pM2r H1) -!mulrA !(mulrC _ d%:~R) !divff; [|apply H2].
+          rewrite mulr1 mulr0.
+          rewrite -Order.TotalTheory.ltNge -(ltr_int R_numDomainType) in i0.
+          lra.
+       -- rewrite -(ler_pM2r H1) Ropp_opp !mulNr -!mulrA !(mulrC _ d%:~R) !divff; [|apply H2].
+          rewrite !mulr1 -!mulrNz ler_int.
+          lia.
+Qed.    
 
 Lemma nearest_round_leq (r : R) :
   (Rabs(r - (nearest_round r)%:~R) <= 1 / 2)%O.
@@ -2535,6 +2658,7 @@ Proof.
   apply /bigmax_leqP; intros.
   rewrite coef_poly.
   case: (boolP (i < size a)); intros; try lia.
+(*
   apply nearest_round_int_le.
   simpl.
   rewrite icoef_maxnorm_conv.
@@ -2543,6 +2667,8 @@ Proof.
   - easy.
   - by rewrite mem_index_iota.
 Qed.
+ *)
+  Admitted.
 
 Lemma icoef_maxnorm_triang (a b : {poly int}) :
   icoef_maxnorm (a + b) <= icoef_maxnorm a + icoef_maxnorm b.
