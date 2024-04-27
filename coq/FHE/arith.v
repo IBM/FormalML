@@ -2576,10 +2576,8 @@ Proof.
     rewrite /Rminus Rplus_add !Ropp_opp.
     eapply Order.POrderTheory.le_trans; cycle 1.
     apply H.
-    rewrite Order.POrderTheory.le_eqVlt.
-    apply /orP.
-    left.
-    apply /eqP.
+    apply /RlebP.
+    right.
     f_equal.
     ring.
   - apply nearest_round_leq.
