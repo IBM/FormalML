@@ -2692,8 +2692,22 @@ Lemma icoef_maxnorm_triang (a b : {poly int}) :
   icoef_maxnorm (a + b) <= icoef_maxnorm a + icoef_maxnorm b.
 Proof.
   rewrite /icoef_maxnorm.
-  
-  Admitted.
+  apply/bigmax_leqP => i _.
+  eapply leq_trans; first by rewrite coefD; apply absz_triang.
+  apply leq_add.
+  - case: (boolP (i < size a)); intros.
+    + eapply leq_trans; cycle 1.
+      apply leq_bigmax_seq;  rewrite ?mem_index_enum //.
+      by apply (@leq_trans  `|a`_(Ordinal p)|).
+    + rewrite nth_default //.
+      by rewrite leqNgt i0.
+  - case: (boolP (i < size b)); intros.
+    + eapply leq_trans; cycle 1.
+      apply leq_bigmax_seq;  rewrite ?mem_index_enum //.
+      by apply (@leq_trans  `|b`_(Ordinal p)|).
+    + rewrite nth_default //.
+      by rewrite leqNgt i0.
+Qed.      
 
 Lemma icoef_maxnorm_neg (a : {poly int}) :
   icoef_maxnorm (-a) = icoef_maxnorm a.
