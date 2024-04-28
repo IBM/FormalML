@@ -2675,11 +2675,13 @@ Proof.
  Qed.
 
 Lemma div_round_leq (p : nat) (a : {poly int}) :
+  p != 0%N ->
   icoef_maxnorm (a - (div_round a p)*+p) <= p./2.
 Proof.
-  rewrite /icoef_maxnorm.
-  rewrite /div_round.
-  Admitted.
+  rewrite /icoef_maxnorm /div_round=> pn0.
+  apply/bigmax_leqP=> i _.
+  by rewrite coefB coefMn coef_map_id0 ?nearest_round_int0 // nearest_round_int_leq.
+Qed.  
 
 
 Lemma div_round_eq (p : nat) (a : {poly int}) :
