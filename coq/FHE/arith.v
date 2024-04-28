@@ -2685,12 +2685,17 @@ Qed.
 
 
 Lemma div_round_eq (p : nat) (a : {poly int}) :
+  p != 0%N ->
   { c : {poly int} |
     a = (div_round a p)*+p + c /\
       icoef_maxnorm c <= p./2}.
 Proof.
-  rewrite /div_round.
-  Admitted.
+  intros.
+  exists  (a - (div_round a p)*+p).
+  split.
+  - ring.
+  - by apply div_round_leq.
+Qed.
 
 Lemma div_round_maxnorm_le (p : nat) (a : {poly int}):
   p <> 0%N ->
@@ -2744,22 +2749,23 @@ Proof.
 Qed.
 
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
-  p <> 0%N ->
+  p != 0%N ->
   { c : {poly int} |
       (div_round a p) * b =
         (div_round (a * b) p) + c  /\
         icoef_maxnorm c <= ((size b) * icoef_maxnorm b + 1)./2}.
 Proof.
   intros pno.
-  destruct (div_round_eq p a) as [?[??]].
-  destruct (div_round_eq p (a * b)) as [?[??]].
+  destruct (div_round_eq p a pno) as [?[??]].
+  destruct (div_round_eq p (a * b) pno) as [?[??]].
+  move /eqP in pno.
   apply (f_equal (fun z => z * b)) in H.
   rewrite mulrDl in H.
   rewrite {1}H mulrnAl in H1.
   apply (f_equal (fun z => z - x * b)) in H1.
   rewrite -!addrA subrr addr0 in H1.
   apply (f_equal (fun z => div_round z p)) in H1.
-  rewrite div_round_muln //  addrC in H1.
+  rewrite div_round_muln // addrC in H1.
   rewrite div_round_muln_add // addrC in H1.
   exists (div_round (x0 - x * b) p).
   split; trivial.
