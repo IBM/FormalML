@@ -2351,6 +2351,28 @@ Proof.
   - case : (boolP (Order.lt _ _)); lia.
 Qed.
 
+Lemma Rmult_leb_compat_r (r r1 r2 : R) : ((0 : R)  <= r)%O -> (r1 <= r2)%O -> (r1 * r <= r2 * r)%O.
+Proof.
+  move/RlebP=> HH1.
+  move/RlebP=> HH2.
+  by apply/RlebP/Rmult_le_compat_r.
+Qed.
+
+Lemma nearest_round_int_le (r1 r2 d : int) :
+  ((0 : int) <= d)%O ->
+  (r1 <= r2)%O ->
+  (nearest_round_int r1 d <= nearest_round_int r2 d)%O.
+Proof.
+  intros.
+  rewrite /nearest_round_int.
+  apply nearest_round_le.
+  apply Rmult_leb_compat_r.
+  - rewrite invr_ge0.
+    rewrite (_:((0 : R) = 0%:~R)); last by lra.
+    by rewrite ler_int.
+  - by rewrite ler_int.
+Qed.
+  
 Lemma nearest_round_pos (r : R) :
   ((0 : R) <= r)%O ->
   ((0 : int) <= nearest_round r)%O.
@@ -2656,6 +2678,7 @@ Lemma div_round_leq (p : nat) (a : {poly int}) :
   icoef_maxnorm (a - (div_round a p)*+p) <= p./2.
 Proof.
   rewrite /icoef_maxnorm.
+  rewrite /div_round.
   Admitted.
 
 
