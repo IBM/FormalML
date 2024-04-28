@@ -2655,7 +2655,7 @@ Proof.
 Lemma div_round_leq (p : nat) (a : {poly int}) :
   icoef_maxnorm (a - (div_round a p)*+p) <= p./2.
 Proof.
-  rewrite /div_round.
+  rewrite /icoef_maxnorm.
   Admitted.
 
 
