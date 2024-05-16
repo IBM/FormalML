@@ -505,6 +505,26 @@ Proof.
   lia.
 Qed.
 
+Lemma nearest_round_int_mod (n1 n2 p1 p2 : int) :
+  p1 <> 0 ->
+  intdiv.modz n1 (p1 * p2) = intdiv.modz n2 (p1 * p2) ->
+  intdiv.modz (nearest_round_int n1 p1) p2 = intdiv.modz (nearest_round_int n2 p1) p2.
+Proof.
+  intros.
+  assert (exists (h : int),
+           n1 = n2 + h * (p1 * p2)).
+  {
+    exists (intdiv.divz n1 (p1 * p2) - intdiv.divz n2 (p1 * p2)).
+    generalize (intdiv.divz_eq n1 (p1 * p2)); intros.
+    generalize (intdiv.divz_eq n2 (p1 * p2)); intros.    
+    rewrite {1}H2 {1}H1 H0.
+    ring.
+  }
+  destruct H1.
+  rewrite H1 addrC (mulrC p1 p2) mulrA nearest_round_int_mul_add //.
+  by rewrite intdiv.modzMDl.
+Qed.
+
 Lemma up_add2' (r1 r2 : R) :
   (up(r1 + r2) = Z.add (up r1) (up r2) \/ up(r1 + r2) = Z.sub (Z.add (up r1) (up r2)) 1)%Z.
 Proof.
