@@ -2772,6 +2772,7 @@ Lemma icoef_maxnorm_prod (a b : {poly int}) :
   icoef_maxnorm (a * b) <= icoef_maxnorm a * icoef_maxnorm b.
 Proof.
   rewrite /icoef_maxnorm.
+  
 Admitted.
 
 Lemma nearest_round_int_mulp (a p : int) :
@@ -2783,7 +2784,12 @@ Proof.
   replace ((p * a)%:~R / p%:~R)%R with (a %:~R : R).
   - by rewrite nearest_round_int_val.
   - field.
-    Admitted.
+    apply /eqP.
+    intros ?.
+    generalize (intr_inj (R := R_numDomainType)); intros.
+    specialize (H1 p 0 H0).
+    lia.
+Qed.
 
 Lemma nearest_round_int_le_const (p : nat) (a c : int) :
   Posz p != 0 ->
