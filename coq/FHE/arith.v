@@ -2784,11 +2784,9 @@ Proof.
   replace ((p * a)%:~R / p%:~R)%R with (a %:~R : R).
   - by rewrite nearest_round_int_val.
   - field.
-    apply /eqP.
-    intros ?.
-    generalize (intr_inj (R := R_numDomainType)); intros.
-    specialize (H1 p 0 H0).
-    lia.
+    move: H.
+    apply contra_neq.
+    apply (@intr_inj R_numDomainType p 0).
 Qed.
 
 Lemma nearest_round_int_le_const (p : nat) (a c : int) :
@@ -2812,20 +2810,27 @@ Proof.
   
   Admitted.
 
+Lemma size_map_poly_le  [aR rR : ringType] [f : aR -> rR] (p : {poly aR}) :
+  size (map_poly f p) <= size p.
+Proof.
+Admitted.
+
 Lemma icoef_maxnorm_div_round_leq (c p : nat) (a : {poly int}) :
   Posz p != 0 ->
   icoef_maxnorm a <= c * p ->
   icoef_maxnorm (div_round a p) <= c.
 Proof.
   rewrite /icoef_maxnorm /div_round.
-  intros.
+  intros pn0 pmax.
   apply /bigmax_leqP => i _.
   rewrite coef_map_id0.
   - apply nearest_round_int_leq2; trivial.
-    move /bigmax_leqP in H.
-    admit.
+    move /bigmax_leqP in pmax.
+    have pfle:  (size (map_poly (aR:=int_Ring) (rR:=int_Ring) (nearest_round_int^~ p) a)) <= size a
+      by apply size_map_poly_le.
+    apply (pmax (widen_ord pfle i) isT).
   - by rewrite nearest_round_int0.
-Admitted.
+Qed.
 
 (*
 Lemma icoef_maxnorm_div_round_leq' (c p : nat) (a : {poly int}) :
