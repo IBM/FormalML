@@ -2807,7 +2807,7 @@ Lemma nearest_round_int_leq2 (c p : nat) (a : int) :
 Proof.
   intros.
   rewrite /absz.
-  
+  case E: nearest_round_int.
   Admitted.
 
 Lemma size_map_poly_le  [aR rR : ringType] [f : aR -> rR] (p : {poly aR}) :
