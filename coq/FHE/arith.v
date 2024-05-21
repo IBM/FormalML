@@ -2800,6 +2800,15 @@ Proof.
   by rewrite mulrC.
 Qed.
 
+Lemma nearest_round_int_le_const_nat (p a c : nat) :
+  Posz p != 0 ->
+  (a <= c * p) ->
+  (nearest_round_int a p <= c)%O.
+Proof.
+  intros.
+  by apply nearest_round_int_le_const.
+Qed.
+
 Lemma nearest_round_int_leq2 (c p : nat) (a : int) :
   Posz p != 0 ->
   `|a| <= c * p ->
@@ -2807,13 +2816,29 @@ Lemma nearest_round_int_leq2 (c p : nat) (a : int) :
 Proof.
   intros.
   rewrite /absz.
+  generalize (nearest_round_int_le_const_nat _ _ _ H H0); intros.
   case E: nearest_round_int.
+  - destruct a.
+    + rewrite absz_nat in H0.
+      rewrite E in H1.
+      lia.
+    + rewrite NegzE in E.
+      rewrite NegzE abszN absz_nat in H1.
+      admit.
+  - destruct a.
+    + admit.
+    + rewrite !NegzE in E.
+      rewrite NegzE abszN absz_nat in H1.
+      apply (f_equal (fun z => - z)) in E.
+      rewrite opprK in E.
+      admit.
   Admitted.
 
 Lemma size_map_poly_le  [aR rR : ringType] [f : aR -> rR] (p : {poly aR}) :
   size (map_poly f p) <= size p.
 Proof.
-Admitted.
+  by rewrite size_poly.
+Qed.
 
 Lemma icoef_maxnorm_div_round_leq (c p : nat) (a : {poly int}) :
   Posz p != 0 ->
@@ -2831,19 +2856,6 @@ Proof.
     apply (pmax (widen_ord pfle i) isT).
   - by rewrite nearest_round_int0.
 Qed.
-
-(*
-Lemma icoef_maxnorm_div_round_leq' (c p : nat) (a : {poly int}) :
-  Posz p != 0 ->
-  icoef_maxnorm a <= c * p ->
-  icoef_maxnorm (div_round a p) <= c.
-Proof.
-  intros.
-  eapply leq_trans.
-  apply div_round_maxnorm_le; trivial.
-  apply nearest_round_int_leq2.
-Admitted.
-*)
 
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
   p != 0%N ->
