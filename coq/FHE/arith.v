@@ -2283,7 +2283,7 @@ Proof.
   lia.
 Qed.
 
-Lemma delta_maxnorm (a b : {poly int}) :
+Lemma delta_maxnorm_prod (a b : {poly int}) :
   0 < size a ->
   icoef_maxnorm (a * b) <= (size b) * icoef_maxnorm a * icoef_maxnorm b.
 Proof.
@@ -2768,13 +2768,6 @@ Proof.
   by rewrite coefE abszN.
 Qed.
 
-Lemma icoef_maxnorm_prod (a b : {poly int}) :
-  icoef_maxnorm (a * b) <= icoef_maxnorm a * icoef_maxnorm b.
-Proof.
-  rewrite /icoef_maxnorm.
-  
-Admitted.
-
 Lemma nearest_round_int_mulp (a p : int) :
   p != 0 ->
   a = nearest_round_int (p * a) p.
@@ -2834,12 +2827,6 @@ Proof.
       admit.
   Admitted.
 
-Lemma size_map_poly_le  [aR rR : ringType] [f : aR -> rR] (p : {poly aR}) :
-  size (map_poly f p) <= size p.
-Proof.
-  by rewrite size_poly.
-Qed.
-
 Lemma icoef_maxnorm_div_round_leq (c p : nat) (a : {poly int}) :
   Posz p != 0 ->
   icoef_maxnorm a <= c * p ->
@@ -2852,7 +2839,7 @@ Proof.
   - apply nearest_round_int_leq2; trivial.
     move /bigmax_leqP in pmax.
     have pfle:  (size (map_poly (aR:=int_Ring) (rR:=int_Ring) (nearest_round_int^~ p) a)) <= size a
-      by apply size_map_poly_le.
+      by rewrite size_poly.
     apply (pmax (widen_ord pfle i) isT).
   - by rewrite nearest_round_int0.
 Qed.
