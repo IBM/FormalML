@@ -2768,6 +2768,72 @@ Proof.
   by rewrite coefE abszN.
 Qed.
 
+Lemma icoef_maxnorm_prod (a b : {poly int}) :
+  icoef_maxnorm (a * b) <= icoef_maxnorm a * icoef_maxnorm b.
+Proof.
+  rewrite /icoef_maxnorm.
+Admitted.
+
+Lemma nearest_round_int_mulp (a p : int) :
+  p != 0 ->
+  a = nearest_round_int (p * a) p.
+Proof.
+  intros.
+  rewrite /nearest_round_int.
+  replace ((p * a)%:~R / p%:~R)%R with (a %:~R : R).
+  - by rewrite nearest_round_int_val.
+  - field.
+    Admitted.
+
+Lemma nearest_round_int_le_const (p : nat) (a c : int) :
+  Posz p != 0 ->
+  (a <= c * p)%O ->
+  (nearest_round_int a p <= c)%O.
+Proof.
+  intros.
+  rewrite (nearest_round_int_mulp c p H).
+  apply nearest_round_int_le; trivial.
+  by rewrite mulrC.
+Qed.
+
+Lemma nearest_round_int_leq2 (c p : nat) (a : int) :
+  Posz p != 0 ->
+  `|a| <= c * p ->
+  `|nearest_round_int a p| <= c.
+Proof.
+  intros.
+  rewrite /absz.
+  
+  Admitted.
+
+Lemma icoef_maxnorm_div_round_leq (c p : nat) (a : {poly int}) :
+  Posz p != 0 ->
+  icoef_maxnorm a <= c * p ->
+  icoef_maxnorm (div_round a p) <= c.
+Proof.
+  rewrite /icoef_maxnorm /div_round.
+  intros.
+  apply /bigmax_leqP => i _.
+  rewrite coef_map_id0.
+  - apply nearest_round_int_leq2; trivial.
+    move /bigmax_leqP in H.
+    admit.
+  - by rewrite nearest_round_int0.
+Admitted.
+
+(*
+Lemma icoef_maxnorm_div_round_leq' (c p : nat) (a : {poly int}) :
+  Posz p != 0 ->
+  icoef_maxnorm a <= c * p ->
+  icoef_maxnorm (div_round a p) <= c.
+Proof.
+  intros.
+  eapply leq_trans.
+  apply div_round_maxnorm_le; trivial.
+  apply nearest_round_int_leq2.
+Admitted.
+*)
+
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
   p != 0%N ->
   { c : {poly int} |
@@ -2789,24 +2855,41 @@ Proof.
   rewrite div_round_muln_add // addrC in H1.
   exists (div_round (x0 - x * b) p).
   split; trivial.
-  eapply leq_trans.
-  apply div_round_maxnorm_le; trivial.
-(*  
+  assert (pno': Posz p != 0).
+  {
+    lia.
+  }
+  apply icoef_maxnorm_div_round_leq; trivial.
+  rewrite mulnC.
+(*
+  destruct (div_round_add2_ex x0 (- (x * b)) p pno') as [? [??]].
+  rewrite H3.
   eapply leq_trans.
   apply icoef_maxnorm_triang.
-  rewrite icoef_maxnorm_neg.
-  assert (icoef_maxnorm (x * b) <= (size b * icoef_maxnorm b) ./2).
+  assert (
+      icoef_maxnorm (div_round x0 p + div_round (- (x * b)) p) <=  (size b * icoef_maxnorm b + 1)./2).
   {
     eapply leq_trans.
-    apply delta_maxnorm.
-    apply (leq_trans (n:= (size b * icoef_maxnorm b * 1./2))).
-    - 
-    
-    admit.
+    apply icoef_maxnorm_triang.
+    assert (icoef_maxnorm (div_round x0 p) <= 1./2).
+    {
+      generalize (icoef_maxnorm_div_round p./2 p x0 H2); intros.
+      destruct p.
+      - lia.
+      - eapply leq_trans.
+        apply H5.
+      admit.
+    }
+    assert (icoef_maxnorm (div_round (- (x * b)) p) <=  (size b * icoef_maxnorm b) ./2).
+    {
+      
+      admit.
+    }
+    lia.
   }
   lia.
-  *)
-  Admitted.
+*)
+Admitted.
 
 Lemma lineariz_prop_div3 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q})
   (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
