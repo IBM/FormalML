@@ -425,6 +425,113 @@ Definition nearest_round_sgn (x : R) : int :=
 Definition nearest_round_int (n d : int) : int := nearest_round ((n %:~R)/(d %:~R))%R.
 Definition nearest_round_int_sgn (n d : int) : int := nearest_round_sgn ((n %:~R)/(d %:~R))%R.
 
+Lemma inv_nat_pos (d : nat) :
+  d != 0%N -> 
+  (inv d%:~R > (0 : R))%O.
+Proof.
+  rewrite invr_gt0.
+  replace  (zero (ssrnum.Num.NumDomain.porder_zmodType R_numDomainType)) with
+    (((0 : int)%:~R : R)) by lra.
+  rewrite ltr_int; lia.
+Qed.  
+
+Lemma div_nat_pos (n d : nat) :
+  d != 0%N ->
+  ((0 : R) <= n%:~R / d %:~R)%O.
+Proof.
+  intros.
+  generalize (inv_nat_pos d H); intros.
+  generalize (ler_pM2l H0 (0 : R) (n %:~R)); intros.
+  rewrite mulr0 mulrC in H1.
+  rewrite H1.
+  replace (0 : R) with (((0 : int)%:~R : R) ) by lra.
+  rewrite ler_int; lia.
+Qed.
+
+Lemma div_int_pos (d : nat) (n : int):
+  d != 0%N ->
+  ((0 : int) <= n)%O ->
+  ((0 : R) <= n%:~R / d %:~R)%O.
+Proof.
+  intros.
+  destruct n.
+  - by apply div_nat_pos.
+  - lia.
+Qed.
+
+Lemma div_negz_neg (n d : nat) :
+  d != 0%N ->
+  (((Negz n)%:~R : R)/ d%:~R < 0)%O.
+Proof.
+  intros.
+  generalize (inv_nat_pos d H); intros.
+  generalize (ltr_pM2l H0 ((Negz n) %:~R) (0 : R)); intros.
+  rewrite mulr0 mulrC in H1.
+  rewrite H1.
+  replace (0 : R) with (((0 : int)%:~R : R) ) by lra.
+  rewrite ltr_int; lia.
+Qed.
+
+Lemma div_int_neg (d : nat) (n : int):
+  d != 0%N ->
+  ((0 : int) > n)%O ->
+  ((0 : R) > ((n%:~R / d %:~R) : R))%O.
+Proof.
+  intros.
+  destruct n.
+  - lia.
+  - by apply div_negz_neg.
+Qed.
+
+Lemma div_int_neg' (d : nat) (n : int):
+  d != 0%N ->
+  ((0 : int) >= n)%O ->
+  ((0 : R) >= ((n%:~R / d %:~R) : R))%O.
+Proof.
+  intros.
+  destruct n.
+  - assert (n = 0%N) by lia.
+    rewrite H1 mul0r.
+    by rewrite Order.POrderTheory.lexx.
+  - generalize (div_negz_neg n d H); intros.
+    lra.
+Qed.
+
+Lemma nearest_round_int_sgn_nat (n d : nat) :
+  d != 0%N ->
+  nearest_round_int n d = nearest_round_int_sgn n d.
+Proof.
+  rewrite /nearest_round_int /nearest_round_int_sgn /nearest_round_sgn.
+  case: (boolP (Order.lt _ _)); trivial.
+  intros.
+  generalize (div_nat_pos n d H); intros.
+  assert ((0 : R) < (0 : R))%O.
+  {
+    eapply Order.POrderTheory.le_lt_trans.
+    apply H0.
+    apply p.
+  }
+  by rewrite Order.POrderTheory.ltxx in H1.
+Qed.
+
+Lemma nearest_round_int_sgn_odd (d : nat) (n : int) :
+  odd d ->
+  nearest_round_int n d = nearest_round_int_sgn n d.
+Proof.
+  intros.
+  destruct n.
+  - rewrite nearest_round_int_sgn_nat; trivial.
+    apply odd_gt0 in H.
+    lia.
+  - rewrite /nearest_round_int /nearest_round_int_sgn /nearest_round_sgn.
+    case: (boolP (Order.lt _ _)); trivial.
+    intros.
+    rewrite /nearest_round /ran_round.
+    case: (boolP (Order.lt _ _)); intros.
+    + case: (boolP (Order.lt _ _)); intros.
+      * 
+    Admitted.
+
 Lemma IZRE (n : Z) : IZR n = (int_of_Z n)%:~R.
 Proof.
   destruct n.
@@ -2440,6 +2547,83 @@ Proof.
     lra.
 Qed.
 
+Lemma nearest_round_int_pos (p : nat) (c : int) :
+  p != 0%N  ->
+  ((0 : int) <= c)%O ->
+  ((0 : int) <= nearest_round_int c p)%O.
+Proof.
+  intros.
+  rewrite -(nearest_round_int0 p).
+  apply nearest_round_le.
+  rewrite mul0r.
+  by apply div_int_pos.
+Qed.
+
+Lemma nearest_round_int_neg (p : nat) (c : int) :
+  p != 0%N  ->
+  ((0 : int) >= c)%O ->
+  ((0 : int) >= nearest_round_int c p)%O.
+Proof.
+  intros.
+  rewrite -(nearest_round_int0 p).
+  apply nearest_round_le.
+  rewrite mul0r.
+  generalize div_int_neg; intros.
+  by apply div_int_neg'.
+Qed.
+
+Lemma odd_mul_half (p : nat) :
+  odd p ->
+  ~(exists (c : int),
+      c %:~R = (1/2 : R) *+ p).
+Proof.
+  intros ??.
+  destruct H0.
+  
+  Admitted.
+
+Lemma odd_div_upi_not_half (p : nat) (c : int) :
+  odd p ->
+  (((upi (c%:~R / p%:~R)%R)%:~R : R) - c%:~R / p%:~R != (1 / 2 : R))%O.
+Proof.
+  intros.
+  apply /eqP.
+  intros ?.
+  apply (f_equal (fun z => z *+ p)) in H0.
+  assert (exists (b : int),
+             b %:~R = (1/2 : R) *+ p).
+  {
+    admit.
+  }
+  by generalize (odd_mul_half p H); intros.
+Admitted.
+
+Lemma odd_div_upi_compare (p : nat) (c : int) :
+  odd p ->
+  (((upi (c%:~R / p%:~R)%R)%:~R : R) - c%:~R / p%:~R < (1 / 2 : R))%O ||
+  (((upi (c%:~R / p%:~R)%R)%:~R : R) - c%:~R / p%:~R > (1 / 2 : R))%O.
+Proof.
+  intros.
+  generalize (odd_div_upi_not_half p c H); intros.
+  apply (Order.TotalTheory.lt_total H0).
+Qed.
+
+Lemma nearest_round_int_negate (p : nat) (c : int) :
+  odd p ->
+  nearest_round_int (-c) p = - nearest_round_int c p.
+Proof.
+  intros.
+  rewrite /nearest_round_int.
+  assert ((((- c)%:~R : R)/ p%:~R)%R = - (c %:~R / p%:~R)%R).
+  {
+    lra.
+  }
+  rewrite H0.
+  apply nearest_round_opp_not_half.
+  apply /eqP.
+  by apply odd_div_upi_not_half.
+Qed.
+
 Lemma nearest_round_sgn_le' (r1 r2 : R) :
   (Rabs r1 <= Rabs r2)%O ->
   (Posz `|nearest_round_sgn r1| <= Posz `|nearest_round_sgn r2|)%O.
@@ -2802,38 +2986,33 @@ Proof.
   by apply nearest_round_int_le_const.
 Qed.
 
+Lemma nearest_round_int_odd_abs (p : nat) (a : int) :
+  odd p ->
+  `|nearest_round_int a p| = `|nearest_round_int `|a| p|.
+Proof.
+Admitted.
+
 Lemma nearest_round_int_leq2 (c p : nat) (a : int) :
-  Posz p != 0 ->
+  odd p ->
   `|a| <= c * p ->
   `|nearest_round_int a p| <= c.
 Proof.
   intros.
+  assert (Posz p != 0) by lia.
+  generalize (nearest_round_int_le_const_nat _ _ _ H1 H0); intros.
   rewrite /absz.
-  generalize (nearest_round_int_le_const_nat _ _ _ H H0); intros.
-  case E: nearest_round_int.
-  - destruct a.
-    + rewrite absz_nat in H0.
-      rewrite E in H1.
-      lia.
-    + rewrite NegzE in E.
-      rewrite NegzE abszN absz_nat in H1.
-      admit.
-  - destruct a.
-    + admit.
-    + rewrite !NegzE in E.
-      rewrite NegzE abszN absz_nat in H1.
-      apply (f_equal (fun z => - z)) in E.
-      rewrite opprK in E.
-      admit.
+  case E: (nearest_round_int a p).
+  - admit.
+  - admit.
   Admitted.
 
 Lemma icoef_maxnorm_div_round_leq (c p : nat) (a : {poly int}) :
-  Posz p != 0 ->
+  odd p ->
   icoef_maxnorm a <= c * p ->
   icoef_maxnorm (div_round a p) <= c.
 Proof.
   rewrite /icoef_maxnorm /div_round.
-  intros pn0 pmax.
+  intros oodp pmax.
   apply /bigmax_leqP => i _.
   rewrite coef_map_id0.
   - apply nearest_round_int_leq2; trivial.
@@ -2845,13 +3024,14 @@ Proof.
 Qed.
 
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
-  p != 0%N ->
+  odd p ->
   { c : {poly int} |
       (div_round a p) * b =
         (div_round (a * b) p) + c  /\
         icoef_maxnorm c <= ((size b) * icoef_maxnorm b + 1)./2}.
 Proof.
-  intros pno.
+  intros oddp.
+  have pno: (p != 0%N) by lia.
   destruct (div_round_eq p a pno) as [?[??]].
   destruct (div_round_eq p (a * b) pno) as [?[??]].
   move /eqP in pno.
