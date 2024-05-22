@@ -2579,8 +2579,24 @@ Lemma odd_mul_half (p : nat) :
 Proof.
   intros ??.
   destruct H0.
-  
-  Admitted.
+  apply (f_equal (fun z => 2 * z)) in H0.
+  assert ((2 * (x %:~R) :R) <> p %:~R).
+  {
+    replace (2 * x %:~R) with ((2 * x)%:~R : R) by lra.
+    intros ?.
+    move /eqP in H1.
+    rewrite eqr_int in H1.
+    move /eqP in H1.
+    destruct x.
+    - assert (2 * n = p)%N by lia.
+      rewrite -H2 in H.
+      replace (2 * n)%N with (n.*2) in H by lia.
+      by rewrite odd_double in H.
+    - lia.
+  }
+  rewrite H0 mulrnAr mulrA mulr1 in H1.
+  by rewrite divff in H1; [|lra].
+Qed.
 
 Lemma odd_div_upi_not_half (p : nat) (c : int) :
   odd p ->
