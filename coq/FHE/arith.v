@@ -2609,6 +2609,9 @@ Proof.
   assert (exists (b : int),
              b %:~R = (1/2 : R) *+ p).
   {
+    exists ((upi (c%:~R / p%:~R)%R)*+p - c).
+    rewrite -H0.
+    rewrite rmorphD rmorphN /=.
     admit.
   }
   by generalize (odd_mul_half p H); intros.
