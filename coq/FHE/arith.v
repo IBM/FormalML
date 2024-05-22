@@ -2952,26 +2952,6 @@ Proof.
   - by apply div_round_leq.
 Qed.
 
-Lemma div_round_maxnorm_le (p : nat) (a : {poly int}):
-  p <> 0%N ->
-  icoef_maxnorm (div_round a p) <= `|nearest_round_int (icoef_maxnorm a) p|.
-Proof.
-  intros.
-  rewrite /icoef_maxnorm /div_round.
-  apply /bigmax_leqP; intros.
-  rewrite coef_poly.
-  case: (boolP (i < size a)); intros; try lia.
-(*
-  apply nearest_round_int_le.
-  simpl.
-  rewrite icoef_maxnorm_conv.
-  eapply leq_trans.
-  2 : apply leq_bigmax_seq=> //.
-  - easy.
-  - by rewrite mem_index_iota.
-Qed.
- *)
-  Admitted.
 
 Lemma icoef_maxnorm_triang (a b : {poly int}) :
   icoef_maxnorm (a + b) <= icoef_maxnorm a + icoef_maxnorm b.
@@ -3080,6 +3060,50 @@ Proof.
     apply (pmax (widen_ord pfle i) isT).
   - by rewrite nearest_round_int0.
 Qed.
+
+Lemma div_round_maxnorm_le (p : nat) (a : {poly int}):
+  odd p ->
+  icoef_maxnorm (div_round a p) <= `|nearest_round_int (icoef_maxnorm a) p|.
+Proof.
+  intros.
+  rewrite /icoef_maxnorm /div_round.
+  apply /bigmax_leqP; intros.
+  rewrite coef_poly.
+  case: (boolP (i < size a)); intros; try lia.
+  rewrite nearest_round_int_odd_abs //.
+  assert  (nearest_round_int `|a`_i| p <= nearest_round_int (\max_(j < size a) `|a`_j|) p)%O.
+  {
+    apply nearest_round_int_le.
+    - lia.
+    - generalize leq_bigmax_seq; intros.
+      have pfle: ((size (map_poly (aR:=int_Ring) (rR:=int_Ring) (nearest_round_int^~ p) a)) <= size a).
+      by rewrite size_poly.
+      generalize (widen_ord pfle i); intros.
+      admit.
+   }
+   assert (p != 0%N) by lia.
+   assert ((0 : int) <= nearest_round_int `|a`_i| p)%O.
+   {
+     by apply nearest_round_int_pos.
+   }
+   assert ((0 : int) <= nearest_round_int (\max_(j < size a) `|a`_j|) p)%O.
+   {
+     by apply nearest_round_int_pos.
+   }
+   lia.
+  
+(*
+  apply nearest_round_int_le.
+  simpl.
+  rewrite icoef_maxnorm_conv.
+  eapply leq_trans.
+  2 : apply leq_bigmax_seq=> //.
+  - easy.
+  - by rewrite mem_index_iota.
+Qed.
+ *)
+  Admitted.
+
 
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
   odd p ->
