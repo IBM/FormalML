@@ -2611,8 +2611,10 @@ Proof.
   {
     exists ((upi (c%:~R / p%:~R)%R)*+p - c).
     rewrite -H0.
-    rewrite rmorphD rmorphN /=.
-    admit.
+    rewrite rmorphD rmorphN /= mulrnDl.
+    f_equal.
+    - ring.
+    - admit.
   }
   by generalize (odd_mul_half p H); intros.
 Admitted.
