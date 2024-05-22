@@ -3027,8 +3027,12 @@ Proof.
   intros.
   assert (Posz p != 0) by lia.
   generalize (nearest_round_int_le_const_nat _ _ _ H1 H0); intros.
-  rewrite /absz.
-  case E: (nearest_round_int a p).
+  rewrite nearest_round_int_odd_abs //.
+  assert (p != 0%N) by lia.
+  assert  ((0 : int) <= `|a|)%O by lia.
+  generalize (nearest_round_int_pos p `|a| H3 H4); intros.
+  rewrite {1}/absz.
+  case E: (nearest_round_int `|a| p).
   - admit.
   - admit.
   Admitted.
