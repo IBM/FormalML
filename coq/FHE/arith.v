@@ -3032,10 +3032,8 @@ Proof.
   assert  ((0 : int) <= `|a|)%O by lia.
   generalize (nearest_round_int_pos p `|a| H3 H4); intros.
   rewrite {1}/absz.
-  case E: (nearest_round_int `|a| p).
-  - admit.
-  - admit.
-  Admitted.
+  case E: (nearest_round_int `|a| p); lia.
+Qed.
 
 Lemma icoef_maxnorm_div_round_leq (c p : nat) (a : {poly int}) :
   odd p ->
