@@ -497,40 +497,6 @@ Proof.
     lra.
 Qed.
 
-Lemma nearest_round_int_sgn_nat (n d : nat) :
-  d != 0%N ->
-  nearest_round_int n d = nearest_round_int_sgn n d.
-Proof.
-  rewrite /nearest_round_int /nearest_round_int_sgn /nearest_round_sgn.
-  case: (boolP (Order.lt _ _)); trivial.
-  intros.
-  generalize (div_nat_pos n d H); intros.
-  assert ((0 : R) < (0 : R))%O.
-  {
-    eapply Order.POrderTheory.le_lt_trans.
-    apply H0.
-    apply p.
-  }
-  by rewrite Order.POrderTheory.ltxx in H1.
-Qed.
-
-Lemma nearest_round_int_sgn_odd (d : nat) (n : int) :
-  odd d ->
-  nearest_round_int n d = nearest_round_int_sgn n d.
-Proof.
-  intros.
-  destruct n.
-  - rewrite nearest_round_int_sgn_nat; trivial.
-    apply odd_gt0 in H.
-    lia.
-  - rewrite /nearest_round_int /nearest_round_int_sgn /nearest_round_sgn.
-    case: (boolP (Order.lt _ _)); trivial.
-    intros.
-    rewrite /nearest_round /ran_round.
-    case: (boolP (Order.lt _ _)); intros.
-    + case: (boolP (Order.lt _ _)); intros.
-      * 
-    Admitted.
 
 Lemma IZRE (n : Z) : IZR n = (int_of_Z n)%:~R.
 Proof.
@@ -2586,7 +2552,6 @@ Proof.
     intros ?.
     move /eqP in H1.
     rewrite eqr_int in H1.
-    move /eqP in H1.
     destruct x.
     - assert (2 * n = p)%N by lia.
       rewrite -H2 in H.
@@ -2644,6 +2609,70 @@ Proof.
   apply nearest_round_opp_not_half.
   apply /eqP.
   by apply odd_div_upi_not_half.
+Qed.
+
+Lemma opp_Ropp (r : R) :
+  opp r = Ropp r.
+Proof.
+  by rewrite /opp /=.
+Qed.
+
+Lemma nearest_round_sgn_negate (r : R) :
+  nearest_round_sgn (-r) = - nearest_round_sgn r.
+Proof.
+  rewrite /nearest_round_sgn.
+  rewrite -!opp_Ropp.
+  case: (boolP (Order.lt r 0)); intros.  
+  - case: (boolP (Order.lt _ _)); intros; try lra.
+    rewrite ltrNl oppr0 in p0.
+    generalize (Order.POrderTheory.lt_trans p0 p); intros.
+    by rewrite Order.POrderTheory.ltxx in H.
+  - case: (boolP (Order.lt _ _)); intros.
+    + by rewrite opprK.
+    + assert (r = 0%R) by lra.
+      by rewrite H oppr0 nearest_round_0 oppr0.
+Qed.
+
+Lemma nearest_round_int_sgn_negate (p : nat) (c : int) :
+  nearest_round_int_sgn (-c) p = - nearest_round_int_sgn c p.
+Proof.
+  rewrite /nearest_round_int_sgn.
+  replace  ((- c)%:~R / p%:~R)%R with
+     (- (c%:~R / p%:~R)%R :R) by lra.
+  by rewrite nearest_round_sgn_negate.
+Qed.
+
+Lemma nearest_round_int_sgn_nat (n d : nat) :
+  d != 0%N ->
+  nearest_round_int n d = nearest_round_int_sgn n d.
+Proof.
+  rewrite /nearest_round_int /nearest_round_int_sgn /nearest_round_sgn.
+  case: (boolP (Order.lt _ _)); trivial.
+  intros.
+  generalize (div_nat_pos n d H); intros.
+  assert ((0 : R) < (0 : R))%O.
+  {
+    eapply Order.POrderTheory.le_lt_trans.
+    apply H0.
+    apply p.
+  }
+  by rewrite Order.POrderTheory.ltxx in H1.
+Qed.
+
+Lemma nearest_round_int_sgn_odd (d : nat) (n : int) :
+  odd d ->
+  nearest_round_int n d = nearest_round_int_sgn n d.
+Proof.
+  intros.
+  destruct n.
+  - rewrite nearest_round_int_sgn_nat; trivial.
+    apply odd_gt0 in H.
+    lia.
+  - rewrite NegzE.
+    rewrite nearest_round_int_negate //.
+    rewrite nearest_round_int_sgn_negate.
+    rewrite nearest_round_int_sgn_nat; trivial.
+    lia.
 Qed.
 
 Lemma nearest_round_sgn_le' (r1 r2 : R) :
