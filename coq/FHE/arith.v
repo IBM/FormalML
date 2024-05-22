@@ -3012,7 +3012,12 @@ Lemma nearest_round_int_odd_abs (p : nat) (a : int) :
   odd p ->
   `|nearest_round_int a p| = `|nearest_round_int `|a| p|.
 Proof.
-Admitted.
+  intros.
+  destruct a.
+  - by rewrite absz_nat.
+  - rewrite NegzE nearest_round_int_negate //.
+    by rewrite !abszN absz_nat.
+Qed.
 
 Lemma nearest_round_int_leq2 (c p : nat) (a : int) :
   odd p ->
