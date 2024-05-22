@@ -2611,13 +2611,14 @@ Proof.
   {
     exists ((upi (c%:~R / p%:~R)%R)*+p - c).
     rewrite -H0.
-    rewrite rmorphD rmorphN /= mulrnDl.
-    f_equal.
-    - ring.
-    - admit.
+    field.
+    replace (zero (Ring.zmodType (ssrnum.Num.NumField.ringType R_numFieldType)))
+      with (((0%:R):R)) by lra.
+    rewrite eqr_nat.
+    lia.
   }
   by generalize (odd_mul_half p H); intros.
-Admitted.
+Qed.
 
 Lemma odd_div_upi_compare (p : nat) (c : int) :
   odd p ->
