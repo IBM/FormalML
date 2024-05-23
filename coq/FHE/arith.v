@@ -3116,7 +3116,18 @@ Proof.
   rewrite coef_mul_poly.
   eapply leq_trans.
   apply absz_triang_sum.
-  
+  simpl.
+  assert (\sum_(j < i.+1) `|(a`_j * b`_(i - j))%R| <= \sum_(j < i.+1) icoef_maxnorm a * icoef_maxnorm b).
+  {
+    apply leq_sum.
+    intros.
+    rewrite abszM.
+    rewrite /icoef_maxnorm.
+    apply leq_mul.
+    - admit.
+    - admit.
+  }
+                                                     
 Admitted.
 
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
