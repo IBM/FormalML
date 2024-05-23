@@ -3092,6 +3092,14 @@ Proof.
    lia.
 Qed.  
 
+Lemma icoef_maxnorm_nat_mul (a b : {poly int}) :
+  icoef_maxnorm_nat (a * b) <= icoef_maxnorm_nat a * icoef_maxnorm_nat b * size b.
+Proof.
+  rewrite {1}/mul /=.
+  rewrite /icoef_maxnorm_nat.
+  generalize coef_mul_poly; intros.
+Admitted.
+
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
   odd p ->
   { c : {poly int} |
@@ -3114,17 +3122,22 @@ Proof.
   rewrite div_round_muln_add // addrC in H1.
   exists (div_round (x0 - x * b) p).
   split; trivial.
-  assert (pno': Posz p != 0).
-  {
-    lia.
-  }
+  assert (pno': Posz p != 0) by lia.
   apply icoef_maxnorm_div_round_leq; trivial.
   rewrite mulnC.
-(*
-  destruct (div_round_add2_ex x0 (- (x * b)) p pno') as [? [??]].
-  rewrite H3.
   eapply leq_trans.
   apply icoef_maxnorm_triang.
+  rewrite icoef_maxnorm_neg.
+  assert (icoef_maxnorm (x * b) <= p * (size b * icoef_maxnorm b)./2).
+  {
+    admit.
+  }
+  rewrite addnC.
+(*
+  move /eqP in pno'.
+  destruct (div_round_add2_ex x0 (- (x * b)) p pno') as [? [??]].
+  
+  rewrite H3.
   assert (
       icoef_maxnorm (div_round x0 p + div_round (- (x * b)) p) <=  (size b * icoef_maxnorm b + 1)./2).
   {
