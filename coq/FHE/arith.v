@@ -3103,12 +3103,10 @@ Proof.
   }
   assert (\sum_(j<n) B = n * B)%N.
   {
-    rewrite sum_nat_const.
-    f_equal.
-    admit.
+    by rewrite sum_nat_const card_ord.
   }
   lia.
-Admitted.
+Qed.
 
 Lemma icoef_maxnorm_mul (a b : {poly int}) :
   icoef_maxnorm (a * b) <= size a * icoef_maxnorm a * icoef_maxnorm b.
