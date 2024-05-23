@@ -3124,10 +3124,17 @@ Proof.
     rewrite abszM.
     rewrite /icoef_maxnorm.
     apply leq_mul.
-    - admit.
-    - admit.
+    - case/orP: (leqVgt (size a) i0) => ineq.
+      + by rewrite nth_default.
+      + by apply: (@leq_bigmax_seq _ (index_enum (ordinal_finType (size a))) xpredT (fun j => `|a`_j|)%O (Ordinal ineq)).
+    - case/orP: (leqVgt (size b) (i - i0)) => ineq.
+      + by rewrite nth_default.
+      + by apply: (@leq_bigmax_seq _ (index_enum (ordinal_finType (size b))) xpredT (fun j => `|b`_j|)%O (Ordinal ineq)).
   }
-                                                     
+  rewrite sum_nat_const card_ord in H1.
+
+  size a < i.+1
+  
 Admitted.
 
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
