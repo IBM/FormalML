@@ -3092,18 +3092,33 @@ Proof.
    lia.
 Qed.  
 
-Lemma icoef_maxnorm_mul (a b : {poly int}) :
-  icoef_maxnorm (a * b) <= icoef_maxnorm a * icoef_maxnorm b * size b.
+Lemma sum_bound (n B : nat) (F : nat -> nat) :
+  (forall j, F j <= B) ->
+  \sum_(j<n) F j <= n * B.
 Proof.
-  rewrite {1}/mul /=.
-  rewrite /icoef_maxnorm.
-  rewrite !icoef_maxnorm_conv.
-  under eq_big_nat.
-  - intros.
-    rewrite coef_mul_poly.
-    over.
-  - 
+  intros.
+  assert (\sum_(j<n) F j <= \sum_(j<n) B).
+  {
+    by apply leq_sum.
+  }
+  assert (\sum_(j<n) B = n * B)%N.
+  {
+    rewrite sum_nat_const.
+    f_equal.
+    admit.
+  }
+  lia.
+Admitted.
 
+Lemma icoef_maxnorm_mul (a b : {poly int}) :
+  icoef_maxnorm (a * b) <= size a * icoef_maxnorm a * icoef_maxnorm b.
+Proof.
+  apply /bigmax_leqP_seq.
+  intros.
+  rewrite coef_mul_poly.
+  eapply leq_trans.
+  apply absz_triang_sum.
+  
 Admitted.
 
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
