@@ -3075,11 +3075,10 @@ Proof.
   {
     apply nearest_round_int_le.
     - lia.
-    - generalize leq_bigmax_seq; intros.
-      have pfle: ((size (map_poly (aR:=int_Ring) (rR:=int_Ring) (nearest_round_int^~ p) a)) <= size a).
+    - have pfle: ((size (map_poly (aR:=int_Ring) (rR:=int_Ring) (nearest_round_int^~ p) a)) <= size a).
       by rewrite size_poly.
-      generalize (widen_ord pfle i); intros.
-      admit.
+      by apply (@leq_bigmax_seq _ (index_enum (ordinal_finType (size a))) xpredT (fun j => `|a`_j|)%O
+                             (widen_ord pfle i)).
    }
    assert (p != 0%N) by lia.
    assert ((0 : int) <= nearest_round_int `|a`_i| p)%O.
@@ -3091,19 +3090,7 @@ Proof.
      by apply nearest_round_int_pos.
    }
    lia.
-  
-(*
-  apply nearest_round_int_le.
-  simpl.
-  rewrite icoef_maxnorm_conv.
-  eapply leq_trans.
-  2 : apply leq_bigmax_seq=> //.
-  - easy.
-  - by rewrite mem_index_iota.
-Qed.
- *)
-  Admitted.
-
+Qed.  
 
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
   odd p ->
