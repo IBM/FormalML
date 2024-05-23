@@ -3135,8 +3135,11 @@ Proof.
   eapply leq_trans; try apply H1.
 
   case/orP: (leqVgt i.+1 (size a)) => ineq.
-  - admit.
-  - admit.
+  - replace (size a) with (i.+1 + (size a - i.+1))%nat by lia.
+    rewrite big_split_ord /=.
+    lia.
+  - replace (i.+1) with (size a + (i.+1 - size a))%N by lia.
+    admit.
 Admitted.
 
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
