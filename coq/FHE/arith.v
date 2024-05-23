@@ -3117,7 +3117,7 @@ Proof.
   eapply leq_trans.
   apply absz_triang_sum.
   simpl.
-  assert (\sum_(j < i.+1) `|(a`_j * b`_(i - j))%R| <= \sum_(j < i.+1) icoef_maxnorm a * icoef_maxnorm b).
+  assert (\sum_(j < size a) `|(a`_j * b`_(i - j))%R| <= \sum_(j < size a) icoef_maxnorm a * icoef_maxnorm b).
   {
     apply leq_sum.
     intros.
@@ -3131,10 +3131,12 @@ Proof.
       + by rewrite nth_default.
       + by apply: (@leq_bigmax_seq _ (index_enum (ordinal_finType (size b))) xpredT (fun j => `|b`_j|)%O (Ordinal ineq)).
   }
-  rewrite sum_nat_const card_ord in H1.
+  rewrite sum_nat_const card_ord mulnA in H1.
+  eapply leq_trans; try apply H1.
 
-  size a < i.+1
-  
+  case/orP: (leqVgt i.+1 (size a)) => ineq.
+  - admit.
+  - admit.
 Admitted.
 
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
