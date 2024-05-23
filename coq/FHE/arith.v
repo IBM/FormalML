@@ -3092,12 +3092,18 @@ Proof.
    lia.
 Qed.  
 
-Lemma icoef_maxnorm_nat_mul (a b : {poly int}) :
-  icoef_maxnorm_nat (a * b) <= icoef_maxnorm_nat a * icoef_maxnorm_nat b * size b.
+Lemma icoef_maxnorm_mul (a b : {poly int}) :
+  icoef_maxnorm (a * b) <= icoef_maxnorm a * icoef_maxnorm b * size b.
 Proof.
   rewrite {1}/mul /=.
-  rewrite /icoef_maxnorm_nat.
-  generalize coef_mul_poly; intros.
+  rewrite /icoef_maxnorm.
+  rewrite !icoef_maxnorm_conv.
+  under eq_big_nat.
+  - intros.
+    rewrite coef_mul_poly.
+    over.
+  - 
+
 Admitted.
 
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
