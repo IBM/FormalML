@@ -2357,10 +2357,8 @@ Proof.
 Qed.
 
 Lemma delta_maxnorm_prod (a b : {poly int}) :
-  0 < size a ->
   icoef_maxnorm (a * b) <= (size b) * icoef_maxnorm a * icoef_maxnorm b.
 Proof.
-  intros abig.
   rewrite /icoef_maxnorm.
   apply /bigmax_leqP.
   intros.
@@ -2412,8 +2410,7 @@ Proof.
         by apply nth_default.
       }
       rewrite H0 /=.
-      have/(bigmax_sup_seq _): (Ordinal (n:=size a) (m:=0) abig \in enum 'I_(size a)) by rewrite mem_enum.
-      by apply.
+      lia.
   - eapply leq_trans; cycle 1.
     by apply leq_bigmax_seq; rewrite ?mem_enum.
     easy.
