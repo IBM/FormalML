@@ -3794,6 +3794,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
     lia.
   Qed.
 
+(*
   Theorem Tsitsiklis1_Jaakkola {n} (β : R) (X w α : nat -> Ts -> vector R (S n)) 
         (XF : nat -> vector R (S n))
         {F : nat -> SigmaAlgebra Ts}
@@ -4771,6 +4772,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
     apply in_seq.
     lia.
   Qed.
+*)
 
   Theorem Tsitsiklis3_beta_pos {n}
     (X w α : nat -> Ts -> vector R n)
