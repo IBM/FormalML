@@ -3135,9 +3135,15 @@ Proof.
   - replace (size a) with (i.+1 + (size a - i.+1))%nat by lia.
     rewrite big_split_ord /=.
     lia.
-  - replace (i.+1) with (size a + (i.+1 - size a))%N by lia.
-    admit.
-Admitted.
+  - rewrite (_:i.+1 = (size a + (i.+1 - size a))%N); last by lia.
+    rewrite big_split_ord /=.
+    suff ->:  (\sum_(i0 < i.+1 - size a) `|(a`_(size a + i0) * b`_(i - (size a + i0)))%R|)%nat = 0%nat
+      by lia.
+    apply/eqP.
+    rewrite sum_nat_eq0.
+    apply/forall_inP => j _.
+    rewrite nth_default /=; lia.
+Qed.
 
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
   odd p ->
