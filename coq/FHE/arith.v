@@ -3145,12 +3145,50 @@ Proof.
     rewrite nth_default /=; lia.
 Qed.
 
+Lemma mul_half2 (a b : nat) :
+  a <= b ./2 <->
+  2 * a <= b .
+Proof.
+  lia.
+Qed.
+
+Lemma mul_half3 (a b c : nat) :
+  a <= b * c./2 ->
+  2 * a <= b * c.
+Proof.
+  lia.
+Qed.
+
+Lemma mul_half4 (a p : nat) :
+  odd p ->
+  a * p./2 <= p * (a + 1)./2.
+Proof.
+  intros.
+  generalize (odd_halfK H); intros.
+  apply (f_equal (fun z => z.+1)) in H0.
+  replace (p.-1.+1) with p in H0 by lia.
+  rewrite -{2}H0.
+  case: (boolP (odd a)); intros.
+  - generalize (odd_halfK p0); intros.
+    apply (f_equal (fun z => z.+1)) in H1.
+    replace (a.-1.+1) with a in H1 by lia.    
+    rewrite -{1}H1.
+    apply (f_equal (fun z => (z + 1)./2)) in H1.
+    rewrite -H1.
+    replace (a./2.*2.+1 + 1)./2 with (a./2 + 1)%N by lia.
+    lia.
+  - apply even_halfK in i.
+    rewrite -i.
+    replace ((a./2.*2 + 1)./2) with (a./2) by lia.
+    lia.
+Qed.
+
 Lemma div_round_mul_ex (p : nat) (a b : {poly int}) :
   odd p ->
   { c : {poly int} |
       (div_round a p) * b =
         (div_round (a * b) p) + c  /\
-        icoef_maxnorm c <= ((size b) * icoef_maxnorm b + 1)./2}.
+        icoef_maxnorm c <= ((size b) * icoef_maxnorm b + 2)./2}.
 Proof.
   intros oddp.
   have pno: (p != 0%N) by lia.
@@ -3173,40 +3211,26 @@ Proof.
   eapply leq_trans.
   apply icoef_maxnorm_triang.
   rewrite icoef_maxnorm_neg.
-  assert (icoef_maxnorm (x * b) <= p * (size b * icoef_maxnorm b)./2).
+  assert (icoef_maxnorm (x * b) <= (size b * icoef_maxnorm b) * p./2).
   {
-    admit.
+    generalize (icoef_maxnorm_mul b x); intros.
+    rewrite mulrC in H3.
+    eapply leq_trans.
+    apply H3.
+    apply leq_mul; lia.
   }
   rewrite addnC.
-(*
-  move /eqP in pno'.
-  destruct (div_round_add2_ex x0 (- (x * b)) p pno') as [? [??]].
-  
-  rewrite H3.
-  assert (
-      icoef_maxnorm (div_round x0 p + div_round (- (x * b)) p) <=  (size b * icoef_maxnorm b + 1)./2).
-  {
+  eapply leq_trans.
+  - apply leq_add.
+    apply H3.
+    apply H2.
+  - assert (size b * icoef_maxnorm b * p./2 + p./2 <= (size b * icoef_maxnorm b + 1) * p./2) by lia.
     eapply leq_trans.
-    apply icoef_maxnorm_triang.
-    assert (icoef_maxnorm (div_round x0 p) <= 1./2).
-    {
-      generalize (icoef_maxnorm_div_round p./2 p x0 H2); intros.
-      destruct p.
-      - lia.
-      - eapply leq_trans.
-        apply H5.
-      admit.
-    }
-    assert (icoef_maxnorm (div_round (- (x * b)) p) <=  (size b * icoef_maxnorm b) ./2).
-    {
-      
-      admit.
-    }
-    lia.
-  }
-  lia.
-*)
-Admitted.
+    apply H4.
+    eapply leq_trans.
+    apply mul_half4; trivial.
+    apply leq_mul; lia.
+Qed.
 
 Lemma lineariz_prop_div3 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q})
   (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
