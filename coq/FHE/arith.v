@@ -3312,13 +3312,15 @@ Lemma lineariz_prop_div3 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (oddp : odd p
 Proof.
   assert (pqbig: (1 < p * q)) by lia.
   assert (pno: (Posz p <> 0)) by lia.
-  eexists.
+  destruct (div_round_mul_ex p (zlift c2 * zlift a) s oddp) as [?[??]].
+  exists
+    (q_reduce q ( (div_round_add2_perturb (zlift c2 * zlift a * s)
+                    (zlift c2 * zlift (- a * q_reduce (p * q) s + q_reduce (p * q) e + q_reduce (p * q) (s ^+ 2 *+ p))) p pno -
+                    x))).
   rewrite !map_Poly_id0.
   + rewrite !horner_Poly /= !mul0r !add0r.
     rewrite -!rmorphM -rmorphD /=.
-    destruct (div_round_mul_ex p (zlift c2 * zlift a) s oddp) as [?[??]].
-    rewrite H.
-    rewrite -(addrA _ x) (addrC x _) addrA.
+    rewrite H -(addrA _ x) (addrC x _) addrA.
     rewrite div_round_add2_eq_alt.
     assert (q_reduce q
               (div_round
@@ -3332,56 +3334,17 @@ Proof.
                        zlift c2 * zlift (- a * q_reduce (p * q) s + q_reduce (p * q) e + q_reduce (p * q) (s ^+ 2 *+ p))) p)).
     {
       apply div_round_mod; try lia.
-      rewrite rmorphD /=.
-      assert (q_reduce (p * q) (zlift (q_reduce (p * q) (zlift c2) * a * q_reduce (p * q) s)) =
-                q_reduce (p * q) (zlift c2 * zlift a * s)).
-      {
-        by rewrite !rmorphM /= !zlift_valid; try lia.
-      }
-      assert ( q_reduce (p * q)
-                 (zlift
-                    (q_reduce (p * q) (zlift c2) *
-                       (- a * q_reduce (p * q) s + q_reduce (p * q) e + q_reduce (p * q) (s ^+ 2 *+ p)))) =
-                 q_reduce (p * q)
-                   (zlift c2 * zlift (- a * q_reduce (p * q) s + q_reduce (p * q) e + q_reduce (p * q) (s ^+ 2 *+ p)))).
-      {
-        rewrite /= zlift_valid; try lia.
-        by rewrite !rmorphM /= zlift_valid; try lia.
-      }
-      rewrite zlift_add2_eq.
-      rewrite !rmorphD /=.
-      rewrite -addrA.
-      f_equal; trivial.
-      
-      
-(*
-    rewrite H.
-    destruct (div_round_add2_ex (zlift c2 * zlift a * s)
-                                   (zlift c2 *
-        zlift
-          (- a * q_reduce (p * q) s + q_reduce (p * q) e +
-           q_reduce (p * q) (s ^+ 2 *+ p))) p pno) as [?[??]].
-    apply (f_equal (fun z => z - x0)) in H1.
-    rewrite -!addrA subrr addr0 in H1.
-    rewrite -!addrA (addrC x _) !addrA.
-    apply (f_equal (fun z => z + x)) in H1.
-    apply (f_equal (fun z => q_reduce q z)) in H1.
-*)
-(*    
-    simpl.
-    Set Printing All.
-pno
-    rewrite zlift_add2_eq.
-    rewrite -rmorphD.
-    rewrite !div_round_add2_eq !rmorphD /=.
-    rewrite -!addrA.
+      rewrite rmorphD /= zlift_valid; try lia.
+      f_equal.
+      - by rewrite !rmorphM /= !zlift_valid; try lia.
+      - by rewrite rmorphM /= zlift_valid; try lia.
+    }
+    rewrite H1 !rmorphD !rmorphN /= -[LHS]addr0 -!addrA.
     f_equal.
-    * admit.
-    * admit.
-  + by rewrite zlift0_alt mulr0 div_round0 rmorph0.
+    ring.
+  + by rewrite (zlift0 0) // mulr0 div_round0 rmorph0.
   + by rewrite mulr0.
-*)
-  Admitted.
+Qed.
 
 Lemma linearize_prop  {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q}) (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   { e2 : {poly int} |
