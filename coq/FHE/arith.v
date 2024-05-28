@@ -3331,8 +3331,29 @@ Proof.
                     (zlift c2 * zlift a * s +
                        zlift c2 * zlift (- a * q_reduce (p * q) s + q_reduce (p * q) e + q_reduce (p * q) (s ^+ 2 *+ p))) p)).
     {
-      apply div_round_mod; trivial.
-    
+      apply div_round_mod; try lia.
+      rewrite rmorphD /=.
+      assert (q_reduce (p * q) (zlift (q_reduce (p * q) (zlift c2) * a * q_reduce (p * q) s)) =
+                q_reduce (p * q) (zlift c2 * zlift a * s)).
+      {
+        by rewrite !rmorphM /= !zlift_valid; try lia.
+      }
+      assert ( q_reduce (p * q)
+                 (zlift
+                    (q_reduce (p * q) (zlift c2) *
+                       (- a * q_reduce (p * q) s + q_reduce (p * q) e + q_reduce (p * q) (s ^+ 2 *+ p)))) =
+                 q_reduce (p * q)
+                   (zlift c2 * zlift (- a * q_reduce (p * q) s + q_reduce (p * q) e + q_reduce (p * q) (s ^+ 2 *+ p)))).
+      {
+        rewrite /= zlift_valid; try lia.
+        by rewrite !rmorphM /= zlift_valid; try lia.
+      }
+      rewrite zlift_add2_eq.
+      rewrite !rmorphD /=.
+      rewrite -addrA.
+      f_equal; trivial.
+      
+      
 (*
     rewrite H.
     destruct (div_round_add2_ex (zlift c2 * zlift a * s)
