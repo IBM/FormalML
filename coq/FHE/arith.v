@@ -2120,6 +2120,35 @@ Proof.
   - by apply int_Zp_0.
 Qed.
 
+Lemma int_Zp_eq_iff (q : nat) (a1 a2 : int) :
+  1 < q ->
+  intdiv.modz a1 q = intdiv.modz a2 q <->
+  (a1%:~R : 'Z_q) = (a2%:~R : 'Z_q).
+Proof.
+  split; intros.
+  - assert (intdiv.modz (a1 - a2) q = 0).
+    {
+      by rewrite -intdiv.modzDm H0 intdiv.modzDm subrr intdiv.mod0z.
+    }
+    rewrite int_Zp_0_iff // in H1.
+    rewrite rmorphD rmorphN /= in H1.
+    apply (f_equal (fun z => z + a2%:~R)) in H1.
+    rewrite add0r in H1.
+    rewrite -H1.
+    ring.
+  - assert (((a1 - a2)%:~R : 'Z_q) = 0).
+    {
+      by rewrite rmorphD rmorphN /= H0 subrr.
+    }
+    rewrite -int_Zp_0_iff // in H1.
+    generalize (intdiv.divz_eq (a1 - a2) q); intros.
+    rewrite H1 addr0 in H2.
+    apply (f_equal (fun z => z + a2)) in H2.
+    replace (a1 - a2 + a2) with (a1) in H2 by lia.
+    rewrite H2 -intdiv.modzDm intdiv.modzMl add0r.
+    by rewrite intdiv.modz_mod.
+Qed.
+
 Lemma liftc_neg_alt_alt (q : nat) (a : int) :
   1 < q ->
   intdiv.dvdz q (2 * a) \/
@@ -3241,30 +3270,22 @@ Proof.
 Qed.
 
 Lemma nearest_round_int_modz (n1 n2: int) (p1 p2 : nat) :
-  Posz p1 <> 0 ->
+  0 < p1 ->
+  1 < p2 ->
   (n1%:~R : 'Z_(p1 * p2)) = (n2%:~R : 'Z_(p1 * p2)) ->
   ((nearest_round_int n1 p1) %:~R : 'Z_p2) = ((nearest_round_int n2 p1) %:~R : 'Z_p2).
 Proof.
   intros.
-  Admitted.
-(*
-  assert (exists (h : int),
-           n1 = n2 + h * (p1 * p2)).
-  {
-    exists (intdiv.divz n1 (p1 * p2) - intdiv.divz n2 (p1 * p2)).
-    generalize (intdiv.divz_eq n1 (p1 * p2)); intros.
-    generalize (intdiv.divz_eq n2 (p1 * p2)); intros.    
-    rewrite {1}H2 {1}H1 H0.
-    ring.
-  }
-  destruct H1.
-  rewrite H1 addrC (mulrC p1 p2) mulrA nearest_round_int_mul_add //.
-  by rewrite intdiv.modzMDl.
+  assert (Posz p1 <> 0) by lia.
+  rewrite -int_Zp_eq_iff //.
+  apply nearest_round_int_mod; trivial.
+  rewrite int_Zp_eq_iff //.
+  lia.
 Qed.
-*)
 
 Lemma div_round_mod (n1 n2 : {poly int}) (p1 p2 : nat) :
-  Posz p1 <> 0 ->
+  0 < p1 ->
+  1 < p2 ->
   q_reduce (p1 * p2) n1 = q_reduce (p1 * p2) n2 ->
   q_reduce p2 (div_round n1 p1) = q_reduce p2 (div_round n2 p1).
 Proof.
@@ -3272,9 +3293,9 @@ Proof.
   intros.
   rewrite -polyP => i.
   rewrite !coef_Poly !(nth_map_default 0 0); try by rewrite rmorph0.
-  rewrite -polyP in H0.
-  specialize (H0 i).
-  rewrite !coef_Poly !(nth_map_default 0 0) in H0; try by rewrite rmorph0.
+  rewrite -polyP in H1.
+  specialize (H1 i).
+  rewrite !coef_Poly !(nth_map_default 0 0) in H1; try by rewrite rmorph0.
   rewrite !coef_Poly !(nth_map_default 0 0); try by rewrite rmorph0.
   - apply nearest_round_int_modz; trivial.
   - by rewrite nearest_round_int0.
