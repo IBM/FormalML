@@ -1736,6 +1736,14 @@ Proof.
   tauto.
 Qed.
 
+Lemma div_round_add2_eq_alt (a b : {poly int}) (d : int) (dn0 : d <> 0) :
+  div_round a d + div_round b d = div_round (a + b) d - div_round_add2_perturb a b d dn0.
+Proof.
+  generalize (div_round_add2_eq a b d dn0); intros.
+  rewrite H.
+  ring.
+Qed.
+
 Lemma div_round_add2_perturb_small (a b : {poly int}) (d : int) (dn0 : d <> 0)
   : icoef_maxnorm (div_round_add2_perturb a b d dn0) <= 1.
 Proof.
@@ -3232,7 +3240,48 @@ Proof.
     apply leq_mul; lia.
 Qed.
 
-Lemma lineariz_prop_div3 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (c2 : {poly 'Z_q})
+Lemma nearest_round_int_modz (n1 n2: int) (p1 p2 : nat) :
+  Posz p1 <> 0 ->
+  (n1%:~R : 'Z_(p1 * p2)) = (n2%:~R : 'Z_(p1 * p2)) ->
+  ((nearest_round_int n1 p1) %:~R : 'Z_p2) = ((nearest_round_int n2 p1) %:~R : 'Z_p2).
+Proof.
+  intros.
+  Admitted.
+(*
+  assert (exists (h : int),
+           n1 = n2 + h * (p1 * p2)).
+  {
+    exists (intdiv.divz n1 (p1 * p2) - intdiv.divz n2 (p1 * p2)).
+    generalize (intdiv.divz_eq n1 (p1 * p2)); intros.
+    generalize (intdiv.divz_eq n2 (p1 * p2)); intros.    
+    rewrite {1}H2 {1}H1 H0.
+    ring.
+  }
+  destruct H1.
+  rewrite H1 addrC (mulrC p1 p2) mulrA nearest_round_int_mul_add //.
+  by rewrite intdiv.modzMDl.
+Qed.
+*)
+
+Lemma div_round_mod (n1 n2 : {poly int}) (p1 p2 : nat) :
+  Posz p1 <> 0 ->
+  q_reduce (p1 * p2) n1 = q_reduce (p1 * p2) n2 ->
+  q_reduce p2 (div_round n1 p1) = q_reduce p2 (div_round n2 p1).
+Proof.
+  rewrite /q_reduce /div_round !map_polyE.
+  intros.
+  rewrite -polyP => i.
+  rewrite !coef_Poly !(nth_map_default 0 0); try by rewrite rmorph0.
+  rewrite -polyP in H0.
+  specialize (H0 i).
+  rewrite !coef_Poly !(nth_map_default 0 0) in H0; try by rewrite rmorph0.
+  rewrite !coef_Poly !(nth_map_default 0 0); try by rewrite rmorph0.
+  - apply nearest_round_int_modz; trivial.
+  - by rewrite nearest_round_int0.
+  - by rewrite nearest_round_int0.
+Qed.
+
+Lemma lineariz_prop_div3 {q p : nat} (qbig : 1 < q) (pbig : 1 < p) (oddp : odd p) (c2 : {poly 'Z_q})
   (s e : {poly int}) (a : {poly 'Z_(p*q)}) :
   let c2' := q_reduce (p*q) (zlift c2) in 
   { e2 : {poly 'Z_q} |
@@ -3246,7 +3295,23 @@ Proof.
   rewrite !map_Poly_id0.
   + rewrite !horner_Poly /= !mul0r !add0r.
     rewrite -!rmorphM -rmorphD /=.
-    destruct (div_round_mul_ex p (zlift c2 * zlift a) s) as [?[??]].
+    destruct (div_round_mul_ex p (zlift c2 * zlift a) s oddp) as [?[??]].
+    rewrite H.
+    rewrite -(addrA _ x) (addrC x _) addrA.
+    rewrite div_round_add2_eq_alt.
+    assert (q_reduce q
+              (div_round
+                 (zlift
+                    (q_reduce (p * q) (zlift c2) * a * q_reduce (p * q) s +
+                       q_reduce (p * q) (zlift c2) *
+                         (- a * q_reduce (p * q) s + q_reduce (p * q) e + q_reduce (p * q) (s ^+ 2 *+ p)))) p) =
+               q_reduce q
+                 (div_round
+                    (zlift c2 * zlift a * s +
+                       zlift c2 * zlift (- a * q_reduce (p * q) s + q_reduce (p * q) e + q_reduce (p * q) (s ^+ 2 *+ p))) p)).
+    {
+      apply div_round_mod; trivial.
+    
 (*
     rewrite H.
     destruct (div_round_add2_ex (zlift c2 * zlift a * s)
