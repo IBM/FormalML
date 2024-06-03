@@ -3313,6 +3313,8 @@ Proof.
   assert (pqbig: (1 < p * q)) by lia.
   assert (pno: (Posz p <> 0)) by lia.
   destruct (div_round_mul_ex p (zlift c2 * zlift a) s oddp) as [?[??]].
+  generalize (div_round_add2_perturb_small (zlift c2 * zlift a * s)
+                    (zlift c2 * zlift (- a * q_reduce (p * q) s + q_reduce (p * q) e + q_reduce (p * q) (s ^+ 2 *+ p))) p pno); intros peterb_small.
   exists
     (q_reduce q ( (div_round_add2_perturb (zlift c2 * zlift a * s)
                     (zlift c2 * zlift (- a * q_reduce (p * q) s + q_reduce (p * q) e + q_reduce (p * q) (s ^+ 2 *+ p))) p pno -
