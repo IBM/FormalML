@@ -2428,7 +2428,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
 
   Lemma lemma3_Jaakkola {n} (W : forall (i : nat),  (i < (S n))%nat -> nat -> nat -> Ts -> R) (ω : Ts) (ε G0 :R)
         (t0 : nat) (α x ww : nat -> Ts -> vector R (S n)) (M G : nat -> Ts -> R) 
-        (XF : nat -> vector R (S n)) :
+        (XF : nat -> Ts -> vector R (S n)) :
     (forall i pf, W i pf 0%nat t0 ω = 0) ->
     M t0 ω <= G t0 ω ->
     (forall t, M (S t) ω <= (1 + ε) * G t ω -> G (S t) ω = G t ω) ->
@@ -2441,8 +2441,8 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
         (1 - vecrvnth i pf (α (t + t0)%nat) ω) * (W i pf t t0 ω) +
         (vecrvnth i pf (α (t + t0)%nat) ω) * (vecrvnth i pf (ww (t + t0)%nat) ω)) ->
     (forall k, rv_eq (x (S k)) 
-                     (vecrvplus (x k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF k ) (x k) ) (vecrvscalerv (G k) (ww k)))))) ->
-    (forall k i pf, rv_le (rvabs (vecrvnth i pf (fun ω => XF k ))) (G k)) ->
+                     (vecrvplus (x k) (vecrvmult (α k) (vecrvplus (vecrvminus (XF k) (x k) ) (vecrvscalerv (G k) (ww k)))))) ->
+    (forall k i pf, rv_le (rvabs (vecrvnth i pf (XF k))) (G k)) ->
     (forall t i pf, Rabs (W i pf t t0 ω) <= ε) -> 
     forall t i pf,
       (-1 + (W i pf t t0 ω)) * (G t0 ω) <= vecrvnth i pf (x (t + t0)%nat) ω <= (1 + (W i pf t t0 ω)) * (G t0 ω) /\
@@ -2770,7 +2770,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
     
    Lemma lemma3_almost_Jaakkola {n} (W : forall (i : nat),  (i < (S n))%nat -> nat -> nat -> Ts -> R) (ε G0 :R)
          (α x ww : nat -> Ts -> vector R (S n)) (M G : nat -> Ts -> R) 
-        (XF : nat -> vector R (S n)) :
+        (XF : nat -> Ts -> vector R (S n)) :
 (*    (forall ω, M t0 ω <= G t0 ω) -> *)
     (forall ω t, M (S t) ω <= (1 + ε) * G t ω -> G (S t) ω = G t ω) ->
     (forall ω t, M t ω <= (1 + ε) * G t ω) ->
@@ -2783,8 +2783,8 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
         (vecrvnth i pf (α (t + t0)%nat) ω) * (vecrvnth i pf (ww (t + t0)%nat) ω)) ->
     (forall ω i pf t0, W i pf 0%nat t0 ω = 0) ->
     (forall k, rv_eq (x (S k)) 
-                     (vecrvplus (x k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF k ) (x k) ) (vecrvscalerv (G k) (ww k)))))) ->
-    (forall k i pf, rv_le (rvabs (vecrvnth i pf (fun ω => XF k ))) (G k)) ->
+                     (vecrvplus (x k) (vecrvmult (α k) (vecrvplus (vecrvminus (XF k ) (x k) ) (vecrvscalerv (G k) (ww k)))))) ->
+    (forall k i pf, rv_le (rvabs (vecrvnth i pf (XF k ))) (G k)) ->
     almost prts
           (fun ω : Ts =>
            is_lim_seq (fun k : nat => M k ω) p_infty ->
@@ -3794,16 +3794,15 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
     lia.
   Qed.
 
-(*
   Theorem Tsitsiklis1_Jaakkola {n} (β : R) (X w α : nat -> Ts -> vector R (S n)) 
-        (XF : nat -> vector R (S n))
+        (XF : nat -> Ts -> vector R (S n))
         {F : nat -> SigmaAlgebra Ts}
         (isfilt : IsFiltration F) 
         (filt_sub : forall k, sa_sub (F k) dom) 
         (adapt_alpha : IsAdapted (Rvector_borel_sa (S n)) α F)
         {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S n)) (X 0%nat)}
         (adapt_w : IsAdapted  (Rvector_borel_sa (S n)) w (fun k => F (S k)))
-        {rvXF : forall k, RandomVariable (Rvector_borel_sa (S n)) (Rvector_borel_sa (S n)) (XF k)}
+        {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S n)) (XF k)}
         {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
         {iscond : forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (w k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k)))} :
 
@@ -3828,9 +3827,9 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
                                          k)))) ->
     0 <= β < 1 ->
     (exists (D : nonnegreal),
-        forall k x, Rvector_max_abs (XF k x) <= β * Rvector_max_abs x + D) ->
+        forall k ω, Rvector_max_abs (XF k ω) <= β * Rvector_max_abs (X k ω) + D) ->
     (forall k, rv_eq (X (S k)) 
-                     (vecrvplus (X k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF k (X k ω)) (X k) ) (w k))))) ->
+                     (vecrvplus (X k) (vecrvmult (α k) (vecrvplus (vecrvminus (XF k) (X k) ) (w k))))) ->
     exists (D0 : Ts -> R),  forall k, almostR2 prts Rle (rvmaxabs (X k)) D0.
   Proof.
     intros.
@@ -3857,9 +3856,9 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
         lra.
     }
     destruct H8 as [G0 [? ?]].
-    assert (forall k x i pf,
-               Rabs (vector_nth i pf (XF k x)) <=
-               γ * Rmax (Rvector_max_abs x) G0).
+    assert (forall k ω i pf,
+               Rabs (vector_nth i pf (XF k ω)) <=
+               γ * Rmax (Rvector_max_abs (X k ω)) G0).
     {
       intros.
       eapply Rle_trans.
@@ -3871,9 +3870,9 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
         + apply Rle_trans with (r2 := β * G0 + D); try lra.
           apply Rplus_le_compat_r.
           apply Rmult_le_compat_l; try lra.
-        + assert (Rvector_max_abs x > G0) by lra.
-          pose (G1 := Rvector_max_abs x - G0).
-          replace (Rvector_max_abs x) with (G0 + G1).
+        + assert (Rvector_max_abs (X k ω) > G0) by lra.
+          pose (G1 := Rvector_max_abs (X k ω) - G0).
+          replace (Rvector_max_abs (X k ω)) with (G0 + G1).
           * assert (β * G1 <= γ * G1).
             {
               apply Rmult_le_compat_r; try lra.
@@ -3950,17 +3949,15 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
       induction n0.
       - easy.
       - assert (RandomVariable (F (S n0)) (Rvector_borel_sa (S n))
-                               (vecrvplus (X n0) (vecrvmult (α n0) (vecrvplus (vecrvminus (fun ω : Ts => XF n0 (X n0 ω)) (X n0)) (w n0))))).
+                               (vecrvplus (X n0) (vecrvmult (α n0) (vecrvplus (vecrvminus (XF n0) (X n0)) (w n0))))).
         {
           apply Rvector_plus_rv.
           - now apply (RandomVariable_sa_sub (isfilt n0)).
           - apply Rvector_mult_rv.
             + now apply (RandomVariable_sa_sub (isfilt n0)).
             + apply Rvector_plus_rv; try easy.
-              apply Rvector_minus_rv.
-              * apply (compose_rv (dom2 := Rvector_borel_sa (S n))); try easy.
-                now apply (RandomVariable_sa_sub (isfilt n0)).
-              * now apply (RandomVariable_sa_sub (isfilt n0)).
+              apply Rvector_minus_rv; trivial.
+              now apply (RandomVariable_sa_sub (isfilt n0)).
         }
         revert H15.
         apply RandomVariable_proper; try easy.
@@ -4564,7 +4561,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
                              forall t,
                                (G t0 ω = G (t + t0)%nat ω))).
     {
-      generalize (lemma3_almost WW ε G0 α X ww M G XF); intros.
+      generalize (lemma3_almost_Jaakkola WW ε G0 α X ww M G XF); intros.
       cut_to H21; try easy.
       - revert H21.
         apply almost_impl, all_almost; intros ???.
@@ -4772,7 +4769,6 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
     apply in_seq.
     lia.
   Qed.
-*)
 
   Theorem Tsitsiklis3_beta_pos {n}
     (X w α : nat -> Ts -> vector R n)
