@@ -2597,7 +2597,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
     (forall t i pf, Rabs (vecrvnth i pf (x t) ω) <= M t ω) -> 
     (forall t i pf, 0 <= vecrvnth i pf (α t) ω <= 1) ->
     (forall t i pf, 0 <= vecrvnth i pf (β t) ω <= 1) ->
-    (forall t i pf, vecrvnth i pf (β t) ω <= vecrvnth i pf (α t) ω <= 1) ->    
+    (forall t i pf, vecrvnth i pf (β t) ω <= vecrvnth i pf (α t) ω) ->    
     (forall t i pf,
         W i pf (S t) t0 ω =
         (1 - vecrvnth i pf (α (t + t0)%nat) ω) * (W i pf t t0 ω) +
@@ -2843,6 +2843,56 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
      exists t0.
      intros.
      now specialize (H11 t _ H12).
+   Qed.
+
+   Lemma lemma3_almost_Jaakkola_beta {n} (W : forall (i : nat),  (i < (S n))%nat -> nat -> nat -> Ts -> R) (ε G0 :R)
+         (α β x ww : nat -> Ts -> vector R (S n)) (M G : nat -> Ts -> R) 
+        (XF : nat -> Ts -> vector R (S n)) :
+(*    (forall ω, M t0 ω <= G t0 ω) -> *)
+    (forall ω t, M (S t) ω <= (1 + ε) * G t ω -> G (S t) ω = G t ω) ->
+    (forall ω t, M t ω <= (1 + ε) * G t ω) ->
+    (forall ω t, M (S t) ω = Rmax (M t ω) (rvmaxabs (x (S t)) ω)) ->
+    (forall ω t i pf, Rabs (vecrvnth i pf (x t) ω) <= M t ω) -> 
+    (forall ω t i pf, 0 <= vecrvnth i pf (α t) ω <= 1) ->
+    (forall ω t i pf, 0 <= vecrvnth i pf (β t) ω <= 1) ->
+    (forall ω t i pf, vecrvnth i pf (β t) ω <= vecrvnth i pf (α t) ω) ->        
+    (forall ω t t0 i pf,
+        W i pf (S t) t0 ω =
+        (1 - vecrvnth i pf (α (t + t0)%nat) ω) * (W i pf t t0 ω) +
+        (vecrvnth i pf (β (t + t0)%nat) ω) * (vecrvnth i pf (ww (t + t0)%nat) ω)) ->
+    (forall ω i pf t0, W i pf 0%nat t0 ω = 0) ->
+    (forall k, rv_eq (x (S k)) 
+                     (vecrvplus (vecrvminus (x k) (vecrvmult (α k) (x k))) (vecrvmult (β k) (vecrvplus (XF k) (vecrvscalerv (G k) (ww k)))))) ->
+    (forall k i pf, rv_le (rvabs (vecrvnth i pf (XF k ))) (G k)) ->
+    almost prts
+          (fun ω : Ts =>
+           is_lim_seq (fun k : nat => M k ω) p_infty ->
+           exists t0 : nat,
+             M t0 ω <= G t0 ω /\
+             (forall (t i : nat) (pf : (i < (S n))%nat), Rabs (W i pf t t0 ω) <= ε)) ->
+(*    (almost prts (fun ω => forall t i pf, Rabs (W i pf t t0 ω) <= ε)) ->  *)
+    almost prts (fun ω => 
+           is_lim_seq (fun k : nat => M k ω) p_infty ->                   
+           exists t0, forall t, G (t + t0)%nat ω = G t0 ω).
+   Proof.
+     intros.
+     revert H10.
+     apply almost_impl, all_almost; intros ???.
+     specialize (H10 H11).
+     destruct H10 as [t0 [? ?]].
+     assert (forall t (i: nat) (pf : (i < S n)%nat), G (t + t0)%nat x0 = G t0 x0).
+     {
+       intros.
+       generalize (lemma3_Jaakkola_beta W x0 ε G0 t0 α β x ww M G XF); intros.
+       cut_to H13; try easy.
+       - now specialize (H13 H9 H12 t i pf).
+       - apply H.
+     }
+     intros.
+     assert (0 < S n)%nat by lia.
+     exists t0.
+     intros.
+     now specialize (H13 t _ H14).
    Qed.
 
   Theorem Tsitsiklis1 {n} (β : R) (X w α : nat -> Ts -> vector R (S n)) 
