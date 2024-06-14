@@ -1849,9 +1849,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
 
  Lemma Y_prod (Y : nat -> Ts -> R) (D : Ts -> R) (β : R) 
       (α : nat -> Ts -> R) :
-   β < 1 ->
    (rv_eq (Y 0%nat) D) ->
-   (forall t ω, 0 <= α t ω <= 1) ->
    (forall t,
        rv_eq (Y (S t))
              (rvplus 
@@ -1862,20 +1860,72 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
   Proof.
     intros.
     induction t.
-    - specialize (H2 0%nat ω).
-      rewrite H2.
-      specialize (H0 ω).
-      rv_unfold'.
+    - specialize (H0 0%nat ω).
       rewrite H0.
+      specialize (H ω).
+      rv_unfold'.
+      rewrite H.
       simpl.
       lra.
-    - specialize (H2 (S t) ω).
-      rewrite H2.
+    - specialize (H0 (S t) ω).
+      rewrite H0.
       rv_unfold'.
       rewrite IHt.
       simpl.
       lra.
   Qed.
+
+ Lemma Y_prod_beta (Y : nat -> Ts -> R) (D : Ts -> R) (β : R) 
+      (α beta : nat -> Ts -> R) :
+   (forall t ω, 0 <= α t ω <= 1) ->
+   (forall t ω, beta t ω <= α t ω) ->   
+   (forall ω,  β *  D ω >= 0) ->
+   (rv_eq (Y 0%nat) D) ->
+   (forall t,
+       rv_eq (Y (S t))
+             (rvplus 
+                (rvmult (rvminus (const 1) (α t)) (Y t))
+                (rvmult (beta t) (rvscale β D)))) ->
+   forall t ω,
+     Y (S t) ω <= prod_f_R0 (fun k => 1 - α k ω) t * ((1 - β) * D ω) + β * D ω.
+ Proof.
+   intros.
+   pose (Y' := fix Y' t :=
+           match t with
+           | 0 => D
+           | S t' => 
+               (rvplus 
+                  (rvmult (rvminus (const 1) (α t')) (Y' t'))
+                  (rvmult (α t') (rvscale β D))) 
+           end).
+   assert (forall t ω, Y t ω <= Y' t ω).
+   {
+     intros.
+     induction t0.
+     - simpl.
+       rewrite H2.
+       now right.
+     - simpl.
+       rewrite H3.
+       unfold rvmult, rvminus, rvopp, rvplus, rvscale, const.
+       apply Rplus_le_compat.
+       + apply Rmult_le_compat_l.
+         * specialize (H t0 ω0).
+           lra.
+         * apply IHt0.
+       + apply Rmult_le_compat_r.
+         * apply Rge_le.
+           apply H1.
+         * apply H0.
+   }
+   eapply Rle_trans.
+   apply H4.
+   rewrite (Y_prod Y' D β α).
+   - now right.
+   - now simpl.
+   - intros.
+     now simpl.
+ Qed.
 
   Lemma sum_inf_prod_0_lt1 (a : nat -> R) :
     (forall n, 0 <= a n < 1) ->
@@ -2023,6 +2073,31 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
         f_equal.
         now rewrite Rplus_0_l.
  Qed.
+
+(*
+  Lemma Y_lim_beta (Y : nat -> Ts -> R) (β : R) (D : Ts -> R)
+      (α beta : nat -> Ts -> R) :
+    β < 1 ->
+    (rv_eq (Y 0%nat) D) ->
+    (forall t ω, 0 <= α t ω <= 1) ->
+    (forall t ω, 0 <= beta t ω <= 1) ->
+    (forall t ω, beta t ω <= α t ω) ->
+    (forall ω, is_lim_seq (sum_n (fun t => α t ω)) p_infty) ->
+    (forall t,
+        rv_eq (Y (S t))
+              (rvplus 
+                 (rvmult (rvminus (const 1) (α t)) (Y t))
+                 (rvmult (beta t) (rvscale β D)))) ->
+    forall ω,
+      ex_lim_seq (fun t => Y t ω) /\
+        Lim_seq (fun t => Y t ω) <= (β * D ω).
+  Proof.
+    intros.
+    split.
+    - apply ex_lim_seq_incr.
+      intros.
+      rewrite H5.
+*)
 
 (*
   Lemma vecrvminus_unfold {n} (x y : Ts -> vector R n) :
