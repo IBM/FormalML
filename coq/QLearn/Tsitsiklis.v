@@ -1860,15 +1860,12 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
   Proof.
     intros.
     induction t.
-    - specialize (H0 0%nat ω).
-      rewrite H0.
-      specialize (H ω).
+    - rewrite H0.
       rv_unfold'.
       rewrite H.
       simpl.
       lra.
-    - specialize (H0 (S t) ω).
-      rewrite H0.
+    - rewrite H0.
       rv_unfold'.
       rewrite IHt.
       simpl.
@@ -2074,10 +2071,10 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
         now rewrite Rplus_0_l.
  Qed.
 
-(*
   Lemma Y_lim_beta (Y : nat -> Ts -> R) (β : R) (D : Ts -> R)
       (α beta : nat -> Ts -> R) :
     β < 1 ->
+    (forall ω,  β * D ω >= 0) ->
     (rv_eq (Y 0%nat) D) ->
     (forall t ω, 0 <= α t ω <= 1) ->
     (forall t ω, 0 <= beta t ω <= 1) ->
@@ -2088,16 +2085,58 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
               (rvplus 
                  (rvmult (rvminus (const 1) (α t)) (Y t))
                  (rvmult (beta t) (rvscale β D)))) ->
-    forall ω,
-      ex_lim_seq (fun t => Y t ω) /\
-        Lim_seq (fun t => Y t ω) <= (β * D ω).
+    forall ω : Ts,
+    forall eps : posreal, 
+      eventually (fun n =>  Y n ω - β * D ω < eps).
   Proof.
     intros.
-    split.
-    - apply ex_lim_seq_incr.
+pose (Y' := fix Y' t :=
+           match t with
+           | 0 => D
+           | S t' => 
+               (rvplus 
+                  (rvmult (rvminus (const 1) (α t')) (Y' t'))
+                  (rvmult (α t') (rvscale β D))) 
+           end).
+   assert (forall t ω, Y t ω <= Y' t ω).
+   {
+     intros.
+     induction t.
+     - simpl.
+       rewrite H1.
+       now right.
+     - simpl.
+       rewrite H6.
+       unfold rvmult, rvminus, rvopp, rvplus, rvscale, const.
+       apply Rplus_le_compat.
+       + apply Rmult_le_compat_l.
+         * specialize (H2 t ω0).
+           lra.
+         * apply IHt.
+       + apply Rmult_le_compat_r.
+         * apply Rge_le.
+           apply H0.
+         * apply H4.
+   }    
+   generalize (Y_lim Y' β D α H); intros.
+   cut_to H8; trivial.
+    - specialize (H8 ω).
+      apply is_lim_seq_spec in H8.
+      specialize (H8 eps).
+      destruct H8.
+      exists x.
       intros.
-      rewrite H5.
-*)
+      specialize (H8 n H9).
+      apply Rabs_def2 in H8.
+      destruct H8.
+      eapply Rle_lt_trans; cycle 1.
+      apply H8.
+      specialize (H7 n ω).
+      lra.
+    - now simpl.
+    - intros.
+      now simpl.
+  Qed.
 
 (*
   Lemma vecrvminus_unfold {n} (x y : Ts -> vector R n) :
