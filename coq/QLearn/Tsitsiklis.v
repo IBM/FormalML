@@ -9694,7 +9694,8 @@ Admitted.
           * now apply (RandomVariable_sa_sub (isfilt x)).
           * apply Rvector_plus_rv.
             -- apply Rvector_minus_rv.
-               ++ admit.
+               ++ apply (RandomVariable_sa_sub (isfilt x)).
+                  apply (@compose_rv) with (dom2 := (Rvector_borel_sa n)); trivial.
                ++ now apply (RandomVariable_sa_sub (isfilt x)).
             -- apply adapt_w.
      }
@@ -9750,9 +9751,56 @@ Admitted.
       lia.
     - intros.
       specialize (H1 i pf ω).
-      revert H1.
-      admit.
-    - admit.
+      unfold α'.
+      now apply (seq_sum_shift (fun k : nat => vector_nth i pf (α k ω)) x).
+    - destruct H2 as [C H2].
+      exists C.
+      intros.
+      specialize (H2 i pf).
+      revert H2.
+      apply almost_impl; apply all_almost.
+      intros ??.
+      unfold α'.
+      destruct x.
+      + rewrite Lim_seq_ext with (v := (sum_n (fun k : nat => (vector_nth i pf (α k x0))²))); trivial.
+        intros.
+        apply sum_n_ext.
+        intros.
+        now replace (n1 + 0)%nat with n1 by lia.
+      + pose (aa := (fun k : nat => (vector_nth i pf (α k x0))²)).
+        rewrite Lim_seq_ext with (v := fun a => sum_n aa (a + S x) - sum_n aa x).
+        * rewrite Lim_seq_minus.
+          -- rewrite Lim_seq_const.
+             rewrite Lim_seq_incr_n.
+             eapply Rbar_le_trans; cycle 1.
+             apply H2.
+             unfold Rbar_minus.
+             rewrite <- Rbar_plus_0_r.
+             apply Rbar_plus_le_compat.
+             ++ apply Rbar_le_refl.
+             ++ rewrite <- Rbar_opp_le_contravar.
+                rewrite Rbar_opp_involutive.
+                rewrite Rbar_opp0.
+                simpl.
+                apply sum_n_nneg.
+                intros.
+                apply Rle_0_sqr.
+          -- apply ex_lim_seq_incr.
+             intros.
+             replace (S n0 + S x)%nat with (S (n0 + S x)) by lia.
+             rewrite sum_Sn.
+             unfold plus; simpl.
+             assert (0 <= aa (S (n0 + S x))).
+             {
+               unfold aa.
+               apply Rle_0_sqr.
+             }
+             lra.
+          -- apply ex_lim_seq_const.
+          -- rewrite Lim_seq_const.
+             apply ex_Rbar_minus_Finite_r.
+        * intros.
+          now rewrite sum_shift_diff.
     - intros.
       specialize (H3 (k + x)%nat i pf).
       assert (almostR2 prts eq
@@ -9768,7 +9816,8 @@ Admitted.
       apply all_almost; intros ???.
       rewrite H13.
       now rewrite H3.
-    - admit.
+    - destruct H4 as [A [B H4]].
+      admit.
     - intros.
       apply H6.
     - intros.
