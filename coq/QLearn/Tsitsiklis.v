@@ -9740,7 +9740,10 @@ Admitted.
       specialize (iscond (k + x)%nat i pf).
       unfold w', F'.
       revert iscond.
-      admit.
+      apply is_conditional_expectation_proper; try easy.
+      apply (almostR2_prob_space_sa_sub_lift prts (filt_sub (k + x)%nat)).
+      apply Condexp_sa_proper.
+      reflexivity.
     - intros.
       unfold α'.
       apply H0.
@@ -9752,14 +9755,19 @@ Admitted.
     - admit.
     - intros.
       specialize (H3 (k + x)%nat i pf).
-      revert H3.
-      apply almost_impl; apply all_almost.
-      intros ??.
-      unfold w'.
-      unfold F' in filt_sub'.
-      clear H H0 H1 H2 H4 H5 H6 H7 H8 H9 H10 H11 iscond adapt_alpha adapt_w rvXF.
-      unfold F' in *.
-      admit.
+      assert (almostR2 prts eq
+                (ConditionalExpectation prts (filt_sub' k) (vecrvnth i pf (w' k)))
+                (ConditionalExpectation prts (filt_sub (k + x)%nat) (vecrvnth i pf (w (k + x)%nat)))).
+      {
+        apply (almostR2_prob_space_sa_sub_lift prts (filt_sub' k)).
+        apply Condexp_sa_proper.
+        reflexivity.
+      }
+      revert H13; apply almost_impl.
+      revert H3; apply almost_impl.
+      apply all_almost; intros ???.
+      rewrite H13.
+      now rewrite H3.
     - admit.
     - intros.
       apply H6.
