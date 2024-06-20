@@ -9631,6 +9631,143 @@ Admitted.
     now apply lim_seq_maxabs.
   Qed.
       
+    Theorem Tsitsiklis_1_3_eventually {n} 
+    (β : R) 
+    (X w α : nat -> Ts -> vector R n)
+    (x' : vector R n)
+    (XF : nat -> vector R n -> vector R n)
+    {F : nat -> SigmaAlgebra Ts}
+    (isfilt : IsFiltration F) 
+    (filt_sub : forall k, sa_sub (F k) dom) 
+    (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
+    {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
+    (npos : (0 < n)%nat)
+    (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
+    {rvXF : forall k, RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) (XF k)}
+    {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
+    {iscond : forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (w k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k)))} :
+     
+      (forall k ω i pf, 0 <= vector_nth i pf (α k ω)) ->
+    (eventually (fun k => forall ω i pf, 0 <= vector_nth i pf (α k ω) <= 1)) ->      
+(*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
+*)
+    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+
+    (exists (C : R),
+        forall i pf,
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Finite C))) ->
+    (forall k i pf, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (vecrvnth i pf (w k))) (const 0)) ->
+    (exists (A B : R),
+        0 < A /\ 0 < B /\
+        forall k i pf, 
+          almostR2 prts Rbar_le (ConditionalExpectation 
+                                   _ (filt_sub k) 
+                                   (rvsqr (vecrvnth i pf (w k))))
+                   (rvplus (const A) 
+                           (rvscale B (rvmaxlist 
+                                         (fun j ω => rvsqr (rvmaxabs (X j)) ω)
+                                         k)))) ->
+    0 <= β < 1 ->
+    (forall k ω, Rvector_max_abs (Rvector_minus (XF k (X k ω)) x') <=
+                 β * Rvector_max_abs (Rvector_minus (X k ω) x')) ->
+    (forall k, rv_eq (X (S k)) 
+                 (vecrvplus (X k) (vecrvmult (α k) (vecrvplus (vecrvminus (fun ω => XF k (X k ω)) (X k) ) (w k))))) ->
+    almost prts (fun ω =>
+                   forall i pf,
+                     is_lim_seq (fun m => vector_nth i pf (X m ω)) (vector_nth i pf x')).
+  Proof.
+    intros.
+    destruct H0.
+    pose (X' := fun n ω => X (n + x)%nat ω).
+    pose (F' := fun n => F (n + x)%nat).
+    assert (RandomVariable (F' 0%nat) (Rvector_borel_sa n) (X' 0%nat)).
+    {
+      unfold F', X'.
+      replace (0 + x)%nat with x by lia.
+      clear H0 H4 X' F'.
+      induction x.
+      - apply rvX0.
+      - rewrite H7.
+        apply Rvector_plus_rv.
+        + now apply (RandomVariable_sa_sub (isfilt x)).
+        + apply Rvector_mult_rv.
+          * now apply (RandomVariable_sa_sub (isfilt x)).
+          * apply Rvector_plus_rv.
+            -- apply Rvector_minus_rv.
+               ++ admit.
+               ++ now apply (RandomVariable_sa_sub (isfilt x)).
+            -- apply adapt_w.
+     }
+    pose (w' := fun n ω => w (n + x)%nat ω).
+    pose (α' := fun n ω => α (n + x)%nat ω).    
+    pose (XF' := fun n ω => XF (n + x)%nat ω).    
+    assert (filt_sub': forall k, sa_sub (F' k) dom).
+    {
+      intros.
+      apply filt_sub.
+    }
+    assert (isfilt': IsFiltration F').
+    {
+      intros ?.
+      apply isfilt.
+    }
+    generalize (Tsitsiklis_1_3 β X' w' α' x' XF' _ filt_sub'); intros.
+    assert (IsAdapted (Rvector_borel_sa n) α' F').
+    {
+      intros ?.
+      apply adapt_alpha.
+    }
+    assert (IsAdapted  (Rvector_borel_sa n) w' (fun k : nat => F' (S k))).
+    {
+      intros ?.
+      apply adapt_w.
+    }
+    assert (forall k : nat, RandomVariable (Rvector_borel_sa n) (Rvector_borel_sa n) (XF' k)).
+    {
+      intros.
+      apply rvXF.
+    }
+    specialize (H9 _ _  npos _ _ _).
+    cut_to H9; try easy.
+    - revert H9.
+      apply almost_impl; apply all_almost.
+      intros ??.
+      intros.
+      specialize (H9 i pf).
+      unfold X' in H9.
+      now rewrite is_lim_seq_incr_n with (N := x).
+    - intros.
+      specialize (iscond (k + x)%nat i pf).
+      unfold w', F'.
+      revert iscond.
+      admit.
+    - intros.
+      unfold α'.
+      apply H0.
+      lia.
+    - intros.
+      specialize (H1 i pf ω).
+      revert H1.
+      admit.
+    - admit.
+    - intros.
+      specialize (H3 (k + x)%nat i pf).
+      revert H3.
+      apply almost_impl; apply all_almost.
+      intros ??.
+      unfold w'.
+      unfold F' in filt_sub'.
+      clear H H0 H1 H2 H4 H5 H6 H7 H8 H9 H10 H11 iscond adapt_alpha adapt_w rvXF.
+      unfold F' in *.
+      admit.
+    - admit.
+    - intros.
+      apply H6.
+    - intros.
+      unfold X'.
+      replace (S k + x)%nat with (S (k + x)) by lia.
+      now rewrite H7.
+Admitted.
 
     Theorem Tsitsiklis_1_3_Jaakkola {n} 
     (β : R) 
