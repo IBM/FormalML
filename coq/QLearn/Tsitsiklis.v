@@ -9664,9 +9664,7 @@ Admitted.
                                    _ (filt_sub k) 
                                    (rvsqr (vecrvnth i pf (w k))))
                    (rvplus (const A) 
-                           (rvscale B (rvmaxlist 
-                                         (fun j ω => rvsqr (rvmaxabs (X j)) ω)
-                                         k)))) ->
+                           (rvscale B (rvsqr (rvmaxabs (X k)))))) ->
     0 <= β < 1 ->
     (forall k ω, Rvector_max_abs (Rvector_minus (XF k (X k ω)) x') <=
                  β * Rvector_max_abs (Rvector_minus (X k ω) x')) ->
@@ -9816,15 +9814,51 @@ Admitted.
       apply all_almost; intros ???.
       rewrite H13.
       now rewrite H3.
-    - destruct H4 as [A [B H4]].
-      admit.
+    - destruct H4 as [A [B [? [? ?]]]].
+      exists A.
+      exists B.
+      split; trivial.
+      split; trivial.
+      intros.
+      specialize (H14 (k + x)%nat i pf).
+      revert H14.
+      assert (almostR2 prts eq
+                (ConditionalExpectation prts (filt_sub' k) (rvsqr (vecrvnth i pf (w' k))))
+                (ConditionalExpectation prts (filt_sub (k + x)%nat) (rvsqr (vecrvnth i pf (w (k + x)%nat))))).
+      {
+        apply (almostR2_prob_space_sa_sub_lift prts (filt_sub' k)).
+        apply Condexp_sa_proper.
+        reflexivity.
+      }
+      apply almost_impl.
+      revert H14.
+      apply almost_impl; apply all_almost.
+      intros ???.
+      rewrite H14.
+      eapply Rbar_le_trans.
+      apply H15.
+      unfold rvplus, const, rvscale, rvsqr, rvmaxabs, rvmaxlist.
+      simpl.
+      apply Rplus_le_compat_l.
+      apply Rmult_le_compat_l; try lra.
+      unfold X'.
+      unfold Rmax_list_map.
+      apply Rmax_list_ge with (x := (Rvector_max_abs (X (k + x)%nat x0))²); try lra.
+      apply in_map_iff.
+      exists k.
+      split; trivial.
+      destruct k.
+      + simpl; lia.
+      + apply in_cons.
+        apply in_seq.
+        lia.
     - intros.
       apply H6.
     - intros.
       unfold X'.
       replace (S k + x)%nat with (S (k + x)) by lia.
       now rewrite H7.
-Admitted.
+ Qed.
 
     Theorem Tsitsiklis_1_3_Jaakkola {n} 
     (β : R) 
