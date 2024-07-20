@@ -876,7 +876,247 @@ Qed.
       generalize (cond_pos C); intros.
       apply Rmult_le_compat_l with (r := C) in H1; lra.
     Qed.
+
+    Lemma lemma3_helper_le {prts: ProbSpace dom} (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
+      {rvf : forall n, RandomVariable dom borel_sa (f n)} 
+      {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
+      almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
+      (forall n x, rvabs (g n) x <= rvabs (f n) x) ->
+      Rabs fstar <= gamma * C ->
+      gamma < 1 ->
+      exists (Eps1 : posreal),
+        forall (eps1 eps2:posreal),
+          eps1 <= Eps1 ->
+          eventually (fun n => ps_P (event_lt dom (rvabs (g n)) (C / (1 + eps1))) >= 1 - eps2).
+    Proof.
+      intros H H0 H1 gamma_1.
+      destruct (lemma3_helper f fstar C gamma H H1 gamma_1).
+      exists x.
+      intros.
+      specialize (H2 eps1 eps2 H3).
+      destruct H2.
+      exists x0.
+      intros.
+      specialize (H2 n H4).
+      eapply Rge_trans; cycle 1.
+      apply H2.
+      apply Rle_ge.
+      apply ps_sub.
+      unfold event_sub, pre_event_sub.
+      simpl; intros.
+      eapply Rle_lt_trans.
+      apply H0.
+      apply H5.
+    Qed.
       
+
+    Lemma lemma3_helper_almost_le {prts: ProbSpace dom} (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
+      {rvf : forall n, RandomVariable dom borel_sa (f n)} 
+      {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
+      almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
+      (forall (n : nat), almostR2 prts Rle (rvabs (g n)) (rvabs (f n))) ->
+      Rabs fstar <= gamma * C ->
+      gamma < 1 ->
+      exists (Eps1 : posreal),
+        forall (eps1 eps2:posreal),
+          eps1 <= Eps1 ->
+          eventually (fun n => ps_P (event_lt dom (rvabs (g n)) (C / (1 + eps1))) >= 1 - eps2).
+   Proof.
+      intros H H0 H1 gamma_1.
+      destruct (lemma3_helper f fstar C gamma H H1 gamma_1).
+      exists x.
+      intros.
+      specialize (H2 eps1 eps2 H3).
+      destruct H2.
+      exists x0.
+      intros.
+      specialize (H2 n H4).
+      eapply Rge_trans; cycle 1.
+      apply H2.
+      specialize (H0 n).
+      clear H H1 gamma_1.
+      apply Rle_ge.
+      apply ps_almostR2_sub.
+      revert H0.
+      apply almost_impl.
+      apply all_almost.
+      intros ??.
+      unfold event_sub, pre_event_sub.
+      simpl; intros ?.
+      eapply Rle_lt_trans.
+      apply H.
+      apply H0.
+  Qed.     
+
+   Lemma lemma3_helper_iter_nneg  (f α β : nat -> Ts -> R) (C C0 : nonnegreal) :
+      (forall n x, 0 <= α n x <= 1) ->
+      (forall n x, 0 <= β n x <= 1) ->     
+      (forall x, f 0%nat x = C0) ->
+      (forall n x, f (S n) x = (1 - α n x) * f n x + (β n x) * C) ->
+      forall n x, 0 <= f n x.
+   Proof.
+     intros.
+     induction n.
+     - rewrite H1.
+       apply cond_nonneg.
+     - rewrite H2.
+       apply Rplus_le_le_0_compat.
+       + apply Rmult_le_pos; trivial.
+         specialize (H n x).
+         lra.
+       + apply Rmult_le_pos.
+         * specialize (H0 n x).
+           lra.
+         * apply cond_nonneg.
+   Qed.
+
+   Lemma lemma3_helper_iter_conv  (f α : nat -> R) (C : R) :
+      (forall n, 0 <= α n < 1) ->
+      l1_divergent α ->
+      (forall n, f (S n) = (1 - α n) * f n + (α n) * C) ->
+      is_lim_seq (fun n => f n) C.
+   Proof.
+     intros abounds adiv fprop.
+     pose (g := fun n => f n - C).
+     assert (is_lim_seq g 0).
+     {
+       assert (forall n, g (S n) = (1 - α n) * g n).
+       {
+         intros.
+         unfold g.
+         rewrite fprop.
+         lra.
+       }
+       assert (forall k,
+                  g (S k) = (part_prod (fun n => (mkposreal (1 - α n)  (a1_pos_pf (abounds  n)))) k) * (g 0%nat)).
+       {
+         intros.
+         induction k.
+         - unfold part_prod.
+           rewrite part_prod_n_k_k.
+           simpl.
+           rewrite  H.
+           lra.
+         - rewrite H, IHk.
+           unfold part_prod.
+           rewrite part_prod_n_S; try lia.
+           simpl.
+           lra.
+       }
+       rewrite is_lim_seq_incr_1.
+       apply is_lim_seq_ext with
+         (u := (fun k => part_prod (fun n : nat => {| pos := 1 - α n; cond_pos := a1_pos_pf (abounds n) |}) k * g 0%nat)).
+       - intros.
+         now rewrite H0.
+       - apply is_lim_seq_mult with (l1 := 0) (l2 := g 0%nat).
+         + now apply Fprod_0.
+         + apply is_lim_seq_const.
+         + unfold is_Rbar_mult.
+           simpl.
+           now rewrite Rmult_0_l.
+     }         
+     apply is_lim_seq_ext with (u := fun n => g n + C).
+     - intros.
+       unfold g.
+       lra.
+     - apply is_lim_seq_plus with (l1 := 0) (l2 := C); trivial.
+       + apply is_lim_seq_const.
+       + unfold is_Rbar_plus.
+         simpl.
+         now rewrite Rplus_0_l.
+  Qed.
+
+   Lemma lemma3_helper_iter_almost_le {prts: ProbSpace dom} (f g α β : nat -> Ts -> R) (C C0 : nonnegreal)
+      {rvα : forall n, RandomVariable dom borel_sa (α n)} 
+      {rvβ : forall n, RandomVariable dom borel_sa (β n)} 
+      {rvf : forall n, RandomVariable dom borel_sa (f n)} 
+      {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
+      (forall n x, 0 <= α n x <= 1) ->
+      (forall n x, 0 <= β n x <= 1) ->     
+      (forall n, almostR2  prts Rle (β n) (α n)) ->
+      (forall x, f 0%nat x = C0) ->
+      (forall x, g 0%nat x = C0) ->
+      (forall n x, f (S n) x = (1 - α n x) * f n x + (α n x) * C) ->
+      (forall n x, g (S n) x = (1 - α n x) * g n x + (β n x) * C) ->      
+      forall n, almostR2 prts Rle (g n) (f n).
+    Proof.
+      intros.
+      induction n.
+      - apply all_almost.
+        intros.
+        rewrite H2.
+        now right.
+      - specialize (H1 n).
+        revert H1.
+        apply almost_impl.
+        revert IHn.
+        apply almost_impl.
+        apply all_almost.
+        intros ???.
+        rewrite H4, H5.
+        apply Rplus_le_compat.
+        + apply Rmult_le_compat_l; trivial.
+          specialize (H n x).
+          lra.
+        + apply Rmult_le_compat_r; trivial.
+          apply cond_nonneg.
+    Qed.
+
+   Lemma lemma3_helper_iter_almost_le_abs {prts: ProbSpace dom} (f g α β : nat -> Ts -> R) (C C0 : nonnegreal)
+      {rvα : forall n, RandomVariable dom borel_sa (α n)} 
+      {rvβ : forall n, RandomVariable dom borel_sa (β n)} 
+      {rvf : forall n, RandomVariable dom borel_sa (f n)} 
+      {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
+      (forall n x, 0 <= α n x <= 1) ->
+      (forall n x, 0 <= β n x <= 1) ->     
+      (forall n, almostR2  prts Rle (β n) (α n)) ->
+      (forall x, f 0%nat x = C0) ->
+      (forall x, g 0%nat x = C0) ->
+      (forall n x, f (S n) x = (1 - α n x) * f n x + (α n x) * C) ->
+      (forall n x, g (S n) x = (1 - α n x) * g n x + (β n x) * C) ->      
+      forall n, almostR2 prts Rle (rvabs (g n)) (rvabs (f n)).
+    Proof.
+      intros.
+      induction n.
+      - apply all_almost.
+        intros.
+        unfold rvabs.
+        rewrite H2, H3.
+        now right.
+      - specialize (H1 n).
+        revert H1.
+        apply almost_impl.
+        revert IHn.
+        apply almost_impl.
+        apply all_almost.
+        intros ???.
+        assert (forall n x, rvabs (f n) x = f n x).
+        {
+          intros.
+          unfold rvabs.
+          rewrite Rabs_right; trivial.
+          apply Rle_ge.
+          apply (lemma3_helper_iter_nneg f α α C C0); trivial.
+        }
+        assert (forall n x, rvabs (g n) x = g n x).
+        {
+          intros.
+          unfold rvabs.
+          rewrite Rabs_right; trivial.
+          apply Rle_ge.
+          apply (lemma3_helper_iter_nneg g α β C C0); trivial.
+        }
+        rewrite H7, H8.
+        rewrite H7, H8 in H1.
+        rewrite H4, H5.
+        apply Rplus_le_compat.
+        + apply Rmult_le_compat_l; trivial.
+          specialize (H n x).
+          lra.
+        + apply Rmult_le_compat_r; trivial.
+          apply cond_nonneg.
+    Qed.
+
     Lemma lemma3_lim_eps (eps : posreal) :
       is_lim_seq (fun n => (/ (1 + eps))^n) 0.
     Proof.
