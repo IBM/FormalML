@@ -5078,30 +5078,6 @@ Qed.
     by rewrite H H0 in H3.
   Qed.
 
-(*
-  Lemma odd_pow_prim_roots_perm (j n : nat) :
-    let l := mkseq (fun i => nth_root (2 * i + 1) (2 ^ (S n))) (2^n) in
-    Permutation l (map (fun r => r^+(2*j+1)) l).
-  Proof.
-    apply NoDup_Permutation_bis.
-    - assert (uniq (mkseq (fun i : nat => nth_root (2 * i + 1) (2 ^ n.+1)) (2 ^ n))).
-      {
-        apply /mkseq_uniqP.
-        intros ?????.
-        rewrite /in_mem /mem /= in H.
-        rewrite /in_mem /mem /= in H0.
-        destruct (pow2_S (S n)).
-        rewrite (eqP i) -nth_root_eq -(eqP i) in H1.
-        rewrite !Nat.mod_small in H1; try rewrite expnS; try lia.
-      }
-      admit.
-    - apply Nat.eq_le_incl.
-      apply map_length.
-    - intros ??.
-      assert (odd (2*j+1)) by lia.
-      generalize (odd_pow_prim_root_inv (2*j+1) n H0); intros.
-      
-*)
   Lemma nth_root_eq' j k (n:nat) : n != 0%nat ->
     j mod n = k mod n <->
       nth_root j n = nth_root k n.
