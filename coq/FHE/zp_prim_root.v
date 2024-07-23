@@ -1219,7 +1219,7 @@ Proof.
       intros.
       assert (exists q, 'C(2^n, 2^k.+1) = q * 2^(n-k.+1)).
       {
-        admit.
+        admi t.
       }
       destruct H0.
       rewrite H0.
@@ -1237,7 +1237,7 @@ Proof.
         rewrite -modnMm.
         assert (exists q,  (2 ^ (n - k.+1 + 2 ^ k.+2) = q * 2^n.+3)).
         {
-          admit.
+          admi t.
         }
         destruct H2.
         by rewrite H2 modnMl muln0 mod0n.
@@ -1249,13 +1249,13 @@ Proof.
       (* 2^n | 'C(2^n,3), ok for x = 3 *)
       (* 2^(n-2) | 'C(2^n, 4), ok for x = 4 *)
       (* enough to prove for x = 2^k, since sucessive values are better *)
-      admit.
+      admi t.
     }
     by rewrite (mulnC _ (4 ^ x)) mulnA -modnMm (eqP H0) mul0n mod0n.
   }
   by rewrite -modnDmr -modnDmr H !mod0n addn0.
   
-Admitted.
+Admi tted.
 
 Lemma ord_pow_2_odd j n :
   odd j ->
@@ -1497,19 +1497,19 @@ Proof.
       destruct (max_prime_pow_dvd H4 H5).
       assert (0< p^k -k.+1).
       {
-        admit.
+        admi t.
       }
       destruct (max_prime_pow_dvd H4 H6).      
       assert (x = x0).
       {
-        admit.
+        admi t.
       }
       move /andP in i.
       move /andP in i0.
       destruct i; destruct i0.
-      admit.
+      admi t.
     + clear IHk H2 H3; lia.
-Admitted.
+Admi tted.
 *)
 
 Lemma prime_power_dvd_mul_helper p k a b :
@@ -1641,7 +1641,7 @@ Lemma prime_power_dvd_mul p k a b :
 Proof.
 (*  move=> pprime.
   case: (eqVneq a 0)=> [-> | neqq].
-  - admit.
+  - admi t.
   - case: (@max_prime_pow_dvd a p).
     + by apply prime_gt1.
     + lia.
@@ -1697,13 +1697,13 @@ Proof.
       case_eq (dvdn (p^j.+1) a) => eqq1.
       * have ordpf: j.+1 < k.+1.
         {
-          admit.
+          admi t.
         } 
         exists (Ordinal ordpf).
         by rewrite /= eqq1 /= subSS.
       * have ordpf: j < k.+1.
         {
-          admit.
+          admi t.
         } 
         exists (Ordinal ordpf).
         rewrite /= diva /=.
@@ -1713,7 +1713,7 @@ Proof.
         dvdn_pmul2l: forall [p d m : nat], 0 < p -> (p * d %| p * m) = (d %| m)
     *)
     
-Admitted.
+Admi tted.
 *)
 
 Lemma prime_pow_dvd_bin_full j k p n :
@@ -1797,7 +1797,7 @@ Proof.
   rewrite bin_ffactd.
   *)
 
-Admitted.
+Admi tted.
 
 
 
@@ -1811,7 +1811,7 @@ Proof.
   - by rewrite expn0 !expn1.
   - rewrite expnS expnS.
     apply (f_equal (fun z => z^p)) in IHn.
-    Admitted.
+    Admi tted.
 
  *)
 
