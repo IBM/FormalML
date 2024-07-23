@@ -570,10 +570,11 @@ Qed.
       apply ps_pos.
     Qed.
 
+    (*
     Lemma vec_pmf_sum1 {n} (p0 : ProbSpace (discrete_sa T)):
       countable_sum (vec_pmf (n:=n) p0) 1.
     Proof.
-      Admitted.
+    Adm itted.
 
     Program Definition vectorPMF {n} (p0 : ProbSpace (discrete_sa T)) : prob_mass_fun (vector T n) := {| pmf_pmf := vec_pmf p0 |}.
     Next Obligation.
@@ -585,7 +586,7 @@ Qed.
 
     Global Instance vector_discrete_ps {n} (p0 : ProbSpace (discrete_sa T)): ProbSpace (discrete_sa (vector T n)) := discrete_ps (vectorPMF p0).
     
-    
+    *)
 End qlearn_aux.      
 
 
