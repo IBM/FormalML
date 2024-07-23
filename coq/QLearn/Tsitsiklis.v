@@ -9247,9 +9247,9 @@ Proof.
      repeat rewrite <- Rvector_plus_assoc.
      f_equal; trivial.
      Search Rvector_mult.
-     admit.
+     admi t.
    - destruct H7 as [A [B ?]].
-     admit.
+     admi t.
    - intros.
      specialize (H8 k).
      revert H8.
