@@ -9126,11 +9126,6 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
     now repeat rewrite (Rvector_mult_comm x _).
   Qed.
     
-  Lemma Rvector_scale_plus {n} (c : R) (x y : vector R n) :
-    Rvector_scale c (Rvector_plus x y) = Rvector_plus (Rvector_scale c x) (Rvector_scale c y).
-  Proof.
-    Admitted.
-
 (*
   Theorem Tsitsiklis3_Jaakkola_alpha_beta_x' {n} 
     (X w α beta : nat -> Ts -> vector R n) 
@@ -9245,7 +9240,7 @@ Proof.
      unfold vecrvminus, vecrvplus, vecrvmult, vecrvopp, vecrvscale.
      unfold Rvector_minus.
      repeat rewrite Rvector_mult_plus_distr_l.
-     rewrite Rvector_scale_plus.
+     rewrite Rvector_scale_plus_l
      repeat rewrite <- Rvector_plus_assoc.
      f_equal; trivial.
      rewrite (Rvector_plus_comm (Rvector_opp x') _).
@@ -9265,7 +9260,6 @@ Proof.
      apply Rvector_max_abs_triang.
      rewrite Rvector_max_abs_opp.
      now apply Rplus_le_compat_r.
-Admitted.   
 *)
 
   Theorem Tsitsiklis_1_3_max_abs {n} 
