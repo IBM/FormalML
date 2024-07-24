@@ -5155,7 +5155,7 @@ Qed.
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (beta k ω) <= 1) ->
     almost prts (fun ω => forall k i pf, vector_nth i pf (beta k ω) <= vector_nth i pf (α k ω)) ->        
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -5164,7 +5164,7 @@ Qed.
 
 (*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
 *)
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -5894,13 +5894,13 @@ Qed.
         apply all_almost.
         intros ??.
         apply H20.
-      - apply all_almost.
-        intros.
-        specialize (H0 i pf x).
+      - revert H0; apply almost_impl.
+        apply all_almost; intros ??.
+        specialize (H0 i pf).
         now unfold vecrvnth.
-      - apply all_almost.
-        intros.
-        apply beta_inf.
+      - revert beta_inf; apply almost_impl.
+        apply all_almost; intros ??.
+        apply H20.
       - unfold const.
         specialize (H1 i pf).
         revert H1.
@@ -7372,7 +7372,7 @@ Qed.
 
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (beta k ω) <= 1) ->
     almost prts (fun ω => forall k i pf, vector_nth i pf (beta k ω) <= vector_nth i pf  (α k ω)) -> 
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -7383,7 +7383,7 @@ Qed.
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
 (*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
 *)
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -7612,14 +7612,12 @@ Qed.
            revert beta_prop; apply almost_impl.
            apply all_almost; intros ??.
            apply H13.
-         - apply all_almost.
-           intros.
-           unfold α1, vecrvnth.
+         - revert H0; apply almost_impl.
+           apply all_almost; intros ??.
            apply H0.
-         - apply all_almost.
-           intros.
-           unfold beta1, vecrvnth.
-           apply beta_inf.
+         - revert beta_inf; apply almost_impl.
+           apply all_almost; intros ??.
+           apply H13.
          - unfold rvsqr, const.
            unfold α1.
            specialize (H1 i pf).
@@ -7857,7 +7855,8 @@ Qed.
              * revert beta_alpha_prop; apply almost_impl.
                apply all_almost; intros ???.
                apply H17.
-             * apply all_almost; intros ?.
+             * revert H0; apply almost_impl.
+               apply all_almost; intros ??.
                apply (seq_sum_shift (fun t => α1 t x)).
                apply H0.
         }
@@ -8513,7 +8512,7 @@ Qed.
 
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (beta k ω) <= 1) ->
     almost prts (fun ω => forall k i pf, vector_nth i pf (beta k ω) <= vector_nth i pf  (α k ω)) -> 
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -8525,7 +8524,7 @@ Qed.
 
 (*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
 *)
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -8651,12 +8650,12 @@ Qed.
         revert betaprop; apply almost_impl.
         apply all_almost; intros ??.
         apply H9.
-      - apply all_almost.
-        intros.
+      - revert H0; apply almost_impl.
+        apply all_almost; intros ??.
         apply H0.
-      - apply all_almost.
-        intros.
-        apply beta_inf.
+      - revert beta_inf; apply almost_impl.
+        apply all_almost; intros ??.
+        apply H9.
       - unfold rvsqr, const.
         unfold α1.
         specialize (H1 i pf).
@@ -8937,7 +8936,7 @@ Qed.
 
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (beta k ω) <= 1) ->
     almost prts (fun ω => forall k i pf, vector_nth i pf (beta k ω) <= vector_nth i pf  (α k ω)) -> 
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -8947,7 +8946,7 @@ Qed.
 
     (*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
 *)
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
     
     (exists (C : R),
       forall i pf,
@@ -9196,7 +9195,7 @@ Qed.
     
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (beta k ω) <= 1) ->
     almost prts (fun ω => forall k i pf, vector_nth i pf (beta k ω) <= vector_nth i pf  (α k ω)) -> 
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -9206,7 +9205,7 @@ Qed.
 
     (*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
 *)
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
     
     (exists (C : R),
       forall i pf,
@@ -9609,7 +9608,7 @@ Proof.
 
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (beta k ω) <= 1) ->
     almost prts (fun ω => forall k i pf, vector_nth i pf (beta k ω) <= vector_nth i pf (α k ω)) ->        
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -9618,7 +9617,7 @@ Proof.
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
 (*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
 *)
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -10047,7 +10046,7 @@ Proof.
 
    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (beta k ω) <= 1) ->
     almost prts (fun ω => forall k i pf, vector_nth i pf (beta k ω) <= vector_nth i pf (α k ω)) ->        
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -10057,7 +10056,7 @@ Proof.
 
 (*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
 *)
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -10417,7 +10416,7 @@ Proof.
     (eventually (fun k => almost prts (fun ω => forall i pf, vector_nth i pf (beta k ω) <= 1))) ->      
     almost prts (fun ω => forall k i pf, 
                      vector_nth i pf (beta k ω) <=  vector_nth i pf (α k ω)) ->        
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (beta k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -10428,7 +10427,7 @@ Proof.
                                            vector_nth i pf (α k ω) <= 1 ))) ->          
 (*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
 *)
-    (forall i pf ω, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
@@ -10549,10 +10548,10 @@ Proof.
     - revert alpha_betaprop; apply almost_impl.
       apply all_almost; intros ?????.
       apply H14.
-    - intros.
-      unfold beta'.
-      specialize (beta_inf i pf).
-       now apply (seq_sum_shift (fun k : nat => vector_nth i pf (beta k ω)) xx).
+    - revert beta_inf; apply almost_impl.
+      apply all_almost; intros ??.
+      intros.
+      now apply (seq_sum_shift (fun k : nat => vector_nth i pf (beta k x1)) xx).
     - destruct beta_fin as [C beta_fin].
       exists C.
       intros.
@@ -10612,9 +10611,10 @@ Proof.
         apply le_dec.
       + intros.
         apply H14.
-    - intros.
-      specialize (H1 i pf ω).
-      now apply (seq_sum_shift (fun k : nat => vector_nth i pf (α k ω)) xx).
+    - revert H1; apply almost_impl.
+      apply all_almost; intros ??.
+      intros.
+      now apply (seq_sum_shift (fun k : nat => vector_nth i pf (α k x1)) xx).
     - destruct H2 as [C H2].
       exists C.
       intros.
