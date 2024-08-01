@@ -1026,6 +1026,26 @@ Qed.
          now rewrite Rplus_0_l.
   Qed.
 
+   Lemma lemma3_helper_iter_conv1  (f α : nat -> R) (C : R) :
+      (exists n,  α n = 1) ->
+      (forall n, f (S n) = (1 - α n) * f n + (α n) * C) ->
+      is_lim_seq (fun n => f n) C.
+   Proof.
+     intros.
+     destruct H.
+     rewrite is_lim_seq_incr_n with (N := (S x)).
+     apply is_lim_seq_ext with (u := fun n => C).
+     - induction n.
+       + replace (0 + S x)%nat with (S x) by lia.
+         rewrite H0, H.
+         lra.
+       + replace (S n + S x)%nat with (S (n + S x)) by lia.
+         rewrite H0.
+         rewrite <- IHn.
+         lra.
+     - apply is_lim_seq_const.
+   Qed.
+
    Lemma lemma3_helper_iter_almost_le {prts: ProbSpace dom} (f g α β : nat -> Ts -> R) (C C0 : nonnegreal)
       {rvα : forall n, RandomVariable dom borel_sa (α n)} 
       {rvβ : forall n, RandomVariable dom borel_sa (β n)} 
