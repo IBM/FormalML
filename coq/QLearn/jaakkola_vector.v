@@ -1067,6 +1067,7 @@ Qed.
        lra.
    Qed.     
 
+
    Lemma lemma3_helper_iter_almost_le {prts: ProbSpace dom} (f g α β : nat -> Ts -> R) (C C0 : nonnegreal)
       {rvα : forall n, RandomVariable dom borel_sa (α n)} 
       {rvβ : forall n, RandomVariable dom borel_sa (β n)} 
