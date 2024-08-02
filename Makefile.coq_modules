@@ -117,7 +117,8 @@ QLEARN = \
 	sumtest \
    	slln \
 	vecslln \
-	Tsitsiklis
+	Tsitsiklis \
+	jaakkola_vector
 
 FHE = \
       nth_root \

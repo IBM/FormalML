@@ -1046,6 +1046,27 @@ Qed.
      - apply is_lim_seq_const.
    Qed.
 
+   Lemma lemma3_helper_iter_conv2  (f α : nat -> R) (C : R) :
+      (forall n, 0 <= α n <= 1) ->
+      l1_divergent α ->
+      (forall n, f (S n) = (1 - α n) * f n + (α n) * C) ->
+      is_lim_seq (fun n => f n) C.
+   Proof.
+     intros.
+     destruct (excluded_middle_informative (forall n, α n < 1)).
+     - apply lemma3_helper_iter_conv with (α := α); trivial.
+       intro n.
+       specialize (r n).
+       specialize (H n).
+       lra.
+     - rewrite not_forall in n.
+       apply lemma3_helper_iter_conv1 with (α := α); trivial.
+       destruct n.
+       exists x.
+       specialize (H x).
+       lra.
+   Qed.     
+
    Lemma lemma3_helper_iter_almost_le {prts: ProbSpace dom} (f g α β : nat -> Ts -> R) (C C0 : nonnegreal)
       {rvα : forall n, RandomVariable dom borel_sa (α n)} 
       {rvβ : forall n, RandomVariable dom borel_sa (β n)} 
