@@ -1711,3 +1711,128 @@ Qed.
            lra.
        Qed.
 
+       Lemma lemma3_base (α X f : nat -> Ts -> R) (C γ : posreal)
+         (rvX : forall n, RandomVariable dom borel_sa (X n))
+         (rvf : forall n, RandomVariable dom borel_sa (f n)) :          
+         (forall t ω, 0 <= α t ω <= 1) ->
+         (forall ω, l1_divergent (fun n : nat => α n ω)) ->
+         γ < 1 ->
+         (rv_eq (f 0%nat) (const C)) ->
+         (forall n, rv_eq (f (S n))
+                      (rvplus 
+                         (rvmult (rvminus (const 1) (α n)) 
+                            (f n))
+                         (rvscale (γ * C) (α n)))) ->
+         (forall n, rv_le (rvabs (X n)) (f n)) ->
+         exists (Eps1 : posreal),
+         forall (eps1 eps2:posreal),
+           eps1 <= Eps1 ->
+
+           eventually (fun n => ps_P (@event_lt Ts dom (rvabs (X n)) (rvabs_rv _ (X n)) (C / (1 + eps1))) >= 1 - eps2).
+       Proof.
+         intros.
+         assert (0 <= γ * C).
+         {
+           apply Rmult_le_pos; left; apply cond_pos.
+         }         
+         apply lemma3_helper_le with (f := f) (fstar := γ * C) (gamma := γ); trivial.
+         - apply all_almost.
+           intros.
+           apply lemma3_helper_iter_conv2 with (α := fun n => α n x); trivial.
+           intros.
+           rewrite H3.
+           rv_unfold.
+           lra.
+         - assert (forall n x, 0 <= f n x).
+           {
+             induction n.
+             - intros.
+               rewrite H2.
+               unfold const; simpl.
+               left.
+               apply cond_pos.
+             - intros.
+               rewrite H3.
+               rv_unfold.
+               specialize (H n x).
+               apply Rplus_le_le_0_compat.
+               + apply Rmult_le_pos; try lra.
+                 apply IHn.
+               + apply Rmult_le_pos; lra.
+           }
+          intros.
+          eapply Rle_trans.
+          apply H4.
+          unfold rvabs.
+          rewrite Rabs_right; try lra.
+          apply Rle_ge.
+          apply H6.
+         - rewrite Rabs_right; try lra.
+       Qed.
+
+       Lemma lemma3_base_alt (α β X Y f : nat -> Ts -> R) (C γ : posreal)
+         (rvX : forall n, RandomVariable dom borel_sa (X n))
+         (rvf : forall n, RandomVariable dom borel_sa (f n)) :          
+         (forall t ω, 0 <= α t ω <= 1) ->
+         (forall t ω, 0 <= β t ω <= 1) ->
+         (forall t ω, β t ω <= α t ω) ->                  
+         (forall ω, l1_divergent (fun n : nat => α n ω)) ->
+         γ < 1 ->
+         (rv_eq (f 0%nat) (const C)) ->
+         (forall n, rv_eq (f (S n))
+                      (rvplus 
+                         (rvmult (rvminus (const 1) (α n)) 
+                            (f n))
+                         (rvscale (γ * C) (α n)))) ->
+         rv_le (rvabs (X 0%nat)) (const C) ->
+         (forall n, rv_eq (X (S n))
+                      (rvplus 
+                         (rvmult (rvminus (const 1) (α n)) 
+                            (X n))
+                         (rvmult (rvscale γ (β n))
+                            (rvabs (Y n))))) ->
+         (forall n, rv_le (rvabs (Y n)) (const C)) ->
+         exists (Eps1 : posreal),
+         forall (eps1 eps2:posreal),
+           eps1 <= Eps1 ->
+           eventually (fun n => ps_P (@event_lt Ts dom (rvabs (X n)) (rvabs_rv _ (X n)) (C / (1 + eps1))) >= 1 - eps2).
+       Proof.
+         intros.
+         apply lemma3_base with (α := α) (f := f) (γ := γ); trivial.
+         intros.
+         induction n.
+         - rewrite H4.
+           apply H6.
+         - rewrite H7, H5.
+           rv_unfold.
+           intros ?.
+           unfold rv_le, rvabs, const.
+           eapply Rle_trans.
+           + apply Rabs_triang.
+           + apply Rplus_le_compat.
+             * replace (Rabs ((1 + -1 * α n a) * X n a)) with
+                 ((1 + -1 * α n a) * Rabs (X n a)).
+               -- apply Rmult_le_compat_l.
+                  ++ specialize (H n a); lra.
+                  ++ apply IHn.
+               -- rewrite Rabs_mult.
+                  f_equal.
+                  rewrite Rabs_right; trivial.
+                  specialize (H n a); lra.
+             * rewrite Rabs_right.
+               -- rewrite Rmult_assoc, Rmult_assoc.
+                  apply Rmult_le_compat_l.
+                  ++ left; apply cond_pos.
+                  ++ rewrite Rmult_comm.
+                     apply Rmult_le_compat; trivial.
+                     ** apply Rabs_pos.
+                     ** specialize (H0 n a); lra.
+                     ** apply H8.
+               -- apply Rle_ge.
+                  apply Rmult_le_pos.
+                  ++ apply Rmult_le_pos.
+                     ** left; apply cond_pos.
+                     ** specialize (H0 n a); lra.
+                  ++ apply Rabs_pos.
+       Qed.
+           
