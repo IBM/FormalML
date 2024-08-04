@@ -471,7 +471,7 @@ Proof.
           rewrite Rabs_right in H0.
           * rewrite Rabs_right in H0.
             -- field_simplify in H0; try lra.
-               rewrite H0 in r.
+               try rewrite H0 in r.
                destruct C as [? ?].
                simpl in r.
                lra.
@@ -570,7 +570,7 @@ Proof.
           rewrite Rabs_right in H0.
           * rewrite Rabs_right in H0.
             -- field_simplify in H0; try lra.
-               rewrite H0 in r.
+               try rewrite H0 in r.
                destruct C as [? ?].
                simpl in r.
                lra.
