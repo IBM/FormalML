@@ -948,6 +948,64 @@ Qed.
       apply H0.
   Qed.     
 
+    Lemma lemma3_helper_prob_le {prts: ProbSpace dom} (f g : nat -> Ts -> R) (fstar: R) (C gamma prob : posreal)
+      {rvf : forall n, RandomVariable dom borel_sa (f n)} 
+      {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
+      almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
+      (forall n, ps_P (event_Rge dom (rvabs (f n)) (rvabs (g n))) >= prob) ->
+      Rabs fstar <= gamma * C ->
+      gamma < 1 ->
+      exists (Eps1 : posreal),
+        forall (eps1 eps2:posreal),
+          eps1 <= Eps1 ->
+          eventually (fun n => ps_P (event_lt dom (rvabs (g n)) (C / (1 + eps1))) >= prob * (1 - eps2)).
+   Proof.
+      intros H H0 H1 gamma_1.
+      destruct (lemma3_helper f fstar C gamma H H1 gamma_1).
+      exists x.
+      intros.
+      specialize (H2 eps1 eps2 H3).
+      destruct H2.
+      exists x0.
+      intros.
+      specialize (H2 n H4).
+      assert (event_sub  
+                (event_inter (event_Rge dom (rvabs (f n)) (rvabs (g n)))
+                   (event_lt dom (rvabs (f n)) (C / (1 + eps1))))
+                (event_lt dom (rvabs (g n)) (C / (1 + eps1)))).
+      {
+        intros ?.
+        simpl.
+        intros ?.
+        unfold pre_event_inter in H5.
+        destruct H5.
+        lra.
+      }
+      apply (ps_sub prts) in H5.
+      apply Rle_ge in H5.
+      eapply Rge_trans.
+      apply H5.
+      specialize (H0 n).
+(*      
+      eapply Rge_trans; cycle 1.
+      apply H2.
+      specialize (H0 n).
+      clear H H1 gamma_1.
+      apply Rle_ge.
+      apply ps_almostR2_sub.
+      revert H0.
+      apply almost_impl.
+      apply all_almost.
+      intros ??.
+      unfold event_sub, pre_event_sub.
+      simpl; intros ?.
+      eapply Rle_lt_trans.
+      apply H.
+      apply H0.
+  Qed.     
+ *)
+      Admitted.
+
    Lemma lemma3_helper_iter_nneg  (f α β : nat -> Ts -> R) (C C0 : nonnegreal) :
       (forall n x, 0 <= α n x <= 1) ->
       (forall n x, 0 <= β n x <= 1) ->     
@@ -1977,6 +2035,7 @@ Qed.
                      ** specialize (H0 n a); lra.
                   ++ apply Rabs_pos.
        Qed.
+
 
        Lemma lemma3 (α β X Y f : nat -> Ts -> R) (C γ : posreal)
          (rvX : forall n, RandomVariable dom borel_sa (X n))
