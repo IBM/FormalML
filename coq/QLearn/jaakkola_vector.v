@@ -751,11 +751,9 @@ Proof.
     apply cond_pos.
 Qed.
 
-Lemma gamma_eps_le (gamma : posreal) :
-  gamma < 1 ->
-  exists (eps : posreal), gamma <=  / (1 + eps).
+Lemma gamma_eps_le (gamma : posreal) (gamma_lt1 : gamma < 1) :
+  {eps : posreal | gamma <=  / (1 + eps)}.
 Proof.
-  intros.
   assert (0 < (1 - gamma) / (2 * gamma)).
   {
     assert (0 < gamma).
@@ -764,11 +762,11 @@ Proof.
     }
     apply RIneq.Rdiv_lt_0_compat; lra.
   }
-  exists (mkposreal _ H0).
+  exists (mkposreal _ H).
   simpl.
   apply Rmult_le_reg_r with (r :=  (1 + ((1 - gamma) / (2 * gamma)))).
   - eapply Rlt_trans.
-    apply H0; lra.
+    apply H; lra.
     lra.
   - unfold Rdiv.
     rewrite Rinv_l; try lra.
@@ -793,11 +791,26 @@ Proof.
   exists x.
   intros.
   eapply Rle_trans.
-  apply H0.
+  apply r.
   generalize (cond_pos x); intros.
   generalize (cond_pos eps2); intros.
   apply Rle_Rinv; lra.
 Qed.
+
+Lemma gamma_eps_le_forall (gamma eps : posreal) :
+  gamma <=  / (1 + eps) ->
+  forall (eps2 : posreal),
+    eps2 <= eps ->
+    gamma <= / (1 + eps2).
+Proof.
+  intros.
+  eapply Rle_trans.
+  apply H.
+  generalize (cond_pos eps); intros.
+  generalize (cond_pos eps2); intros.
+  apply Rle_Rinv; lra.
+Qed.
+
 
     Lemma conv_as_prob_1_eps_alt {prts: ProbSpace dom} (f : nat -> Ts -> R) (fstar: R)
       {rv : forall n, RandomVariable dom borel_sa (f n)} :
@@ -838,6 +851,39 @@ Qed.
       apply (gamma_eps_le_alt _ H1).
     Qed.      
 
+Lemma lemma3_gamma_eps_le (gamma : posreal) :
+  gamma < 1 ->
+  {eps : posreal |  gamma + (1 - gamma)/2 <= / (1 + eps)}.
+Proof.
+  intros.
+  assert (0 < gamma + (1 - gamma)/2).
+  {
+    generalize (cond_pos gamma); intros.
+    apply Rplus_lt_0_compat; lra.
+  }
+  assert (mkposreal _ H0 < 1).
+  {
+    simpl; lra.
+  }
+  apply (gamma_eps_le (mkposreal _ H0) H1).
+Qed.
+
+Lemma lemma3_gamma_eps_alt (gamma eps : posreal) :
+  gamma < 1 ->
+  gamma + (1 - gamma)/2 <=  / (1 + eps) ->
+  forall (eps2 : posreal),
+    eps2 <= eps ->
+    gamma + (1 - gamma)/2 <= / (1 + eps2).
+Proof.
+  intros.
+  assert (0 < gamma + (1 - gamma)/2).
+  {
+    generalize (cond_pos gamma); intros.
+    apply Rplus_lt_0_compat; lra.
+  }
+  now apply (gamma_eps_le_forall (mkposreal _ H2) eps).
+Qed.
+
     Lemma lemma3_helper {prts: ProbSpace dom} (f : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rv : forall n, RandomVariable dom borel_sa (f n)} :
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
@@ -877,6 +923,45 @@ Qed.
       apply Rmult_le_compat_l with (r := C) in H1; lra.
     Qed.
 
+    Lemma lemma3_helper_alt {prts: ProbSpace dom} (f : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
+      {rv : forall n, RandomVariable dom borel_sa (f n)} 
+      (gamma_lt1 : gamma < 1) :
+      almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
+      Rabs fstar <= gamma * C ->
+      let eps1 := proj1_sig (lemma3_gamma_eps_le gamma gamma_lt1) in
+      forall (eps2 : posreal),
+        eventually (fun n => ps_P (event_lt dom (rvabs (f n)) (C / (1 + eps1))) >= 1 - eps2).
+    Proof.
+      intros H H0.
+      destruct (lemma3_gamma_eps_le gamma gamma_lt1).
+      intros.
+      assert (0 < ((1 - gamma)/2) * C).
+      {
+        apply Rmult_lt_0_compat.
+        - apply Rmult_lt_0_compat; lra.
+        - apply cond_pos.
+      }
+      destruct (conv_as_prob_1_eps_alt f fstar H (mkposreal _ H1) eps2).
+      exists x0.
+      intros.
+      eapply Rge_trans; cycle 1.
+      apply (H2 _ H3).
+      apply Rle_ge.
+      apply ps_sub.
+      unfold event_sub, pre_event_sub, rvabs; simpl; intros.
+      unfold rvabs, rvminus, rvplus, rvopp, rvscale, const in H4.
+      generalize (Rabs_triang_inv (f n x1) fstar); intros.
+      replace  (f n x1 + -1 * fstar) with  (f n x1 - fstar) in H4 by lra.
+      assert (Rabs(f n x1) < (1 - gamma) * C / 2 + gamma * C) by lra.
+      eapply Rlt_le_trans.
+      apply H6.
+      generalize (cond_pos C); intros.
+      unfold eps1 in *.
+      simpl.
+      generalize r; intros.
+      apply Rmult_le_compat_l with (r := C) in r0; lra.
+    Qed.
+
     Lemma lemma3_helper_le {prts: ProbSpace dom} (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
@@ -909,6 +994,35 @@ Qed.
       apply H5.
     Qed.
       
+    Lemma lemma3_helper_le_alt {prts: ProbSpace dom} (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
+      (gamma_lt1 : gamma < 1)
+      {rvf : forall n, RandomVariable dom borel_sa (f n)} 
+      {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
+      almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
+      (forall n x, rvabs (g n) x <= rvabs (f n) x) ->
+      Rabs fstar <= gamma * C ->
+      let eps1 := proj1_sig (lemma3_gamma_eps_le gamma gamma_lt1) in
+      forall (eps2:posreal),
+        eventually (fun n => ps_P (event_lt dom (rvabs (g n)) (C / (1 + eps1))) >= 1 - eps2).
+    Proof.
+      intros H H0 H1.
+      generalize (lemma3_helper_alt f fstar C gamma gamma_lt1 H H1); intros.
+      intros.
+      specialize (H2 eps2).
+      destruct H2.
+      exists x.
+      intros.
+      specialize (H2 n H3).
+      eapply Rge_trans; cycle 1.
+      apply H2.
+      apply Rle_ge.
+      apply ps_sub.
+      unfold event_sub, pre_event_sub.
+      simpl; intros.
+      eapply Rle_lt_trans.
+      apply H0.
+      apply H4.
+    Qed.
 
     Lemma lemma3_helper_almost_le {prts: ProbSpace dom} (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
@@ -948,28 +1062,42 @@ Qed.
       apply H0.
   Qed.     
 
+   Lemma ps_inter_cond_prob_r {T:Type} {σ:SigmaAlgebra T} 
+      (A B : event σ) (prts : ProbSpace σ) :
+     ps_P B > 0 ->
+     ps_P (event_inter A B) = (cond_prob prts A B) * ps_P B.
+   Proof.
+     intros.
+     unfold cond_prob, Rdiv.
+     rewrite Rmult_assoc, Rinv_l; lra.
+   Qed.
+
+   Lemma ps_inter_cond_prob_l {T:Type} {σ:SigmaAlgebra T} 
+      (A B : event σ) (prts : ProbSpace σ) :
+     ps_P A > 0 ->
+     ps_P (event_inter A B) = ps_P A * (cond_prob prts B A).
+   Proof.
+     intros.
+     rewrite event_inter_comm, ps_inter_cond_prob_r; lra.
+   Qed.
+
     Lemma lemma3_helper_prob_le {prts: ProbSpace dom} (f g : nat -> Ts -> R) (fstar: R) (C gamma prob : posreal)
+      (gamma_lt1 : gamma < 1)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
       (forall n, ps_P (event_Rge dom (rvabs (f n)) (rvabs (g n))) >= prob) ->
       Rabs fstar <= gamma * C ->
-      gamma < 1 ->
-      exists (Eps1 : posreal),
-        forall (eps1 eps2:posreal),
-          eps1 <= Eps1 ->
+      let eps1 := proj1_sig (lemma3_gamma_eps_le gamma gamma_lt1) in
+      forall (eps2:posreal),
           eventually (fun n => ps_P (event_lt dom (rvabs (g n)) (C / (1 + eps1))) >= prob * (1 - eps2)).
    Proof.
-      intros H H0 H1 gamma_1.
-      destruct (lemma3_helper f fstar C gamma H H1 gamma_1).
-      exists x.
-      intros.
-      specialize (H2 eps1 eps2 H3).
-      destruct H2.
-      exists x0.
-      intros.
-      specialize (H2 n H4).
-      assert (event_sub  
+     intros. 
+     destruct (lemma3_helper_alt f fstar C gamma gamma_lt1 H H1 eps2).
+     exists x.
+     intros.
+     specialize (H2 n H3).
+     assert (event_sub  
                 (event_inter (event_Rge dom (rvabs (f n)) (rvabs (g n)))
                    (event_lt dom (rvabs (f n)) (C / (1 + eps1))))
                 (event_lt dom (rvabs (g n)) (C / (1 + eps1)))).
@@ -977,33 +1105,23 @@ Qed.
         intros ?.
         simpl.
         intros ?.
-        unfold pre_event_inter in H5.
-        destruct H5.
+        unfold pre_event_inter in H4.
+        destruct H4.
         lra.
       }
-      apply (ps_sub prts) in H5.
-      apply Rle_ge in H5.
+      apply (ps_sub prts) in H4.
+      apply Rle_ge in H4.
       eapply Rge_trans.
-      apply H5.
+      apply H4.
       specialize (H0 n).
-(*      
-      eapply Rge_trans; cycle 1.
-      apply H2.
-      specialize (H0 n).
-      clear H H1 gamma_1.
-      apply Rle_ge.
-      apply ps_almostR2_sub.
-      revert H0.
-      apply almost_impl.
-      apply all_almost.
-      intros ??.
-      unfold event_sub, pre_event_sub.
-      simpl; intros ?.
-      eapply Rle_lt_trans.
-      apply H.
-      apply H0.
-  Qed.     
- *)
+      assert (0 < prob) by apply cond_pos.
+      destruct (Rgt_dec 0 (1 - eps2)).
+      - apply Rge_trans with (r2 := 0).
+        + apply Rle_ge.
+          apply ps_pos.
+        + apply Rle_ge.
+          apply Rmult_le_0_l; lra.
+      - admit.
       Admitted.
 
    Lemma lemma3_helper_iter_nneg  (f α β : nat -> Ts -> R) (C C0 : nonnegreal) :
