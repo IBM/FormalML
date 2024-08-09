@@ -2287,11 +2287,14 @@ admit.
           unfold eventually.
           Admitted.
 
-    Theorem Jaakkola_alpha_beta_bounded {n} 
-    (γ C : R) 
-    (X w α β : nat -> Ts -> vector R n)
-(*    (x' : vector R n) *)
-    (XF : nat -> Ts -> vector R n)
+  Definition ConditionalVariance {dom2 : SigmaAlgebra Ts}
+    (sub : sa_sub dom2 dom) (f : Ts -> R) 
+    {rv : RandomVariable dom borel_sa f} : Ts -> Rbar :=
+    ConditionalExpectation _ sub (rvsqr (rvminus f (ConditionalExpectation _ sub f))).
+  
+  Theorem Jaakkola_alpha_beta_bounded {n} 
+    (γ : R) 
+    (X XF α β : nat -> Ts -> vector R n)
     {F : nat -> SigmaAlgebra Ts}
     (isfilt : IsFiltration F) 
     (filt_sub : forall k, sa_sub (F k) dom) 
@@ -2299,57 +2302,48 @@ admit.
     (adapt_beta : IsAdapted (Rvector_borel_sa n) β F)    
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
     (npos : (0 < n)%nat)
-    (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa n) (XF k)}
-    {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
-    {iscond : forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (w k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k)))} :
+    {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}:
 
+      0 < γ < 1 ->
+      
+    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω) <= 1) ->
     almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <= vector_nth i pf (α k ω)) ->        
-    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
-
-    (exists (C : R),
-        forall i pf,
-          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (β k ω))))) (Finite C))) ->
-
-    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
 
 (*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
 *)
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
 
     (exists (C : R),
         forall i pf,
           almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Finite C))) ->
-    (forall k i pf, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (vecrvnth i pf (w k))) (const 0)) ->
-    (exists (A B : R),
-        0 < A /\ 0 < B /\
-        forall k i pf, 
-          almostR2 prts Rbar_le (ConditionalExpectation 
-                                   _ (filt_sub k) 
-                                   (rvsqr (vecrvnth i pf (w k))))
-                   (rvplus (const A) 
-                           (rvscale B (rvmaxlist 
-                                         (fun j ω => rvsqr (rvmaxabs (X j)) ω)
-                                         k)))) ->
-    0 <= γ < 1 ->
-    (forall k ω, Rvector_max_abs (XF k ω) <=
-                 γ * Rvector_max_abs (X k ω)) ->
-    (forall k ω, Rvector_max_abs (X k ω) <= C) ->
+    (exists (C : R),
+        forall i pf,
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (β k ω))))) (Finite C))) ->
+
+    (forall k i pf ω, 
+        Rbar_le ((ConditionalExpectation _ (filt_sub k) ((vecrvnth i pf (XF k)))) ω)
+                 (γ * (Rvector_max_abs (X k ω)))) ->
+
+    (exists (C : R),
+        0 < C /\
+        forall k i pf ω, 
+          Rbar_le ((ConditionalVariance (filt_sub k) (vecrvnth i pf (XF k))) ω)
+            (C * (1 + Rvector_max_abs (X k ω))^2)) ->                  
+    (exists (C : R), forall k ω, Rvector_max_abs (X k ω) <= C) ->
     (forall k, rv_eq (X (S k)) 
-                 (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (vecrvplus (XF k) (w k))))) ->
+                 (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k)))) ->
     almost prts (fun ω =>
                    forall i pf,
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
   Proof.
     Admitted.
 
-
     Theorem Jaakkola_alpha_beta_bounded_eventually_almost {n} 
-    (γ C : R) 
-    (X w α β : nat -> Ts -> vector R n)
-(*    (x' : vector R n) *)
-    (XF : nat -> Ts -> vector R n)
+    (γ : R) 
+    (X XF α β : nat -> Ts -> vector R n)
     {F : nat -> SigmaAlgebra Ts}
     (isfilt : IsFiltration F) 
     (filt_sub : forall k, sa_sub (F k) dom) 
@@ -2357,46 +2351,39 @@ admit.
     (adapt_beta : IsAdapted (Rvector_borel_sa n) β F)    
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
     (npos : (0 < n)%nat)
-    (adapt_w : IsAdapted  (Rvector_borel_sa n) w (fun k => F (S k)))
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa n) (XF k)}
-    {rvw : forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (w k ω))}
-    {iscond : forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (w k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (w k)))} :
+    {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}:
 
+    0 < γ < 1 ->
+
+    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω)) ->
-    (eventually (fun k => almost prts (fun ω => forall i pf, vector_nth i pf (β k ω) <= 1))) ->      
-    almost prts (fun ω => forall k i pf, 
-                     vector_nth i pf (β k ω) <=  vector_nth i pf (α k ω)) ->        
-    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
+    eventually (fun k => almost prts (fun ω => forall i pf, vector_nth i pf (α k ω) <= 1)) ->          
+    eventually (fun k => almost prts (fun ω => forall i pf, vector_nth i pf (β k ω) <= 1)) ->      
+    almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <=  vector_nth i pf (α k ω)) ->        
 
+(*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
+*)
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
     (exists (C : R),
         forall i pf,
           almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (β k ω))))) (Finite C))) ->
 
-    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
-    (eventually (fun k => almost prts (fun ω => forall i pf,
-                                           vector_nth i pf (α k ω) <= 1 ))) ->          
-(*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
-*)
-    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    (forall k i pf ω, 
+        Rbar_le ((ConditionalExpectation _ (filt_sub k) ((vecrvnth i pf (XF k)))) ω)
+                 (γ * (Rvector_max_abs (X k ω)))) ->
 
     (exists (C : R),
-        forall i pf,
-          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Finite C))) ->
-    (forall k i pf, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (vecrvnth i pf (w k))) (const 0)) ->
-    (exists (A B : R),
-        0 < A /\ 0 < B /\
-        forall k i pf, 
-          almostR2 prts Rbar_le (ConditionalExpectation 
-                                   _ (filt_sub k) 
-                                   (rvsqr (vecrvnth i pf (w k))))
-                   (rvplus (const A) 
-                      (rvscale B (rvsqr (rvmaxabs (X k)))))) ->
-    0 <= γ < 1 ->
-    (forall k ω, Rvector_max_abs (XF k ω) <=
-                 γ * Rvector_max_abs (X k ω)) ->
-    (forall k ω, Rvector_max_abs (X k ω) <= C) ->
+        0 < C /\
+        forall k i pf ω, 
+          Rbar_le ((ConditionalVariance (filt_sub k) (vecrvnth i pf (XF k))) ω)
+             (C * (1 + Rvector_max_abs (X k ω))^2)) ->                  
+
+    (exists (C : R), forall k ω, Rvector_max_abs (X k ω) <= C) ->
+    
     (forall k, rv_eq (X (S k)) 
-                 (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (vecrvplus (XF k) (w k))))) ->
+                 (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
     almost prts (fun ω =>
                    forall i pf,
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
