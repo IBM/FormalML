@@ -2287,8 +2287,8 @@ admit.
           unfold eventually.
           Admitted.
 
-    Theorem Jaakkola_alpha_beta {n} 
-    (γ : R) 
+    Theorem Jaakkola_alpha_beta_bounded {n} 
+    (γ C : R) 
     (X w α β : nat -> Ts -> vector R n)
 (*    (x' : vector R n) *)
     (XF : nat -> Ts -> vector R n)
@@ -2335,6 +2335,7 @@ admit.
     0 <= γ < 1 ->
     (forall k ω, Rvector_max_abs (XF k ω) <=
                  γ * Rvector_max_abs (X k ω)) ->
+    (forall k ω, Rvector_max_abs (X k ω) <= C) ->
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (vecrvplus (XF k) (w k))))) ->
     almost prts (fun ω =>
@@ -2344,8 +2345,8 @@ admit.
     Admitted.
 
 
-    Theorem Jaakkola_alpha_beta_eventually_almost {n} 
-    (γ : R) 
+    Theorem Jaakkola_alpha_beta_bounded_eventually_almost {n} 
+    (γ C : R) 
     (X w α β : nat -> Ts -> vector R n)
 (*    (x' : vector R n) *)
     (XF : nat -> Ts -> vector R n)
@@ -2393,6 +2394,7 @@ admit.
     0 <= γ < 1 ->
     (forall k ω, Rvector_max_abs (XF k ω) <=
                  γ * Rvector_max_abs (X k ω)) ->
+    (forall k ω, Rvector_max_abs (X k ω) <= C) ->
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (vecrvplus (XF k) (w k))))) ->
     almost prts (fun ω =>
