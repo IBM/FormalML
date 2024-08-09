@@ -5494,6 +5494,7 @@ Section cond_exp2.
     Rbar_rvminus (NonNegCondexp (pos_fun_part f))
                  (NonNegCondexp (neg_fun_part f)).
 
+
   Lemma Condexp_nneg_simpl (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {nnf : NonnegativeFunction f} :
@@ -6644,6 +6645,13 @@ Section fin_cond_exp.
     destruct HH.
     apply x.
   Defined.
+
+  Definition ConditionalVariance (f : Ts -> R) 
+    {rv : RandomVariable dom borel_sa f} 
+    {isfe:IsFiniteExpectation prts f} 
+    {rv2 : RandomVariable dom borel_sa
+             (rvsqr (rvminus f (FiniteConditionalExpectation f )))} : Ts -> Rbar :=
+    ConditionalExpectation prts sub (rvsqr (rvminus f (FiniteConditionalExpectation f))).
 
   Lemma FiniteConditionalExpectation_ext (f1 f2 : Ts -> R)
         {rv1 : RandomVariable dom borel_sa f1}

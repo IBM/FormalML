@@ -2287,10 +2287,6 @@ admit.
           unfold eventually.
           Admitted.
 
-  Definition ConditionalVariance {dom2 : SigmaAlgebra Ts}
-    (sub : sa_sub dom2 dom) (f : Ts -> R) 
-    {rv : RandomVariable dom borel_sa f} : Ts -> Rbar :=
-    ConditionalExpectation _ sub (rvsqr (rvminus f (ConditionalExpectation _ sub f))).
   
   Theorem Jaakkola_alpha_beta_bounded {n} 
     (γ : R) 
@@ -2303,9 +2299,12 @@ admit.
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
     (npos : (0 < n)%nat)
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa n) (XF k)}
-    {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}:
-
-      0 < γ < 1 ->
+    {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
+    {rv2 : forall k i pf, RandomVariable dom borel_sa
+                            (rvsqr (rvminus (vecrvnth i pf (XF k))
+                                      (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} : 
+    0 < γ < 1 ->
       
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω) <= 1) ->
@@ -2330,7 +2329,7 @@ admit.
     (exists (C : R),
         0 < C /\
         forall k i pf ω, 
-          Rbar_le ((ConditionalVariance (filt_sub k) (vecrvnth i pf (XF k))) ω)
+          Rbar_le ((ConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
             (C * (1 + Rvector_max_abs (X k ω))^2)) ->                  
     (exists (C : R), forall k ω, Rvector_max_abs (X k ω) <= C) ->
     (forall k, rv_eq (X (S k)) 
@@ -2352,7 +2351,12 @@ admit.
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
     (npos : (0 < n)%nat)
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa n) (XF k)}
-    {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}:
+    {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
+    {rv2 : forall k i pf, RandomVariable dom borel_sa
+                            (rvsqr (rvminus (vecrvnth i pf (XF k))
+                                      (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} : 
+
 
     0 < γ < 1 ->
 
@@ -2377,7 +2381,7 @@ admit.
     (exists (C : R),
         0 < C /\
         forall k i pf ω, 
-          Rbar_le ((ConditionalVariance (filt_sub k) (vecrvnth i pf (XF k))) ω)
+          Rbar_le ((ConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
              (C * (1 + Rvector_max_abs (X k ω))^2)) ->                  
 
     (exists (C : R), forall k ω, Rvector_max_abs (X k ω) <= C) ->
