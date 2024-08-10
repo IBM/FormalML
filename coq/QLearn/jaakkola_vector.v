@@ -2338,6 +2338,128 @@ admit.
                    forall i pf,
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
   Proof.
+    intros.
+    assert (rvXF2 : forall k, RandomVariable dom (Rvector_borel_sa n) (XF k)).
+    {
+      intros.
+      now apply (RandomVariable_sa_sub (filt_sub (S k))).
+    }
+    assert (vecisfe: forall k, vector_IsFiniteExpectation prts (XF k)).
+    {
+      intros.
+      unfold vector_IsFiniteExpectation.
+      simpl.
+      admit.
+    }
+    pose (r := fun (k : nat) => vecrvminus (XF k)
+                                  (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k))).
+    pose (δ := fix δ kk :=
+          match kk with
+                | 0%nat => X 0%nat
+                | S k =>
+                    (vecrvplus (vecrvminus (δ k) (vecrvmult (α k) (δ k))) 
+                       (vecrvmult (β k)
+                          (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k))))
+          end).
+
+    pose (w := fix w kk :=
+          match kk with
+                | 0%nat => vecrvconst n 0
+                | S k =>
+                    (vecrvplus (vecrvminus (w k) (vecrvmult (α k) (w k))) 
+                       (vecrvmult (β k) (r k)))
+          end).
+
+    assert (forall k, rv_eq (X k) (vecrvplus (δ k) (w k))).
+    {
+      intros.
+      induction k.
+      - intros ?.
+        simpl.
+        unfold vecrvplus, vecrvconst.
+        now rewrite Rvector_plus_zero.        
+      - intros ?.
+        simpl.
+        rewrite H10.
+        specialize (IHk a).
+        unfold r, vecrvminus, vecrvplus, vecrvopp, vecrvmult, vecrvscale.
+        rewrite IHk.
+        unfold vecrvplus, Rvector_scale.
+        repeat rewrite Rvector_mult_explode.        
+        repeat rewrite Rvector_plus_explode.
+        apply vector_create_ext; intros.
+        repeat rewrite vector_nth_map.
+        repeat rewrite vector_map_create.
+        repeat rewrite vector_nth_create.
+        repeat rewrite vector_nth_map.
+        assert (pf3 : (i < n)%nat).
+        {
+          lia.
+        }
+        replace (vector_nth (0 + i) (plus_lt_compat_l i n 0 pf2) (β k a)) with
+          (vector_nth i pf3 (β k a)) by apply vector_nth_ext.
+        replace (vector_nth (0 + i) (plus_lt_compat_l i n 0 pf2) (α k a)) with
+          (vector_nth i pf3 (α k a)) by apply vector_nth_ext.
+        replace (vector_nth (0 + i) (plus_lt_compat_l i n 0 pf2) (XF k a)) with
+          (vector_nth i pf3 (XF k a)) by apply vector_nth_ext.
+        replace (vector_nth (0 + (0 + i))
+                   (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2)) 
+                   (α k a)) with
+          (vector_nth i pf3 (α k a)) by apply vector_nth_ext.
+        replace (vector_nth (0 + (0 + i))
+                   (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2)) 
+                   (β k a)) with
+          (vector_nth i pf3 (β k a)) by apply vector_nth_ext.
+        replace (vector_nth (0 + (0 + i))
+                   (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2)) 
+                   (δ k a)) with
+          (vector_nth i pf3 (δ k a)) by apply vector_nth_ext.
+        replace (vector_nth (0 + (0 + i))
+                   (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2)) 
+                   (w k a)) with
+          (vector_nth i pf3 (w k a)) by apply vector_nth_ext.
+        replace (vector_nth (0 + (0 + i))
+                   (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2)) 
+                   (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) a)) with
+          (vector_nth i pf3 (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) a)) by apply vector_nth_ext.
+        replace (vector_nth (0 + (0 + (0 + i)))
+                   (plus_lt_compat_l (0 + (0 + i)) n 0
+                      (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2))) 
+                   (α k a)) with
+           (vector_nth i pf3 (α k a)) by apply vector_nth_ext.
+        replace (vector_nth (0 + (0 + (0 + i)))
+                   (plus_lt_compat_l (0 + (0 + i)) n 0
+                      (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2))) 
+                   (β k a)) with
+           (vector_nth i pf3 (β k a)) by apply vector_nth_ext.
+        replace (vector_nth (0 + (0 + (0 + i)))
+                   (plus_lt_compat_l (0 + (0 + i)) n 0
+                      (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2))) 
+                   (δ k a)) with
+           (vector_nth i pf3 (δ k a)) by apply vector_nth_ext.
+        replace (vector_nth (0 + (0 + (0 + i)))
+                   (plus_lt_compat_l (0 + (0 + i)) n 0
+                      (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2))) 
+                   (w k a)) with
+           (vector_nth i pf3 (w k a)) by apply vector_nth_ext.
+        replace (vector_nth (0 + (0 + (0 + i)))
+                   (plus_lt_compat_l (0 + (0 + i)) n 0
+                      (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2))) 
+                   (XF k a)) with
+           (vector_nth i pf3 (XF k a)) by apply vector_nth_ext.
+        replace (vector_nth (0 + (0 + (0 + i)))
+                   (plus_lt_compat_l (0 + (0 + i)) n 0
+                      (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2))) 
+                  (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) a)) with
+          (vector_nth i pf3 (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) a)) by apply vector_nth_ext.
+        lra.
+    }
+    
+    
+        
+        
+        
+        
     Admitted.
 
     Theorem Jaakkola_alpha_beta_bounded_eventually_almost {n} 

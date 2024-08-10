@@ -6653,6 +6653,12 @@ Section fin_cond_exp.
              (rvsqr (rvminus f (FiniteConditionalExpectation f )))} : Ts -> Rbar :=
     ConditionalExpectation prts sub (rvsqr (rvminus f (FiniteConditionalExpectation f))).
 
+  Definition ConditionalVariance_alt (f : Ts -> R) 
+    {rv : RandomVariable dom borel_sa f} 
+    {rv2 : RandomVariable dom borel_sa (rvsqr f)} : Ts -> Rbar :=
+    Rbar_rvminus (ConditionalExpectation prts sub (rvsqr f))
+      (Rbar_rvsqr (ConditionalExpectation prts sub f)).
+
   Lemma FiniteConditionalExpectation_ext (f1 f2 : Ts -> R)
         {rv1 : RandomVariable dom borel_sa f1}
         {rv2 : RandomVariable dom borel_sa f2}
