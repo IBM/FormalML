@@ -2347,9 +2347,7 @@ admit.
     assert (vecisfe: forall k, vector_IsFiniteExpectation prts (XF k)).
     {
       intros.
-      unfold vector_IsFiniteExpectation.
-      simpl.
-      admit.
+      now apply vector_nth_IsFiniteExpectation.
     }
     pose (r := fun (k : nat) => vecrvminus (XF k)
                                   (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k))).
@@ -2485,21 +2483,42 @@ admit.
       apply (RandomVariable_sa_sub (filt_sub k)).
       apply vector_FiniteCondexp_rv.
     }
-    assert (exists C, forall k i pf ω, Rbar_le (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (r k))) ω) C).
+    assert (exists (C : R), forall k i pf ω, Rbar_le (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (r k))) ω) C).
     {
       unfold r.
       destruct H12.
       exists x.
       intros.
       unfold ConditionalVariance in H12.
+(*
       eapply Rbar_le_trans; cycle 1.
       apply (H12 k i pf ω).
       apply slln.eq_Rbar_le.
       apply ConditionalExpectation_ext.
       intros ?.
       f_equal.
+*)
       admit.
     }
+    destruct H5 as [Ca ?].
+    destruct H6 as [Cb ?].
+    assert (exists B,
+             forall k i pf ω,
+               Rbar_le (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (r k))) ω) (Rsqr B)).               
+    {
+      destruct H14.
+      exists (Rsqrt (mknonnegreal _ (Rmax_l 0 x))).
+      intros.
+      eapply Rbar_le_trans.
+      apply H14.
+      
+      admit.
+    }
+    generalize (fun i pf => lemma1_bounded_alpha_beta 
+                              (fun k ω => vector_nth i pf (α k ω))
+                              (fun k ω => vector_nth i pf (β k ω))
+                              (fun k ω => vector_nth i pf (r k ω))                                                    (fun k ω => vector_nth i pf (w k ω)) Ca Cb); intros.
+    
     
         
     Admitted.
