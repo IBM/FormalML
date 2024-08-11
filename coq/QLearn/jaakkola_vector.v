@@ -2454,11 +2454,53 @@ admit.
           (vector_nth i pf3 (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) a)) by apply vector_nth_ext.
         lra.
     }
+    assert (exists C, forall k i pf ω, Rbar_le (ConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k)) ω) C).
+    {
+      destruct H8 as [? [??]].
+      destruct H9.
+      exists (x * (1 + x0)^2).
+      intros.
+      eapply Rbar_le_trans.
+      apply H12.
+      simpl.
+      apply Rmult_le_compat_l; try lra.
+      repeat rewrite Rmult_1_r.
+      assert (0 <= x0).
+      {
+        eapply Rle_trans; cycle 1.
+        apply H9.
+        apply Rvector_max_abs_nonneg.
+      }
+      generalize (Rvector_max_abs_nonneg (X k ω)); intros.
+      specialize (H9 k ω).
+      apply Rmult_le_compat; try lra.
+    }
+    assert (forall k i pf,
+               RandomVariable dom borel_sa (vecrvnth i pf (r k))).
+    {
+      intros.
+      unfold r.
+      apply vecrvnth_rv.
+      apply Rvector_minus_rv; trivial.
+      apply (RandomVariable_sa_sub (filt_sub k)).
+      apply vector_FiniteCondexp_rv.
+    }
+    assert (exists C, forall k i pf ω, Rbar_le (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (r k))) ω) C).
+    {
+      unfold r.
+      destruct H12.
+      exists x.
+      intros.
+      unfold ConditionalVariance in H12.
+      eapply Rbar_le_trans; cycle 1.
+      apply (H12 k i pf ω).
+      apply slln.eq_Rbar_le.
+      apply ConditionalExpectation_ext.
+      intros ?.
+      f_equal.
+      admit.
+    }
     
-    
-        
-        
-        
         
     Admitted.
 
