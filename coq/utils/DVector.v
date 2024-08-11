@@ -880,6 +880,15 @@ Proof.
   apply vector_nth_In.
 Qed.
 
+Program Lemma vector_Forall_iff {A} {P:A->Prop} {n:nat} (l:vector A n)
+  : Forall P l <-> (forall i pf, P (vector_nth i pf l)).
+Proof.
+  intros.
+  split.
+  - apply vector_Forall.
+  - apply Forall_vector.
+Qed.
+
 
 
 Lemma vector_nthS {A} a i (l:list A) pf1 pf2 :
