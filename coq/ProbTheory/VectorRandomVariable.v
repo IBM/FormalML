@@ -2109,6 +2109,17 @@ Section vec_exp.
     apply H.
   Qed.
 
+  Local Instance vector_nth_IsFiniteExpectation {n} (f: Ts -> vector R n) :
+    (forall i pf, IsFiniteExpectation prts (vecrvnth i pf f)) ->
+    vector_IsFiniteExpectation f.
+  Proof.
+    intros allisfe.
+    apply Forall_vector; intros i pf.
+    simpl iso_f.
+    rewrite vector_nth_fun_to_vector.
+    apply allisfe.
+  Qed.
+
   Definition vector_IsFiniteExpectation_Finite {n} (rv_X:Ts -> vector R n)
         {isfe:vector_IsFiniteExpectation rv_X} :
     { x : vector R n | vector_Expectation rv_X = Some (vector_map Finite x)}.
