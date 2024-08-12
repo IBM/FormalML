@@ -2394,63 +2394,14 @@ admit.
         {
           lia.
         }
-        replace (vector_nth (0 + i) (plus_lt_compat_l i n 0 pf2) (β k a)) with
-          (vector_nth i pf3 (β k a)) by apply vector_nth_ext.
-        replace (vector_nth (0 + i) (plus_lt_compat_l i n 0 pf2) (α k a)) with
-          (vector_nth i pf3 (α k a)) by apply vector_nth_ext.
-        replace (vector_nth (0 + i) (plus_lt_compat_l i n 0 pf2) (XF k a)) with
-          (vector_nth i pf3 (XF k a)) by apply vector_nth_ext.
-        replace (vector_nth (0 + (0 + i))
-                   (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2)) 
-                   (α k a)) with
-          (vector_nth i pf3 (α k a)) by apply vector_nth_ext.
-        replace (vector_nth (0 + (0 + i))
-                   (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2)) 
-                   (β k a)) with
-          (vector_nth i pf3 (β k a)) by apply vector_nth_ext.
-        replace (vector_nth (0 + (0 + i))
-                   (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2)) 
-                   (δ k a)) with
-          (vector_nth i pf3 (δ k a)) by apply vector_nth_ext.
-        replace (vector_nth (0 + (0 + i))
-                   (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2)) 
-                   (w k a)) with
-          (vector_nth i pf3 (w k a)) by apply vector_nth_ext.
-        replace (vector_nth (0 + (0 + i))
-                   (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2)) 
-                   (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) a)) with
-          (vector_nth i pf3 (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) a)) by apply vector_nth_ext.
-        replace (vector_nth (0 + (0 + (0 + i)))
-                   (plus_lt_compat_l (0 + (0 + i)) n 0
-                      (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2))) 
-                   (α k a)) with
-           (vector_nth i pf3 (α k a)) by apply vector_nth_ext.
-        replace (vector_nth (0 + (0 + (0 + i)))
-                   (plus_lt_compat_l (0 + (0 + i)) n 0
-                      (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2))) 
-                   (β k a)) with
-           (vector_nth i pf3 (β k a)) by apply vector_nth_ext.
-        replace (vector_nth (0 + (0 + (0 + i)))
-                   (plus_lt_compat_l (0 + (0 + i)) n 0
-                      (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2))) 
-                   (δ k a)) with
-           (vector_nth i pf3 (δ k a)) by apply vector_nth_ext.
-        replace (vector_nth (0 + (0 + (0 + i)))
-                   (plus_lt_compat_l (0 + (0 + i)) n 0
-                      (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2))) 
-                   (w k a)) with
-           (vector_nth i pf3 (w k a)) by apply vector_nth_ext.
-        replace (vector_nth (0 + (0 + (0 + i)))
-                   (plus_lt_compat_l (0 + (0 + i)) n 0
-                      (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2))) 
-                   (XF k a)) with
-           (vector_nth i pf3 (XF k a)) by apply vector_nth_ext.
-        replace (vector_nth (0 + (0 + (0 + i)))
-                   (plus_lt_compat_l (0 + (0 + i)) n 0
-                      (plus_lt_compat_l (0 + i) n 0 (plus_lt_compat_l i n 0 pf2))) 
-                  (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) a)) with
-          (vector_nth i pf3 (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) a)) by apply vector_nth_ext.
-        lra.
+        simpl.
+        repeat match goal with
+          [|- context [@vector_nth ?RR ?nn i (plus_lt_compat_l ?pi ?pn ?pc ?pp) ?v]] =>
+            replace (@vector_nth RR nn i (plus_lt_compat_l pi pn pc pp) v)
+            with (@vector_nth RR nn i pf3 v)
+            by apply vector_nth_ext
+        end.
+        lra. 
     }
     assert (exists C, forall k i pf ω, Rbar_le (ConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k)) ω) C).
     {
