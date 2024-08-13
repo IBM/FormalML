@@ -4,6 +4,7 @@ version: "~dev"
 synopsis: "Exploring formal verification for symbolic neural networks"
 maintainer: "Avi Shinnar <shinnar@us.ibm.com>"
 authors: "Avi Shinnar <shinnar@us.ibm.com>"
+license: "Apache-2.0"
 homepage: "https://github.com/ibm/formalml"
 bug-reports: "https://github.com/ibm/formalml/issues"
 depends: [
