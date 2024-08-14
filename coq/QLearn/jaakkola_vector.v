@@ -2440,7 +2440,9 @@ admit.
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa n) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
     {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
-    {isfe2 : forall k i pf, IsFiniteExpectation prts (rvsqr (vecrvnth i pf (XF k)))} :
+    {isfe2 : forall k i pf, IsFiniteExpectation prts 
+                              (rvsqr (rvminus (vecrvnth i pf (XF k))
+                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} :
     0 < γ < 1 ->
       
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
@@ -2466,8 +2468,8 @@ admit.
     (exists (C : R),
         0 < C /\
         forall k i pf ω, 
-          (FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω <=
-            C * (1 + Rvector_max_abs (X k ω))^2) ->                  
+          Rbar_le ((FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
+            (C * (1 + Rvector_max_abs (X k ω))^2)) ->                  
     (exists (C : R), forall k ω, Rvector_max_abs (X k ω) <= C) ->
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k)))) ->
@@ -2638,56 +2640,57 @@ admit.
     }
     destruct H5 as [Ca ?].
     destruct H6 as [Cb ?].
+    assert (forall k i pf, IsFiniteExpectation prts (rvsqr (vecrvnth i pf (r k)))).
+    {
+      intros.
+      unfold r.
+      admit.
+    }
     assert (exists B,
-             forall k i pf,
-               almostR2 prts Rbar_le (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (r k)))) (const  (Rsqr B))).
+             forall k i pf ω,
+               (FiniteConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (r k)))) ω <=  (Rsqr B)).
     {
       unfold FiniteConditionalVariance in H12.
-      
-      destruct H9 as [C ?].
-      exists (2 * C).
-      intros.
-      assert (RandomVariable dom borel_sa (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))).
+      destruct H12 as [C ?].
+      assert (0 <= Rmax 0 C).
       {
-        apply (RandomVariable_sa_sub (filt_sub k)).
-        apply FiniteCondexp_rv.
+        apply Rmax_l.
       }
-      generalize (condexp_square_bounded (vecrvnth i pf (XF k)) C (filt_sub k)); intros.
-      cut_to H18.
-      - unfold r.
-        revert H18.
-        apply almost_impl.
-        apply all_almost; intros ??.
-        eapply Rbar_le_trans; cycle 1.
-        apply H18.
-        apply slln.eq_Rbar_le.
-        apply ConditionalExpectation_ext.
-        intros ?.
-        unfold rvsqr.
-        f_equal.
-        unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vector_FiniteConditionalExpectation, vecrvnth.
-        rewrite Rvector_nth_plus, Rvector_nth_scale.
-        simpl.
-        rewrite vector_of_funs_vector_nth, vector_nth_map.
-        unfold rvminus, rvplus, rvopp, rvscale, vecrvnth.
-        f_equal.
-        f_equal.
-        apply FiniteConditionalExpectation_ext.
-        intros ?.
-        rewrite vector_dep_zip_nth_proj1.
-        now rewrite vector_nth_fun_to_vector.
-      - intros.
-        unfold FiniteConditionalVariance in H12.
-        unfold r in H16.
-        admit.
+      exists (Rsqrt (mknonnegreal _ H18)).
+      intros.
+      specialize (H12 k i pf ω).
+      unfold r.
+      unfold Rsqr.
+      rewrite Rsqrt_Rsqrt.
+      simpl.
+      assert (C <= Rmax 0 C) by apply Rmax_r.
+      eapply Rle_trans; cycle 1.
+      apply H19.
+      eapply Rle_trans; cycle 1.
+      apply H12.
+      right.
+      apply FiniteConditionalExpectation_ext.
+      intros ?.
+      unfold rvsqr.
+      f_equal.
+      unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vector_FiniteConditionalExpectation, vecrvnth.
+      rewrite Rvector_nth_plus, Rvector_nth_scale.
+      simpl.
+      rewrite vector_of_funs_vector_nth, vector_nth_map.
+      unfold rvminus, rvplus, rvopp, rvscale, vecrvnth.
+      f_equal.
+      f_equal.
+      apply FiniteConditionalExpectation_ext.
+      intros ?.
+      rewrite vector_dep_zip_nth_proj1.
+      now rewrite vector_nth_fun_to_vector.
     }
+    destruct H18 as [B ?].
     generalize (fun i pf => lemma1_bounded_alpha_beta 
                               (fun k ω => vector_nth i pf (α k ω))
                               (fun k ω => vector_nth i pf (β k ω))
                               (fun k ω => vector_nth i pf (r k ω))
                               (fun k ω => vector_nth i pf (w k ω)) Ca Cb); intros.
-    
-    
         
     Admitted.
 
