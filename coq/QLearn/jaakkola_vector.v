@@ -2287,31 +2287,146 @@ admit.
           unfold eventually.
           Admitted.
 
-   Lemma condexp_condexp_diff_0 (XF : nat -> Ts -> R)
-     {F : nat -> SigmaAlgebra Ts}
-     (isfilt : IsFiltration F) 
-     (filt_sub : forall k, sa_sub (F k) dom) 
-     {rvXF : forall k, RandomVariable dom borel_sa (XF k)}
-     {isfe : forall k, IsFiniteExpectation prts (XF k)} 
-     {rv3 : forall k, RandomVariable dom borel_sa (FiniteConditionalExpectation prts (filt_sub k) (XF k))} :
-     forall (k:nat), almostR2 prts eq
-                       (ConditionalExpectation
-                          prts (filt_sub k)
-                          (rvminus (XF k)
-                             (FiniteConditionalExpectation prts (filt_sub k) (XF k))))
-                       (const 0).
+   Lemma condexp_condexp_diff_0 (XF : Ts -> R)
+     {dom2 : SigmaAlgebra Ts}
+     (sa_sub2 : sa_sub dom2 dom) 
+     {rvXF : RandomVariable dom borel_sa XF}
+     {isfe : IsFiniteExpectation prts XF} 
+     {rv3 : RandomVariable dom borel_sa (FiniteConditionalExpectation prts sa_sub2 XF)} :
+     almostR2 prts eq
+       (ConditionalExpectation
+          prts sa_sub2
+          (rvminus XF
+             (FiniteConditionalExpectation prts sa_sub2 XF)))
+       (const 0).
      Proof.
        intros.
-       apply (almost_prob_space_sa_sub_lift prts (filt_sub k)).
-       generalize (Condexp_minus prts (filt_sub k) (XF k) (FiniteConditionalExpectation prts (filt_sub k) (XF k))).
+       apply (almost_prob_space_sa_sub_lift prts sa_sub2).
+       generalize (Condexp_minus prts sa_sub2 XF (FiniteConditionalExpectation prts sa_sub2 XF)).
        apply almost_impl.
        apply all_almost; intros ??.
        rewrite H.
-       generalize (FiniteCondexp_rv prts (filt_sub k) (XF k)); intros.
-       generalize (Condexp_id prts (filt_sub k)); intros.
-       specialize (H1 _ _ H0).
-       Admitted.
+       generalize (FiniteCondexp_rv prts sa_sub2 XF); intros.
+       assert (rv_eq 
+                  (Rbar_rvminus (ConditionalExpectation prts sa_sub2 XF)
+                     (ConditionalExpectation prts sa_sub2 (FiniteConditionalExpectation prts sa_sub2 XF)))
+                  (Rbar_rvminus (ConditionalExpectation prts sa_sub2 XF) 
+                     (ConditionalExpectation prts sa_sub2 XF))).
+       {
+         generalize (Condexp_id prts sa_sub2); intros.
+         specialize (H1 _ _ H0).
+         intros ?.
+         unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
+         f_equal.
+         f_equal.
+         rewrite H1.
+         now rewrite (FiniteCondexp_eq prts sa_sub2 XF).
+       }
+       rewrite H1.
+       generalize (FiniteCondexp_eq prts sa_sub2 XF); intros.
+       rewrite H2.
+       unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp, const.
+       simpl.
+       apply Rbar_finite_eq.
+       lra.
+   Qed.
   
+   Lemma condexp_sqr_bounded  (XF : Ts -> R) (C : R)
+     {dom2 : SigmaAlgebra Ts}
+     (sa_sub2 : sa_sub dom2 dom) 
+     {rvXF : RandomVariable dom borel_sa XF} :
+     almostR2 prts Rle (rvsqr XF) (const C) ->
+     almostR2 (prob_space_sa_sub prts sa_sub2) Rbar_le (ConditionalExpectation prts sa_sub2 (rvsqr XF)) (const C).
+   Proof.
+     intros.
+     generalize (Condexp_const prts sa_sub2 C); intros.     
+     assert (IsFiniteExpectation prts (rvsqr XF)).
+     {
+       apply (IsFiniteExpectation_abs_bound_almost prts (rvsqr XF) (const C)).
+       - revert H.
+         apply almost_impl.
+         unfold const, rvsqr, rvabs.
+         apply all_almost; intros ??.
+         now rewrite <- Rabs_sqr.
+       - apply IsFiniteExpectation_const.
+     }
+     generalize (Condexp_ale prts sa_sub2 (rvsqr XF) (const C)); intros.
+     rewrite Condexp_const in H2.
+     now apply H2.
+  Qed.
+
+   Lemma condexp_sqr_bounded_prts  (XF : Ts -> R) (C : R)
+     {dom2 : SigmaAlgebra Ts}
+     (sa_sub2 : sa_sub dom2 dom) 
+     {rvXF : RandomVariable dom borel_sa XF} :
+     almostR2 prts Rle (rvsqr XF) (const C) ->
+     almostR2 prts Rbar_le (ConditionalExpectation prts sa_sub2 (rvsqr XF)) (const C).
+   Proof.
+     intros.
+     apply (almost_prob_space_sa_sub_lift prts sa_sub2).
+     now apply condexp_sqr_bounded.
+  Qed.
+
+   Lemma condexp_square_bounded (XF : Ts -> R) (C : R)
+     {dom2 : SigmaAlgebra Ts}
+     (sa_sub2 : sa_sub dom2 dom) 
+     {rvXF : RandomVariable dom borel_sa XF}
+     {isfe : IsFiniteExpectation prts XF} 
+     {rv3 : RandomVariable dom borel_sa (FiniteConditionalExpectation prts sa_sub2 XF)} :
+     (forall ω, Rabs (XF ω) <= C) ->
+     almostR2 prts Rbar_le
+       (ConditionalExpectation
+          prts sa_sub2
+          (rvsqr (rvminus XF
+                    (FiniteConditionalExpectation prts sa_sub2 XF))))
+       (const (Rsqr (2 * C))).
+  Proof.
+    intros.
+    apply condexp_sqr_bounded_prts.
+    assert (almostR2 prts Rle (FiniteConditionalExpectation prts sa_sub2 XF) (const C)).
+    {
+      generalize (FiniteCondexp_ale prts sa_sub2 XF (const C)); intros.
+      apply (almost_prob_space_sa_sub_lift prts sa_sub2).      
+      rewrite FiniteCondexp_const in H0.
+      apply H0.
+      apply all_almost; intros ?.
+      unfold const.
+      specialize (H x).
+      now rewrite Rabs_le_both in H.
+   }
+   assert (almostR2 prts Rle (const (- C)) (FiniteConditionalExpectation prts sa_sub2 XF)).
+   {
+      generalize (FiniteCondexp_ale prts sa_sub2 (const (- C)) XF ); intros.
+      apply (almost_prob_space_sa_sub_lift prts sa_sub2).      
+      rewrite FiniteCondexp_const in H1.
+      apply H1.
+      apply all_almost; intros ?.
+      unfold const.
+      specialize (H x).
+      now rewrite Rabs_le_both in H.
+   }
+   revert H0; apply almost_impl.
+   revert H1; apply almost_impl.
+   unfold const, rvsqr, rvminus, rvplus, rvopp, rvscale.
+   apply all_almost; intros ???.
+   apply Rsqr_le_abs_1.    
+   eapply Rle_trans.
+   apply Rabs_triang.
+   repeat rewrite Rabs_mult.
+   rewrite Rabs_m1, Rmult_1_l.
+   rewrite (Rabs_right 2); try lra.
+   assert (0 <= C).
+   {
+     eapply Rle_trans; cycle 1.
+     apply (H x).
+     apply Rabs_pos.
+   }
+   rewrite (Rabs_right C); try lra.
+   replace (2 * C) with (C + C) by lra.
+   apply Rplus_le_compat; trivial.
+   now rewrite Rabs_le_both.
+ Qed.
+
   Theorem Jaakkola_alpha_beta_bounded {n} 
     (γ : R) 
     (X XF α β : nat -> Ts -> vector R n)
@@ -2491,57 +2606,80 @@ admit.
                                      (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))
                 (fun x : Ts => const 0 x)).
       {
-        apply (almost_prob_space_sa_sub_lift prts (filt_sub k)).
-        generalize (Condexp_minus prts (filt_sub k)); intros.
-        unfold almostR2 in H17.
-        admit.
+        assert  (RandomVariable dom borel_sa (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))).        
+        {
+          apply (RandomVariable_sa_sub (filt_sub k)).
+          apply FiniteCondexp_rv.
+        }
+        generalize (condexp_condexp_diff_0 (vecrvnth i pf (XF k)) (filt_sub k)).
+        apply almost_impl.
+        apply all_almost; intros ??.
+        rewrite <- H18.
+        now apply ConditionalExpectation_ext.
       }
-
-      generalize (FiniteConditionalExpectation_ext prts (filt_sub k)); intros.
-      admit.
-    }
-
-
-    assert (forall k i pf,
-               IsFiniteExpectation prts (rvsqr (vecrvnth i pf (r k)))).
-    {
-      intros.
-      unfold r.
-      admit.
-    }
-    
-    assert (exists (C : R), forall k i pf ω, FiniteConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (r k))) ω <= C).
-    {
-      unfold r.
-      destruct H12.
-      exists x.
-      intros.
-      unfold FiniteConditionalVariance in H12.
-      eapply Rle_trans; cycle 1.
-      apply (H12 k i pf ω).
-      right.
-      admit.
-(*
+      revert H17.
+      apply almost_impl.
+      apply all_almost.
+      intros ??.
+      rewrite <- H17.
+      apply ConditionalExpectation_ext.
+      intros ?.
+      unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vector_FiniteConditionalExpectation.
+      rewrite Rvector_nth_plus, Rvector_nth_scale.
+      simpl.
+      rewrite vector_of_funs_vector_nth, vector_nth_map.
+      unfold rvminus, rvplus, rvopp, rvscale, vecrvnth.
+      f_equal.
+      f_equal.
       apply FiniteConditionalExpectation_ext.
       intros ?.
-      f_equal.
-*)
+      rewrite vector_dep_zip_nth_proj1.
+      now rewrite vector_nth_fun_to_vector.
     }
     destruct H5 as [Ca ?].
     destruct H6 as [Cb ?].
     assert (exists B,
-             forall k i pf ω,
-               Rbar_le (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (r k))) ω) (Rsqr B)).               
+             forall k i pf,
+               almostR2 prts Rbar_le (ConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (r k)))) (const  (Rsqr B))).
     {
-      admit.
-      (*
-      destruct H14.
-      exists (Rsqrt (mknonnegreal _ (Rmax_l 0 x))).
+      unfold FiniteConditionalVariance in H12.
+      
+      destruct H9 as [C ?].
+      exists (2 * C).
       intros.
-      eapply Rbar_le_trans.
-      apply H14.
-      *)
-
+      assert (RandomVariable dom borel_sa (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))).
+      {
+        apply (RandomVariable_sa_sub (filt_sub k)).
+        apply FiniteCondexp_rv.
+      }
+      generalize (condexp_square_bounded (vecrvnth i pf (XF k)) C (filt_sub k)); intros.
+      cut_to H18.
+      - unfold r.
+        revert H18.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        eapply Rbar_le_trans; cycle 1.
+        apply H18.
+        apply slln.eq_Rbar_le.
+        apply ConditionalExpectation_ext.
+        intros ?.
+        unfold rvsqr.
+        f_equal.
+        unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vector_FiniteConditionalExpectation, vecrvnth.
+        rewrite Rvector_nth_plus, Rvector_nth_scale.
+        simpl.
+        rewrite vector_of_funs_vector_nth, vector_nth_map.
+        unfold rvminus, rvplus, rvopp, rvscale, vecrvnth.
+        f_equal.
+        f_equal.
+        apply FiniteConditionalExpectation_ext.
+        intros ?.
+        rewrite vector_dep_zip_nth_proj1.
+        now rewrite vector_nth_fun_to_vector.
+      - intros.
+        unfold FiniteConditionalVariance in H12.
+        unfold r in H16.
+        admit.
     }
     generalize (fun i pf => lemma1_bounded_alpha_beta 
                               (fun k ω => vector_nth i pf (α k ω))
