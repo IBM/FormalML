@@ -2644,7 +2644,22 @@ admit.
     {
       intros.
       unfold r.
-      admit.
+      generalize (isfe2 k i pf).
+      apply IsFiniteExpectation_proper.
+      intros ?.
+      unfold rvsqr.
+      f_equal.
+      unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vector_FiniteConditionalExpectation, vecrvnth.
+      rewrite Rvector_nth_plus, Rvector_nth_scale.
+      simpl.
+      rewrite vector_of_funs_vector_nth, vector_nth_map.
+      unfold rvminus, rvplus, rvopp, rvscale, vecrvnth.
+      f_equal.
+      f_equal.
+      apply FiniteConditionalExpectation_ext.
+      intros ?.
+      rewrite vector_dep_zip_nth_proj1.
+      now rewrite vector_nth_fun_to_vector.
     }
     assert (exists B,
              forall k i pf ω,
