@@ -2709,7 +2709,38 @@ admit.
                               (fun k ω => vector_nth i pf (β k ω))
                               (fun k ω => vector_nth i pf (r k ω))
                               (fun k ω => vector_nth i pf (w k ω)) Ca Cb); intros.
-    apply almost_forall; intros.
+    apply almost_bounded_forall; intros.
+    - apply lt_dec.
+    - revert H20.
+      apply is_lim_seq_ext.
+      intros.
+      apply vector_nth_ext.
+    - specialize (H19 n0 pf B _ isfilt filt_sub _ _).
+      cut_to H19; trivial.
+      cut_to H19.
+      + assert (forall n1 : nat, RandomVariable dom (Rvector_borel_sa n) (w n1)).
+        {
+          induction n1.
+          - simpl.
+            apply rvconst.
+          - simpl.
+            apply Rvector_plus_rv.
+            + apply Rvector_minus_rv; trivial.
+              apply Rvector_mult_rv; trivial.
+              specialize (adapt_alpha n1).
+              now apply RandomVariable_sa_sub in adapt_alpha.
+            + apply Rvector_mult_rv; trivial.
+              * specialize (adapt_beta n1).
+              now apply RandomVariable_sa_sub in adapt_beta.
+              * now apply rv_vecrvnth.
+        }
+        assert (forall n1 : nat, RandomVariable dom borel_sa (fun ω : Ts => vector_nth n0 pf (w n1 ω))).
+        {
+          intros.
+          now apply vecrvnth_rv.
+        }
+        generalize (conv_as_prob_1_eps (fun n1 => vecrvnth n0 pf (w n1)) H19); intros.
+      
     Admitted.
 
     Theorem Jaakkola_alpha_beta_bounded_eventually_almost {n} 
