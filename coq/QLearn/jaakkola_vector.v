@@ -2556,7 +2556,7 @@ admit.
       assert (0 <= x0).
       {
         eapply Rle_trans; cycle 1.
-        apply H9.
+        apply (H9 0%nat ω).
         apply Rvector_max_abs_nonneg.
       }
       generalize (Rvector_max_abs_nonneg (X k ω)); intros.
@@ -2808,7 +2808,57 @@ admit.
         * intros. apply lt_dec.
         * intros i pf1 pf2 x HH.
           erewrite (vector_nth_ext); eapply HH.
-      +           
+      + intros.
+        apply forall_almost with (n:=n1) in H1.
+        apply bounded_forall_almost with (n:=n0) (pf:=pf) in H1.
+        * revert H1.
+          apply almost_impl.
+          apply all_almost; intros ??.
+          unfold const.
+          lra.
+        * intros. apply lt_dec.
+        * intros i pf1 pf2 x HH.
+          erewrite (vector_nth_ext); eapply HH.
+      + intros.
+        apply forall_almost with (n:=n1) in H0.
+        apply bounded_forall_almost with (n:=n0) (pf:=pf) in H0.
+        * revert H0.
+          apply almost_impl.
+          apply all_almost; intros ??.
+          unfold const.
+          lra.
+        * intros. apply lt_dec.
+        * intros i pf1 pf2 x HH.
+          erewrite (vector_nth_ext); eapply HH.
+      + intros.
+        apply forall_almost with (n:=n1) in H1.
+        apply bounded_forall_almost with (n:=n0) (pf:=pf) in H1.
+        * revert H1.
+          apply almost_impl.
+          apply all_almost; intros ??.
+          unfold const.
+          lra.
+        * intros. apply lt_dec.
+        * intros i pf1 pf2 x HH.
+          erewrite (vector_nth_ext); eapply HH.
+      + apply bounded_forall_almost with (n:=n0) (pf:=pf) in H3.
+        * apply H3.
+        * intros. apply lt_dec.
+        * intros i pf1 pf2 x.
+          apply is_lim_seq_ext.
+          intros.
+          apply sum_n_ext.
+          intros.
+          apply vector_nth_ext.
+      + apply bounded_forall_almost with (n:=n0) (pf:=pf) in H4.
+        * apply H4.
+        * intros. apply lt_dec.
+        * intros i pf1 pf2 x.
+          apply is_lim_seq_ext.
+          intros.
+          apply sum_n_ext.
+          intros.
+          apply vector_nth_ext.
     Admitted.
 
     Theorem Jaakkola_alpha_beta_bounded_eventually_almost {n} 
