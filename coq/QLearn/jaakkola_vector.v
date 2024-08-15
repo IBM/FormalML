@@ -2640,15 +2640,16 @@ admit.
     }
     destruct H5 as [Ca ?].
     destruct H6 as [Cb ?].
-    assert (forall k i pf, IsFiniteExpectation prts (rvsqr (vecrvnth i pf (r k)))).
+    assert (eqvec: forall k i pf,
+               rv_eq
+                 (vecrvnth i pf
+                    (vecrvminus (XF k)
+                       (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k))) )
+                 (rvminus (vecrvnth i pf (XF k))
+                    (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k))))).
     {
       intros.
-      unfold r.
-      generalize (isfe2 k i pf).
-      apply IsFiniteExpectation_proper.
       intros ?.
-      unfold rvsqr.
-      f_equal.
       unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vector_FiniteConditionalExpectation, vecrvnth.
       rewrite Rvector_nth_plus, Rvector_nth_scale.
       simpl.
@@ -2660,6 +2661,18 @@ admit.
       intros ?.
       rewrite vector_dep_zip_nth_proj1.
       now rewrite vector_nth_fun_to_vector.
+    }
+
+    assert (forall k i pf, IsFiniteExpectation prts (rvsqr (vecrvnth i pf (r k)))).
+    {
+      intros.
+      unfold r.
+      generalize (isfe2 k i pf).
+      apply IsFiniteExpectation_proper.
+      intros ?.
+      unfold rvsqr.
+      f_equal.
+      now rewrite eqvec.
     }
     assert (exists B,
              forall k i pf ω,
@@ -2688,17 +2701,7 @@ admit.
       intros ?.
       unfold rvsqr.
       f_equal.
-      unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vector_FiniteConditionalExpectation, vecrvnth.
-      rewrite Rvector_nth_plus, Rvector_nth_scale.
-      simpl.
-      rewrite vector_of_funs_vector_nth, vector_nth_map.
-      unfold rvminus, rvplus, rvopp, rvscale, vecrvnth.
-      f_equal.
-      f_equal.
-      apply FiniteConditionalExpectation_ext.
-      intros ?.
-      rewrite vector_dep_zip_nth_proj1.
-      now rewrite vector_nth_fun_to_vector.
+      now rewrite eqvec.
     }
     destruct H18 as [B ?].
     generalize (fun i pf => lemma1_bounded_alpha_beta 
@@ -2706,7 +2709,7 @@ admit.
                               (fun k ω => vector_nth i pf (β k ω))
                               (fun k ω => vector_nth i pf (r k ω))
                               (fun k ω => vector_nth i pf (w k ω)) Ca Cb); intros.
-        
+    apply almost_forall; intros.
     Admitted.
 
     Theorem Jaakkola_alpha_beta_bounded_eventually_almost {n} 
