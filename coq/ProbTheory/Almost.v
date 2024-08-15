@@ -391,6 +391,53 @@ Section almostR2_part.
     eapply prop; eauto.
   Qed.
 
+  Lemma bounded_forall_almost
+        (P:nat->Prop)
+        (dec:forall n, {P n} + {~ P n})
+        {Pn:forall i (pf:P i), pre_event Ts} :
+    (forall i pf1 pf2 x, Pn i pf1 x -> Pn i pf2 x) ->
+    almost prts (fun x => forall n pf, Pn n pf x) ->
+    (forall n pf, almost prts (Pn n pf)).
+  Proof.
+    intros prop a.
+    assert (forall n, almost prts (
+                          match dec n with
+                          | left pf => (Pn n pf)
+                          | right _ => fun _ => True
+                          end
+                        )).
+    {
+      intros.
+      match_destr.
+      - apply forall_almost with (n:=n) in a.
+        revert a.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        apply H.
+      - now apply all_almost.
+    }
+    intros n pf.
+    generalize (H n).
+    match_destr.
+    - apply almost_impl.
+      apply all_almost; intros ?; red.
+      apply prop.
+    - tauto.
+  Qed.
+
+  Lemma almost_bounded_forall_iff
+        (P:nat->Prop)
+        (dec:forall n, {P n} + {~ P n})
+        {Pn:forall i (pf:P i), pre_event Ts} :
+    (forall i pf1 pf2 x, Pn i pf1 x -> Pn i pf2 x) ->
+    (forall n pf, almost prts (Pn n pf)) <->
+    almost prts (fun x => forall n pf, Pn n pf x).
+  Proof.
+    split.
+    - now apply almost_bounded_forall.
+    - now apply bounded_forall_almost.
+  Qed.
+
     (* classically true *)
   Lemma almost_independent_impl (P:Prop) (Q:Ts->Prop) :
     (P -> almost prts Q) <-> almost prts (fun ts => P -> Q ts).

@@ -2788,7 +2788,27 @@ admit.
         }
         specialize (H20 H21).
 
-      
+        unfold vecrvnth in H20.
+        rewrite H20.
+
+        simpl.
+        unfold const.
+        eapply Rle_trans; [| apply (H18 x)].
+        right.
+        apply FiniteConditionalExpectation_ext.
+        reflexivity.
+      + intros.
+        apply forall_almost with (n:=n1) in H0.
+        apply bounded_forall_almost with (n:=n0) (pf:=pf) in H0.
+        * revert H0.
+          apply almost_impl.
+          apply all_almost; intros ??.
+          unfold const.
+          lra.
+        * intros. apply lt_dec.
+        * intros i pf1 pf2 x HH.
+          erewrite (vector_nth_ext); eapply HH.
+      +           
     Admitted.
 
     Theorem Jaakkola_alpha_beta_bounded_eventually_almost {n} 
