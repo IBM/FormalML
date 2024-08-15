@@ -2740,6 +2740,54 @@ admit.
           now apply vecrvnth_rv.
         }
         generalize (conv_as_prob_1_eps (fun n1 => vecrvnth n0 pf (w n1)) H19); intros.
+        assert (exists C, γ * (C + 1) /C < 1).
+        {
+          exists  (2 * γ / (1 - γ)).
+          field_simplify; lra.
+        }
+        admit.
+      + apply H5.
+      + apply H6.
+      + intros.
+        simpl.
+        unfold vecrvminus, vecrvmult, vecrvplus, vecrvopp, vecrvscale.
+        repeat rewrite Rvector_nth_plus.
+        rewrite Rvector_nth_scale.
+        repeat rewrite Rvector_nth_mult.
+        lra.
+      + unfold IsAdapted; intros.
+        apply vecrvnth_rv.
+        unfold r.
+        apply Rvector_minus_rv.
+        * apply rvXF.
+        * apply (RandomVariable_sa_sub (isfilt n1)).
+          apply vector_FiniteCondexp_rv.
+      + unfold IsAdapted.
+        intros.
+        apply vecrvnth_rv.
+        apply adapt_alpha.
+      + unfold IsAdapted.
+        intros.
+        apply vecrvnth_rv.
+        apply adapt_beta.
+      + intros.
+        specialize (H18 n1 n0 pf).
+        apply all_almost; intros.
+        generalize (FiniteCondexp_eq prts (filt_sub n1)); intros.
+        specialize (H20 (rvsqr (fun ω : Ts => vector_nth n0 pf (r n1 ω))) (@rvsqr_rv Ts dom (@vecrvnth Ts R n n0 pf (r n1)) (H13 n1 n0 pf))).
+        assert (IsFiniteExpectation prts (rvsqr (fun ω : Ts => vector_nth n0 pf (r n1 ω)))).
+        {
+          generalize (isfe2 n1 n0 pf).
+          apply IsFiniteExpectation_proper.
+          intros ?.
+          unfold rvsqr.
+          f_equal.
+          unfold r.
+          rewrite <- eqvec.
+          reflexivity.
+        }
+        specialize (H20 H21).
+
       
     Admitted.
 
