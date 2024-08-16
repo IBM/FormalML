@@ -2740,12 +2740,48 @@ admit.
           now apply vecrvnth_rv.
         }
         generalize (conv_as_prob_1_eps (fun n1 => vecrvnth n0 pf (w n1)) H19); intros.
-        assert (exists C, γ * (C + 1) /C < 1).
+        assert (exists C, 0 < C /\ γ * ((C + 1) / C) < 1).
         {
           exists  (2 * γ / (1 - γ)).
-          field_simplify; lra.
+          split.
+          - apply Rmult_lt_0_compat; try lra.
+            apply Rinv_0_lt_compat.
+            lra.
+          - field_simplify; lra.
         }
-        admit.
+
+        destruct H23 as [C [? ?]].
+        assert (forall (eps : posreal),
+                 forall (delta : R),
+                   Rabs(delta) > C * eps ->
+                   Rabs(delta + eps) <= ((C + 1)/C) * Rabs(delta)).
+        {
+          intros.
+          replace ( Rabs (delta + eps)) with
+            (Rabs(C * delta + C * eps)/C).
+          - apply Rle_trans with (r2 := Rabs ((C + 1) * delta)/C).
+            + unfold Rdiv.
+              apply Rmult_le_compat_r.
+              * left.
+                now apply Rinv_0_lt_compat.
+              * eapply Rle_trans.
+                apply Rabs_triang.
+                repeat rewrite Rabs_mult.                
+                rewrite (Rabs_right C); try lra.
+                rewrite (Rabs_right (C + 1)); try lra.                
+                rewrite Rmult_plus_distr_r.
+                apply Rplus_le_compat_l.
+                rewrite (Rabs_right eps); try lra.
+                left.
+                apply cond_pos.
+            + rewrite Rabs_mult.
+              rewrite (Rabs_right (C + 1)); try lra.
+        - rewrite <- Rmult_plus_distr_l.
+          rewrite Rabs_mult.
+          rewrite (Rabs_right C); try lra.
+          field.
+          lra.
+      }
       + apply H5.
       + apply H6.
       + intros.
