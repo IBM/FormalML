@@ -2429,15 +2429,15 @@ admit.
 
   Theorem Jaakkola_alpha_beta_bounded {n} 
     (γ : R) 
-    (X XF α β : nat -> Ts -> vector R n)
+    (X XF α β : nat -> Ts -> vector R (S n))
     {F : nat -> SigmaAlgebra Ts}
     (isfilt : IsFiltration F) 
     (filt_sub : forall k, sa_sub (F k) dom) 
-    (adapt_alpha : IsAdapted (Rvector_borel_sa n) α F)
-    (adapt_beta : IsAdapted (Rvector_borel_sa n) β F)    
-    {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa n) (X 0%nat)}
+    (adapt_alpha : IsAdapted (Rvector_borel_sa (S n)) α F)
+    (adapt_beta : IsAdapted (Rvector_borel_sa (S n)) β F)    
+    {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S n)) (X 0%nat)}
     (npos : (0 < n)%nat)
-    {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa n) (XF k)}
+    {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S n)) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
     {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
     {isfe2 : forall k i pf, IsFiniteExpectation prts 
@@ -2478,7 +2478,7 @@ admit.
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
   Proof.
     intros.
-    assert (rvXF2 : forall k, RandomVariable dom (Rvector_borel_sa n) (XF k)).
+    assert (rvXF2 : forall k, RandomVariable dom (Rvector_borel_sa (S n)) (XF k)).
     {
       intros.
       now apply (RandomVariable_sa_sub (filt_sub (S k))).
@@ -2501,7 +2501,7 @@ admit.
 
     pose (w := fix w kk :=
           match kk with
-                | 0%nat => vecrvconst n 0
+                | 0%nat => vecrvconst (S n) 0
                 | S k =>
                     (vecrvplus (vecrvminus (w k) (vecrvmult (α k) (w k))) 
                        (vecrvmult (β k) (r k)))
@@ -2529,7 +2529,7 @@ admit.
         repeat rewrite vector_map_create.
         repeat rewrite vector_nth_create.
         repeat rewrite vector_nth_map.
-        assert (pf3 : (i < n)%nat).
+        assert (pf3 : (i < (S n))%nat).
         {
           lia.
         }
@@ -2718,7 +2718,7 @@ admit.
     - specialize (H19 n0 pf B _ isfilt filt_sub _ _).
       cut_to H19; trivial.
       cut_to H19.
-      + assert (forall n1 : nat, RandomVariable dom (Rvector_borel_sa n) (w n1)).
+      + assert (forall n1 : nat, RandomVariable dom (Rvector_borel_sa (S n)) (w n1)).
         {
           induction n1.
           - simpl.
@@ -2752,36 +2752,38 @@ admit.
 
         destruct H23 as [C [? ?]].
         assert (forall (eps : posreal),
-                 forall (delta : R),
-                   Rabs(delta) > C * eps ->
-                   Rabs(delta + eps) <= ((C + 1)/C) * Rabs(delta)).
+                   forall k ω,
+                     Rvector_max_abs(δ k ω) > C * eps ->
+                     Rvector_max_abs (Rvector_plus (δ k ω) (@vector_const R eps (S n))) <= ((C + 1)/C) * Rvector_max_abs(δ k ω)).
         {
           intros.
-          replace ( Rabs (delta + eps)) with
-            (Rabs(C * delta + C * eps)/C).
-          - apply Rle_trans with (r2 := Rabs ((C + 1) * delta)/C).
+          replace (Rvector_max_abs (Rvector_plus (δ k ω) (@vector_const R eps (S n)))) with
+            ((Rvector_max_abs (Rvector_plus (Rvector_scale C (δ k ω)) (Rvector_scale C (@vector_const R eps (S n)))))/C).
+          - apply Rle_trans with (r2 := Rvector_max_abs (Rvector_scale (C + 1) (δ k ω))/C).
             + unfold Rdiv.
               apply Rmult_le_compat_r.
               * left.
                 now apply Rinv_0_lt_compat.
               * eapply Rle_trans.
-                apply Rabs_triang.
-                repeat rewrite Rabs_mult.                
+                apply Rvector_max_abs_triang.
+                repeat rewrite Rvector_max_abs_scale.
                 rewrite (Rabs_right C); try lra.
                 rewrite (Rabs_right (C + 1)); try lra.                
                 rewrite Rmult_plus_distr_r.
                 apply Rplus_le_compat_l.
+                rewrite Rvector_max_abs_const.
                 rewrite (Rabs_right eps); try lra.
                 left.
                 apply cond_pos.
-            + rewrite Rabs_mult.
+            + rewrite Rvector_max_abs_scale.
               rewrite (Rabs_right (C + 1)); try lra.
-        - rewrite <- Rmult_plus_distr_l.
-          rewrite Rabs_mult.
-          rewrite (Rabs_right C); try lra.
-          field.
-          lra.
+          - rewrite <- Rvector_scale_plus_l.
+            rewrite Rvector_max_abs_scale.
+            rewrite (Rabs_right C); try lra.
+            field.
+            lra.
       }
+
       admit.
       + apply H5.
       + apply H6.
@@ -2811,7 +2813,7 @@ admit.
         specialize (H18 n1 n0 pf).
         apply all_almost; intros.
         generalize (FiniteCondexp_eq prts (filt_sub n1)); intros.
-        specialize (H20 (rvsqr (fun ω : Ts => vector_nth n0 pf (r n1 ω))) (@rvsqr_rv Ts dom (@vecrvnth Ts R n n0 pf (r n1)) (H13 n1 n0 pf))).
+        specialize (H20 (rvsqr (fun ω : Ts => vector_nth n0 pf (r n1 ω))) (@rvsqr_rv Ts dom (@vecrvnth Ts R (S n) n0 pf (r n1)) (H13 n1 n0 pf))).
         assert (IsFiniteExpectation prts (rvsqr (fun ω : Ts => vector_nth n0 pf (r n1 ω)))).
         {
           generalize (isfe2 n1 n0 pf).
