@@ -22,6 +22,92 @@ Section conv_as.
     Context {Ts : Type}
             {dom: SigmaAlgebra Ts}.
 
+      Lemma almost_lim_indicator_forall {prts: ProbSpace dom} (f : nat -> Ts -> R) 
+          {rv : forall n, RandomVariable dom borel_sa (f n)} :
+      almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
+      forall (eps : posreal),
+        almost prts (fun x => is_lim_seq (fun n0 =>
+                                            EventIndicator (classic_dec (inter_of_collection (fun n => event_lt dom (rvabs (f (n + n0)%nat)) eps))) x) 1).
+     Proof.
+       intros.
+       apply almost_impl' with (P1 := (fun x => is_lim_seq (fun n => f n x) 0)); trivial.
+       apply all_almost.
+       intros.
+       unfold EventIndicator; simpl.
+       apply is_lim_seq_spec in H0.
+       apply is_lim_seq_spec.
+       unfold is_lim_seq'.
+       unfold is_lim_seq' in H0.
+       intros.
+       specialize (H0 eps).
+       destruct H0.
+       exists x0.
+       intros.
+       unfold rvabs.
+       match_destr; try lra.
+       - replace (1 - 1) with (0) by lra.
+         rewrite Rabs_R0.
+         apply cond_pos.
+       - rewrite not_forall in n0.
+         destruct n0.
+         specialize (H0 (x1 + n)%nat).
+         rewrite Rminus_0_r in H0.
+         cut_to H0; try easy.
+         lia.
+    Qed.
+
+     Lemma conv_as_prob_1_forall {prts: ProbSpace dom} (f : nat -> Ts -> R) 
+       {rv : forall n, RandomVariable dom borel_sa (f n)} :
+       almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
+       forall (eps:posreal),
+         is_lim_seq (fun n0 => ps_P (inter_of_collection (fun n => (event_lt dom (rvabs (f (n + n0)%nat)) eps)))) 1.
+     Proof.
+       intros.
+       generalize (almost_lim_indicator_forall f H eps); intros.
+       generalize (Dominated_convergence_almost 
+                     prts
+                      (fun n0 =>
+                         EventIndicator (classic_dec (inter_of_collection (fun n => event_lt dom (rvabs (f (n + n0)%nat)) eps))))
+                     (const 1)
+                  ); intros.
+      specialize (H1 (const 1)).
+      cut_to H1; try typeclasses eauto.
+      assert  (isfefn : forall n0 : nat,
+                   IsFiniteExpectation prts
+                     (EventIndicator (classic_dec (inter_of_collection (fun n => event_lt dom (rvabs (f (n + n0)%nat)) eps))))).
+      {
+        intros.
+        apply IsFiniteExpectation_simple; try typeclasses eauto.
+      }
+      assert  (isfefn' : forall n0 : nat,
+                   Rbar_IsFiniteExpectation prts
+                     (EventIndicator (classic_dec (inter_of_collection (fun n => event_lt dom (rvabs (f (n + n0)%nat)) eps))))).
+      {
+        intros.
+        now apply IsFiniteExpectation_Rbar.
+      }
+      specialize (H1 isfefn' (Rbar_IsFiniteExpectation_const prts 1) (Rbar_IsFiniteExpectation_const prts 1)).
+      cut_to H1.
+      - generalize (fun n0 => Expectation_EventIndicator (classic_dec (inter_of_collection (fun n => event_lt dom (rvabs (f (n + n0)%nat)) eps))) ); intros.
+        apply is_lim_seq_ext with (v := (fun n0 : nat => ps_P (inter_of_collection (fun n => event_lt dom (rvabs (f (n + n0)%nat)) eps)))) in H1.
+        + now rewrite Rbar_FiniteExpectation_const in H1.
+        + intros n0.
+          generalize (FiniteExpectation_indicator prts (classic_dec (inter_of_collection (fun n => event_lt dom (rvabs (f (n + n0)%nat)) eps)))); intros.
+          rewrite <- H3.
+          rewrite (Rbar_FinExp_FinExp _ _).
+          apply FiniteExpectation_pf_irrel.
+      - intros.
+        apply all_almost.
+        intros; simpl.
+        rv_unfold.
+        match_destr.
+        + rewrite Rabs_right; lra.
+        + rewrite Rabs_R0; lra.
+      - revert H0.
+        apply almost_impl; apply all_almost; intros ??.
+        now apply is_Elim_seq_fin.
+   Qed.
+
       Lemma conv_as_prob_1 {prts: ProbSpace dom} (f : nat -> Ts -> R) 
           {rv : forall n, RandomVariable dom borel_sa (f n)} :
       almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
@@ -113,6 +199,25 @@ Section conv_as.
       rewrite Rabs_minus_sym in H0.
       rewrite Rabs_right in H0; try lra.
       generalize (ps_le1 prts (event_lt dom (rvabs (f n)) eps1)); lra.
+   Qed.
+
+    Lemma conv_as_prob_1_eps_forall {prts: ProbSpace dom} (f : nat -> Ts -> R)
+      {rv : forall n, RandomVariable dom borel_sa (f n)} :
+      almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
+      forall (eps1 eps2:posreal),
+        eventually (fun n0 => ps_P (inter_of_collection (fun n => event_lt dom (rvabs (f (n + n0)%nat)) eps1)) >= 1 - eps2).
+    Proof.
+      intros.
+      apply (conv_as_prob_1_forall _) with (eps := eps1) in H.
+      rewrite <- is_lim_seq_spec in H.
+      destruct (H eps2).
+      exists x.
+      intros.
+      specialize (H0 n H1).
+      rewrite Rabs_minus_sym in H0.
+      rewrite Rabs_right in H0; try lra.
+      generalize (ps_le1 prts (inter_of_collection
+       (fun n0 : nat => event_lt dom (rvabs (f (n0 + n)%nat)) eps1))); lra.
    Qed.
 
     Lemma conv_as_prob_1_vec {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size)
