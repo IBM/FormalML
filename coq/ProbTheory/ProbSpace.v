@@ -1146,20 +1146,23 @@ Section conditional_probability.
       now apply Rinv_0_lt_compat.
   Qed.
 
-  Lemma event_restricted_cond_prob (e f :event σ) (pf:0 < ps_P e) :
-    cond_prob (event_restricted_event_lift e (event_restricted_event e f)) e =
+   Lemma event_restricted_cond_prob (e f :event σ) (pf:0 < ps_P e) :
+    cond_prob f e =
       ps_P (ProbSpace := event_restricted_prob_space e pf) (event_restricted_event e f).
-  Proof.
-    now simpl.
-  Qed.
-
-   Lemma event_restricted_cond_prob_ge (e f :event σ) (pf:0 < ps_P e) :
-    cond_prob f e >=
-      ps_P (ProbSpace := event_restricted_prob_space e pf) (event_restricted_event e f).
-  Proof.
-   Admitted.
-
-
+   Proof.
+     simpl; unfold cond_prob.
+     f_equal.
+     unfold event_restricted_event_lift; simpl.
+     apply ps_proper; intros ?; simpl.
+     unfold pre_event_inter, event_restricted_pre_event.
+     split.
+     - intros [fx ex].
+       unfold event_restricted_domain.
+       split; trivial.
+       exists (exist _ _ ex); simpl; tauto.
+     - intros [[?[??]]?]; subst.
+       tauto.
+   Qed.
 
 End conditional_probability.
 
