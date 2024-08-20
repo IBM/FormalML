@@ -2918,6 +2918,42 @@ Section more_pre_props.
 
 End more_pre_props.
 
+Section event_impl_theory.
+
+  Definition pre_event_impl {A}  (a b : pre_event A) : pre_event A
+    := fun x => a x -> b x.
+
+  Program Definition event_impl {A} {σ : SigmaAlgebra A} (a b : event σ) : event σ
+    := pre_event_impl (event_pre a) (event_pre b).
+  Next Obligation.
+    generalize (proj2_sig (event_union (event_complement a) b)).
+    apply sa_proper.
+    intros ?; simpl.
+    unfold pre_event_impl, pre_event_union, pre_event_complement.
+    destruct (classic (event_pre a x)); firstorder.
+  Qed.
+End event_impl_theory.
+
+Section eventually_event.
+
+  Import Coquelicot.Hierarchy.
+
+  Definition pre_event_pre_eventually {A} (pe: nat -> pre_event A): pre_event A
+    := fun a => eventually (fun n => pe n a).
+
+  Program Definition event_eventually {A} {σ: SigmaAlgebra A} (pe: nat -> event σ): event σ
+    := fun a => eventually (fun n => event_pre (pe n) a).
+  Next Obligation.
+    apply (proj2_sig
+                  (union_of_collection
+                     (fun n =>
+                        inter_of_collection
+                          (fun i =>
+                             event_impl (event_const (n <= i)%nat) (pe i))))).
+  Qed.
+
+End eventually_event.
+
 Coercion event_pre : event >-> Funclass.
 
 Notation "∅" := event_none : prob. (* \emptyset *)
