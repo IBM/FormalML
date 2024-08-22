@@ -2488,6 +2488,39 @@ Qed.
       Qed.
 
 
+      Lemma lemma3_base_forall_alt_eventually_cond_prob (α β X Y : nat -> Ts -> R) (C γ : posreal)
+         (rva : forall n, RandomVariable dom borel_sa (α n))
+         (rvX : forall n, RandomVariable dom borel_sa (X n))
+         (rvY : forall n, RandomVariable dom borel_sa (rvabs (Y n))):          
+         (forall t ω, 0 <= α t ω <= 1) ->
+         (forall t ω, 0 <= β t ω <= 1) ->
+         (forall t ω, β t ω <= α t ω) ->                  
+         (forall ω, l1_divergent (fun n : nat => α n ω)) ->
+         γ < 1 ->
+         (forall n, rv_eq (X (S n))
+                      (rvplus 
+                         (rvmult (rvminus (const 1) (α n)) 
+                            (X n))
+                         (rvmult (rvscale γ (β n))
+                            (rvabs (Y n))))) ->
+         (forall n, rv_le (rvabs (X n)) (rvabs (Y n))) ->
+         forall (eps1 eps2 : posreal), 
+           forall (nY : nat),
+           γ + (1 - γ)/2 <= / (1 + eps1) ->
+           0 < ps_P (inter_of_collection (fun n => (event_lt dom (rvabs (Y (n + nY)%nat)) C))) ->
+           eventually (fun n0 => cond_prob prts (inter_of_collection (fun n => (event_lt dom (rvabs (X (n + n0)%nat)) (C / (1 + eps1)))))
+                                   (inter_of_collection (fun n => (event_lt dom (rvabs (Y (n + nY)%nat)) C)))
+                                 >= 1 - eps2).
+      Proof.
+         intros aprop bprop abprop gamma_div gamma_lt1 Xprop XYprop eps1 eps2 nY eps1_prop Yprop.
+         eexists.
+         intros.
+         rewrite event_restricted_cond_prob with (pf := Yprop).
+         generalize (lemma3_base_forall_alt_eventually α β X Y C γ _ _ aprop bprop abprop gamma_div gamma_lt1 Xprop XYprop); intros.
+         
+        Admitted.
+
+
       Lemma lemma3_base_forall_alt_eventually_prob (α β X Y : nat -> Ts -> R) (C γ : posreal)
          (rva : forall n, RandomVariable dom borel_sa (α n))
          (rvX : forall n, RandomVariable dom borel_sa (X n))
@@ -2509,9 +2542,15 @@ Qed.
            eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_lt dom (rvabs (Y (n + n0)%nat)) C))) >= prob) ->
            eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_lt dom (rvabs (X (n + n0)%nat)) (C / (1 + eps1))))) >= prob * (1 - eps2)).
       Proof.
-         intros aprop bprop abprop gamma_div gamma_lt1 Xprop XYprop eps1 ep2 prob eps1_prop Yprop.
+         intros aprop bprop abprop gamma_div gamma_lt1 Xprop XYprop eps1 eps2 prob eps1_prop Yprop.
          destruct Yprop as [nY Yprop].
          generalize (lemma3_base_forall_alt_eventually α β X Y C γ _ _ aprop bprop abprop gamma_div gamma_lt1 Xprop XYprop); intros.
+         cut_to H.
+         specialize (H eps1 eps2 eps1_prop).
+         destruct H.
+         exists x.
+         intros.
+         specialize (H n H0).
         Admitted.
 
 
