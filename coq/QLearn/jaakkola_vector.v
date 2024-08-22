@@ -17,7 +17,9 @@ Require Import RelationClasses.
 
 Set Bullet Behavior "Strict Subproofs".
 
-Context (gamma : R) (α : nat -> R) {Ts : Type} {SS:Type} (N:nat)
+Section jaakola_vector1.
+  
+Context {Ts : Type} {SS:Type} (N:nat)
         {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
 
 Program Definition pos_to_nneg (c : posreal) : nonnegreal :=
@@ -167,7 +169,7 @@ Lemma lemma2_0_w (x : SS) (w : Ts)
    - now apply Rvector_max_abs_nzero.
  Qed.
 
-Lemma lemma2_n00 {SS:Type} (x : SS) (w : Ts)
+Lemma lemma2_n00 (x : SS) (w : Ts)
       (X XX : nat -> SS -> Ts -> vector R N)
       (Y : nat -> Ts -> vector R N)
       (G : nat -> vector R N -> vector R N -> SS -> vector R N)
@@ -265,7 +267,7 @@ Lemma lemma2_n00 {SS:Type} (x : SS) (w : Ts)
       now rewrite <- XGB.
   Qed.
 
-Lemma lemma2_n00_w {SS:Type} (x : SS) (w : Ts)
+Lemma lemma2_n00_w (x : SS) (w : Ts)
       (X XX : nat -> SS -> Ts -> vector R N)
       (Y : nat -> Ts -> vector R N)
       (G : nat -> vector R N -> vector R N -> SS -> vector R N)
@@ -363,7 +365,7 @@ Lemma lemma2_n00_w {SS:Type} (x : SS) (w : Ts)
       now rewrite <- XGB.
   Qed.
 
-  Lemma lemma2_n000 {SS:Type} (x : SS) (w : Ts)
+  Lemma lemma2_n000 (x : SS) (w : Ts)
       (X XX : nat -> SS -> Ts -> vector R N)
       (Y : nat -> Ts -> vector R N)
       (G : nat -> vector R N  -> vector R N -> SS -> vector R N)
@@ -390,7 +392,7 @@ Lemma lemma2_n00_w {SS:Type} (x : SS) (w : Ts)
    split; trivial.
  Qed.
 
-  Lemma lemma2_n000_w {SS:Type} (x : SS) (w : Ts)
+  Lemma lemma2_n000_w (x : SS) (w : Ts)
       (X XX : nat -> SS -> Ts -> vector R N)
       (Y : nat -> Ts -> vector R N)
       (G : nat -> vector R N  -> vector R N -> SS -> vector R N)
@@ -417,7 +419,7 @@ Lemma lemma2_n00_w {SS:Type} (x : SS) (w : Ts)
    split; trivial.
  Qed.
 
-Lemma lemma2_n0 {SS:Type} (x : SS) (w : Ts)
+Lemma lemma2_n0 (x : SS) (w : Ts)
       (X XX : nat -> SS -> Ts -> vector R N)
       (Y : nat -> Ts -> vector R N)
       (G : nat -> vector R N -> vector R N -> SS -> vector R N)
@@ -515,7 +517,7 @@ Proof.
     + apply Rbar_mult_0_r.
   Qed.
 
-Lemma lemma2_n0_w {SS:Type} (x : SS) (w : Ts)
+Lemma lemma2_n0_w (x : SS) (w : Ts)
       (X XX : nat -> SS -> Ts -> vector R N)
       (Y : nat -> Ts -> vector R N)
       (G : nat -> vector R N -> vector R N -> SS -> vector R N)
@@ -672,7 +674,7 @@ Proof.
     now apply (lemma2_n0_w x w X XX Y G C).
 Qed.
   
-Lemma gamma_C :
+Lemma gamma_C (gamma : R) :
   0 < gamma < 1 ->
   forall (C : R),
     C > gamma / (1-gamma) ->
@@ -707,7 +709,7 @@ Proof.
   now rewrite vector_nth_const.
 Qed.
 
-Lemma delta_eps_bound (eps : posreal) (C : posreal) {N} (delta : vector R (S N)) :
+Lemma delta_eps_bound (gamma : R) (eps : posreal) (C : posreal) (delta : vector R (S N)) :
   0 < gamma ->
   Rvector_max_abs delta > C * eps ->
   gamma * Rvector_max_abs (Rvector_plus delta (vector_const (pos eps) (S N))) <=
@@ -751,12 +753,12 @@ Proof.
     apply cond_pos.
 Qed.
 
-Lemma gamma_eps_le (gamma : posreal) (gamma_lt1 : gamma < 1) :
-  {eps : posreal | gamma <=  / (1 + eps)}.
+Lemma gamma_eps_le (gamma' : posreal) (gamma'_lt1 : gamma' < 1) :
+  {eps : posreal | gamma' <=  / (1 + eps)}.
 Proof.
-  assert (0 < (1 - gamma) / (2 * gamma)).
+  assert (0 < (1 - gamma') / (2 * gamma')).
   {
-    assert (0 < gamma).
+    assert (0 < gamma').
     {
       apply cond_pos.
     }
@@ -764,7 +766,7 @@ Proof.
   }
   exists (mkposreal _ H).
   simpl.
-  apply Rmult_le_reg_r with (r :=  (1 + ((1 - gamma) / (2 * gamma)))).
+  apply Rmult_le_reg_r with (r :=  (1 + ((1 - gamma') / (2 * gamma')))).
   - eapply Rlt_trans.
     apply H; lra.
     lra.
@@ -772,7 +774,7 @@ Proof.
     rewrite Rinv_l; try lra.
     rewrite Rmult_plus_distr_l, Rmult_1_r.
     rewrite <- Rmult_assoc, Rmult_comm, <- Rmult_assoc.
-    replace (/ (2 * gamma) * gamma) with (/2).
+    replace (/ (2 * gamma') * gamma') with (/2).
     + lra.
     + rewrite Rinv_mult, Rmult_assoc, Rinv_l, Rmult_1_r; trivial.
       apply Rgt_not_eq.
@@ -812,7 +814,7 @@ Proof.
 Qed.
 
 
-    Lemma conv_as_prob_1_eps_alt {prts: ProbSpace dom} (f : nat -> Ts -> R) (fstar: R)
+    Lemma conv_as_prob_1_eps_alt (f : nat -> Ts -> R) (fstar: R)
       {rv : forall n, RandomVariable dom borel_sa (f n)} :
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
       forall (eps1 eps2:posreal),
@@ -831,7 +833,7 @@ Qed.
         lra.
     Qed.
 
-    Lemma conv_as_prob_1_eps_forall_alt {prts: ProbSpace dom} (f : nat -> Ts -> R) (fstar: R)
+    Lemma conv_as_prob_1_eps_forall_alt (f : nat -> Ts -> R) (fstar: R)
       {rv : forall n, RandomVariable dom borel_sa (f n)} :
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
       forall (eps1 eps2:posreal),
@@ -905,7 +907,7 @@ Proof.
   now apply (gamma_eps_le_forall (mkposreal _ H2) eps).
 Qed.
 
-    Lemma lemma3_helper_forall {prts: ProbSpace dom} (f : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
+    Lemma lemma3_helper_forall (f : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rv : forall n, RandomVariable dom borel_sa (f n)} :
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
       Rabs fstar <= gamma * C ->
@@ -940,7 +942,7 @@ Qed.
       apply Rmult_le_compat_l with (r := C) in gamma_lt; lra.
     Qed.
 
-    Lemma lemma3_helper {prts: ProbSpace dom} (f : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
+    Lemma lemma3_helper (f : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rv : forall n, RandomVariable dom borel_sa (f n)} :
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
       Rabs fstar <= gamma * C ->
@@ -980,7 +982,7 @@ Qed.
     Qed.
 
 
-    Lemma lemma3_helper_forall_le {prts: ProbSpace dom} (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
+    Lemma lemma3_helper_forall_le  (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
@@ -1007,7 +1009,7 @@ Qed.
       apply H4.
     Qed.
       
-    Lemma lemma3_helper_forall_eventually_le {prts: ProbSpace dom} (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
+    Lemma lemma3_helper_forall_eventually_le  (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
@@ -1034,7 +1036,7 @@ Qed.
       apply H4.
     Qed.
 
-    Lemma lemma3_helper_forall_eventually_le_alt {prts: ProbSpace dom} (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
+    Lemma lemma3_helper_forall_eventually_le_alt (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
@@ -1063,7 +1065,7 @@ Qed.
       apply H4.
     Qed.
 
-    Lemma lemma3_helper_le {prts: ProbSpace dom} (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
+    Lemma lemma3_helper_le (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
@@ -1095,7 +1097,7 @@ Qed.
       apply H5.
     Qed.
 
-    Lemma lemma3_helper_almost_le {prts: ProbSpace dom} (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
+    Lemma lemma3_helper_almost_le  (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
@@ -1133,7 +1135,7 @@ Qed.
       apply H0.
   Qed.     
 
-    Lemma lemma3_helper_forall_almost_le {prts: ProbSpace dom} (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
+    Lemma lemma3_helper_forall_almost_le  (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
@@ -1170,9 +1172,9 @@ Qed.
   Qed.     
 
    Lemma ps_inter_cond_prob_r {T:Type} {σ:SigmaAlgebra T} 
-      (A B : event σ) (prts : ProbSpace σ) :
+      (A B : event σ) (prts' : ProbSpace σ) :
      ps_P B > 0 ->
-     ps_P (event_inter A B) = (cond_prob prts A B) * ps_P B.
+     ps_P (event_inter A B) = (cond_prob prts' A B) * ps_P B.
    Proof.
      intros.
      unfold cond_prob, Rdiv.
@@ -1180,9 +1182,9 @@ Qed.
    Qed.
 
    Lemma ps_inter_cond_prob_l {T:Type} {σ:SigmaAlgebra T} 
-      (A B : event σ) (prts : ProbSpace σ) :
+      (A B : event σ) (prts' : ProbSpace σ) :
      ps_P A > 0 ->
-     ps_P (event_inter A B) = ps_P A * (cond_prob prts B A).
+     ps_P (event_inter A B) = ps_P A * (cond_prob prts' B A).
    Proof.
      intros.
      rewrite event_inter_comm, ps_inter_cond_prob_r; lra.
@@ -1308,7 +1310,7 @@ Qed.
    Qed.     
 
 
-   Lemma lemma3_helper_iter_almost_le {prts: ProbSpace dom} (f g α β : nat -> Ts -> R) (C C0 : nonnegreal)
+   Lemma lemma3_helper_iter_almost_le (f g α β : nat -> Ts -> R) (C C0 : nonnegreal)
       {rvα : forall n, RandomVariable dom borel_sa (α n)} 
       {rvβ : forall n, RandomVariable dom borel_sa (β n)} 
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
@@ -1344,7 +1346,7 @@ Qed.
           apply cond_nonneg.
     Qed.
 
-   Lemma lemma3_helper_iter_almost_le_abs {prts: ProbSpace dom} (f g α β : nat -> Ts -> R) (C C0 : nonnegreal)
+   Lemma lemma3_helper_iter_almost_le_abs (f g α β : nat -> Ts -> R) (C C0 : nonnegreal)
       {rvα : forall n, RandomVariable dom borel_sa (α n)} 
       {rvβ : forall n, RandomVariable dom borel_sa (β n)} 
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
@@ -2216,7 +2218,7 @@ Qed.
         now apply H5.
      Qed.
 
-        Lemma lemma3_base_shift (α X f : nat -> Ts -> R) (C γ : posreal) (N : nat) 
+        Lemma lemma3_base_shift (α X f : nat -> Ts -> R) (C γ : posreal) 
          (rvX : forall n, RandomVariable dom borel_sa (X (n + N)%nat))
          (rvf : forall n, RandomVariable dom borel_sa (f (n + N)%nat)) :          
          (forall t ω, 0 <= α (t + N)%nat ω <= 1) ->
@@ -2239,7 +2241,7 @@ Qed.
         now apply lemma3_base with (α := fun n => α (n + N)%nat) (f := fun n => f (n + N)%nat) (γ := γ).
       Qed.
 
-        Lemma lemma3_base'_shift (α X f : nat -> Ts -> R) (C γ : posreal) (N : nat) 
+        Lemma lemma3_base'_shift (α X f : nat -> Ts -> R) (C γ : posreal)
          (rvX : forall n, RandomVariable dom borel_sa (X (n + N)%nat))
          (rvf : forall n, RandomVariable dom borel_sa (f (n + N)%nat)) :          
          (forall t ω, 0 <= α (t + N)%nat ω <= 1) ->
@@ -2487,6 +2489,11 @@ Qed.
                      ** apply Rabs_pos.
       Qed.
 
+End jaakola_vector1.
+Section jaakola_vector2.
+
+  Context {Ts : Type} {SS:Type} (N:nat)
+    {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
 
       Lemma lemma3_base_forall_alt_eventually_cond_prob (α β X Y : nat -> Ts -> R) (C γ : posreal)
          (rva : forall n, RandomVariable dom borel_sa (α n))
@@ -2515,9 +2522,54 @@ Qed.
          intros aprop bprop abprop gamma_div gamma_lt1 Xprop XYprop eps1 eps2 nY eps1_prop Yprop.
          eexists.
          intros.
+                    
          rewrite event_restricted_cond_prob with (pf := Yprop).
-         generalize (lemma3_base_forall_alt_eventually α β X Y C γ _ _ aprop bprop abprop gamma_div gamma_lt1 Xprop XYprop); intros.
-         
+         pose (re:= (inter_of_collection (fun n0 : nat => event_lt dom (rvabs (Y (n0 + nY)%nat)) C))).
+         assert (rvα':(forall n : nat,
+                           RandomVariable
+                             (event_restricted_sigma
+                                re) borel_sa
+                             (event_restricted_function re (α n))) ) by admit.
+         assert (rvX':(forall n : nat,
+                           RandomVariable
+                             (event_restricted_sigma
+                                re) borel_sa
+                             (event_restricted_function re (X n))) ) by admit.
+         assert (rvY':(forall n : nat,
+                           RandomVariable
+                             (event_restricted_sigma
+                                re) borel_sa
+                             (event_restricted_function re (Y n))) ) by admit.
+
+         generalize (lemma3_base_forall_alt_eventually (prts:=event_restricted_prob_space prts _ Yprop)
+                       (fun n => event_restricted_function re (α n))
+                       (fun n => event_restricted_function re (β n))
+                       (fun n => event_restricted_function re (X n))
+                       (fun n => event_restricted_function re (Y n))
+                       C γ
+                       rvα' rvX'
+                    )
+         ; intros HH.
+         cut_to HH.
+         specialize (HH eps1 eps2 eps1_prop).
+         destruct HH.
+         specialize (H0 n).
+         cut_to H0.
+         10: {
+           exists nY; intros nn Nn [xx xxP]; simpl.
+           unfold rvabs, event_restricted_function, const; simpl.
+           red in xxP; simpl in xxP.
+           specialize (xxP (nn-nY)%nat).
+           replace (nn - nY + nY)%nat with nn in xxP by lia.
+           unfold rvabs in xxP.
+           lra.
+         } 
+
+         eapply Rge_trans; [| apply H0].
+         right.
+         apply ps_proper; intros ?.
+         reflexivity.
+
         Admitted.
 
 
@@ -3281,3 +3333,5 @@ Qed.
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
  Proof.
    Admitted.
+
+ End jaakola_vector2.
