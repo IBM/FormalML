@@ -2520,26 +2520,34 @@ Section jaakola_vector2.
                                  >= 1 - eps2).
       Proof.
          intros aprop bprop abprop gamma_div gamma_lt1 Xprop XYprop eps1 eps2 nY eps1_prop Yprop.
-         eexists.
-         intros.
-                    
-         rewrite event_restricted_cond_prob with (pf := Yprop).
          pose (re:= (inter_of_collection (fun n0 : nat => event_lt dom (rvabs (Y (n0 + nY)%nat)) C))).
          assert (rvα':(forall n : nat,
                            RandomVariable
                              (event_restricted_sigma
                                 re) borel_sa
-                             (event_restricted_function re (α n))) ) by admit.
+                             (event_restricted_function re (α n))) ).
+         {
+           intros.
+           now apply Restricted_RandomVariable.
+         }
          assert (rvX':(forall n : nat,
                            RandomVariable
                              (event_restricted_sigma
                                 re) borel_sa
-                             (event_restricted_function re (X n))) ) by admit.
+                             (event_restricted_function re (X n))) ).
+         {
+           intros.
+           now apply Restricted_RandomVariable.
+         }
          assert (rvY':(forall n : nat,
                            RandomVariable
                              (event_restricted_sigma
                                 re) borel_sa
-                             (event_restricted_function re (Y n))) ) by admit.
+                             (event_restricted_function re (rvabs (Y n))) )).
+         {
+           intros.
+           now apply Restricted_RandomVariable.
+         }
 
          generalize (lemma3_base_forall_alt_eventually (prts:=event_restricted_prob_space prts _ Yprop)
                        (fun n => event_restricted_function re (α n))
@@ -2550,28 +2558,43 @@ Section jaakola_vector2.
                        rvα' rvX'
                     )
          ; intros HH.
-         cut_to HH.
-         specialize (HH eps1 eps2 eps1_prop).
-         destruct HH.
-         specialize (H0 n).
-         cut_to H0.
-         10: {
-           exists nY; intros nn Nn [xx xxP]; simpl.
+         cut_to HH; trivial.
+         - specialize (HH eps1 eps2 eps1_prop).
+           destruct HH.
+           exists (x + nY)%nat.
+           intros.
+           specialize (H n).
+           cut_to H; try lia.
+           rewrite event_restricted_cond_prob with (pf := Yprop).
+           eapply Rge_trans; [| apply H].
+           right.
+           apply ps_proper; intros ?.
+           reflexivity.
+         - intros.
+           apply aprop.
+         - intros.
+           apply bprop.
+         - intros.
+           apply abprop.
+         - intros.
+           unfold event_restricted_function.
+           apply gamma_div.
+         - intros.
+           unfold event_restricted_function, event_restricted_domain.
+           intros ?.
+           apply Xprop.
+         - intros.
+           unfold event_restricted_function, event_restricted_domain.
+           intros ?.
+           apply XYprop.
+         - exists nY; intros nn Nn [xx xxP]; simpl.
            unfold rvabs, event_restricted_function, const; simpl.
            red in xxP; simpl in xxP.
            specialize (xxP (nn-nY)%nat).
            replace (nn - nY + nY)%nat with nn in xxP by lia.
            unfold rvabs in xxP.
            lra.
-         } 
-
-         eapply Rge_trans; [| apply H0].
-         right.
-         apply ps_proper; intros ?.
-         reflexivity.
-
-        Admitted.
-
+      Qed.
 
       Lemma lemma3_base_forall_alt_eventually_prob (α β X Y : nat -> Ts -> R) (C γ : posreal)
          (rva : forall n, RandomVariable dom borel_sa (α n))
@@ -2606,7 +2629,7 @@ Section jaakola_vector2.
         Admitted.
 
 
-       Lemma lemma3 {N} (α β X : nat -> Ts -> vector R N) (C γ : posreal)
+       Lemma lemma3 (α β X : nat -> Ts -> vector R N) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa N) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa N) (α n)) 
          (rvb : forall n, RandomVariable dom (Rvector_borel_sa N) (β n)) :           
@@ -2629,7 +2652,7 @@ Section jaakola_vector2.
         intros.
       Admitted.
 
-       Lemma lemma3' {N} (α β X : nat -> Ts -> vector R N) (C γ : posreal)
+       Lemma lemma3' (α β X : nat -> Ts -> vector R N) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa N) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa N) (α n)) 
          (rvb : forall n, RandomVariable dom (Rvector_borel_sa N) (β n)) :           
