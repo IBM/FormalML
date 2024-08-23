@@ -2196,17 +2196,26 @@ Section jaakola_vector2.
                            (vecrvmult (α n) (X n)))
                         (vecrvscalerv (rvmaxabs (X n))
                            (vecrvscale γ (β n))))) ->
-         forall (eps1 eps2:posreal),
-           forall (k : nat),
-             γ + (1 - γ)/2 <= / (1 + eps1) ->
-             1 - eps2 > 0 ->
-             eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1)^k)))) >= (1 - eps2)^k).
+        forall (eps1 : posreal),
+               forall (eps2:nat -> posreal),
+               forall (k : nat),
+                 γ + (1 - γ)/2 <= / (1 + eps1) ->
+                 (forall n, 1 - eps2 n > 0) ->
+                 eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1)^k)))) >= prod_f_R0 (fun n => (1 - eps2 n)) k).
       Proof.
         intros aprop bprop abprop gamma_div gamma_lt1 Xbound Xprop eps1 eps2 k eps1_prop eps2_prop.
         induction k.
         - apply all_eventually.
           intros.
-          rewrite pow_O, pow_O, Rdiv_1.
+          simpl.
+          rewrite Rdiv_1.
+          assert (1 >= 1 - eps2 0%nat).
+          {
+            generalize (cond_pos (eps2 0%nat)).
+            lra.
+          }
+          eapply Rge_trans; cycle 1.
+          apply H.
           right.
           apply ps_one_countable_inter.
           intros.
@@ -2227,31 +2236,47 @@ Section jaakola_vector2.
             generalize (cond_pos eps1).
             lra.
           }
-generalize (lemma3_vector_forall_eventually_prob α β X (mkposreal _ H) γ _ _ _ aprop bprop abprop gamma_div gamma_lt1 Xprop eps1 eps2); intros.
-          assert (0 < (1 - eps2)^k).
+          generalize (lemma3_vector_forall_eventually_prob α β X (mkposreal _ H) γ _ _ _ aprop bprop abprop gamma_div gamma_lt1 Xprop eps1 (eps2 (S k))); intros.
+          assert (0 < prod_f_R0 (fun n => (1 - eps2 n)) k).
           {
-            now apply pow_lt.
+            clear H H0 IHk.
+            induction k.
+            - simpl.
+              apply eps2_prop.
+            - simpl.
+              apply Rmult_lt_0_compat; trivial.
+              apply eps2_prop.
           }
-          specialize (H0 (mkposreal _ H1) eps1_prop eps2_prop IHk).
-          destruct H0.
-          exists x.
-          intros.
-          specialize (H0 n H2).
-          simpl in H0.
-          simpl.
+          specialize (H0 (mkposreal _ H1) eps1_prop (eps2_prop (S k))); intros.
           rewrite Rmult_comm in H0.
-          eapply Rge_trans; cycle 1.
-          apply H0.
-          right.
-          apply ps_proper.
-          intros ?.
-          simpl.
-          replace  (C / (1 + eps1) ^ k / (1 + eps1)) with
-            (C / ((1 + eps1) * (1 + eps1) ^ k)); [tauto | ].
-          rewrite Rmult_comm.
-          unfold Rdiv.
-          rewrite Rmult_assoc.
-          now rewrite Rinv_mult.
+          cut_to H0.
+          + destruct H0.
+            exists x.
+            intros.
+            specialize (H0 n H2).
+            simpl in H0.
+            simpl.
+            rewrite Rmult_comm in H0.
+            eapply Rge_trans; cycle 1.
+            apply H0.
+            right.
+            apply ps_proper.
+            intros ?.
+            simpl.
+            replace  (C / (1 + eps1) ^ k / (1 + eps1)) with
+              (C / ((1 + eps1) * (1 + eps1) ^ k)); [tauto | ].
+            rewrite Rmult_comm.
+            unfold Rdiv.
+            rewrite Rmult_assoc.
+            now rewrite Rinv_mult.
+          + destruct IHk.
+            exists x.
+            intros.
+            specialize (H2 n H3).
+            simpl.
+            eapply Rge_trans; cycle 1.
+            apply H2.
+            now right.
        Qed.
 
        Lemma lemma3 (α β X : nat -> Ts -> vector R N) (C γ : posreal)
@@ -2276,7 +2301,17 @@ generalize (lemma3_vector_forall_eventually_prob α β X (mkposreal _ H) γ _ _ 
         generalize (lemma3_vector_forall_eventually_prob_iter α β X C γ _ _ _); intros.
         cut_to H6; trivial.
         destruct (lemma3_gamma_eps_le _ H3) as [eps1 eps1_prop].
+        generalize (lemma3_lim_eps_alt C eps1); intros.
+        assert (is_lim_seq (fun n => C / (1 + eps1)^n) 0).
+        {
+          revert H7.
+          apply is_lim_seq_ext.
+          intros.
+          unfold Rdiv.
+          now rewrite pow_inv.
+        }
         
+
       Admitted.
 
        Lemma lemma3' (α β X : nat -> Ts -> vector R N) (C γ : posreal)
