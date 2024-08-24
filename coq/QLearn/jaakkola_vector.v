@@ -1969,7 +1969,33 @@ Qed.
                         --- left; apply cond_pos.
                         --- specialize (bprop (n + nY)%nat a); lra.
                      ** apply Rabs_pos.
-      Qed.
+       Qed.
+
+       Lemma lemma3_vector_forall_eventually_alt (α β X : nat -> Ts -> vector R N) (C C0 γ : posreal)
+         (rva : forall n, RandomVariable dom (Rvector_borel_sa N) (α n))
+         (rvX : forall n, RandomVariable dom (Rvector_borel_sa N) (X n)) :
+         (forall t ω i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
+         (forall t ω i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
+         (forall t ω i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->       
+
+         (forall ω i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+
+         γ < 1 ->
+
+         (forall n, rv_eq (X (S n))
+                      (vecrvclip 
+                         (vecrvplus 
+                            (vecrvminus (X n)
+                               (vecrvmult (α n) (X n)))
+                            (vecrvscalerv (rvmaxabs (X n))
+                               (vecrvscale γ (β n))))
+                         (pos_to_nneg C0))) ->
+         eventually (fun n => rv_le (rvmaxabs (X n)) (const C)) ->
+         forall (eps1 eps2:posreal),
+           γ + (1 - γ)/2 <= / (1 + eps1) ->
+           eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1))))) >= 1 - eps2).
+     Proof.
+       Admitted.
 
 End jaakola_vector1.
 Section jaakola_vector2.
@@ -2184,8 +2210,73 @@ Section jaakola_vector2.
                                    (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + nY)%nat)) C)))
                                  >= 1 - eps2).
        Proof.
-         Admitted.
+         intros aprop bprop abprop gamma_div gamma_lt1 Xprop  eps1 eps2 prob nY eps1_prop eps2_prop Yprop.
+         pose (re:= (inter_of_collection (fun n0 : nat => event_le dom (rvmaxabs (X (n0 + nY)%nat)) C))).
+         assert (rvα':(forall n : nat,
+                           RandomVariable
+                             (event_restricted_sigma
+                                re) (Rvector_borel_sa N)
+                             (event_restricted_function re (α n))) ).
+         {
+           intros.
+           now apply Restricted_RandomVariable.
+         }
+         assert (rvX':(forall n : nat,
+                           RandomVariable
+                             (event_restricted_sigma
+                                re) (Rvector_borel_sa N)
+                             (event_restricted_function re (X n))) ).
+         {
+           intros.
+           now apply Restricted_RandomVariable.
+         }
+         assert (rvY':(forall n : nat,
+                           RandomVariable
+                             (event_restricted_sigma
+                                re) borel_sa
+                             (event_restricted_function re (rvmaxabs (X n))) )).
+         {
+           intros.
+           apply Restricted_RandomVariable.
+           now apply Rvector_max_abs_rv.
+         }
 
+         generalize (lemma3_vector_forall_eventually_alt (SS := nat) (prts:=event_restricted_prob_space prts _ Yprop) N
+                       (fun n => event_restricted_function re (α n))
+                       (fun n => event_restricted_function re (β n))
+                       (fun n => event_restricted_function re (X n)) C C0 γ rvα' rvX'); intros HH.
+         cut_to HH; trivial.
+         - specialize (HH eps1 eps2 eps1_prop).
+           destruct HH.
+           exists (x + nY)%nat.
+           intros.
+           specialize (H n).
+           cut_to H; try lia.
+           rewrite event_restricted_cond_prob with (pf := Yprop).
+           eapply Rge_trans; [| apply H].
+           right.
+           apply ps_proper; intros ?.
+           reflexivity.
+         - intros.
+           apply aprop.
+         - intros.
+           apply bprop.
+         - intros.
+           apply abprop.
+         - intros.
+           now unfold event_restricted_function.
+         - intros.
+           unfold event_restricted_function, event_restricted_domain.
+           intros ?.
+           apply Xprop.
+         - exists nY; intros nn Nn [xx xxP]; simpl.
+           unfold rvmaxabs, event_restricted_function, const; simpl.
+           red in xxP; simpl in xxP.
+           specialize (xxP (nn-nY)%nat).
+           replace (nn - nY + nY)%nat with nn in xxP by lia.
+           unfold rvabs in xxP.
+           apply xxP.
+      Qed.
 
       Lemma lemma3_vector_forall_eventually_prob_inter (α β X : nat -> Ts -> vector R N) (C C0 γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa N) (α n))
