@@ -245,22 +245,61 @@ Section conv_as.
       generalize (ps_le1 prts (event_lt dom (rvabs (f n)) eps1)); lra.
    Qed.
 
+    Lemma eps_lt_le {prts: ProbSpace dom} (f : nat -> Ts -> R)
+      {rv : forall n, RandomVariable dom borel_sa (f n)} :
+      (forall (eps1 eps2: posreal),
+        eventually (fun n => ps_P (event_lt dom (f n) eps1) >= 1 - eps2)) ->
+      forall (eps1 eps2: posreal),
+        eventually (fun n => ps_P (event_le dom (f n) eps1) >= 1 - eps2).
+    Proof.
+      intros.
+      specialize (H eps1 eps2).
+      destruct H.
+      exists x.
+      intros.
+      specialize (H n H0).
+      eapply Rge_trans; cycle 1.
+      - apply H.
+      - apply Rle_ge.
+        apply ps_sub.
+        intros ?.
+        simpl.
+        lra.
+    Qed.
+
+    Lemma eps_lt_le_forall {prts: ProbSpace dom} (f : nat -> Ts -> R)
+      {rv : forall n, RandomVariable dom borel_sa (f n)} :
+      (forall (eps1 eps2:posreal),
+        eventually (fun n0 => ps_P (inter_of_collection (fun n => event_lt dom (f (n + n0)%nat) eps1)) >= 1 - eps2)) ->
+      (forall (eps1 eps2:posreal),
+        eventually (fun n0 => ps_P (inter_of_collection (fun n => event_le dom (f (n + n0)%nat) eps1)) >= 1 - eps2)).
+    Proof.
+      intros.
+      specialize (H eps1 eps2).
+      destruct H.
+      exists x.
+      intros.
+      specialize (H n H0).
+      eapply Rge_trans; cycle 1.
+      - apply H.
+      - apply Rle_ge.
+        apply ps_sub.
+        intros ?.
+        simpl.
+        intros.
+        specialize (H1 n0).
+        lra.
+    Qed.
+
     Lemma conv_as_prob_1_eps_le {prts: ProbSpace dom} (f : nat -> Ts -> R)
       {rv : forall n, RandomVariable dom borel_sa (f n)} :
       almost prts (fun x => is_lim_seq (fun n => f n x) 0) ->
       forall (eps1 eps2: posreal),
         eventually (fun n => ps_P (event_le dom (rvabs (f n)) eps1) >= 1 - eps2).
     Proof.
-      intros.
-      apply (conv_as_prob_1_le _) with (eps := eps1) in H.
-      rewrite <- is_lim_seq_spec in H.
-      destruct (H eps2).
-      exists x.
-      intros.
-      specialize (H0 n H1).
-      rewrite Rabs_minus_sym in H0.
-      rewrite Rabs_right in H0; try lra.
-      generalize (ps_le1 prts (event_le dom (rvabs (f n)) eps1)); lra.
+      intro am.
+      apply eps_lt_le.
+      now apply conv_as_prob_1_eps.
    Qed.
 
     Lemma conv_as_prob_1_eps_forall {prts: ProbSpace dom} (f : nat -> Ts -> R)
@@ -330,16 +369,13 @@ Section conv_as.
         now rewrite vector_nth_map.
     Qed.
 
-                                     
-    Lemma conv_as_prob_1_rvmaxabs {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size)
+    Lemma almost_rvmaxabs_lim_seq {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size)
       {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (f n)} :
       almost prts (fun x => forall i pf, is_lim_seq (fun n => vector_nth i pf (f n x)) 0) ->
-      forall (eps : posreal),
-        eventually (fun n => ps_P (event_lt dom (rvmaxabs (f n)) eps) >= 1 - eps).
+      almost prts (fun x => is_lim_seq (fun n => rvmaxabs (f n) x) 0).
     Proof.
       intros.
-      assert (almost prts (fun x => is_lim_seq (fun n => rvmaxabs (f n) x) 0)).
-      {
+
         revert H.
         apply almost_impl.
         apply all_almost.
@@ -400,7 +436,17 @@ Section conv_as.
             apply is_lim_seq_ext; intros nn.
             rewrite vector_nth_map.
             now rewrite vector_of_funs_vector_nth, vector_nth_add_to_end_suffix.
-      } 
+
+    Qed.
+      
+    Lemma conv_as_prob_1_rvmaxabs {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size)
+      {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (f n)} :
+      almost prts (fun x => forall i pf, is_lim_seq (fun n => vector_nth i pf (f n x)) 0) ->
+      forall (eps : posreal),
+        eventually (fun n => ps_P (event_lt dom (rvmaxabs (f n)) eps) >= 1 - eps).
+    Proof.
+      intros.
+      generalize (almost_rvmaxabs_lim_seq f H); intros.
       destruct (conv_as_prob_1_eps (fun n => rvmaxabs (f n)) H0 eps eps).
       exists x.
       intros.
@@ -419,6 +465,46 @@ Section conv_as.
       now rewrite H3.
     Qed.
 
+    Lemma conv_as_prob_1_rvmaxabs_forall {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size)
+      {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (f n)} :
+      almost prts (fun x => forall i pf, is_lim_seq (fun n => vector_nth i pf (f n x)) 0) ->
+      forall (eps1 eps2 : posreal),
+        eventually (fun n0 => ps_P (inter_of_collection (fun n => event_lt dom (rvmaxabs (f (n + n0)%nat)) eps1)) >= 1 - eps2).
+    Proof.
+      intros.
+      generalize (almost_rvmaxabs_lim_seq f H); intros.
+      destruct (conv_as_prob_1_eps_forall (fun n => rvmaxabs (f n)) H0 eps1 eps2).
+      exists x.
+      intros.
+      eapply Rge_trans; [|now apply (H1 _ H2)].
+      right.
+      apply ps_proper.
+      intros ?.
+      simpl.
+      assert (forall n0, rvmaxabs (f (n0 + n)%nat) x0 = rvabs (rvmaxabs (f (n0 + n)%nat)) x0).
+      {
+        intros.
+        unfold rvabs.
+        rewrite Rabs_right; trivial.
+        apply Rle_ge.
+        apply rvmaxabs_pos.
+      }
+      split; intros.
+      - now rewrite <- H3.
+      - now rewrite H3.
+    Qed.
+
+    Lemma conv_as_prob_1_rvmaxabs_forall_le {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size)
+      {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (f n)} :
+      almost prts (fun x => forall i pf, is_lim_seq (fun n => vector_nth i pf (f n x)) 0) ->
+      forall (eps1 eps2 : posreal),
+        eventually (fun n0 => ps_P (inter_of_collection (fun n => event_le dom (rvmaxabs (f (n + n0)%nat)) eps1)) >= 1 - eps2).
+    Proof.
+      intros.
+      generalize (eps_lt_le_forall (fun n => rvmaxabs (f n))); intros.
+      apply H0.
+      now apply conv_as_prob_1_rvmaxabs_forall.
+   Qed.
 
 End conv_as.
 
