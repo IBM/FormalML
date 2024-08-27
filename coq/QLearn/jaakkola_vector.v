@@ -2413,8 +2413,14 @@ Qed.
                      ** apply abprop.
                -- unfold rvmaxabs.
                   simpl.
-                  admit.
-             Admitted.
+                  rewrite Rabs_mult.
+                  rewrite Rabs_mult.
+                  generalize (cond_pos γ); intros.
+                  rewrite (Rabs_right γ); try lra.
+                  rewrite (Rabs_right  (vector_nth i pf (β (n + nY)%nat a))); try lra.
+                  apply Rle_ge.
+                  apply bprop.
+        Qed.
 
 End newN.
 Section jaakola_vector2.
