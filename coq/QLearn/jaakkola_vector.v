@@ -2875,11 +2875,10 @@ Section jaakola_vector2.
 
       Admitted.
 
-(*
-       Lemma lemma3' (α β X : nat -> Ts -> vector R N) (C γ : posreal)
-         (rvX : forall n, RandomVariable dom (Rvector_borel_sa N) (X n)) 
-         (rva : forall n, RandomVariable dom (Rvector_borel_sa N) (α n)) 
-         (rvb : forall n, RandomVariable dom (Rvector_borel_sa N) (β n)) :           
+       Lemma lemma3' (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
+         (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
+         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
+         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n)) :           
          (forall t ω i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
          (forall t ω i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
          (forall t ω i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->                  
@@ -2887,11 +2886,13 @@ Section jaakola_vector2.
          γ < 1 ->
          (forall n, rv_le (rvmaxabs (X n)) (const C)) ->
          (forall n, rv_eq (X (S n))
-                      (vecrvplus 
-                         (vecrvminus (X n)
-                            (vecrvmult (α n) (X n)))
-                         (vecrvscalerv (rvmaxabs (X n))
-                            (vecrvscale γ (β n))))) ->
+                      (vecrvclip (S N)
+                         (vecrvplus 
+                            (vecrvminus (X n)
+                               (vecrvmult (α n) (X n)))
+                            (vecrvscalerv (rvmaxabs (X n))
+                               (vecrvscale γ (β n))))
+                         (pos_to_nneg C))) ->
          forall i pf,
            almost prts (fun ω => is_lim_seq (fun n => vector_nth i pf (X n ω)) 0).
       Proof.
@@ -2913,7 +2914,6 @@ Section jaakola_vector2.
         apply Rabs_le_between.
         apply Rvector_max_abs_nth_le.
      Qed.        
-*)
 
    Lemma condexp_condexp_diff_0 (XF : Ts -> R)
      {dom2 : SigmaAlgebra Ts}
