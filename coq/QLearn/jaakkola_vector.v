@@ -2254,7 +2254,13 @@ Qed.
          (forall i pf, Rabs (vector_nth i pf v1) <= Rabs (vector_nth i pf v2)) ->
          Rvector_max_abs v1 <= Rvector_max_abs v2.
        Proof.
-         Admitted.
+         intros.
+         destruct (Rvector_max_abs_nth_in v1) as [? [??]].
+         rewrite H0.
+         eapply Rle_trans.
+         apply H.
+         apply Rvector_max_abs_nth_le.
+       Qed.
 
        Lemma lemma3_vector_forall_eventually_alt (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
@@ -2666,7 +2672,7 @@ Section jaakola_vector2.
            now apply Rvector_max_abs_rv.
          }
 
-         generalize (lemma3_vector_forall_eventually_alt (SS := nat) (prts:=event_restricted_prob_space prts _ Yprop) N
+         generalize (lemma3_vector_forall_eventually_alt  (prts:=event_restricted_prob_space prts _ Yprop) N
                        (fun n => event_restricted_function re (α n))
                        (fun n => event_restricted_function re (β n))
                        (fun n => event_restricted_function re (X n)) C C0 γ rvα' rvX'); intros HH.
@@ -2930,6 +2936,11 @@ Section jaakola_vector2.
         {
           apply lemma3_plim_Rabs.
         }
+        apply all_almost; intros ?.
+        apply is_lim_seq_spec.
+        unfold is_lim_seq'.
+        intros.
+        
 
       Admitted.
 
