@@ -17,6 +17,32 @@ Require Import RelationClasses.
 
 Set Bullet Behavior "Strict Subproofs".
 
+(* move somewhere earlier *)
+Lemma eventually_bounded_forall (N:nat) P : 
+  (forall (i : nat) (pf : (i < N)%nat), eventually (P i pf)) ->
+  eventually (fun n => forall i pf, P i pf n).
+Proof.
+  induction N.
+  - intros.
+    exists 0%nat; intros; lia.
+  - intros HH.
+    specialize (IHN (fun x pf => P x (lt_S _ _ pf))).
+    cut_to IHN.
+    + simpl in IHN.
+      specialize (HH N (Nat.lt_succ_diag_r _)).
+      revert HH; apply eventually_impl.
+      revert IHN; apply eventually_impl.
+      apply all_eventually; intros.
+      destruct (Nat.eq_dec i N).
+      * subst.
+        now rewrite (digit_pf_irrel _ _ _ pf) in H0.
+      * assert (pf2 : (i < N)%nat) by lia.
+        specialize (H i pf2).
+        now rewrite (digit_pf_irrel _ _ _ pf) in H.
+    + intros.
+      apply HH.
+Qed.
+
 Section jaakola_vector1.
   
 Context {Ts : Type} {SS:Type} (N:nat)
@@ -1016,7 +1042,11 @@ Qed.
    Proof.
      intros H H0 gamma_1 eps1 eps2 gamma_lt.
      generalize (lemma3_helper_vector_forall_alt f fstar C gamma H H0 gamma_1 eps1 eps2 gamma_lt); intros.
-     Admitted.
+     apply eventually_bounded_forall in H1.
+     revert H1; apply eventually_impl.
+     apply all_eventually; intros.
+     (* Rvector_max_abs_nth_in *)
+   Admitted.
 
 (*
     Lemma lemma3_helper_forall_le  (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
