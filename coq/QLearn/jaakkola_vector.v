@@ -1030,46 +1030,6 @@ Qed.
       apply Rmult_le_compat_l with (r := C) in gamma_lt; lra.
     Qed.
 
-    Lemma lemma3_helper_vector_forall_alt (f : nat -> Ts -> vector R N) (fstar: vector R N) (C gamma : posreal)
-      {rv : forall n, RandomVariable dom (Rvector_borel_sa N) (f n)} :
-      (forall i pf, almost prts (fun x => is_lim_seq (fun n => vector_nth i pf (f n x)) (vector_nth i pf fstar))) ->
-      (forall i pf, (Rabs (vector_nth i pf fstar) <= gamma * C)) ->
-      gamma < 1 ->
-      forall (eps1 eps2:posreal),
-        gamma + (1 - gamma)/2 <= / (1 + eps1) ->
-        forall i pf,
-          eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvabs (vecrvnth i pf (f (n + n0)%nat))) (C / (1 + eps1))))) >= 1 - eps2).
-    Proof.
-      intros H H0 gamma_1 eps1 eps2 gamma_lt.
-      intros.
-      specialize (H i pf).
-      specialize (H0 i pf).
-      assert (0 < ((1 - gamma)/2) * C).
-      {
-        apply Rmult_lt_0_compat.
-        - apply Rmult_lt_0_compat; lra.
-        - apply cond_pos.
-      }
-      pose (ff := fun n => vecrvnth i pf (f n)).
-      destruct (conv_as_prob_1_eps_forall_alt ff (vector_nth i pf fstar) H (mkposreal _ H1) eps2).
-      exists x.
-      intros.
-      eapply Rge_trans; cycle 1.
-      apply (H2 _ H3).
-      apply Rle_ge.
-      apply ps_sub.
-      unfold event_sub, pre_event_sub, rvabs; simpl; intros.
-      unfold rvabs, rvminus, rvplus, rvopp, rvscale, const in H4.
-      specialize (H4 n0).
-      generalize (Rabs_triang_inv (ff (n0 + n)%nat x0) (vector_nth i pf fstar)); intros.
-      replace  (ff (n0 + n)%nat x0 + -1 * (vector_nth i pf fstar)) with  (ff (n0 + n)%nat x0 - (vector_nth i pf fstar)) in H4 by lra.
-      assert (Rabs(ff (n0 + n)%nat x0) <= (1 - gamma) * C / 2 + gamma * C) by lra.
-      eapply Rle_trans.
-      apply H6.
-      generalize (cond_pos C); intros.
-      apply Rmult_le_compat_l with (r := C) in gamma_lt; lra.
-    Qed.
-
     Lemma lemma3_helper_vector_forall (f : nat -> Ts -> vector R N) (fstar: vector R N) (C gamma : posreal)
       {rv : forall n, RandomVariable dom (Rvector_borel_sa N) (f n)} :
       (forall i pf, almost prts (fun x => is_lim_seq (fun n => vector_nth i pf (f n x)) (vector_nth i pf fstar))) ->
@@ -1108,35 +1068,6 @@ Qed.
      apply Rmult_le_compat_l with (r := C) in gamma_lt; lra.
   Qed.
 
-(*
-    Lemma lemma3_helper_forall_le  (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
-      {rvf : forall n, RandomVariable dom borel_sa (f n)} 
-      {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
-      almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
-      (forall n x, rvabs (g n) x <= rvabs (f n) x) ->
-      Rabs fstar <= gamma * C ->
-      gamma < 1 ->
-      forall (eps1 eps2:posreal),
-        gamma + (1 - gamma)/2 <= / (1 + eps1) ->
-        eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvabs (g (n + n0)%nat)) (C / (1 + eps1))))) >= 1 - eps2).
-    Proof.
-      intros H H0 H1 gamma_1 eps1 eps2 gamma_lt.
-      destruct (lemma3_helper_forall f fstar C gamma H H1 gamma_1 eps1 eps2 gamma_lt).
-      exists x.
-      intros.
-      specialize (H2 n H3).
-      eapply Rge_trans; cycle 1.
-      apply H2.
-      apply Rle_ge.
-      apply ps_sub.
-      unfold event_sub, pre_event_sub.
-      simpl; intros.
-      eapply Rle_trans.
-      apply H0.
-      apply H4.
-    Qed.
-*)
-      
     Lemma lemma3_helper_forall_eventually_le (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
