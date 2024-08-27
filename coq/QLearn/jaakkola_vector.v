@@ -2339,7 +2339,31 @@ Qed.
              apply vecrvclip_le.
              assert (forall n i pf a, (vector_nth i pf (f n a)) >= 0).
              {
-               admit.
+               intros.
+               induction n0.
+               - simpl.
+                 unfold vecrvconst.
+                 rewrite vector_nth_const.
+                 generalize (cond_pos C); lra.
+               - simpl.
+                 unfold vecrvplus, vecrvmult, vecrvminus, vecrvconst, vecrvopp, vecrvscale.
+                 rewrite Rvector_nth_plus.
+                 apply Rle_ge.
+                 apply Rplus_le_le_0_compat.
+                 + rewrite Rvector_nth_mult.
+                   apply Rmult_le_pos; try lra.
+                   unfold vecrvplus.
+                   rewrite Rvector_nth_plus.
+                   rewrite vector_nth_const.
+                   rewrite Rvector_nth_scale.
+                   specialize (aprop (n0 + nY)%nat a0 i0 pf0).
+                   lra.
+                 + rewrite Rvector_nth_scale.
+                   apply Rmult_le_pos.
+                   * apply Rmult_le_pos.
+                     generalize (cond_pos γ); lra.
+                     generalize (cond_pos C); lra.                     
+                   * apply aprop.
              }
              rewrite (Rabs_right (vector_nth i pf (f (S n) a))); [|apply H0].
              simpl.
