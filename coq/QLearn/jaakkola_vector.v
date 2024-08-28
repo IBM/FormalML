@@ -2864,6 +2864,37 @@ Section jaakola_vector2.
         rewrite Rminus_0_r.
         unfold rvmaxabs.
 
+        pose (Ek := fun (n0 : nat) (eps1 : posreal) (k : nat) =>
+                     (inter_of_collection
+                        (fun n : nat =>
+                           event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1) ^ k)))).
+        assert (forall n0 eps k,
+                   event_sub (Ek n0 eps (S k)) (Ek n0 eps k)).
+        {
+          intros.
+          intros ?.
+          unfold Ek.
+          simpl.
+          intros.
+          specialize (H11 n1).
+          eapply Rle_trans.
+          apply H11.
+          unfold Rdiv.
+          apply Rmult_le_compat_l.
+          - generalize (cond_pos C); lra.
+          - apply Rinv_le_contravar.
+            + apply pow_lt.
+              generalize (cond_pos eps0); lra.
+            + rewrite <- (Rmult_1_l ((1 + eps0)^k)) at 1.
+              generalize (cond_pos eps0); intros.
+              apply Rmult_le_compat_r; try lra.
+              apply pow_le; lra.
+        }
+        generalize (fun (n0 : nat) (eps : posreal) => lim_prob_descending (Ek n0 eps) (inter_of_collection (Ek n0 eps)) (H11 n0 eps)); intros.
+        
+
+                   
+
       Admitted.
 
        Lemma lemma3' (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)

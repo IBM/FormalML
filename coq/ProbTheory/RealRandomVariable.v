@@ -2005,6 +2005,11 @@ Section RealRandomVariables.
     now apply sa_preimage_singleton.
   Qed.
 
+  Definition event_Req
+             (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
+    : event dom
+    := preimage_singleton rv_X x.
+
   Lemma sa_le_ge_rv 
         (rv_X : Ts -> R) {rv : RandomVariable dom borel_sa rv_X} x
     : sa_sigma _ (fun omega => rv_X omega >= x).
