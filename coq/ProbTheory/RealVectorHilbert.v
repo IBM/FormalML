@@ -1142,12 +1142,19 @@ Section more_lemmas.
       apply H.
   Qed.
     
-
   Lemma Rvector_max_abs_nonneg {n} (v: vector R n) : 0 <= Rvector_max_abs v.
   Proof.
     unfold Rvector_max_abs, vector_fold_left.
     destruct v as [l lpf]; simpl; clear lpf.
     apply fold_left_Rmax_init_le.
+  Qed.
+
+  Lemma Rabs_Rvector_max_abs {n} (v : vector R n) :
+    Rabs (Rvector_max_abs v) = Rvector_max_abs v.
+  Proof.
+    rewrite Rabs_right; trivial.
+    apply Rle_ge.
+    apply Rvector_max_abs_nonneg.
   Qed.
 
   Lemma sqr_max_abs_le_inner {n:nat} (v : vector R n) :

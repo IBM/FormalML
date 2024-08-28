@@ -2871,7 +2871,10 @@ Section jaakola_vector2.
         apply is_lim_seq_spec.
         unfold is_lim_seq'.
         intros.
-        
+        eexists.
+        intros.
+        rewrite Rminus_0_r.
+        unfold rvmaxabs.
 
       Admitted.
 
