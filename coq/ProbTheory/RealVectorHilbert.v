@@ -1117,6 +1117,18 @@ Section more_lemmas.
     eauto.
   Qed.
 
+  Lemma Rvector_max_abs_le {n} (v1 v2 : vector R (S n)) :
+    (forall i pf, Rabs (vector_nth i pf v1) <= Rabs (vector_nth i pf v2)) ->
+    Rvector_max_abs v1 <= Rvector_max_abs v2.
+  Proof.
+    intros.
+    destruct (Rvector_max_abs_nth_in v1) as [? [??]].
+    rewrite H0.
+    eapply Rle_trans.
+    apply H.
+    apply Rvector_max_abs_nth_le.
+  Qed.
+
   Program Lemma Rvector_sum_pos_in_le {n} x (v : vector R n) :
     (forall a, In a v -> 0%R <= a) ->
     In x v ->
@@ -1384,6 +1396,7 @@ Section more_lemmas.
     rewrite Rabs_m1.
     lra.
   Qed.
+
 
 End more_lemmas.
 
