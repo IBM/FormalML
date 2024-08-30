@@ -2850,7 +2850,7 @@ Section jaakola_vector2.
           unfold Rdiv.
           now rewrite pow_inv.
         }
-        pose (eps2 := fun eps n => (Rabs eps)^(S n)).
+        pose (eps2 := fun (eps : R) (n : nat) => (Rabs eps)^(S n)).
         assert (lim_0_1: is_lim (fun y : R => Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2 y n) m)) 0 1).
         {
           apply lemma3_plim_Rabs.
@@ -2948,13 +2948,35 @@ Section jaakola_vector2.
           apply H9.
           apply H10.
         }
-        generalize (fun (n0 : nat) (eps : posreal) =>
-                      lim_prob_descending (Ek n0 eps)
-                        (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                           (Rbar_rvlim (fun n => rvmaxabs (X (n + n0)%nat)))
-                           (Finite 0)) 
-                        (esub n0 eps)); intros.
-        unfold Ek in H9.
+        generalize (fun n0 eps =>
+                        (ps_sub _ _ _ (eesub n0 eps))); intros.
+        assert (forall n0 eps,
+                      is_lim_seq (fun n : nat => ps_P (Ek n0 eps n))
+                        (ps_P (inter_of_collection (Ek n0 eps)))).
+        {
+          intros.
+          apply lim_prob_descending.
+          - intros. apply esub.
+          - intros ?.
+            simpl.
+            tauto.
+        }
+        assert (forall n0 y (eps : posreal),
+                   ps_P
+                     (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                        (Rbar_rvlim
+                           (fun (n : nat) (omega : Ts) =>
+                              rvmaxabs (X (n + n0)%nat) omega)) (Finite 0)) >= 
+                      Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2 y n) m)).
+        {
+          intros.
+          specialize (H10 n0 eps).
+          specialize (H9 n0 eps).
+          apply Rle_ge in H9.
+          apply is_lim_seq_unique in H10.
+          specialize (H6 eps).
+          
+        
 
       Admitted.
 
