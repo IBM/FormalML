@@ -2893,8 +2893,8 @@ Section jaakola_vector2.
           apply Real_Rbar_rv.
           now apply Rvector_max_abs_rv.
         }
-        assert (eequiv: forall n0 eps,
-                   event_equiv
+        assert (eesub: forall n0 eps,
+                   event_sub
                      (inter_of_collection (Ek n0 eps))
                      (preimage_singleton (has_pre := Rbar_borel_has_preimages)
                         (Rbar_rvlim (fun n => rvmaxabs (X (n + n0)%nat))) (Finite 0))).
@@ -2904,16 +2904,56 @@ Section jaakola_vector2.
           intros ?.
           simpl.
           unfold pre_event_preimage, pre_event_singleton.
-          split; intros.
-          - admit.
-          - admit.
+          intros.
+          unfold Rbar_rvlim.
+          rewrite Elim_seq_fin.
+          apply is_lim_seq_unique.
+          rewrite <- is_lim_seq_spec.
+          intros ?.
+          assert (eventually (fun n => C / (1 + eps) ^ n < eps0)).
+          {
+            generalize (lemma3_lim_eps_alt C eps); intros.
+            assert (is_lim_seq (fun n => C / (1 + eps)^n) 0).
+            {
+              revert H10.
+              apply is_lim_seq_ext.
+              intros.
+              unfold Rdiv.
+              now rewrite pow_inv.
+            }
+            apply is_lim_seq_spec in H11.
+            specialize (H11 eps0).
+            simpl in H11.
+            revert H11.
+            apply eventually_impl.
+            apply all_eventually.
+            intros.
+            rewrite Rminus_0_r in H11.
+            rewrite Rabs_right in H11; trivial.
+            apply Rle_ge.
+            apply Rdiv_le_0_compat.
+            - generalize (cond_pos C); lra.
+            - apply pow_lt.
+              generalize (cond_pos eps); lra.
+          }
+          revert H10.
+          apply eventually_impl.
+          apply all_eventually.
+          intros ??.
+          rewrite Rminus_0_r.
+          unfold rvmaxabs.
+          rewrite Rabs_Rvector_max_abs.
+          specialize (H9 x1 x1).
+          eapply Rle_lt_trans.
+          apply H9.
+          apply H10.
         }
         generalize (fun (n0 : nat) (eps : posreal) =>
                       lim_prob_descending (Ek n0 eps)
                         (preimage_singleton (has_pre := Rbar_borel_has_preimages)
                            (Rbar_rvlim (fun n => rvmaxabs (X (n + n0)%nat)))
                            (Finite 0)) 
-                        (esub n0 eps) (eequiv n0 eps)); intros.
+                        (esub n0 eps)); intros.
         unfold Ek in H9.
 
       Admitted.
