@@ -2842,7 +2842,7 @@ Section jaakola_vector2.
         cut_to H6; trivial.
         destruct (lemma3_gamma_eps_le _ H3) as [eps1 eps1_prop].
         generalize (lemma3_lim_eps_alt C eps1); intros.
-        assert (is_lim_seq (fun n => C / (1 + eps1)^n) 0).
+        assert (lim_C_eps1: is_lim_seq (fun n => C / (1 + eps1)^n) 0).
         {
           revert H7.
           apply is_lim_seq_ext.
@@ -2851,24 +2851,17 @@ Section jaakola_vector2.
           now rewrite pow_inv.
         }
         pose (eps2 := fun eps n => (Rabs eps)^(S n)).
-        assert (is_lim (fun y : R => Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2 y n) m)) 0 1).
+        assert (lim_0_1: is_lim (fun y : R => Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2 y n) m)) 0 1).
         {
           apply lemma3_plim_Rabs.
         }
         apply all_almost; intros ?.
-        apply is_lim_seq_spec.
-        unfold is_lim_seq'.
-        intros.
-        eexists.
-        intros.
-        rewrite Rminus_0_r.
-        unfold rvmaxabs.
 
         pose (Ek := fun (n0 : nat) (eps1 : posreal) (k : nat) =>
                      (inter_of_collection
                         (fun n : nat =>
                            event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1) ^ k)))).
-        assert (forall n0 eps k,
+        assert (esub: forall n0 eps k,
                    event_sub (Ek n0 eps (S k)) (Ek n0 eps k)).
         {
           intros.
@@ -2876,24 +2869,52 @@ Section jaakola_vector2.
           unfold Ek.
           simpl.
           intros.
-          specialize (H11 n1).
+          specialize (H8 n).
           eapply Rle_trans.
-          apply H11.
+          apply H8.
           unfold Rdiv.
           apply Rmult_le_compat_l.
           - generalize (cond_pos C); lra.
           - apply Rinv_le_contravar.
             + apply pow_lt.
-              generalize (cond_pos eps0); lra.
-            + rewrite <- (Rmult_1_l ((1 + eps0)^k)) at 1.
-              generalize (cond_pos eps0); intros.
+              generalize (cond_pos eps); lra.
+            + rewrite <- (Rmult_1_l ((1 + eps)^k)) at 1.
+              generalize (cond_pos eps); intros.
               apply Rmult_le_compat_r; try lra.
               apply pow_le; lra.
         }
-        generalize (fun (n0 : nat) (eps : posreal) => lim_prob_descending (Ek n0 eps) (inter_of_collection (Ek n0 eps)) (H11 n0 eps)); intros.
-        
 
-                   
+        assert (forall n0,
+                   RandomVariable dom Rbar_borel_sa (Rbar_rvlim (fun n => rvmaxabs (X (n + n0)%nat)))).
+        {
+          intros.
+          apply Rbar_rvlim_rv.
+          intros.
+          apply Real_Rbar_rv.
+          now apply Rvector_max_abs_rv.
+        }
+        assert (eequiv: forall n0 eps,
+                   event_equiv
+                     (inter_of_collection (Ek n0 eps))
+                     (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                        (Rbar_rvlim (fun n => rvmaxabs (X (n + n0)%nat))) (Finite 0))).
+        {
+          intros.
+          unfold Ek.
+          intros ?.
+          simpl.
+          unfold pre_event_preimage, pre_event_singleton.
+          split; intros.
+          - admit.
+          - admit.
+        }
+        generalize (fun (n0 : nat) (eps : posreal) =>
+                      lim_prob_descending (Ek n0 eps)
+                        (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                           (Rbar_rvlim (fun n => rvmaxabs (X (n + n0)%nat)))
+                           (Finite 0)) 
+                        (esub n0 eps) (eequiv n0 eps)); intros.
+        unfold Ek in H9.
 
       Admitted.
 
