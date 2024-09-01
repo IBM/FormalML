@@ -2998,7 +2998,13 @@ Section jaakola_vector2.
           {
             apply is_finite_Lim_bounded with (m := 0) (M := 1).
             intros.
-            admit.
+            split.
+            - apply prod_f_R0_nonneg.
+              intros.
+              admit.
+            - apply prod_f_R0_le_1.
+              intros.
+              admit.
           }
           assert (Rbar_ge
                     (Lim_seq (fun n : nat => ps_P (Ek n0 eps n)))
