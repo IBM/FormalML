@@ -2975,9 +2975,50 @@ Section jaakola_vector2.
           apply Rle_ge in H9.
           apply is_lim_seq_unique in H10.
           specialize (H6 eps).
-          
+          assert (forall n, 0 < eps ^ S n).
+          {
+            intros.
+            apply pow_lt.
+            generalize (cond_pos eps); lra.
+          }
+          eapply Rge_trans.
+          apply H9.
+          assert (is_finite (Lim_seq (fun n : nat => ps_P (Ek n0 eps n)))).
+          {
+            apply is_finite_Lim_bounded with (m := 0) (M := 1).
+            intros.
+            split.
+            - apply ps_pos.
+            - apply ps_le1.
+          }
+          rewrite <- H12 in H10.
+          rewrite Rbar_finite_eq in H10.
+          rewrite <- H10.
+          assert (is_finite (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2 y n) m))).
+          {
+            apply is_finite_Lim_bounded with (m := 0) (M := 1).
+            intros.
+            admit.
+          }
+          assert (Rbar_ge
+                    (Lim_seq (fun n : nat => ps_P (Ek n0 eps n)))
+                    (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2 y n) m))).
+          {
+            unfold Rbar_ge.
+            apply Lim_seq_le.
+            intros.
+            apply Rge_le.
+            pose (eps2' := fun (n : nat) =>  mkposreal _ (H11 n)).
+            specialize (H6 eps2' n).
+            admit.
+          }
+          rewrite <- H12 in H14.
+          rewrite <- H13 in H14.
+          simpl in H14.
+          apply Rle_ge in H14.
+          apply H14.
+        }
         
-
       Admitted.
 
        Lemma lemma3' (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
