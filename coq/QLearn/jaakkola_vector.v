@@ -2855,7 +2855,6 @@ Section jaakola_vector2.
         {
           apply lemma3_plim_Rabs.
         }
-        apply all_almost; intros ?.
 
         pose (Ek := fun (n0 : nat) (eps1 : posreal) (k : nat) =>
                      (inter_of_collection
@@ -2943,7 +2942,7 @@ Section jaakola_vector2.
           rewrite Rminus_0_r.
           unfold rvmaxabs.
           rewrite Rabs_Rvector_max_abs.
-          specialize (H9 x1 x1).
+          specialize (H9 x0 x0).
           eapply Rle_lt_trans.
           apply H9.
           apply H10.
