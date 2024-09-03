@@ -2969,6 +2969,59 @@ Section jaakola_vector2.
           intros.
           specialize (H6 eps' (eps2' eps')).
           apply H6; now apply eps_prop.
+        }
+        assert (inter_prod_R : forall (y : R),
+                   Rabs y <= eps ->
+                   forall k : nat,
+                     eventually
+                       (fun n0 : nat =>
+                          ps_P
+                            (inter_of_collection
+                               (fun n : nat =>
+                                  event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + Rabs y) ^ k))) >=
+                            prod_f_R0 (fun n : nat => 1 - eps2 y n) k)).
+        {
+          intros.
+          destruct (Rtotal_order 0 y).
+          - assert (0 < Rabs y).
+            {
+              rewrite Rabs_right; lra.
+            }
+            specialize (inter_prod (mkposreal _ H10) H8 k).
+            apply inter_prod.
+          - destruct H9.
+            + rewrite <- H9.
+              exists 0%nat.
+              intros.
+              unfold eps2.
+              rewrite Rabs_R0, Rplus_0_r.
+              rewrite pow1, Rdiv_1.
+              replace (prod_f_R0 (fun n0 : nat => 1 - 0 ^ S n0) k) with
+                (prod_f_R0 (fun n0 : nat => 1) k).
+              * rewrite prod_f_R0_one.
+                right.
+                apply ps_one_countable_inter.
+                intros.
+                replace 1 with R1 by lra.
+                rewrite <- ps_one.
+                apply ps_proper.
+                intros ?.
+                simpl.
+                unfold pre_Ω.
+                specialize (H4 (n0 + n)%nat x).
+                unfold const in H4.
+                tauto.
+              * apply prod_f_R0_proper.
+                intros ?.
+                -- rewrite pow0_Sbase.
+                   lra.
+                -- trivial.
+            + assert (0 < Rabs y).
+              {
+              rewrite Rabs_left; lra.
+              } 
+              specialize (inter_prod (mkposreal _ H10) H8 k).              
+              apply inter_prod.
        }
 
 (*
