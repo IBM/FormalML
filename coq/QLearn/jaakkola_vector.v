@@ -2815,7 +2815,45 @@ Section jaakola_vector2.
             eapply Rge_trans; cycle 1.
             apply H2.
             now right.
-       Qed.
+      Qed.
+
+      Lemma lemma3_vector_forall_eventually_prob_iter_alt (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
+        (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
+        (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
+        (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) :
+        (forall t ω i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
+        (forall t ω i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
+        (forall t ω i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->       
+
+        (forall ω i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+        γ < 1 ->
+        (forall n, rv_le (rvmaxabs (X n)) (const C)) ->
+        (forall n, rv_eq (X (S n))
+                         (vecrvclip (S N)
+                            (vecrvplus 
+                               (vecrvminus (X n)
+                                  (vecrvmult (α n) (X n)))
+                               (vecrvscalerv (rvmaxabs (X n))
+                                  (vecrvscale γ (β n))))
+                            (pos_to_nneg C))) ->
+        forall (eps1 : posreal),
+               forall (eps2:nat -> posreal),
+                 γ + (1 - γ)/2 <= / (1 + eps1) ->
+                 (forall n, 1 - eps2 n > 0) ->
+                 forall (k : nat),
+                   eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1)^k)))) >= prod_f_R0 (fun n => (1 - eps2 n)) k).
+        Proof.
+          intros.
+          now apply (lemma3_vector_forall_eventually_prob_iter α β) with (γ := γ).
+        Qed.
+            
+(*
+      Lemma is_lim_eps :
+        (* is_lim (fun (eps : posreal) => eps) 0 0. *)
+        is_lim (fun (eps : R) => eps) 0 0.
+      Proof.
+        Search is_lim.
+*)
 
        Lemma lemma3 (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
@@ -2838,7 +2876,7 @@ Section jaakola_vector2.
          almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
       Proof.
         intros.
-        generalize (lemma3_vector_forall_eventually_prob_iter α β X C γ _ _ _); intros.
+        generalize (lemma3_vector_forall_eventually_prob_iter_alt α β X C γ _ _ _); intros.
         cut_to H6; trivial.
         destruct (lemma3_gamma_eps_le _ H3) as [eps1 eps1_prop].
         generalize (lemma3_lim_eps_alt C eps1); intros.
@@ -2855,6 +2893,89 @@ Section jaakola_vector2.
         {
           apply lemma3_plim_Rabs.
         }
+        assert (eps_pow : forall (eps : posreal) (n : nat),
+                   0 < eps ^ n).
+        {
+          intros.
+          apply pow_lt.
+          apply cond_pos.
+        }
+        pose (eps2' := fun (eps : posreal) (n : nat) => mkposreal _ (eps_pow eps (S n))).
+        assert (exists (eps : posreal),
+                 forall (eps' : posreal),
+                   eps' <= eps ->
+                   (γ + (1 - γ) / 2 <= / (1 + eps')) /\
+                     (forall n, 1 - eps2' eps' n > 0)).
+        {
+          assert (0 < Rmin eps1 (1/2)).
+          {
+            apply Rgt_lt.
+            apply Rmin_Rgt_r.
+            split; try lra.
+            apply cond_pos.
+          }
+          exists (mkposreal _ H8).
+          intros.
+          split.
+          - eapply Rle_trans.
+            apply eps1_prop.
+            apply Rinv_le_contravar.
+            + simpl.
+              generalize (cond_pos eps'); lra.
+            + apply Rplus_le_compat_l.
+              eapply Rle_trans.
+              apply H9.
+              apply Rmin_l.
+          - intros.
+            unfold eps2'.
+            induction n.
+            + simpl.
+              rewrite Rmult_1_r.
+              assert (eps' <= 1/2).
+              {
+                eapply Rle_trans.
+                apply H9.
+                apply Rmin_r.
+              }
+              lra.
+           + simpl.
+             simpl in IHn.
+             assert (eps' * (eps' * eps' ^ n) <=  1 * (eps' * eps' ^ n)).
+             {
+               generalize (cond_pos eps'); intros.
+               apply Rmult_le_compat_r.
+               - apply Rmult_le_pos; try lra.
+                 apply pow_le.
+                 lra.
+               - eapply Rle_trans.
+                 apply H9.
+                 eapply Rle_trans with (r2 := 1/2); try lra.
+                 apply Rmin_r.
+             }
+             lra.
+        }
+        destruct H8 as [eps eps_prop].
+        assert (inter_prod : forall (eps' : posreal),
+                   eps' <= eps ->
+                   forall k : nat,
+                     eventually
+                       (fun n0 : nat =>
+                          ps_P
+                            (inter_of_collection
+                               (fun n : nat =>
+                                  event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps') ^ k))) >=
+                            prod_f_R0 (fun n : nat => 1 - eps2' eps' n) k)).
+        {
+          intros.
+          specialize (H6 eps' (eps2' eps')).
+          apply H6; now apply eps_prop.
+       }
+
+(*
+        assert (lim_0_1': 
+                 is_lim (fun (y : posreal) =>
+                           Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' y n) m)) 0 1).
+*)
 
         pose (Ek := fun (n0 : nat) (eps1 : posreal) (k : nat) =>
                      (inter_of_collection
@@ -2876,9 +2997,9 @@ Section jaakola_vector2.
           - generalize (cond_pos C); lra.
           - apply Rinv_le_contravar.
             + apply pow_lt.
-              generalize (cond_pos eps); lra.
-            + rewrite <- (Rmult_1_l ((1 + eps)^k)) at 1.
-              generalize (cond_pos eps); intros.
+              generalize (cond_pos eps0); lra.
+            + rewrite <- (Rmult_1_l ((1 + eps0)^k)) at 1.
+              generalize (cond_pos eps0); intros.
               apply Rmult_le_compat_r; try lra.
               apply pow_le; lra.
         }
@@ -2909,10 +3030,10 @@ Section jaakola_vector2.
           apply is_lim_seq_unique.
           rewrite <- is_lim_seq_spec.
           intros ?.
-          assert (eventually (fun n => C / (1 + eps) ^ n < eps0)).
+          assert (eventually (fun n => C / (1 + eps0) ^ n < eps3)).
           {
-            generalize (lemma3_lim_eps_alt C eps); intros.
-            assert (is_lim_seq (fun n => C / (1 + eps)^n) 0).
+            generalize (lemma3_lim_eps_alt C eps0); intros.
+            assert (is_lim_seq (fun n => C / (1 + eps0)^n) 0).
             {
               revert H10.
               apply is_lim_seq_ext.
@@ -2921,7 +3042,7 @@ Section jaakola_vector2.
               now rewrite pow_inv.
             }
             apply is_lim_seq_spec in H11.
-            specialize (H11 eps0).
+            specialize (H11 eps3).
             simpl in H11.
             revert H11.
             apply eventually_impl.
@@ -2933,7 +3054,7 @@ Section jaakola_vector2.
             apply Rdiv_le_0_compat.
             - generalize (cond_pos C); lra.
             - apply pow_lt.
-              generalize (cond_pos eps); lra.
+              generalize (cond_pos eps0); lra.
           }
           revert H10.
           apply eventually_impl.
@@ -2960,29 +3081,33 @@ Section jaakola_vector2.
             simpl.
             tauto.
         }
-        assert (forall n0 y (eps : posreal),
-                   ps_P
-                     (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                        (Rbar_rvlim
-                           (fun (n : nat) (omega : Ts) =>
-                              rvmaxabs (X (n + n0)%nat) omega)) (Finite 0)) >= 
-                      Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2 y n) m)).
+        assert (forall (eps' : posreal) (k : nat),
+                   eps' <= eps ->
+                   exists (n0 : nat),
+                     ps_P
+                       (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                          (Rbar_rvlim
+                             (fun (n : nat) (omega : Ts) =>
+                                rvmaxabs (X (n + n0)%nat) omega)) (Finite 0)) >= 
+                       Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m)).
         {
           intros.
-          specialize (H10 n0 eps).
-          specialize (H9 n0 eps).
+          destruct (inter_prod eps' H11 k) as [n0 inter_prod'].
+          specialize (H10 n0 eps').
+          specialize (H9 n0 eps').
           apply Rle_ge in H9.
           apply is_lim_seq_unique in H10.
-          specialize (H6 eps).
-          assert (forall n, 0 < eps ^ S n).
+          specialize (H6 eps').
+          assert (forall n, 0 < eps' ^ S n).
           {
             intros.
             apply pow_lt.
-            generalize (cond_pos eps); lra.
+            apply cond_pos.
           }
+          exists n0.
           eapply Rge_trans.
           apply H9.
-          assert (is_finite (Lim_seq (fun n : nat => ps_P (Ek n0 eps n)))).
+          assert (is_finite (Lim_seq (fun n : nat => ps_P (Ek n0 eps' n)))).
           {
             apply is_finite_Lim_bounded with (m := 0) (M := 1).
             intros.
@@ -2990,38 +3115,44 @@ Section jaakola_vector2.
             - apply ps_pos.
             - apply ps_le1.
           }
-          rewrite <- H12 in H10.
+          rewrite <- H13 in H10.
           rewrite Rbar_finite_eq in H10.
           rewrite <- H10.
-          assert (is_finite (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2 y n) m))).
+          assert (is_finite (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m))).
           {
             apply is_finite_Lim_bounded with (m := 0) (M := 1).
             intros.
             split.
             - apply prod_f_R0_nonneg.
               intros.
-              admit.
+              specialize (eps_prop eps' H11).
+              destruct eps_prop.
+              specialize (H15 n1).
+              lra.
             - apply prod_f_R0_le_1.
               intros.
-              admit.
+              specialize (eps_prop eps' H11).
+              destruct eps_prop.
+              specialize (H15 n1).
+              generalize (cond_pos (eps2' eps' n1)); intros.
+              lra.
           }
           assert (Rbar_ge
-                    (Lim_seq (fun n : nat => ps_P (Ek n0 eps n)))
-                    (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2 y n) m))).
+                    (Lim_seq (fun n : nat => ps_P (Ek n0 eps' n)))
+                    (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m))).
           {
             unfold Rbar_ge.
             apply Lim_seq_le.
             intros.
             apply Rge_le.
-            pose (eps2' := fun (n : nat) =>  mkposreal _ (H11 n)).
-            specialize (H6 eps2' n).
+            specialize (inter_prod' n0).
             admit.
           }
-          rewrite <- H12 in H14.
-          rewrite <- H13 in H14.
-          simpl in H14.
-          apply Rle_ge in H14.
-          apply H14.
+          rewrite <- H13 in H15.
+          rewrite <- H14 in H15.
+          simpl in H15.
+          apply Rle_ge in H15.
+          apply H15.
         }
         
       Admitted.
