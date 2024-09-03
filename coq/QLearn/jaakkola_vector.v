@@ -2847,14 +2847,6 @@ Section jaakola_vector2.
           now apply (lemma3_vector_forall_eventually_prob_iter α β) with (γ := γ).
         Qed.
             
-(*
-      Lemma is_lim_eps :
-        (* is_lim (fun (eps : posreal) => eps) 0 0. *)
-        is_lim (fun (eps : R) => eps) 0 0.
-      Proof.
-        Search is_lim.
-*)
-
        Lemma lemma3 (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
@@ -3022,14 +3014,36 @@ Section jaakola_vector2.
               } 
               specialize (inter_prod (mkposreal _ H10) H8 k).              
               apply inter_prod.
+        }
+        assert (eps_prop_R : forall (y : R),
+                   Rabs y <= eps ->
+                    γ + (1 - γ) / 2 <= / (1 + Rabs y) /\
+                      (forall n : nat, 1 - eps2 y n > 0)).
+        {
+          intros.
+          destruct (Rtotal_order 0 y).
+          - assert (0 < Rabs y).
+            {
+              rewrite Rabs_right; lra.
+            }
+            now apply (eps_prop (mkposreal _ H10)).
+          - destruct H9.
+            + rewrite <- H9.
+              unfold eps2.
+              rewrite Rabs_R0.
+              * split.
+                -- rewrite Rplus_0_r.
+                   rewrite Rinv_1.
+                   lra.
+                -- intros.
+                   rewrite pow0_Sbase.
+                   lra.
+            + assert (0 < Rabs y).
+              {
+              rewrite Rabs_left; lra.
+              } 
+              now apply (eps_prop (mkposreal _ H10)).
        }
-
-(*
-        assert (lim_0_1': 
-                 is_lim (fun (y : posreal) =>
-                           Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' y n) m)) 0 1).
-*)
-
         pose (Ek := fun (n0 : nat) (eps1 : posreal) (k : nat) =>
                      (inter_of_collection
                         (fun n : nat =>
@@ -3146,6 +3160,7 @@ Section jaakola_vector2.
         {
           intros.
           destruct (inter_prod eps' H11 k) as [n0 inter_prod'].
+          
           specialize (H10 n0 eps').
           specialize (H9 n0 eps').
           apply Rle_ge in H9.
