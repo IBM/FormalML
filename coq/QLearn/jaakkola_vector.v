@@ -3307,7 +3307,6 @@ Section jaakola_vector2.
         
       Admitted.
 
-(*
        Lemma lemma3' (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
@@ -3327,27 +3326,37 @@ Section jaakola_vector2.
                                (vecrvscale γ (β n))))
                          (pos_to_nneg C))) ->
          forall i pf,
-           almost prts (fun ω => is_im_seq (fun n => vector_nth i pf (X n ω))  0).
+           almost prts (fun ω => Lim_seq (fun n => vector_nth i pf (X n ω)) = 0).
       Proof.
         intros.
         generalize (lemma3 α β X C γ _ _ _ H H0 H1 H2 H3 H4 H5).
         apply almost_impl.
         apply all_almost.
         intros ??.
-        assert (is_lim_seq (fun n => - (rvmaxabs (X n) x)) 0).
+        assert (Lim_seq (fun n => - (rvmaxabs (X n) x)) = 0).
         {
-          apply is_lim_seq_opp in H6.
-          simpl in H6.
-          now rewrite Ropp_0 in H6.
+          rewrite Lim_seq_opp, H6.
+          simpl.
+          now rewrite Ropp_0.
         }
-        revert H7 H6.
-        apply is_lim_seq_le_le_loc.
-        exists (0%nat).
-        intros.
-        apply Rabs_le_between.
-        apply Rvector_max_abs_nth_le.
+        generalize (Lim_seq_le  (fun n : nat => - rvmaxabs (X n) x) (fun n : nat => vector_nth i pf (X n x))); intros.
+        generalize (Lim_seq_le   (fun n : nat => vector_nth i pf (X n x)) (fun n : nat => rvmaxabs (X n) x)); intros.       
+        assert (forall n, - rvmaxabs (X n) x <= vector_nth i pf (X n x) <=  rvmaxabs (X n) x).
+        {
+          intros.
+          apply Rabs_le_between.
+          apply Rvector_max_abs_nth_le.
+        }
+        rewrite H6 in H9.
+        rewrite H7 in H8.
+        cut_to H8.
+        cut_to H9.
+        - now apply Rbar_le_antisym.
+        - intros.
+          apply H10.
+        - intros.
+          apply H10.
      Qed.        
-*)
 
    Lemma condexp_condexp_diff_0 (XF : Ts -> R)
      {dom2 : SigmaAlgebra Ts}
