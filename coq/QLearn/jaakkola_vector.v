@@ -2846,7 +2846,61 @@ Section jaakola_vector2.
           intros.
           now apply (lemma3_vector_forall_eventually_prob_iter α β) with (γ := γ).
         Qed.
-            
+
+
+        Lemma eps_pos_eventually (C eps eps0: posreal) :
+          eventually (fun k => C / (1 + eps)^k < eps0).
+        Proof.
+          generalize (lemma3_lim_eps_alt C eps); intros.          
+          assert (lim_C_eps1: is_lim_seq (fun n => C / (1 + eps)^n) 0).
+          {
+            revert H.
+            apply is_lim_seq_ext.
+            intros.
+            unfold Rdiv.
+            now rewrite pow_inv.
+          }
+          apply is_lim_seq_spec in lim_C_eps1.
+          specialize (lim_C_eps1 eps0).
+          revert lim_C_eps1.
+          apply eventually_impl.
+          apply all_eventually.
+          intros.
+          rewrite Rminus_0_r in H0.
+          rewrite Rabs_right in H0; trivial.
+          apply Rle_ge.
+          apply Rdiv_le_0_compat.
+          - left; apply cond_pos.
+          - apply pow_lt.
+            generalize (cond_pos eps); lra.
+      Qed.
+
+        Lemma is_lim_seq_eventually_0 (f : nat -> posreal)  (C eps : posreal) :
+          (forall (k : nat),
+              eventually (fun n0 =>  f (n0) <= C / (1 + eps)^k)) ->
+          is_lim_seq f 0.
+        Proof.
+          intros.
+          apply is_lim_seq_spec.
+          intros ?.
+          generalize (eps_pos_eventually C eps eps0); intros.
+          destruct H0.
+          specialize (H x).
+          specialize (H0 x).
+          cut_to H0; try lia.
+          revert H.
+          apply eventually_impl.
+          apply all_eventually.
+          intros.
+          rewrite Rminus_0_r.
+          rewrite Rabs_right.
+          - eapply Rle_lt_trans.
+            apply H.
+            apply H0.
+          - left.
+            apply cond_pos.
+       Qed.
+
        Lemma lemma3 (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
@@ -3135,8 +3189,24 @@ Section jaakola_vector2.
           apply H9.
           apply H10.
         }
-        generalize (fun n0 eps =>
-                        (ps_sub _ _ _ (eesub n0 eps))); intros.
+        assert (forall (n0 : nat) (eps : posreal),
+                   ps_P (inter_of_collection (Ek n0 eps)) <=
+                     ps_P (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                             (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0)).
+        {
+          intros.
+          generalize (ps_sub _ _ _ (eesub n0 eps0)); intros.
+          eapply Rle_trans.
+          apply H9.
+          right.
+          apply ps_proper.
+          intros ?.
+          simpl.
+          unfold pre_event_preimage, preimage_singleton, Rbar_rvlim, pre_event_singleton.
+          repeat rewrite Elim_seq_fin.
+          now rewrite (Lim_seq_incr_n (fun x0 : nat => rvmaxabs (X x0) x) n0).
+        }
+          
         assert (forall n0 eps,
                       is_lim_seq (fun n : nat => ps_P (Ek n0 eps n))
                         (ps_P (inter_of_collection (Ek n0 eps)))).
@@ -3171,7 +3241,6 @@ Section jaakola_vector2.
               lra.
           }
 
-          generalize Lim_ext_loc; intros.
           assert (forall (y : R),
                    Rabs y <= eps ->
                    (ps_P
@@ -3182,6 +3251,7 @@ Section jaakola_vector2.
                      (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2 y n) m))).
         {
           intros.
+          specialize (inter_prod_R y H12).
           admit.
         }
         assert (Rbar_ge (
@@ -3207,11 +3277,11 @@ Section jaakola_vector2.
               apply Rinv_pos.
               apply cond_pos.
           }
-          destruct H14.
+          destruct H13.
           exists x.
           intros.
           apply Rge_le.
-          apply H13.
+          apply H12.
           unfold Rbar_loc_seq.
           rewrite Rplus_0_l.
           rewrite Rabs_right.
@@ -3221,7 +3291,7 @@ Section jaakola_vector2.
             + apply Rinv_pos.
               apply cond_pos.
             + eapply Rle_trans.
-              apply H14.
+              apply H13.
               apply Rplus_le_compat_r.
               apply le_INR.
               lia.
@@ -3234,8 +3304,8 @@ Section jaakola_vector2.
             }
             lra.
         }
-        simpl in H14.
-        apply Rle_ge in H14.
+        simpl in H13.
+        apply Rle_ge in H13.
         unfold almost.
         exists  (preimage_singleton (has_pre := Rbar_borel_has_preimages)
                      (Rbar_rvlim
@@ -3248,10 +3318,10 @@ Section jaakola_vector2.
                            rvmaxabs (X n) omega)) (Finite 0))).
           lra.
         - intros.
-          simpl in H15.
-          unfold pre_event_singleton, pre_event_preimage in H15.
-          unfold Rbar_rvlim in H15.
-          now rewrite Elim_seq_fin in H15.
+          simpl in H14.
+          unfold pre_event_singleton, pre_event_preimage in H14.
+          unfold Rbar_rvlim in H14.
+          now rewrite Elim_seq_fin in H14.
         
 (*          
           
