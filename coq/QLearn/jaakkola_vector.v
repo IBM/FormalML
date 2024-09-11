@@ -3252,7 +3252,9 @@ Section jaakola_vector2.
         {
           intros.
           specialize (inter_prod eps' H12).
-          pose (M := fun (k : nat) => k).
+
+          apply ClassicalChoice.choice in inter_prod.
+          destruct inter_prod as [M inter_prod].
           assert (forall k,
                         ps_P
                           (inter_of_collection
