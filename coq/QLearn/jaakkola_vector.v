@@ -3240,20 +3240,61 @@ Section jaakola_vector2.
               generalize (cond_pos (eps2' eps' n0)); intros.
               lra.
           }
-
-          assert (forall (y : R),
-                   Rabs y <= eps ->
+          assert (forall (eps' : posreal),
+                   eps' <= eps ->
+                   Rbar_ge
                    (ps_P
                       (preimage_singleton (has_pre := Rbar_borel_has_preimages)
                          (Rbar_rvlim
                             (fun (n : nat) (omega : Ts) =>
-                               rvmaxabs (X n) omega)) (Finite 0))) >=
-                     (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2 y n) m))).
+                               rvmaxabs (X n) omega)) (Finite 0)))
+                     (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m))).
         {
           intros.
-          specialize (inter_prod_R y H12).
-          admit.
-        }
+          specialize (inter_prod eps' H12).
+          pose (M := fun (k : nat) => k).
+          assert (forall k,
+                        ps_P
+                          (inter_of_collection
+                           (fun n : nat => event_le dom (rvmaxabs (X (n + (M k))%nat)) (C / (1 + eps') ^ k))) >=
+                  prod_f_R0 (fun n : nat => 1 - eps2' eps' n) k).
+          {
+            admit.
+          }
+
+(*          
+          unfold Rbar_ge.
+          assert (Rbar_le 
+                    (Lim_seq (fun n0 =>  ps_P (inter_of_collection (Ek n0 eps)) ))
+                    (Lim_seq (fun n0 =>
+                                ps_P (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                                        (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0)))).
+
+          {
+            apply Lim_seq_le.
+            intros.
+            apply H9.
+          }
+          rewrite Lim_seq_const in H13.
+          eapply Rbar_le_trans; cycle 1.
+          apply H13.
+          unfold Ek.
+          unfold eps2'.
+          simpl.
+          apply Lim_seq_le_loc.
+          exists 0%nat.
+          intros.
+          eexists.
+          intros.
+
+          unfold inter_of_collection.
+          simpl.
+          specialize (inter_prod n).
+          
+
+          specialize (H10 n eps).
+
+          ass
         assert (Rbar_ge (
                     ps_P
                   (preimage_singleton (has_pre := Rbar_borel_has_preimages)
@@ -3323,6 +3364,7 @@ Section jaakola_vector2.
           unfold Rbar_rvlim in H14.
           now rewrite Elim_seq_fin in H14.
         
+*)
 (*          
           
           destruct (inter_prod eps' H11 k) as [n0 inter_prod'].
