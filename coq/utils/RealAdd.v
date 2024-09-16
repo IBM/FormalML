@@ -4806,6 +4806,28 @@ Proof.
     + now simpl.
 Qed.
 
+Lemma Lim_seq_inf_le (f : nat -> R) :
+  Rbar_le (LimInf_seq f) (Lim_seq f) .
+Proof.
+  unfold Lim_seq.
+  generalize (LimSup_LimInf_seq_le f); intros.
+  replace (LimInf_seq f) with (Rbar_div_pos (Rbar_plus (LimInf_seq f) (LimInf_seq f))
+                                            {| pos := 2; cond_pos := Rlt_R0_R2 |}) at 1.
+  - apply Rbar_div_pos_le.
+    apply Rbar_plus_le_compat.
+    + apply LimSup_LimInf_seq_le.
+    + apply Rbar_le_refl.
+  - destruct (LimInf_seq f).
+    + simpl; rewrite Rbar_finite_eq; field_simplify.
+      rewrite Rmult_comm.
+      unfold Rdiv; rewrite Rmult_assoc.
+      rewrite <- Rinv_r_sym.
+      * now rewrite Rmult_1_r.
+      * lra.
+    + now simpl.
+    + now simpl.
+Qed.
+
 Lemma list_sum0_is0 l :
   Forall (fun x => x = 0) l ->
   list_sum l = 0%R.
