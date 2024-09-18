@@ -2222,6 +2222,54 @@ Section event.
       now exists x.
   Qed.
 
+  Lemma pre_inter_of_collection_as_ascending_equiv {E} (an : nat -> pre_event E) :
+    pre_event_equiv (pre_inter_of_collection an)
+      (pre_inter_of_collection (fun n : nat => pre_list_inter (collection_take an (S n)))).
+  Proof.
+    intros e.
+    split.
+    - intros HH n a inn.
+      apply In_collection_take in inn.
+      destruct inn as [? [??]]; subst.
+      apply HH.
+    - intros HH n.
+      apply (HH n (an n)).
+      apply in_map.
+      apply in_seq; lia.
+  Qed.
+
+  Lemma union_of_collection_as_ascending_equiv (an : nat -> event σ) :
+    event_equiv (union_of_collection an)
+      (union_of_collection (fun n : nat => list_union (collection_take an (S n)))).
+  Proof.
+    intros e.
+    split; intros [n ?].
+    - exists n, (an n).
+      split; trivial.
+      apply in_map.
+      apply in_seq; lia.
+    - destruct H as [n2 [??]].
+      apply In_collection_take in H.
+      destruct H as [? [??]]; subst.
+      now exists x.
+  Qed.
+
+  Lemma inter_of_collection_as_ascending_equiv (an : nat -> event σ) :
+    event_equiv (inter_of_collection an)
+      (inter_of_collection (fun n : nat => list_inter (collection_take an (S n)))).
+  Proof.
+    intros e.
+    split.
+    - intros HH n a inn.
+      apply In_collection_take in inn.
+      destruct inn as [? [??]]; subst.
+      apply HH.
+    - intros HH n.
+      apply (HH n (an n)).
+      apply in_map.
+      apply in_seq; lia.
+  Qed.
+
   End take.
 
   Lemma event_union_list_union (c:nat->event σ) :
