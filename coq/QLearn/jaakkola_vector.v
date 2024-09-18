@@ -2901,6 +2901,270 @@ Section jaakola_vector2.
             apply cond_pos.
        Qed.
 
+        Lemma is_ps_lim_inf  (E : nat -> event dom) :
+          let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
+          is_lim_seq (fun n => ps_P (Einf n)) (ps_P (union_of_collection Einf)).
+        Proof.
+          apply is_lim_ascending.
+          intros ??.
+          simpl.
+          intros.
+          specialize (H (S n0)).
+          now replace (n0 + S n)%nat with (S n0 + n)%nat by lia.
+        Qed.
+
+        Lemma ps_lim_inf  (E : nat -> event dom) :
+          let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
+          Lim_seq (fun n => ps_P (Einf n)) = (ps_P (union_of_collection Einf)).
+        Proof.
+          apply lim_ascending.
+          intros ??.
+          simpl.
+          intros.
+          specialize (H (S n0)).
+          now replace (n0 + S n)%nat with (S n0 + n)%nat by lia.
+        Qed.
+
+        Lemma ps_inter_inf0  (E : nat -> event dom) :
+          Rbar_le (ps_P (inter_of_collection E)) (Inf_seq (fun k : nat => ps_P (E k))).
+        Proof.
+          rewrite <- (Inf_seq_const (ps_P (inter_of_collection E))).
+          apply Inf_seq_le.
+          intros.
+          simpl.
+          apply ps_sub.
+          intros ??.
+          now specialize (H n).
+        Qed.
+
+        Lemma ps_inter_inf  (E : nat -> event dom) :
+          let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
+          Rbar_le 
+            (ps_P (union_of_collection Einf))
+            (Lim_seq (fun n => Inf_seq (fun k => ps_P (E (k + n)%nat)))).
+        Proof.
+          intros.
+          unfold Einf.
+          rewrite <- ps_lim_inf.
+          apply Lim_seq_le.
+          intros.
+          generalize (ps_inter_inf0 (fun k => E (k + n)%nat)); intros.
+          assert (is_finite  (Inf_seq (fun k : nat => ps_P (E (k + n)%nat)))).
+          {
+            apply bounded_is_finite with (a := 0) (b := 1).
+            - rewrite <- (Inf_seq_const 0).
+              apply Inf_seq_le.
+              intros.
+              simpl.
+              apply ps_pos.
+            - rewrite <- (Inf_seq_const 1).  
+              apply Inf_seq_le.
+              intros.
+              simpl.
+              apply ps_le1.
+          }
+          rewrite <- H0 in H.
+          now simpl in H.
+        Qed.
+          
+        Lemma is_ps_lim_sup  (E : nat -> event dom) :
+          let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
+          is_lim_seq (fun n => ps_P (Esup n)) (ps_P (inter_of_collection Esup)).
+        Proof.
+          apply is_lim_descending.
+          intros ??.
+          simpl.
+          intros.
+          destruct H.
+          exists (S x0).
+          now replace (S x0 + n)%nat with (x0 +S n)%nat by lia.
+       Qed.
+
+        Lemma ps_lim_sup  (E : nat -> event dom) :
+          let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
+          Lim_seq (fun n => ps_P (Esup n)) = (ps_P (inter_of_collection Esup)).
+        Proof.
+          apply lim_descending.
+          intros ??.
+          simpl.
+          intros.
+          destruct H.
+          exists (S x0).
+          now replace (S x0 + n)%nat with (x0 +S n)%nat by lia.
+       Qed.
+
+        Lemma ps_union_sup0  (E : nat -> event dom) :
+          Rbar_le (Sup_seq (fun k : nat => ps_P (E k))) (ps_P (union_of_collection E)).
+        Proof.
+          rewrite <- (Sup_seq_const (ps_P (union_of_collection E))).
+          apply Sup_seq_le.
+          intros.
+          simpl.
+          apply ps_sub.
+          intros ??.
+          simpl.
+          now exists n.
+        Qed.
+
+        Lemma ps_union_sup  (E : nat -> event dom) :
+          let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
+          Rbar_le 
+            (Lim_seq (fun n => Sup_seq (fun k => ps_P (E (k + n)%nat))))
+            (ps_P (inter_of_collection Esup)).
+        Proof.
+          intros.
+          unfold Esup.
+          rewrite <- ps_lim_sup.
+          apply Lim_seq_le.
+          intros.
+          generalize (ps_union_sup0 (fun k => E (k + n)%nat)); intros.
+          assert (is_finite  (Sup_seq (fun k : nat => ps_P (E (k + n)%nat)))).
+          {
+            apply bounded_is_finite with (a := 0) (b := 1).
+            - rewrite <- (Sup_seq_const 0).
+              apply Sup_seq_le.
+              intros.
+              simpl.
+              apply ps_pos.
+            - rewrite <- (Sup_seq_const 1).  
+              apply Sup_seq_le.
+              intros.
+              simpl.
+              apply ps_le1.
+          }
+          rewrite <- H0 in H.
+          now simpl in H.
+        Qed.
+
+        Lemma ps_union_sup_fin  (E : nat -> event dom) :
+          let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
+          (Lim_seq (fun n => Sup_seq (fun k => ps_P (E (k + n)%nat)))) <=
+            (ps_P (inter_of_collection Esup)).
+         Proof.
+           generalize (ps_union_sup E); intros.
+           simpl in H.
+           assert (forall n,
+                      is_finite  (Sup_seq (fun k : nat => ps_P (E (k + n)%nat)))).
+           {
+             intros.
+            apply bounded_is_finite with (a := 0) (b := 1).
+            - rewrite <- (Sup_seq_const 0).
+              apply Sup_seq_le.
+              intros.
+              simpl.
+              apply ps_pos.
+            - rewrite <- (Sup_seq_const 1).  
+              apply Sup_seq_le.
+              intros.
+              simpl.
+              apply ps_le1.
+          }
+          assert (is_finite (Lim_seq (fun n : nat => Sup_seq (fun k : nat => ps_P (E (k + n)%nat))))).
+          {
+            apply bounded_is_finite with (a := 0) (b := 1).
+            - rewrite <- (Lim_seq_const 0).
+              apply Lim_seq_le.
+              intros.
+              assert (Rbar_le 0
+                        (Sup_seq (fun k : nat => ps_P (E (k + n)%nat)))).
+              {
+                rewrite <- (Sup_seq_const 0).
+                apply Sup_seq_le.
+                intros.
+                simpl.
+                apply ps_pos.
+              }
+              rewrite <- H0 in H1.
+              now simpl in H1.
+            - rewrite <- (Lim_seq_const 1).
+              apply Lim_seq_le.
+              intros.
+              assert (Rbar_le 
+                        (Sup_seq (fun k : nat => ps_P (E (k + n)%nat))) 
+                        1).
+              {
+                rewrite <- (Sup_seq_const 1).
+                apply Sup_seq_le.
+                intros.
+                simpl.
+                apply ps_le1.
+              }
+              rewrite <- H0 in H1.
+              now simpl in H1.
+           }
+           rewrite <- H1 in H.
+           now simpl in H.
+        Qed.
+
+
+        Lemma ps_lim_inf_sup  (E : nat -> event dom) :
+          let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
+          let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
+          event_equiv (union_of_collection Einf) (inter_of_collection Esup) ->
+          Lim_seq (fun n => ps_P (E n)) = (ps_P (inter_of_collection Esup)).
+        Proof.
+          intros.
+          assert (ex_lim_seq (fun n => ps_P (E n))).
+          {
+            rewrite ex_lim_LimSup_LimInf_seq.
+            generalize (LimSup_LimInf_seq_le (fun n => ps_P (E n))); intros.
+            generalize (ps_union_sup E); intros.
+            generalize (ps_inter_inf E); intros.
+
+            rewrite LimInf_SupInf_seq.
+            rewrite LimSup_InfSup_seq.          
+(*  
+
+            
+          unfold Lim_seq.
+          Search Lim_seq.
+          unfold Esup in H0.
+          unfold Einf in H1.
+          assert (Rbar_le
+                     (ps_P
+                        (union_of_collection
+                           (fun k : nat => inter_of_collection (fun n : nat => E (n + k)%nat))))
+                      (ps_P
+            (inter_of_collection
+               (fun k : nat => union_of_collection (fun n : nat => E (n + k)%nat))))).
+          {
+            eapply Rbar_le_trans.
+            apply (ps_inter_inf E).
+            assert (Rbar_le (Lim_seq (fun n : nat => Inf_seq (fun k : nat => ps_P (E (k + n)%nat))))
+                            (Lim_seq (fun n : nat => Sup_seq (fun k : nat => ps_P (E (k + n)%nat))))).
+            {
+              admit.
+            }
+            eapply Rbar_le_trans.
+            apply H2.
+            apply H0.
+          }
+            
+                             
+)
+          generalize (Lim_seq_sup_le (fun n => ps_P (E n))); intros.
+          generalize (Lim_seq_inf_le (fun n => ps_P (E n))); intros.          
+          assert (Rbar_le (ps_P (union_of_collection Einf))
+                          (LimInf_seq (fun n => ps_P (E n)))).
+          {
+            generalize (ps_lim_inf E); intros.
+            simpl in H2.
+            unfold Einf.
+            rewrite <- H2.
+            rewrite LimInf_SupInf_seq.
+            Search Sup_seq.
+            unfold LimInf_seq.
+            destruct  (ex_LimInf_seq (fun n : nat => ps_P (E n))).
+            simpl.
+            unfold is_LimInf_seq in i.
+          unfold Lim_seq.
+
+          apply is_LimSup_LimInf_lim_seq.
+*)
+          
+          Admitted.
+
+
        Lemma lemma3 (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
@@ -3206,7 +3470,6 @@ Section jaakola_vector2.
           repeat rewrite Elim_seq_fin.
           now rewrite (Lim_seq_incr_n (fun x0 : nat => rvmaxabs (X x0) x) n0).
         }
-          
         assert (forall n0 eps,
                       is_lim_seq (fun n : nat => ps_P (Ek n0 eps n))
                         (ps_P (inter_of_collection (Ek n0 eps)))).
@@ -3255,16 +3518,91 @@ Section jaakola_vector2.
 
           apply ClassicalChoice.choice in inter_prod.
           destruct inter_prod as [M inter_prod].
+          
           assert (forall k,
                         ps_P
                           (inter_of_collection
                            (fun n : nat => event_le dom (rvmaxabs (X (n + (M k))%nat)) (C / (1 + eps') ^ k))) >=
                   prod_f_R0 (fun n : nat => 1 - eps2' eps' n) k).
           {
+            intros.
+            apply inter_prod.
+            lia.
+          }
+          assert (ps_P (inter_of_collection (fun k => Ek (M k) eps' k)) <=
+                   (ps_P
+                      (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                         (Rbar_rvlim
+                            (fun (n : nat) (omega : Ts) =>
+                               rvmaxabs (X n) omega)) (Finite 0)))).
+          {
+            intros.
+            apply ps_sub.
+            intros ?.
+            simpl.
+            unfold pre_event_preimage, preimage_singleton, Rbar_rvlim, pre_event_singleton.
+            rewrite Elim_seq_fin.
+            unfold rvmaxabs.
+            intros.
+            assert (is_lim_seq (fun x0 : nat => Rvector_max_abs (X x0 x)) 0).
+            {
+              apply is_lim_seq_spec.
+              intros ?.
+              destruct (eps_pos_eventually C eps' eps0).
+              exists (M x0).
+              intros.
+              rewrite Rminus_0_r.
+              specialize (H15 x0).
+              cut_to H15; try lia.
+              eapply Rle_lt_trans; cycle 1.
+              apply H15.
+              specialize (H14 x0 (n - M x0)%nat).
+              rewrite Rabs_right.
+              - now replace (n - M x0 + M x0)%nat with n in H14 by lia.
+              - apply Rle_ge.
+                apply Rvector_max_abs_nonneg.
+            }
+            now apply is_lim_seq_unique in H15.
+          }
+          rewrite <- H11; trivial.
+          eapply Rle_trans; cycle 1.
+          apply H14.
+          assert (is_lim_seq (fun k => ps_P (list_inter (collection_take (fun j => Ek (M j) eps' j) (S k))))
+                    (ps_P (inter_of_collection (fun k : nat => Ek (M k) eps' k)))).
+          {
+            intros.
+            apply lim_prob_descending.
+            - intros ???.
+              rewrite collection_take_Sn in H15.
+              apply list_inter_app in H15.
+              admit.
+            - symmetry.
+              apply inter_of_collection_as_ascending_equiv.
+          }
+          apply is_lim_seq_unique in H15.
+          assert (is_finite (Lim_seq (fun k : nat => ps_P (list_inter (collection_take (fun j : nat => Ek (M j) eps' j) (S k)))))).
+          {
             admit.
           }
-
+          rewrite <- H16 in H15.
+          rewrite Rbar_finite_eq in H15.
+          rewrite <- H15.
+          assert (Rbar_le (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m))
+                    (Lim_seq (fun k : nat => ps_P (list_inter (collection_take (fun j : nat => Ek (M j) eps' j) k))))).
+          {
+            apply Lim_seq_le.
+            intros.
+            admit.
 (*          
+          generalize Lim_seq_le; intros.
+          generalize (Lim_seq_le _ _ H13); intros.
+            Search Lim_seq.
+          now rewrite (Lim_seq_incr_n (fun x0 : nat => rvmaxabs (X x0) x) n0).
+
+            apply 
+
+                    
+                     eps
           unfold Rbar_ge.
           assert (Rbar_le 
                     (Lim_seq (fun n0 =>  ps_P (inter_of_collection (Ek n0 eps)) ))
@@ -3276,7 +3614,10 @@ Section jaakola_vector2.
             apply Lim_seq_le.
             intros.
             apply H9.
+
           }
+          
+          unfold Ek in H9.
           rewrite Lim_seq_const in H13.
           eapply Rbar_le_trans; cycle 1.
           apply H13.
