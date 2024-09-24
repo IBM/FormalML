@@ -3357,6 +3357,68 @@ Section jaakola_vector2.
           specialize (H6 eps' (eps2' eps')).
           apply H6; now apply eps_prop.
         }
+        assert (inter_sub : forall (eps' : posreal),
+                   forall k n0 : nat,
+                     event_sub
+                       (inter_of_collection
+                          (fun n : nat =>
+                             event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps') ^ (S k))))
+                       (inter_of_collection
+                          (fun n : nat =>
+                             event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps') ^ k)))).
+        {
+          intros.
+          intros ?.
+          simpl.
+          intros.
+          specialize (H8 n).
+          eapply Rle_trans.
+          apply H8.
+          unfold Rdiv.
+          apply Rmult_le_compat_l.
+          - left.
+            apply cond_pos.
+          - generalize (cond_pos eps'); intros.
+            apply Rinv_le_contravar.
+            + apply pow_lt; lra.
+            + rewrite <- (Rmult_1_l ((1 + eps')^k)) at 1.
+              apply Rmult_le_compat_r; try lra.
+              apply pow_le; lra.
+        }
+        assert (inter_sub_eventually : forall (eps' : posreal),
+                   forall k : nat,
+                     event_sub
+                       (event_eventually 
+                          (fun n0 =>
+                             (inter_of_collection
+                                (fun n : nat =>
+                                   event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps') ^ (S k))))))
+                       (event_eventually 
+                          (fun n0 =>
+                             (inter_of_collection
+                                (fun n : nat =>
+                                   event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps') ^ k)))))).
+        {
+          intros.
+          intros ?.
+          simpl.
+          apply eventually_impl.
+          apply all_eventually.
+          intros.
+          specialize (H8 n).
+           eapply Rle_trans.
+          apply H8.
+          unfold Rdiv.
+          apply Rmult_le_compat_l.
+          - left.
+            apply cond_pos.
+          - generalize (cond_pos eps'); intros.
+            apply Rinv_le_contravar.
+            + apply pow_lt; lra.
+            + rewrite <- (Rmult_1_l ((1 + eps')^k)) at 1.
+              apply Rmult_le_compat_r; try lra.
+              apply pow_le; lra.
+      }
         assert (inter_prod_R : forall (y : R),
                    Rabs y <= eps ->
                    forall k : nat,
