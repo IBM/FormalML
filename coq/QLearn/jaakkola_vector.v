@@ -3190,11 +3190,11 @@ Section jaakola_vector2.
            apply ElimSup_Sup.
          Qed.
 
-        Lemma ps_lim_inf_sup  (E : nat -> event dom) :
+        Lemma ps_is_lim_seq  (E : nat -> event dom) :
           let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
           let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
           event_equiv (union_of_collection Einf) (inter_of_collection Esup) ->
-          Lim_seq (fun n => ps_P (E n)) = (ps_P (inter_of_collection Esup)).
+          is_lim_seq (fun n => ps_P (E n)) (ps_P (inter_of_collection Esup)).
         Proof.
           intros.
           assert (ps_P (union_of_collection Einf) = ps_P (inter_of_collection Esup)).
@@ -3220,20 +3220,26 @@ Section jaakola_vector2.
               apply inter.
               apply ELim_seq_Sup_seq_le.
           }
-          unfold Lim_seq.
-          rewrite H1.
-          rewrite x_plus_x_div_2.
-          apply Rbar_le_antisym.
-          - rewrite LimSup_InfSup_seq.
-            eapply Rbar_le_trans.
-            apply Inf_seq_Elim_seq_le.
-            apply union.
-          - rewrite <- H1.
-            rewrite LimInf_SupInf_seq.
-            rewrite <- H0.
-            eapply Rbar_le_trans.
-            apply inter.
-            apply ELim_seq_Sup_seq_le.
+          assert (Lim_seq (fun n => ps_P (E n)) = ps_P (inter_of_collection Esup)).
+          {
+            unfold Lim_seq.
+            rewrite H1.
+            rewrite x_plus_x_div_2.
+            apply Rbar_le_antisym.
+            - rewrite LimSup_InfSup_seq.
+              eapply Rbar_le_trans.
+              apply Inf_seq_Elim_seq_le.
+              apply union.
+            - rewrite <- H1.
+              rewrite LimInf_SupInf_seq.
+              rewrite <- H0.
+              eapply Rbar_le_trans.
+              apply inter.
+              apply ELim_seq_Sup_seq_le.
+          }
+          rewrite <- H2.
+          apply Lim_seq_correct.
+          now rewrite ex_lim_LimSup_LimInf_seq.
         Qed.
 
        Lemma lemma3 (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
