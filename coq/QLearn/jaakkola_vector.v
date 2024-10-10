@@ -3398,6 +3398,15 @@ Section jaakola_vector2.
          lra.
        Qed.
 
+       Definition is_lim_pos (f : posreal -> R) (l : R) :=
+         filterlim (fun y => lift_posreal_f f 0 y) (at_right 0) (locally l).
+
+       Lemma lemma3_plim_pos :
+         is_lim_pos (fun (y : posreal) => real (Lim_seq (fun m => prod_f_R0 (fun n => 1 - y ^ S n) m))) 1.
+       Proof.
+         apply lemma3_plim.
+       Qed.
+
        Lemma lemma3 (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
@@ -3444,6 +3453,10 @@ Section jaakola_vector2.
           apply cond_pos.
         }
         pose (eps2' := fun (eps : posreal) (n : nat) => mkposreal _ (eps_pow eps (S n))).
+        assert (lim_0_1': is_lim_pos (fun (y : posreal) => real (Lim_seq (fun m => prod_f_R0 (fun n => 1 - eps2' y n) m))) 1).
+        {
+          apply lemma3_plim_pos.
+        }
         assert (exists (eps : posreal),
                  forall (eps' : posreal),
                    eps' <= eps ->
