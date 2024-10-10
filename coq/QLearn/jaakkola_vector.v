@@ -3242,6 +3242,162 @@ Section jaakola_vector2.
           now rewrite ex_lim_LimSup_LimInf_seq.
         Qed.
 
+(*
+        Program Definition funpos (f : posreal -> R) : (R -> R).
+        Proof.
+          intros x.
+          destruct (Rlt_dec 0 x).
+          - exact (f (mkposreal x r)).
+          - exact 0.
+       Defined.
+*)
+
+        Definition lift_posreal_f (f:posreal->R) (default : R) : R -> R
+          := fun x => match Rlt_dec 0 x with
+             | left pf => f (mkposreal x pf)
+             | right _ => default
+             end.
+
+        Definition lift_posreal_f2 (f:posreal->R) (f2 : R -> R) : R -> R
+          := fun x => match Rlt_dec 0 x with
+             | left pf => f (mkposreal x pf)
+             | right _ => f2 x
+             end.
+
+        Lemma lift_posreal_f_pos (f : posreal -> R) :
+          forall (x y1 y2 : R),
+            0 < x ->
+            lift_posreal_f f y1 x = lift_posreal_f f y2 x.
+        Proof.
+          intros.
+          unfold lift_posreal_f.
+          match_destr.
+          lra.
+        Qed.
+            
+        Lemma lift_posreal_f2_pos (f : posreal -> R) :
+          forall (x : R),
+            forall (g1 g2 : R -> R),
+            0 < x ->
+            lift_posreal_f2 f g1 x = lift_posreal_f2 f g2 x.
+        Proof.
+          intros.
+          unfold lift_posreal_f2.
+          match_destr.
+          lra.
+        Qed.
+
+        Definition limit1_in_pos0 (f:posreal -> R) (default : R) (l:R) : Prop :=
+          limit1_in (lift_posreal_f f default) (fun x => 0 < x) 0 l.
+
+        Lemma limit1_in_ext (f1 f2 : R -> R) (x l : R) (D : R -> Prop) :
+          (forall x, D x -> f1 x = f2 x) ->
+          limit1_in f1 D x l <-> limit1_in f2 D x l.
+        Proof.
+          unfold limit1_in, limit_in.
+          intros.
+          split; intros.
+          - destruct (H0 eps H1) as [alp [??]].
+            exists alp.
+            split; trivial.
+            intros.
+            specialize (H3 x0 H4).
+            destruct H4.
+            now rewrite <- (H x0).
+          - destruct (H0 eps H1) as [alp [??]].
+            exists alp.
+            split; trivial.
+            intros.
+            specialize (H3 x0 H4).
+            destruct H4.
+            now rewrite (H x0).
+        Qed.
+
+        Lemma limit1_in_subset (f : R -> R) (x l : R) (D1 D2 : R -> Prop) :
+          (forall x, D1 x -> D2 x) ->
+          limit1_in f D2 x l ->
+          limit1_in f D1 x l.
+        Proof.
+          unfold limit1_in, limit_in.
+          intros.
+          destruct (H0 eps H1) as [alp [??]].
+          exists alp.
+          split; trivial.
+          intros.
+          apply H3.
+          destruct H4.
+          split; trivial.
+          now apply H.
+       Qed.
+
+        Lemma limit1_in_pos0_unique (f : posreal -> R) (l : R) :
+          forall (y1 y2 : R),
+            limit1_in_pos0 f y1 l <-> limit1_in_pos0 f y2 l.
+        Proof.
+          intros.
+          unfold limit1_in_pos0.
+          apply limit1_in_ext.
+          intros.
+          now apply lift_posreal_f_pos.
+        Qed.
+
+        Definition limit1_in_pos0_alt (f:posreal -> R) (f2 : R -> R) (l:R) : Prop :=
+          limit1_in (lift_posreal_f2 f f2) (fun x => 0 < x) 0 l.
+
+        Lemma limit1_in_pos0_alt_unique (f : posreal -> R) (l : R) :
+          forall (g1 g2 : R -> R),
+            limit1_in_pos0_alt f g1 l <-> limit1_in_pos0_alt f g2 l.
+        Proof.
+          intros.
+          unfold limit1_in_pos0_alt.
+          apply limit1_in_ext.
+          intros.
+          now apply lift_posreal_f2_pos.
+       Qed.
+
+       Lemma lemma3_plim0 :
+         filterlim (fun y => real (Lim_seq (fun m => prod_f_R0 (fun n => 1 - (Rabs y) ^ S n) m)))
+           (at_right 0) (Rbar_locally 1).
+       Proof.
+         generalize lemma3_plim_Rabs.
+         apply filterlim_filter_le_1.
+         intros ??.
+         destruct H as [eps ?].
+         exists eps.
+         intros.
+         apply H; trivial.
+         lra.
+       Qed.
+         
+       Lemma lemma3_plim1 :
+         filterlim (fun y => real (Lim_seq (fun m => prod_f_R0 (fun n => 1 - (Rabs y) ^ S n) m)))
+           (at_right 0) (locally 1).
+       Proof.
+         generalize lemma3_plim0.
+         apply filterlim_filter_le_2.         
+         apply filter_le_refl.
+       Qed.
+
+       Lemma lemma3_plim :
+         filterlim (fun y => (lift_posreal_f (fun (yy : posreal) => real (Lim_seq (fun m => prod_f_R0 (fun n => 1 - yy ^ S n) m))) 0) y)
+           (at_right 0) (locally 1).
+       Proof.
+         generalize lemma3_plim1.
+         apply filterlim_within_ext.
+         intros.
+         unfold lift_posreal_f.
+         match_destr; try lra.
+         f_equal.
+         apply Lim_seq_ext.
+         intros.
+         apply prod_f_R0_proper; trivial.
+         intros ?.
+         f_equal.
+         f_equal.
+         rewrite Rabs_right; trivial.
+         lra.
+       Qed.
+
        Lemma lemma3 (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
