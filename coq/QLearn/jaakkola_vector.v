@@ -3438,6 +3438,19 @@ Section jaakola_vector2.
          match_destr.
        Qed.
 
+       Lemma event_sub_eventually {A} {σ: SigmaAlgebra A} (pe: nat -> event σ):
+         forall n,
+           event_sub (inter_of_collection (fun n0 => pe (n + n0)%nat))
+                     (event_eventually pe).
+       Proof.
+         intros ???.
+         exists n.
+         intros.
+         specialize (H (n0 - n)%nat).
+         simpl in H.
+         now replace (n + (n0 - n))%nat with n0 in H by lia.
+       Qed.
+
        Lemma lemma3 (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
@@ -3693,7 +3706,46 @@ Section jaakola_vector2.
             + rewrite <- (Rmult_1_l ((1 + eps0)^k)) at 1.
               apply Rmult_le_compat_r; try lra.
               apply pow_le; lra.
-      }
+        }
+        assert (inter_prod_eventually :
+                  forall eps' : posreal,
+                    eps' <= eps ->
+                    forall k : nat,
+                      ps_P
+                        (event_eventually
+                           (fun n0 : nat => Ek n0 eps' k) ) >=
+                        prod_f_R0 (fun n : nat => 1 - eps2' eps' n) k).
+        {
+          intros.
+          specialize (inter_prod eps' H8 k).
+          destruct inter_prod as [n0 inter_prod].
+          unfold Ek.
+          assert (event_sub
+                    (inter_of_collection (fun n : nat => event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps') ^ k)))
+                    (event_eventually
+                        (fun n1 : nat =>
+                           inter_of_collection (fun n : nat => event_le dom (rvmaxabs (X (n + n1)%nat)) (C / (1 + eps') ^ k))))
+                 ).
+          {
+            intros ?.
+            simpl.
+            intros.
+            exists n0.
+            intros.
+            admit.
+          }
+          specialize (inter_prod n0).
+          cut_to inter_prod; try lia.
+          eapply Rge_trans; cycle 1.
+          apply inter_prod.
+          apply Rle_ge.
+          apply ps_sub.
+          apply H9.
+        }
+        
+          
+          
+          
 
         assert (forall n0,
                    RandomVariable dom Rbar_borel_sa (Rbar_rvlim (fun n => rvmaxabs (X (n + n0)%nat)))).
