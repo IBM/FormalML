@@ -3678,23 +3678,17 @@ Section jaakola_vector2.
               apply Rmult_le_compat_r; try lra.
               apply pow_le; lra.
         }
-        assert (esub_eventually : forall eps k,
+        assert (esub_eventually : forall (eps : posreal) k,
                    event_sub
-                     (event_eventually 
-                        (fun n0 =>
-                           (Ek n0 eps (S k))))
-                     (event_eventually 
-                        (fun n0 =>
-                           (Ek n0 eps k)))).                     
+                     (event_eventually (fun n : nat => event_le dom (rvmaxabs (X n)) (C / (1 + eps) ^ (S k))))
+                     (event_eventually (fun n : nat => event_le dom (rvmaxabs (X n)) (C / (1 + eps) ^ k)))).
         {
-          intros.
-          intros ?.
+          intros ???.
           simpl.
           apply eventually_impl.
           apply all_eventually.
           intros.
-          specialize (H8 n).
-           eapply Rle_trans.
+          eapply Rle_trans.
           apply H8.
           unfold Rdiv.
           apply Rmult_le_compat_l.
@@ -3712,27 +3706,18 @@ Section jaakola_vector2.
                     eps' <= eps ->
                     forall k : nat,
                       ps_P
-                        (event_eventually
-                           (fun n0 : nat => Ek n0 eps' k) ) >=
+                        (event_eventually (fun n : nat => event_le dom (rvmaxabs (X n)) (C / (1 + eps') ^ k))) >=
                         prod_f_R0 (fun n : nat => 1 - eps2' eps' n) k).
         {
           intros.
           specialize (inter_prod eps' H8 k).
           destruct inter_prod as [n0 inter_prod].
-          unfold Ek.
           assert (event_sub
-                    (inter_of_collection (fun n : nat => event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps') ^ k)))
-                    (event_eventually
-                        (fun n1 : nat =>
-                           inter_of_collection (fun n : nat => event_le dom (rvmaxabs (X (n + n1)%nat)) (C / (1 + eps') ^ k))))
-                 ).
+                    (inter_of_collection (fun n : nat => event_le dom (rvmaxabs (X (n0 + n)%nat)) (C / (1 + eps') ^ k)))
+                    (event_eventually (fun n : nat => event_le dom (rvmaxabs (X n)) (C / (1 + eps') ^ k)))).
           {
-            intros ?.
-            simpl.
-            intros.
-            exists n0.
-            intros.
-            admit.
+            generalize (event_sub_eventually (fun n : nat => event_le dom (rvmaxabs (X n)) (C / (1 + eps') ^ k)) n0) ; intros.
+            apply H9.
           }
           specialize (inter_prod n0).
           cut_to inter_prod; try lia.
@@ -3740,12 +3725,16 @@ Section jaakola_vector2.
           apply inter_prod.
           apply Rle_ge.
           apply ps_sub.
+          assert (event_equiv (inter_of_collection (fun n : nat => event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps') ^ k)))
+                    (inter_of_collection (fun n : nat => event_le dom (rvmaxabs (X (n0 + n)%nat)) (C / (1 + eps') ^ k)))).
+          {
+            apply inter_of_collection_proper.
+            intros ?.
+            now replace (n0 + a)%nat with (a + n0)%nat by lia.
+          }
+          rewrite H10.
           apply H9.
         }
-        
-          
-          
-          
 
         assert (forall n0,
                    RandomVariable dom Rbar_borel_sa (Rbar_rvlim (fun n => rvmaxabs (X (n + n0)%nat)))).
