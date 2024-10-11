@@ -3407,18 +3407,35 @@ Section jaakola_vector2.
          apply lemma3_plim.
        Qed.
 
-       Lemma is_lim_pos_unique (f g : posreal -> R)  (l : R) :
+       Lemma filterlim_at_right_0_Rbar_ext (f g : R -> R) (l : Rbar) :
+         (forall x, 0 < x -> f x = g x) ->
+         filterlim f (at_right 0) (Rbar_locally l) <-> filterlim g (at_right 0) (Rbar_locally l).
+       Proof.
+         intros.
+         split; apply filterlim_within_ext.
+         - apply H.
+         - symmetry; now apply H.
+       Qed.
+
+       Lemma filterlim_at_right_0_ext (f g : R -> R) (l : R) :
+         (forall x, 0 < x -> f x = g x) ->
+         filterlim f (at_right 0) (locally l) <-> filterlim g (at_right 0) (locally l).
+       Proof.
+         intros.
+         split; apply filterlim_within_ext.
+         - apply H.
+         - symmetry; now apply H.
+       Qed.
+
+       Lemma is_lim_pos_ext (f g : posreal -> R)  (l : R) :
          (forall x, f x = g x) ->
          is_lim_pos f l <-> is_lim_pos g l.
        Proof.
-         split.
-         - apply filterlim_within_ext.
-           unfold lift_posreal_f.
-           intros; match_destr.
-         - apply filterlim_within_ext.
-           unfold lift_posreal_f.
-           intros; match_destr.
-           now rewrite H.
+         intros.
+         apply filterlim_at_right_0_ext.
+         intros.
+         unfold lift_posreal_f.
+         match_destr.
        Qed.
 
        Lemma lemma3 (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
