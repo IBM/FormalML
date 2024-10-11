@@ -3735,6 +3735,65 @@ Section jaakola_vector2.
           rewrite H10.
           apply H9.
         }
+        assert (eesub_eventually: forall eps : posreal,
+                   event_sub
+                     (inter_of_collection 
+                        (fun k => (event_eventually (fun n : nat => event_le dom (rvmaxabs (X n)) (C / (1 + eps) ^ k)))))
+                     (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                        (Rbar_rvlim (fun n => rvmaxabs (X n))) (Finite 0))).
+        {
+          intros ??.
+          simpl.
+          unfold pre_event_preimage, pre_event_singleton.
+          intros.
+          unfold Rbar_rvlim.
+          rewrite Elim_seq_fin.
+          apply is_lim_seq_unique.
+          rewrite <- is_lim_seq_spec.
+          intros ?.
+          assert (eventually (fun n => C / (1 + eps0) ^ n < eps3)).
+          {
+            generalize (lemma3_lim_eps_alt C eps0); intros.
+            assert (is_lim_seq (fun n => C / (1 + eps0)^n) 0).
+            {
+              revert H9.
+              apply is_lim_seq_ext.
+              intros.
+              unfold Rdiv.
+              now rewrite pow_inv.
+            }
+            apply is_lim_seq_spec in H10.
+            specialize (H10 eps3).
+            simpl in H10.
+            revert H10.
+            apply eventually_impl.
+            apply all_eventually.
+            intros.
+            rewrite Rminus_0_r in H10.
+            rewrite Rabs_right in H10; trivial.
+            apply Rle_ge.
+            apply Rdiv_le_0_compat.
+            - generalize (cond_pos C); lra.
+            - apply pow_lt.
+              generalize (cond_pos eps0); lra.
+          }
+          revert H9.
+          apply eventually_impl.
+          apply all_eventually.
+          intros ??.
+          rewrite Rminus_0_r.
+          unfold rvmaxabs.
+          rewrite Rabs_Rvector_max_abs.
+          specialize (H8 x0).
+          destruct H8.
+          eapply Rle_lt_trans; cycle 1.
+          apply H9.
+          unfold rvmaxabs in H8.
+          apply H8.
+          admit.
+        }
+          
+                     
 
         assert (forall n0,
                    RandomVariable dom Rbar_borel_sa (Rbar_rvlim (fun n => rvmaxabs (X (n + n0)%nat)))).
