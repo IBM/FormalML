@@ -3777,23 +3777,21 @@ Section jaakola_vector2.
             - apply pow_lt.
               generalize (cond_pos eps0); lra.
           }
-          revert H9.
+          destruct H9.
+          specialize (H9 x0).
+          cut_to H9; try lia.
+          specialize (H8 x0).
+          revert H8.
           apply eventually_impl.
           apply all_eventually.
           intros ??.
           rewrite Rminus_0_r.
           unfold rvmaxabs.
           rewrite Rabs_Rvector_max_abs.
-          specialize (H8 x0).
-          destruct H8.
           eapply Rle_lt_trans; cycle 1.
           apply H9.
-          unfold rvmaxabs in H8.
           apply H8.
-          admit.
         }
-          
-                     
 
         assert (forall n0,
                    RandomVariable dom Rbar_borel_sa (Rbar_rvlim (fun n => rvmaxabs (X (n + n0)%nat)))).
