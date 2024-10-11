@@ -3407,6 +3407,20 @@ Section jaakola_vector2.
          apply lemma3_plim.
        Qed.
 
+       Lemma is_lim_pos_unique (f g : posreal -> R)  (l : R) :
+         (forall x, f x = g x) ->
+         is_lim_pos f l <-> is_lim_pos g l.
+       Proof.
+         split.
+         - apply filterlim_within_ext.
+           unfold lift_posreal_f.
+           intros; match_destr.
+         - apply filterlim_within_ext.
+           unfold lift_posreal_f.
+           intros; match_destr.
+           now rewrite H.
+       Qed.
+
        Lemma lemma3 (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
