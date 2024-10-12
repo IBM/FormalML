@@ -3576,114 +3576,7 @@ Section jaakola_vector2.
           specialize (H6 eps' (eps2' eps')).
           apply H6; now apply eps_prop.
         }
-        assert (inter_prod_R : forall (y : R),
-                   Rabs y <= eps ->
-                   forall k : nat,
-                     eventually
-                       (fun n0 : nat =>
-                          ps_P
-                            (inter_of_collection
-                               (fun n : nat =>
-                                  event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + Rabs y) ^ k))) >=
-                            prod_f_R0 (fun n : nat => 1 - eps2 y n) k)).
-        {
-          intros.
-          destruct (Rtotal_order 0 y).
-          - assert (0 < Rabs y).
-            {
-              rewrite Rabs_right; lra.
-            }
-            specialize (inter_prod (mkposreal _ H10) H8 k).
-            apply inter_prod.
-          - destruct H9.
-            + rewrite <- H9.
-              exists 0%nat.
-              intros.
-              unfold eps2.
-              rewrite Rabs_R0, Rplus_0_r.
-              rewrite pow1, Rdiv_1.
-              replace (prod_f_R0 (fun n0 : nat => 1 - 0 ^ S n0) k) with
-                (prod_f_R0 (fun n0 : nat => 1) k).
-              * rewrite prod_f_R0_one.
-                right.
-                apply ps_one_countable_inter.
-                intros.
-                replace 1 with R1 by lra.
-                rewrite <- ps_one.
-                apply ps_proper.
-                intros ?.
-                simpl.
-                unfold pre_Ω.
-                specialize (H4 (n0 + n)%nat x).
-                unfold const in H4.
-                tauto.
-              * apply prod_f_R0_proper.
-                intros ?.
-                -- rewrite pow0_Sbase.
-                   lra.
-                -- trivial.
-            + assert (0 < Rabs y).
-              {
-              rewrite Rabs_left; lra.
-              } 
-              specialize (inter_prod (mkposreal _ H10) H8 k).              
-              apply inter_prod.
-        }
-        assert (eps_prop_R : forall (y : R),
-                   Rabs y <= eps ->
-                    γ + (1 - γ) / 2 <= / (1 + Rabs y) /\
-                      (forall n : nat, 1 - eps2 y n > 0)).
-        {
-          intros.
-          destruct (Rtotal_order 0 y).
-          - assert (0 < Rabs y).
-            {
-              rewrite Rabs_right; lra.
-            }
-            now apply (eps_prop (mkposreal _ H10)).
-          - destruct H9.
-            + rewrite <- H9.
-              unfold eps2.
-              rewrite Rabs_R0.
-              * split.
-                -- rewrite Rplus_0_r.
-                   rewrite Rinv_1.
-                   lra.
-                -- intros.
-                   rewrite pow0_Sbase.
-                   lra.
-            + assert (0 < Rabs y).
-              {
-              rewrite Rabs_left; lra.
-              } 
-              now apply (eps_prop (mkposreal _ H10)).
-       }
-        pose (Ek := fun (n0 : nat) (eps1 : posreal) (k : nat) =>
-                     (inter_of_collection
-                        (fun n : nat =>
-                           event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1) ^ k)))).
-        assert (esub: forall n0 eps k,
-                   event_sub (Ek n0 eps (S k)) (Ek n0 eps k)).
-        {
-          intros.
-          intros ?.
-          unfold Ek.
-          simpl.
-          intros.
-          specialize (H8 n).
-          eapply Rle_trans.
-          apply H8.
-          unfold Rdiv.
-          apply Rmult_le_compat_l.
-          - generalize (cond_pos C); lra.
-          - apply Rinv_le_contravar.
-            + apply pow_lt.
-              generalize (cond_pos eps0); lra.
-            + rewrite <- (Rmult_1_l ((1 + eps0)^k)) at 1.
-              generalize (cond_pos eps0); intros.
-              apply Rmult_le_compat_r; try lra.
-              apply pow_le; lra.
-        }
+
         assert (esub_eventually : forall (eps : posreal) k,
                    event_sub
                      (event_eventually (fun n : nat => event_le dom (rvmaxabs (X n)) (C / (1 + eps) ^ (S k))))
@@ -3808,78 +3701,7 @@ Section jaakola_vector2.
           apply Real_Rbar_rv.
           now apply Rvector_max_abs_rv.
         }
-        assert (eesub: forall n0 eps,
-                   event_sub
-                     (inter_of_collection (Ek n0 eps))
-                     (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                        (Rbar_rvlim (fun n => rvmaxabs (X (n + n0)%nat))) (Finite 0))).
-        {
-          intros.
-          unfold Ek.
-          intros ?.
-          simpl.
-          unfold pre_event_preimage, pre_event_singleton.
-          intros.
-          unfold Rbar_rvlim.
-          rewrite Elim_seq_fin.
-          apply is_lim_seq_unique.
-          rewrite <- is_lim_seq_spec.
-          intros ?.
-          assert (eventually (fun n => C / (1 + eps0) ^ n < eps3)).
-          {
-            generalize (lemma3_lim_eps_alt C eps0); intros.
-            assert (is_lim_seq (fun n => C / (1 + eps0)^n) 0).
-            {
-              revert H10.
-              apply is_lim_seq_ext.
-              intros.
-              unfold Rdiv.
-              now rewrite pow_inv.
-            }
-            apply is_lim_seq_spec in H11.
-            specialize (H11 eps3).
-            simpl in H11.
-            revert H11.
-            apply eventually_impl.
-            apply all_eventually.
-            intros.
-            rewrite Rminus_0_r in H11.
-            rewrite Rabs_right in H11; trivial.
-            apply Rle_ge.
-            apply Rdiv_le_0_compat.
-            - generalize (cond_pos C); lra.
-            - apply pow_lt.
-              generalize (cond_pos eps0); lra.
-          }
-          revert H10.
-          apply eventually_impl.
-          apply all_eventually.
-          intros ??.
-          rewrite Rminus_0_r.
-          unfold rvmaxabs.
-          rewrite Rabs_Rvector_max_abs.
-          specialize (H9 x0 x0).
-          eapply Rle_lt_trans.
-          apply H9.
-          apply H10.
-        }
-        assert (forall (n0 : nat) (eps : posreal),
-                   ps_P (inter_of_collection (Ek n0 eps)) <=
-                     ps_P (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                             (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0)).
-        {
-          intros.
-          generalize (ps_sub _ _ _ (eesub n0 eps0)); intros.
-          eapply Rle_trans.
-          apply H9.
-          right.
-          apply ps_proper.
-          intros ?.
-          simpl.
-          unfold pre_event_preimage, preimage_singleton, Rbar_rvlim, pre_event_singleton.
-          repeat rewrite Elim_seq_fin.
-          now rewrite (Lim_seq_incr_n (fun x0 : nat => rvmaxabs (X x0) x) n0).
-        }
+
         assert (ps_P_le_eventually : forall (eps : posreal),
                    ps_P (inter_of_collection
                           (fun k : nat =>
@@ -3907,17 +3729,6 @@ Section jaakola_vector2.
             simpl.
             tauto.
        }
-        assert (forall n0 eps,
-                      is_lim_seq (fun n : nat => ps_P (Ek n0 eps n))
-                        (ps_P (inter_of_collection (Ek n0 eps)))).
-        {
-          intros.
-          apply lim_prob_descending.
-          - intros. apply esub.
-          - intros ?.
-            simpl.
-            tauto.
-        }
         assert (forall (eps' : posreal),
                    eps' <= eps ->
                    is_finite (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m))).
@@ -3928,15 +3739,15 @@ Section jaakola_vector2.
             split.
             - apply prod_f_R0_nonneg.
               intros.
-              specialize (eps_prop eps' H11).
+              specialize (eps_prop eps' H9).
               destruct eps_prop.
-              specialize (H13 n0).
+              specialize (H11 n0).
               lra.
             - apply prod_f_R0_le_1.
               intros.
-              specialize (eps_prop eps' H11).
+              specialize (eps_prop eps' H9).
               destruct eps_prop.
-              specialize (H13 n0).
+              specialize (H11 n0).
               generalize (cond_pos (eps2' eps' n0)); intros.
               lra.
           }
@@ -3951,7 +3762,7 @@ Section jaakola_vector2.
                      (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m))).
         {
           intros.
-          specialize (inter_prod_eventually eps' H12).
+          specialize (inter_prod_eventually eps' H10).
           unfold Rbar_ge.
           specialize (ps_P_le_eventually eps').
           specialize (is_lim_seq_ps_P eps').
@@ -3973,9 +3784,9 @@ Section jaakola_vector2.
             apply Rge_le.
             apply inter_prod_eventually.
           }
-          unfold Rbar_ge in H13.
+          unfold Rbar_ge in H11.
           eapply Rbar_le_trans.
-          apply H13.
+          apply H11.
           rewrite is_lim_seq_ps_P.
           apply ps_P_le_eventually.
         }
@@ -4002,9 +3813,9 @@ Section jaakola_vector2.
               apply Proper_StrongProper.
               apply at_right_proper_filter.
             }
-            generalize (@filterlim_le R (at_right 0) H15); intros.
+            generalize (@filterlim_le R (at_right 0) H13); intros.
             unfold Rbar_ge.
-            apply H16 with 
+            apply H14 with 
               (f := (fun y : R =>
                        lift_posreal_f
                          (fun y0 : posreal =>
@@ -4016,8 +3827,8 @@ Section jaakola_vector2.
                          (preimage_singleton  (has_pre := Rbar_borel_has_preimages)
                             (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0))); trivial.
             unfold at_right, within.
-            clear H9 H10 H13 H14 H15 H16 eesub.
-            unfold Rbar_ge in H12.
+            clear H12 H13 H14.
+            unfold Rbar_ge in H10.
             assert (forall eps' : posreal,
                        eps' <= eps ->
                         (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m)) <=  (ps_P
@@ -4025,42 +3836,42 @@ Section jaakola_vector2.
                 (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0))).
             {
               intros.
-              specialize (H11 eps' H9).
-              specialize (H12 eps' H9).
-              rewrite <- H11 in H12.
-              now simpl in H12.
+              specialize (H9 eps' H12).
+              specialize (H10 eps' H12).
+              rewrite <- H9 in H10.
+              now simpl in H10.
             }
             unfold locally.
             exists eps.
             intros.
-            red in H10; simpl in H10.
-            red in H10; simpl in H10.
-            unfold abs, minus, plus, opp in H10.
-            simpl in H10.
-            replace (y + - 0) with y in H10 by lra.
-            rewrite Rabs_right in H10; try lra.
-            specialize (H9 (mkposreal y H13)).
-            simpl in H9.
-            cut_to H9; try lra.
+            red in H13; simpl in H13.
+            red in H13; simpl in H13.
+            unfold abs, minus, plus, opp in H13.
+            simpl in H13.
+            replace (y + - 0) with y in H13 by lra.
+            rewrite Rabs_right in H13; try lra.
+            specialize (H12 (mkposreal y H14)).
+            simpl in H12.
+            cut_to H12; try lra.
             unfold eps2'.
             simpl.
             unfold lift_posreal_f.
             match_destr.
             lra.
           }
-          simpl in H14.
+          simpl in H12.
           lra.
        }
        exists  (preimage_singleton (has_pre := Rbar_borel_has_preimages)
              (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0).
         split; trivial.
         intros.
-        unfold preimage_singleton in H14.
-        simpl in H14.
-        unfold pre_event_preimage in H14.
-        unfold pre_event_singleton in H14.
-        unfold Rbar_rvlim in H14.
-        now rewrite Elim_seq_fin in H14.
+        unfold preimage_singleton in H12.
+        simpl in H12.
+        unfold pre_event_preimage in H12.
+        unfold pre_event_singleton in H12.
+        unfold Rbar_rvlim in H12.
+        now rewrite Elim_seq_fin in H12.
    Qed.
 
        Lemma lemma3' (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
