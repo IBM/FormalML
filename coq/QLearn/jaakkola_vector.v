@@ -4016,10 +4016,21 @@ Section jaakola_vector2.
                          (preimage_singleton  (has_pre := Rbar_borel_has_preimages)
                             (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0))); trivial.
             unfold at_right, within.
+            clear H9 H10 H13 H14 H15 H16 eesub.
+            unfold Rbar_ge in H12.
+            assert (forall eps' : posreal,
+                       eps' <= eps ->
+                        (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m)) <=  (ps_P
+             (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0))).
+            {
+              intros.
+              specialize (H11 eps' H9).
+              specialize (H12 eps' H9).
+              rewrite <- H11 in H12.
+              now simpl in H12.
+            }
             admit.
-          }
-          simpl in H14.
-          lra.
         }
 (*        
           Search Lim_seq.
