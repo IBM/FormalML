@@ -4030,265 +4030,38 @@ Section jaakola_vector2.
               rewrite <- H11 in H12.
               now simpl in H12.
             }
-            admit.
-        }
-(*        
-          Search Lim_seq.
-          apply Lim_seq_le in ps_P_le_eventually.
-          assert (ps_P (inter_of_collection (fun k => Ek (M k) eps' k)) <=
-                   (ps_P
-                      (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                         (Rbar_rvlim
-                            (fun (n : nat) (omega : Ts) =>
-                               rvmaxabs (X n) omega)) (Finite 0)))).
-          {
+            unfold locally.
+            exists eps.
             intros.
-            apply ps_sub.
-            intros ?.
+            red in H10; simpl in H10.
+            red in H10; simpl in H10.
+            unfold abs, minus, plus, opp in H10.
+            simpl in H10.
+            replace (y + - 0) with y in H10 by lra.
+            rewrite Rabs_right in H10; try lra.
+            specialize (H9 (mkposreal y H13)).
+            simpl in H9.
+            cut_to H9; try lra.
+            unfold eps2'.
             simpl.
-            unfold pre_event_preimage, preimage_singleton, Rbar_rvlim, pre_event_singleton.
-            rewrite Elim_seq_fin.
-            unfold rvmaxabs.
-            intros.
-            assert (is_lim_seq (fun x0 : nat => Rvector_max_abs (X x0 x)) 0).
-            {
-              apply is_lim_seq_spec.
-              intros ?.
-              destruct (eps_pos_eventually C eps' eps0).
-              exists (M x0).
-              intros.
-              rewrite Rminus_0_r.
-              specialize (H15 x0).
-              cut_to H15; try lia.
-              eapply Rle_lt_trans; cycle 1.
-              apply H15.
-              specialize (H14 x0 (n - M x0)%nat).
-              rewrite Rabs_right.
-              - now replace (n - M x0 + M x0)%nat with n in H14 by lia.
-              - apply Rle_ge.
-                apply Rvector_max_abs_nonneg.
-            }
-            now apply is_lim_seq_unique in H15.
-          }
-          rewrite <- H11; trivial.
-          eapply Rle_trans; cycle 1.
-          apply H14.
-          assert (is_lim_seq (fun k => ps_P (list_inter (collection_take (fun j => Ek (M j) eps' j) (S k))))
-                    (ps_P (inter_of_collection (fun k : nat => Ek (M k) eps' k)))).
-          {
-            intros.
-            apply lim_prob_descending.
-            - intros ???.
-              rewrite collection_take_Sn in H15.
-              apply list_inter_app in H15.
-              now apply Event.event_inter_sub_l in H15.
-            - symmetry.
-              apply inter_of_collection_as_ascending_equiv.
-          }
-          apply is_lim_seq_unique in H15.
-          pose (Ekk := fun k => Ek (M k) eps' k).
-          pose (Einf := fun k => inter_of_collection (fun n => Ekk (n + k)%nat)).
-          pose (Esup := fun k => union_of_collection (fun n => Ekk (n + k)%nat)).
-          assert (event_equiv (union_of_collection Einf) (inter_of_collection Esup)).
-          {
-            intros ?.
-            simpl.
-            split; intros.
-            - destruct H16.
-              exists x0.
-              intros.
-              replace (x0 + n)%nat with (n + x0)%nat by lia.
-              apply H16.
-            - apply ClassicalChoice.choice in H16.
-              destruct H16 as [f ?].
-              exists 0%nat.
-              intros.
-              specialize (H16 0%nat).
-              admit.
-          }
-
-
-          assert (is_finite (Lim_seq (fun k : nat => ps_P (list_inter (collection_take (fun j : nat => Ek (M j) eps' j) (S k)))))).
-          {
-            admit.
-          }
-          rewrite <- H17 in H15.
-          rewrite Rbar_finite_eq in H15.
-          rewrite <- H15.
-          assert (Rbar_le (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m))
-                    (Lim_seq (fun k : nat => ps_P (list_inter (collection_take (fun j : nat => Ek (M j) eps' j) (S k)))))).
-          {
-            apply Lim_seq_le.
-            intros.
-            admit.
-          generalize Lim_seq_le; intros.
-          generalize (Lim_seq_le _ _ H13); intros.
-            Search Lim_seq.
-          now rewrite (Lim_seq_incr_n (fun x0 : nat => rvmaxabs (X x0) x) n0).
-
-            apply 
-
-                    
-                     eps
-          unfold Rbar_ge.
-          assert (Rbar_le 
-                    (Lim_seq (fun n0 =>  ps_P (inter_of_collection (Ek n0 eps)) ))
-                    (Lim_seq (fun n0 =>
-                                ps_P (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                                        (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0)))).
-
-          {
-            apply Lim_seq_le.
-            intros.
-            apply H9.
-
-          }
-          
-          unfold Ek in H9.
-          rewrite Lim_seq_const in H13.
-          eapply Rbar_le_trans; cycle 1.
-          apply H13.
-          unfold Ek.
-          unfold eps2'.
-          simpl.
-          apply Lim_seq_le_loc.
-          exists 0%nat.
-          intros.
-          eexists.
-          intros.
-
-          unfold inter_of_collection.
-          simpl.
-          specialize (inter_prod n).
-          
-
-          specialize (H10 n eps).
-
-          ass
-        assert (Rbar_ge (
-                    ps_P
-                  (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                     (Rbar_rvlim
-                        (fun (n : nat) (omega : Ts) =>
-                           rvmaxabs (X n) omega)) (Finite 0))) 1).
-        {
-          apply is_lim_unique in  lim_0_1.
-          rewrite <- lim_0_1.
-          rewrite <- Lim_const with (x := 0).
-          unfold Lim, Rbar_ge.
-          apply Lim_seq_le_loc.
-          assert (exists (n : nat),
-                      / eps <= INR n + 1).
-          {
-            exists (Z.to_nat (up (/eps))).
-            rewrite INR_up_pos.
-            - destruct (archimed (/ eps)).
-              lra.
-            - left.
-              apply Rinv_pos.
-              apply cond_pos.
-          }
-          destruct H13.
-          exists x.
-          intros.
-          apply Rge_le.
-          apply H12.
-          unfold Rbar_loc_seq.
-          rewrite Rplus_0_l.
-          rewrite Rabs_right.
-          - generalize (cond_pos eps); intros.
-            rewrite <- (Rinv_involutive_depr eps); try lra.
-            apply Rinv_le_contravar.
-            + apply Rinv_pos.
-              apply cond_pos.
-            + eapply Rle_trans.
-              apply H13.
-              apply Rplus_le_compat_r.
-              apply le_INR.
-              lia.
-          - apply Rle_ge.
-            left.
-            apply Rinv_pos.
-            assert (0 <= INR n).
-            {
-              apply pos_INR.
-            }
+            unfold lift_posreal_f.
+            match_destr.
             lra.
-        }
-        simpl in H13.
-        apply Rle_ge in H13.
-        unfold almost.
-        exists  (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                     (Rbar_rvlim
-                        (fun (n : nat) (omega : Ts) =>
-                           rvmaxabs (X n) omega)) (Finite 0)).
-        split.
-        - generalize (ps_le1 _ (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                     (Rbar_rvlim
-                        (fun (n : nat) (omega : Ts) =>
-                           rvmaxabs (X n) omega)) (Finite 0))).
-          lra.
-        - intros.
+          }
           simpl in H14.
-          unfold pre_event_singleton, pre_event_preimage in H14.
-          unfold Rbar_rvlim in H14.
-          now rewrite Elim_seq_fin in H14.
-        
- *)
-
-(*          
-          
-          destruct (inter_prod eps' H11 k) as [n0 inter_prod'].
-          
-          specialize (H10 n0 eps').
-          specialize (H9 n0 eps').
-          apply Rle_ge in H9.
-          apply is_lim_seq_unique in H10.
-          specialize (H6 eps').
-          assert (forall n, 0 < eps' ^ S n).
-          {
-            intros.
-            apply pow_lt.
-            apply cond_pos.
-          }
-          exists n0.
-          eapply Rge_trans.
-          apply H9.
-          assert (is_finite (Lim_seq (fun n : nat => ps_P (Ek n0 eps' n)))).
-          {
-            apply is_finite_Lim_bounded with (m := 0) (M := 1).
-            intros.
-            split.
-            - apply ps_pos.
-            - apply ps_le1.
-          }
-          rewrite <- H13 in H10.
-          rewrite Rbar_finite_eq in H10.
-          rewrite <- H10.
-*)
-(*          
-          assert (Rbar_ge
-                    (Lim_seq (fun n : nat => ps_P (Ek n0 eps' n)))
-                    (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m))).
-          {
-            unfold Rbar_ge.
-            apply Lim_seq_le.
-            intros.
-            apply Rge_le.
-            specialize (inter_prod' n0).
-            admit.
-          }
-*)
-(*
-          rewrite <- H13 in H15.
-          rewrite <- H14 in H15.
-          simpl in H15.
-          apply Rle_ge in H15.
-          apply H15.
-        }
-*)
-        
-      Admitted.
+          lra.
+       }
+       exists  (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+             (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0).
+        split; trivial.
+        intros.
+        unfold preimage_singleton in H14.
+        simpl in H14.
+        unfold pre_event_preimage in H14.
+        unfold pre_event_singleton in H14.
+        unfold Rbar_rvlim in H14.
+        now rewrite Elim_seq_fin in H14.
+   Qed.
 
        Lemma lemma3' (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
