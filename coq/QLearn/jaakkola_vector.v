@@ -3490,11 +3490,6 @@ Section jaakola_vector2.
           unfold Rdiv.
           now rewrite pow_inv.
         }
-        pose (eps2 := fun (eps : R) (n : nat) => (Rabs eps)^(S n)).
-        assert (lim_0_1: is_lim (fun y : R => Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2 y n) m)) 0 1).
-        {
-          apply lemma3_plim_Rabs.
-        }
         assert (eps_pow : forall (eps : posreal) (n : nat),
                    0 < eps ^ n).
         {
@@ -3650,7 +3645,7 @@ Section jaakola_vector2.
           apply is_lim_seq_unique.
           rewrite <- is_lim_seq_spec.
           intros ?.
-          assert (eventually (fun n => C / (1 + eps0) ^ n < eps3)).
+          assert (eventually (fun n => C / (1 + eps0) ^ n < eps2)).
           {
             generalize (lemma3_lim_eps_alt C eps0); intros.
             assert (is_lim_seq (fun n => C / (1 + eps0)^n) 0).
@@ -3662,7 +3657,7 @@ Section jaakola_vector2.
               now rewrite pow_inv.
             }
             apply is_lim_seq_spec in H10.
-            specialize (H10 eps3).
+            specialize (H10 eps2).
             simpl in H10.
             revert H10.
             apply eventually_impl.
