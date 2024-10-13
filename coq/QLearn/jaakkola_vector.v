@@ -3987,7 +3987,11 @@ Section jaakola_vector2.
             rewrite H4.
             reflexivity.
           }
-          admit.
+          f_equal.
+          apply functional_extensionality.
+          intros.
+          rewrite H4.
+          reflexivity.
         - intros ???.
           rewrite H4.
           rewrite H4.
