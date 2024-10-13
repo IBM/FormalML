@@ -3917,10 +3917,20 @@ Section jaakola_vector2.
         intros.
         unfold vecrvclip.
         match_destr.
-        - admit.
+        - rewrite Rvector_max_abs_scale.
+          simpl.
+          generalize (cond_pos C); intros.
+          assert (Rvector_max_abs (rvec a) > 0).
+          {
+            simpl in r; lra.
+          }
+          rewrite Rabs_right.
+          + field_simplify; lra.
+          + apply Rle_ge.
+            apply Rdiv_le_0_compat; lra.
         - simpl in n.
           lra.
-      Admitted.
+      Qed.
 
       Lemma lemma3_2 (α β X XX : nat -> Ts -> vector R (S N)) 
         (G : nat -> Ts -> vector R (S N) -> vector R (S N)) 
