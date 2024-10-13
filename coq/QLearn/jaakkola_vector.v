@@ -56,13 +56,12 @@ Qed.
 
 Lemma lemma2_0 (w : Ts)
       (X : nat -> Ts -> vector R N)
-      (Y : nat -> Ts -> vector R N)
-      (G : nat -> vector R N -> vector R N -> vector R N )
+      (G : nat -> Ts -> vector R N -> vector R N )
       (C : posreal)   :
-  (forall n,  rv_eq (X (S n) ) (fun w => G n (X n w) (Y n w))) ->
+  (forall n,  rv_eq (X (S n) ) (fun w => G n w (X n w))) ->
   (forall n beta, 
-      rv_eq (fun w => Rvector_scale beta (G n (X n w) (Y n w)))
-            (fun w => (G n (Rvector_scale beta (X n w)) (Y n w)))) ->
+      rv_eq (fun w => Rvector_scale beta (G n w (X n w)))
+            (fun w => (G n w (Rvector_scale beta (X n w))))) ->
   (exists n, X n w = Rvector_zero) ->
   is_lim_seq (fun n => Rvector_max_abs (X n w)) 0.
  Proof.
@@ -92,14 +91,13 @@ Lemma lemma2_0 (w : Ts)
  Qed.
 
 Lemma lemma2_0_w (w : Ts)
-      (X : nat ->  Ts -> vector R N)
-      (Y : nat -> Ts -> vector R N)
-      (G : nat -> vector R N -> vector R N  -> vector R N )
+      (X : nat -> Ts -> vector R N)
+      (G : nat -> Ts -> vector R N  -> vector R N )
       (C : posreal)   :
-  (forall n,  rv_eq (X (S n)) (fun w => G n (X n w) (Y n w))) ->
+  (forall n,  rv_eq (X (S n)) (fun w => G n w (X n w))) ->
   (forall n beta, 
-      Rvector_scale beta (G n (X n w) (Y n w))  = 
-        (G n (Rvector_scale beta (X n w)) (Y n w))) ->
+      Rvector_scale beta (G n w (X n w))  = 
+        (G n w (Rvector_scale beta (X n w)))) ->
   (exists n, X n w = Rvector_zero) ->
   is_lim_seq (fun n => Rvector_max_abs (X n w)) 0.
  Proof.
@@ -197,19 +195,18 @@ Lemma lemma2_0_w (w : Ts)
 
 Lemma lemma2_n00 (w : Ts)
       (X XX : nat -> Ts -> vector R N)
-      (Y : nat -> Ts -> vector R N)
-      (G : nat -> vector R N -> vector R N  -> vector R N)
+      (G : nat -> Ts -> vector R N  -> vector R N)
       (C : posreal)   :
-  (forall n, rv_eq (X (S n)) (fun w => G n (X n w) (Y n w))) ->
-  (forall n, rv_eq (XX (S n) ) (vecrvclip (fun w => G n (XX n w) (Y n w)) 
+  (forall n, rv_eq (X (S n)) (fun w => G n w (X n w))) ->
+  (forall n, rv_eq (XX (S n) ) (vecrvclip (fun w => G n w (XX n w) ) 
                                           (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
   (forall n beta, 
-      rv_eq (fun w => Rvector_scale beta (G n (X n w) (Y n w)))
-            (fun w => (G n (Rvector_scale beta (X n w)) (Y n w)))) ->
+      rv_eq (fun w => Rvector_scale beta (G n w (X n w)))
+            (fun w => (G n w (Rvector_scale beta (X n w))))) ->
   (forall n beta, 
-      rv_eq (fun w => Rvector_scale beta (G n (XX n w) (Y n w) ))
-            (fun w => (G n (Rvector_scale beta (XX n w)) (Y n w) ))) ->
+      rv_eq (fun w => Rvector_scale beta (G n w (XX n w) ))
+            (fun w => (G n w (Rvector_scale beta (XX n w)) ))) ->
   (forall n, X n w <> Rvector_zero) ->
   forall n,
   exists (CC : R),
@@ -257,8 +254,8 @@ Lemma lemma2_n00 (w : Ts)
       apply Rvector_scale_not_0.
       split; trivial.
     }
-    destruct (Rgt_dec (Rvector_max_abs (G n (XX n w) (Y n w) )) C).
-    + exists (x * (C / Rvector_max_abs (G n (XX n w) (Y n w) ))).
+    destruct (Rgt_dec (Rvector_max_abs (G n w (XX n w) )) C).
+    + exists (x * (C / Rvector_max_abs (G n w (XX n w) ))).
       split.
       * apply Rmult_not_0; split; trivial.
         apply Rdiv_not_0;split.
@@ -295,19 +292,18 @@ Lemma lemma2_n00 (w : Ts)
 
 Lemma lemma2_n00_w (w : Ts)
       (X XX : nat -> Ts -> vector R N)
-      (Y : nat -> Ts -> vector R N)
-      (G : nat -> vector R N -> vector R N -> vector R N)
+      (G : nat -> Ts -> vector R N -> vector R N)
       (C : posreal)   :
-  (forall n, rv_eq (X (S n)) (fun w => G n (X n w) (Y n w) )) ->
-  (forall n, rv_eq (XX (S n) ) (vecrvclip (fun w => G n (XX n w) (Y n w) ) 
+  (forall n, rv_eq (X (S n)) (fun w => G n w (X n w)  )) ->
+  (forall n, rv_eq (XX (S n) ) (vecrvclip (fun w => G n w (XX n w) ) 
                                           (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
   (forall n beta, 
-      Rvector_scale beta (G n (X n w) (Y n w)) = 
-        (G n (Rvector_scale beta (X n w)) (Y n w))) ->
+      Rvector_scale beta (G n w (X n w)) = 
+        (G n w (Rvector_scale beta (X n w)))) ->
   (forall n beta, 
-      Rvector_scale beta (G n (XX n w) (Y n w)) = 
-        (G n (Rvector_scale beta (XX n w)) (Y n w))) ->  
+      Rvector_scale beta (G n w (XX n w)) = 
+        (G n w (Rvector_scale beta (XX n w)))) ->  
   (forall n, X n w <> Rvector_zero) ->
   forall n,
   exists (CC : R),
@@ -355,8 +351,8 @@ Lemma lemma2_n00_w (w : Ts)
       apply Rvector_scale_not_0.
       split; trivial.
     }
-    destruct (Rgt_dec (Rvector_max_abs (G n (XX n w) (Y n w))) C).
-    + exists (x * (C / Rvector_max_abs (G n (XX n w) (Y n w)))).
+    destruct (Rgt_dec (Rvector_max_abs (G n w (XX n w))) C).
+    + exists (x * (C / Rvector_max_abs (G n w (XX n w)))).
       split.
       * apply Rmult_not_0; split; trivial.
         apply Rdiv_not_0;split.
@@ -393,24 +389,23 @@ Lemma lemma2_n00_w (w : Ts)
 
   Lemma lemma2_n000 (w : Ts)
       (X XX : nat -> Ts -> vector R N)
-      (Y : nat -> Ts -> vector R N)
-      (G : nat -> vector R N  -> vector R N -> vector R N)
+      (G : nat -> Ts  -> vector R N -> vector R N)
       (C : posreal)   :
-  (forall n, rv_eq (X (S n)) (fun w => G n (X n w) (Y n w))) ->
-  (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n (XX n w) (Y n w)) 
+  (forall n, rv_eq (X (S n)) (fun w => G n w (X n w))) ->
+  (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n w (XX n w)) 
                                            (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
   (forall n beta, 
-      rv_eq (fun w => Rvector_scale beta (G n (X n w) (Y n w)))
-            (fun w => (G n (Rvector_scale beta (X n w)) (Y n w)))) ->
+      rv_eq (fun w => Rvector_scale beta (G n w (X n w)))
+            (fun w => (G n w (Rvector_scale beta (X n w))))) ->
   (forall n beta, 
-      rv_eq (fun w => Rvector_scale beta (G n (XX n w) (Y n w)))
-            (fun w => (G n (Rvector_scale beta (XX n w)) (Y n w)))) ->
+      rv_eq (fun w => Rvector_scale beta (G n w (XX n w)))
+            (fun w => (G n w (Rvector_scale beta (XX n w))))) ->
   (forall n, X n w <> Rvector_zero) ->
   forall n, XX n w <> Rvector_zero.
  Proof.
    intros XG XXG XX0 XGB XXGB Xn0.
-   generalize (lemma2_n00 w X XX Y G C); intros.
+   generalize (lemma2_n00 w X XX G C); intros.
    cut_to H; trivial.
    destruct (H n) as [? [? ?]].
    rewrite <- H1.
@@ -420,24 +415,23 @@ Lemma lemma2_n00_w (w : Ts)
 
   Lemma lemma2_n000_w (w : Ts)
       (X XX : nat -> Ts -> vector R N)
-      (Y : nat -> Ts -> vector R N)
-      (G : nat -> vector R N  -> vector R N -> vector R N)
+      (G : nat -> Ts -> vector R N -> vector R N)
       (C : posreal)   :
-  (forall n, rv_eq (X (S n)) (fun w => G n (X n w) (Y n w))) ->
-  (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n (XX n w) (Y n w)) 
+  (forall n, rv_eq (X (S n)) (fun w => G n w (X n w))) ->
+  (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n w (XX n w)) 
                                            (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
   (forall n beta, 
-      Rvector_scale beta (G n (X n w) (Y n w)) = 
-        (G n (Rvector_scale beta (X n w)) (Y n w))) ->
+      Rvector_scale beta (G n w (X n w)) = 
+        (G n w (Rvector_scale beta (X n w)))) ->
   (forall n beta, 
-      Rvector_scale beta (G n (XX n w) (Y n w)) = 
-        (G n (Rvector_scale beta (XX n w)) (Y n w))) ->  
+      Rvector_scale beta (G n w (XX n w)) = 
+        (G n w (Rvector_scale beta (XX n w)))) ->  
   (forall n, X n w <> Rvector_zero) ->
   forall n, XX n w <> Rvector_zero.
  Proof.
    intros XG XXG XX0 XGB XXGB Xn0.
-   generalize (lemma2_n00_w w X XX Y G C); intros.
+   generalize (lemma2_n00_w w X XX G C); intros.
    cut_to H; trivial.
    destruct (H n) as [? [? ?]].
    rewrite <- H1.
@@ -447,19 +441,18 @@ Lemma lemma2_n00_w (w : Ts)
 
 Lemma lemma2_n0 (w : Ts)
       (X XX : nat  -> Ts -> vector R N)
-      (Y : nat -> Ts -> vector R N)
-      (G : nat -> vector R N -> vector R N -> vector R N)
+      (G : nat -> Ts -> vector R N -> vector R N)
       (C : posreal)   :
-  (forall n, rv_eq (X (S n)) (fun w => G n (X n w) (Y n w))) ->
-  (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n (XX n w) (Y n w)) 
+  (forall n, rv_eq (X (S n)) (fun w => G n w (X n w))) ->
+  (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n w (XX n w)) 
                                           (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
   (forall n beta, 
-      rv_eq (fun w => Rvector_scale beta (G n (X n w) (Y n w)))
-            (fun w => (G n (Rvector_scale beta (X n w)) (Y n w)))) ->
+      rv_eq (fun w => Rvector_scale beta (G n w (X n w)))
+            (fun w => (G n w (Rvector_scale beta (X n w))))) ->
   (forall n beta, 
-      rv_eq (fun w => Rvector_scale beta (G n (XX n w) (Y n w)))
-            (fun w => (G n (Rvector_scale beta (XX n w)) (Y n w)))) ->
+      rv_eq (fun w => Rvector_scale beta (G n w (XX n w)))
+            (fun w => (G n w (Rvector_scale beta (XX n w))))) ->
   (forall n, X n w <> Rvector_zero) ->
   is_lim_seq (fun n => Rvector_max_abs(XX n w)) 0 ->
   is_lim_seq (fun n => Rvector_max_abs(X n w)) 0.
@@ -467,7 +460,7 @@ Proof.
   intros XG XXG XX0 XGB XXGB Xn0 H.
   assert (XXn0: forall n, XX n w <> Rvector_zero).
   {
-   generalize (lemma2_n000 w X XX Y G C); intros.
+   generalize (lemma2_n000 w X XX G C); intros.
    cut_to H0; trivial.
   }
   generalize H; intros HH.
@@ -481,7 +474,7 @@ Proof.
     destruct (H C) as [n0 ?].
     exists n0.
     assert (forall n, (n0 <= n)%nat ->
-                      (XX (S n) w = G n (XX n w) (Y n w))).
+                      (XX (S n) w = G n w (XX n w))).
     {
       intros.
       rewrite XXG.
@@ -514,7 +507,7 @@ Proof.
          * apply cond_pos.
       - apply Rle_ge, Rvector_max_abs_nonneg.
     }
-    generalize (lemma2_n00 w X XX Y G C); intros.
+    generalize (lemma2_n00 w X XX G C); intros.
     cut_to H2; trivial.
     destruct (H2 n0) as [? [? ?]].
     exists (/ x).
@@ -545,20 +538,19 @@ Proof.
 
 Lemma lemma2_n0_w (w : Ts)
       (X XX : nat -> Ts -> vector R N)
-      (Y : nat -> Ts -> vector R N)
-      (G : nat -> vector R N -> vector R N -> vector R N)
+      (G : nat -> Ts -> vector R N -> vector R N)
       (C : posreal)   :
-  (forall n, rv_eq (X (S n)) (fun w => G n (X n w) (Y n w))) ->
-  (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n (XX n w) (Y n w)) 
+  (forall n, rv_eq (X (S n)) (fun w => G n w (X n w))) ->
+  (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n w (XX n w)) 
                                           (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
 
  (forall n beta, 
-      Rvector_scale beta (G n (X n w) (Y n w)) = 
-        (G n (Rvector_scale beta (X n w)) (Y n w))) ->
+      Rvector_scale beta (G n w (X n w)) = 
+        (G n w (Rvector_scale beta (X n w)))) ->
   (forall n beta, 
-      Rvector_scale beta (G n (XX n w) (Y n w)) = 
-        (G n (Rvector_scale beta (XX n w)) (Y n w))) ->  
+      Rvector_scale beta (G n w (XX n w)) = 
+        (G n w (Rvector_scale beta (XX n w)))) ->  
   (forall n, X n w <> Rvector_zero) ->
   is_lim_seq (fun n => Rvector_max_abs(XX n w)) 0 ->
   is_lim_seq (fun n => Rvector_max_abs(X n w)) 0.
@@ -566,7 +558,7 @@ Proof.
   intros XG XXG XX0 XGB XXGB Xn0 H.
   assert (XXn0: forall n, XX n w <> Rvector_zero).
   {
-   generalize (lemma2_n000_w w X XX Y G C); intros.
+   generalize (lemma2_n000_w w X XX G C); intros.
    cut_to H0; trivial.
   }
   generalize H; intros HH.
@@ -580,7 +572,7 @@ Proof.
     destruct (H C) as [n0 ?].
     exists n0.
     assert (forall n, (n0 <= n)%nat ->
-                      (XX (S n) w = G n (XX n w) (Y n w))).
+                      (XX (S n) w = G n w (XX n w))).
     {
       intros.
       rewrite XXG.
@@ -613,7 +605,7 @@ Proof.
          * apply cond_pos.
       - apply Rle_ge, Rvector_max_abs_nonneg.
     }
-    generalize (lemma2_n00_w w X XX Y G C); intros.
+    generalize (lemma2_n00_w w X XX G C); intros.
     cut_to H2; trivial.
     destruct (H2 n0) as [? [? ?]].
     exists (/ x).
@@ -644,47 +636,45 @@ Proof.
 
 Lemma lemma2 
       (X XX : nat -> Ts -> vector R N)
-      (Y : nat -> Ts -> vector R N)
-      (G : nat -> vector R N -> vector R N -> vector R N)
+      (G : nat -> Ts -> vector R N -> vector R N)
       (C : posreal)   :
-  (forall n, rv_eq (X (S n)) (fun w => G n (X n w) (Y n w))) ->
-  (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n (XX n w) (Y n w)) 
+  (forall n, rv_eq (X (S n)) (fun w => G n w (X n w))) ->
+  (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n w (XX n w)) 
                                           (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
   (forall n beta, 
-      rv_eq (fun w => Rvector_scale beta (G n (X n w) (Y n w)))
-            (fun w => (G n (Rvector_scale beta (X n w)) (Y n w)))) ->
+      rv_eq (fun w => Rvector_scale beta (G n w (X n w)))
+            (fun w => (G n w (Rvector_scale beta (X n w))))) ->
   (forall n beta, 
-      rv_eq (fun w => Rvector_scale beta (G n (XX n w) (Y n w)))
-            (fun w => (G n (Rvector_scale beta (XX n w)) (Y n w)))) ->
+      rv_eq (fun w => Rvector_scale beta (G n w (XX n w)))
+            (fun w => (G n w (Rvector_scale beta (XX n w))))) ->
   almost prts (fun w => is_lim_seq (fun n => Rvector_max_abs (XX n w)) 0) ->
   almost prts (fun w => is_lim_seq (fun n => Rvector_max_abs (X n w)) 0).
 Proof.
   intros XG XXG XX0 XGB XXGB.
   apply almost_impl, all_almost; intros w H.
   destruct (classic (exists n, X n w = Rvector_zero)).
-  - now apply (lemma2_0 w X Y G C).
+  - now apply (lemma2_0 w X G C).
   - generalize (not_ex_all_not nat _ H0); intros HH.
-    now apply (lemma2_n0 w X XX Y G C).
+    now apply (lemma2_n0 w X XX G C).
 Qed.
         
 Lemma lemma2_almostG
       (X XX : nat -> Ts -> vector R N)
-      (Y : nat -> Ts -> vector R N)
-      (G : nat -> vector R N -> vector R N -> vector R N)
+      (G : nat -> Ts -> vector R N -> vector R N)
       (C : posreal)   :
-  (forall n, rv_eq (X (S n)) (fun w => G n (X n w) (Y n w))) ->
-  (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n (XX n w) (Y n w)) 
+  (forall n, rv_eq (X (S n)) (fun w => G n w (X n w))) ->
+  (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n w (XX n w)) 
                                           (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
   almost prts (fun w =>
                  forall n beta, 
-                   Rvector_scale beta (G n (X n w) (Y n w)) = 
-                     G n (Rvector_scale beta (X n w)) (Y n w)) ->
+                   Rvector_scale beta (G n w (X n w)) = 
+                     G n w (Rvector_scale beta (X n w))) ->
   almost prts (fun w =>
                  forall n beta, 
-                   Rvector_scale beta (G n (XX n w) (Y n w)) = 
-                     G n (Rvector_scale beta (XX n w)) (Y n w)) ->
+                   Rvector_scale beta (G n w (XX n w)) = 
+                     G n w (Rvector_scale beta (XX n w))) ->
   almost prts (fun w => is_lim_seq (fun n => Rvector_max_abs (XX n w)) 0) ->
   almost prts (fun w => is_lim_seq (fun n => Rvector_max_abs (X n w)) 0).
 Proof.
@@ -695,9 +685,9 @@ Proof.
   apply all_almost.
   intros w ???.
   destruct (classic (exists n, X n w = Rvector_zero)).
-  - now apply (lemma2_0_w w X Y G C).
+  - now apply (lemma2_0_w w X G C).
   - generalize (not_ex_all_not nat _ H2); intros HH.
-    now apply (lemma2_n0_w w X XX Y G C).
+    now apply (lemma2_n0_w w X XX G C).
 Qed.
   
 Lemma gamma_C (gamma : R) :
@@ -3920,68 +3910,120 @@ Section jaakola_vector2.
           apply H10.
       Qed.
 
-      Lemma lemma3_2 (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
-         (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
-         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
-         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n)) :           
-         (forall t ω i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
-         (forall t ω i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
-         (forall t ω i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->                  
-         (forall ω i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
-         γ < 1 ->
-         
-         (forall n, rv_le (rvmaxabs (X n)) (const C)) ->
-               (forall n, rv_eq (X (S n))
-                         (vecrvclip (S N)
-                            (vecrvplus 
-                               (vecrvminus (X n)
-                                  (vecrvmult (α n) (X n)))
-                               (vecrvscalerv (rvmaxabs (X n))
-                                  (vecrvscale γ (β n))))
-                            (pos_to_nneg C))) ->
-               almost prts (fun ω => Lim_seq (fun n => rvmaxabs (X n) ω) = 0).
+      Lemma vecrvclip_max_bound (rvec : Ts -> vector R (S N)) (C : posreal) :
+        forall a,
+          Rvector_max_abs (vecrvclip (S N) rvec (pos_to_nneg C) a) <= C.
+      Proof.
+        intros.
+        unfold vecrvclip.
+        match_destr.
+        - admit.
+        - simpl in n.
+          lra.
+      Admitted.
+
+      Lemma lemma3_2 (α β X XX : nat -> Ts -> vector R (S N)) 
+        (G : nat -> Ts -> vector R (S N) -> vector R (S N)) 
+        (C γ : posreal)
+        (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n))
+        (rvXX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (XX n))         
+        (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
+        (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n)) :           
+        (forall t ω i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
+        (forall t ω i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
+        (forall t ω i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->                  
+        (forall ω i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+        γ < 1 ->
+        
+        (forall n w V, G n w V =
+                     Rvector_plus
+                       (Rvector_minus V (Rvector_mult (α n w) V))
+                       (Rvector_scale (Rvector_max_abs V)
+                          (Rvector_scale γ (β n w)))) ->
+        (forall n, rv_eq (X (S n))
+                     (vecrvplus 
+                        (vecrvminus (X n)
+                           (vecrvmult (α n) (X n)))
+                        (vecrvscalerv (rvmaxabs (X n))
+                           (vecrvscale γ (β n))))) ->
+(*        (forall n, rv_le (rvmaxabs (XX n)) (const C)) -> *)
+        (rv_eq (XX 0%nat) (vecrvclip (S N) (X 0%nat) (pos_to_nneg C))) ->
+        (forall n, rv_eq (XX (S n))
+                     (vecrvclip (S N)
+                        (vecrvplus 
+                           (vecrvminus (XX n)
+                              (vecrvmult (α n) (XX n)))
+                           (vecrvscalerv (rvmaxabs (XX n))
+                              (vecrvscale γ (β n))))
+                        (pos_to_nneg C))) ->
+        almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
+      Proof.
+        intros.
+        generalize (lemma3 α β XX C γ); intros.
+        cut_to H8; trivial.
+        generalize (lemma2 (S N) X XX G C); intros.
+        apply H9; trivial.
+        - intros ??.
+          rewrite H5, H4.
+          reflexivity.
+        - intros ??.
+          rewrite H7.
+          assert (rv_eq
+                     (vecrvplus (vecrvminus (XX n) (vecrvmult (α n) (XX n)))
+                        (vecrvscalerv (rvmaxabs (XX n)) (vecrvscale γ (β n))))
+                      (fun w : Ts => G n w (XX n w))).
+          {
+            intros ?.
+            rewrite H4.
+            reflexivity.
+          }
+          admit.
+        - intros ???.
+          rewrite H4.
+          rewrite H4.
+          rewrite Rvector_scale_plus_l.
+          f_equal.
+          + unfold Rvector_minus.
+            rewrite Rvector_scale_plus_l.
+            f_equal.
+            rewrite Rvector_scale_mult_r.
+            unfold Rvector_opp.
+            rewrite Rvector_scale_scale.
+            rewrite Rvector_scale_scale.
+            f_equal; lra.
+          + rewrite Rvector_max_abs_scale.
+            rewrite Rvector_scale_scale.
+            f_equal.
+            f_equal.
+            admit.
+        - intros ???.
+          rewrite H4.
+          rewrite H4.
+          rewrite Rvector_scale_plus_l.
+          f_equal.
+          + unfold Rvector_minus.
+            rewrite Rvector_scale_plus_l.
+            f_equal.
+            rewrite Rvector_scale_mult_r.
+            unfold Rvector_opp.
+            rewrite Rvector_scale_scale.
+            rewrite Rvector_scale_scale.
+            f_equal; lra.
+          + rewrite Rvector_max_abs_scale.
+            rewrite Rvector_scale_scale.
+            f_equal.
+            f_equal.
+            admit.
+        - admit.
+        - intros.
+          intros ?.
+          unfold rvmaxabs.
+          destruct n.
+          + rewrite H6.
+            apply vecrvclip_max_bound.
+          + rewrite H7.
+            apply vecrvclip_max_bound.
         Admitted.
-
-(*
-            Lemma lemma3 (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
-         (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
-         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
-         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n)) :           
-         (forall t ω i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
-         (forall t ω i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
-         (forall t ω i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->                  
-         (forall ω i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
-         γ < 1 ->
-         (forall n, rv_le (rvmaxabs (X n)) (const C)) ->
-               (forall n, rv_eq (X (S n))
-                         (vecrvclip (S N)
-                            (vecrvplus 
-                               (vecrvminus (X n)
-                                  (vecrvmult (α n) (X n)))
-                               (vecrvscalerv (rvmaxabs (X n))
-                                  (vecrvscale γ (β n))))
-                            (pos_to_nneg C))) ->
-               almost prts (fun ω => Lim_seq (fun n => rvmaxabs (X n) ω) = 0).
-
-              Lemma lemma2
-      (X XX : nat -> Ts -> vector R N)
-      (Y : nat -> Ts -> vector R N)
-      (G : nat -> vector R N -> vector R N -> vector R N)
-      (C : posreal)   :
-  (forall n, rv_eq (X (S n)) (fun w => G n (X n w) (Y n w))) ->
-  (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n (XX n w) (Y n w)) 
-                                          (pos_to_nneg C))) ->
-  rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
-  (forall n beta, 
-      rv_eq (fun w => Rvector_scale beta (G n (X n w) (Y n w)))
-            (fun w => (G n (Rvector_scale beta (X n w)) (Y n w)))) ->
-  (forall n beta, 
-      rv_eq (fun w => Rvector_scale beta (G n (XX n w) (Y n w)))
-            (fun w => (G n (Rvector_scale beta (XX n w)) (Y n w)))) ->
-  almost prts (fun w => is_lim_seq (fun n => Rvector_max_abs (XX n w)) 0) ->
-  almost prts (fun w => is_lim_seq (fun n => Rvector_max_abs (X n w)) 0).
-
- *)
       
    Lemma condexp_condexp_diff_0 (XF : Ts -> R)
      {dom2 : SigmaAlgebra Ts}
