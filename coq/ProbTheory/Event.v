@@ -218,6 +218,11 @@ Section pre_ev.
 
   Hint Resolve pre_event_inter_sub_l pre_event_inter_sub_r : prob.
 
+  Lemma pre_event_sub_inter {T} (A B C:pre_event T) : A ≤ B -> A ≤ C -> A ≤ B ∩ C.
+  Proof.
+    firstorder.
+  Qed.
+
   Lemma pre_event_union_true_l {T} (A:pre_event T) : pre_Ω ∪ A === pre_Ω.
   Proof.
     firstorder.
@@ -1361,6 +1366,11 @@ Section event.
   Qed.
 
   Hint Resolve event_inter_sub_l event_inter_sub_r : prob.
+
+  Lemma event_sub_inter  (A B C:event σ) : A ≤ B -> A ≤ C -> A ≤ B ∩ C.
+  Proof.
+    firstorder.
+  Qed.
 
   Lemma event_union_true_l  (A:event σ) : Ω ∪ A === Ω.
   Proof.
