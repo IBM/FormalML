@@ -59,7 +59,7 @@ Lemma lemma2_0 (w : Ts)
       (G : nat -> Ts -> vector R N -> vector R N )
       (C : posreal)   :
   (forall n,  rv_eq (X (S n) ) (fun w => G n w (X n w))) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       rv_eq (fun w => Rvector_scale beta (G n w (X n w)))
             (fun w => (G n w (Rvector_scale beta (X n w))))) ->
   (exists n, X n w = Rvector_zero) ->
@@ -79,7 +79,8 @@ Lemma lemma2_0 (w : Ts)
       now rewrite Rvector_max_abs_zero.
     + replace (x + S h)%nat with (S (x + h))%nat by lia.
       rewrite XG.
-      replace  (X (x + h)%nat w) with (Rvector_scale 0 (X (x + h)%nat w)).
+      assert (le0: 0 <= 0) by lra.
+      replace  (X (x + h)%nat w) with (Rvector_scale (mknonnegreal 0 le0) (X (x + h)%nat w)).
       * rewrite <- XGB.
         rewrite Rvector_scale0.
         symmetry.
@@ -95,7 +96,7 @@ Lemma lemma2_0_w (w : Ts)
       (G : nat -> Ts -> vector R N  -> vector R N )
       (C : posreal)   :
   (forall n,  rv_eq (X (S n)) (fun w => G n w (X n w))) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       Rvector_scale beta (G n w (X n w))  = 
         (G n w (Rvector_scale beta (X n w)))) ->
   (exists n, X n w = Rvector_zero) ->
@@ -115,7 +116,8 @@ Lemma lemma2_0_w (w : Ts)
       now rewrite Rvector_max_abs_zero.
     + replace (x + S h)%nat with (S (x + h))%nat by lia.
       rewrite XG.
-      replace  (X (x + h)%nat w) with (Rvector_scale 0 (X (x + h)%nat w)).
+      assert (le0: 0 <= 0) by lra.
+      replace  (X (x + h)%nat w) with (Rvector_scale (mknonnegreal 0 le0) (X (x + h)%nat w)).
       * rewrite <- XGB.
         rewrite Rvector_scale0.
         symmetry.
@@ -201,16 +203,16 @@ Lemma lemma2_n00 (w : Ts)
   (forall n, rv_eq (XX (S n) ) (vecrvclip (fun w => G n w (XX n w) ) 
                                           (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       rv_eq (fun w => Rvector_scale beta (G n w (X n w)))
             (fun w => (G n w (Rvector_scale beta (X n w))))) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       rv_eq (fun w => Rvector_scale beta (G n w (XX n w) ))
             (fun w => (G n w (Rvector_scale beta (XX n w)) ))) ->
   (forall n, X n w <> Rvector_zero) ->
   forall n,
   exists (CC : R),
-    CC <> 0 /\
+    CC > 0 /\
     Rvector_scale CC (X n w) = XX n w.
   Proof.
   intros XG XXG XX0 XGB XXGB Xn0.
@@ -222,8 +224,14 @@ Lemma lemma2_n00 (w : Ts)
       now apply vecrvclip_not_0.
     }
     split.
-    + apply Rdiv_not_0.
-      split; now apply Rvector_max_abs_nzero.
+    + apply Rlt_gt.
+      apply Rdiv_lt_0_compat.
+      * generalize (Rvector_max_abs_nzero (XX 0%nat w) H); intros.
+        generalize (Rvector_max_abs_nonneg (XX 0%nat w)); intros.
+        lra.
+      * generalize (Rvector_max_abs_nzero (X 0%nat w) (Xn0 0%nat)); intros.
+        generalize (Rvector_max_abs_nonneg (X 0%nat w)); intros.        
+        lra.
     + rewrite XX0.
       unfold vecrvclip.
       match_destr.
@@ -249,45 +257,58 @@ Lemma lemma2_n00 (w : Ts)
       rewrite XXG.
       apply vecrvclip_not_0.
       rewrite <- H0.
-      rewrite <- XGB.
-      rewrite <- XG.
-      apply Rvector_scale_not_0.
-      split; trivial.
+      assert (0 <= x) by lra.
+      assert (G n w (Rvector_scale (mknonnegreal x H1) (X n w)) <> Rvector_zero).
+      {
+        rewrite <- XGB.
+        simpl.
+        rewrite <- XG.
+        apply Rvector_scale_not_0.
+        split; trivial.
+        lra.
+      }
+      now simpl in H2.
     }
     destruct (Rgt_dec (Rvector_max_abs (G n w (XX n w) )) C).
     + exists (x * (C / Rvector_max_abs (G n w (XX n w) ))).
       split.
-      * apply Rmult_not_0; split; trivial.
-        apply Rdiv_not_0;split.
-        -- apply Rgt_not_eq.
-           apply cond_pos.
-        -- apply Rgt_not_eq.
-           eapply Rgt_trans.
-           apply r.
-           apply cond_pos.
+      * apply Rmult_gt_0_compat; trivial.
+        apply Rlt_gt.
+        apply Rdiv_lt_0_compat.
+        -- apply cond_pos.
+        -- generalize (cond_pos C).
+           lra.
       * rewrite XXG.
         unfold vecrvclip; simpl.
         match_destr; try lra.
         rewrite XG.
         rewrite <- H0.
-        rewrite <- XGB.
+        assert (le0: 0 <= x) by lra.
+        assert (rv_eq (fun w : Ts => Rvector_scale (mknonnegreal x le0) (G n w (X n w)))
+                       (fun w : Ts => G n w (Rvector_scale (mknonnegreal x le0) (X n w)))).
+        {
+          now rewrite <- XGB.
+        }
+        simpl in H2.
+        rewrite <- H2.
         rewrite Rvector_scale_scale.
         f_equal.
         field.
         rewrite Rvector_max_abs_scale.
         apply Rmult_not_0; split.
-        -- now apply Rgt_not_eq, Rabs_pos_lt.
+        -- rewrite Rabs_right; lra.
         -- rewrite <- XG.
            now apply Rvector_max_abs_nzero.
-    + exists x.
+    + assert (le0: 0 <= x) by lra.
+      exists (mknonnegreal x le0).
       split; trivial.
       rewrite XXG.
       unfold vecrvclip.
-      simpl.
       match_destr; try lra.
-      rewrite XG.
-      rewrite <- H0.
-      now rewrite <- XGB.
+      * now simpl.
+      * rewrite XG.
+        rewrite <- H0.
+        now rewrite XGB.
   Qed.
 
 Lemma lemma2_n00_w (w : Ts)
@@ -298,16 +319,16 @@ Lemma lemma2_n00_w (w : Ts)
   (forall n, rv_eq (XX (S n) ) (vecrvclip (fun w => G n w (XX n w) ) 
                                           (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       Rvector_scale beta (G n w (X n w)) = 
         (G n w (Rvector_scale beta (X n w)))) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       Rvector_scale beta (G n w (XX n w)) = 
         (G n w (Rvector_scale beta (XX n w)))) ->  
   (forall n, X n w <> Rvector_zero) ->
   forall n,
   exists (CC : R),
-    CC <> 0 /\
+    CC > 0 /\
     Rvector_scale CC (X n w) = XX n w.
   Proof.
   intros XG XXG XX0 XGB XXGB Xn0.
@@ -319,8 +340,14 @@ Lemma lemma2_n00_w (w : Ts)
       now apply vecrvclip_not_0.
     }
     split.
-    + apply Rdiv_not_0.
-      split; now apply Rvector_max_abs_nzero.
+    + apply Rlt_gt.
+      apply Rdiv_lt_0_compat.
+      * generalize (Rvector_max_abs_nzero (XX 0%nat w) H); intros.
+        generalize (Rvector_max_abs_nonneg (XX 0%nat w)); intros.
+        lra.
+      * generalize (Rvector_max_abs_nzero (X 0%nat w) (Xn0 0%nat)); intros.
+        generalize (Rvector_max_abs_nonneg (X 0%nat w)); intros.        
+        lra.
     + rewrite XX0.
       unfold vecrvclip.
       match_destr.
@@ -346,45 +373,58 @@ Lemma lemma2_n00_w (w : Ts)
       rewrite XXG.
       apply vecrvclip_not_0.
       rewrite <- H0.
-      rewrite <- XGB.
-      rewrite <- XG.
-      apply Rvector_scale_not_0.
-      split; trivial.
+      assert (0 <= x) by lra.
+      assert (G n w (Rvector_scale (mknonnegreal x H1) (X n w)) <> Rvector_zero).
+      {
+        rewrite <- XGB.
+        simpl.
+        rewrite <- XG.
+        apply Rvector_scale_not_0.
+        split; trivial.
+        lra.
+      }
+      now simpl in H2.
     }
     destruct (Rgt_dec (Rvector_max_abs (G n w (XX n w))) C).
     + exists (x * (C / Rvector_max_abs (G n w (XX n w)))).
       split.
-      * apply Rmult_not_0; split; trivial.
-        apply Rdiv_not_0;split.
-        -- apply Rgt_not_eq.
-           apply cond_pos.
-        -- apply Rgt_not_eq.
-           eapply Rgt_trans.
-           apply r.
-           apply cond_pos.
+      * apply Rmult_gt_0_compat; trivial.
+        apply Rlt_gt.
+        apply Rdiv_lt_0_compat.
+        -- apply cond_pos.
+        -- generalize (cond_pos C).
+           lra.
       * rewrite XXG.
         unfold vecrvclip; simpl.
         match_destr; try lra.
         rewrite XG.
         rewrite <- H0.
-        rewrite <- XGB.
+        assert (le0: 0 <= x) by lra.
+        assert (Rvector_scale (mknonnegreal x le0) (G n w (X n w)) =
+                 G n w (Rvector_scale (mknonnegreal x le0) (X n w))).
+        {
+          now rewrite <- XGB.
+        }
+        simpl in H2.
+        rewrite <- H2.
         rewrite Rvector_scale_scale.
         f_equal.
         field.
         rewrite Rvector_max_abs_scale.
         apply Rmult_not_0; split.
-        -- now apply Rgt_not_eq, Rabs_pos_lt.
+        -- rewrite Rabs_right; lra.
         -- rewrite <- XG.
            now apply Rvector_max_abs_nzero.
-    + exists x.
+    + assert (le0: 0 <= x) by lra.
+      exists (mknonnegreal x le0).
       split; trivial.
       rewrite XXG.
       unfold vecrvclip.
-      simpl.
       match_destr; try lra.
-      rewrite XG.
-      rewrite <- H0.
-      now rewrite <- XGB.
+      * now simpl.
+      * rewrite XG.
+        rewrite <- H0.
+        now rewrite XGB.
   Qed.
 
   Lemma lemma2_n000 (w : Ts)
@@ -395,10 +435,10 @@ Lemma lemma2_n00_w (w : Ts)
   (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n w (XX n w)) 
                                            (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       rv_eq (fun w => Rvector_scale beta (G n w (X n w)))
             (fun w => (G n w (Rvector_scale beta (X n w))))) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       rv_eq (fun w => Rvector_scale beta (G n w (XX n w)))
             (fun w => (G n w (Rvector_scale beta (XX n w))))) ->
   (forall n, X n w <> Rvector_zero) ->
@@ -411,6 +451,7 @@ Lemma lemma2_n00_w (w : Ts)
    rewrite <- H1.
    apply Rvector_scale_not_0.
    split; trivial.
+   lra.
  Qed.
 
   Lemma lemma2_n000_w (w : Ts)
@@ -421,10 +462,10 @@ Lemma lemma2_n00_w (w : Ts)
   (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n w (XX n w)) 
                                            (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       Rvector_scale beta (G n w (X n w)) = 
         (G n w (Rvector_scale beta (X n w)))) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       Rvector_scale beta (G n w (XX n w)) = 
         (G n w (Rvector_scale beta (XX n w)))) ->  
   (forall n, X n w <> Rvector_zero) ->
@@ -437,6 +478,7 @@ Lemma lemma2_n00_w (w : Ts)
    rewrite <- H1.
    apply Rvector_scale_not_0.
    split; trivial.
+   lra.
  Qed.
 
 Lemma lemma2_n0 (w : Ts)
@@ -447,10 +489,10 @@ Lemma lemma2_n0 (w : Ts)
   (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n w (XX n w)) 
                                           (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       rv_eq (fun w => Rvector_scale beta (G n w (X n w)))
             (fun w => (G n w (Rvector_scale beta (X n w))))) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       rv_eq (fun w => Rvector_scale beta (G n w (XX n w)))
             (fun w => (G n w (Rvector_scale beta (XX n w))))) ->
   (forall n, X n w <> Rvector_zero) ->
@@ -520,11 +562,25 @@ Proof.
       rewrite Rvector_scale_scale.
       rewrite <- Rinv_l_sym; trivial.
       now rewrite Rvector_scale1.
+      lra.
     - replace (n0 + S h)%nat with (S (n0 + h))%nat by lia.
       rewrite XG.
       rewrite H1; try lia.
-      rewrite XXGB.
-      now f_equal.
+      rewrite IHh.
+      assert (0 <= /x).
+      {
+        assert (0 < /x).
+        {
+          now apply Rinv_0_lt_compat.
+        }
+        lra.
+      }
+      assert ( G (n0 + h)%nat w (Rvector_scale (mknonnegreal (/ x) H6) (XX (n0 + h)%nat w)) =
+                 Rvector_scale (mknonnegreal (/ x) H6) (G (n0 + h)%nat w (XX (n0 + h)%nat w))).
+      {
+        now rewrite XXGB.
+      }
+      now simpl in H7.
   }
   destruct H0 as [nn [CC ?]].
   apply is_lim_seq_ext_loc with (u := fun n => Rabs(CC) * Rvector_max_abs (XX n w)).
@@ -545,10 +601,10 @@ Lemma lemma2_n0_w (w : Ts)
                                           (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
 
- (forall n beta, 
+ (forall n (beta : nonnegreal), 
       Rvector_scale beta (G n w (X n w)) = 
         (G n w (Rvector_scale beta (X n w)))) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       Rvector_scale beta (G n w (XX n w)) = 
         (G n w (Rvector_scale beta (XX n w)))) ->  
   (forall n, X n w <> Rvector_zero) ->
@@ -608,7 +664,15 @@ Proof.
     generalize (lemma2_n00_w w X XX G C); intros.
     cut_to H2; trivial.
     destruct (H2 n0) as [? [? ?]].
-    exists (/ x).
+    assert (0 <= /x).
+    {
+      assert (0 < /x).
+      {
+        now apply Rinv_0_lt_compat.
+      }
+      lra.
+    }
+    exists (mknonnegreal (/ x) H5).
     intros.
     pose (h := (n - n0)%nat).
     replace n with (n0 + h)%nat by lia.
@@ -616,8 +680,10 @@ Proof.
     - replace (n0 + 0)%nat with n0 by lia.
       rewrite <- H4.
       rewrite Rvector_scale_scale.
+      simpl.
       rewrite <- Rinv_l_sym; trivial.
       now rewrite Rvector_scale1.
+      lra.
     - replace (n0 + S h)%nat with (S (n0 + h))%nat by lia.
       rewrite XG.
       rewrite H1; try lia.
@@ -642,10 +708,10 @@ Lemma lemma2
   (forall n, rv_eq (XX (S n)) (vecrvclip (fun w => G n w (XX n w)) 
                                           (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       rv_eq (fun w => Rvector_scale beta (G n w (X n w)))
             (fun w => (G n w (Rvector_scale beta (X n w))))) ->
-  (forall n beta, 
+  (forall n (beta : nonnegreal), 
       rv_eq (fun w => Rvector_scale beta (G n w (XX n w)))
             (fun w => (G n w (Rvector_scale beta (XX n w))))) ->
   almost prts (fun w => is_lim_seq (fun n => Rvector_max_abs (XX n w)) 0) ->
@@ -668,11 +734,11 @@ Lemma lemma2_almostG
                                           (pos_to_nneg C))) ->
   rv_eq (XX 0%nat) (vecrvclip (X 0%nat) (pos_to_nneg C)) ->
   almost prts (fun w =>
-                 forall n beta, 
+                 forall n (beta : nonnegreal), 
                    Rvector_scale beta (G n w (X n w)) = 
                      G n w (Rvector_scale beta (X n w))) ->
   almost prts (fun w =>
-                 forall n beta, 
+                 forall n (beta : nonnegreal), 
                    Rvector_scale beta (G n w (XX n w)) = 
                      G n w (Rvector_scale beta (XX n w))) ->
   almost prts (fun w => is_lim_seq (fun n => Rvector_max_abs (XX n w)) 0) ->
@@ -3858,6 +3924,7 @@ Section jaakola_vector2.
         unfold pre_event_singleton in H12.
         unfold Rbar_rvlim in H12.
         rewrite Elim_seq_fin in H12.
+        
    Admitted.
 
        Lemma lemma3' (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
@@ -4010,7 +4077,9 @@ Section jaakola_vector2.
             rewrite Rvector_scale_scale.
             f_equal.
             f_equal.
-            admit.
+            rewrite Rabs_right; trivial.
+            apply Rle_ge.
+            apply cond_nonneg.
         - intros ???.
           rewrite H4.
           rewrite H4.
@@ -4028,7 +4097,9 @@ Section jaakola_vector2.
             rewrite Rvector_scale_scale.
             f_equal.
             f_equal.
-            admit.
+            rewrite Rabs_right; trivial.
+            apply Rle_ge.
+            apply cond_nonneg.
         - intros.
           intros ?.
           unfold rvmaxabs.
@@ -4037,7 +4108,7 @@ Section jaakola_vector2.
             apply vecrvclip_max_bound.
           + rewrite H7.
             apply vecrvclip_max_bound.
-        Admitted.
+      Qed.
       
    Lemma condexp_condexp_diff_0 (XF : Ts -> R)
      {dom2 : SigmaAlgebra Ts}
