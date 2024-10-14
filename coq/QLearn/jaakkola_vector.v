@@ -3686,80 +3686,85 @@ Section jaakola_vector2.
           rewrite H10.
           apply H9.
         }
-        assert (eesub_eventually: forall eps : posreal,
-                   event_sub
-                     (inter_of_collection 
-                        (fun k => (event_eventually (fun n : nat => event_le dom (rvmaxabs (X n)) (C / (1 + eps) ^ k)))))
-                     (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                        (Rbar_rvlim (fun n => rvmaxabs (X n))) (Finite 0))).
+        assert (rv_rvmaxabs: forall n,
+                   RandomVariable dom Rbar_borel_sa (rvmaxabs (X n))).
         {
-          intros ??.
-          simpl.
-          unfold pre_event_preimage, pre_event_singleton.
-          intros.
-          unfold Rbar_rvlim.
-          rewrite Elim_seq_fin.
-          apply is_lim_seq_unique.
-          rewrite <- is_lim_seq_spec.
-          intros ?.
-          assert (eventually (fun n => C / (1 + eps0) ^ n < eps2)).
-          {
-            generalize (lemma3_lim_eps_alt C eps0); intros.
-            assert (is_lim_seq (fun n => C / (1 + eps0)^n) 0).
-            {
-              revert H9.
-              apply is_lim_seq_ext.
-              intros.
-              unfold Rdiv.
-              now rewrite pow_inv.
-            }
-            apply is_lim_seq_spec in H10.
-            specialize (H10 eps2).
-            simpl in H10.
-            revert H10.
-            apply eventually_impl.
-            apply all_eventually.
-            intros.
-            rewrite Rminus_0_r in H10.
-            rewrite Rabs_right in H10; trivial.
-            apply Rle_ge.
-            apply Rdiv_le_0_compat.
-            - generalize (cond_pos C); lra.
-            - apply pow_lt.
-              generalize (cond_pos eps0); lra.
-          }
-          destruct H9.
-          specialize (H9 x0).
-          cut_to H9; try lia.
-          specialize (H8 x0).
-          revert H8.
-          apply eventually_impl.
-          apply all_eventually.
-          intros ??.
-          rewrite Rminus_0_r.
-          unfold rvmaxabs.
-          rewrite Rabs_Rvector_max_abs.
-          eapply Rle_lt_trans; cycle 1.
-          apply H9.
-          apply H8.
-        }
-
-        assert (forall n0,
-                   RandomVariable dom Rbar_borel_sa (Rbar_rvlim (fun n => rvmaxabs (X (n + n0)%nat)))).
-        {
-          intros.
-          apply Rbar_rvlim_rv.
           intros.
           apply Real_Rbar_rv.
           now apply Rvector_max_abs_rv.
         }
 
+       assert (eesub_eventually_is_limseq: forall eps : posreal,
+                   event_sub
+                     (inter_of_collection 
+                        (fun k => (event_eventually (fun n : nat => event_le dom (rvmaxabs (X n)) (C / (1 + eps) ^ k)))))
+                     (event_inter (event_ex_Elim_seq (fun n => rvmaxabs (X n)) rv_rvmaxabs)
+                                   (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                        (Rbar_rvlim (fun n => rvmaxabs (X n))) (Finite 0)))).
+        {
+          intros ??.
+          simpl.
+          intros.
+          unfold pre_event_inter, pre_event_preimage.
+          unfold pre_event_preimage, pre_event_singleton, Rbar_rvlim.
+          rewrite ex_Elim_seq_fin, Elim_seq_fin.
+          assert (is_lim_seq (fun x0 : nat => rvmaxabs (X x0) x) 0).
+          {
+            rewrite <- is_lim_seq_spec.
+            intros ?.
+            assert (eventually (fun n => C / (1 + eps0) ^ n < eps2)).
+            {
+              generalize (lemma3_lim_eps_alt C eps0); intros.
+              assert (is_lim_seq (fun n => C / (1 + eps0)^n) 0).
+              {
+                revert H9.
+                apply is_lim_seq_ext.
+                intros.
+                unfold Rdiv.
+                now rewrite pow_inv.
+              }
+              apply is_lim_seq_spec in H10.
+              specialize (H10 eps2).
+              simpl in H10.
+              revert H10.
+              apply eventually_impl.
+              apply all_eventually.
+              intros.
+              rewrite Rminus_0_r in H10.
+              rewrite Rabs_right in H10; trivial.
+              apply Rle_ge.
+              apply Rdiv_le_0_compat.
+              - generalize (cond_pos C); lra.
+              - apply pow_lt.
+                generalize (cond_pos eps0); lra.
+            }
+            destruct H9.
+            specialize (H9 x0).
+            cut_to H9; try lia.
+            specialize (H8 x0).
+            revert H8.
+            apply eventually_impl.
+            apply all_eventually.
+            intros ??.
+            rewrite Rminus_0_r.
+            unfold rvmaxabs.
+            rewrite Rabs_Rvector_max_abs.
+            eapply Rle_lt_trans; cycle 1.
+            apply H9.
+            apply H8.
+          }
+          split.
+          - now exists 0.
+          - now apply is_lim_seq_unique.
+        }
         assert (ps_P_le_eventually : forall (eps : posreal),
                    ps_P (inter_of_collection
                           (fun k : nat =>
                              event_eventually (fun n : nat => event_le dom (rvmaxabs (X n)) (C / (1 + eps) ^ k)))) <=
-                     ps_P (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                             (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0)).
+                     ps_P (event_inter
+                             (event_ex_Elim_seq (fun n => rvmaxabs (X n)) rv_rvmaxabs)                             
+                             (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                             (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0))).
         {
           intros.
           now apply ps_sub.
@@ -3791,30 +3796,29 @@ Section jaakola_vector2.
             split.
             - apply prod_f_R0_nonneg.
               intros.
-              specialize (eps_prop eps' H9).
+              specialize (eps_prop eps' H8).
               destruct eps_prop.
-              specialize (H11 n0).
+              specialize (H10 n0).
               lra.
             - apply prod_f_R0_le_1.
               intros.
-              specialize (eps_prop eps' H9).
+              specialize (eps_prop eps' H8).
               destruct eps_prop.
-              specialize (H11 n0).
+              specialize (H10 n0).
               generalize (cond_pos (eps2' eps' n0)); intros.
               lra.
           }
           assert (forall (eps' : posreal),
                    eps' <= eps ->
                    Rbar_ge
-                   (ps_P
-                      (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                         (Rbar_rvlim
-                            (fun (n : nat) (omega : Ts) =>
-                               rvmaxabs (X n) omega)) (Finite 0)))
+                     (ps_P (event_inter
+                             (event_ex_Elim_seq (fun n => rvmaxabs (X n)) rv_rvmaxabs)                             
+                             (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                             (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) (Finite 0))))
                      (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m))).
         {
           intros.
-          specialize (inter_prod_eventually eps' H10).
+          specialize (inter_prod_eventually eps' H9).
           unfold Rbar_ge.
           specialize (ps_P_le_eventually eps').
           specialize (is_lim_seq_ps_P eps').
@@ -3836,38 +3840,44 @@ Section jaakola_vector2.
             apply Rge_le.
             apply inter_prod_eventually.
           }
-          unfold Rbar_ge in H11.
+          unfold Rbar_ge in H10.
           eapply Rbar_le_trans.
-          apply H11.
+          apply H10.
           rewrite is_lim_seq_ps_P.
           apply ps_P_le_eventually.
         }
-        assert (ps_P
-             (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0) = 1).
+        assert (ps_P (event_inter
+                        (event_ex_Elim_seq (fun n => rvmaxabs (X n)) rv_rvmaxabs)                             
+                        (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                           (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) (Finite 0))) = 1).
         {
           generalize (ps_le1 _
-                        (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                           (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0)); intros.
+                        (event_inter
+                           (event_ex_Elim_seq (fun n => rvmaxabs (X n)) rv_rvmaxabs)                             
+                           (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                              (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) (Finite 0)))); intros.
           assert (Rbar_ge
-                    (ps_P
-                       (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                          (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0))
+                    (ps_P (event_inter
+                             (event_ex_Elim_seq (fun n => rvmaxabs (X n)) rv_rvmaxabs)                             
+                             (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                                (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) (Finite 0))))
                     1).
           {
             unfold is_lim_pos in lim_0_1'.
             generalize (filterlim_const_at_right0
                           (ps_P
-                             (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                                (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0))); intros.
+                             (event_inter
+                                (event_ex_Elim_seq (fun n => rvmaxabs (X n)) rv_rvmaxabs)                             
+                                (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                                   (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) (Finite 0))))); intros.
             assert (ProperFilter' (at_right 0)).
             {
               apply Proper_StrongProper.
               apply at_right_proper_filter.
             }
-            generalize (@filterlim_le R (at_right 0) H13); intros.
+            generalize (@filterlim_le R (at_right 0) H12); intros.
             unfold Rbar_ge.
-            apply H14 with 
+            apply H13 with 
               (f := (fun y : R =>
                        lift_posreal_f
                          (fun y0 : posreal =>
@@ -3876,56 +3886,67 @@ Section jaakola_vector2.
                          0 y))
               (g := (fun _ : R =>
                        ps_P
-                         (preimage_singleton  (has_pre := Rbar_borel_has_preimages)
-                            (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0))); trivial.
+                         (event_inter
+                            (event_ex_Elim_seq (fun n => rvmaxabs (X n)) rv_rvmaxabs)                             
+                            (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                               (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) (Finite 0))))); trivial.
             unfold at_right, within.
-            clear H12 H13 H14.
-            unfold Rbar_ge in H10.
+            clear H11 H12 H13.
+            unfold Rbar_ge in H9.
             assert (forall eps' : posreal,
                        eps' <= eps ->
-                        (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m)) <=  (ps_P
-             (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-                (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0))).
+                       (Lim_seq (fun m : nat => prod_f_R0 (fun n : nat => 1 - eps2' eps' n) m)) <=
+                         (ps_P
+                            (event_inter
+                            (event_ex_Elim_seq (fun n => rvmaxabs (X n)) rv_rvmaxabs)                             
+                            (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                               (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) (Finite 0))))).
             {
               intros.
-              specialize (H9 eps' H12).
-              specialize (H10 eps' H12).
-              rewrite <- H9 in H10.
-              now simpl in H10.
+              specialize (H8 eps' H11).
+              specialize (H9 eps' H11).
+              rewrite <- H8 in H9.
+              now simpl in H9.
             }
             unfold locally.
             exists eps.
             intros.
-            red in H13; simpl in H13.
-            red in H13; simpl in H13.
-            unfold abs, minus, plus, opp in H13.
-            simpl in H13.
-            replace (y + - 0) with y in H13 by lra.
-            rewrite Rabs_right in H13; try lra.
-            specialize (H12 (mkposreal y H14)).
+            red in H12; simpl in H12.
+            red in H12; simpl in H12.
+            unfold abs, minus, plus, opp in H12.
             simpl in H12.
-            cut_to H12; try lra.
+            replace (y + - 0) with y in H12 by lra.
+            rewrite Rabs_right in H12; try lra.
+            specialize (H11 (mkposreal y H13)).
+            simpl in H11.
+            cut_to H11; try lra.
             unfold eps2'.
             simpl.
             unfold lift_posreal_f.
             match_destr.
             lra.
           }
-          simpl in H12.
+          simpl in H11.
           lra.
        }
-       exists  (preimage_singleton (has_pre := Rbar_borel_has_preimages)
-             (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) 0).
+       exists (event_inter
+                 (event_ex_Elim_seq (fun n => rvmaxabs (X n)) rv_rvmaxabs)                             
+                 (preimage_singleton (has_pre := Rbar_borel_has_preimages)
+                    (Rbar_rvlim (fun (n : nat) (omega : Ts) => rvmaxabs (X n) omega)) (Finite 0))).
         split; trivial.
         intros.
-        unfold preimage_singleton in H12.
-        simpl in H12.
-        unfold pre_event_preimage in H12.
-        unfold pre_event_singleton in H12.
-        unfold Rbar_rvlim in H12.
-        rewrite Elim_seq_fin in H12.
-        
-   Admitted.
+        unfold preimage_singleton in H11.
+        simpl in H11.
+        unfold pre_event_preimage in H11.
+        unfold pre_event_singleton in H11.
+        unfold Rbar_rvlim in H11.
+        unfold pre_event_inter in H11.
+        rewrite Elim_seq_fin in H11.
+        rewrite ex_Elim_seq_fin in H11.
+        destruct H11.
+        apply Lim_seq_correct in H11.
+        now rewrite H12 in H11.
+   Qed.
 
        Lemma lemma3' (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
