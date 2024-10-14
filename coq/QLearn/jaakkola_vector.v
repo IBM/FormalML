@@ -3457,15 +3457,16 @@ Section jaakola_vector2.
          (forall ω i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
          γ < 1 ->
          (forall n, rv_le (rvmaxabs (X n)) (const C)) ->
-               (forall n, rv_eq (X (S n))
-                         (vecrvclip (S N)
-                            (vecrvplus 
-                               (vecrvminus (X n)
-                                  (vecrvmult (α n) (X n)))
-                               (vecrvscalerv (rvmaxabs (X n))
-                                  (vecrvscale γ (β n))))
-                            (pos_to_nneg C))) ->
-         almost prts (fun ω => Lim_seq (fun n => rvmaxabs (X n) ω) = 0).
+         (forall n, rv_eq (X (S n))
+                      (vecrvclip (S N)
+                         (vecrvplus 
+                            (vecrvminus (X n)
+                               (vecrvmult (α n) (X n)))
+                            (vecrvscalerv (rvmaxabs (X n))
+                               (vecrvscale γ (β n))))
+                         (pos_to_nneg C))) ->
+         (*         almost prts (fun ω => Lim_seq (fun n => rvmaxabs (X n) ω) = 0). *)
+         almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
       Proof.
         intros.
         generalize (lemma3_vector_forall_eventually_prob_iter_alt α β X C γ _ _ _); intros.
@@ -3856,8 +3857,8 @@ Section jaakola_vector2.
         unfold pre_event_preimage in H12.
         unfold pre_event_singleton in H12.
         unfold Rbar_rvlim in H12.
-        now rewrite Elim_seq_fin in H12.
-   Qed.
+        rewrite Elim_seq_fin in H12.
+   Admitted.
 
        Lemma lemma3' (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
@@ -3885,6 +3886,7 @@ Section jaakola_vector2.
         apply almost_impl.
         apply all_almost.
         intros ??.
+        apply is_lim_seq_unique in H6.
         assert (Lim_seq (fun n => - (rvmaxabs (X n) x)) = 0).
         {
           rewrite Lim_seq_opp, H6.
@@ -3956,7 +3958,6 @@ Section jaakola_vector2.
                            (vecrvmult (α n) (X n)))
                         (vecrvscalerv (rvmaxabs (X n))
                            (vecrvscale γ (β n))))) ->
-(*        (forall n, rv_le (rvmaxabs (XX n)) (const C)) -> *)
         (rv_eq (XX 0%nat) (vecrvclip (S N) (X 0%nat) (pos_to_nneg C))) ->
         (forall n, rv_eq (XX (S n))
                      (vecrvclip (S N)
@@ -4028,7 +4029,6 @@ Section jaakola_vector2.
             f_equal.
             f_equal.
             admit.
-        - admit.
         - intros.
           intros ?.
           unfold rvmaxabs.
