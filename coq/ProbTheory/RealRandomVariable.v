@@ -3902,7 +3902,7 @@ Section RbarRandomVariables.
       now intros; apply rv_Rbar_measurable.
   Qed.
 
-  Definition event_ex_Elim_seq (f : nat -> Ts -> Rbar) (rv: (forall n : nat, RandomVariable dom Rbar_borel_sa (f n)))
+  Definition event_ex_Elim_seq (f : nat -> Ts -> Rbar) (rv: (forall n : nat, RandomVariable dom Rbar_borel_sa (f n))) : event dom
     := exist _ (fun omega => ex_Elim_seq (fun n => f n omega)) (event_ex_Elim_seq_sa f rv).
 
 End RbarRandomVariables.
