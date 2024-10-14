@@ -3850,6 +3850,26 @@ Section RbarRandomVariables.
              {rv2:RandomVariable dom Rbar_borel_sa x2} : event dom
      := exist _ (fun x : Ts => Rbar_ge (x1 x) (x2 x)) (event_Rbar_le_sa x2 x1).
 
+     Lemma event_Rbar_eq_sa x1 x2
+        {rv1:RandomVariable dom Rbar_borel_sa x1}
+        {rv2:RandomVariable dom Rbar_borel_sa x2}
+    : sa_sigma _ (fun x => eq (x1 x) (x2 x)).
+   Proof.
+     eapply (sa_proper _ (event_inter (event_Rbar_le x1 x2) (event_Rbar_ge x1 x2))).
+     - intros ?.
+       unfold event_inter, event_Rbar_le, event_Rbar_ge, pre_event_inter; simpl.
+       split; intros HH.
+       + apply Rbar_le_antisym; tauto.
+       + rewrite HH.
+         split; apply Rbar_le_refl.
+     - apply sa_sigma_event_pre.
+   Qed.
+
+  Definition event_Rbar_eq (x1 x2:Ts -> Rbar)
+    {rv1:RandomVariable dom Rbar_borel_sa x1}
+    {rv2:RandomVariable dom Rbar_borel_sa x2} : event dom
+    := exist _ (fun x : Ts => eq (x1 x) (x2 x)) (event_Rbar_eq_sa x1 x2).
+
   Lemma event_Rbar_gt_dec x1 x2
         {rv1:RandomVariable dom Rbar_borel_sa x1}
         {rv2:RandomVariable dom Rbar_borel_sa x2} :
