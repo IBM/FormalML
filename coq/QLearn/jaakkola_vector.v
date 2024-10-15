@@ -4100,7 +4100,7 @@ Section jaakola_vector2.
             apply vecrvclip_max_bound.
       Qed.
 
-      Lemma almost_is_lim_nth_maxabs (X : nat -> Ts -> vector R (S N)) :
+      Lemma almost_is_lim_nth_maxabs {NN} (X : nat -> Ts -> vector R (S NN)) :
         almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0) ->
         forall k pf,
           almost prts (fun x : Ts => is_lim_seq (fun m : nat => vector_nth k pf (X m x)) 0).
@@ -4620,7 +4620,6 @@ Section jaakola_vector2.
             field.
             lra.
       }
-
       admit.
       + apply H5.
       + apply H6.
