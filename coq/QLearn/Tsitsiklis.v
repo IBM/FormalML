@@ -1061,6 +1061,34 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
    now apply lemma2 with (α := α) (w := w).
  Qed.
 
+ Lemma lemma2_almost_alpha_pos  (W : nat -> nat -> Ts -> R) 
+      (α w : nat -> Ts -> R) :
+  (forall t0 ω, W 0%nat t0 ω = 0) ->
+  almost prts (fun ω => forall t, 0 <= α t ω) ->
+  almost prts (fun ω => is_lim_seq (fun t => α t ω) 0) ->
+  (forall t0 t ω,
+      W (S t) t0 ω =
+      (1 - α (t + t0)%nat ω) * (W t t0 ω) +
+      (α (t + t0)%nat ω) * (w (t + t0)%nat ω)) ->
+  (forall x, almost prts (fun ω => is_lim_seq (fun n => W n x ω) 0)) ->
+  forall (delta : Ts -> posreal),
+  exists (T : Ts -> nat),
+    almost prts (fun ω =>
+                   forall t0 t,
+                   (t0 >= T ω)%nat ->
+                   (rvabs (W t t0) ω) <= delta ω).
+ Proof.
+   intros.
+   apply (@exists_almost Ts dom prts _ (fun (T : nat) =>
+                                          (fun ω : Ts => forall t0 t : nat, (t0 >= T)%nat -> rvabs (W t t0) ω <= delta ω))).
+   apply almost_forall in H3.
+   revert H0; apply almost_impl.
+   revert H1; apply almost_impl.
+   revert H3; apply almost_impl.
+   apply all_almost; intros ????.
+   now apply lemma2_alpha_pos with (α := α) (w := w).
+ Qed.
+ 
  Lemma lemma2_almost_beta (W : nat -> nat -> Ts -> R) 
       (α β w : nat -> Ts -> R) :
   (forall t0 ω, W 0%nat t0 ω = 0) ->
