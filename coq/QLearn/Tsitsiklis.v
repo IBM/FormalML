@@ -924,6 +924,71 @@ Lemma lemma2 (W : nat -> nat -> Ts -> R) (ω : Ts)
        lia.
  Qed.
 
+ Lemma lemma2_alpha_pos (W : nat -> nat -> Ts -> R) (ω : Ts) 
+      (α w : nat -> Ts -> R) :
+  (forall t0, W 0%nat t0 ω = 0) ->
+  (forall t , 0 <= α t ω ) ->
+  is_lim_seq (fun t => α t ω) 0 ->
+  (forall t0 t,
+      W (S t) t0 ω =
+      (1 - α (t + t0)%nat ω) * (W t t0 ω) +
+      (α (t + t0)%nat ω) * (w (t + t0)%nat ω)) ->
+  (forall x, is_lim_seq (fun n => W n x ω) 0) ->
+  forall (delta : posreal),
+  exists (T : nat),
+  forall t0 t,
+    (t0 >= T)%nat ->
+    Rabs (W t t0 ω) <= delta.
+ Proof.
+   intros.
+   apply is_lim_seq_spec in H1.
+   assert (0 < 1) by lra.
+   specialize (H1 (mkposreal 1 H4)).
+   destruct H1.
+   pose (W' := fun (t t0:nat) (ω : Ts) =>
+                 W t (t0 + x)%nat ω).
+   pose (α' := fun (t : nat) (ω : Ts) => α (t + x)%nat ω).
+   pose (w' := fun (t : nat) (ω : Ts) => w (t + x)%nat ω).   
+   generalize (lemma2 W' ω α' w'); intros.
+   cut_to H5.
+   - specialize (H5 delta).
+     destruct H5.
+     exists (x + x0)%nat.
+     intros.
+     specialize (H5 (t0 - x)%nat t).
+     cut_to H5; try lia.
+     unfold W' in H5.
+     replace (t0 - x + x)%nat with t0 in H5 by lia.
+     apply H5.
+   - intros.
+     apply H.
+   - intros.
+     split.
+     + apply H0.
+     + unfold α'.
+       specialize (H1 (t + x)%nat).
+       cut_to H1; try lia.
+       simpl in H1.
+       rewrite Rminus_0_r in H1.
+       rewrite Rabs_right in H1; try lra.
+       apply Rle_ge.
+       apply H0.
+   - intros.
+     unfold W'.
+     rewrite H2.
+     unfold α', w'.
+     f_equal.
+     + f_equal.
+       f_equal.
+       f_equal.
+       lia.
+     + f_equal.
+       * f_equal; lia.
+       * f_equal; lia.
+   - apply H3.
+Qed.
+   
+   
 Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts) 
       (α β w : nat -> Ts -> R) :
   (forall t0, W 0%nat t0 ω = 0) ->
