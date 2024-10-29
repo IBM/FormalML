@@ -2160,10 +2160,20 @@ Section MoreRealRandomVariable.
              {rv2:RandomVariable σ borel_sa x2} : event σ
     := exist _ _ (event_Rge_sa σ x1 x2).
 
+  Definition event_Rle (σ:SigmaAlgebra Ts) x1 x2
+             {rv1:RandomVariable σ borel_sa x1}
+             {rv2:RandomVariable σ borel_sa x2} : event σ
+    := event_Rge _ x2 x1.
+
   Definition event_Rgt (σ:SigmaAlgebra Ts) x1 x2
              {rv1:RandomVariable σ borel_sa x1}
              {rv2:RandomVariable σ borel_sa x2} : event σ
     := exist _ _ (event_Rgt_sa σ x1 x2).
+
+  Definition event_Rlt (σ:SigmaAlgebra Ts) x1 x2
+             {rv1:RandomVariable σ borel_sa x1}
+             {rv2:RandomVariable σ borel_sa x2} : event σ
+    := event_Rgt _ x2 x1.                                                        
 
   Lemma event_Rgt_dec (σ:SigmaAlgebra Ts) x1 x2
         {rv1:RandomVariable σ borel_sa x1}

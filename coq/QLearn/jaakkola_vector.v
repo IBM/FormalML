@@ -4299,7 +4299,7 @@ Section jaakola_vector2.
           almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (β k ω))))) (Finite C))) ->
 
     (forall k i pf ω, 
-        (FiniteConditionalExpectation _ (filt_sub k) ((vecrvnth i pf (XF k)))) ω <=
+        Rabs ((FiniteConditionalExpectation _ (filt_sub k) ((vecrvnth i pf (XF k)))) ω) <=
           (γ * (Rvector_max_abs (X k ω)))) ->
 
     (exists (C : R),
@@ -4619,8 +4619,150 @@ Section jaakola_vector2.
             rewrite (Rabs_right C); try lra.
             field.
             lra.
-      }
-      admit.
+        }
+        assert (almost prts 
+                  (fun  ω => forall n i pf,
+                       Rabs (vector_nth i pf (δ (S n) ω)) <=
+                         (1 - vector_nth i pf (α n ω)) * Rabs (vector_nth i pf (δ n ω)) +
+                           γ * (vector_nth i pf (β n ω)) * 
+                             Rvector_max_abs (Rvector_plus (δ n ω) (w n ω)))).
+        {
+          revert H0.
+          apply almost_impl.
+          revert H1.
+          apply almost_impl.
+          apply all_almost; intros ω??.
+          intros.
+          simpl.
+          unfold vecrvminus, vecrvopp, vecrvplus, vecrvscale, vecrvmult.
+          repeat rewrite Rvector_nth_plus.
+          rewrite Rvector_nth_scale.
+          repeat rewrite  Rvector_nth_mult.
+          replace  (vector_nth i pf0 (δ n1 ω) +
+                    -1 * (vector_nth i pf0 (α n1 ω) * vector_nth i pf0 (δ n1 ω))) with
+            ((1 - vector_nth i pf0 (α n1 ω)) * (vector_nth i pf0 (δ n1 ω))) by lra.
+          eapply Rle_trans.
+          apply Rabs_triang.
+          specialize (H0 n1 i pf0).
+          specialize (H1 n1 i pf0).
+          rewrite Rabs_mult, Rabs_right; try lra.
+          apply Rplus_le_compat_l.
+          rewrite Rabs_mult, Rabs_right; try lra.
+          rewrite (Rmult_comm γ _).
+          rewrite Rmult_assoc.
+          apply Rmult_le_compat_l; try lra.
+          rewrite vector_FiniteConditionalExpectation_nth.
+          specialize (H7 n1 i pf0 ω).
+          rewrite H11 in H7.
+          eapply Rle_trans; cycle 1.
+          apply H7.
+          right.
+          f_equal.
+          now apply FiniteConditionalExpectation_ext.
+        }
+        assert (rv_alpha: forall n1,
+                   RandomVariable dom (Rvector_borel_sa (S n)) (α n1)).
+        {
+          intros.
+          now apply (RandomVariable_sa_sub (filt_sub n1)).
+        }
+        assert (rv_beta: forall n1,
+                   RandomVariable dom (Rvector_borel_sa (S n)) (β n1)).
+        {
+          intros.
+          now apply (RandomVariable_sa_sub (filt_sub n1)).
+        }
+        assert (rv_delta: forall n1,
+                   RandomVariable dom (Rvector_borel_sa (S n)) (δ n1)).
+        {
+          intros.
+          induction n1.
+          - simpl.
+            now apply (RandomVariable_sa_sub (filt_sub 0%nat)).
+          - simpl.
+            apply Rvector_plus_rv.
+            + apply Rvector_minus_rv; trivial.
+              now apply Rvector_mult_rv.
+            + apply Rvector_mult_rv; trivial.
+              apply (RandomVariable_sa_sub (filt_sub n1)).
+              apply vector_FiniteCondexp_rv.
+        }
+        assert (forall i pf n1,
+                   RandomVariable dom borel_sa (rvabs (vecrvnth i pf (δ n1)))).
+        {
+          intros.
+          apply rvabs_rv.
+          now apply vecrvnth_rv.
+        }
+        assert (forall (eps : posreal) i pf n1,
+                   RandomVariable dom borel_sa
+                     (rvplus 
+                        (vecrvnth i pf
+                           (vecrvminus (δ n1) 
+                              (vecrvmult (α n1) (δ n1))))
+                        (rvscale γ
+                           (rvmult (vecrvnth i pf (β n1))
+                              (rvmaxabs
+                                 (vecrvplus 
+                                    (δ n1) 
+                                    (vecrvconst (S n) eps))))))).
+        {
+          intros.
+          apply rvplus_rv.
+          - apply vecrvnth_rv.
+            apply Rvector_minus_rv; trivial.
+            now apply Rvector_mult_rv.
+          - apply rvscale_rv.
+            apply rvmult_rv.
+            + now apply vecrvnth_rv.
+            + apply Rvector_max_abs_rv.
+              apply Rvector_plus_rv; trivial.
+              apply rvconst.
+        }
+        assert (forall (eps : posreal) i pf,
+                   eventually (fun n1 : nat =>
+                                 ps_P (event_Rle
+                                         dom
+                                         (rvabs (vecrvnth i pf (δ (S n1))))
+                                         (rvplus 
+                                            (vecrvnth i pf
+                                               (vecrvminus (δ n1) 
+                                                       (vecrvmult (α n1) (δ n1))))
+                                            (rvscale γ
+                                               (rvmult (vecrvnth i pf (β n1))
+                                                  (rvmaxabs
+                                                     (vecrvplus 
+                                                        (δ n1) 
+                                                        (vecrvconst (S n) eps)))))))
+                                 >= 1-eps  )).
+        {
+          intros.
+          destruct H26 as [? [??]].
+          specialize (H22 eps eps).
+          revert H22.
+
+          apply eventually_impl.
+          apply all_eventually.
+          intros ??.
+          admit.
+       }
+       assert (almost prts (fun ω : Ts => is_lim_seq (fun n1 : nat => vector_nth n0 pf (δ n1 ω)) 0)).
+        {
+          
+          admit.
+        }
+        revert H30.
+        apply almost_impl.
+        revert H19.
+        apply almost_impl.
+        apply all_almost; intros ???.
+        generalize (is_lim_seq_plus' _ _ _ _ H30 H19).
+        rewrite Rplus_0_r.
+        apply is_lim_seq_ext.
+        intros.
+        rewrite H11.
+        unfold vecrvplus.
+        now rewrite Rvector_nth_plus.
       + apply H5.
       + apply H6.
       + intros.
