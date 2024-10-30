@@ -4695,11 +4695,11 @@ Section jaakola_vector2.
       assert (forall (eps : posreal),
                    forall k ω,
                      Rvector_max_abs(δ k ω) > C * eps ->
-                     Rvector_max_abs (Rvector_plus (δ k ω) (@vector_const R eps (S n))) <= ((C + 1)/C) * Rvector_max_abs(δ k ω)).
+                     Rvector_max_abs (Rvector_plus (Rvector_abs (δ k ω)) (@vector_const R eps (S n))) <= ((C + 1)/C) * Rvector_max_abs(δ k ω)).
         {
           intros.
-          replace (Rvector_max_abs (Rvector_plus (δ k ω) (@vector_const R eps (S n)))) with
-            ((Rvector_max_abs (Rvector_plus (Rvector_scale C (δ k ω)) (Rvector_scale C (@vector_const R eps (S n)))))/C).
+          replace (Rvector_max_abs (Rvector_plus (Rvector_abs (δ k ω)) (@vector_const R eps (S n)))) with
+            ((Rvector_max_abs (Rvector_plus (Rvector_scale C (Rvector_abs (δ k ω))) (Rvector_scale C (@vector_const R eps (S n)))))/C).
           - apply Rle_trans with (r2 := Rvector_max_abs (Rvector_scale (C + 1) (δ k ω))/C).
             + unfold Rdiv.
               apply Rmult_le_compat_r.
@@ -4711,11 +4711,19 @@ Section jaakola_vector2.
                 rewrite (Rabs_right C); try lra.
                 rewrite (Rabs_right (C + 1)); try lra.                
                 rewrite Rmult_plus_distr_r.
-                apply Rplus_le_compat_l.
-                rewrite Rvector_max_abs_const.
-                rewrite (Rabs_right eps); try lra.
-                left.
-                apply cond_pos.
+                replace (Rvector_max_abs (Rvector_abs (δ k ω))) with
+                  (Rvector_max_abs (δ k ω)) .
+                -- apply Rplus_le_compat_l.
+                   rewrite Rvector_max_abs_const.
+                   rewrite (Rabs_right eps); try lra.
+                   left.
+                   apply cond_pos.
+                -- unfold Rvector_max_abs, Rvector_abs.
+                   f_equal.
+                   rewrite vector_map_map.
+                   apply vector_map_ext.
+                   intros.
+                   now rewrite Rabs_Rabsolu.
             + rewrite Rvector_max_abs_scale.
               rewrite (Rabs_right (C + 1)); try lra.
           - rewrite <- Rvector_scale_plus_l.
