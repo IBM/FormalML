@@ -4681,7 +4681,7 @@ Section jaakola_vector2.
       }
       generalize lim_w_0; intros lim_maxabs_0.
       apply almost_is_lim_nth_maxabs_alt in lim_maxabs_0.
-      generalize (conv_as_prob_1_eps _ lim_maxabs_0); intros.
+      generalize (conv_as_prob_1_eps_forall _ lim_maxabs_0); intros.
       assert (exists C, 0 < C /\ γ * ((C + 1) / C) < 1).
       {
           exists  (2 * γ / (1 - γ)).
@@ -4852,21 +4852,25 @@ Section jaakola_vector2.
               apply rvconst.
         }
         assert (forall (eps : posreal) i pf,
-                   eventually (fun n1 : nat =>
-                                 ps_P (event_Rle
-                                         dom
-                                         (rvabs (vecrvnth i pf (δ (S n1))))
-                                         (rvplus 
-                                            (vecrvnth i pf
-                                               (vecrvminus (vecrvabs (δ n1))
-                                                       (vecrvmult (α n1) (vecrvabs (δ n1)))))
-                                            (rvscale γ
-                                               (rvmult (vecrvnth i pf (β n1))
-                                                  (rvmaxabs
-                                                     (vecrvplus 
-                                                        (vecrvabs (δ n1))
-                                                        (vecrvconst (S n) eps)))))))
-                                 >= 1-eps  )).
+                   eventually 
+                     (fun n0 : nat =>
+                        ps_P 
+                          (inter_of_collection
+                             (fun n1 =>
+                                (event_Rle
+                                   dom
+                                   (rvabs (vecrvnth i pf (δ (S (n0 + n1)))))
+                                   (rvplus 
+                                      (vecrvnth i pf
+                                         (vecrvminus (vecrvabs (δ (n0 + n1)%nat))
+                                            (vecrvmult (α (n0 + n1)%nat) (vecrvabs (δ (n0 + n1)%nat)))))
+                                      (rvscale γ
+                                         (rvmult (vecrvnth i pf (β (n0 + n1)%nat))
+                                            (rvmaxabs
+                                               (vecrvplus 
+                                                  (vecrvabs (δ (n0 + n1)%nat))
+                                                  (vecrvconst (S n) eps)))))))))
+                                >= 1-eps  )).
         {
           intros.
           generalize (almost_and _ (almost_and _ H0 H1) H25); intros.
@@ -4879,7 +4883,9 @@ Section jaakola_vector2.
           assert
             (ps_P
                (event_inter x
-                  (event_lt dom (rvabs (rvmaxabs (w x0))) eps)) >= 1-eps).
+                  (inter_of_collection
+                     (fun n0 : nat => event_lt dom (rvabs (fun ω : Ts => rvmaxabs (w (n0 + x0)%nat) ω)) eps)))
+                >= 1-eps).
           {
             now rewrite ps_inter_l1.
           }
@@ -4894,6 +4900,7 @@ Section jaakola_vector2.
           specialize (H29 x1 H31).
           replace (S x0) with (x0 + 1)%nat by lia.
           simpl.
+          intros.
           apply Rle_ge.
           replace (x0 + 1)%nat with (S x0) by lia.          
           unfold rvabs.
@@ -4904,18 +4911,20 @@ Section jaakola_vector2.
           rewrite Rvector_nth_plus, Rvector_nth_scale, Rvector_nth_mult.
           unfold rvmaxabs.
           destruct H29 as [[? ?] ?].
-          replace (vector_nth i pf0 (vecrvabs (δ x0) x1) +
-                   -1 * (vector_nth i pf0 (α x0 x1) * vector_nth i pf0 (vecrvabs (δ x0) x1))) with
-            ((1 - vector_nth i pf0 (α x0 x1)) * vector_nth i pf0 (vecrvabs (δ x0) x1)) by lra.
+          replace (vector_nth i pf0 (vecrvabs (δ (x0 + n1)%nat) x1) +
+                   -1 * (vector_nth i pf0 (α (x0 + n1)%nat x1) * vector_nth i pf0 (vecrvabs (δ (x0 + n1)%nat) x1))) with
+            ((1 - vector_nth i pf0 (α (x0 + n1)%nat x1)) * vector_nth i pf0 (vecrvabs (δ (x0 + n1)%nat) x1)) by lra.
           unfold vecrvabs.
-          replace (vector_nth i pf0 (Rvector_abs (δ x0 x1))) with
-            (Rabs (vector_nth i pf0 (δ x0 x1))).
+          replace (vector_nth i pf0 (Rvector_abs (δ (x0 + n1)%nat x1))) with
+            (Rabs (vector_nth i pf0 (δ (x0 + n1)%nat x1))).
           - apply Rplus_le_compat_l.
             rewrite Rmult_assoc.
             apply Rmult_le_compat_l; try lra.
             apply Rmult_le_compat_l.
             + apply H33.
             + unfold rvabs, vecrvnth in H32.
+              specialize (H32 n1).
+              replace (n1 + x0)%nat with (x0 + n1)%nat in H32 by lia.
               unfold rvmaxabs in H32.
               rewrite Rabs_Rvector_max_abs in H32.
               apply Rvector_max_abs_le.
@@ -4924,23 +4933,25 @@ Section jaakola_vector2.
               rewrite Rvector_nth_plus.
               unfold Rvector_abs.
               repeat rewrite vector_nth_map.
-              rewrite (Rabs_right  (Rabs (vector_nth i0 pf1 (δ x0 x1)) + Rabs (vector_nth i0 pf1 (w x0 x1)))).
+              rewrite (Rabs_right  (Rabs (vector_nth i0 pf1 (δ (x0+n1)%nat x1)) + Rabs (vector_nth i0 pf1 (w (x0 + n1)%nat x1)))).
               rewrite vector_nth_const.
-              rewrite (Rabs_right (Rplus (Rabs (@vector_nth R (S n) i0 pf1 (δ x0 x1))) (pos eps))).
+              rewrite (Rabs_right (Rplus (Rabs (@vector_nth R (S n) i0 pf1 (δ (x0 +n1)%nat x1))) (pos eps))).
               * apply Rplus_le_compat_l.
                 left.
                 eapply Rle_lt_trans.
                 apply Rvector_max_abs_nth_le.
                 apply H32.
-              * generalize (Rabs_pos (vector_nth i0 pf1 (δ x0 x1))); intros.
+              * generalize (Rabs_pos (vector_nth i0 pf1 (δ (x0+n1)%nat x1))); intros.
                 generalize (cond_pos eps); intros.
                 lra.
-              * generalize (Rabs_pos  (vector_nth i0 pf1 (δ x0 x1))); intros.
-                generalize (Rabs_pos (vector_nth i0 pf1 (w x0 x1))); intros.
+              * generalize (Rabs_pos  (vector_nth i0 pf1 (δ (x0+n1)%nat x1))); intros.
+                generalize (Rabs_pos (vector_nth i0 pf1 (w (x0+n1)%nat x1))); intros.
                 lra.
           - unfold Rvector_abs.
             now rewrite vector_nth_map.
         }
+                   
+        generalize classic_min_of_sumbool; intros.
         assert (almost prts (fun ω : Ts => is_lim_seq (fun n1 : nat => vector_nth n0 pf (δ n1 ω)) 0)).
         {
           
