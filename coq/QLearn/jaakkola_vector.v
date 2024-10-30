@@ -4122,7 +4122,27 @@ Section jaakola_vector2.
         simpl.
         apply Rabs_le_between.
         apply Rvector_max_abs_nth_le.
-   Qed.
+      Qed.
+
+    Lemma almost_is_lim_nth_maxabs_alt {NN} (X : nat -> Ts -> vector R (S NN)) :
+      (forall k pf,
+          almost prts (fun x : Ts => is_lim_seq (fun m : nat => vector_nth k pf (X m x)) 0)) ->
+        almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
+    Proof.
+      intros.
+      apply almost_bounded_forall in H.
+      - revert H.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        now apply lim_seq_maxabs0_b.
+      - intros.
+        apply lt_dec.
+      - intros.
+        revert H0.
+        apply is_lim_seq_ext.
+        intros.
+        apply vector_nth_ext.
+    Qed.
 
    Lemma condexp_condexp_diff_0 (XF : Ts -> R)
      {dom2 : SigmaAlgebra Ts}
@@ -4541,22 +4561,105 @@ Section jaakola_vector2.
       now rewrite eqvec.
     }
     destruct H18 as [B ?].
-    generalize (fun i pf => lemma1_bounded_alpha_beta 
-                              (fun k ω => vector_nth i pf (α k ω))
-                              (fun k ω => vector_nth i pf (β k ω))
-                              (fun k ω => vector_nth i pf (r k ω))
-                              (fun k ω => vector_nth i pf (w k ω)) Ca Cb); intros.
+    assert (lim_w_0: forall (i : nat) (pf : (i < S n)%nat),
+                almost prts
+                  (fun ω : Ts => is_lim_seq (fun n0 : nat => vector_nth i pf (w n0 ω)) 0)).
+    {
+      intros n1 pf.
+      generalize (fun i pf => lemma1_bounded_alpha_beta 
+                                (fun k ω => vector_nth i pf (α k ω))
+                                (fun k ω => vector_nth i pf (β k ω))
+                                (fun k ω => vector_nth i pf (r k ω))
+                                (fun k ω => vector_nth i pf (w k ω)) Ca Cb); intros.
+      specialize (H19 n1 pf B _ isfilt filt_sub _ _).
+      apply H19; clear H19.
+      - unfold IsAdapted; intros.
+        apply vecrvnth_rv.
+        unfold r.
+        apply Rvector_minus_rv.
+        + apply rvXF.
+        + apply (RandomVariable_sa_sub (isfilt n0)).
+          apply vector_FiniteCondexp_rv.
+      - unfold IsAdapted.
+        intros.
+        apply vecrvnth_rv.
+        apply adapt_alpha.
+      - unfold IsAdapted.
+        intros.
+        apply vecrvnth_rv.
+        apply adapt_beta.
+      - intros.
+        apply H16.
+      - intros.
+        specialize (H18 n0 n1 pf).
+        apply all_almost; intros.
+        generalize (FiniteCondexp_eq prts (filt_sub n0)); intros.
+        specialize (H19 (rvsqr (fun ω : Ts => vector_nth n1 pf (r n0 ω)))
+                      (@rvsqr_rv Ts dom (@vecrvnth Ts R (S n) n1 pf (r n0)) (H13 n0 n1 pf))).
+        assert (IsFiniteExpectation prts (rvsqr (fun ω : Ts => vector_nth n1 pf (r n0 ω)))).
+        {
+          generalize (isfe2 n0 n1 pf).
+          apply IsFiniteExpectation_proper.
+          intros ?.
+          unfold rvsqr.
+          f_equal.
+          unfold r.
+          rewrite <- eqvec.
+          reflexivity.
+        }
+        specialize (H19 H20).
+        unfold vecrvnth in H19.
+        rewrite H19.
+        simpl.
+        unfold const.
+        eapply Rle_trans; [| apply (H18 x)].
+        right.
+        apply FiniteConditionalExpectation_ext.
+        reflexivity.
+      - intros.
+        revert H0.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        apply H0.
+      - intros.
+        revert H1.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        apply H1.
+      - intros.
+        revert H0.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        apply H0.
+      - intros.
+        revert H1.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        apply H1.
+      - revert H3.
+        apply almost_impl.
+        now apply all_almost; intros ??.
+      - revert H4.
+        apply almost_impl.
+        now apply all_almost; intros ??.
+      - apply H5.
+      - apply H6.
+      - intros.
+        simpl.
+        unfold vecrvminus, vecrvmult, vecrvplus, vecrvopp, vecrvscale.
+        repeat rewrite Rvector_nth_plus.
+        rewrite Rvector_nth_scale.
+        repeat rewrite Rvector_nth_mult.
+        lra.
+   }
     apply almost_bounded_forall; intros.
     - apply lt_dec.
-    - revert H20.
+    - revert H19.
       apply is_lim_seq_ext.
       intros.
       apply vector_nth_ext.
-    - specialize (H19 n0 pf B _ isfilt filt_sub _ _).
-      cut_to H19; trivial.
-      cut_to H19.
-      + assert (forall n1 : nat, RandomVariable dom (Rvector_borel_sa (S n)) (w n1)).
-        {
+    - assert (forall n1 : nat, RandomVariable dom (Rvector_borel_sa (S n)) (w n1)).
+      {
           induction n1.
           - simpl.
             apply rvconst.
@@ -4570,25 +4673,26 @@ Section jaakola_vector2.
               * specialize (adapt_beta n1).
               now apply RandomVariable_sa_sub in adapt_beta.
               * now apply rv_vecrvnth.
-        }
-        assert (forall n1 : nat, RandomVariable dom borel_sa (fun ω : Ts => vector_nth n0 pf (w n1 ω))).
-        {
+      }
+      assert (forall n1 : nat, RandomVariable dom borel_sa (fun ω : Ts => vector_nth n0 pf (w n1 ω))).
+      {
           intros.
           now apply vecrvnth_rv.
-        }
-        generalize (conv_as_prob_1_eps (fun n1 => vecrvnth n0 pf (w n1)) H19); intros.
-        assert (exists C, 0 < C /\ γ * ((C + 1) / C) < 1).
-        {
+      }
+      generalize lim_w_0; intros lim_maxabs_0.
+      apply almost_is_lim_nth_maxabs_alt in lim_maxabs_0.
+      generalize (conv_as_prob_1_eps _ lim_maxabs_0); intros.
+      assert (exists C, 0 < C /\ γ * ((C + 1) / C) < 1).
+      {
           exists  (2 * γ / (1 - γ)).
           split.
           - apply Rmult_lt_0_compat; try lra.
             apply Rinv_0_lt_compat.
             lra.
           - field_simplify; lra.
-        }
-
-        destruct H23 as [C [? ?]].
-        assert (forall (eps : posreal),
+      }
+      destruct H22 as [C [? ?]].
+      assert (forall (eps : posreal),
                    forall k ω,
                      Rvector_max_abs(δ k ω) > C * eps ->
                      Rvector_max_abs (Rvector_plus (δ k ω) (@vector_const R eps (S n))) <= ((C + 1)/C) * Rvector_max_abs(δ k ω)).
@@ -4726,8 +4830,8 @@ Section jaakola_vector2.
                                          (rvabs (vecrvnth i pf (δ (S n1))))
                                          (rvplus 
                                             (vecrvnth i pf
-                                               (vecrvminus (δ n1) 
-                                                       (vecrvmult (α n1) (δ n1))))
+                                               (vecrvminus (vecrvabs (δ n1))
+                                                       (vecrvmult (α n1) (vecrvabs (δ n1)))))
                                             (rvscale γ
                                                (rvmult (vecrvnth i pf (β n1))
                                                   (rvmaxabs
@@ -4737,148 +4841,80 @@ Section jaakola_vector2.
                                  >= 1-eps  )).
         {
           intros.
-          destruct H26 as [? [??]].
-          specialize (H22 eps eps).
-          revert H22.
-
+          generalize (almost_and _ (almost_and _ H0 H1) H25); intros.
+          destruct H28 as [? [??]].
+          specialize (H21 eps eps).
+          revert H21.
           apply eventually_impl.
           apply all_eventually.
           intros ??.
-          admit.
-       }
-       assert (almost prts (fun ω : Ts => is_lim_seq (fun n1 : nat => vector_nth n0 pf (δ n1 ω)) 0)).
+          assert
+            (ps_P
+               (event_inter x
+                  (event_lt dom (rvabs (rvmaxabs (w x0))) eps)) >= 1-eps).
+          {
+            now rewrite ps_inter_l1.
+          }
+          eapply Rge_trans; cycle 1.
+          apply H30.
+          apply Rle_ge.
+          apply ps_sub.
+          intros ??.
+          simpl in H31.
+          unfold pre_event_inter in H31.
+          destruct H31.
+          specialize (H29 x1 H31).
+          replace (S x0) with (x0 + 1)%nat by lia.
+          simpl.
+          apply Rle_ge.
+          replace (x0 + 1)%nat with (S x0) by lia.          
+          unfold rvabs.
+          eapply Rle_trans.
+          apply H29.
+          unfold vecrvnth, vecrvminus, vecrvplus, vecrvopp, rvscale.
+          unfold rvplus, rvmult, vecrvconst, vecrvscale, vecrvmult.
+          rewrite Rvector_nth_plus, Rvector_nth_scale, Rvector_nth_mult.
+          unfold rvmaxabs.
+          destruct H29 as [[? ?] ?].
+          replace (vector_nth i pf0 (vecrvabs (δ x0) x1) +
+                   -1 * (vector_nth i pf0 (α x0 x1) * vector_nth i pf0 (vecrvabs (δ x0) x1))) with
+            ((1 - vector_nth i pf0 (α x0 x1)) * vector_nth i pf0 (vecrvabs (δ x0) x1)) by lra.
+          unfold vecrvabs.
+          replace (vector_nth i pf0 (Rvector_abs (δ x0 x1))) with
+            (Rabs (vector_nth i pf0 (δ x0 x1))).
+          - apply Rplus_le_compat_l.
+            rewrite Rmult_assoc.
+            apply Rmult_le_compat_l; try lra.
+            apply Rmult_le_compat_l.
+            + apply H33.
+            + unfold rvabs, vecrvnth in H32.
+              unfold rvmaxabs in H32.
+              rewrite Rabs_Rvector_max_abs in H32.
+              admit.
+          - unfold Rvector_abs.
+            now rewrite vector_nth_map.
+        }
+        assert (almost prts (fun ω : Ts => is_lim_seq (fun n1 : nat => vector_nth n0 pf (δ n1 ω)) 0)).
         {
           
           admit.
         }
-        revert H30.
+        revert H29.
         apply almost_impl.
-        revert H19.
+        specialize (lim_w_0 n0 pf).
+        revert lim_w_0.
         apply almost_impl.
         apply all_almost; intros ???.
-        generalize (is_lim_seq_plus' _ _ _ _ H30 H19).
+        generalize (is_lim_seq_plus' _ _ _ _ H30 H29).
         rewrite Rplus_0_r.
         apply is_lim_seq_ext.
         intros.
         rewrite H11.
         unfold vecrvplus.
         now rewrite Rvector_nth_plus.
-      + apply H5.
-      + apply H6.
-      + intros.
-        simpl.
-        unfold vecrvminus, vecrvmult, vecrvplus, vecrvopp, vecrvscale.
-        repeat rewrite Rvector_nth_plus.
-        rewrite Rvector_nth_scale.
-        repeat rewrite Rvector_nth_mult.
-        lra.
-      + unfold IsAdapted; intros.
-        apply vecrvnth_rv.
-        unfold r.
-        apply Rvector_minus_rv.
-        * apply rvXF.
-        * apply (RandomVariable_sa_sub (isfilt n1)).
-          apply vector_FiniteCondexp_rv.
-      + unfold IsAdapted.
-        intros.
-        apply vecrvnth_rv.
-        apply adapt_alpha.
-      + unfold IsAdapted.
-        intros.
-        apply vecrvnth_rv.
-        apply adapt_beta.
-      + intros.
-        specialize (H18 n1 n0 pf).
-        apply all_almost; intros.
-        generalize (FiniteCondexp_eq prts (filt_sub n1)); intros.
-        specialize (H20 (rvsqr (fun ω : Ts => vector_nth n0 pf (r n1 ω))) (@rvsqr_rv Ts dom (@vecrvnth Ts R (S n) n0 pf (r n1)) (H13 n1 n0 pf))).
-        assert (IsFiniteExpectation prts (rvsqr (fun ω : Ts => vector_nth n0 pf (r n1 ω)))).
-        {
-          generalize (isfe2 n1 n0 pf).
-          apply IsFiniteExpectation_proper.
-          intros ?.
-          unfold rvsqr.
-          f_equal.
-          unfold r.
-          rewrite <- eqvec.
-          reflexivity.
-        }
-        specialize (H20 H21).
+  Admitted.
 
-        unfold vecrvnth in H20.
-        rewrite H20.
-
-        simpl.
-        unfold const.
-        eapply Rle_trans; [| apply (H18 x)].
-        right.
-        apply FiniteConditionalExpectation_ext.
-        reflexivity.
-      + intros.
-        apply forall_almost with (n:=n1) in H0.
-        apply bounded_forall_almost with (n:=n0) (pf:=pf) in H0.
-        * revert H0.
-          apply almost_impl.
-          apply all_almost; intros ??.
-          unfold const.
-          lra.
-        * intros. apply lt_dec.
-        * intros i pf1 pf2 x HH.
-          erewrite (vector_nth_ext); eapply HH.
-      + intros.
-        apply forall_almost with (n:=n1) in H1.
-        apply bounded_forall_almost with (n:=n0) (pf:=pf) in H1.
-        * revert H1.
-          apply almost_impl.
-          apply all_almost; intros ??.
-          unfold const.
-          lra.
-        * intros. apply lt_dec.
-        * intros i pf1 pf2 x HH.
-          erewrite (vector_nth_ext); eapply HH.
-      + intros.
-        apply forall_almost with (n:=n1) in H0.
-        apply bounded_forall_almost with (n:=n0) (pf:=pf) in H0.
-        * revert H0.
-          apply almost_impl.
-          apply all_almost; intros ??.
-          unfold const.
-          lra.
-        * intros. apply lt_dec.
-        * intros i pf1 pf2 x HH.
-          erewrite (vector_nth_ext); eapply HH.
-      + intros.
-        apply forall_almost with (n:=n1) in H1.
-        apply bounded_forall_almost with (n:=n0) (pf:=pf) in H1.
-        * revert H1.
-          apply almost_impl.
-          apply all_almost; intros ??.
-          unfold const.
-          lra.
-        * intros. apply lt_dec.
-        * intros i pf1 pf2 x HH.
-          erewrite (vector_nth_ext); eapply HH.
-      + apply bounded_forall_almost with (n:=n0) (pf:=pf) in H3.
-        * apply H3.
-        * intros. apply lt_dec.
-        * intros i pf1 pf2 x.
-          apply is_lim_seq_ext.
-          intros.
-          apply sum_n_ext.
-          intros.
-          apply vector_nth_ext.
-      + apply bounded_forall_almost with (n:=n0) (pf:=pf) in H4.
-        * apply H4.
-        * intros. apply lt_dec.
-        * intros i pf1 pf2 x.
-          apply is_lim_seq_ext.
-          intros.
-          apply sum_n_ext.
-          intros.
-          apply vector_nth_ext.
-    Admitted.
-
-    Theorem Jaakkola_alpha_beta_bounded_eventually_almost {n} 
+  Theorem Jaakkola_alpha_beta_bounded_eventually_almost {n} 
     (γ : R) 
     (X XF α β : nat -> Ts -> vector R n)
     {F : nat -> SigmaAlgebra Ts}
