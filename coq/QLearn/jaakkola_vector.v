@@ -4950,7 +4950,7 @@ Section jaakola_vector2.
           - unfold Rvector_abs.
             now rewrite vector_nth_map.
         }
-        assert (rvlimsup: forall (eps : posreal) (i : nat) (pf : (i < S n)%nat),
+        assert (rvlimsup: forall (i : nat) (pf : (i < S n)%nat),
                    RandomVariable dom borel_sa
                      (fun (ω : Ts) => real (ELimSup_seq (fun n => vector_nth i pf (δ n ω))))).
         {
@@ -4963,15 +4963,26 @@ Section jaakola_vector2.
           apply rv_measurable.
           now apply vecrvnth_rv.
         }
-(*
-        assert (forall (eps : posreal) (i : nat) (pf : (i < S n)%nat),
+
+        assert (HH1: forall (eps : posreal) (i : nat) (pf : (i < S n)%nat),
                    ps_P (event_le
                            dom
                            (fun (ω : Ts) => real (ELimSup_seq (fun n => vector_nth i pf (δ n ω))))
                            (C * eps)) >= 1-eps).
+        {
+          intros eps i pf0.
+          specialize (H28 eps i pf0).
+          destruct H28.
+          pose (chooser := fun ω => classic_min_of
+                                       (fun n => vector_nth i pf0 (δ (x + n)%nat ω)  <= (C * eps))).
+          admit.
+        } 
+(*          assert (aa : Ts) by admit.
+          case_eq (chooser aa).
 
+            apply Rnot_le_gt.
+          
 *)
-        generalize classic_min_of_sumbool; intros.
         assert (almost prts (fun ω : Ts => is_lim_seq (fun n1 : nat => vector_nth n0 pf (δ n1 ω)) 0)).
         {
           
