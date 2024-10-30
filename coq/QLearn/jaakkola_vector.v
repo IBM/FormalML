@@ -4729,7 +4729,7 @@ Section jaakola_vector2.
                        Rabs (vector_nth i pf (δ (S n) ω)) <=
                          (1 - vector_nth i pf (α n ω)) * Rabs (vector_nth i pf (δ n ω)) +
                            γ * (vector_nth i pf (β n ω)) * 
-                             Rvector_max_abs (Rvector_plus (δ n ω) (w n ω)))).
+                             Rvector_max_abs (Rvector_plus (Rvector_abs (δ n ω)) (Rvector_abs (w n ω))))).
         {
           revert H0.
           apply almost_impl.
@@ -4758,6 +4758,26 @@ Section jaakola_vector2.
           rewrite vector_FiniteConditionalExpectation_nth.
           specialize (H7 n1 i pf0 ω).
           rewrite H11 in H7.
+          eapply Rle_trans; cycle 1.
+          assert ( γ * Rvector_max_abs (vecrvplus (δ n1) (w n1) ω) <=
+                     γ * Rvector_max_abs (Rvector_plus (Rvector_abs (δ n1 ω)) (Rvector_abs (w n1 ω)))).
+          {
+            apply Rmult_le_compat_l; try lra.
+            unfold vecrvplus.
+            apply Rvector_max_abs_le.
+            intros.
+            rewrite Rvector_nth_plus.
+            rewrite Rvector_nth_plus.
+            eapply Rle_trans.
+            apply Rabs_triang.
+            unfold Rvector_abs.
+            rewrite vector_nth_map.
+            rewrite vector_nth_map.
+            generalize (Rabs_pos (vector_nth i0 pf1 (δ n1 ω)) ); intros.
+            generalize (Rabs_pos  (vector_nth i0 pf1 (w n1 ω))); intros.
+            rewrite (Rabs_right (Rabs (vector_nth i0 pf1 (δ n1 ω)) + Rabs (vector_nth i0 pf1 (w n1 ω)))); lra.
+          }
+          apply H25.
           eapply Rle_trans; cycle 1.
           apply H7.
           right.
@@ -4836,7 +4856,7 @@ Section jaakola_vector2.
                                                (rvmult (vecrvnth i pf (β n1))
                                                   (rvmaxabs
                                                      (vecrvplus 
-                                                        (δ n1) 
+                                                        (vecrvabs (δ n1))
                                                         (vecrvconst (S n) eps)))))))
                                  >= 1-eps  )).
         {
@@ -4890,7 +4910,26 @@ Section jaakola_vector2.
             + unfold rvabs, vecrvnth in H32.
               unfold rvmaxabs in H32.
               rewrite Rabs_Rvector_max_abs in H32.
-              admit.
+              apply Rvector_max_abs_le.
+              intros.
+              rewrite Rvector_nth_plus.
+              rewrite Rvector_nth_plus.
+              unfold Rvector_abs.
+              repeat rewrite vector_nth_map.
+              rewrite (Rabs_right  (Rabs (vector_nth i0 pf1 (δ x0 x1)) + Rabs (vector_nth i0 pf1 (w x0 x1)))).
+              rewrite vector_nth_const.
+              rewrite (Rabs_right (Rplus (Rabs (@vector_nth R (S n) i0 pf1 (δ x0 x1))) (pos eps))).
+              * apply Rplus_le_compat_l.
+                left.
+                eapply Rle_lt_trans.
+                apply Rvector_max_abs_nth_le.
+                apply H32.
+              * generalize (Rabs_pos (vector_nth i0 pf1 (δ x0 x1))); intros.
+                generalize (cond_pos eps); intros.
+                lra.
+              * generalize (Rabs_pos  (vector_nth i0 pf1 (δ x0 x1))); intros.
+                generalize (Rabs_pos (vector_nth i0 pf1 (w x0 x1))); intros.
+                lra.
           - unfold Rvector_abs.
             now rewrite vector_nth_map.
         }
