@@ -4950,6 +4950,18 @@ Section jaakola_vector2.
           - unfold Rvector_abs.
             now rewrite vector_nth_map.
         }
+(*
+        assert (forall (eps : posreal) (i : nat) (pf : (i < S n)%nat),
+                   eventually
+                     (fun n0 : nat =>
+                        ps_P
+                          (inter_of_collection
+                             (fun n1 : nat =>
+                                event_le dom (rvabs (vecrvnth i pf (δ (n0 + n1)%nat)))
+                                  (C * eps)))
+                        >= 1 - eps)).
+*)
+
         assert (rvlimsup: forall (i : nat) (pf : (i < S n)%nat),
                    RandomVariable dom borel_sa
                      (fun (ω : Ts) => real (ELimSup_seq (fun n => vector_nth i pf (δ n ω))))).
@@ -4973,8 +4985,28 @@ Section jaakola_vector2.
           intros eps i pf0.
           specialize (H28 eps i pf0).
           destruct H28.
-          pose (chooser := fun ω => classic_min_of
-                                       (fun n => vector_nth i pf0 (δ (x + n)%nat ω)  <= (C * eps))).
+          specialize (H28 x).
+          cut_to H28; try lia.
+          eapply Rge_trans; cycle 1.
+          apply H28.
+          apply Rle_ge.
+          apply ps_sub.
+          intros ??.
+          simpl.
+          destruct (classic_min_of_sumbool
+                     (fun n => vector_nth i pf0 (δ (x + n)%nat x0) <= (C * eps))).
+          - destruct s as [? [??]].
+            clear H31.
+            assert (forall k,
+                        vector_nth i pf0 (δ (x + x1+k)%nat x0) <= C * eps).
+            {
+              induction k.
+              - now replace (x + x1 + 0)%nat with (x + x1)%nat by lia.
+              - admit.
+            }
+            admit.
+          - 
+
           admit.
         } 
 (*          assert (aa : Ts) by admit.
