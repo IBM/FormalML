@@ -1366,6 +1366,40 @@ Section more_lemmas.
     now rewrite Rvector_plus_zero.
   Qed.
 
+  Lemma Rvector_max_abs_plus_nneg {n} (v : vector R (S n)) (c : R) :
+    0 <= c ->
+    Rvector_max_abs (Rvector_plus (Rvector_abs v) (vector_const c (S n))) =
+      Rvector_max_abs v + c.
+  Proof.
+    intros c_nneg.
+    unfold Rvector_max_abs, Rvector_abs, vector_fold_left; simpl.
+    destruct v; simpl.
+    destruct x; [discriminate |].
+    simpl.
+    assert (length x = n) by auto with arith.
+    clear e.
+    rewrite <- H.
+    clear H.
+    repeat rewrite fold_symmetric by apply Rmax_assoc || apply Rmax_comm.
+    induction x; simpl.
+    - repeat rewrite Rmax_right by apply Rabs_pos.
+      apply Rabs_pos_eq.
+      generalize (Rabs_pos r).
+      lra.
+    - rewrite vector_list_create_const_shift with (start2:=1%nat).
+      replace (vector_list_create 1 (length x)
+                 (fun (m : nat) (_ : (1 <= m)%nat) (_ : (m < 1 + length x)%nat) => c))
+        with (vector_list_create 1 (length x)
+                (fun (m : nat) (_ : (1 <= m)%nat) (_ : (m < S (length x))%nat) => c))
+      by now apply vector_list_create_ext.
+      rewrite IHx.
+      generalize (fold_right Rmax (Rmax 0 (Rabs r)) (map Rabs x)); intros.
+      rewrite (Rabs_pos_eq (Rabs a + c)).
+      + now rewrite Rplus_max_distr_r.
+      + generalize (Rabs_pos a).
+        lra.
+  Qed.
+
   Lemma Rvector_max_abs_sqr {n} (v : vector R n) :
     Rvector_max_sqr v = Rsqr (Rvector_max_abs v).
   Proof.
@@ -1396,7 +1430,6 @@ Section more_lemmas.
     rewrite Rabs_m1.
     lra.
   Qed.
-
 
 End more_lemmas.
 
