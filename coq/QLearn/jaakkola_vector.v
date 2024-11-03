@@ -128,11 +128,36 @@ Lemma lemma2_0_w (w : Ts)
   - apply is_lim_seq_const.
  Qed.
 
+ Definition Rvector_clip (v : vector R N) (c : nonnegreal) : vector R N
+   := if Rgt_dec (Rvector_max_abs v) c then 
+        Rvector_scale (c/Rvector_max_abs v) v else
+        v.
+
  Definition vecrvclip {Ts:Type} (f : Ts -> vector R N) 
             (c : nonnegreal) : Ts -> vector R N
    := fun x => if Rgt_dec (Rvector_max_abs (f x)) c then 
                  Rvector_scale (c/Rvector_max_abs (f x)) (f x) else
                  (f x).
+
+ Lemma vecrvclip_alt (f : Ts -> vector R N) (c : nonnegreal) :
+   forall (x : Ts),
+     vecrvclip f c x = Rvector_clip (f x) c.
+ Proof.
+   reflexivity.
+ Qed.
+
+ Lemma Rvector_clip_scale v c :
+   {c1:R | Rvector_clip v c = Rvector_scale c1 v}.
+ Proof.
+   destruct (Rgt_dec (Rvector_max_abs v) c).
+   - exists (c / Rvector_max_abs v).
+     unfold Rvector_clip.
+     match_destr; tauto.
+   - exists 1.
+     unfold Rvector_clip.
+     match_destr; try tauto.
+     now rewrite Rvector_scale1.
+ Qed.
 
  Lemma Rmult_not_0 (x y : R) :
        (x <> 0) /\ (y <> 0) -> x * y <> 0.
@@ -3917,6 +3942,144 @@ Section jaakola_vector2.
         now rewrite H12 in H11.
    Qed.
 
+   Lemma vecrvclip_rv (X : Ts -> vector R (S N)) (C : nonnegreal) :
+     RandomVariable dom (Rvector_borel_sa (S N)) X ->
+     RandomVariable dom (Rvector_borel_sa (S N)) (vecrvclip (S N) X C).
+   Proof.
+     intros.
+     apply RealVectorMeasurableRandomVariable.
+     apply RandomVariableRealVectorMeasurable in H.
+     unfold vecrvclip.
+     unfold RealVectorMeasurable.
+     intros.
+   Admitted.
+
+   Lemma rvmaxabs_vecrvclip (X : Ts -> vector R (S N)) (C : nonnegreal) :
+     rv_le 
+       (rvmaxabs (vecrvclip (S N) X C))
+       (const C).
+   Proof.
+     intros ?.
+     unfold rvmaxabs, const, vecrvclip.
+     match_destr; try lra.
+     rewrite Rvector_max_abs_scale.
+     generalize (cond_nonneg C); intros.
+     rewrite Rabs_right.
+     - unfold Rdiv.
+       rewrite Rmult_assoc.
+       rewrite Rinv_l; lra.
+     - apply Rle_ge.
+       apply Rdiv_le_0_compat; lra.
+   Qed.
+
+   Lemma Rvector_scale_comm {n : nat} (a b : R) (v : vector R n) :
+     Rvector_scale a (Rvector_scale b v) = Rvector_scale b (Rvector_scale a v).
+   Proof.
+     repeat rewrite Rvector_scale_scale.
+     now rewrite Rmult_comm.
+   Qed.
+
+       Lemma lemma3_full (α β X : nat -> Ts -> vector R (S N)) (γ : posreal)
+         (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
+         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
+         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n)) :           
+         (forall t ω i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
+         (forall t ω i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
+         (forall t ω i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->                  
+         (forall ω i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+         γ < 1 ->
+         (forall n, rv_eq (X (S n))
+                      (vecrvplus 
+                         (vecrvminus (X n)
+                            (vecrvmult (α n) (X n)))
+                         (vecrvscalerv (rvmaxabs (X n))
+                            (vecrvscale γ (β n))))) ->
+         almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
+       Proof.
+         intros.
+         assert (0 < 1) by lra.
+         pose (C := mkposreal 1 H5).
+         pose (G := fun n ω Y =>
+                      Rvector_plus
+                        (Rvector_plus Y
+                                      (Rvector_scale (-1)  (Rvector_mult (α n ω) Y)))
+                        (Rvector_scale (γ * Rvector_max_abs Y)
+                                       (β n ω))).
+         pose (XC := fix XC nn :=
+                 match nn with
+                 | 0%nat => vecrvclip (S N) (X 0%nat) (pos_to_nneg C)
+                 | S n =>
+                     vecrvclip (S N)
+                       (vecrvplus 
+                          (vecrvminus (XC n)
+                             (vecrvmult (α n) (XC n)))
+                          (vecrvscalerv (rvmaxabs (XC n))
+                             (vecrvscale γ (β n))))
+                       (pos_to_nneg C)
+                   end).
+         generalize (lemma3 α β XC C γ); intros.
+         cut_to H6; trivial.
+         - apply (lemma2 (S N) X XC G C).
+           + intros ??.
+             rewrite H4.
+             unfold G, vecrvminus, vecrvmult, vecrvscalerv, rvmaxabs.
+             unfold vecrvplus, vecrvopp, vecrvscale.
+             rewrite Rvector_scale_scale.
+             now rewrite Rmult_comm.
+           + intros ??.
+             simpl.
+             unfold G, vecrvminus, vecrvmult, vecrvscalerv, rvmaxabs.
+             unfold vecrvplus, vecrvopp, vecrvscale.
+             f_equal.
+             apply functional_extensionality.
+             intros.
+             rewrite Rvector_scale_scale.
+             now rewrite Rmult_comm.
+           + simpl.
+             reflexivity.
+           + intros ???.
+             unfold G.
+             rewrite Rvector_scale_plus_l.
+             rewrite Rvector_scale_plus_l.
+             repeat rewrite (Rvector_scale_comm beta).
+             rewrite Rvector_scale_mult_r.
+             rewrite Rvector_max_abs_scale.
+             repeat rewrite Rvector_scale_scale.
+             generalize (cond_nonneg beta); intros.
+             rewrite Rabs_right; try lra.
+             rewrite (Rmult_comm beta).
+             now rewrite Rmult_assoc.
+           + intros ???.
+             unfold G.
+             rewrite Rvector_scale_plus_l.
+             rewrite Rvector_scale_plus_l.
+             repeat rewrite (Rvector_scale_comm beta).
+             rewrite Rvector_scale_mult_r.
+             rewrite Rvector_max_abs_scale.
+             repeat rewrite Rvector_scale_scale.
+             generalize (cond_nonneg beta); intros.
+             rewrite Rabs_right; try lra.
+             rewrite (Rmult_comm beta).
+             now rewrite Rmult_assoc.
+           + apply H6.
+         - intros.
+           induction n.
+           + simpl.
+             now apply vecrvclip_rv.
+           + simpl.
+             apply vecrvclip_rv.
+             apply Rvector_plus_rv.
+             * apply Rvector_minus_rv; trivial.
+               now apply Rvector_mult_rv.
+             * apply Rvector_scale_rv_rv.
+               -- now apply Rvector_max_abs_rv.
+               -- now apply Rvector_scale_rv.
+         - intros.
+           induction n; simpl; apply rvmaxabs_vecrvclip.
+         - intros.
+           now simpl.
+       Qed.
+
        Lemma lemma3' (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
@@ -4987,6 +5150,8 @@ Section jaakola_vector2.
           destruct H28.
           specialize (H28 x).
           cut_to H28; try lia.
+          generalize almost_independent_impl; intros HH.
+          
           generalize (almost_and _ (almost_and _ H0 H1) H2); intros.
           destruct H29 as [? [??]].
           assert
@@ -5097,7 +5262,14 @@ Section jaakola_vector2.
             unfold const in H35.
             rewrite LimSup_seq_const in H35.
             admit.
-       - admit.
+          - assert (forall n0,  Rvector_max_abs (δ (x + n0)%nat x1) > C * eps).
+            {
+              intros.
+              specialize (n1 n2).
+              now apply Rnot_le_gt in n1.
+           }
+           
+           admit.
             
             
 (*          assert (aa : Ts) by admit.
@@ -5109,7 +5281,6 @@ Section jaakola_vector2.
        }
         assert (almost prts (fun ω : Ts => is_lim_seq (fun n1 : nat => vector_nth n0 pf (δ n1 ω)) 0)).
         {
-          
           admit.
         }
         revert H29.
