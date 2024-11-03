@@ -3998,12 +3998,54 @@ Section jaakola_vector2.
         + rewrite H1.
           apply sa_all.
       - apply Rnot_ge_lt in n.
-        specialize (H i pf).
-        specialize (H r).
-        generalize (vecrvclip_le N X C i pf); intros.
-        generalize Rvector_clip_scale; intros.
-        
-        admit.
+        destruct (Rlt_dec r (-C)).
+        + assert (C < - r) by lra.
+          assert (pre_event_equiv (fun omega : Ts => vector_nth i pf (iso_f (vecrvclip (S N) X C)) omega <= r)
+                    event_none ).
+          {
+            intros ?.
+            split; [| unfold event_none, pre_event_none; simpl; tauto].
+            simpl.
+            rewrite vector_nth_fun_to_vector.
+            specialize (H0 x).
+            unfold rvmaxabs, const in H0.
+            rewrite Rvector_max_abs_nth_Rabs_le in H0.
+            specialize (H0 i pf).
+            intros HH.
+            generalize (Rle_abs (- vector_nth i pf (vecrvclip (S N) X C x))); intros HH2.
+            rewrite Rabs_Ropp in HH2.
+            lra.
+          } 
+          rewrite H2.
+          apply sa_none.
+        + assert (-r <= C) by lra.
+          assert  (pre_event_equiv (fun omega : Ts => vector_nth i pf (iso_f (vecrvclip (S N) X C)) omega <= r)
+                                   (fun omega : Ts => vector_nth i pf (iso_f X) omega <= r)
+                  ).
+          {
+            intros ?; simpl.
+            repeat rewrite vector_nth_fun_to_vector.
+            rewrite vecrvclip_alt; simpl.
+            unfold Rvector_clip in *.
+            match_destr; [| tauto].
+            
+
+            specialize (H0 x).
+            destruct (Rvector_max_abs_nth_in (X x)) as [?[??]].
+            rewrite H2 in r0.
+            unfold rvmaxabs, const in H0.
+            rewrite Rvector_max_abs_nth_Rabs_le in H0.
+            specialize (H0 _ x1).
+            rewrite vecrvclip_alt in H0.
+            unfold Rvector_clip in H0.
+            match_destr_in H0; [| lra].
+            unfold Rvector_scale in H0.
+            rewrite vector_nth_map in H0.
+            rewrite H2 in H0.
+            admit.
+          }
+          rewrite H2.
+          apply H.
    Admitted.
 
 
