@@ -3942,18 +3942,6 @@ Section jaakola_vector2.
         now rewrite H12 in H11.
    Qed.
 
-   Lemma vecrvclip_rv (X : Ts -> vector R (S N)) (C : nonnegreal) :
-     RandomVariable dom (Rvector_borel_sa (S N)) X ->
-     RandomVariable dom (Rvector_borel_sa (S N)) (vecrvclip (S N) X C).
-   Proof.
-     intros.
-     apply RealVectorMeasurableRandomVariable.
-     apply RandomVariableRealVectorMeasurable in H.
-     unfold vecrvclip.
-     unfold RealVectorMeasurable.
-     intros.
-   Admitted.
-
    Lemma rvmaxabs_vecrvclip (X : Ts -> vector R (S N)) (C : nonnegreal) :
      rv_le 
        (rvmaxabs (vecrvclip (S N) X C))
@@ -3971,6 +3959,53 @@ Section jaakola_vector2.
      - apply Rle_ge.
        apply Rdiv_le_0_compat; lra.
    Qed.
+
+   Lemma vecrvclip_rv (X : Ts -> vector R (S N)) (C : nonnegreal) :
+     RandomVariable dom (Rvector_borel_sa (S N)) X ->
+     RandomVariable dom (Rvector_borel_sa (S N)) (vecrvclip (S N) X C).
+   Proof.
+     intros.
+     apply RealVectorMeasurableRandomVariable.
+     apply RandomVariableRealVectorMeasurable in H.
+     generalize (rvmaxabs_vecrvclip X C); intros.
+     unfold RealVectorMeasurable, RealMeasurable.
+     intros.
+     destruct (Rge_dec r C).
+      - assert (pre_event_equiv (fun omega : Ts => vector_nth i pf (iso_f (vecrvclip (S N) X C)) omega <= r)
+                                Ω ).
+        + intro x.
+          specialize (H0 x).
+          simpl in H0.
+          unfold rvmaxabs, const in H0.
+          rewrite Rvector_max_abs_nth_Rabs_le in H0.
+          specialize (H0 i pf).
+          assert ((vector_nth i pf (vecrvclip (S N) X C x)) <= r).
+          {
+            eapply Rle_trans.
+            apply Rle_abs.
+            lra.
+          }
+          unfold Ω, pre_Ω; simpl.
+          unfold fun_to_vector_to_vector_of_funs.
+          rewrite vector_nth_create.
+          simpl.
+          split; try tauto.
+          intros.
+          eapply Rle_trans; cycle 1.
+          apply H1.
+          right.
+          apply vector_nth_ext.
+        + rewrite H1.
+          apply sa_all.
+      - apply Rnot_ge_lt in n.
+        specialize (H i pf).
+        specialize (H r).
+        generalize (vecrvclip_le N X C i pf); intros.
+        generalize Rvector_clip_scale; intros.
+        
+        admit.
+   Admitted.
+
 
    Lemma Rvector_scale_comm {n : nat} (a b : R) (v : vector R n) :
      Rvector_scale a (Rvector_scale b v) = Rvector_scale b (Rvector_scale a v).
