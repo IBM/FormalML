@@ -4124,7 +4124,28 @@ Section jaakola_vector2.
        }
        apply scale_measurable.
        apply mult_measurable.
-       + admit.
+       + intros ?.
+         simpl.
+         apply (sa_proper _ (fun a : Ts =>
+                               C < Rvector_max_abs (X a) /\ / Rvector_max_abs (X a) <= r)).
+         {
+           intros ?.
+           split; intros ?.
+           - destruct H0.
+             unfold event_restricted_domain.
+             simpl.
+             assert (Hpf:(if Rgt_dec (Rvector_max_abs (X x)) C then true else false) = true).
+             {
+               match_destr; lra.
+             } 
+             exists (exist _ x Hpf); simpl.
+             tauto.
+           - destruct H0 as [?[??]]; subst.
+             destruct x0; simpl in *.
+             match_destr_in e.
+             lra.
+         }
+         
        + apply (RealMeasurable_proper _
                   (fun a => event_restricted_function _ (fun a => vector_nth i pf (X a)) a)); try reflexivity.
          apply rv_measurable.
