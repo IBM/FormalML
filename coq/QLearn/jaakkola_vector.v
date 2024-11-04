@@ -4170,8 +4170,26 @@ Section jaakola_vector2.
            apply event_Rgt_sa.
            - now apply measurable_rv.
            - apply rvconst.
-         } 
-         admit.
+         }
+         apply (sa_proper _ event_none).
+         * intros ?.
+           split; [unfold event_none, pre_event_none; simpl; tauto |].
+           intros [??].
+           assert (r <= 0) by lra.
+           {
+             destruct (Req_dec C 0).
+             - rewrite H3 in H0.
+               apply Rinv_pos in H0.
+               lra.
+             - assert (0 < Rvector_max_abs (X x)).
+               { eapply Rle_lt_trans; try apply H0.
+                 destruct C; simpl in *; lra.
+               }
+               assert (0 < / Rvector_max_abs (X x))
+                 by now apply Rinv_pos.
+               lra.
+           }
+         * apply sa_none.
        + apply (RealMeasurable_proper _
                   (fun a => event_restricted_function _ (fun a => vector_nth i pf (X a)) a)); try reflexivity.
          apply rv_measurable.
@@ -4182,8 +4200,7 @@ Section jaakola_vector2.
          intros ?; simpl.
          now rewrite vector_nth_fun_to_vector.
      - now apply Restricted_RandomVariable.
-   Admitted.
-
+   Qed.
 
    Lemma Rvector_scale_comm {n : nat} (a b : R) (v : vector R n) :
      Rvector_scale a (Rvector_scale b v) = Rvector_scale b (Rvector_scale a v).
