@@ -4036,6 +4036,43 @@ Section jaakola_vector2.
           + intros; discriminate.
       Qed.
 
+    Instance vecrvchoiceb_restricted_rv {n}
+      (rv_C : Ts -> bool)
+      (rv_X1 rv_X2 : Ts -> vector R n)
+      {rvc : RandomVariable dom (discrete_sa bool) rv_C}
+      {rv1 : RandomVariable (event_restricted_sigma
+              (exist (sa_sigma dom) (fun x : Ts => rv_C x = true)
+                 (rvc
+                    (exist (fun e : pre_event bool => sa_sigma (discrete_sa bool) e)
+                       (fun x : bool => x = true) I))))
+               (Rvector_borel_sa n) (event_restricted_function (exist _ (fun x => rv_C x = true) (rvc (exist _ (fun x => x = true) I))) rv_X1)}
+      {rv2 : RandomVariable (event_restricted_sigma
+              (exist (sa_sigma dom) (fun x : Ts => rv_C x = false)
+                 (rvc
+                    (exist (fun e : pre_event bool => sa_sigma (discrete_sa bool) e)
+                       (fun x : bool => x = false) I))))
+               (Rvector_borel_sa n) (event_restricted_function (exist _ (fun x => rv_C x = false) (rvc (exist _ (fun x => x = false) I))) rv_X2)}  :
+      RandomVariable dom (Rvector_borel_sa n) (vecrvchoice rv_C rv_X1 rv_X2).
+    Proof.
+      apply rv_vecrvnth; intros i pf.
+      generalize (@rvchoiceb_restricted_rv _ dom rv_C (vector_nth i pf (fun_to_vector_to_vector_of_funs rv_X1)) (vector_nth i pf (fun_to_vector_to_vector_of_funs rv_X2)) rvc); intros.
+      cut_to H; trivial.
+      - revert H.
+        apply RandomVariable_proper; try reflexivity.
+        intros ?.
+        unfold vecrvnth, vecrvchoice, rvchoice.
+        rewrite vector_nth_fun_to_vector.
+        match_destr.
+        now rewrite vector_nth_fun_to_vector.
+      - apply (@vecrvnth_rv _ _ _ _ pf) in rv1.
+        revert rv1.
+        apply RandomVariable_proper; try reflexivity; intros ?.
+        now rewrite vector_nth_fun_to_vector.
+      - apply (@vecrvnth_rv _ _ _ _ pf) in rv2.
+        revert rv2.
+        apply RandomVariable_proper; try reflexivity; intros ?.
+        now rewrite vector_nth_fun_to_vector.
+    Qed.
  
  Lemma vecrvclip_choice {M} (f : Ts -> vector R M) (c : nonnegreal) :
    rv_eq (vecrvclip _ f c) (vecrvchoice (fun x => if Rgt_dec (Rvector_max_abs (f x)) c then true else false)
@@ -4053,8 +4090,9 @@ Section jaakola_vector2.
    Proof.
      intros.
      rewrite vecrvclip_choice.
-     apply vecrvchoiceb_rv; trivial.
-     - Existing Instance FiniteRange_FiniteRangeFunction.
+     assert (rv_C: RandomVariable dom (discrete_sa bool)
+                     (fun x : Ts => if Rgt_dec (Rvector_max_abs (X x)) C then true else false)).
+     { Existing Instance FiniteRange_FiniteRangeFunction.
        apply (frf_singleton_rv _ _).
        intros [|] _; unfold pre_event_singleton, pre_event_singleton, pre_event_preimage; simpl.
        * apply sa_proper with
@@ -4072,20 +4110,31 @@ Section jaakola_vector2.
             ++ intros ?; lra.
             ++ apply sa_le_le_rv.
                now apply Rvector_max_abs_rv.
+     } 
+     apply (@vecrvchoiceb_restricted_rv _ _ _ _ rv_C); trivial.
      - apply RealVectorMeasurableRandomVariable; intros i pf; simpl.
        rewrite vector_nth_fun_to_vector.
        unfold Rvector_scale.
-       eapply RealMeasurable_proper; [intro; rewrite vector_nth_map; unfold Rdiv; rewrite Rmult_assoc;
-       reflexivity |].
+       eapply RealMeasurable_proper.
+       {
+         intro.
+         unfold event_restricted_function, Rdiv.
+         rewrite vector_nth_map, Rmult_assoc.
+         reflexivity.
+       }
        apply scale_measurable.
        apply mult_measurable.
        + admit.
-       + apply rv_measurable.
+       + apply (RealMeasurable_proper _
+                  (fun a => event_restricted_function _ (fun a => vector_nth i pf (X a)) a)); try reflexivity.
+         apply rv_measurable.
+         apply Restricted_RandomVariable.
          apply (vec_rv _ _ pf) in H.
          revert H.
          apply RandomVariable_proper; try reflexivity.
          intros ?; simpl.
          now rewrite vector_nth_fun_to_vector.
+     - now apply Restricted_RandomVariable.
    Admitted.
 
 
