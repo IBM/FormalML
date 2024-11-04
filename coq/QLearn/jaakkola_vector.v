@@ -4145,7 +4145,33 @@ Section jaakola_vector2.
              match_destr_in e.
              lra.
          }
-         
+         assert (vmax_rv: RealMeasurable dom (fun a => Rvector_max_abs (X a))).
+         {
+           apply Rvector_max_abs_measurable.
+           now apply RandomVariableRealVectorMeasurable.
+         }
+         destruct (Rlt_dec 0 r).
+         { red in vmax_rv.
+           generalize (sa_le_ge _ vmax_rv (/ r)); intros HH.
+           apply (sa_proper _ (fun a : Ts => C < Rvector_max_abs (X a) /\ Rvector_max_abs (X a) >= / r)).
+           {
+             intros ?.
+             rewrite <- (Rinv_inv r) at 2.
+             intuition.
+             - apply Rinv_le_contravar.
+               + now apply Rinv_pos.
+               + lra.
+             - apply Rinv_le_cancel in H2.
+               + lra.
+               + eapply Rle_lt_trans; try apply H1.
+                 apply cond_nonneg.
+           }
+           apply sa_inter; trivial.
+           apply event_Rgt_sa.
+           - now apply measurable_rv.
+           - apply rvconst.
+         } 
+         admit.
        + apply (RealMeasurable_proper _
                   (fun a => event_restricted_function _ (fun a => vector_nth i pf (X a)) a)); try reflexivity.
          apply rv_measurable.
