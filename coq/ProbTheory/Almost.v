@@ -535,18 +535,6 @@ Section almostR2_part.
   
 End almostR2_part.
 
-(*{Ts:Type} {Td:Type}
-          {dom: SigmaAlgebra Ts}
-          (prts: ProbSpace dom). *)
-
-
-                                                   
-    almost P1 ->
-    almost (fun x => P1 x -> P2 x) ->
-    almost P2.
-  Proof.
-
-
 Section sa_sub.
 
   Context {Ts:Type} 
