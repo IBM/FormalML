@@ -1286,6 +1286,43 @@ Qed.
          * apply cond_nonneg.
    Qed.
 
+   Lemma lemma3_helper_iter_nneg_alt  (f α β : nat -> Ts -> R) (C C0 : nonnegreal) (x : Ts):
+      (forall n, 0 <= α n x <= 1) ->
+      (forall n, 0 <= β n x <= 1) ->     
+      (f 0%nat x = C0) ->
+      (forall n, f (S n) x = (1 - α n x) * f n x + (β n x) * C) ->
+      forall n, 0 <= f n x.
+   Proof.
+     intros.
+     induction n.
+     - rewrite H1.
+       apply cond_nonneg.
+     - rewrite H2.
+       apply Rplus_le_le_0_compat.
+       + apply Rmult_le_pos; trivial.
+         specialize (H n).
+         lra.
+       + apply Rmult_le_pos.
+         * specialize (H0 n).
+           lra.
+         * apply cond_nonneg.
+   Qed.
+
+   Lemma lemma3_helper_iter_nneg_almost  (f α β : nat -> Ts -> R) (C C0 : nonnegreal) :
+     almost prts (fun ω => forall k, 0 <= α k ω <= 1) ->
+     almost prts (fun ω => forall k, 0 <= β k ω <= 1) ->
+     (forall x, f 0%nat x = C0) ->
+     (forall n x, f (S n) x = (1 - α n x) * f n x + (β n x) * C) ->
+     almost prts (fun ω => forall n, 0 <= f n ω).
+   Proof.
+     intros.
+     revert H; apply almost_impl.
+     revert H0; apply almost_impl.
+     apply all_almost; intros ????.
+     apply lemma3_helper_iter_nneg_alt with (α := α) (β := β) (C := C) (C0 := C0); trivial.
+   Qed.
+     
+
    Lemma lemma3_helper_iter_conv  (f α : nat -> R) (C : R) :
       (forall n, 0 <= α n < 1) ->
       l1_divergent α ->
