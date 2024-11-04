@@ -4054,7 +4054,24 @@ Section jaakola_vector2.
      intros.
      rewrite vecrvclip_choice.
      apply vecrvchoiceb_rv; trivial.
-     - admit.       
+     - Existing Instance FiniteRange_FiniteRangeFunction.
+       apply (frf_singleton_rv _ _).
+       intros [|] _; unfold pre_event_singleton, pre_event_singleton, pre_event_preimage; simpl.
+       * apply sa_proper with
+           (x := (fun ω => Rvector_max_abs (X ω) > C)).
+            -- intros ?.
+               now match_destr.
+            -- apply sa_le_gt_rv.
+               now apply Rvector_max_abs_rv.
+       * apply sa_proper with
+           (x := (fun ω => ~(Rvector_max_abs (X ω) > C))).               
+         -- intros ?.
+            now match_destr.
+         -- apply sa_proper with
+              (x := (fun ω => (Rvector_max_abs (X ω) <= C))).               
+            ++ intros ?; lra.
+            ++ apply sa_le_le_rv.
+               now apply Rvector_max_abs_rv.
      - apply RealVectorMeasurableRandomVariable; intros i pf; simpl.
        rewrite vector_nth_fun_to_vector.
        unfold Rvector_scale.
