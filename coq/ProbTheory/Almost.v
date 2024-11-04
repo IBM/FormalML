@@ -180,7 +180,22 @@ Section almost.
     exists f.
     exists p.
     split; trivial.
-  Qed.    
+  Qed.
+
+  Lemma almost_impl_restr (P Q:Ts->Prop) :
+    (forall R, (forall x, R x -> P x) -> almost (fun x => R x -> Q x)) -> almost (fun x => P x) -> almost (fun x => Q x).
+  Proof.
+    intros.
+    destruct H0 as [?[??]].
+    specialize (H (fun a => x a)); simpl in *.
+    apply H in H1.
+    destruct H1 as [?[??]].
+    exists (event_inter x x0).
+    split.
+    - rewrite ps_inter_l1; trivial.
+    - intros ? [??].
+      firstorder.
+  Qed.
 
   Lemma almost_exists_iff {Idx} {Pn:Idx -> pre_event Ts} :
     (exists (n : Ts -> Idx), almost (fun ω => Pn (n ω) ω)) <->
@@ -438,7 +453,7 @@ Section almostR2_part.
     - now apply bounded_forall_almost.
   Qed.
 
-    (* classically true *)
+  (* classically true *)
   Lemma almost_independent_impl (P:Prop) (Q:Ts->Prop) :
     (P -> almost prts Q) <-> almost prts (fun ts => P -> Q ts).
   Proof.
@@ -519,6 +534,18 @@ Section almostR2_part.
 
   
 End almostR2_part.
+
+(*{Ts:Type} {Td:Type}
+          {dom: SigmaAlgebra Ts}
+          (prts: ProbSpace dom). *)
+
+
+                                                   
+    almost P1 ->
+    almost (fun x => P1 x -> P2 x) ->
+    almost P2.
+  Proof.
+
 
 Section sa_sub.
 
