@@ -569,3 +569,31 @@ Section sa_sub.
   Qed.
 
 End sa_sub.
+
+Section sa_restricted.
+
+  Lemma almost_prob_space_event_restricted
+          {Ts:Type} 
+          {σ: SigmaAlgebra Ts}
+          (prts:ProbSpace σ)
+          (e:event σ) (pf:0 < ps_P e) 
+        (prop : Ts -> Prop) :
+    almost prts prop ->
+    almost (event_restricted_prob_space prts e pf) (event_restricted_function e prop).
+  Proof.
+    intros [p [pone peqq]].
+    red.
+    exists (event_restricted_event e p).
+    split.
+    - simpl.
+      unfold cond_prob.
+      rewrite <- event_restricted_inter.
+      rewrite ps_inter_l1, Rdiv_diag; trivial.
+      lra.
+    - intros [??]; simpl.
+      unfold event_restricted_pre_event; red; simpl.
+      apply peqq.
+  Qed.      
+
+End sa_restricted.
+
