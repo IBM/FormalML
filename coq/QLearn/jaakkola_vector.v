@@ -1149,6 +1149,7 @@ Qed.
      apply Rmult_le_compat_l with (r := C) in gamma_lt; lra.
   Qed.
 
+
     Lemma lemma3_helper_forall_eventually_le (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
@@ -1177,6 +1178,7 @@ Qed.
       apply H0.
       apply H4.
     Qed.
+
 
     Lemma lemma3_helper_vector_forall_eventually_le (f g : nat -> Ts -> (vector R N)) (fstar: vector R N) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom (Rvector_borel_sa N) (f n)} 
@@ -1209,7 +1211,6 @@ Qed.
       apply H4.
     Qed.
 
-(*
     Lemma lemma3_helper_forall_almost_le  (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
@@ -1244,8 +1245,42 @@ Qed.
       eapply Rle_trans.
       apply H0.
       apply H4.
-  Qed.     
- *)
+  Qed.
+
+    Lemma lemma3_helper_vector_forall_almost_eventually_le (f g : nat -> Ts -> (vector R N)) (fstar: vector R N) (C gamma : posreal)
+      {rvf : forall n, RandomVariable dom (Rvector_borel_sa N) (f n)} 
+      {rvg : forall n, RandomVariable dom (Rvector_borel_sa N) (g n)} :       
+      (forall i pf, almost prts (fun x => is_lim_seq (fun n => vector_nth i pf (f n x)) (vector_nth i pf fstar))) ->
+      (exists n0, forall n, almostR2 prts Rle (rvmaxabs (g (n + n0)%nat)) (rvmaxabs (f n))) ->
+      Rvector_max_abs fstar <= gamma * C ->
+      gamma < 1 ->
+      forall (eps1 eps2:posreal),
+        gamma + (1 - gamma)/2 <= / (1 + eps1) ->
+        eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (g (n + n0)%nat)) (C / (1 + eps1))))) >= 1 - eps2).
+    Proof.
+      intros H H0 H1 gamma_1 eps1 eps2 gamma_lt.
+      destruct (lemma3_helper_vector_forall f fstar C gamma H H1 gamma_1 eps1 eps2 gamma_lt).
+      destruct H0.
+      exists (x + x0)%nat.
+      intros.
+      specialize (H2 (n - x0)%nat).
+      cut_to H2; try lia.
+      eapply Rge_trans; cycle 1.
+      apply H2.
+      apply Rle_ge.
+      apply ps_almostR2_sub.
+      apply almost_forall in H0.
+      revert H0; apply almost_impl.
+      apply all_almost; intros ???.
+      unfold event_sub, pre_event_sub.
+      simpl; intros.
+      specialize (H0 (n0 + (n - x0))%nat).
+      simpl in H0.
+      replace (n0 + (n - x0) + x0)%nat with (n0 + n)%nat in H0 by lia.
+      eapply Rle_trans.
+      apply H0.
+      apply H4.
+    Qed.   
     
    Lemma ps_inter_cond_prob_r {T:Type} {σ:SigmaAlgebra T} 
       (A B : event σ) (prts' : ProbSpace σ) :
@@ -2021,6 +2056,53 @@ Qed.
          - rewrite Rvector_max_abs_const, Rabs_right; lra.
     Qed.
 
+       Lemma lemma3_vector_forall_eventually_almost
+         (α X f : nat -> Ts -> vector R (S N)) (C γ : posreal)
+         (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n))
+         (rvf : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (f n)) :          
+         almost prts (fun ω => forall t i pf , 0 <= vector_nth i pf (α t ω) <= 1) ->
+         almost prts (fun ω => forall i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+         γ < 1 ->
+         rv_eq (f 0%nat) (vecrvconst (S N) C) ->
+         (forall n, rv_eq (f (S n))
+                      (vecrvplus 
+                         (vecrvmult (vecrvminus (vecrvconst (S N) 1) (α n)) 
+                            (f n))
+                         (vecrvscale (γ * C) (α n)))) ->
+         (exists n0, almost prts (fun ω => forall n,
+                          rvmaxabs (X (n + n0)%nat) ω <= rvmaxabs (f n) ω)) ->
+         forall (eps1 eps2:posreal),
+           γ + (1 - γ)/2 <= / (1 + eps1) ->
+           eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1))))) >= 1 - eps2).
+       Proof.
+         intros.
+         assert (0 <= γ * C).
+         {
+           apply Rmult_le_pos; left; apply cond_pos.
+         }
+         apply lemma3_helper_vector_forall_almost_eventually_le with (f := f) (fstar := vector_const (γ * C) (S N)) (gamma := γ); trivial.
+         - intros.
+           revert H; apply almost_impl.
+           revert H0; apply almost_impl.
+           apply all_almost; intros ???.
+           rewrite vector_nth_const.
+           apply (lemma3_helper_iter_conv2 (fun n => vector_nth i pf (f n x))
+                    (fun n => vector_nth i pf (α n x))); trivial.
+           intros.
+           rewrite H3.
+           unfold vecrvminus, vecrvmult, vecrvplus, vecrvconst, vecrvopp, vecrvscale.
+           rewrite Rvector_nth_plus, Rvector_nth_mult.
+           rewrite Rvector_nth_plus, Rvector_nth_scale, vector_nth_const.
+           rewrite Rvector_nth_scale.
+           lra.
+         - destruct H4.
+           exists x.
+           apply forall_almost.
+           revert H4; apply almost_impl.
+           apply all_almost; intros ??.
+           now unfold pre_inter_of_collection.
+         - rewrite Rvector_max_abs_const, Rabs_right; lra.
+    Qed.
 
        Lemma vecrvclip_le (f : Ts -> vector R (S N)) (C : nonnegreal) :
          forall i pf ω,
@@ -2223,6 +2305,179 @@ Qed.
                   apply bprop.
         Qed.
 
+
+       Lemma lemma3_vector_forall_eventually_alt_almost (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
+         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
+         (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) :
+         almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
+         almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
+         almost prts (fun ω => forall t i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->       
+
+         almost prts (fun ω => forall i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+
+         γ < 1 ->
+
+         (forall n, rv_eq (X (S n))
+                      (vecrvclip (S N)
+                         (vecrvplus 
+                            (vecrvminus (X n)
+                               (vecrvmult (α n) (X n)))
+                            (vecrvscalerv (rvmaxabs (X n))
+                               (vecrvscale γ (β n))))
+                         (pos_to_nneg C0))) ->
+         eventually (fun n => rv_le (rvmaxabs (X n)) (const C)) ->
+         forall (eps1 eps2:posreal),
+           γ + (1 - γ)/2 <= / (1 + eps1) ->
+           eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1))))) >= 1 - eps2).
+     Proof.
+       intros aprop bprop abprop gamma_div gamma_lt1 Xprop Yprop eps1 eps2 eps1_prop.
+       destruct Yprop as [nY Yprop].
+       pose (f := fix f nn :=
+          match nn with
+                | 0%nat => vecrvconst (S N) C
+                | S n =>
+                    (vecrvplus 
+                       (vecrvmult (vecrvminus (vecrvconst (S N) 1) (α (n + nY)%nat)) 
+                          (f n))
+                       (vecrvscale (γ * C) (α (n + nY)%nat)))
+          end).
+       generalize (lemma3_vector_forall_eventually_almost (fun n => α (n + nY)%nat) X f C γ rvX); intros.
+       assert (rvf : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (f n)).
+         {
+           intros.
+           induction n.
+           - simpl.
+             apply rvconst.
+           - simpl.
+             apply Rvector_plus_rv.
+             + apply Rvector_mult_rv; trivial.
+               apply Rvector_minus_rv.
+               * apply rvconst.
+               * apply rva.
+             + apply Rvector_scale_rv.
+               apply rva.
+         }
+         specialize (H rvf).
+         apply H; trivial.
+         - revert aprop; apply almost_impl.
+           apply all_almost; intros ?????.
+           apply H0.
+         - revert gamma_div; apply almost_impl.
+           apply all_almost; intros ????.
+           specialize (H0 i pf).
+           apply (seq_sum_shift (fun n => vector_nth i pf (α n x)) nY).
+           apply H0.
+         - now simpl.
+         - intros.
+           now simpl.
+         - exists nY.
+           apply almost_forall.
+           intros.
+           revert aprop; apply almost_impl.
+           revert bprop; apply almost_impl.
+           revert abprop; apply almost_impl.
+           apply all_almost; intros ? abprop bprop aprop.
+           apply Rvector_max_abs_le.
+           induction n.
+           + intros.
+             simpl.
+             unfold vecrvconst.
+             rewrite vector_nth_const.
+             generalize (cond_pos C); intros.
+             rewrite (Rabs_right C); try lra.
+             eapply Rle_trans.
+             apply Rvector_max_abs_nth_le.
+             now apply Yprop.
+           + intros.
+             replace (S n + nY)%nat with (S (n + nY)) by lia.
+             rewrite Xprop.
+             eapply Rle_trans.
+             apply vecrvclip_le.
+             assert (forall n i pf, (vector_nth i pf (f n x)) >= 0).
+             {
+               intros.
+               induction n0.
+               - simpl.
+                 unfold vecrvconst.
+                 rewrite vector_nth_const.
+                 generalize (cond_pos C); lra.
+               - simpl.
+                 unfold vecrvplus, vecrvmult, vecrvminus, vecrvconst, vecrvopp, vecrvscale.
+                 rewrite Rvector_nth_plus.
+                 apply Rle_ge.
+                 apply Rplus_le_le_0_compat.
+                 + rewrite Rvector_nth_mult.
+                   apply Rmult_le_pos; try lra.
+                   unfold vecrvplus.
+                   rewrite Rvector_nth_plus.
+                   rewrite vector_nth_const.
+                   rewrite Rvector_nth_scale.
+                   specialize (aprop (n0 + nY)%nat i0 pf0).
+                   lra.
+                 + rewrite Rvector_nth_scale.
+                   apply Rmult_le_pos.
+                   * apply Rmult_le_pos.
+                     generalize (cond_pos γ); lra.
+                     generalize (cond_pos C); lra.                     
+                   * apply aprop.
+             }
+             rewrite (Rabs_right (vector_nth i pf (f (S n) x))); [|apply H0].
+             simpl.
+             unfold vecrvplus.
+             repeat rewrite Rvector_nth_plus.
+             eapply Rle_trans.
+             apply Rabs_triang.
+             apply Rplus_le_compat.
+             * unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, vecrvmult, vecrvconst.
+               rewrite Rvector_nth_plus.
+               rewrite Rvector_nth_scale, Rvector_nth_mult.
+               rewrite Rvector_nth_mult, Rvector_nth_plus, Rvector_nth_scale.
+               rewrite vector_nth_const.
+               replace (vector_nth i pf (X (n + nY)%nat x) +
+                        -1 * (vector_nth i pf (α (n + nY)%nat x) * vector_nth i pf (X (n + nY)%nat x)))
+                 with
+                 ((1 + -1 * vector_nth i pf (α (n + nY)%nat x)) * vector_nth i pf (X (n + nY)%nat x)) by lra.
+               rewrite Rabs_mult.
+               assert (0 <=  (1 + -1 * vector_nth i pf (α (n + nY)%nat x))).
+               {
+                 specialize (aprop (n + nY)%nat i pf).
+                 lra.
+               }
+               apply Rle_ge in H1.
+               rewrite (Rabs_right _ H1).
+               apply Rmult_le_compat_l; try lra.
+               eapply Rle_trans.
+               apply IHn.
+               rewrite Rabs_right; [|apply H0].
+               lra.
+             * unfold vecrvscalerv.
+               unfold vecrvscale.
+               repeat rewrite Rvector_nth_scale.
+               replace (Rabs (rvmaxabs (X (n + nY)%nat) x * (γ * vector_nth i pf (β (n + nY)%nat x)))) with
+                 (γ * (Rabs (rvmaxabs (X (n + nY)%nat) x) * (vector_nth i pf (β (n + nY)%nat x)))).
+               -- rewrite Rmult_assoc.
+                  apply Rmult_le_compat_l.
+                  ++ generalize (cond_pos γ); lra.
+                  ++ apply Rmult_le_compat.
+                     ** apply Rabs_pos.
+                     ** apply bprop.
+                     ** unfold rvmaxabs.
+                        rewrite Rabs_right.
+                        --- apply Yprop; try lia.
+                        --- apply Rle_ge.
+                            apply Rvector_max_abs_nonneg.
+                     ** apply abprop.
+               -- unfold rvmaxabs.
+                  simpl.
+                  rewrite Rabs_mult.
+                  rewrite Rabs_mult.
+                  generalize (cond_pos γ); intros.
+                  rewrite (Rabs_right γ); try lra.
+                  rewrite (Rabs_right  (vector_nth i pf (β (n + nY)%nat x))); try lra.
+                  apply Rle_ge.
+                  apply bprop.
+        Qed.
+     
 End newN.
 Section jaakola_vector2.
 
@@ -2315,6 +2570,120 @@ Section jaakola_vector2.
            unfold event_restricted_function, event_restricted_domain.
            intros ?.
            apply Xprop.
+         - exists nY; intros nn Nn [xx xxP]; simpl.
+           unfold rvmaxabs, event_restricted_function, const; simpl.
+           red in xxP; simpl in xxP.
+           specialize (xxP (nn-nY)%nat).
+           replace (nn - nY + nY)%nat with nn in xxP by lia.
+           unfold rvabs in xxP.
+           apply xxP.
+      Qed.
+
+      Lemma lemma3_vector_forall_eventually_cond_prob_almost (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
+        (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
+        (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
+        (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) :
+        almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
+        almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
+        almost prts (fun ω => forall t i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->       
+
+        almost prts (fun ω => forall i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+        γ < 1 ->
+        (forall n, rv_eq (X (S n))
+                         (vecrvclip (S N)
+                            (vecrvplus 
+                               (vecrvminus (X n)
+                                  (vecrvmult (α n) (X n)))
+                               (vecrvscalerv (rvmaxabs (X n))
+                                  (vecrvscale γ (β n))))
+                            (pos_to_nneg C0))) ->
+         forall (eps1 eps2 prob:posreal),
+           forall (nY : nat),
+             γ + (1 - γ)/2 <= / (1 + eps1) ->
+             1 - eps2 > 0 ->
+             0 < ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + nY)%nat)) C))) ->
+             eventually (fun n0 => cond_prob prts (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1)))))
+                                   (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + nY)%nat)) C)))
+                                 >= 1 - eps2).
+       Proof.
+         intros aprop bprop abprop gamma_div gamma_lt1 Xprop  eps1 eps2 prob nY eps1_prop eps2_prop Yprop.
+         pose (re:= (inter_of_collection (fun n0 : nat => event_le dom (rvmaxabs (X (n0 + nY)%nat)) C))).
+         assert (rvα':(forall n : nat,
+                           RandomVariable
+                             (event_restricted_sigma
+                                re) (Rvector_borel_sa (S N))
+                             (event_restricted_function re (α n))) ).
+         {
+           intros.
+           now apply Restricted_RandomVariable.
+         }
+         assert (rvX':(forall n : nat,
+                           RandomVariable
+                             (event_restricted_sigma
+                                re) (Rvector_borel_sa (S N))
+                             (event_restricted_function re (X n))) ).
+         {
+           intros.
+           now apply Restricted_RandomVariable.
+         }
+         assert (rvY':(forall n : nat,
+                           RandomVariable
+                             (event_restricted_sigma
+                                re) borel_sa
+                             (event_restricted_function re (rvmaxabs (X n))) )).
+         {
+           intros.
+           apply Restricted_RandomVariable.
+           now apply Rvector_max_abs_rv.
+         }
+         generalize (lemma3_vector_forall_eventually_alt_almost  (prts:=event_restricted_prob_space prts _ Yprop) N
+                       (fun n => event_restricted_function re (α n))
+                       (fun n => event_restricted_function re (β n))
+                       (fun n => event_restricted_function re (X n)) C C0 γ rvα' rvX'); intros HH.
+         cut_to HH; trivial.
+         - specialize (HH eps1 eps2 eps1_prop).
+           destruct HH.
+           exists (x + nY)%nat.
+           intros.
+           specialize (H n).
+           cut_to H; try lia.
+           rewrite event_restricted_cond_prob with (pf := Yprop).
+           eapply Rge_trans; [| apply H].
+           right.
+           apply ps_proper; intros ?.
+           reflexivity.
+         - apply (almost_prob_space_event_restricted _ _ Yprop) in aprop.
+           revert aprop.
+           apply almost_impl.
+           apply all_almost.
+           intros ???.
+           unfold event_restricted_function in H.
+           apply H.
+         - apply (almost_prob_space_event_restricted _ _ Yprop) in bprop.
+           revert bprop.
+           apply almost_impl.
+           apply all_almost.
+           intros ???.
+           unfold event_restricted_function in H.
+           apply H.
+         - apply (almost_prob_space_event_restricted _ _ Yprop) in abprop.
+           revert abprop.
+           apply almost_impl.
+           apply all_almost.
+           intros ???.
+           unfold event_restricted_function in H.
+           apply H.
+         - apply (almost_prob_space_event_restricted _ _ Yprop) in gamma_div.
+           revert gamma_div.
+           apply almost_impl.
+           apply all_almost.
+           intros ???.
+           unfold event_restricted_function in H.
+           apply H.
+         - intros ??.
+           unfold event_restricted_function.
+           rewrite Xprop.
+           reflexivity.
          - exists nY; intros nn Nn [xx xxP]; simpl.
            unfold rvmaxabs, event_restricted_function, const; simpl.
            red in xxP; simpl in xxP.
