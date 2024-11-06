@@ -1076,6 +1076,7 @@ Proof.
   now apply (gamma_eps_le_forall (mkposreal _ H2) eps).
 Qed.
 
+(*
     Lemma lemma3_helper_forall (f : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rv : forall n, RandomVariable dom borel_sa (f n)} :
       almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
@@ -1110,6 +1111,7 @@ Qed.
       generalize (cond_pos C); intros.
       apply Rmult_le_compat_l with (r := C) in gamma_lt; lra.
     Qed.
+*)
 
     Lemma lemma3_helper_vector_forall (f : nat -> Ts -> vector R N) (fstar: vector R N) (C gamma : posreal)
       {rv : forall n, RandomVariable dom (Rvector_borel_sa N) (f n)} :
@@ -1149,7 +1151,7 @@ Qed.
      apply Rmult_le_compat_l with (r := C) in gamma_lt; lra.
   Qed.
 
-
+(*
     Lemma lemma3_helper_forall_eventually_le (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
@@ -1178,7 +1180,7 @@ Qed.
       apply H0.
       apply H4.
     Qed.
-
+*)
 
     Lemma lemma3_helper_vector_forall_eventually_le (f g : nat -> Ts -> (vector R N)) (fstar: vector R N) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom (Rvector_borel_sa N) (f n)} 
@@ -1211,6 +1213,7 @@ Qed.
       apply H4.
     Qed.
 
+(*
     Lemma lemma3_helper_forall_almost_le  (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
@@ -1246,6 +1249,7 @@ Qed.
       apply H0.
       apply H4.
   Qed.
+*)
 
     Lemma lemma3_helper_vector_forall_almost_eventually_le (f g : nat -> Ts -> (vector R N)) (fstar: vector R N) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom (Rvector_borel_sa N) (f n)} 
@@ -2056,6 +2060,7 @@ Qed.
          - rewrite Rvector_max_abs_const, Rabs_right; lra.
     Qed.
 
+
        Lemma lemma3_vector_forall_eventually_almost
          (α X f : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n))
@@ -2139,6 +2144,7 @@ Qed.
          apply Rabs_pos.
        Qed.
 
+(*
        Lemma lemma3_vector_forall_eventually_alt (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) :
@@ -2304,7 +2310,7 @@ Qed.
                   apply Rle_ge.
                   apply bprop.
         Qed.
-
+*)
 
        Lemma lemma3_vector_forall_eventually_alt_almost (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
@@ -2483,7 +2489,7 @@ Section jaakola_vector2.
 
   Context {Ts : Type} {SS:Type} (N:nat)
     {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
-
+(*
       Lemma lemma3_vector_forall_eventually_cond_prob (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
@@ -2578,7 +2584,7 @@ Section jaakola_vector2.
            unfold rvabs in xxP.
            apply xxP.
       Qed.
-
+*)
       Lemma lemma3_vector_forall_eventually_cond_prob_almost (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
@@ -2693,6 +2699,7 @@ Section jaakola_vector2.
            apply xxP.
       Qed.
 
+(*
       Lemma lemma3_vector_forall_eventually_prob_inter (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
@@ -2739,7 +2746,7 @@ Section jaakola_vector2.
           apply cond_pos.
         - generalize (cond_pos prob); lra.
       Qed.
-
+*)
       Lemma lemma3_vector_forall_eventually_prob_inter_almost (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
@@ -2786,7 +2793,7 @@ Section jaakola_vector2.
           apply cond_pos.
         - generalize (cond_pos prob); lra.
       Qed.
-
+(*
       Lemma lemma3_vector_forall_eventually_prob (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
@@ -2826,7 +2833,7 @@ Section jaakola_vector2.
         apply ps_sub.
         apply Event.event_inter_sub_l.
      Qed.
-     
+*)     
       Lemma lemma3_vector_forall_eventually_prob_almost (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
@@ -2867,6 +2874,7 @@ Section jaakola_vector2.
         apply Event.event_inter_sub_l.
      Qed.
 
+(*
       Lemma lemma3_vector_forall_eventually_prob_iter (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
@@ -2968,7 +2976,7 @@ Section jaakola_vector2.
             apply H2.
             now right.
       Qed.
-
+*)
       Lemma lemma3_vector_forall_eventually_prob_iter_almost (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
@@ -3071,6 +3079,7 @@ Section jaakola_vector2.
             now right.
       Qed.
 
+(*
       Lemma lemma3_vector_forall_eventually_prob_iter_alt (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
@@ -3100,7 +3109,7 @@ Section jaakola_vector2.
           intros.
           now apply (lemma3_vector_forall_eventually_prob_iter α β) with (γ := γ).
         Qed.
-
+*)
 
       Lemma lemma3_vector_forall_eventually_prob_iter_alt_almost (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
@@ -3629,6 +3638,7 @@ Section jaakola_vector2.
          now replace (n + (n0 - n))%nat with n0 in H by lia.
        Qed.
 
+(*
        Lemma lemma3 (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
@@ -4032,7 +4042,7 @@ Section jaakola_vector2.
         apply Lim_seq_correct in H11.
         now rewrite H12 in H11.
    Qed.
-
+*)
       Lemma lemma3_almost (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
@@ -4705,6 +4715,7 @@ Section jaakola_vector2.
      now rewrite Rmult_comm.
    Qed.
 
+(*
        Lemma lemma3_full (α β X : nat -> Ts -> vector R (S N)) (γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
@@ -4805,6 +4816,7 @@ Section jaakola_vector2.
          - intros.
            now simpl.
        Qed.
+*)
 
        Lemma lemma3_full_almost (α β X : nat -> Ts -> vector R (S N)) (γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
@@ -4908,14 +4920,15 @@ Section jaakola_vector2.
            now simpl.
        Qed.
 
-       Lemma lemma3' (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
+       Lemma lemma3'_almost (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
          (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n)) :           
-         (forall t ω i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
-         (forall t ω i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
-         (forall t ω i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->                  
-         (forall ω i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+         almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
+         almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
+         almost prts (fun ω => forall t i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->       
+
+         almost prts (fun ω => forall i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
          γ < 1 ->
          (forall n, rv_le (rvmaxabs (X n)) (const C)) ->
          (forall n, rv_eq (X (S n))
@@ -4930,7 +4943,7 @@ Section jaakola_vector2.
            almost prts (fun ω => Lim_seq (fun n => vector_nth i pf (X n ω)) = 0).
       Proof.
         intros.
-        generalize (lemma3 α β X C γ _ _ _ H H0 H1 H2 H3 H4 H5).
+        generalize (lemma3_almost α β X C γ _ _ _ H H0 H1 H2 H3 H4 H5).
         apply almost_impl.
         apply all_almost.
         intros ??.
@@ -4982,6 +4995,7 @@ Section jaakola_vector2.
           lra.
       Qed.
 
+(*
       Lemma lemma3_2 (α β X XX : nat -> Ts -> vector R (S N)) 
         (G : nat -> Ts -> vector R (S N) -> vector R (S N)) 
         (C γ : posreal)
@@ -5090,7 +5104,7 @@ Section jaakola_vector2.
           + rewrite H7.
             apply vecrvclip_max_bound.
       Qed.
-
+*)
       Lemma almost_is_lim_nth_maxabs {NN} (X : nat -> Ts -> vector R (S NN)) :
         almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0) ->
         forall k pf,
