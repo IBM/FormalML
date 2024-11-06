@@ -1209,6 +1209,7 @@ Qed.
       apply H4.
     Qed.
 
+(*
     Lemma lemma3_helper_forall_almost_le  (f g : nat -> Ts -> R) (fstar: R) (C gamma : posreal)
       {rvf : forall n, RandomVariable dom borel_sa (f n)} 
       {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
@@ -1244,7 +1245,8 @@ Qed.
       apply H0.
       apply H4.
   Qed.     
-
+ *)
+    
    Lemma ps_inter_cond_prob_r {T:Type} {σ:SigmaAlgebra T} 
       (A B : event σ) (prts' : ProbSpace σ) :
      ps_P B > 0 ->
@@ -1419,99 +1421,6 @@ Qed.
        specialize (H x).
        lra.
    Qed.     
-
-(*
-   Lemma lemma3_helper_iter_almost_le (f g α β : nat -> Ts -> R) (C C0 : nonnegreal)
-      {rvα : forall n, RandomVariable dom borel_sa (α n)} 
-      {rvβ : forall n, RandomVariable dom borel_sa (β n)} 
-      {rvf : forall n, RandomVariable dom borel_sa (f n)} 
-      {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
-      (forall n x, 0 <= α n x <= 1) ->
-      (forall n x, 0 <= β n x <= 1) ->     
-      (forall n, almostR2  prts Rle (β n) (α n)) ->
-      (forall x, f 0%nat x = C0) ->
-      (forall x, g 0%nat x = C0) ->
-      (forall n x, f (S n) x = (1 - α n x) * f n x + (α n x) * C) ->
-      (forall n x, g (S n) x = (1 - α n x) * g n x + (β n x) * C) ->      
-      forall n, almostR2 prts Rle (g n) (f n).
-    Proof.
-      intros.
-      induction n.
-      - apply all_almost.
-        intros.
-        rewrite H2.
-        now right.
-      - specialize (H1 n).
-        revert H1.
-        apply almost_impl.
-        revert IHn.
-        apply almost_impl.
-        apply all_almost.
-        intros ???.
-        rewrite H4, H5.
-        apply Rplus_le_compat.
-        + apply Rmult_le_compat_l; trivial.
-          specialize (H n x).
-          lra.
-        + apply Rmult_le_compat_r; trivial.
-          apply cond_nonneg.
-    Qed.
-
-   Lemma lemma3_helper_iter_almost_le_abs (f g α β : nat -> Ts -> R) (C C0 : nonnegreal)
-      {rvα : forall n, RandomVariable dom borel_sa (α n)} 
-      {rvβ : forall n, RandomVariable dom borel_sa (β n)} 
-      {rvf : forall n, RandomVariable dom borel_sa (f n)} 
-      {rvg : forall n, RandomVariable dom borel_sa (g n)} :       
-      (forall n x, 0 <= α n x <= 1) ->
-      (forall n x, 0 <= β n x <= 1) ->     
-      (forall n, almostR2  prts Rle (β n) (α n)) ->
-      (forall x, f 0%nat x = C0) ->
-      (forall x, g 0%nat x = C0) ->
-      (forall n x, f (S n) x = (1 - α n x) * f n x + (α n x) * C) ->
-      (forall n x, g (S n) x = (1 - α n x) * g n x + (β n x) * C) ->      
-      forall n, almostR2 prts Rle (rvabs (g n)) (rvabs (f n)).
-    Proof.
-      intros.
-      induction n.
-      - apply all_almost.
-        intros.
-        unfold rvabs.
-        rewrite H2, H3.
-        now right.
-      - specialize (H1 n).
-        revert H1.
-        apply almost_impl.
-        revert IHn.
-        apply almost_impl.
-        apply all_almost.
-        intros ???.
-        assert (forall n x, rvabs (f n) x = f n x).
-        {
-          intros.
-          unfold rvabs.
-          rewrite Rabs_right; trivial.
-          apply Rle_ge.
-          apply (lemma3_helper_iter_nneg f α α C C0); trivial.
-        }
-        assert (forall n x, rvabs (g n) x = g n x).
-        {
-          intros.
-          unfold rvabs.
-          rewrite Rabs_right; trivial.
-          apply Rle_ge.
-          apply (lemma3_helper_iter_nneg g α β C C0); trivial.
-        }
-        rewrite H7, H8.
-        rewrite H7, H8 in H1.
-        rewrite H4, H5.
-        apply Rplus_le_compat.
-        + apply Rmult_le_compat_l; trivial.
-          specialize (H n x).
-          lra.
-        + apply Rmult_le_compat_r; trivial.
-          apply cond_nonneg.
-    Qed.
-*)
 
     Lemma lemma3_lim_eps (eps : posreal) :
       is_lim_seq (fun n => (/ (1 + eps))^n) 0.
@@ -3028,119 +2937,6 @@ Section jaakola_vector2.
           apply Lim_seq_correct.
           now rewrite ex_lim_LimSup_LimInf_seq.
         Qed.
-
-(*
-        Program Definition funpos (f : posreal -> R) : (R -> R).
-        Proof.
-          intros x.
-          destruct (Rlt_dec 0 x).
-          - exact (f (mkposreal x r)).
-          - exact 0.
-       Defined.
-*)
-
-        Definition lift_posreal_f (f:posreal->R) (default : R) : R -> R
-          := fun x => match Rlt_dec 0 x with
-             | left pf => f (mkposreal x pf)
-             | right _ => default
-             end.
-
-        Definition lift_posreal_f2 (f:posreal->R) (f2 : R -> R) : R -> R
-          := fun x => match Rlt_dec 0 x with
-             | left pf => f (mkposreal x pf)
-             | right _ => f2 x
-             end.
-
-        Lemma lift_posreal_f_pos (f : posreal -> R) :
-          forall (x y1 y2 : R),
-            0 < x ->
-            lift_posreal_f f y1 x = lift_posreal_f f y2 x.
-        Proof.
-          intros.
-          unfold lift_posreal_f.
-          match_destr.
-          lra.
-        Qed.
-            
-        Lemma lift_posreal_f2_pos (f : posreal -> R) :
-          forall (x : R),
-            forall (g1 g2 : R -> R),
-            0 < x ->
-            lift_posreal_f2 f g1 x = lift_posreal_f2 f g2 x.
-        Proof.
-          intros.
-          unfold lift_posreal_f2.
-          match_destr.
-          lra.
-        Qed.
-
-        Definition limit1_in_pos0 (f:posreal -> R) (default : R) (l:R) : Prop :=
-          limit1_in (lift_posreal_f f default) (fun x => 0 < x) 0 l.
-
-        Lemma limit1_in_ext (f1 f2 : R -> R) (x l : R) (D : R -> Prop) :
-          (forall x, D x -> f1 x = f2 x) ->
-          limit1_in f1 D x l <-> limit1_in f2 D x l.
-        Proof.
-          unfold limit1_in, limit_in.
-          intros.
-          split; intros.
-          - destruct (H0 eps H1) as [alp [??]].
-            exists alp.
-            split; trivial.
-            intros.
-            specialize (H3 x0 H4).
-            destruct H4.
-            now rewrite <- (H x0).
-          - destruct (H0 eps H1) as [alp [??]].
-            exists alp.
-            split; trivial.
-            intros.
-            specialize (H3 x0 H4).
-            destruct H4.
-            now rewrite (H x0).
-        Qed.
-
-        Lemma limit1_in_subset (f : R -> R) (x l : R) (D1 D2 : R -> Prop) :
-          (forall x, D1 x -> D2 x) ->
-          limit1_in f D2 x l ->
-          limit1_in f D1 x l.
-        Proof.
-          unfold limit1_in, limit_in.
-          intros.
-          destruct (H0 eps H1) as [alp [??]].
-          exists alp.
-          split; trivial.
-          intros.
-          apply H3.
-          destruct H4.
-          split; trivial.
-          now apply H.
-       Qed.
-
-        Lemma limit1_in_pos0_unique (f : posreal -> R) (l : R) :
-          forall (y1 y2 : R),
-            limit1_in_pos0 f y1 l <-> limit1_in_pos0 f y2 l.
-        Proof.
-          intros.
-          unfold limit1_in_pos0.
-          apply limit1_in_ext.
-          intros.
-          now apply lift_posreal_f_pos.
-        Qed.
-
-        Definition limit1_in_pos0_alt (f:posreal -> R) (f2 : R -> R) (l:R) : Prop :=
-          limit1_in (lift_posreal_f2 f f2) (fun x => 0 < x) 0 l.
-
-        Lemma limit1_in_pos0_alt_unique (f : posreal -> R) (l : R) :
-          forall (g1 g2 : R -> R),
-            limit1_in_pos0_alt f g1 l <-> limit1_in_pos0_alt f g2 l.
-        Proof.
-          intros.
-          unfold limit1_in_pos0_alt.
-          apply limit1_in_ext.
-          intros.
-          now apply lift_posreal_f2_pos.
-       Qed.
 
        Lemma lemma3_plim0 :
          filterlim (fun y => real (Lim_seq (fun m => prod_f_R0 (fun n => 1 - (Rabs y) ^ S n) m)))
