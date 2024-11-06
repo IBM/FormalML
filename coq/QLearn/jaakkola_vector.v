@@ -2740,6 +2740,53 @@ Section jaakola_vector2.
         - generalize (cond_pos prob); lra.
       Qed.
 
+      Lemma lemma3_vector_forall_eventually_prob_inter_almost (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
+        (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
+        (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
+        (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) :
+        almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
+        almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
+        almost prts (fun ω => forall t i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->       
+
+        almost prts (fun ω => forall i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+        γ < 1 ->
+        (forall n, rv_eq (X (S n))
+                         (vecrvclip (S N)
+                            (vecrvplus 
+                               (vecrvminus (X n)
+                                  (vecrvmult (α n) (X n)))
+                               (vecrvscalerv (rvmaxabs (X n))
+                                  (vecrvscale γ (β n))))
+                            (pos_to_nneg C0))) ->
+         forall (eps1 eps2 prob:posreal),
+           forall (nY : nat),
+             γ + (1 - γ)/2 <= / (1 + eps1) ->
+             1 - eps2 > 0 ->
+
+             ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + nY)%nat)) C))) >= prob ->
+             eventually (fun n0 => ps_P (event_inter 
+                                           (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1)))))
+                                           (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + nY)%nat)) C))) ) >= prob * (1 - eps2)).
+      Proof.
+        intros aprop bprop abprop gamma_div gamma_lt1 Xprop eps1 eps2 prob nY eps1_prop eps2_prop Yprop.
+        assert (0 < ps_P (inter_of_collection (fun n : nat => event_le dom (rvmaxabs (X (n + nY)%nat)) C))).
+        {
+          generalize (cond_pos prob); lra.
+        }
+        generalize (lemma3_vector_forall_eventually_cond_prob_almost α β X C C0 γ _ _ _ aprop bprop abprop gamma_div gamma_lt1 Xprop eps1 eps2 prob nY eps1_prop eps2_prop H); intros.
+        destruct H0.
+        exists (x + nY)%nat.
+        intros.
+        specialize (H0 n).
+        cut_to H0; try lia.
+        rewrite ps_inter_cond_prob_r; try lra.
+        rewrite Rmult_comm.
+        apply Rmult_ge_compat; trivial.
+        - left.
+          apply cond_pos.
+        - generalize (cond_pos prob); lra.
+      Qed.
+
       Lemma lemma3_vector_forall_eventually_prob (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
@@ -2780,6 +2827,46 @@ Section jaakola_vector2.
         apply Event.event_inter_sub_l.
      Qed.
      
+      Lemma lemma3_vector_forall_eventually_prob_almost (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
+        (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
+        (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
+        (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) :
+        almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
+        almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
+        almost prts (fun ω => forall t i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->       
+
+        almost prts (fun ω => forall i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+        γ < 1 ->
+        (forall n, rv_eq (X (S n))
+                         (vecrvclip (S N)
+                            (vecrvplus 
+                               (vecrvminus (X n)
+                                  (vecrvmult (α n) (X n)))
+                               (vecrvscalerv (rvmaxabs (X n))
+                                  (vecrvscale γ (β n))))
+                            (pos_to_nneg C0))) ->
+         forall (eps1 eps2 prob:posreal),
+           γ + (1 - γ)/2 <= / (1 + eps1) ->
+           1 - eps2 > 0 ->
+           eventually (fun nY => ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + nY)%nat)) C))) >= prob) ->
+           eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1))))) >= prob * (1 - eps2)).
+      Proof.
+        intros aprop bprop abprop gamma_div gamma_lt1 Xprop eps1 eps2 prob eps1_prop eps2_prop Yprop.
+        destruct Yprop as [nY Yprop].
+        specialize (Yprop nY).
+        cut_to Yprop; try lia.
+        generalize (lemma3_vector_forall_eventually_prob_inter_almost α β X C C0 γ _ _ _ aprop bprop abprop gamma_div gamma_lt1 Xprop eps1 eps2 prob nY eps1_prop eps2_prop Yprop); intros.
+        destruct H.
+        exists x.
+        intros.
+        specialize (H n H0).
+        eapply Rge_trans; cycle 1.
+        apply H.
+        apply Rle_ge.
+        apply ps_sub.
+        apply Event.event_inter_sub_l.
+     Qed.
+
       Lemma lemma3_vector_forall_eventually_prob_iter (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
@@ -2882,6 +2969,108 @@ Section jaakola_vector2.
             now right.
       Qed.
 
+      Lemma lemma3_vector_forall_eventually_prob_iter_almost (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
+        (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
+        (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
+        (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) :
+        almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
+        almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
+        almost prts (fun ω => forall t i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->       
+
+        almost prts (fun ω => forall i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+           γ < 1 ->
+        (forall n, rv_le (rvmaxabs (X n)) (const C)) ->
+        (forall n, rv_eq (X (S n))
+                         (vecrvclip (S N)
+                            (vecrvplus 
+                               (vecrvminus (X n)
+                                  (vecrvmult (α n) (X n)))
+                               (vecrvscalerv (rvmaxabs (X n))
+                                  (vecrvscale γ (β n))))
+                            (pos_to_nneg C))) ->
+        forall (eps1 : posreal),
+               forall (eps2:nat -> posreal),
+               forall (k : nat),
+                 γ + (1 - γ)/2 <= / (1 + eps1) ->
+                 (forall n, 1 - eps2 n > 0) ->
+                 eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1)^k)))) >= prod_f_R0 (fun n => (1 - eps2 n)) k).
+      Proof.
+        intros aprop bprop abprop gamma_div gamma_lt1 Xbound Xprop eps1 eps2 k eps1_prop eps2_prop.
+        induction k.
+        - apply all_eventually.
+          intros.
+          simpl.
+          rewrite Rdiv_1.
+          assert (1 >= 1 - eps2 0%nat).
+          {
+            generalize (cond_pos (eps2 0%nat)).
+            lra.
+          }
+          eapply Rge_trans; cycle 1.
+          apply H.
+          right.
+          apply ps_one_countable_inter.
+          intros.
+          replace 1 with R1 by lra.
+          rewrite <- ps_one.
+          apply ps_proper.
+          intros ?.
+          simpl.
+          unfold pre_Ω.
+          specialize (Xbound (n + x)%nat x0).
+          unfold const in Xbound.
+          tauto.
+        - assert (0 < C/(1+eps1)^k).
+          {
+            apply Rdiv_lt_0_compat.
+            apply cond_pos.
+            apply pow_lt.
+            generalize (cond_pos eps1).
+            lra.
+          }
+          generalize (lemma3_vector_forall_eventually_prob_almost α β X (mkposreal _ H) C γ _ _ _ aprop bprop abprop gamma_div gamma_lt1 Xprop eps1 (eps2 (S k))); intros.
+          assert (0 < prod_f_R0 (fun n => (1 - eps2 n)) k).
+          {
+            clear H H0 IHk.
+            induction k.
+            - simpl.
+              apply eps2_prop.
+            - simpl.
+              apply Rmult_lt_0_compat; trivial.
+              apply eps2_prop.
+          }
+          specialize (H0 (mkposreal _ H1) eps1_prop (eps2_prop (S k))); intros.
+          rewrite Rmult_comm in H0.
+          cut_to H0.
+          + destruct H0.
+            exists x.
+            intros.
+            specialize (H0 n H2).
+            simpl in H0.
+            simpl.
+            rewrite Rmult_comm in H0.
+            eapply Rge_trans; cycle 1.
+            apply H0.
+            right.
+            apply ps_proper.
+            intros ?.
+            simpl.
+            replace  (C / (1 + eps1) ^ k / (1 + eps1)) with
+              (C / ((1 + eps1) * (1 + eps1) ^ k)); [tauto | ].
+            rewrite Rmult_comm.
+            unfold Rdiv.
+            rewrite Rmult_assoc.
+            now rewrite Rinv_mult.
+          + destruct IHk.
+            exists x.
+            intros.
+            specialize (H2 n H3).
+            simpl.
+            eapply Rge_trans; cycle 1.
+            apply H2.
+            now right.
+      Qed.
+
       Lemma lemma3_vector_forall_eventually_prob_iter_alt (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
@@ -2910,6 +3099,37 @@ Section jaakola_vector2.
         Proof.
           intros.
           now apply (lemma3_vector_forall_eventually_prob_iter α β) with (γ := γ).
+        Qed.
+
+
+      Lemma lemma3_vector_forall_eventually_prob_iter_alt_almost (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
+        (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
+        (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
+        (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) :
+        almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
+        almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
+        almost prts (fun ω => forall t i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->       
+
+        almost prts (fun ω => forall i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+        γ < 1 ->
+        (forall n, rv_le (rvmaxabs (X n)) (const C)) ->
+        (forall n, rv_eq (X (S n))
+                         (vecrvclip (S N)
+                            (vecrvplus 
+                               (vecrvminus (X n)
+                                  (vecrvmult (α n) (X n)))
+                               (vecrvscalerv (rvmaxabs (X n))
+                                  (vecrvscale γ (β n))))
+                            (pos_to_nneg C))) ->
+        forall (eps1 : posreal),
+               forall (eps2:nat -> posreal),
+                 γ + (1 - γ)/2 <= / (1 + eps1) ->
+                 (forall n, 1 - eps2 n > 0) ->
+                 forall (k : nat),
+                   eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (X (n + n0)%nat)) (C / (1 + eps1)^k)))) >= prod_f_R0 (fun n => (1 - eps2 n)) k).
+        Proof.
+          intros.
+          now apply (lemma3_vector_forall_eventually_prob_iter_almost α β) with (γ := γ).
         Qed.
 
 
