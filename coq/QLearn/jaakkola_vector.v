@@ -2311,37 +2311,6 @@ Section jaakola_vector2.
           let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
           Rbar_le 
             (ps_P (union_of_collection Einf))
-            (Lim_seq (fun n => Inf_seq (fun k => ps_P (E (k + n)%nat)))).
-        Proof.
-          intros.
-          unfold Einf.
-          rewrite <- ps_lim_inf.
-          apply Lim_seq_le.
-          intros.
-          generalize (ps_inter_inf0 (fun k => E (k + n)%nat)); intros.
-          assert (is_finite  (Inf_seq (fun k : nat => ps_P (E (k + n)%nat)))).
-          {
-            apply bounded_is_finite with (a := 0) (b := 1).
-            - rewrite <- (Inf_seq_const 0).
-              apply Inf_seq_le.
-              intros.
-              simpl.
-              apply ps_pos.
-            - rewrite <- (Inf_seq_const 1).  
-              apply Inf_seq_le.
-              intros.
-              simpl.
-              apply ps_le1.
-          }
-          rewrite <- H0 in H.
-          now simpl in H.
-        Qed.
-          
-
-        Lemma ps_inter_inf_alt  (E : nat -> event dom) :
-          let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
-          Rbar_le 
-            (ps_P (union_of_collection Einf))
             (ELim_seq (fun n => Inf_seq (fun k => ps_P (E (k + n)%nat)))).
         Proof.
           intros.
@@ -2395,36 +2364,6 @@ Section jaakola_vector2.
         Lemma ps_union_sup  (E : nat -> event dom) :
           let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
           Rbar_le 
-            (Lim_seq (fun n => Sup_seq (fun k => ps_P (E (k + n)%nat))))
-            (ps_P (inter_of_collection Esup)).
-        Proof.
-          intros.
-          unfold Esup.
-          rewrite <- ps_lim_sup.
-          apply Lim_seq_le.
-          intros.
-          generalize (ps_union_sup0 (fun k => E (k + n)%nat)); intros.
-          assert (is_finite  (Sup_seq (fun k : nat => ps_P (E (k + n)%nat)))).
-          {
-            apply bounded_is_finite with (a := 0) (b := 1).
-            - rewrite <- (Sup_seq_const 0).
-              apply Sup_seq_le.
-              intros.
-              simpl.
-              apply ps_pos.
-            - rewrite <- (Sup_seq_const 1).  
-              apply Sup_seq_le.
-              intros.
-              simpl.
-              apply ps_le1.
-          }
-          rewrite <- H0 in H.
-          now simpl in H.
-        Qed.
-
-        Lemma ps_union_sup_alt  (E : nat -> event dom) :
-          let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
-          Rbar_le 
             (ELim_seq (fun n => Sup_seq (fun k => ps_P (E (k + n)%nat))))
             (ps_P (inter_of_collection Esup)).
         Proof.
@@ -2436,84 +2375,6 @@ Section jaakola_vector2.
           intros.
           apply ps_union_sup0.
         Qed.
-
-        Lemma Sup_seq_ps_P_fin  (E : nat -> event dom) :
-          forall n,
-            is_finite  (Sup_seq (fun k : nat => ps_P (E (k + n)%nat))).
-          Proof.
-            intros.
-            apply bounded_is_finite with (a := 0) (b := 1).
-            - rewrite <- (Sup_seq_const 0).
-              apply Sup_seq_le.
-              intros.
-              simpl.
-              apply ps_pos.
-            - rewrite <- (Sup_seq_const 1).  
-              apply Sup_seq_le.
-              intros.
-              simpl.
-              apply ps_le1.
-        Qed.
-
-        Lemma ps_union_sup_fin  (E : nat -> event dom) :
-          let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
-          (Lim_seq (fun n => Sup_seq (fun k => ps_P (E (k + n)%nat)))) <=
-            (ps_P (inter_of_collection Esup)).
-         Proof.
-           generalize (ps_union_sup E); intros.
-           simpl in H.
-           assert (forall n,
-                      is_finite  (Sup_seq (fun k : nat => ps_P (E (k + n)%nat)))).
-           {
-             intros.
-            apply bounded_is_finite with (a := 0) (b := 1).
-            - rewrite <- (Sup_seq_const 0).
-              apply Sup_seq_le.
-              intros.
-              simpl.
-              apply ps_pos.
-            - rewrite <- (Sup_seq_const 1).  
-              apply Sup_seq_le.
-              intros.
-              simpl.
-              apply ps_le1.
-          }
-          assert (is_finite (Lim_seq (fun n : nat => Sup_seq (fun k : nat => ps_P (E (k + n)%nat))))).
-          {
-            apply bounded_is_finite with (a := 0) (b := 1).
-            - rewrite <- (Lim_seq_const 0).
-              apply Lim_seq_le.
-              intros.
-              assert (Rbar_le 0
-                        (Sup_seq (fun k : nat => ps_P (E (k + n)%nat)))).
-              {
-                rewrite <- (Sup_seq_const 0).
-                apply Sup_seq_le.
-                intros.
-                simpl.
-                apply ps_pos.
-              }
-              rewrite <- H0 in H1.
-              now simpl in H1.
-            - rewrite <- (Lim_seq_const 1).
-              apply Lim_seq_le.
-              intros.
-              assert (Rbar_le 
-                        (Sup_seq (fun k : nat => ps_P (E (k + n)%nat))) 
-                        1).
-              {
-                rewrite <- (Sup_seq_const 1).
-                apply Sup_seq_le.
-                intros.
-                simpl.
-                apply ps_le1.
-              }
-              rewrite <- H0 in H1.
-              now simpl in H1.
-           }
-           rewrite <- H1 in H.
-           now simpl in H.
-         Qed.
 
          Lemma Inf_seq_ElimInf_seq_le (f : nat -> Rbar) :
            Rbar_le (Inf_seq f) (ELimInf_seq f).
@@ -2572,8 +2433,8 @@ Section jaakola_vector2.
             apply ps_proper.
             now rewrite H.
           }
-          generalize (ps_union_sup_alt E); intros union.
-          generalize (ps_inter_inf_alt E); intros inter.
+          generalize (ps_union_sup E); intros union.
+          generalize (ps_inter_inf E); intros inter.
           assert (LimInf_seq (fun n => ps_P (E n)) = LimSup_seq (fun n => ps_P (E n))).
           {
             apply Rbar_le_antisym.
@@ -3791,109 +3652,6 @@ Section jaakola_vector2.
      repeat rewrite Rvector_scale_scale.
      now rewrite Rmult_comm.
    Qed.
-
-(*
-       Lemma lemma3_full (α β X : nat -> Ts -> vector R (S N)) (γ : posreal)
-         (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
-         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
-         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n)) :           
-         (forall t ω i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
-         (forall t ω i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
-         (forall t ω i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->                  
-         (forall ω i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
-         γ < 1 ->
-         (forall n, rv_eq (X (S n))
-                      (vecrvplus 
-                         (vecrvminus (X n)
-                            (vecrvmult (α n) (X n)))
-                         (vecrvscalerv (rvmaxabs (X n))
-                            (vecrvscale γ (β n))))) ->
-         almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
-       Proof.
-         intros.
-         assert (0 < 1) by lra.
-         pose (C := mkposreal 1 H5).
-         pose (G := fun n ω Y =>
-                      Rvector_plus
-                        (Rvector_plus Y
-                                      (Rvector_scale (-1)  (Rvector_mult (α n ω) Y)))
-                        (Rvector_scale (γ * Rvector_max_abs Y)
-                                       (β n ω))).
-         pose (XC := fix XC nn :=
-                 match nn with
-                 | 0%nat => vecrvclip (S N) (X 0%nat) (pos_to_nneg C)
-                 | S n =>
-                     vecrvclip (S N)
-                       (vecrvplus 
-                          (vecrvminus (XC n)
-                             (vecrvmult (α n) (XC n)))
-                          (vecrvscalerv (rvmaxabs (XC n))
-                             (vecrvscale γ (β n))))
-                       (pos_to_nneg C)
-                   end).
-         generalize (lemma3 α β XC C γ); intros.
-         cut_to H6; trivial.
-         - apply (lemma2 (S N) X XC G C).
-           + intros ??.
-             rewrite H4.
-             unfold G, vecrvminus, vecrvmult, vecrvscalerv, rvmaxabs.
-             unfold vecrvplus, vecrvopp, vecrvscale.
-             rewrite Rvector_scale_scale.
-             now rewrite Rmult_comm.
-           + intros ??.
-             simpl.
-             unfold G, vecrvminus, vecrvmult, vecrvscalerv, rvmaxabs.
-             unfold vecrvplus, vecrvopp, vecrvscale.
-             f_equal.
-             apply functional_extensionality.
-             intros.
-             rewrite Rvector_scale_scale.
-             now rewrite Rmult_comm.
-           + simpl.
-             reflexivity.
-           + intros ???.
-             unfold G.
-             rewrite Rvector_scale_plus_l.
-             rewrite Rvector_scale_plus_l.
-             repeat rewrite (Rvector_scale_comm beta).
-             rewrite Rvector_scale_mult_r.
-             rewrite Rvector_max_abs_scale.
-             repeat rewrite Rvector_scale_scale.
-             generalize (cond_nonneg beta); intros.
-             rewrite Rabs_right; try lra.
-             rewrite (Rmult_comm beta).
-             now rewrite Rmult_assoc.
-           + intros ???.
-             unfold G.
-             rewrite Rvector_scale_plus_l.
-             rewrite Rvector_scale_plus_l.
-             repeat rewrite (Rvector_scale_comm beta).
-             rewrite Rvector_scale_mult_r.
-             rewrite Rvector_max_abs_scale.
-             repeat rewrite Rvector_scale_scale.
-             generalize (cond_nonneg beta); intros.
-             rewrite Rabs_right; try lra.
-             rewrite (Rmult_comm beta).
-             now rewrite Rmult_assoc.
-           + apply H6.
-         - intros.
-           induction n.
-           + simpl.
-             now apply vecrvclip_rv.
-           + simpl.
-             apply vecrvclip_rv.
-             apply Rvector_plus_rv.
-             * apply Rvector_minus_rv; trivial.
-               now apply Rvector_mult_rv.
-             * apply Rvector_scale_rv_rv.
-               -- now apply Rvector_max_abs_rv.
-               -- now apply Rvector_scale_rv.
-         - intros.
-           induction n; simpl; apply rvmaxabs_vecrvclip.
-         - intros.
-           now simpl.
-       Qed.
-*)
 
        Lemma lemma3_full_almost (α β X : nat -> Ts -> vector R (S N)) (γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
