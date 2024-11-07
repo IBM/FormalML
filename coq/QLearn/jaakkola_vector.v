@@ -816,50 +816,6 @@ Proof.
   now rewrite vector_nth_const.
 Qed.
 
-Lemma delta_eps_bound (gamma : R) (eps : posreal) (C : posreal) (delta : vector R (S N)) :
-  0 < gamma ->
-  Rvector_max_abs delta > C * eps ->
-  gamma * Rvector_max_abs (Rvector_plus delta (vector_const (pos eps) (S N))) <=
-    gamma * (C + 1)/ C * Rvector_max_abs delta.
-Proof.
-  intros.
-  unfold Rdiv.
-  rewrite Rmult_assoc.
-  rewrite Rmult_assoc.
-  apply Rmult_le_compat_l; try lra.
-  rewrite <- Rmult_1_l at 1.
-  rewrite (Rinv_l_sym C) at 1.
-  - rewrite <- Rmult_assoc.
-    rewrite (Rmult_comm (C + 1) _).
-    rewrite Rmult_assoc.
-    rewrite Rmult_assoc.
-    apply Rmult_le_compat_l.
-    + left.
-      apply Rinv_pos.
-      apply cond_pos.
-    + replace (pos C) with (Rabs C) at 1.
-      * rewrite <- Rvector_max_abs_scale.
-        rewrite Rvector_scale_plus_l.
-        eapply Rle_trans.
-        -- apply Rvector_max_abs_triang.
-        -- rewrite Rvector_scale_const.
-           rewrite Rvector_max_abs_const.
-           rewrite Rabs_right.
-           ++ apply Rgt_lt in H0.
-              apply Rplus_lt_compat_l with (r := Rvector_max_abs (Rvector_scale C delta)) in H0.
-              eapply Rle_trans.
-              ** left; apply H0.
-              ** rewrite Rvector_max_abs_scale.
-                 right.
-                 rewrite Rabs_right; try lra.
-                 left; apply cond_pos.
-          ++ apply Rle_ge.
-             apply Rmult_le_pos; left; apply cond_pos.
-      * apply Rabs_right; apply Rle_ge; left; apply cond_pos.
-  - apply Rgt_not_eq.
-    apply cond_pos.
-Qed.
-
 Lemma gamma_eps_le (gamma' : posreal) (gamma'_lt1 : gamma' < 1) :
   {eps : posreal | gamma' <=  / (1 + eps)}.
 Proof.
@@ -887,102 +843,6 @@ Proof.
       apply Rgt_not_eq.
       apply cond_pos.
 Qed.
-
-Lemma gamma_eps_le_alt (gamma : posreal) :
-  gamma < 1 ->
-  exists (eps : posreal),
-  forall (eps2 : posreal),
-    eps2 <= eps ->
-    gamma <= / (1 + eps2).
-Proof.
-  intros.
-  destruct (gamma_eps_le gamma H).
-  exists x.
-  intros.
-  eapply Rle_trans.
-  apply r.
-  generalize (cond_pos x); intros.
-  generalize (cond_pos eps2); intros.
-  apply Rle_Rinv; lra.
-Qed.
-
-Lemma gamma_eps_le_forall (gamma eps : posreal) :
-  gamma <=  / (1 + eps) ->
-  forall (eps2 : posreal),
-    eps2 <= eps ->
-    gamma <= / (1 + eps2).
-Proof.
-  intros.
-  eapply Rle_trans.
-  apply H.
-  generalize (cond_pos eps); intros.
-  generalize (cond_pos eps2); intros.
-  apply Rle_Rinv; lra.
-Qed.
-
-
-    Lemma conv_as_prob_1_eps_alt (f : nat -> Ts -> R) (fstar: R)
-      {rv : forall n, RandomVariable dom borel_sa (f n)} :
-      almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
-      forall (eps1 eps2:posreal),
-        eventually (fun n => ps_P (event_le dom (rvabs (rvminus (f n) (const fstar))) eps1) >= 1 - eps2).
-    Proof.
-      intros.
-      apply conv_as_prob_1_eps_le.
-      revert H.
-      apply almost_impl; apply all_almost.
-      intros ??.
-      apply is_lim_seq_plus with (l1 := fstar) (l2 := -1 * fstar); trivial.
-      - apply is_lim_seq_const.
-      - unfold is_Rbar_plus; simpl.
-        f_equal.
-        f_equal.
-        lra.
-    Qed.
-
-    Lemma conv_as_prob_1_eps_forall_alt (f : nat -> Ts -> R) (fstar: R)
-      {rv : forall n, RandomVariable dom borel_sa (f n)} :
-      almost prts (fun x => is_lim_seq (fun n => f n x) fstar) ->
-      forall (eps1 eps2:posreal),
-        eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvabs (rvminus (f (n + n0)%nat) (const fstar))) eps1))) >= 1 - eps2).
-    Proof.
-      intros.
-      generalize (conv_as_prob_1_eps_forall_le (fun n =>  rvminus (f n) (const fstar))); intros.
-      cut_to H0.
-      - apply H0.
-      - revert H.
-        apply almost_impl; apply all_almost.
-        intros ??.
-        apply is_lim_seq_plus with (l1 := fstar) (l2 := -1 * fstar); trivial.
-        + apply is_lim_seq_const.
-        + unfold is_Rbar_plus; simpl.
-          f_equal.
-          f_equal.
-          lra.
-    Qed.
-
-    Lemma conv_as_prob_1_eps_vector_forall_alt (f : nat -> Ts -> vector R N) (fstar: vector R N)
-      {rv : forall n, RandomVariable dom (Rvector_borel_sa N) (f n)} :
-      (forall i pf, almost prts (fun x => is_lim_seq (fun n => vector_nth i pf (f n x)) (vector_nth i pf fstar))) ->
-      forall (eps1 eps2:posreal),
-        forall i pf,
-        eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvabs (rvminus (vecrvnth i pf (f (n + n0)%nat)) (const (vector_nth i pf fstar)))) eps1))) >= 1 - eps2).
-    Proof.
-      intros.
-      generalize (conv_as_prob_1_eps_forall_le (fun n =>  rvminus (vecrvnth i pf (f n)) (const (vector_nth i pf fstar)))); intros.
-      cut_to H0.
-      - apply H0.
-      - specialize (H i pf).
-        revert H.
-        apply almost_impl; apply all_almost.
-        intros ??.
-        apply is_lim_seq_plus with (l1 := vector_nth i pf fstar) (l2 := -1 * (vector_nth i pf fstar)); trivial.
-        + apply is_lim_seq_const.
-        + unfold is_Rbar_plus; simpl.
-          f_equal.
-          f_equal.
-          lra.
-    Qed.
 
     Lemma conv_as_prob_1_eps_vector_forall_alt2 (f : nat -> Ts -> vector R N) (fstar: vector R N)
       {rv : forall n, RandomVariable dom (Rvector_borel_sa N) (f n)} :
@@ -1022,28 +882,6 @@ Qed.
          rv_unfold.
          now unfold vecrvnth.
     Qed.
-
-(*
-    Lemma lemma3_gamma_eps (gamma : posreal) :
-      gamma < 1 ->
-      exists (eps : posreal),
-      forall (eps2 : posreal), 
-        eps2 <= eps ->
-        gamma + (1 - gamma)/2 <= / (1 + eps2).
-    Proof.
-      intros.
-      assert (0 < gamma + (1 - gamma)/2).
-      {
-        generalize (cond_pos gamma); intros.
-        apply Rplus_lt_0_compat; lra.
-      }
-      assert (mkposreal _ H0 < 1).
-      {
-        simpl; lra.
-      }
-      apply (gamma_eps_le_alt _ H1).
-    Qed.      
-*)
 
 Lemma lemma3_gamma_eps_le (gamma : posreal) :
   gamma < 1 ->
