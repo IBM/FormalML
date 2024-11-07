@@ -781,33 +781,6 @@ Proof.
     now apply (lemma2_n0_w w X XX G C).
 Qed.
   
-Lemma gamma_C (gamma : R) :
-  0 < gamma < 1 ->
-  forall (C : R),
-    C > gamma / (1-gamma) ->
-    0 < C /\
-    gamma * (C + 1)/C < 1.
-Proof.
-  intros.
-  assert (0 < C).
-  {
-    apply Rgt_lt in H0.
-    eapply Rlt_trans; [|apply H0].
-    apply Rdiv_lt_0_compat; lra.
-  }
-  split; trivial.
-  apply Rmult_lt_reg_r with (r := C); trivial.
-  unfold Rdiv.
-  rewrite Rmult_assoc.
-  rewrite <- Rinv_l_sym; try lra.
-  rewrite Rmult_1_l.
-  rewrite Rmult_1_r.
-  apply Rmult_gt_compat_r with (r := (1 - gamma)) in H0; try lra.
-  unfold Rdiv in H0.
-  rewrite Rmult_assoc in H0.
-  rewrite <- Rinv_l_sym in H0; lra.
-Qed.
-
 Lemma Rvector_max_abs_const {n : nat} (c : R) :
   Rvector_max_abs (vector_const c (S n)) = Rabs c.
 Proof.
@@ -844,7 +817,7 @@ Proof.
       apply cond_pos.
 Qed.
 
-    Lemma conv_as_prob_1_eps_vector_forall_alt2 (f : nat -> Ts -> vector R N) (fstar: vector R N)
+    Lemma conv_as_prob_1_eps_vector_forall_alt (f : nat -> Ts -> vector R N) (fstar: vector R N)
       {rv : forall n, RandomVariable dom (Rvector_borel_sa N) (f n)} :
       (forall i pf, almost prts (fun x => is_lim_seq (fun n => vector_nth i pf (f n x)) (vector_nth i pf fstar))) ->
       forall (eps1 eps2:posreal),
@@ -917,7 +890,7 @@ Qed.
         - apply cond_pos.
       }
       
-     generalize (conv_as_prob_1_eps_vector_forall_alt2 f fstar H (mkposreal _ H1) eps2).
+     generalize (conv_as_prob_1_eps_vector_forall_alt f fstar H (mkposreal _ H1) eps2).
      apply eventually_impl.
      apply all_eventually; intros.
      eapply Rge_trans; cycle 1.
@@ -3145,7 +3118,8 @@ Section jaakola_vector2.
         apply Lim_seq_correct in H11.
         now rewrite H12 in H11.
    Qed.
-*)
+ *)
+       
       Lemma lemma3_almost (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
