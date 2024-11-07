@@ -1023,6 +1023,7 @@ Qed.
          now unfold vecrvnth.
     Qed.
 
+(*
     Lemma lemma3_gamma_eps (gamma : posreal) :
       gamma < 1 ->
       exists (eps : posreal),
@@ -1042,6 +1043,7 @@ Qed.
       }
       apply (gamma_eps_le_alt _ H1).
     Qed.      
+*)
 
 Lemma lemma3_gamma_eps_le (gamma : posreal) :
   gamma < 1 ->
@@ -1058,22 +1060,6 @@ Proof.
     simpl; lra.
   }
   apply (gamma_eps_le (mkposreal _ H0) H1).
-Qed.
-
-Lemma lemma3_gamma_eps_alt (gamma eps : posreal) :
-  gamma < 1 ->
-  gamma + (1 - gamma)/2 <=  / (1 + eps) ->
-  forall (eps2 : posreal),
-    eps2 <= eps ->
-    gamma + (1 - gamma)/2 <= / (1 + eps2).
-Proof.
-  intros.
-  assert (0 < gamma + (1 - gamma)/2).
-  {
-    generalize (cond_pos gamma); intros.
-    apply Rplus_lt_0_compat; lra.
-  }
-  now apply (gamma_eps_le_forall (mkposreal _ H2) eps).
 Qed.
 
     Lemma lemma3_helper_vector_forall (f : nat -> Ts -> vector R N) (fstar: vector R N) (C gamma : posreal)
@@ -1168,64 +1154,6 @@ Qed.
      rewrite event_inter_comm, ps_inter_cond_prob_r; lra.
    Qed.
 
-   Lemma lemma3_helper_iter_nneg  (f α β : nat -> Ts -> R) (C C0 : nonnegreal) :
-      (forall n x, 0 <= α n x <= 1) ->
-      (forall n x, 0 <= β n x <= 1) ->     
-      (forall x, f 0%nat x = C0) ->
-      (forall n x, f (S n) x = (1 - α n x) * f n x + (β n x) * C) ->
-      forall n x, 0 <= f n x.
-   Proof.
-     intros.
-     induction n.
-     - rewrite H1.
-       apply cond_nonneg.
-     - rewrite H2.
-       apply Rplus_le_le_0_compat.
-       + apply Rmult_le_pos; trivial.
-         specialize (H n x).
-         lra.
-       + apply Rmult_le_pos.
-         * specialize (H0 n x).
-           lra.
-         * apply cond_nonneg.
-   Qed.
-
-   Lemma lemma3_helper_iter_nneg_alt  (f α β : nat -> Ts -> R) (C C0 : nonnegreal) (x : Ts):
-      (forall n, 0 <= α n x <= 1) ->
-      (forall n, 0 <= β n x <= 1) ->     
-      (f 0%nat x = C0) ->
-      (forall n, f (S n) x = (1 - α n x) * f n x + (β n x) * C) ->
-      forall n, 0 <= f n x.
-   Proof.
-     intros.
-     induction n.
-     - rewrite H1.
-       apply cond_nonneg.
-     - rewrite H2.
-       apply Rplus_le_le_0_compat.
-       + apply Rmult_le_pos; trivial.
-         specialize (H n).
-         lra.
-       + apply Rmult_le_pos.
-         * specialize (H0 n).
-           lra.
-         * apply cond_nonneg.
-   Qed.
-
-   Lemma lemma3_helper_iter_nneg_almost  (f α β : nat -> Ts -> R) (C C0 : nonnegreal) :
-     almost prts (fun ω => forall k, 0 <= α k ω <= 1) ->
-     almost prts (fun ω => forall k, 0 <= β k ω <= 1) ->
-     (forall x, f 0%nat x = C0) ->
-     (forall n x, f (S n) x = (1 - α n x) * f n x + (β n x) * C) ->
-     almost prts (fun ω => forall n, 0 <= f n ω).
-   Proof.
-     intros.
-     revert H; apply almost_impl.
-     revert H0; apply almost_impl.
-     apply all_almost; intros ????.
-     apply lemma3_helper_iter_nneg_alt with (α := α) (β := β) (C := C) (C0 := C0); trivial.
-   Qed.
-     
 
    Lemma lemma3_helper_iter_conv  (f α : nat -> R) (C : R) :
       (forall n, 0 <= α n < 1) ->
