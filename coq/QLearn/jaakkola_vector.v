@@ -4721,6 +4721,51 @@ Section jaakola_vector2.
             intros.
             apply HH1.
           }
+          assert (epsk: forall (k : nat),
+                     0 < / INR (S k)).
+          {
+            intros.
+            apply Rinv_0_lt_compat.
+            apply lt_0_INR.
+            lia.
+          }
+          assert (forall (k : nat),
+                     ps_P
+                       (event_le dom
+                          (fun ω : Ts =>
+                             ELimSup_seq (fun n1 : nat => Rabs (vector_nth n pf (δ n1 ω))))
+                          (C * (mkposreal _ (epsk k)))) >= 1 - (mkposreal _ (epsk k)) ).
+          {
+            intros.
+            apply H29.
+          }
+          assert (is_lim_seq (fun k => mkposreal _ (epsk k)) 0).
+          {
+            assert (is_lim_seq (fun k => INR(S k)) p_infty).
+            {
+              rewrite <- is_lim_seq_incr_1.
+              apply is_lim_seq_INR.
+            }
+            apply is_lim_seq_inv in H31.
+            + replace (Rbar_inv p_infty) with (Finite 0) in H31.
+              * apply H31.
+              * now unfold Rbar_inv.
+            + discriminate.            
+          }
+
+          assert (is_lim_seq (fun k => 1 - mkposreal _ (epsk k)) 1).
+          {
+            apply is_lim_seq_minus with (l1 := 1) (l2 := 0); trivial.
+            - apply is_lim_seq_const.
+            - unfold is_Rbar_minus, is_Rbar_plus.
+              simpl.
+              f_equal; f_equal; lra.
+          }
+          assert (is_lim_seq (fun k => (C * (mkposreal _ (epsk k)))) 0).
+          {
+            apply is_lim_seq_scal_l with (a := C) in H31.
+            now rewrite Rbar_mult_0_r in H31.
+          }
           assert (is_lim_pos (fun (eps:posreal) => C * eps) 0).
           {
             assert (is_lim (fun r => C * r) 0 0).
