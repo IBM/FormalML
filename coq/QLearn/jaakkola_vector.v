@@ -3711,6 +3711,50 @@ Section jaakola_vector2.
    now rewrite Rabs_le_both.
   Qed.
 
+  Lemma LimSup_pos_0 (f : nat -> R) :
+    (forall n, 0 <= f n) ->
+    (LimSup_seq f = 0) ->
+    Lim_seq f = 0.
+  Proof.
+    intros.
+    generalize (Lim_seq_sup_le f); intros.
+    rewrite H0 in H1.
+    apply Rbar_le_antisym; trivial.
+    replace (Finite 0) with (Lim_seq (const 0)).
+    - apply Lim_seq_le.
+      apply H.
+    - unfold const.
+      now rewrite Lim_seq_const.
+  Qed.
+
+  Lemma LimSup_pos_bounded_finite (f : nat -> R) (c : R) :
+    (forall n, 0 <= f n) ->
+    Rbar_le (LimSup_seq f) c ->
+    is_finite (LimSup_seq f).
+  Proof.
+    intros.
+    apply bounded_is_finite with (a := 0) (b := c); trivial.
+    replace (Finite 0) with (LimSup_seq (fun _ => 0)).
+    - apply LimSup_le.
+      exists 0%nat.
+      intros.
+      apply H.
+    - apply LimSup_seq_const.
+  Qed.
+
+  Lemma Lim_seq_pos_bounded_finite (f : nat -> R) (c : R) :
+    (forall n, 0 <= f n) ->
+    Rbar_le (Lim_seq f) c ->
+    is_finite (Lim_seq f).
+  Proof.
+    intros.
+    apply bounded_is_finite with (a := 0) (b := c); trivial.
+    replace (Finite 0) with (Lim_seq (fun _ => 0)).
+    - apply Lim_seq_le.
+      apply H.
+    - apply Lim_seq_const.
+  Qed.
+
 
   Theorem Jaakkola_alpha_beta_bounded
     (γ : R) 
@@ -4796,16 +4840,39 @@ Section jaakola_vector2.
                           (fun ω : Ts =>
                              ELimSup_seq (fun n1 : nat => Rabs (vector_nth n pf (δ n1 ω))))
                           (C * (mkposreal _ (epsk k))))))
-                    (event_le dom
+                    (event_Req dom
                        (fun ω : Ts =>
                           ELimSup_seq (fun n1 : nat => Rabs (vector_nth n pf (δ n1 ω))))
-                          0)).
+                       0)).
           {
             intros ?.
             unfold inter_of_collection, proj1_sig, event_le.
             split; intros.
-            admit.
-            admit.
+            - apply Lim_seq_le in H35.
+              apply is_lim_seq_unique in H33.
+              rewrite H33 in H35.
+              rewrite Lim_seq_const in H35.
+              simpl.
+              unfold pre_event_preimage, pre_event_singleton.
+              simpl in H35.
+              apply Rle_antisym; trivial.
+              rewrite ELimSup_seq_fin.
+              generalize (LimSup_le (const 0)
+                                    (fun x0 : nat => Rabs (vector_nth n pf (δ x0 x)))); intros.
+              cut_to H36.
+              unfold const in H36.
+              rewrite LimSup_seq_const in H36.
+              + admit.
+              + exists 0%nat.
+                intros.
+                unfold const.
+                apply Rabs_pos.
+            - red in H35.
+              unfold preimage_singleton, pre_event_preimage, pre_event_singleton in H35.              rewrite H35.
+              apply Rmult_le_pos; try lra.
+              left.
+              apply Rinv_0_lt_compat.
+              apply lt_0_INR; lia.
           }
           generalize (lim_prob_descending _ _ H34 H35); intros.
                     
