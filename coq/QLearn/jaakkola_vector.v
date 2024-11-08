@@ -3713,7 +3713,7 @@ Section jaakola_vector2.
 
   Lemma LimSup_pos_0 (f : nat -> R) :
     (forall n, 0 <= f n) ->
-    (LimSup_seq f = 0) ->
+    LimSup_seq f = 0->
     Lim_seq f = 0.
   Proof.
     intros.
@@ -3726,6 +3726,25 @@ Section jaakola_vector2.
     - unfold const.
       now rewrite Lim_seq_const.
   Qed.
+
+  Lemma is_lim_seq_pos_0 (f : nat -> R) :
+    (forall n, 0 <= f n) ->
+    (forall (eps: posreal),
+        eventually (fun n => f n < eps)) ->
+    is_lim_seq f 0.
+  Proof.
+    intros.
+    apply is_lim_seq_spec.
+    intros ?.
+    specialize (H0 eps).
+    revert H0.
+    apply eventually_impl.
+    apply all_eventually.
+    intros.
+    rewrite Rminus_0_r, Rabs_right; try lra.
+    now apply Rle_ge.
+  Qed.
+  
 
   Lemma LimSup_pos_bounded_finite (f : nat -> R) (c : R) :
     (forall n, 0 <= f n) ->
