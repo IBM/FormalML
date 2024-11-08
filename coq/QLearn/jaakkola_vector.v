@@ -4739,6 +4739,7 @@ Section jaakola_vector2.
             intros.
             apply H29.
           }
+                       
           assert (is_lim_seq (fun k => mkposreal _ (epsk k)) 0).
           {
             assert (is_lim_seq (fun k => INR(S k)) p_infty).
@@ -4766,6 +4767,48 @@ Section jaakola_vector2.
             apply is_lim_seq_scal_l with (a := C) in H31.
             now rewrite Rbar_mult_0_r in H31.
           }
+          assert (forall k,
+                     event_sub
+                       (event_le dom
+                          (fun ω : Ts =>
+                             ELimSup_seq (fun n1 : nat => Rabs (vector_nth n pf (δ n1 ω))))
+                          (C * (mkposreal _ (epsk (S k)))))
+                       (event_le dom
+                          (fun ω : Ts =>
+                             ELimSup_seq (fun n1 : nat => Rabs (vector_nth n pf (δ n1 ω))))
+                          (C * (mkposreal _ (epsk k))))).
+          {
+            intros ??.
+            unfold event_le, proj1_sig.
+            intros.
+            eapply Rle_trans.
+            apply H34.
+            apply Rmult_le_compat_l.
+            - lra.
+            - apply Rinv_le_contravar.
+              + apply lt_0_INR; lia.
+              + apply le_INR; lia.
+          }  
+          assert (event_equiv
+                    (inter_of_collection
+                       (fun k =>
+                          (event_le dom
+                          (fun ω : Ts =>
+                             ELimSup_seq (fun n1 : nat => Rabs (vector_nth n pf (δ n1 ω))))
+                          (C * (mkposreal _ (epsk k))))))
+                    (event_le dom
+                       (fun ω : Ts =>
+                          ELimSup_seq (fun n1 : nat => Rabs (vector_nth n pf (δ n1 ω))))
+                          0)).
+          {
+            intros ?.
+            unfold inter_of_collection, proj1_sig, event_le.
+            split; intros.
+            admit.
+            admit.
+          }
+          generalize (lim_prob_descending _ _ H34 H35); intros.
+                    
           assert (is_lim_pos (fun (eps:posreal) => C * eps) 0).
           {
             assert (is_lim (fun r => C * r) 0 0).
@@ -4774,11 +4817,11 @@ Section jaakola_vector2.
               {
                 apply is_lim_id.
               }
-              apply is_lim_scal_l with (a := C) in H30.
-              now rewrite Rbar_mult_0_r in H30.
+              apply is_lim_scal_l with (a := C) in H37.
+              now rewrite Rbar_mult_0_r in H37.
             }
-            apply filterlim_right in H30.
-            revert H30.
+            apply filterlim_right in H37.
+            revert H37.
             apply filterlim_at_right_0_Rbar_ext.
             intros.
             unfold lift_posreal_f.
@@ -4797,8 +4840,8 @@ Section jaakola_vector2.
                 f_equal.
                 f_equal; lra.
             }
-            apply filterlim_right in H31.
-            revert H31.
+            apply filterlim_right in H38.
+            revert H38.
             apply filterlim_at_right_0_Rbar_ext.
             intros.
             unfold lift_posreal_f.
