@@ -3541,49 +3541,35 @@ Section jaakola_vector2.
             apply vecrvclip_max_bound.
       Qed.
 *)
+
       Lemma almost_is_lim_nth_maxabs {NN} (X : nat -> Ts -> vector R (S NN)) :
-        almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0) ->
+        almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0) <->
         forall k pf,
           almost prts (fun x : Ts => is_lim_seq (fun m : nat => vector_nth k pf (X m x)) 0).
       Proof.
-        intros.
-        revert H.
-        apply almost_impl.
-        apply all_almost.
-        intros ??.
-        assert (is_lim_seq (fun n => - (rvmaxabs (X n) x)) 0).
+        split; intros.
         {
-          rewrite is_lim_seq_opp in H.
-          simpl in H.
-          now rewrite Ropp_0 in H.
+          revert H.
+          apply almost_impl.
+          apply all_almost.
+          intros ??.
+          now apply lim_seq_maxabs0.
         }
-        eapply (is_lim_seq_le_le _ _ _ 0 _ H0 H).
-        Unshelve.
-        intros.
-        simpl.
-        apply Rabs_le_between.
-        apply Rvector_max_abs_nth_le.
+        {
+          apply almost_bounded_forall in H.
+          - revert H.
+            apply almost_impl.
+            apply all_almost; intros ??.
+            now apply lim_seq_maxabs0_b.
+          - intros.
+            apply lt_dec.
+          - intros.
+            revert H0.
+            apply is_lim_seq_ext.
+            intros.
+            apply vector_nth_ext.
+        }
       Qed.
-
-    Lemma almost_is_lim_nth_maxabs_alt {NN} (X : nat -> Ts -> vector R (S NN)) :
-      (forall k pf,
-          almost prts (fun x : Ts => is_lim_seq (fun m : nat => vector_nth k pf (X m x)) 0)) ->
-        almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
-    Proof.
-      intros.
-      apply almost_bounded_forall in H.
-      - revert H.
-        apply almost_impl.
-        apply all_almost; intros ??.
-        now apply lim_seq_maxabs0_b.
-      - intros.
-        apply lt_dec.
-      - intros.
-        revert H0.
-        apply is_lim_seq_ext.
-        intros.
-        apply vector_nth_ext.
-    Qed.
 
    Lemma condexp_condexp_diff_0 (XF : Ts -> R)
      {dom2 : SigmaAlgebra Ts}
@@ -4122,7 +4108,7 @@ Section jaakola_vector2.
           now apply vecrvnth_rv.
       }
       generalize lim_w_0; intros lim_maxabs_0.
-      apply almost_is_lim_nth_maxabs_alt in lim_maxabs_0.
+      rewrite <- almost_is_lim_nth_maxabs in lim_maxabs_0.
       generalize (conv_as_prob_1_eps_forall _ lim_maxabs_0); intros.
       assert (exists C, 0 < C /\ γ * ((C + 1) / C) < 1).
       {
