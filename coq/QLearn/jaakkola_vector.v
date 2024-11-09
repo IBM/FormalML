@@ -4442,6 +4442,7 @@ Section jaakola_vector2.
           - unfold Rvector_abs.
             now rewrite vector_nth_map.
         }
+(*        
         assert (rvlimsup: forall (i : nat) (pf : (i < S N)%nat),
                    RandomVariable dom borel_sa
                      (fun (ω : Ts) => real (ELimSup_seq (fun n => Rabs( vector_nth i pf (δ n ω)))))).
@@ -4456,25 +4457,25 @@ Section jaakola_vector2.
           apply rvabs_rv.
           now apply vecrvnth_rv.
         }
-
+*)
+(*
         assert (HH1: forall (eps : posreal) (i : nat) (pf : (i < S N)%nat),
                    ps_P (event_le
                            dom
                            (fun (ω : Ts) => real (ELimSup_seq (fun n => Rabs( vector_nth i pf (δ n ω)))))
                            (C * eps)) >= 1-eps).
-(*
-        assert (forall (eps : posreal) (i : nat) (pf : (i < S N)%nat),
-                   eventually
-                     (fun n0 : nat =>
-                        ps_P
+*)
+        assert (forall (eps : posreal),
+                   ps_P
+                     (event_eventually
+                        (fun n0 : nat =>
                           (inter_of_collection
                              (fun n1 : nat =>
-                                event_le dom (rvabs (vecrvnth i pf (δ (n0 + n1)%nat)))
-                                  (C * eps)))
-                        >= 1 - eps)).
-*)
+                                event_le dom (rvmaxabs (δ (n0 + n1)%nat))
+                                  (C * eps)))))
+                   >= 1 - eps).
         {
-          intros eps i pf0.
+          intros eps.
           specialize (H28 eps).
           destruct H28.
           specialize (H28 x).
@@ -4563,9 +4564,15 @@ Section jaakola_vector2.
           {
             revert H3; apply almost_impl.
             apply all_almost; intros ????.
-            specialize (H3 i0 pf1).
+            specialize (H3 i pf0).
             unfold l1_divergent, αα.
-            admit.
+            apply is_lim_seq_sum_shift_inf with (N := x) in H3.
+            revert H3.
+            apply is_lim_seq_ext.
+            intros.
+            apply sum_n_ext.
+            intros.
+            now replace (n1 + x)%nat with (x + n1)%nat by lia.
           }
           generalize (lemma3_full_almost αα ββ δδ (mkposreal _ gamma_C_pos) _ _ _ αα_almost ββ_almost αβ_almost l1_div H23 lemma3_eq); intros lemma3.
           generalize (almost_and _ (almost_and _ H0 H1) (almost_and _ H2 lemma3)); intros.
@@ -4613,7 +4620,7 @@ Section jaakola_vector2.
                 destruct H30 as [[? ?] ?].
                 rewrite Rvector_max_abs_nth_Rabs_le.
                 intros.
-                specialize (H34 (x2 + k)%nat i0 pf1).
+                specialize (H34 (x2 + k)%nat i pf0).
                 apply Rge_le in H34.
                 unfold rvabs, vecrvnth in H34.
                 replace (S (x + (x2 + k))) with (x + (x2 + S k))%nat in H34 by lia.
@@ -4625,10 +4632,10 @@ Section jaakola_vector2.
                 rewrite Rvector_max_abs_plus_nneg; try lra.
                 unfold Rvector_abs.
                 rewrite vector_nth_map.
-                replace (Rabs (vector_nth i0 pf1 (δ (x + (x2 + k))%nat x1)) +
-                         -1 * (vector_nth i0 pf1 (α (x + (x2 + k))%nat x1) * Rabs (vector_nth i0 pf1 (δ (x + (x2 + k))%nat x1))))
+                replace (Rabs (vector_nth i pf0 (δ (x + (x2 + k))%nat x1)) +
+                         -1 * (vector_nth i pf0 (α (x + (x2 + k))%nat x1) * Rabs (vector_nth i pf0 (δ (x + (x2 + k))%nat x1))))
                   with
-                  ((1 - (vector_nth i0 pf1 (α (x + (x2 + k))%nat x1))) * Rabs (vector_nth i0 pf1 (δ (x + (x2 + k))%nat x1))) by lra.
+                  ((1 - (vector_nth i pf0 (α (x + (x2 + k))%nat x1))) * Rabs (vector_nth i pf0 (δ (x + (x2 + k))%nat x1))) by lra.
                 assert ((Rvector_max_abs (δ (x + (x2 + k))%nat x1) + eps) <= (C + 1)*eps).
                 {
                   lra.
@@ -4640,44 +4647,44 @@ Section jaakola_vector2.
                 rewrite Rmult_assoc in H23.
                 rewrite Rmult_inv_l in H23; try lra.
                 rewrite Rmult_1_r in H23.
-                apply Rmult_le_compat_l with (r :=  γ * (vector_nth i0 pf1 (β (x + (x2 + k))%nat x1))) in H38.
-                + assert (γ * vector_nth i0 pf1 (β (x + (x2 + k))%nat x1) * (Rvector_max_abs (δ (x + (x2 + k))%nat x1) + eps) <=
-                            (vector_nth i0 pf1 (α (x + (x2 + k))%nat x1) * (C * eps))).
+                apply Rmult_le_compat_l with (r :=  γ * (vector_nth i pf0 (β (x + (x2 + k))%nat x1))) in H38.
+                + assert (γ * vector_nth i pf0 (β (x + (x2 + k))%nat x1) * (Rvector_max_abs (δ (x + (x2 + k))%nat x1) + eps) <=
+                            (vector_nth i pf0 (α (x + (x2 + k))%nat x1) * (C * eps))).
                   {
                     eapply Rle_trans.
                     apply H38.
                     generalize (cond_pos eps); intros.
                     assert  (γ * (C + 1) <= C) by lra.
                     apply Rmult_le_compat_r with (r := eps) in H40; try lra.
-                    apply Rmult_le_compat_l with (r := vector_nth i0 pf1 (β (x + (x2 + k))%nat x1)) in H40.
-                    apply Rle_trans with (r2 := vector_nth i0 pf1 (β (x + (x2 + k))%nat x1) * (C * eps)); try lra.
+                    apply Rmult_le_compat_l with (r := vector_nth i pf0 (β (x + (x2 + k))%nat x1)) in H40.
+                    apply Rle_trans with (r2 := vector_nth i pf0 (β (x + (x2 + k))%nat x1) * (C * eps)); try lra.
                     apply Rmult_le_compat_r.
                     apply Rmult_le_pos; lra.
                     apply H36.
                     apply H35.
                   }
-                  apply Rplus_le_compat_l with (r :=  (1 - vector_nth i0 pf1 (α (x + (x2 + k))%nat x1)) * Rabs (vector_nth i0 pf1 (δ (x + (x2 + k))%nat x1))) in H39.
+                  apply Rplus_le_compat_l with (r :=  (1 - vector_nth i pf0 (α (x + (x2 + k))%nat x1)) * Rabs (vector_nth i pf0 (δ (x + (x2 + k))%nat x1))) in H39.
                   rewrite <- Rmult_assoc.
                   eapply Rle_trans.
                   apply H39.
-                  assert (Rabs (vector_nth i0 pf1 (δ (x + (x2 + k))%nat x1)) <= C * eps).
+                  assert (Rabs (vector_nth i pf0 (δ (x + (x2 + k))%nat x1)) <= C * eps).
                   {
                     now rewrite Rvector_max_abs_nth_le.
                   }
-                  apply Rmult_le_compat_l with (r := (1 - vector_nth i0 pf1 (α (x + (x2 + k))%nat x1)) ) in H40.
-                  apply Rplus_le_compat_r with (r := vector_nth i0 pf1 (α (x + (x2 + k))%nat x1) * (C * eps)) in H40.
+                  apply Rmult_le_compat_l with (r := (1 - vector_nth i pf0 (α (x + (x2 + k))%nat x1)) ) in H40.
+                  apply Rplus_le_compat_r with (r := vector_nth i pf0 (α (x + (x2 + k))%nat x1) * (C * eps)) in H40.
                   eapply Rle_trans.
                   apply H40.
                   rewrite <- Rmult_plus_distr_r; try lra.
-                  specialize (H30 (x + (x2 + k))%nat i0 pf1); try lra.
+                  specialize (H30 (x + (x2 + k))%nat i pf0); try lra.
              + apply Rmult_le_pos; try lra.
                apply H35.
             }
-            rewrite ELimSup_seq_fin.
-            generalize (LimSup_le  (fun x3 : nat => vector_nth i pf0 (δ x3 x1)) (const (C * eps))); intros.
-            unfold const in H35.
-            rewrite LimSup_seq_const in H35.
-            admit.
+            exists (x + x2)%nat.
+            intros.
+            specialize (H34 (n1 + (n0 - (x + x2)))%nat).
+            replace (x + (x2 + (n1 + (n0 - (x + x2)))))%nat with (n0 + n1)%nat in H34 by lia.
+            apply H34.
           - assert (forall n0,  Rvector_max_abs (δ (x + n0)%nat x1) > C * eps).
             {
               intros.
@@ -4689,17 +4696,45 @@ Section jaakola_vector2.
             specialize (H30 x1 H32).
             unfold pre_event_inter in H30.
             destruct H30 as [[? ?] [? ?]].
-            assert (forall n,
-                       Rabs (vector_nth i pf0 (δ (x + n)%nat x1)) <=
-                         vector_nth i pf0 (δδ n x1) ).
+            assert (dd_pos: forall n i pf0,
+                       0 <= vector_nth i pf0 (δδ n x1)).
             {
+              intros.
               induction n1.
               - simpl.
+                unfold vecrvabs, Rvector_abs.
+                rewrite vector_nth_map.
+                apply Rabs_pos.
+              - simpl.
+                unfold vecrvminus, vecrvplus, vecrvmult, vecrvscalerv, vecrvopp, vecrvscale.
+                repeat rewrite Rvector_nth_plus.
+                repeat rewrite Rvector_nth_scale.
+                rewrite Rvector_nth_mult.
+                replace (vector_nth i pf0 (δδ n1 x1) + -1 * (vector_nth i pf0 (α (x + n1)%nat x1) * vector_nth i pf0 (δδ n1 x1))) with
+                  ((1 - (vector_nth i pf0 (α (x + n1)%nat x1))) * vector_nth i pf0 (δδ n1 x1)) by lra.
+                apply Rplus_le_le_0_compat.
+                + apply Rmult_le_pos; trivial.
+                  specialize (H30 (x + n1)%nat i pf0); lra.
+                + apply Rmult_le_pos.
+                  * apply Rvector_max_abs_nonneg.
+                  * apply Rmult_le_pos.
+                    -- apply Rmult_le_pos; try lra.
+                       apply Rdiv_le_0_compat; lra.
+                    -- specialize (H35 (x + n1)%nat i pf0); lra.
+            }
+            assert (forall n i pf,
+                       Rabs(vector_nth i pf (δ (x + n)%nat x1)) <=
+                         vector_nth i pf (δδ (n)%nat x1)).
+            {
+              induction n1.
+              - intros.
+                simpl.
                 rewrite vecrvabs_unfold.
                 rewrite vector_nth_apply.
                 rewrite vector_nth_const.
-                replace (x + 0)%nat with x by lia; lra.
-              - replace (x + S n1)%nat with (S (x + n1)) by lia.
+                now replace (x + 0)%nat with x by lia.
+              - intros.
+                replace (x + S n1)%nat with (S (x + n1)) by lia.
                 specialize (H34 n1 i pf0).
                 apply Rge_le in H34.
                 eapply Rle_trans.
@@ -4737,9 +4772,24 @@ Section jaakola_vector2.
                   repeat rewrite Rmult_assoc.
                   apply Rmult_le_compat_l.
                   * specialize (H35 (x + n1)%nat i pf0); lra.
-                  * admit.
+                  * specialize (H33 n1).
+                    specialize (H24 eps (x + n1)%nat x1 H33).
+                    apply Rmult_le_compat_r with (r := γ) in H24; try lra.
+                    eapply Rle_trans.
+                    apply H24.
+                    rewrite Rmult_comm.
+                    rewrite (Rmult_comm (Rvector_max_abs (δδ n1 x1))).
+                    rewrite <- Rmult_assoc.
+                    apply Rmult_le_compat_l.
+                    -- apply Rmult_le_pos; try lra.
+                       apply Rdiv_le_0_compat; lra.
+                    -- apply Rvector_max_abs_le.
+                       intros.
+                       eapply Rle_trans.
+                       apply IHn1.
+                       apply Rle_abs.
             }
-            assert (forall n,
+            assert (forall n i pf0,
                        Rabs (vector_nth i pf0 (δ (x + n)%nat x1)) <= Rabs (vector_nth i pf0 (δδ n x1))).
             {
               intros.
@@ -4747,33 +4797,75 @@ Section jaakola_vector2.
               apply H38.
               apply Rle_abs.
             }
-            apply lim_seq_maxabs0 with (i := i) (pf := pf0) in H37.
-            assert (is_lim_seq  (fun m : nat => Rabs (vector_nth i pf0 (δ m x1))) 0).
+
+            assert (lim_dd: forall i pf, is_lim_seq (fun m : nat => vector_nth i pf (δδ m x1)) 0).
             {
-              rewrite is_lim_seq_abs_0 in H37.
+              intros.
+              now apply lim_seq_maxabs0.
+            }
+            assert (forall n,
+                       Rvector_max_abs (δ (x + n)%nat x1) <= Rvector_max_abs (δδ n x1)).
+            {
+              intros.
+              now apply Rvector_max_abs_le.
+            }
+            assert (is_lim_seq  (fun m : nat => Rvector_max_abs (δ m x1)) 0).
+            {
+              intros.
               apply is_lim_seq_incr_n with (N := x).
               revert H37.
               apply is_lim_seq_le_le with (u := const 0).
               - intros.
                 split.
                 + unfold const.
-                  apply Rabs_pos.
+                  apply Rvector_max_abs_nonneg.
                 + replace (n1 + x)%nat with (x + n1)%nat by lia.
-                  apply H39.
+                  apply H40.
               - apply is_lim_seq_const.
             }
-            rewrite <- ex_Elim_seq_sup.
-            + rewrite <- is_Elim_seq_fin in H40.
-              apply is_Elim_seq_unique in H40.
-              rewrite H40.
-              apply Rmult_le_pos; try lra.
-              left.
+            apply is_lim_seq_spec in H41.
+            unfold is_lim_seq' in H41.
+            assert (0 < C * eps).
+            {
+              apply Rmult_lt_0_compat; try lra.
               apply cond_pos.
-            + rewrite <- is_Elim_seq_fin in H40.
-              now apply is_Elim_seq_ex_Elim_seq in H40.
-       }
+            }
+            specialize (H41 (mkposreal _ H42)).
+            destruct H41.
+            exists x2.
+            intros.
+            specialize (H41 (n1 + n2)%nat).
+            cut_to H41; try lia.
+            rewrite Rminus_0_r in H41.
+            simpl in H41.
+            unfold rvmaxabs.
+            rewrite Rabs_Rvector_max_abs in H41.
+            lra.
+        }
+        assert (epsk: forall (k : nat),
+                   0 < / INR (S k)).
+          {
+            intros.
+            apply Rinv_0_lt_compat.
+            apply lt_0_INR.
+            lia.
+          }
+          assert (forall (k : nat),
+                     ps_P
+                       (event_eventually
+                          (fun n0 : nat => inter_of_collection (fun n1 : nat => 
+                                                                  event_le dom (rvmaxabs (δ (n0 + n1)%nat))
+                                                                    (C * (mkposreal _ (epsk k)))))) >= 
+                       1 - (mkposreal _ (epsk k)) ).
+          {
+            intros.
+            apply H29.
+          }
+
         assert (almost prts (fun ω : Ts => is_lim_seq (fun n1 : nat => vector_nth n pf (δ n1 ω)) 0)).
         {
+          apply almost_is_lim_nth_maxabs.
+(*          
           assert (forall (eps : posreal),
                       ps_P
                         (event_le dom
@@ -4802,6 +4894,7 @@ Section jaakola_vector2.
             intros.
             apply H29.
           }
+*)
                        
           assert (is_lim_seq (fun k => mkposreal _ (epsk k)) 0).
           {
@@ -4832,40 +4925,84 @@ Section jaakola_vector2.
           }
           assert (forall k,
                      event_sub
-                       (event_le dom
-                          (fun ω : Ts =>
-                             ELimSup_seq (fun n1 : nat => Rabs (vector_nth n pf (δ n1 ω))))
-                          (C * (mkposreal _ (epsk (S k)))))
-                       (event_le dom
-                          (fun ω : Ts =>
-                             ELimSup_seq (fun n1 : nat => Rabs (vector_nth n pf (δ n1 ω))))
-                          (C * (mkposreal _ (epsk k))))).
+                       (event_eventually
+                          (fun n0 : nat =>
+                             inter_of_collection
+                               (fun n1 : nat => event_le dom (rvmaxabs (δ (n0 + n1)%nat)) (C * (mkposreal _ (epsk (S k)))))))
+                       (event_eventually
+                          (fun n0 : nat =>
+                             inter_of_collection
+                               (fun n1 : nat => event_le dom (rvmaxabs (δ (n0 + n1)%nat)) (C * (mkposreal _ (epsk k))))))).
           {
             intros ??.
-            unfold event_le, proj1_sig.
-            intros.
+            unfold event_eventually, event_le, proj1_sig.
+            apply eventually_impl.
+            apply all_eventually.
+            simpl; intros.
+            specialize (H34 n0).
             eapply Rle_trans.
             apply H34.
             apply Rmult_le_compat_l.
             - lra.
             - apply Rinv_le_contravar.
-              + apply lt_0_INR; lia.
-              + apply le_INR; lia.
-          }  
-          assert (event_equiv
-                    (inter_of_collection
-                       (fun k =>
-                          (event_le dom
-                          (fun ω : Ts =>
-                             ELimSup_seq (fun n1 : nat => Rabs (vector_nth n pf (δ n1 ω))))
-                          (C * (mkposreal _ (epsk k))))))
+              + match_destr.
+                * lra.
+                * generalize (pos_INR (S k)); lra.
+              + match_destr;lra.
+         }
+         assert (event_equiv
+                   (inter_of_collection
+                      (fun k =>
+                         (event_eventually
+                            (fun n0 : nat =>
+                               inter_of_collection
+                                 (fun n1 : nat => event_le dom (rvmaxabs (δ (n0 + n1)%nat)) (C * (mkposreal _ (epsk k))))))))
                     (event_Req dom
                        (fun ω : Ts =>
-                          ELimSup_seq (fun n1 : nat => Rabs (vector_nth n pf (δ n1 ω))))
+                          Lim_seq (fun n1 : nat => Rvector_max_abs (δ n1 ω)))
                        0)).
           {
             intros ?.
-            unfold inter_of_collection, proj1_sig, event_le.
+            unfold inter_of_collection, proj1_sig, event_eventually, event_le.
+            simpl.
+            unfold pre_event_preimage, pre_event_singleton.
+            split; intros.
+            - assert (is_lim_seq (fun n1 : nat => Rvector_max_abs (δ n1 x)) 0).
+              {
+                apply is_lim_seq_spec.
+                intros ?.
+                assert (eventually (fun n0 => C * (mkposreal _ (epsk n0)) < eps)).
+                {
+                  admit.
+                }
+                destruct H36.
+                specialize (H35 x0).
+                revert H35.
+                apply eventually_impl.
+                apply all_eventually.
+                intros.
+                rewrite Rminus_0_r, Rabs_Rvector_max_abs.
+                specialize (H35 0%nat).
+                replace (x1 + 0)%nat with x1 in H35 by lia.
+                unfold rvmaxabs in H35.
+                eapply Rle_lt_trans.
+                apply H35.
+                apply H36; lia.
+              }
+              apply is_lim_seq_unique in H36.
+              now rewrite H36.
+            - admit.
+(*
+              
+                Search Rvector_max_abs.
+assert (is_
+              apply is_lim_seq_unique.
+Search Lim_seq.
+
+            intros.
+            simpl in H35.
+
+            unfold pre_event_preimage.
             split; intros.
             - apply Lim_seq_le in H35.
               apply is_lim_seq_unique in H33.
@@ -4892,9 +5029,10 @@ Section jaakola_vector2.
               left.
               apply Rinv_0_lt_compat.
               apply lt_0_INR; lia.
+*)
           }
-          generalize (lim_prob_descending _ _ H34 H35); intros.
-                    
+
+         (*           
           assert (is_lim_pos (fun (eps:posreal) => C * eps) 0).
           {
             assert (is_lim (fun r => C * r) 0 0).
@@ -4934,15 +5072,16 @@ Section jaakola_vector2.
             match_destr.
             lra.
           }
+*)
           admit.
         }
-        revert H29.
+        revert H31.
         apply almost_impl.
         specialize (lim_w_0 n pf).
         revert lim_w_0.
         apply almost_impl.
         apply all_almost; intros ???.
-        generalize (is_lim_seq_plus' _ _ _ _ H30 H29).
+        generalize (is_lim_seq_plus' _ _ _ _ H32 H31).
         rewrite Rplus_0_r.
         apply is_lim_seq_ext.
         intros.
