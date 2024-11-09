@@ -4865,37 +4865,6 @@ Section jaakola_vector2.
         assert (almost prts (fun ω : Ts => is_lim_seq (fun n1 : nat => vector_nth n pf (δ n1 ω)) 0)).
         {
           apply almost_is_lim_nth_maxabs.
-(*          
-          assert (forall (eps : posreal),
-                      ps_P
-                        (event_le dom
-                           (fun ω : Ts =>
-                              ELimSup_seq (fun n1 : nat => Rabs (vector_nth n pf (δ n1 ω))))
-                           (C * eps)) >= 1 - eps ).
-          {
-            intros.
-            apply HH1.
-          }
-          assert (epsk: forall (k : nat),
-                     0 < / INR (S k)).
-          {
-            intros.
-            apply Rinv_0_lt_compat.
-            apply lt_0_INR.
-            lia.
-          }
-          assert (forall (k : nat),
-                     ps_P
-                       (event_le dom
-                          (fun ω : Ts =>
-                             ELimSup_seq (fun n1 : nat => Rabs (vector_nth n pf (δ n1 ω))))
-                          (C * (mkposreal _ (epsk k)))) >= 1 - (mkposreal _ (epsk k)) ).
-          {
-            intros.
-            apply H29.
-          }
-*)
-                       
           assert (is_lim_seq (fun k => mkposreal _ (epsk k)) 0).
           {
             assert (is_lim_seq (fun k => INR(S k)) p_infty).
@@ -4949,7 +4918,50 @@ Section jaakola_vector2.
                 * lra.
                 * generalize (pos_INR (S k)); lra.
               + match_destr;lra.
-         }
+          }
+          assert (forall k,
+                     eventually (fun n0 => mkposreal _ (epsk n0) < C * mkposreal _ (epsk k))).
+          {
+            intros.
+            apply is_lim_seq_spec in H31.
+            unfold is_lim_seq' in H31.
+            assert (0 < C * mkposreal _ (epsk k)).
+            {
+              apply Rmult_lt_0_compat; try lra.
+              apply cond_pos.
+            }
+            specialize (H31 (mkposreal _ H35)).
+            revert H31.
+            apply eventually_impl.
+            apply all_eventually.
+            intros.
+            rewrite Rminus_0_r in H31.
+            rewrite Rabs_right in H31.
+            - apply H31.
+            - apply Rle_ge.
+              left.
+              apply cond_pos.
+          }
+          assert (forall k,
+                     eventually (fun n0 => C * mkposreal _ (epsk n0) < mkposreal _ (epsk k))).
+          {
+            intros.
+            apply is_lim_seq_spec in H33.
+            unfold is_lim_seq' in H33.
+            specialize (H33 (mkposreal _ (epsk k))).
+            revert H33.
+            apply eventually_impl.
+            apply all_eventually.
+            intros.
+            rewrite Rminus_0_r in H33.
+            rewrite Rabs_right in H33.
+            - apply H33.
+            - apply Rle_ge.
+              apply Rmult_le_pos; try lra.
+              left.
+              apply cond_pos.
+          }
+
          assert (event_equiv
                    (inter_of_collection
                       (fun k =>
@@ -4957,123 +4969,105 @@ Section jaakola_vector2.
                             (fun n0 : nat =>
                                inter_of_collection
                                  (fun n1 : nat => event_le dom (rvmaxabs (δ (n0 + n1)%nat)) (C * (mkposreal _ (epsk k))))))))
-                    (event_Req dom
-                       (fun ω : Ts =>
-                          Lim_seq (fun n1 : nat => Rvector_max_abs (δ n1 ω)))
-                       0)).
+                   (inter_of_collection
+                      (fun k =>
+                         (event_eventually
+                            (fun n0 : nat =>
+                               event_le dom (rvmaxabs (δ n0)) (/ (INR (S k)))))))).
           {
             intros ?.
             unfold inter_of_collection, proj1_sig, event_eventually, event_le.
             simpl.
             unfold pre_event_preimage, pre_event_singleton.
             split; intros.
-            - assert (is_lim_seq (fun n1 : nat => Rvector_max_abs (δ n1 x)) 0).
-              {
-                apply is_lim_seq_spec.
-                intros ?.
-                assert (eventually (fun n0 => C * (mkposreal _ (epsk n0)) < eps)).
-                {
-                  admit.
-                }
-                destruct H36.
-                specialize (H35 x0).
-                revert H35.
-                apply eventually_impl.
-                apply all_eventually.
-                intros.
-                rewrite Rminus_0_r, Rabs_Rvector_max_abs.
-                specialize (H35 0%nat).
-                replace (x1 + 0)%nat with x1 in H35 by lia.
-                unfold rvmaxabs in H35.
-                eapply Rle_lt_trans.
-                apply H35.
-                apply H36; lia.
-              }
-              apply is_lim_seq_unique in H36.
-              now rewrite H36.
-            - admit.
-(*
-              
-                Search Rvector_max_abs.
-assert (is_
-              apply is_lim_seq_unique.
-Search Lim_seq.
-
-            intros.
-            simpl in H35.
-
-            unfold pre_event_preimage.
-            split; intros.
-            - apply Lim_seq_le in H35.
-              apply is_lim_seq_unique in H33.
-              rewrite H33 in H35.
-              rewrite Lim_seq_const in H35.
-              simpl.
-              unfold pre_event_preimage, pre_event_singleton.
-              simpl in H35.
-              apply Rle_antisym; trivial.
-              rewrite ELimSup_seq_fin.
-              generalize (LimSup_le (const 0)
-                                    (fun x0 : nat => Rabs (vector_nth n pf (δ x0 x)))); intros.
-              cut_to H36.
-              unfold const in H36.
-              rewrite LimSup_seq_const in H36.
-              + admit.
-              + exists 0%nat.
-                intros.
-                unfold const.
-                apply Rabs_pos.
-            - red in H35.
-              unfold preimage_singleton, pre_event_preimage, pre_event_singleton in H35.              rewrite H35.
-              apply Rmult_le_pos; try lra.
+            - specialize (H36 n0).
+              destruct H36.
+              specialize (H37 x0).
+              revert H37.
+              apply eventually_impl.
+              apply all_eventually; intros.
+              specialize (H37 0%nat).
+              replace (x1 + 0)%nat with x1 in H37 by lia.
+              eapply Rle_trans.
+              apply H37.
               left.
-              apply Rinv_0_lt_compat.
-              apply lt_0_INR; lia.
-*)
+              apply H36; lia.
+            - specialize (H35 n0).
+              destruct H35.
+              specialize (H35 x0).
+              cut_to H35; try lia.
+              specialize (H37 x0).
+              destruct H37.
+              exists x1.
+              intros.
+              specialize (H37 (n1 + n2)%nat).
+              cut_to H37; try lia.
+              eapply Rle_trans.
+              apply H37.
+              left.
+              apply H35.
           }
-
-         (*           
-          assert (is_lim_pos (fun (eps:posreal) => C * eps) 0).
+          generalize (lim_prob_descending _ _ H34 H37); intros.
+          assert (forall k,
+                     1 - {| pos := / INR (S k); cond_pos := epsk k |} <=
+                           ps_P
+                             (event_eventually
+                                (fun n0 : nat =>
+                                   inter_of_collection
+                                     (fun n1 : nat => event_le dom (rvmaxabs (δ (n0 + n1)%nat)) (C * {| pos := / INR (S k); cond_pos := epsk k |}))))).
           {
-            assert (is_lim (fun r => C * r) 0 0).
-            {
-              assert (is_lim (fun r => r) 0 0).
-              {
-                apply is_lim_id.
-              }
-              apply is_lim_scal_l with (a := C) in H37.
-              now rewrite Rbar_mult_0_r in H37.
-            }
-            apply filterlim_right in H37.
-            revert H37.
-            apply filterlim_at_right_0_Rbar_ext.
             intros.
-            unfold lift_posreal_f.
-            match_destr.
-            lra.
+            now apply Rge_le.
           }
-          assert (is_lim_pos (fun (eps : posreal) => 1 - eps) 1).
+          generalize (is_lim_seq_le _ _ (Finite 1) (Finite (ps_P
+             (inter_of_collection
+                (fun k : nat => event_eventually (fun n0 : nat => event_le dom (rvmaxabs (δ n0)) (/ INR (S k))))))) H39 H32 H38); intros.
+          simpl in H40.
+          assert ( ps_P
+                     (inter_of_collection
+                        (fun k : nat =>
+                           event_eventually
+                             (fun n0 : nat => event_le dom (rvmaxabs (δ n0)) (/ match k with
+                                                                                | 0%nat => 1
+                                                                                | S _ => INR k + 1
+                                                                                end)))) = 1).
           {
-            assert (is_lim (fun r => 1 - r) 0 1).
-            {
-              apply is_lim_minus with (lf := 1) (lg := 0).
-              - apply is_lim_const.
-              - apply is_lim_id.
-              - unfold is_Rbar_minus, is_Rbar_plus.
-                simpl.
-                f_equal.
-                f_equal; lra.
-            }
-            apply filterlim_right in H38.
-            revert H38.
-            apply filterlim_at_right_0_Rbar_ext.
-            intros.
-            unfold lift_posreal_f.
-            match_destr.
-            lra.
+            apply Rle_antisym; trivial.
+            apply ps_le1.
           }
-*)
-          admit.
+          unfold almost.
+          exists (inter_of_collection
+             (fun k : nat =>
+              event_eventually
+                (fun n0 : nat => event_le dom (rvmaxabs (δ n0)) (/ match k with
+                                                                   | 0%nat => 1
+                                                                   | S _ => INR k + 1
+                                                                   end)))).
+          split; trivial.
+          intros.
+          apply is_lim_seq_spec.
+          unfold is_lim_seq'.
+          intros.
+          simpl in H42.
+          apply is_lim_seq_spec in H31.
+          specialize (H31 eps).
+          destruct H31.
+          specialize (H42 x0).
+          revert H42.
+          apply eventually_impl.
+          apply all_eventually.
+          intros.
+          unfold rvmaxabs.
+          rewrite Rminus_0_r, Rabs_Rvector_max_abs.
+          eapply Rle_lt_trans.
+          apply H42.
+          specialize (H31 x0).
+          cut_to H31; try lia.
+          rewrite Rminus_0_r in H31.
+          rewrite Rabs_right in H31.
+          - apply H31.
+          - apply Rle_ge.
+            left; apply cond_pos.
         }
         revert H31.
         apply almost_impl.
@@ -5088,7 +5082,7 @@ Search Lim_seq.
         rewrite H11.
         unfold vecrvplus.
         now rewrite Rvector_nth_plus.
-  Admitted.
+  Qed.
 
   Theorem Jaakkola_alpha_beta_bounded_eventually_almost {n} 
     (γ : R) 
