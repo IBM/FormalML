@@ -5140,7 +5140,10 @@ Section jaakola_vector2.
       apply H13.
       simpl.
       right.
-      admit.
+      apply FiniteConditionalExpectation_ext; intros ?.
+      unfold rvsqr, rvminus, rvplus, rvopp, rvscale.
+      do 3 f_equal.
+      apply FiniteConditionalExpectation_ext; reflexivity.
     - destruct H11.
       exists x1.
       intros.
