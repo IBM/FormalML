@@ -3431,117 +3431,6 @@ Section jaakola_vector2.
           lra.
       Qed.
 
-(*
-      Lemma lemma3_2 (α β X XX : nat -> Ts -> vector R (S N)) 
-        (G : nat -> Ts -> vector R (S N) -> vector R (S N)) 
-        (C γ : posreal)
-        (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n))
-        (rvXX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (XX n))         
-        (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
-        (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n)) :           
-        (forall t ω i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
-        (forall t ω i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
-        (forall t ω i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->                  
-        (forall ω i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
-        γ < 1 ->
-        
-        (forall n w V, G n w V =
-                     Rvector_plus
-                       (Rvector_minus V (Rvector_mult (α n w) V))
-                       (Rvector_scale (Rvector_max_abs V)
-                          (Rvector_scale γ (β n w)))) ->
-        (forall n, rv_eq (X (S n))
-                     (vecrvplus 
-                        (vecrvminus (X n)
-                           (vecrvmult (α n) (X n)))
-                        (vecrvscalerv (rvmaxabs (X n))
-                           (vecrvscale γ (β n))))) ->
-        (rv_eq (XX 0%nat) (vecrvclip (S N) (X 0%nat) (pos_to_nneg C))) ->
-        (forall n, rv_eq (XX (S n))
-                     (vecrvclip (S N)
-                        (vecrvplus 
-                           (vecrvminus (XX n)
-                              (vecrvmult (α n) (XX n)))
-                           (vecrvscalerv (rvmaxabs (XX n))
-                              (vecrvscale γ (β n))))
-                        (pos_to_nneg C))) ->
-        almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
-      Proof.
-        intros.
-        generalize (lemma3 α β XX C γ); intros.
-        cut_to H8; trivial.
-        generalize (lemma2 (S N) X XX G C); intros.
-        apply H9; trivial.
-        - intros ??.
-          rewrite H5, H4.
-          reflexivity.
-        - intros ??.
-          rewrite H7.
-          assert (rv_eq
-                     (vecrvplus (vecrvminus (XX n) (vecrvmult (α n) (XX n)))
-                        (vecrvscalerv (rvmaxabs (XX n)) (vecrvscale γ (β n))))
-                      (fun w : Ts => G n w (XX n w))).
-          {
-            intros ?.
-            rewrite H4.
-            reflexivity.
-          }
-          f_equal.
-          apply functional_extensionality.
-          intros.
-          rewrite H4.
-          reflexivity.
-        - intros ???.
-          rewrite H4.
-          rewrite H4.
-          rewrite Rvector_scale_plus_l.
-          f_equal.
-          + unfold Rvector_minus.
-            rewrite Rvector_scale_plus_l.
-            f_equal.
-            rewrite Rvector_scale_mult_r.
-            unfold Rvector_opp.
-            rewrite Rvector_scale_scale.
-            rewrite Rvector_scale_scale.
-            f_equal; lra.
-          + rewrite Rvector_max_abs_scale.
-            rewrite Rvector_scale_scale.
-            f_equal.
-            f_equal.
-            rewrite Rabs_right; trivial.
-            apply Rle_ge.
-            apply cond_nonneg.
-        - intros ???.
-          rewrite H4.
-          rewrite H4.
-          rewrite Rvector_scale_plus_l.
-          f_equal.
-          + unfold Rvector_minus.
-            rewrite Rvector_scale_plus_l.
-            f_equal.
-            rewrite Rvector_scale_mult_r.
-            unfold Rvector_opp.
-            rewrite Rvector_scale_scale.
-            rewrite Rvector_scale_scale.
-            f_equal; lra.
-          + rewrite Rvector_max_abs_scale.
-            rewrite Rvector_scale_scale.
-            f_equal.
-            f_equal.
-            rewrite Rabs_right; trivial.
-            apply Rle_ge.
-            apply cond_nonneg.
-        - intros.
-          intros ?.
-          unfold rvmaxabs.
-          destruct n.
-          + rewrite H6.
-            apply vecrvclip_max_bound.
-          + rewrite H7.
-            apply vecrvclip_max_bound.
-      Qed.
-*)
-
       Lemma almost_is_lim_nth_maxabs {NN} (X : nat -> Ts -> vector R (S NN)) :
         almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0) <->
         forall k pf,
@@ -3797,8 +3686,6 @@ Section jaakola_vector2.
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω) <= 1) ->
     almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <= vector_nth i pf (α k ω)) ->        
 
-(*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
-*)
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
 
@@ -5039,8 +4926,6 @@ Section jaakola_vector2.
     eventually (fun k => almost prts (fun ω => forall i pf, vector_nth i pf (β k ω) <= 1)) ->      
     almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <=  vector_nth i pf (α k ω)) ->        
 
-(*    (forall i pf, (almost prts (fun ω => is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty))) ->
-*)
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
     (exists (C : R),
