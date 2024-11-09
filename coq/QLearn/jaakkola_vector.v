@@ -4442,29 +4442,6 @@ Section jaakola_vector2.
           - unfold Rvector_abs.
             now rewrite vector_nth_map.
         }
-(*        
-        assert (rvlimsup: forall (i : nat) (pf : (i < S N)%nat),
-                   RandomVariable dom borel_sa
-                     (fun (ω : Ts) => real (ELimSup_seq (fun n => Rabs( vector_nth i pf (δ n ω)))))).
-        {
-          intros.
-          apply measurable_rv.
-          apply Rbar_real_measurable.
-          apply Rbar_lim_sup_measurable.
-          intros.
-          rewrite <- RealMeasurable_RbarMeasurable.
-          apply rv_measurable.
-          apply rvabs_rv.
-          now apply vecrvnth_rv.
-        }
-*)
-(*
-        assert (HH1: forall (eps : posreal) (i : nat) (pf : (i < S N)%nat),
-                   ps_P (event_le
-                           dom
-                           (fun (ω : Ts) => real (ELimSup_seq (fun n => Rabs( vector_nth i pf (δ n ω)))))
-                           (C * eps)) >= 1-eps).
-*)
         assert (forall (eps : posreal),
                    ps_P
                      (event_eventually
@@ -4919,49 +4896,6 @@ Section jaakola_vector2.
                 * generalize (pos_INR (S k)); lra.
               + match_destr;lra.
           }
-          assert (forall k,
-                     eventually (fun n0 => mkposreal _ (epsk n0) < C * mkposreal _ (epsk k))).
-          {
-            intros.
-            apply is_lim_seq_spec in H31.
-            unfold is_lim_seq' in H31.
-            assert (0 < C * mkposreal _ (epsk k)).
-            {
-              apply Rmult_lt_0_compat; try lra.
-              apply cond_pos.
-            }
-            specialize (H31 (mkposreal _ H35)).
-            revert H31.
-            apply eventually_impl.
-            apply all_eventually.
-            intros.
-            rewrite Rminus_0_r in H31.
-            rewrite Rabs_right in H31.
-            - apply H31.
-            - apply Rle_ge.
-              left.
-              apply cond_pos.
-          }
-          assert (forall k,
-                     eventually (fun n0 => C * mkposreal _ (epsk n0) < mkposreal _ (epsk k))).
-          {
-            intros.
-            apply is_lim_seq_spec in H33.
-            unfold is_lim_seq' in H33.
-            specialize (H33 (mkposreal _ (epsk k))).
-            revert H33.
-            apply eventually_impl.
-            apply all_eventually.
-            intros.
-            rewrite Rminus_0_r in H33.
-            rewrite Rabs_right in H33.
-            - apply H33.
-            - apply Rle_ge.
-              apply Rmult_le_pos; try lra.
-              left.
-              apply cond_pos.
-          }
-
          assert (event_equiv
                    (inter_of_collection
                       (fun k =>
@@ -4973,41 +4907,32 @@ Section jaakola_vector2.
                       (fun k =>
                          (event_eventually
                             (fun n0 : nat =>
-                               event_le dom (rvmaxabs (δ n0)) (/ (INR (S k)))))))).
+                               event_le dom (rvmaxabs (δ n0)) (C * (mkposreal _ (epsk k)))))))).
           {
             intros ?.
             unfold inter_of_collection, proj1_sig, event_eventually, event_le.
             simpl.
             unfold pre_event_preimage, pre_event_singleton.
             split; intros.
-            - specialize (H36 n0).
-              destruct H36.
-              specialize (H37 x0).
-              revert H37.
-              apply eventually_impl.
-              apply all_eventually; intros.
-              specialize (H37 0%nat).
-              replace (x1 + 0)%nat with x1 in H37 by lia.
-              eapply Rle_trans.
-              apply H37.
-              left.
-              apply H36; lia.
             - specialize (H35 n0).
               destruct H35.
-              specialize (H35 x0).
-              cut_to H35; try lia.
-              specialize (H37 x0).
-              destruct H37.
-              exists x1.
+              exists x0.
               intros.
-              specialize (H37 (n1 + n2)%nat).
-              cut_to H37; try lia.
-              eapply Rle_trans.
-              apply H37.
-              left.
+              specialize (H35 n1 H36).
+              specialize (H35 0%nat).
+              replace (n1 + 0)%nat with n1 in H35 by lia.
               apply H35.
+            - specialize (H35 n0).
+              destruct H35.
+              exists x0.
+              intros.
+              specialize (H35 (n1 + n2)%nat).
+              cut_to H35; try lia.
+              eapply Rle_trans.
+              apply H35.
+              lra.
           }
-          generalize (lim_prob_descending _ _ H34 H37); intros.
+          generalize (lim_prob_descending _ _ H34 H35); intros.
           assert (forall k,
                      1 - {| pos := / INR (S k); cond_pos := epsk k |} <=
                            ps_P
@@ -5020,17 +4945,20 @@ Section jaakola_vector2.
             now apply Rge_le.
           }
           generalize (is_lim_seq_le _ _ (Finite 1) (Finite (ps_P
-             (inter_of_collection
-                (fun k : nat => event_eventually (fun n0 : nat => event_le dom (rvmaxabs (δ n0)) (/ INR (S k))))))) H39 H32 H38); intros.
-          simpl in H40.
+                                                              (inter_of_collection
+                                                                 (fun k =>
+                                                                    (event_eventually
+                                                                       (fun n0 : nat =>
+                                                                          event_le dom (rvmaxabs (δ n0)) (C * (mkposreal _ (epsk k))))))))) H37 H32 H36); intros.
+          simpl in H38.
           assert ( ps_P
                      (inter_of_collection
                         (fun k : nat =>
                            event_eventually
-                             (fun n0 : nat => event_le dom (rvmaxabs (δ n0)) (/ match k with
-                                                                                | 0%nat => 1
-                                                                                | S _ => INR k + 1
-                                                                                end)))) = 1).
+                             (fun n0 : nat => event_le dom (rvmaxabs (δ n0)) (C * / match k with
+                                                                                    | 0%nat => 1
+                                                                                    | S _ => INR k + 1
+                                                                                    end)))) = 1).
           {
             apply Rle_antisym; trivial.
             apply ps_le1.
@@ -5039,34 +4967,35 @@ Section jaakola_vector2.
           exists (inter_of_collection
              (fun k : nat =>
               event_eventually
-                (fun n0 : nat => event_le dom (rvmaxabs (δ n0)) (/ match k with
-                                                                   | 0%nat => 1
-                                                                   | S _ => INR k + 1
-                                                                   end)))).
+                (fun n0 : nat => event_le dom (rvmaxabs (δ n0)) (C * / match k with
+                                                                       | 0%nat => 1
+                                                                       | S _ => INR k + 1
+                                                                       end)))).
           split; trivial.
           intros.
           apply is_lim_seq_spec.
           unfold is_lim_seq'.
           intros.
-          simpl in H42.
-          apply is_lim_seq_spec in H31.
-          specialize (H31 eps).
-          destruct H31.
-          specialize (H42 x0).
-          revert H42.
+          simpl in H40.
+          apply is_lim_seq_spec in H33.
+          specialize (H33 eps).
+          destruct H33.
+          specialize (H40 x0).
+          revert H40.
           apply eventually_impl.
           apply all_eventually.
           intros.
           unfold rvmaxabs.
           rewrite Rminus_0_r, Rabs_Rvector_max_abs.
           eapply Rle_lt_trans.
-          apply H42.
-          specialize (H31 x0).
-          cut_to H31; try lia.
-          rewrite Rminus_0_r in H31.
-          rewrite Rabs_right in H31.
-          - apply H31.
+          apply H40.
+          specialize (H33 x0).
+          cut_to H33; try lia.
+          rewrite Rminus_0_r in H33.
+          rewrite Rabs_right in H33.
+          - apply H33.
           - apply Rle_ge.
+            apply Rmult_le_pos; try lra.
             left; apply cond_pos.
         }
         revert H31.
