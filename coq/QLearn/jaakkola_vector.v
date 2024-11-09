@@ -4991,11 +4991,34 @@ Section jaakola_vector2.
       induction xx.
       - now simpl.
       - simpl.
-        admit.
+        rewrite H12.
+        simpl in IHxx.
+        cut_to IHxx.
+        + apply Rvector_plus_rv.
+          * apply Rvector_minus_rv.
+            -- now apply (RandomVariable_sa_sub (isfilt xx)).
+            -- apply Rvector_mult_rv.
+               ++ now apply (RandomVariable_sa_sub (isfilt xx)).
+               ++ now apply (RandomVariable_sa_sub (isfilt xx)).
+          * apply Rvector_mult_rv.
+            -- now apply (RandomVariable_sa_sub (isfilt xx)).   
+            -- apply rvXF.
+        + unfold IsFiltration.
+          intros.
+          apply isfilt.
+        + intros.
+          apply filt_sub.
+        + intros ?.
+          apply adapt_alpha.
+        + intros ?.
+          apply adapt_beta.
     }
     assert (rvXXF: forall k : nat, RandomVariable (FF (S k)) (Rvector_borel_sa (S N)) (XXF k)).
     {
-      admit.
+      intros.
+      unfold FF, XXF.
+      replace (S k + xx)%nat with (S (k + xx)) by lia.
+      apply rvXF.
     }
     assert (rvXXF_I:  forall (k i : nat) (pf : (i < S N)%nat), RandomVariable dom borel_sa (vecrvnth i pf (XXF k))).
     {
@@ -5073,15 +5096,20 @@ Section jaakola_vector2.
       exists x1.
       intros.
       specialize (H7 i pf).
-      revert H7.
-      intros.
+      revert H7; apply almost_impl.
+      apply all_almost; intros ??.
+      unfold αα.
       admit.
     - destruct H8.
       exists x1.
       admit.
     - intros.
       admit.
-    - admit.
+    - destruct H10 as [? [??]].
+      exists x1.
+      split; trivial.
+      intros.
+      admit.
     - destruct H11.
       exists x1.
       intros.
