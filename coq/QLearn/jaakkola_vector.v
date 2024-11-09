@@ -5105,16 +5105,30 @@ Section jaakola_vector2.
       revert H7; apply almost_impl.
       apply all_almost; intros ??.
       unfold αα.
+      generalize (sum_shift_diff); intros.
+      generalize (Lim_seq_ext_loc); intros.
       admit.
     - destruct H8.
       exists x1.
       admit.
     - intros.
-      admit.
+      specialize (H9 (k + xx)%nat i pf ω).
+      eapply Rle_trans; cycle 1.
+      apply H9.
+      unfold XXF.
+      right.
+      f_equal.
+      now apply FiniteConditionalExpectation_ext.
     - destruct H10 as [? [??]].
       exists x1.
       split; trivial.
       intros.
+      unfold XX, XXF.
+      specialize (H13 (k + xx)%nat i pf ω).
+      eapply Rbar_le_trans; cycle 1.
+      apply H13.
+      simpl.
+      right.
       admit.
     - destruct H11.
       exists x1.
