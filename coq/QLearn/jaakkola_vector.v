@@ -5041,9 +5041,10 @@ Section jaakola_vector2.
       apply IsFiniteExpectation_proper.
       intros ?.
       unfold rvsqr; f_equal.
-      unfold rvminus; f_equal.
-      unfold rvopp; f_equal.
-      admit.
+      unfold rvminus, rvplus; f_equal.
+      unfold rvopp, rvscale; f_equal.
+      apply FiniteConditionalExpectation_ext.
+      reflexivity.
     }
 
     generalize (Jaakkola_alpha_beta_bounded γ XX XXF αα ββ isfilt_FF (fun k => filt_sub (k + xx)%nat) adapt_aa adapt_bb); intros jak_bound.
@@ -5105,9 +5106,19 @@ Section jaakola_vector2.
       revert H7; apply almost_impl.
       apply all_almost; intros ??.
       unfold αα.
-      generalize (sum_shift_diff); intros.
-      generalize (Lim_seq_ext_loc); intros.
-      admit.
+      rewrite <- (Lim_seq_incr_n (sum_n (fun k : nat => (vector_nth i pf (α k x2))²)) xx) in H7.
+      unfold sum_n in H7.
+      erewrite Lim_seq_ext; cycle 1.
+      { intros.
+        rewrite <- (sum_n_m_shift (fun k : nat => (vector_nth i pf (α (k)%nat x2))²) xx n).
+        reflexivity.
+      }
+      eapply Rbar_le_trans; try apply H7.
+      apply Lim_seq_le; intros.
+      destruct xx; [reflexivity |].
+      rewrite (sum_split (fun k : nat => (vector_nth i pf (α k x2))²) 0 (n + S xx) xx); unfold plus; simpl; try lia.
+      cut (0 <=  sum_n_m (fun k : nat => (vector_nth i pf (α k x2))²) 0 xx); try lra.
+      apply nneg_sum_n_m_sq.
     - destruct H8.
       exists x1.
       admit.
