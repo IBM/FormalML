@@ -4958,36 +4958,34 @@ Section jaakola_vector2.
     destruct H3 as [? H3].
     pose (xx := (x + x0)%nat).
     pose (XX := fun n => X (n + xx)%nat).
-    pose (FF := fun n => F (n + xx)%nat).    
     pose (XXF := fun n => XF (n + xx)%nat).
     pose (αα := fun n => α (n + xx)%nat).
     pose (ββ := fun n => β (n + xx)%nat).
-    assert (isfilt_FF :IsFiltration FF).
+    assert (isfilt_FF :IsFiltration (fun n => F (n + xx)%nat)).
     {
-      unfold FF.
       unfold IsFiltration.
       intros.
       replace (S n + xx)%nat with (S (n + xx)) by lia.
       apply isfilt.
     }
-    assert (filtsub_FF: forall k, sa_sub (FF k) dom).
+    assert (filtsub_FF: forall k, sa_sub (F (k + xx)%nat) dom).
     {
       intros.
       apply filt_sub.
     }
-    assert (adapt_aa: IsAdapted (Rvector_borel_sa (S N)) αα FF).
+    assert (adapt_aa: IsAdapted (Rvector_borel_sa (S N)) αα (fun n => F (n + xx)%nat)).
     {
       intros ?.
       apply adapt_alpha.
     }
-    assert (adapt_bb: IsAdapted (Rvector_borel_sa (S N)) ββ FF).    
+    assert (adapt_bb: IsAdapted (Rvector_borel_sa (S N)) ββ (fun n => F (n + xx)%nat)).    
     {
       intros ?.
       apply adapt_beta.
     }
-    assert (rv_XX0: RandomVariable (FF 0%nat) (Rvector_borel_sa (S N)) (XX 0%nat)).
+    assert (rv_XX0: RandomVariable (F (xx)) (Rvector_borel_sa (S N)) (XX 0%nat)).
     {
-      unfold FF, XX.
+      unfold XX.
       induction xx.
       - now simpl.
       - simpl.
@@ -5013,10 +5011,10 @@ Section jaakola_vector2.
         + intros ?.
           apply adapt_beta.
     }
-    assert (rvXXF: forall k : nat, RandomVariable (FF (S k)) (Rvector_borel_sa (S N)) (XXF k)).
+    assert (rvXXF: forall k : nat, RandomVariable (F (S k + xx)%nat) (Rvector_borel_sa (S N)) (XXF k)).
     {
       intros.
-      unfold FF, XXF.
+      unfold XXF.
       replace (S k + xx)%nat with (S (k + xx)) by lia.
       apply rvXF.
     }
@@ -5034,13 +5032,21 @@ Section jaakola_vector2.
                    IsFiniteExpectation prts
                      (rvsqr
                         (rvminus (vecrvnth i pf (XXF k))
-                           (FiniteConditionalExpectation prts (filtsub_FF k) (vecrvnth i pf (XXF k)))))).
+                           (FiniteConditionalExpectation prts (filt_sub (k + xx)%nat) (vecrvnth i pf (XXF k)))))).
     {
       intros.
+      unfold XXF.
+      generalize (isfe2 (k + xx)%nat i pf); intros.
+      revert H13.
+      apply IsFiniteExpectation_proper.
+      intros ?.
+      unfold rvsqr; f_equal.
+      unfold rvminus; f_equal.
+      unfold rvopp; f_equal.
       admit.
     }
 
-    generalize (Jaakkola_alpha_beta_bounded γ XX XXF αα ββ isfilt_FF filtsub_FF adapt_aa adapt_bb); intros jak_bound.
+    generalize (Jaakkola_alpha_beta_bounded γ XX XXF αα ββ isfilt_FF (fun k => filt_sub (k + xx)%nat) adapt_aa adapt_bb); intros jak_bound.
     specialize (jak_bound npos rvXXF rvXXF_I _ _ H).
     cut_to jak_bound; trivial.
     - revert jak_bound; apply almost_impl.
