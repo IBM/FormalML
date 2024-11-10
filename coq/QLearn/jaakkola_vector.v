@@ -3673,7 +3673,6 @@ Section jaakola_vector2.
     (adapt_alpha : IsAdapted (Rvector_borel_sa (S N)) α F)
     (adapt_beta : IsAdapted (Rvector_borel_sa (S N)) β F)    
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
-    (npos : (0 < N)%nat)
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
     {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
@@ -4909,7 +4908,6 @@ Section jaakola_vector2.
     (adapt_alpha : IsAdapted (Rvector_borel_sa (S N)) α F)
     (adapt_beta : IsAdapted (Rvector_borel_sa (S N)) β F)    
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
-    (npos : (0 < N)%nat)
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
     {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
@@ -5047,8 +5045,7 @@ Section jaakola_vector2.
       reflexivity.
     }
 
-    generalize (Jaakkola_alpha_beta_bounded γ XX XXF αα ββ isfilt_FF (fun k => filt_sub (k + xx)%nat) adapt_aa adapt_bb); intros jak_bound.
-    specialize (jak_bound npos rvXXF rvXXF_I _ _ H).
+    generalize (Jaakkola_alpha_beta_bounded γ XX XXF αα ββ isfilt_FF (fun k => filt_sub (k + xx)%nat) adapt_aa adapt_bb H); intros jak_bound.
     cut_to jak_bound; trivial.
     - revert jak_bound; apply almost_impl.
       apply all_almost; intros ??.
@@ -5179,7 +5176,6 @@ Section jaakola_vector2.
     (adapt_alpha : IsAdapted (Rvector_borel_sa (S N)) α F)
     (adapt_beta : IsAdapted (Rvector_borel_sa (S N)) β F)    
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
-    (npos : (0 < N)%nat)
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
     {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
@@ -5233,7 +5229,7 @@ Section jaakola_vector2.
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
      Proof.
        intros.
-       apply (Jaakkola_alpha_beta_bounded_eventually_almost γ X XF α β isfilt filt_sub adapt_alpha adapt_beta npos); trivial.
+       apply (Jaakkola_alpha_beta_bounded_eventually_almost γ X XF α β isfilt filt_sub adapt_alpha adapt_beta); trivial.
        - assert (forall i pf,
                       eventually (fun n => almostR2 prts Rle  (vecrvnth i pf (α n)) (const 1))).
          {
