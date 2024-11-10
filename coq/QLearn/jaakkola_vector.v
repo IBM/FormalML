@@ -5261,9 +5261,15 @@ Section jaakola_vector2.
            exists x.
            apply H14.
          }
-         
-
-        admit.
+         apply eventually_bounded_forall in H13.
+         revert H13.
+         apply eventually_impl.
+         apply all_eventually; intros.
+         apply  almost_bounded_forall.
+         + intros; apply lt_dec.
+         + intros.
+           erewrite vector_nth_ext; try apply H14.
+         + apply H13.
        - clear jak_bound.
          assert (forall i pf,
                       eventually (fun n => almostR2 prts Rle  (vecrvnth i pf (β n)) (const 1))).
@@ -5286,8 +5292,16 @@ Section jaakola_vector2.
            destruct ( uniform_converge_sq _ H13 ( uniform_converge_sum_sq _ (H9 i pf))).
            exists x.
            apply H14.
-        }
-        admit.
-     Admitted.
+         }
+         apply eventually_bounded_forall in H13.
+         revert H13.
+         apply eventually_impl.
+         apply all_eventually; intros.
+         apply  almost_bounded_forall.
+         + intros; apply lt_dec.
+         + intros.
+           erewrite vector_nth_ext; try apply H14.
+         + apply H13.
+     Qed.
      
  End jaakola_vector2.
