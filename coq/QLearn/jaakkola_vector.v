@@ -5247,10 +5247,14 @@ Section jaakola_vector2.
            {
              intros.
              apply forall_almost with (n:= n) in H0.
-             (*
-               apply bounded_forall_almost with (n := n) (pf := pf) in H0.
-             *)
-             admit.
+             apply bounded_forall_almost with (n := i) (pf := pf) in H0.
+             - apply H0.
+             - admit.
+             - intros.
+               eapply Rle_trans.
+               apply H13.
+               right.
+               apply vector_nth_ext.
            }
            destruct ( uniform_converge_sq _ H13 ( uniform_converge_sum_sq _ (H8 i pf))).
            exists x.
@@ -5266,10 +5270,14 @@ Section jaakola_vector2.
            {
              intros.
              apply forall_almost with (n:= n) in H1.
-             (*
-               apply bounded_forall_almost with (n := n) (pf := pf) in H1.
-             *)
-             admit.
+             apply bounded_forall_almost with (n := i) (pf := pf) in H1.
+             - apply H1.
+             - admit.
+             - intros.
+               eapply Rle_trans.
+               apply H13.
+               right.
+               apply vector_nth_ext.
            }
            destruct ( uniform_converge_sq _ H13 ( uniform_converge_sum_sq _ (H9 i pf))).
            exists x.
