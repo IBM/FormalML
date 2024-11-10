@@ -5238,8 +5238,44 @@ Section jaakola_vector2.
        - apply jak_bound.
          + apply H11.
          + apply H12.
-       - admit.
-       - admit.
+       - clear jak_bound.
+         assert (forall i pf,
+                      eventually (fun n => almostR2 prts Rle  (vecrvnth i pf (α n)) (const 1))).
+         {
+           intros.
+           assert (forall n : nat, almostR2 prts Rle (const 0) (vecrvnth i pf (α n))).
+           {
+             intros.
+             apply forall_almost with (n:= n) in H0.
+             (*
+               apply bounded_forall_almost with (n := n) (pf := pf) in H0.
+             *)
+             admit.
+           }
+           destruct ( uniform_converge_sq _ H13 ( uniform_converge_sum_sq _ (H8 i pf))).
+           exists x.
+           apply H14.
+        }
+        admit.
+       - clear jak_bound.
+         assert (forall i pf,
+                      eventually (fun n => almostR2 prts Rle  (vecrvnth i pf (β n)) (const 1))).
+         {
+           intros.
+           assert (forall n : nat, almostR2 prts Rle (const 0) (vecrvnth i pf (β n))).
+           {
+             intros.
+             apply forall_almost with (n:= n) in H1.
+             (*
+               apply bounded_forall_almost with (n := n) (pf := pf) in H1.
+             *)
+             admit.
+           }
+           destruct ( uniform_converge_sq _ H13 ( uniform_converge_sum_sq _ (H9 i pf))).
+           exists x.
+           apply H14.
+        }
+        admit.
      Admitted.
      
  End jaakola_vector2.
