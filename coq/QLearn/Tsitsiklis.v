@@ -11728,6 +11728,7 @@ End FixedPoint_contract.
            (prod_nonnegreal _ _)
      end.
 
+   (*
    Instance dep_ps_product_ps {X : Type} {Y : Type} (A : SigmaAlgebra X) (B : SigmaAlgebra Y)
      (psA:ProbSpace A)
      (psB : forall a : X, ProbSpace B)
@@ -11741,7 +11742,7 @@ End FixedPoint_contract.
      unfold product_sa, dep_product_sa.
      intros ?.
      
-   Admitted.
+*)
 (*   
    (* d assumes that the vector is reversed.  The most recent history is at the beginning *)
    Program Fixpoint ivector_dep_prod n
@@ -11759,7 +11760,7 @@ End FixedPoint_contract.
 
    *)
 
-   Lemma puterman_5_5_1 (s0 : state M)
+(*   Lemma puterman_5_5_1 (s0 : state M)
      (d : forall (n:nat), vector (sigT M.(act)) n -> forall (s:state M), ProbSpace (discrete_sa (M.(act) s))) :
      exists (d' : nat -> forall (s:state M), ProbSpace (discrete_sa (M.(act) s))),
      forall (p1 : ProbSpace (discrete_sa (M.(state))))
@@ -11769,7 +11770,7 @@ End FixedPoint_contract.
        (forall s, policy_prob_s d p1 ns N v s = policy_prob_s (fun n v s => d' n s) p1 ns N v s) /\
        (forall sa, policy_prob_sa d p1 ns N v sa = policy_prob_sa (fun n v s => d' n s) p1 ns N v sa).
    Proof.
-     Admitted.
+ *)
 
 End MDP.
 
@@ -11883,7 +11884,7 @@ Section Jaakkola.
   Qed.
 
 
-
+(*
   Theorem qlearn_single_path_uniform_conv
       (x' : Rfct (sigT M.(act)))
       (alpha_bound : forall t ω sa, 0 <= α t ω sa)
@@ -11909,8 +11910,7 @@ Section Jaakkola.
                      is_lim_seq (fun n => X n ω sa) (x' sa)).
  Proof.
    intros.
-  Admitted.   
-   
+   *)
 
   Fixpoint qlearn_Q_single_path (t : nat) : (Ts -> Rfct (sigT M.(act)))    :=
            match t with
