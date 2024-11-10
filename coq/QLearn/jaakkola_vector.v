@@ -5170,4 +5170,76 @@ Section jaakola_vector2.
       now rewrite H12.
   Qed.
 
+   Theorem Jaakkola_alpha_beta_bounded_uniformly
+    (γ : R) 
+    (X XF α β : nat -> Ts -> vector R (S N))
+    {F : nat -> SigmaAlgebra Ts}
+    (isfilt : IsFiltration F) 
+    (filt_sub : forall k, sa_sub (F k) dom) 
+    (adapt_alpha : IsAdapted (Rvector_borel_sa (S N)) α F)
+    (adapt_beta : IsAdapted (Rvector_borel_sa (S N)) β F)    
+    {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
+    (npos : (0 < N)%nat)
+    {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}
+    {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
+    {isfe2 : forall k i pf, IsFiniteExpectation prts 
+                              (rvsqr (rvminus (vecrvnth i pf (XF k))
+                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} 
+    {rv2 : forall k i pf, RandomVariable dom borel_sa
+                            (rvsqr (rvminus (vecrvnth i pf (XF k))
+                                      (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} : 
+    0 < γ < 1 ->
+
+    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
+    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω)) ->
+(*
+    eventually (fun k => almost prts (fun ω => forall i pf, vector_nth i pf (α k ω) <= 1)) ->          
+    eventually (fun k => almost prts (fun ω => forall i pf, vector_nth i pf (β k ω) <= 1)) ->      
+*)
+    almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <=  vector_nth i pf (α k ω)) ->        
+
+
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
+    (exists (C : R),
+        forall i pf,
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Finite C))) ->
+    (exists (C : R),
+        forall i pf,
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (β k ω))))) (Finite C))) ->
+    (forall k i pf ω, 
+        Rabs ((FiniteConditionalExpectation _ (filt_sub k) ((vecrvnth i pf (XF k)))) ω) <=
+          (γ * (Rvector_max_abs (X k ω)))) ->
+
+    (forall i pf,
+        is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω) n) 
+          (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω)))) ->
+    (forall i pf, 
+        is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω) n) 
+          (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω)))) ->
+    (exists (C : R),
+        0 < C /\
+        forall k i pf ω, 
+          Rbar_le ((FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
+            (C * (1 + Rvector_max_abs (X k ω))^2)) ->                  
+
+    (exists (C : R), forall k ω, Rvector_max_abs (X k ω) <= C) ->
+    
+    (forall k, rv_eq (X (S k)) 
+                 (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
+    almost prts (fun ω =>
+                   forall i pf,
+                     is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
+     Proof.
+       intros.
+       generalize (Jaakkola_alpha_beta_bounded_eventually_almost γ X XF α β isfilt filt_sub adapt_alpha adapt_beta npos H); intros jak_bound.
+       cut_to jak_bound; trivial.
+       - apply jak_bound.
+         + apply H11.
+         + apply H12.
+       - admit.
+       - admit.
+     Admitted.
+     
  End jaakola_vector2.
