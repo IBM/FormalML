@@ -5275,7 +5275,8 @@ Section jaakola_vector2.
              apply forall_almost with (n:= n) in H1.
              apply bounded_forall_almost with (n := i) (pf := pf) in H1.
              - apply H1.
-             - admit.
+             - intros.
+               apply lt_dec.
              - intros.
                eapply Rle_trans.
                apply H13.
