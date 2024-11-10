@@ -5121,7 +5121,23 @@ Section jaakola_vector2.
       apply nneg_sum_n_m_sq.
     - destruct H8.
       exists x1.
-      admit.
+
+      unfold ββ; intros i pf.
+      generalize (H8 i pf).
+      apply almost_impl; apply all_almost; intros ? HH.
+      rewrite <- (Lim_seq_incr_n (sum_n (fun k : nat => (vector_nth i pf (β k x2))²)) xx) in HH.
+      unfold sum_n in HH.
+      erewrite Lim_seq_ext; cycle 1.
+      { intros.
+        rewrite <- (sum_n_m_shift (fun k : nat => (vector_nth i pf (β (k)%nat x2))²) xx n).
+        reflexivity.
+      }
+      eapply Rbar_le_trans; try apply HH.
+      apply Lim_seq_le; intros.
+      destruct xx; [reflexivity |].
+      rewrite (sum_split (fun k : nat => (vector_nth i pf (β k x2))²) 0 (n + S xx) xx); unfold plus; simpl; try lia.
+      cut (0 <=  sum_n_m (fun k : nat => (vector_nth i pf (β k x2))²) 0 xx); try lra.
+      apply nneg_sum_n_m_sq.
     - intros.
       specialize (H9 (k + xx)%nat i pf ω).
       eapply Rle_trans; cycle 1.
@@ -5152,6 +5168,6 @@ Section jaakola_vector2.
       unfold XX, αα, ββ, XX, XXF.
       replace (S k + xx)%nat with (S (k + xx))%nat by lia.
       now rewrite H12.
-   Admitted.
+  Qed.
 
  End jaakola_vector2.
