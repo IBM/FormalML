@@ -5234,12 +5234,8 @@ Section jaakola_vector2.
      Proof.
        intros.
        generalize (Jaakkola_alpha_beta_bounded_eventually_almost γ X XF α β isfilt filt_sub adapt_alpha adapt_beta npos H); intros jak_bound.
-       cut_to jak_bound; trivial.
-       - apply jak_bound.
-         + apply H11.
-         + apply H12.
-       - clear jak_bound.
-         assert (forall i pf,
+       apply jak_bound; trivial; clear jak_bound.
+       - assert (forall i pf,
                       eventually (fun n => almostR2 prts Rle  (vecrvnth i pf (α n)) (const 1))).
          {
            intros.
@@ -5252,10 +5248,7 @@ Section jaakola_vector2.
              - intros.
                apply lt_dec.
              - intros.
-               eapply Rle_trans.
-               apply H13.
-               right.
-               apply vector_nth_ext.
+               erewrite vector_nth_ext; try apply H13.
            }
            destruct ( uniform_converge_sq _ H13 ( uniform_converge_sum_sq _ (H8 i pf))).
            exists x.
@@ -5270,8 +5263,7 @@ Section jaakola_vector2.
          + intros.
            erewrite vector_nth_ext; try apply H14.
          + apply H13.
-       - clear jak_bound.
-         assert (forall i pf,
+       - assert (forall i pf,
                       eventually (fun n => almostR2 prts Rle  (vecrvnth i pf (β n)) (const 1))).
          {
            intros.
@@ -5284,10 +5276,7 @@ Section jaakola_vector2.
              - intros.
                apply lt_dec.
              - intros.
-               eapply Rle_trans.
-               apply H13.
-               right.
-               apply vector_nth_ext.
+               erewrite vector_nth_ext; try apply H13.
            }
            destruct ( uniform_converge_sq _ H13 ( uniform_converge_sum_sq _ (H9 i pf))).
            exists x.
