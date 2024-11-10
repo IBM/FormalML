@@ -5233,8 +5233,7 @@ Section jaakola_vector2.
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
      Proof.
        intros.
-       generalize (Jaakkola_alpha_beta_bounded_eventually_almost γ X XF α β isfilt filt_sub adapt_alpha adapt_beta npos H); intros jak_bound.
-       apply jak_bound; trivial; clear jak_bound.
+       apply (Jaakkola_alpha_beta_bounded_eventually_almost γ X XF α β isfilt filt_sub adapt_alpha adapt_beta npos); trivial.
        - assert (forall i pf,
                       eventually (fun n => almostR2 prts Rle  (vecrvnth i pf (α n)) (const 1))).
          {
