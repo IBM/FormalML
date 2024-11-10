@@ -5249,7 +5249,8 @@ Section jaakola_vector2.
              apply forall_almost with (n:= n) in H0.
              apply bounded_forall_almost with (n := i) (pf := pf) in H0.
              - apply H0.
-             - admit.
+             - intros.
+               apply lt_dec.
              - intros.
                eapply Rle_trans.
                apply H13.
@@ -5259,7 +5260,9 @@ Section jaakola_vector2.
            destruct ( uniform_converge_sq _ H13 ( uniform_converge_sum_sq _ (H8 i pf))).
            exists x.
            apply H14.
-        }
+         }
+         
+
         admit.
        - clear jak_bound.
          assert (forall i pf,
