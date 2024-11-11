@@ -344,6 +344,13 @@ Section Rvector_defs.
     lra.
   Qed.
   
+  Lemma Rvector_scale_comm (a b : R) (x : vector R n) :
+    a .* (b .* x) = b .* (a .* x).
+  Proof.
+    repeat rewrite Rvector_scale_scale.
+    now rewrite Rmult_comm.
+  Qed.
+
   Definition Rvector_ModuleSpace_mixin : ModuleSpace.mixin_of R_Ring Rvector_AbelianGroup
         := ModuleSpace.Mixin R_Ring Rvector_AbelianGroup
                              Rvector_scale Rvector_scale_scale Rvector_scale1

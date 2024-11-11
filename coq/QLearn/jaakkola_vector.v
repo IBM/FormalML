@@ -3239,13 +3239,6 @@ Section jaakola_vector2.
      - now apply Restricted_RandomVariable.
    Qed.
 
-   Lemma Rvector_scale_comm {n : nat} (a b : R) (v : vector R n) :
-     Rvector_scale a (Rvector_scale b v) = Rvector_scale b (Rvector_scale a v).
-   Proof.
-     repeat rewrite Rvector_scale_scale.
-     now rewrite Rmult_comm.
-   Qed.
-
        Lemma lemma3_full_almost (α β X : nat -> Ts -> vector R (S N)) (γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
