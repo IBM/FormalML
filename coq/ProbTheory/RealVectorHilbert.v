@@ -144,6 +144,12 @@ Section Rvector_defs.
       apply vector_nth_map.
     Qed.
 
+    Lemma Rvector_nth_abs (v : vector R n) (i : nat) (pf : (i < n)%nat):
+      vector_nth i pf (Rvector_abs v) = Rabs (vector_nth i pf v).
+    Proof.
+      apply vector_nth_map.
+    Qed.
+
     Definition Rvector_minus (x y:vector R n) : vector R n
       := Rvector_plus x (Rvector_opp y).
 
@@ -1127,6 +1133,14 @@ Section more_lemmas.
     eapply Rle_trans.
     apply H.
     apply Rvector_max_abs_nth_le.
+  Qed.
+
+  Lemma Rvector_max_abs_const {n} (c : R) :
+    Rvector_max_abs (vector_const c (S n)) = Rabs c.
+  Proof.
+    destruct (Rvector_max_abs_nth_in (vector_const c (S n))) as [?[? eqq]].
+    rewrite eqq.
+    now rewrite vector_nth_const.
   Qed.
 
   Program Lemma Rvector_sum_pos_in_le {n} x (v : vector R n) :

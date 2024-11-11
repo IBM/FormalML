@@ -781,14 +781,6 @@ Proof.
     now apply (lemma2_n0_w w X XX G C).
 Qed.
   
-Lemma Rvector_max_abs_const {n : nat} (c : R) :
-  Rvector_max_abs (vector_const c (S n)) = Rabs c.
-Proof.
-  destruct (Rvector_max_abs_nth_in (vector_const c (S n))) as [?[? eqq]].
-  rewrite eqq.
-  now rewrite vector_nth_const.
-Qed.
-
 Lemma gamma_eps_le (gamma' : posreal) (gamma'_lt1 : gamma' < 1) :
   {eps : posreal | gamma' <=  / (1 + eps)}.
 Proof.
@@ -4151,13 +4143,10 @@ Section jaakola_vector2.
             unfold vecrvplus.
             apply Rvector_max_abs_le.
             intros.
-            rewrite Rvector_nth_plus.
-            rewrite Rvector_nth_plus.
+            repeat rewrite Rvector_nth_plus.
             eapply Rle_trans.
             apply Rabs_triang.
-            unfold Rvector_abs.
-            rewrite vector_nth_map.
-            rewrite vector_nth_map.
+            repeat rewrite Rvector_nth_abs.
             generalize (Rabs_pos (vector_nth i0 pf1 (δ n0 ω)) ); intros.
             generalize (Rabs_pos  (vector_nth i0 pf1 (w n0 ω))); intros.
             rewrite (Rabs_right (Rabs (vector_nth i0 pf1 (δ n0 ω)) + Rabs (vector_nth i0 pf1 (w n0 ω)))); lra.
@@ -4309,8 +4298,7 @@ Section jaakola_vector2.
               intros.
               rewrite Rvector_nth_plus.
               rewrite Rvector_nth_plus.
-              unfold Rvector_abs.
-              repeat rewrite vector_nth_map.
+              repeat rewrite Rvector_nth_abs.
               rewrite (Rabs_right  (Rabs (vector_nth i0 pf1 (δ (x0+n0)%nat x1)) + Rabs (vector_nth i0 pf1 (w (x0 + n0)%nat x1)))).
               rewrite vector_nth_const.
               rewrite (Rabs_right (Rplus (Rabs (@vector_nth R (S N) i0 pf1 (δ (x0 +n0)%nat x1))) (pos eps))).
@@ -4325,8 +4313,7 @@ Section jaakola_vector2.
               * generalize (Rabs_pos  (vector_nth i0 pf1 (δ (x0+n0)%nat x1))); intros.
                 generalize (Rabs_pos (vector_nth i0 pf1 (w (x0+n0)%nat x1))); intros.
                 lra.
-          - unfold Rvector_abs.
-            now rewrite vector_nth_map.
+          - now rewrite Rvector_nth_abs.
         }
         assert (forall (eps : posreal),
                    ps_P
@@ -4493,8 +4480,7 @@ Section jaakola_vector2.
                 rewrite Rvector_nth_plus, Rvector_nth_scale, Rvector_nth_mult.
                 generalize (cond_pos eps); intros.
                 rewrite Rvector_max_abs_plus_nneg; try lra.
-                unfold Rvector_abs.
-                rewrite vector_nth_map.
+                rewrite Rvector_nth_abs.
                 replace (Rabs (vector_nth i pf0 (δ (x + (x2 + k))%nat x1)) +
                          -1 * (vector_nth i pf0 (α (x + (x2 + k))%nat x1) * Rabs (vector_nth i pf0 (δ (x + (x2 + k))%nat x1))))
                   with
@@ -4565,8 +4551,8 @@ Section jaakola_vector2.
               intros.
               induction n1.
               - simpl.
-                unfold vecrvabs, Rvector_abs.
-                rewrite vector_nth_map.
+                unfold vecrvabs.
+                rewrite Rvector_nth_abs.
                 apply Rabs_pos.
               - simpl.
                 unfold vecrvminus, vecrvplus, vecrvmult, vecrvscalerv, vecrvopp, vecrvscale.
