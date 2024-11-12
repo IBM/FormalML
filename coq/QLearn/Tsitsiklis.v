@@ -419,6 +419,80 @@ Proof.
   now apply is_lim_seq_ext.
 Qed.
 
+Lemma lemma1_alpha_beta_alt (α β w W : nat -> Ts -> R) (Ca Cb : R)
+      {F : nat -> SigmaAlgebra Ts}
+      (isfilt : IsFiltration F)
+      (filt_sub : forall n, sa_sub (F n) dom)
+      {rv : forall n, RandomVariable dom borel_sa (w n)}
+      {rvW0 : RandomVariable (F 0%nat) borel_sa (W 0%nat)}
+      {adaptw : IsAdapted borel_sa w (fun n => F (S n))}
+      {adapta : IsAdapted borel_sa α F} 
+      {adaptb : IsAdapted borel_sa β F}
+      (is_cond : forall n, is_conditional_expectation prts (F n) (w n) (ConditionalExpectation prts (filt_sub n) (w n))) :
+  (forall (n:nat), almostR2 prts eq (ConditionalExpectation _ (filt_sub n) (w n)) (const 0)) ->
+  (forall (n:nat), almostR2 prts Rle (const 0) (α n)) -> 
+(*  (forall n x, 0 <= α n x) -> *)
+  (forall (n:nat), almostR2 prts Rle (const 0) (β n)) ->  
+  (forall (n:nat), almostR2 prts Rle (α n) (const 1)) -> 
+(*  (forall n x, 0 <= 1 - α n x )  -> *)
+  (forall (n:nat), almostR2 prts Rle (β n) (const 1)) ->  
+  (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
+  (almost prts (fun ω => is_lim_seq (sum_n (fun k => β k ω)) p_infty)) ->  
+  (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) (const Ca)) ->
+  (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (β k) ω))) (const Cb)) ->
+  (forall n ω, W (S n) ω = (1 - α n ω) * (W n ω) + (β n ω) * (w n ω)) ->
+  (exists (b : Ts -> R),
+      almost prts (fun ω => forall n,
+                       Rbar_le (ConditionalExpectation _ (filt_sub n) (rvsqr (w n)) ω) (b ω))) ->  
+  almost prts (fun ω => is_lim_seq (fun n => W n ω) 0). 
+Proof.
+  intros.
+  pose (B := fun n ω => real (ConditionalExpectation _ (filt_sub n) (rvsqr (w n)) ω)).
+  generalize (lemma1_alpha_beta α β w B W Ca Cb isfilt); intros.
+  specialize (H10 filt_sub rv _).
+  apply H10; trivial.
+  - unfold IsAdapted, B.
+    intros.
+    apply Rbar_real_rv.
+    apply Condexp_rv.
+  - intros.
+    destruct H9 as [b ?].
+    revert H9.
+    apply almost_impl.
+    apply all_almost; intros ??.
+    specialize (H9 n).
+    unfold B.
+    assert (is_finite
+               (ConditionalExpectation prts (filt_sub n) (rvsqr (w n)) x)).
+    {
+      apply bounded_is_finite with (a := 0) (b := b x); trivial.
+      apply Condexp_nneg.
+      apply nnfsqr.
+    }
+    rewrite <- H11.
+    simpl.
+    now right.
+  - destruct H9 as [b ?].
+    exists b.
+    revert H9.
+    apply almost_impl.
+    apply all_almost; intros ???.
+    unfold B.
+    specialize (H9 n).
+    assert (is_finite
+               (ConditionalExpectation prts (filt_sub n) (rvsqr (w n)) x)).
+    {
+      apply bounded_is_finite with (a := 0) (b := b x); trivial.
+      apply Condexp_nneg.
+      apply nnfsqr.
+    }
+    rewrite <- H11 in H9.
+    simpl in H9.
+    eapply Rle_trans.
+    apply H9.
+    apply Rle_abs.
+ Qed.
+
 Lemma lemma1_alpha_alpha (α w B W : nat -> Ts -> R) (Ca : R)
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
