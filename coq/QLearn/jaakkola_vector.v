@@ -5340,6 +5340,11 @@ Section jaakola_vector2.
          + apply H13.
      Qed.
 
+     Lemma Binomial_C_2_1 : Binomial.C 2 1 = 2.
+     Proof.
+       vm_compute; lra.
+     Qed.
+     
   Theorem Jaakkola_alpha_beta_unbounded
     (γ : R) 
     (X XF α β : nat -> Ts -> vector R (S N))
@@ -5516,8 +5521,70 @@ Section jaakola_vector2.
       apply FiniteConditionalExpectation_ext.
       reflexivity.
     - clear Tsit1.
-      admit.
-    Admitted.
-    
-    
- End jaakola_vector2.
+      destruct H8 as [C [Cpos HH]].
+      pose (A:=3 * C).
+      pose (B:=3 * C).
+      exists A.
+      exists B.
+      split; [unfold A; lra |].
+      split; [unfold B; lra |].
+      intros.
+      assert (forall ω, (C * (1 + Rvector_max_abs (X k ω)) ^ 2) <=
+                     rvplus (const A)
+                       (rvscale B (rvmaxlist (fun (j : nat) (ω : Ts) => rvsqr (rvmaxabs (X j)) ω) k)) ω).
+      {
+        assert (forall ω, (C * (1 + Rvector_max_abs (X k ω)) ^ 2) <=
+                       (rvplus (const A)
+                          (rvscale B (rvsqr (rvmaxabs (X k))))) ω).
+        {
+          intros ω.
+          unfold rvsqr, rvplus, rvscale, const, rvmaxabs.
+          rewrite binomial; simpl.
+          repeat rewrite C_n_0, C_n_n, Binomial_C_2_1.
+          ring_simplify.
+          rewrite <-Rsqr_pow2.
+          rewrite (Rplus_comm A).
+          rewrite Rplus_assoc.
+          destruct (Rlt_dec (Rvector_max_abs (X k ω)) 1).
+          - unfold A, B.
+            apply Rplus_le_compat.
+            + apply Rmult_le_compat_r.
+              apply Rle_0_sqr.
+              lra.
+            + cut (2 * C * Rvector_max_abs (X k ω) <  2 * C * 1); [lra |].
+              apply Rmult_lt_compat_l; trivial.
+              lra.
+          - assert (HvX_small : Rvector_max_abs (X k ω) <= (Rvector_max_abs (X k ω))²).
+            {
+              assert (HH2:Rvector_max_abs (X k ω) >= 1) by lra.
+              apply (Rmult_ge_compat_r) with (r:= (Rvector_max_abs (X k ω))) in HH2.
+              unfold Rsqr.
+              lra.
+              apply Rle_ge.
+              apply Rvector_max_abs_nonneg.
+            }
+            transitivity ( C * (Rvector_max_abs (X k ω))² + (2 * C * (Rvector_max_abs (X k ω))² + C)).
+            + apply Rplus_le_compat_l.
+              apply Rplus_le_compat_r.
+              apply Rmult_le_compat_l; try lra.
+            + rewrite <- Rplus_assoc.
+              unfold A, B.
+              lra.
+        }
+        intros ω.
+        specialize (H8 ω).
+        rewrite H8.
+        unfold rvplus, rvscale.
+        apply Rplus_le_compat_l.
+        apply Rmult_le_compat_l.
+        - unfold B; lra.
+        - unfold rvmaxlist.
+          apply Rmax_spec.
+          apply in_map_iff.
+          exists k; split; trivial.
+          apply in_seq.
+          lia.
+      }
+  Admitted.
+
+End jaakola_vector2.
