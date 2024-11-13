@@ -5452,9 +5452,28 @@ Section jaakola_vector2.
     - intros.
       apply Condexp_cond_exp.
       unfold w.
+      assert (IsFiniteExpectation prts
+                (rvminus
+                   (vecrvnth i pf (XF k))
+                   (vecrvnth i pf (XF2 k)))).
+      {
+        apply IsFiniteExpectation_minus.
+        - now apply vecrvnth_rv.
+        - apply vecrvnth_rv.
+          now apply (RandomVariable_sa_sub (filt_sub (S k))).
+        - apply isfe.
+        - unfold XF2.
+          rewrite vector_FiniteConditionalExpectation_nth'.
+          apply FiniteCondexp_isfe.
+      }
+      revert H10.
+      apply IsFiniteExpectation_proper.
       unfold vecrvnth, vecrvminus, vecrvplus, vecrvopp, vecrvscale.
-      admit.
+      intros ?.
+      now rewrite Rvector_nth_plus, Rvector_nth_scale.
     - intros.
+      apply all_almost; intros.
+      unfold w.
       admit.
     - admit.
     Admitted.
