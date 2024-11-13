@@ -3691,7 +3691,7 @@ Section jaakola_vector2.
                 (C * (1 + Rvector_max_abs (X k ω))^2))) ->                  
     (exists (C : Ts -> R), 
         (RandomVariable (F 0%nat) borel_sa C) /\
-          (forall k ω, Rvector_max_abs (X k ω) <= C ω)) ->
+          almost prts (fun ω => forall k, Rvector_max_abs (X k ω) <= C ω)) ->
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k)))) ->
     almost prts (fun ω =>
@@ -3765,7 +3765,7 @@ Section jaakola_vector2.
     }
     assert (exists (C : Ts -> R),
                (RandomVariable (F 0%nat) borel_sa C) /\
-                 (forall k i pf ω, (FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k)) ω) <= C ω)).
+                 (almost prts (fun ω => forall k i pf, (FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k)) ω) <= C ω))).
     {
       
       destruct H8 as [? [??]].
@@ -3779,7 +3779,11 @@ Section jaakola_vector2.
         apply rvconst.
       }
       intros.
-      specialize (H12 k i pf ω).
+      revert H13.
+      apply almost_impl.
+      apply all_almost; intros ??.
+      intros.
+      specialize (H12 k i pf x1).
       eapply Rle_trans.
       simpl in H12.
       apply H12.
@@ -3787,14 +3791,14 @@ Section jaakola_vector2.
       apply Rmult_le_compat_l; try lra.
       unfold Rsqr.
       rewrite Rmult_1_r.
-      assert (0 <= x0 ω).
+      assert (0 <= x0 x1).
       {
         eapply Rle_trans; cycle 1.
-        apply (H13 0%nat ω).
+        apply (H13 0%nat).
         apply Rvector_max_abs_nonneg.
       }
-      generalize (Rvector_max_abs_nonneg (X k ω)); intros.
-      specialize (H13 k ω).
+      generalize (Rvector_max_abs_nonneg (X k x1)); intros.
+      specialize (H13 k).
       apply Rmult_le_compat; try lra.
     }
     assert (forall k i pf,
@@ -3910,15 +3914,19 @@ Section jaakola_vector2.
     }
     assert (exists (B : Ts -> R),
                (RandomVariable (F 0%nat) borel_sa B) /\
-                 (forall k i pf ω,
-                     (FiniteConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (r k)))) ω <=  (B ω))).
+                 almost prts 
+                   (fun ω =>
+                      forall k i pf,
+                        (FiniteConditionalExpectation prts (filt_sub k) (rvsqr (vecrvnth i pf (r k)))) ω <=  (B ω))).
     {
       unfold FiniteConditionalVariance in H12.
       destruct H12 as [C [rvC H12]].
       exists C.
       split; trivial.
+      revert H12; apply almost_impl.
+      apply all_almost; intros ??.
       intros.
-      specialize (H12 k i pf ω).
+      specialize (H12 k i pf).
       unfold r.
       eapply Rle_trans; cycle 1.
       apply H12.
@@ -3976,9 +3984,9 @@ Section jaakola_vector2.
       - intros.
         apply H16.
       - intros.
+        revert H19; apply almost_impl.
+        apply all_almost; intros ??.
         specialize (H19 n n1 pf).
-        apply all_almost; intros.
-        specialize (H19 x).
         generalize (FiniteCondexp_eq prts (filt_sub n)); intros.
         specialize (H20 (rvsqr (fun ω : Ts => vector_nth n1 pf (r n ω)))
                       (@rvsqr_rv Ts dom (@vecrvnth Ts R (S N) n1 pf (r n)) (H13 n n1 pf))).
@@ -4950,10 +4958,9 @@ Section jaakola_vector2.
           Rbar_le ((FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
             (C * (1 + Rvector_max_abs (X k ω))^2)) ->                  
 
-    (exists (C : Ts -> R), 
+   (exists (C : Ts -> R), 
         (RandomVariable (F 0%nat) borel_sa C) /\
-          (forall k ω, Rvector_max_abs (X k ω) <= C ω)) ->
-    
+          almost prts (fun ω => forall k, Rvector_max_abs (X k ω) <= C ω)) ->
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
     almost prts (fun ω =>
@@ -5172,13 +5179,15 @@ Section jaakola_vector2.
       unfold rvsqr, rvminus, rvplus, rvopp, rvscale.
       do 3 f_equal.
       apply FiniteConditionalExpectation_ext; reflexivity.
-    - destruct H11.
+    - destruct H11 as [? [??]].
       exists x1.
       split.
       + replace (0 + xx)%nat with xx by lia.
         now apply (RandomVariable_sa_sub (Fx_sub xx)).
-      + intros.
-        apply H11.
+      + revert H13; apply almost_impl.
+        apply all_almost; intros ??.
+        intros.
+        apply H13.
     - intros.
       unfold XX, αα, ββ, XX, XXF.
       replace (S k + xx)%nat with (S (k + xx))%nat by lia.
@@ -5238,10 +5247,9 @@ Section jaakola_vector2.
           Rbar_le ((FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
             (C * (1 + Rvector_max_abs (X k ω))^2)) ->                  
 
-    (exists (C : Ts -> R), 
+   (exists (C : Ts -> R), 
         (RandomVariable (F 0%nat) borel_sa C) /\
-          (forall k ω, Rvector_max_abs (X k ω) <= C ω)) ->
-    
+          almost prts (fun ω => forall k, Rvector_max_abs (X k ω) <= C ω)) ->
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
     almost prts (fun ω =>
@@ -5351,7 +5359,7 @@ Section jaakola_vector2.
 (*
     (exists (C : Ts -> R), 
         (RandomVariable (F 0%nat) borel_sa C) /\
-          (forall k ω, Rvector_max_abs (X k ω) <= C ω)) ->
+          almost prts (fun ω => forall k, Rvector_max_abs (X k ω) <= C ω)) ->
 *)
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k)))) ->
@@ -5403,7 +5411,13 @@ Section jaakola_vector2.
     cut_to Tsit1.
     - destruct Tsit1.
       exists x.
-      admit.
+      split.
+      + admit.
+      + apply almost_forall in H10.
+        revert H10; apply almost_impl.
+        apply all_almost; intros ??.
+        intros.
+        apply H10.
     - assert (0 <= 0) by lra.
       exists (mknonnegreal _ H10).
       intros.
