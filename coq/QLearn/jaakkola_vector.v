@@ -5494,29 +5494,27 @@ Section jaakola_vector2.
       intros ?.
       now rewrite Rvector_nth_plus, Rvector_nth_scale.
     - intros.
-      assert (RandomVariable dom borel_sa
-                (rvminus (vecrvnth i pf (XF k))
-                   (vecrvnth i pf (XF2 k)))).
-      {
-        apply rvminus_rv.
-        - now apply vecrvnth_rv.
-        - apply vecrvnth_rv.
-          now apply (RandomVariable_sa_sub (filt_sub (S k))).
-      }
-      generalize Condexp_minus; intros.
-      apply all_almost; intros.
       unfold w.
-      clear Tsit1.
-      assert (rv_eq
-                (ConditionalExpectation prts (filt_sub k)
-                   (rvminus (vecrvnth i pf (XF k))
-                      (vecrvnth i pf (XF2 k))))
-               (const 0)).
+      assert (RandomVariable dom borel_sa
+                (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))).
       {
-        generalize Condexp_minus; intros.
-        admit.
+        apply FiniteCondexp_rv'.
       }
-      admit.
+      generalize (condexp_condexp_diff_0 (vecrvnth i pf (XF k)) (filt_sub k)).
+      apply almost_impl.
+      apply all_almost; intros ??.
+      rewrite <- H11.
+      apply ConditionalExpectation_ext.
+      intros ?.
+      unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale.
+      unfold vecrvnth, rvminus, rvplus, rvopp, rvscale.
+      rewrite Rvector_nth_plus, Rvector_nth_scale.
+      f_equal.
+      f_equal.
+      unfold XF2.
+      rewrite vector_FiniteConditionalExpectation_nth.
+      apply FiniteConditionalExpectation_ext.
+      reflexivity.
     - clear Tsit1.
       admit.
     Admitted.
