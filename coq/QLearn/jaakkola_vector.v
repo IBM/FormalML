@@ -5307,5 +5307,143 @@ Section jaakola_vector2.
            erewrite vector_nth_ext; try apply H14.
          + apply H13.
      Qed.
-     
+
+  Theorem Jaakkola_alpha_beta_unbounded
+    (γ : R) 
+    (X XF α β : nat -> Ts -> vector R (S N))
+    {F : nat -> SigmaAlgebra Ts}
+    (isfilt : IsFiltration F) 
+    (filt_sub : forall k, sa_sub (F k) dom) 
+    (adapt_alpha : IsAdapted (Rvector_borel_sa (S N)) α F)
+    (adapt_beta : IsAdapted (Rvector_borel_sa (S N)) β F)    
+    {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
+    {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}
+    {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
+    {isfe2 : forall k i pf, IsFiniteExpectation prts 
+                              (rvsqr (rvminus (vecrvnth i pf (XF k))
+                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} :
+    0 < γ < 1 ->
+      
+    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
+    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω) <= 1) ->
+    almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <= vector_nth i pf (α k ω)) ->        
+
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
+
+    (exists (C : R),
+        forall i pf,
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (α k ω))))) (Finite C))) ->
+    (exists (C : R),
+        forall i pf,
+          almost prts (fun ω => Rbar_le (Lim_seq (sum_n (fun k : nat => Rsqr (vector_nth i pf (β k ω))))) (Finite C))) ->
+
+    (forall k i pf ω, 
+        Rabs ((FiniteConditionalExpectation _ (filt_sub k) ((vecrvnth i pf (XF k)))) ω) <=
+          (γ * (Rvector_max_abs (X k ω)))) ->
+
+    (exists (C : R),
+        (0 < C)  /\
+        (forall k i pf ω, 
+              Rbar_le ((FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
+                (C * (1 + Rvector_max_abs (X k ω))^2))) ->                  
+(*
+    (exists (C : Ts -> R), 
+        (RandomVariable (F 0%nat) borel_sa C) /\
+          (forall k ω, Rvector_max_abs (X k ω) <= C ω)) ->
+*)
+    (forall k, rv_eq (X (S k)) 
+                 (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k)))) ->
+    almost prts (fun ω =>
+                   forall i pf,
+                     is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
+  Proof.
+    intros.
+    apply (Jaakkola_alpha_beta_bounded γ X XF α β isfilt filt_sub _ _); trivial.
+    generalize (Tsitsiklis1_Jaakkola_beta γ X); intros Tsit1.
+    assert (rvXF2 : forall k, RandomVariable dom (Rvector_borel_sa (S N)) (XF k)).
+    {
+      intros.
+      now apply (RandomVariable_sa_sub (filt_sub (S k))).
+    }
+    assert (vecisfe: forall k, vector_IsFiniteExpectation prts (XF k)).
+    {
+      intros.
+      now apply vector_nth_IsFiniteExpectation.
+    }
+    pose (XF2 := fun k =>
+                   (vector_FiniteConditionalExpectation prts (filt_sub k) (XF k))).
+    pose (w := fun k => vecrvminus (XF k) (XF2 k)).
+
+    assert (rv_XF2: forall k : nat, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF2 k)).
+    {
+      intros.
+      apply (RandomVariable_sa_sub (isfilt k)).
+      apply (vector_FiniteCondexp_rv prts (filt_sub k)).
+    }
+
+    assert  (rvw : forall (k i : nat) (pf : (i < S N)%nat),
+                  RandomVariable dom borel_sa
+                    (fun ω : Ts => vector_nth i pf (w k ω))).
+    {
+      intros.
+      apply vecrvnth_rv.
+      unfold w.
+      apply Rvector_minus_rv; trivial.
+      now apply (RandomVariable_sa_sub (filt_sub (S k))).      
+    }
+    assert (adapt_w :IsAdapted (Rvector_borel_sa (S N)) w (fun k : nat => F (S k))).
+    {
+      intros ?.
+      now apply Rvector_minus_rv.
+    }
+    specialize (Tsit1 w α β XF2 F isfilt filt_sub _ _ _ _ _ _).
+    cut_to Tsit1; trivial; try lra.
+    cut_to Tsit1.
+    - destruct Tsit1.
+      exists x.
+      admit.
+    - assert (0 <= 0) by lra.
+      exists (mknonnegreal _ H10).
+      intros.
+      simpl.
+      rewrite Rplus_0_r.
+      rewrite Rvector_max_abs_nth_Rabs_le.
+      intros.
+      unfold XF2.
+      rewrite vector_FiniteConditionalExpectation_nth.
+      eapply Rle_trans; cycle 1.
+      apply (H7 k i pf).
+      right.
+      f_equal.
+      now apply FiniteConditionalExpectation_ext.
+    - intros.
+      rewrite H9.
+      assert (rv_eq
+                (XF k)
+                (vecrvplus (XF2 k) (w k))).
+      {
+        unfold w.
+        unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale.
+        intros ?.
+        rewrite Rvector_plus_assoc.
+        rewrite (Rvector_plus_comm (XF2 k a)).
+        rewrite <- Rvector_plus_assoc.
+        rewrite <- Rvector_opp_scale.
+        rewrite Rvector_plus_inv.
+        now rewrite Rvector_plus_zero.
+      }
+      now rewrite H10.
+    - intros.
+      apply Condexp_cond_exp.
+      unfold w.
+      unfold vecrvnth, vecrvminus, vecrvplus, vecrvopp, vecrvscale.
+      admit.
+    - intros.
+      admit.
+    - admit.
+    Admitted.
+    
+    
  End jaakola_vector2.
