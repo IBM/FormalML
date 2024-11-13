@@ -5585,6 +5585,32 @@ Section jaakola_vector2.
           apply in_seq.
           lia.
       }
-  Admitted.
+      Local Existing Instance Rbar_le_pre.
+      transitivity  (fun ω => C * (1 + Rvector_max_abs (X k ω)) ^ 2); [| apply all_almost; intros; apply H8].
+      transitivity (fun ω => (FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k)) ω))
+      ; [| apply all_almost; intros; apply HH].
+      apply all_almost; intros.
+      unfold  FiniteConditionalVariance.
+      unfold w.
+      apply refl_refl.
+      assert (eqq: rv_eq (rvsqr (vecrvnth i pf (vecrvminus (XF k) (XF2 k))))
+                 (rvsqr
+                    (rvminus (vecrvnth i pf (XF k))
+                       (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))).
+      {
+        intros ?.
+        unfold rvsqr, vecrvnth, vecrvminus, XF2, vecrvplus, vecrvopp, rvminus, rvplus, rvopp, vecrvscale, rvscale.
+        rewrite Rvector_nth_plus, Rvector_nth_scale, vector_FiniteConditionalExpectation_nth.
+        do 3 f_equal.
+        apply FiniteConditionalExpectation_ext; reflexivity.
+      }
+      assert (isfe': IsFiniteExpectation prts (rvsqr (vecrvnth i pf (vecrvminus (XF k) (XF2 k))))).
+      {
+        rewrite eqq; trivial.
+      } 
+      rewrite FiniteCondexp_eq with (isfe:=isfe').
+      f_equal.
+      apply FiniteConditionalExpectation_ext; trivial.
+  Qed.
 
 End jaakola_vector2.
