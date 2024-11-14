@@ -5344,7 +5344,61 @@ Section jaakola_vector2.
      Proof.
        vm_compute; lra.
      Qed.
-     
+
+     Lemma jaakkola_tsitsilis_coefs1 (x : R) :
+       Rsqr (1 + x) <= 3 + 3 * Rsqr (x).
+     Proof.
+       intros.
+       unfold Rsqr; ring_simplify.
+       destruct (Rlt_dec x 1).
+       - rewrite Rplus_assoc.
+         apply Rplus_le_compat; try lra.
+         generalize (pow2_ge_0 x); intros.
+         lra.
+       - assert (1 <= x) by lra.
+         apply Rmult_le_compat_l with (r := x) in H; lra.         
+    Qed.         
+           
+     Lemma jaakkola_tsitsilis_coefs2 (x A B : nonnegreal) :
+       A + B * Rsqr x <= (A + B) *  Rsqr (1 + x).
+     Proof.
+       unfold Rsqr; ring_simplify.
+       assert (0 <= A * x ^ 2 + 2 * A * x + 2 * B * x + B).
+       {
+         generalize (cond_nonneg A); intros.
+         generalize (cond_nonneg B); intros.
+         generalize (cond_nonneg x); intros.
+         generalize (pow2_ge_0 x); intros.         
+         repeat apply Rplus_le_le_0_compat; try lra;  apply Rmult_le_pos; lra.
+       }
+       lra.
+     Qed.
+       
+     Lemma jaakkola_tsitsilis_coefs2_alt (x A B : nonnegreal) :
+       A + B * Rsqr x <= (Rmax A B) *  Rsqr (1 + x).
+     Proof.
+       assert ((Rmax A B)*(1 + Rsqr x) <= (Rmax A B) * Rsqr ( 1 + x)).
+       {
+         apply Rmult_le_compat_l.
+         - apply Rle_trans with (r2 := A).
+           + apply cond_nonneg.
+           + apply Rmax_l.
+         - unfold Rsqr.
+           ring_simplify.
+           generalize (cond_nonneg x).
+           lra.
+       }
+       eapply Rle_trans; cycle 1.
+       apply H.
+       rewrite Rmult_plus_distr_l.
+       apply Rplus_le_compat.
+       - rewrite Rmult_1_r.
+         apply Rmax_l.
+       - apply Rmult_le_compat_r.
+         + apply Rle_0_sqr.
+         + apply Rmax_r.
+    Qed.
+
   Theorem Jaakkola_alpha_beta_unbounded
     (γ : R) 
     (X XF α β : nat -> Ts -> vector R (S N))
