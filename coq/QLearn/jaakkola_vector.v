@@ -5593,37 +5593,11 @@ Section jaakola_vector2.
         {
           intros ω.
           unfold rvsqr, rvplus, rvscale, const, rvmaxabs.
-          rewrite binomial; simpl.
-          repeat rewrite C_n_0, C_n_n, Binomial_C_2_1.
-          ring_simplify.
-          rewrite <-Rsqr_pow2.
-          rewrite (Rplus_comm A).
-          rewrite Rplus_assoc.
-          destruct (Rlt_dec (Rvector_max_abs (X k ω)) 1).
-          - unfold A, B.
-            apply Rplus_le_compat.
-            + apply Rmult_le_compat_r.
-              apply Rle_0_sqr.
-              lra.
-            + cut (2 * C * Rvector_max_abs (X k ω) <  2 * C * 1); [lra |].
-              apply Rmult_lt_compat_l; trivial.
-              lra.
-          - assert (HvX_small : Rvector_max_abs (X k ω) <= (Rvector_max_abs (X k ω))²).
-            {
-              assert (HH2:Rvector_max_abs (X k ω) >= 1) by lra.
-              apply (Rmult_ge_compat_r) with (r:= (Rvector_max_abs (X k ω))) in HH2.
-              unfold Rsqr.
-              lra.
-              apply Rle_ge.
-              apply Rvector_max_abs_nonneg.
-            }
-            transitivity ( C * (Rvector_max_abs (X k ω))² + (2 * C * (Rvector_max_abs (X k ω))² + C)).
-            + apply Rplus_le_compat_l.
-              apply Rplus_le_compat_r.
-              apply Rmult_le_compat_l; try lra.
-            + rewrite <- Rplus_assoc.
-              unfold A, B.
-              lra.
+          unfold A, B.
+          rewrite (Rmult_comm 3), Rmult_assoc.
+          rewrite <- Rmult_plus_distr_l, <- Rsqr_pow2.
+          apply Rmult_le_compat_l; try lra.
+          apply jaakkola_tsitsilis_coefs1.
         }
         intros ω.
         specialize (H8 ω).
