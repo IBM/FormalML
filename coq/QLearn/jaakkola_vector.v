@@ -5348,13 +5348,9 @@ Section jaakola_vector2.
      Lemma jaakkola_tsitsilis_coefs1 (x : R) :
        Rsqr (1 + x) <= 3 + 3 * Rsqr (x).
      Proof.
-       intros.
        unfold Rsqr; ring_simplify.
        destruct (Rlt_dec x 1).
-       - rewrite Rplus_assoc.
-         apply Rplus_le_compat; try lra.
-         generalize (pow2_ge_0 x); intros.
-         lra.
+       - generalize (pow2_ge_0 x); lra.
        - assert (1 <= x) by lra.
          apply Rmult_le_compat_l with (r := x) in H; lra.         
     Qed.         
@@ -5374,22 +5370,20 @@ Section jaakola_vector2.
        lra.
      Qed.
        
-     Lemma jaakkola_tsitsilis_coefs2_alt (x A B : nonnegreal) :
+     Lemma jaakkola_tsitsilis_coefs2_alt (x : nonnegreal) (A B : R):
+       0 <= Rmax A B ->
        A + B * Rsqr x <= (Rmax A B) *  Rsqr (1 + x).
      Proof.
+       intros.
        assert ((Rmax A B)*(1 + Rsqr x) <= (Rmax A B) * Rsqr ( 1 + x)).
        {
-         apply Rmult_le_compat_l.
-         - apply Rle_trans with (r2 := A).
-           + apply cond_nonneg.
-           + apply Rmax_l.
-         - unfold Rsqr.
-           ring_simplify.
-           generalize (cond_nonneg x).
-           lra.
+         apply Rmult_le_compat_l; trivial.
+         unfold Rsqr.
+         generalize (cond_nonneg x).
+         lra.
        }
        eapply Rle_trans; cycle 1.
-       apply H.
+       apply H0.
        rewrite Rmult_plus_distr_l.
        apply Rplus_le_compat.
        - rewrite Rmult_1_r.
