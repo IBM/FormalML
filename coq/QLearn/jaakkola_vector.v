@@ -6203,7 +6203,10 @@ Proof.
     + unfold XF', pos_Rvector_mult.
       now rewrite Rvector_mult_assoc.      
   - intros.
-    admit.
+    apply rvsqr_rv.
+    apply rvminus_rv; trivial.
+    apply (RandomVariable_sa_sub (filt_sub k)).
+    apply FiniteCondexp_rv.
   - intros.
     admit.
   - apply Rvector_mult_rv; trivial.
