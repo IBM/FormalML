@@ -6050,6 +6050,8 @@ Section jaakola_vector2.
 
      Definition pos_scaled_Rvector_max_abs {n} (x : vector R n) (y :vector posreal n) : R :=
        Rvector_max_abs (pos_Rvector_mult x y).
+
+     Definition pos_vec {n} (x : vector posreal n) : vector R n := vector_map pos x.
      
  Theorem Jaakkola_alpha_beta_unbounded_uniformly_W (W : vector posreal (S N))
     (γ : R) 
@@ -6132,7 +6134,16 @@ Proof.
   {
     intros.
     unfold XF', pos_Rvector_mult.
-    admit.
+    assert (IsFiniteExpectation prts (fun ω => (vector_nth i pf W) * (vector_nth i pf (XF k ω)))).
+    {
+      apply IsFiniteExpectation_scale.
+      apply isfe.
+    }
+    revert H12.
+    apply IsFiniteExpectation_proper.
+    intros ?.
+    unfold vecrvnth.
+    rewrite Rvector_nth_mult, vector_nth_map; lra.
   }
   assert (isfe2' : forall (k i : nat) (pf : (i < S N)%nat),
                    IsFiniteExpectation prts
