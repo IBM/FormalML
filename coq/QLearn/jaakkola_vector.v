@@ -6497,7 +6497,39 @@ Proof.
         unfold FiniteConditionalVariance.
         admit.
     }
-    admit.
+    generalize 
+      (bounded_nat_ex_choice_vector 
+         (A := R) (n := S N)
+         (fun i pf C =>
+            0 < C /\
+            (forall (k : nat) (ω : Ts),
+                  Rbar_le
+                    (FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF' k)) ω)
+                    (C * (1 + Rvector_max_abs (X' k ω)) ^ 2)))); intros.
+    cut_to H2.
+    - destruct H2.
+      exists (Rvector_max_abs x).
+      split.
+      + assert (0 < S N)%nat by lia.
+        destruct (H2 0%nat H3).
+        eapply Rlt_le_trans.
+        apply H4.
+        eapply Rle_trans; cycle 1.
+        apply Rvector_max_abs_nth_le with (i := 0%nat) (pf := H3).
+        apply Rle_abs.
+      + intros.
+        destruct (H2 i pf).
+        specialize (H4 k ω).
+        eapply Rbar_le_trans.
+        apply H4.
+        rewrite Rbar_le_Rle.
+        apply Rmult_le_compat_r.
+        * apply pow2_ge_0.
+        * eapply Rle_trans; cycle 1.
+          apply Rvector_max_abs_nth_le with (i := i) (pf := pf).
+          apply Rle_abs.
+    - intros.
+      apply H1.
   }
   specialize (jaak H13 H8 H9 H14).
   cut_to jaak; trivial.
