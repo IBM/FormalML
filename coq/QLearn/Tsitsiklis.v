@@ -8983,7 +8983,7 @@ Proof.
         {isfe : IsFiniteExpectation prts x}
         {isfe0 : IsFiniteExpectation prts (rvsqr x)} :
     almostR2 prts Rle (rvsqr x) (const c²) ->
-    almostR2 prts Rle (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
+    almostR2 (prob_space_sa_sub prts sub) Rle (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
                                (rvsqr (FiniteConditionalExpectation prts sub x)))
           (const c²).
   Proof.
@@ -8991,10 +8991,8 @@ Proof.
     generalize (FiniteCondexp_ale 
                   prts sub (rvsqr x) (const c²)); intros.
     cut_to H0; try easy.
-    apply almost_prob_space_sa_sub_lift in H0.
     revert H0; apply almost_impl.
-    revert H; apply almost_impl.
-    apply all_almost; intros ???.
+    apply all_almost; intros ??.
     rewrite FiniteCondexp_const in H0.
     rv_unfold.
     eapply Rle_trans.
@@ -9017,7 +9015,7 @@ Proof.
         {isfe2 : IsFiniteExpectation prts c}
         {isfe0 : IsFiniteExpectation prts (rvsqr x)} :
     almostR2 prts Rle (rvsqr x) (c) ->
-    almostR2 prts Rle (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
+    almostR2 (prob_space_sa_sub prts sub) Rle (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
                                (rvsqr (FiniteConditionalExpectation prts sub x)))
              (c).
   Proof.
@@ -9029,10 +9027,8 @@ Proof.
     generalize (FiniteCondexp_ale 
                   prts sub (rvsqr x) (c)); intros.
     cut_to H0; try easy.
-    apply almost_prob_space_sa_sub_lift in H0.
     revert H0; apply almost_impl.
-    revert H; apply almost_impl.
-    apply all_almost; intros ???.
+    apply all_almost; intros ??.
     rewrite FiniteCondexp_id with (f := c) in H0; trivial.
     rv_unfold.
     eapply Rle_trans.
@@ -9170,7 +9166,7 @@ Proof.
                    prts
                    (rvsqr (FiniteConditionalExpectation prts sub x))}
         {isfe5 : IsFiniteExpectation prts  (rvmult (FiniteConditionalExpectation prts sub x) x)}  :
-    almostR2 prts eq
+    almostR2 (prob_space_sa_sub prts sub) eq
              (FiniteConditionalExpectation 
                 prts sub
                 (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))) 
@@ -9262,11 +9258,6 @@ Proof.
                     (rvmult (FiniteConditionalExpectation prts sub x) x)); intros.
       generalize (FiniteCondexp_factor_out_l prts sub x (FiniteConditionalExpectation prts sub x)); intros.
 
-      apply almost_prob_space_sa_sub_lift in H.
-      apply almost_prob_space_sa_sub_lift in H0.
-      apply almost_prob_space_sa_sub_lift in H1.
-      apply almost_prob_space_sa_sub_lift in H2.
-      apply almost_prob_space_sa_sub_lift in H3.            
       revert H3; apply almost_impl.
       revert H2; apply almost_impl.
       revert H1; apply almost_impl.
@@ -9319,7 +9310,7 @@ Proof.
         (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa x}
         {isl2: IsLp prts 2 x} :
-    almostR2 prts eq
+    almostR2 (prob_space_sa_sub prts sub) eq
              (FiniteConditionalExpectation 
                 prts sub
                 (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))) 
@@ -9347,7 +9338,7 @@ Proof.
         {isfe5 : IsFiniteExpectation prts
             (rvmult (FiniteConditionalExpectation prts sub x) x)}    :
     almostR2 prts Rle (rvsqr x) (const c²) ->
-    almostR2 prts Rle (FiniteConditionalExpectation prts sub (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))))
+    almostR2 (prob_space_sa_sub prts sub) Rle (FiniteConditionalExpectation prts sub (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))))
           (const c²).
   Proof.
     intros.
@@ -9366,7 +9357,7 @@ Proof.
         {rv : RandomVariable dom borel_sa x}
         {isl2: IsLp prts 2 x} :
     almostR2 prts Rle (rvsqr x) (const c²) ->
-    almostR2 prts Rle (FiniteConditionalExpectation prts sub (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))))
+    almostR2 (prob_space_sa_sub prts sub) Rle (FiniteConditionalExpectation prts sub (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))))
           (const c²).
   Proof.
     intros.
@@ -9387,7 +9378,7 @@ Proof.
         {isfe2 : IsFiniteExpectation prts c}
         {isl2: IsLp prts 2 x} :
     almostR2 prts Rle (rvsqr x) (c) ->
-    almostR2 prts Rle (FiniteConditionalExpectation prts sub (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))))
+    almostR2 (prob_space_sa_sub prts sub) Rle (FiniteConditionalExpectation prts sub (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))))
           (c).
   Proof.
     intros.
@@ -11389,7 +11380,8 @@ End FixedPoint_contract.
                       (fun ω => (Rmax_all (fun sa => Rsqr (qlearn_Q k ω sa))))
                       (filt_sub k)); intros.
         cut_to H11.
-        - revert H11.
+        - apply almost_prob_space_sa_sub_lift in H11.
+          revert H11.
           apply almost_impl, all_almost; intros ??.
           etransitivity; [| etransitivity]; [| apply H11 |]; apply refl_refl.
           + apply FiniteConditionalExpectation_ext.

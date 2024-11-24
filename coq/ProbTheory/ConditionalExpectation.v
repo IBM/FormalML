@@ -6965,6 +6965,27 @@ Section fin_cond_exp.
     congruence.
   Qed.
 
+  Lemma FiniteCondexp_scale' c (f : Ts -> R) 
+        {rv : RandomVariable dom borel_sa f}
+        {rvc : RandomVariable dom borel_sa (rvscale c f)}
+        {isfe:IsFiniteExpectation prts f}
+        {isfec:IsFiniteExpectation prts (rvscale c f)} :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (FiniteConditionalExpectation (rvscale c f))
+             (rvscale c (FiniteConditionalExpectation f)).
+  Proof.
+    generalize (Condexp_scale prts sub c f).
+    rewrite (FiniteCondexp_eq f), (FiniteCondexp_eq (rvscale c f)).
+    apply almost_impl.
+    apply all_almost.
+    unfold Rbar_rvmult, rvscale; simpl.
+    intros ? eqq.
+    inversion eqq.
+    apply FiniteConditionalExpectation_ext.
+    reflexivity.
+  Qed.
+
+  
   Lemma FiniteCondexp_opp (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f} :

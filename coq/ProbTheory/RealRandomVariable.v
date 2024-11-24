@@ -798,6 +798,17 @@ Section RealRandomVariables.
         typeclasses eauto.
       Qed.
 
+      Lemma rvscale_rv_inv (c: R)  (cnzero : c <> 0) (rv_X : Ts -> R)
+        (rv : RandomVariable dom borel_sa (rvscale c rv_X)) :
+        RandomVariable dom borel_sa rv_X.
+      Proof.
+        generalize (rvscale_rv (/ c) _ rv).
+        apply RandomVariable_proper; try reflexivity.
+        intros ?.
+        unfold rvscale.
+        rewrite <- Rmult_assoc, Rinv_l; lra.
+      Qed.
+
       Global Instance rvopp_rv (rv_X : Ts -> R) 
              {rv : RandomVariable dom borel_sa rv_X}
         : RandomVariable dom borel_sa (rvopp rv_X).
