@@ -6191,7 +6191,7 @@ Section jaakola_vector2.
              (rvscale (Rsqr c) (FiniteConditionalVariance prts sub f)).
   Proof.
     assert (IsFiniteExpectation prts (rvsqr (rvscale c f))) by admit.
-    generalize (Finite_conditional_variance_alt_scale f c sub); intros.
+    generalize (Finite_conditional_variance_alt_scale f c sub); apply almost_impl.
     assert (rv2 : RandomVariable dom borel_sa
           (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f)))).
     {
@@ -6203,7 +6203,7 @@ Section jaakola_vector2.
             (rvsqr (FiniteConditionalExpectation prts sub f))) by admit.
     assert (isfe5 : IsFiniteExpectation prts
             (rvmult (FiniteConditionalExpectation prts sub f) f)) by admit.
-    generalize (conditional_variance_alt f sub); intros.
+    generalize (conditional_variance_alt f sub); apply almost_impl.
     assert (rv2' : RandomVariable dom borel_sa
           (rvsqr
              (rvminus (rvscale c f)
@@ -6213,10 +6213,7 @@ Section jaakola_vector2.
     assert (isfe5' : IsFiniteExpectation prts
             (rvmult (FiniteConditionalExpectation prts sub (rvscale c f))
                (rvscale c f))) by admit.
-    generalize (conditional_variance_alt (rvscale c f) sub); intros.
-    revert H0; apply almost_impl.
-    revert H1; apply almost_impl.
-    revert H2; apply almost_impl.
+    generalize (conditional_variance_alt (rvscale c f) sub); apply almost_impl.
     apply all_almost; intros ????.
     unfold FiniteConditionalVariance.
     replace
