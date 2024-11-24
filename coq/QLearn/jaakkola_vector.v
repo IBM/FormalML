@@ -6541,7 +6541,67 @@ Proof.
         apply Rsqr_pos_lt.
         generalize (cond_pos (vector_nth i pf W)); lra.
       - intros.
-        unfold FiniteConditionalVariance.
+        assert (rv_eq  (vecrvnth i pf (XF' k))
+                       (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k)))).
+        {
+          intros ?.
+          unfold rvscale, XF', vecrvnth, pos_Rvector_mult.
+          now rewrite Rvector_nth_mult, vector_nth_map, Rmult_comm.
+        }
+        eapply (FiniteConditionalVariance_ext prts (filt_sub k)) in H1.
+        rewrite H1.
+        rewrite Rbar_le_Rle.
+        assert (IsFiniteExpectation prts
+                  (rvsqr
+                     (rvminus (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k)))
+                        (FiniteConditionalExpectation prts (filt_sub k)
+                           (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k))))))).
+        {
+          admit.
+        }
+        assert (almostR2 prts Rle
+                         (FiniteConditionalVariance prts (filt_sub k)
+                            (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k))))
+                         (const ((C * (vector_nth i pf W)² * (1 + Rvector_max_abs (X' k ω)) ^ 2)))).
+        {
+          assert (IsFiniteExpectation prts (rvsqr (vecrvnth i pf (XF k)))) by admit.
+          assert (IsFiniteExpectation prts
+             (rvsqr
+                (rvminus (vecrvnth i pf (XF k))
+                   (FiniteConditionalExpectation prts (filt_sub k)
+                      (vecrvnth i pf (XF k)))))) by admit.
+          assert (IsFiniteExpectation prts
+             (rvsqr
+                (rvminus (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k)))
+                   (FiniteConditionalExpectation prts (filt_sub k)
+                      (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k))))))) by admit.
+          generalize (FiniteConditionalVariance_scale (filt_sub k) 
+                        (vector_nth i pf W) (vecrvnth i pf (XF k))); intros.
+          apply almost_prob_space_sa_sub_lift in H6.
+          revert H6; apply almost_impl.
+          apply all_almost; intros ??.
+          assert (rvscale (vector_nth i pf W)²
+                    (FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) x <=
+                     const (C * (vector_nth i pf W)² * (1 + Rvector_max_abs (X' k ω)) ^ 2) x).
+          {
+            unfold rvscale, const.
+            specialize (HH k i pf ω).
+            rewrite Rbar_le_Rle in HH.
+            apply Rmult_le_compat_l with (r := (vector_nth i pf W)²)  in HH.
+            - replace  (pos_scaled_Rvector_max_abs (X k ω) W) with
+                (Rvector_max_abs (X' k ω)) in HH by reflexivity.
+              rewrite (Rmult_comm C), Rmult_assoc.
+              eapply Rle_trans; cycle 1.
+              apply HH.
+              apply Rmult_le_compat_l.
+              + apply Rle_0_sqr.
+              + admit.
+            - apply Rle_0_sqr.
+        }
+        eapply Rle_trans; cycle 1.
+        apply H8.
+        admit.
+        }
         admit.
     }
     generalize 
@@ -6560,7 +6620,7 @@ Proof.
       + assert (0 < S N)%nat by lia.
         destruct (H2 0%nat H3).
         eapply Rlt_le_trans.
-        apply H4.
+        apply H2.
         eapply Rle_trans; cycle 1.
         apply Rvector_max_abs_nth_le with (i := 0%nat) (pf := H3).
         apply Rle_abs.
@@ -6619,137 +6679,5 @@ Proof.
     + unfold XF', pos_Rvector_mult.
       now rewrite Rvector_mult_assoc.      
  Admitted.   
-
-(*    
-    generalize IsFiniteExpectation_proper_almostR2; intros.
-    
-         prts
-         (rvscale (vector_nth i pf W)²
-            (rvsqr
-               (rvminus (vecrvnth i pf (XF k))
-                  (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k))))))
-         (rvsqr
-            (rvminus (vecrvnth i pf (fun ω : Ts => pos_Rvector_mult (XF k ω) W))
-               (FiniteConditionalExpectation prts (filt_sub k)
-                  (vecrvnth i pf (fun ω : Ts => pos_Rvector_mult (XF k ω) W)))))); intros.
-
-    apply IsFiniteExpectation_proper_almostR2.
-    apply IsFiniteExpectation_proper.
-    intros ?.
-    unfold rvsqr, rvminus, vecrvnth, rvplus, rvopp, rvscale; simpl.
-    assert (rv_eq
-              (FiniteConditionalExpectation prts (filt_sub k)
-                 (fun omega : Ts => vector_nth i pf (pos_Rvector_mult (XF k omega) W)))
-              (FiniteConditionalExpectation prts (filt_sub k)
-                 (rvscale (vector_nth i pf W)
-                          (fun omega => vector_nth i pf (XF k omega))))).
-    {
-      intros.
-      apply FiniteConditionalExpectation_ext.
-      intros ?.
-      unfold pos_Rvector_mult, rvscale.
-      rewrite Rvector_nth_mult, vector_nth_map.
-      lra.
-   }
-   rewrite H12.
-    generalize FiniteCondexp_scale; intros.
-    
-
-      
-    unfold pos_Rvector_mult.
-    rewrite Rvector_nth_mult, vector_nth_map.
-
-      
-generalize isfe2; intros.
-                                         
-    assert (forall w,
-               IsFinite
-    apply IsFiniteExpectation_bounded with (rv_X1 := const 0) (rv_X3 := (rvsqr
-               (rvminus (vecrvnth i pf (XF k))
-                  (FiniteConditionalExpectation prts (filt_sub k)
-                     (vecrvnth i pf (XF k)))))).
-    admit.
-(*
-    generalize (isfe2' k i pf).
-    apply IsFiniteExpectation_proper; intros ?.
-    unfold rvsqr, rvminus, vecrvnth, rvplus, rvopp, rvscale; simpl.
-    do 3 f_equal.
-    apply FiniteConditionalExpectation_ext; intros ?.
-    reflexivity.
-*)
-  }
-  specialize (jaak _ _ _).
-  cut_to jaak; trivial.
-  assert (exists C : R,
-            0 < C /\
-            (forall (k i : nat) (pf : (i < S N)%nat) (ω : Ts),
-             Rbar_le (FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF' k)) ω)
-               (C * (1 + Rvector_max_abs (X' k ω)) ^ 2))).
-  {
-    destruct H10 as [C [HH1 HH2]].
-(*    
-    exists C.
-    split; [trivial |].
-    intros.
-    eapply Rbar_le_trans; [eapply Rbar_le_trans |]; [| apply (HH2 k i pf ω) |]; apply refl_refl.
-    - unfold FiniteConditionalVariance.
-      apply Rbar_finite_eq.
-      apply FiniteConditionalExpectation_ext; intros ?.
-      unfold rvsqr, rvminus, vecrvnth, rvplus, rvopp, rvscale; simpl.
-      do 3 f_equal.
-      apply FiniteConditionalExpectation_ext; intros ?.
-      reflexivity.
-    - reflexivity.
-*)
-    admit.
-  }
-  specialize (jaak H9 H12).
-  cut_to jaak; trivial.
-  - intros.
-    unfold X'.
-    intros ?.
-    rewrite H11.
-    unfold pos_Rvector_mult, vecrvminus, vecrvplus, vecrvmult, vecrvopp, vecrvscale.
-    repeat rewrite Rvector_mult_plus_distr_r.
-    f_equal.
-    + f_equal.
-      rewrite Rvector_scale_mult_l.
-      f_equal.
-      now rewrite Rvector_mult_assoc.
-    + unfold XF', pos_Rvector_mult.
-      now rewrite Rvector_mult_assoc.      
-  - intros.
-    apply rvsqr_rv.
-    apply rvminus_rv; trivial.
-    apply (RandomVariable_sa_sub (filt_sub k)).
-    apply FiniteCondexp_rv.
-  - intros.
-    clear jaak.
-    assert (vector_IsFiniteExpectation prts (XF' k)).
-    {
-      admit.
-    }
-    assert (Rvector_max_abs ((vector_FiniteConditionalExpectation prts (filt_sub k) (XF' k)) ω) <= γ * Rvector_max_abs (X' k ω)).
-    {
-      admit.
-    }
-    eapply Rle_trans; cycle 1.
-    apply H13.
-    admit.
-(*
-    unfold X', XF'.
-    eapply Rle_trans; [eapply Rle_trans |]; [| apply (H7 k i pf) |].
-    + apply refl_refl.
-      f_equal.
-      now apply FiniteConditionalExpectation_ext; intros ?.
-    + reflexivity.
-  - apply Rvector_mult_rv; trivial.
-    apply rvconst.
-  - intros.
-    apply Rvector_mult_rv; trivial.
-    apply rvconst.
-*)
-Admitted.
-*)
     
 End jaakola_vector2.
