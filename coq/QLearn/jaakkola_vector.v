@@ -6073,8 +6073,6 @@ Section jaakola_vector2.
        now rewrite Rvector_nth_mult, vector_nth_map, Rmult_comm.
      Qed.
 
-     Check vector_FiniteConditionalExpectation.
-
      Lemma pos_scaled_fincondexp_nth {n} (W : vector posreal n) {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) 
        (f : Ts -> vector R n)
        {rv : RandomVariable dom (Rvector_borel_sa n) f}
