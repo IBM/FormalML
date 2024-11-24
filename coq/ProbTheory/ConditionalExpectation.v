@@ -6713,6 +6713,51 @@ Section fin_cond_exp.
     {isfe2:IsFiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation f)))} : Ts -> R :=
     FiniteConditionalExpectation (rv := variance_rv f) _.
 
+  Lemma ConditionalVariance_ext (f1 f2 : Ts -> R)
+        {rv1   : RandomVariable dom borel_sa f1}
+        {rv2   : RandomVariable dom borel_sa f2}
+        {isfe1 : IsFiniteExpectation prts f1}
+        {isfe2 : IsFiniteExpectation prts f2}:
+    rv_eq f1 f2 ->
+    rv_eq (ConditionalVariance f1) (ConditionalVariance f2).
+  Proof.
+    intros ??.
+    unfold ConditionalVariance.
+    apply ConditionalExpectation_ext.
+    intros ?.
+    unfold rvsqr, rvminus, rvplus, rvopp, rvscale.
+    do 3 f_equal.
+    now apply FiniteConditionalExpectation_ext.
+  Qed.      
+
+  Lemma FiniteConditionalVariance_ext (f1 f2 : Ts -> R)
+        {rv1    : RandomVariable dom borel_sa f1}
+        {rv2    : RandomVariable dom borel_sa f2}
+        {isfe1  : IsFiniteExpectation prts f1}
+        {isfe'1 : IsFiniteExpectation prts (rvsqr (rvminus f1 (FiniteConditionalExpectation f1)))} 
+        {isfe2  : IsFiniteExpectation prts f2}
+        {isfe'2 : IsFiniteExpectation prts (rvsqr (rvminus f2 (FiniteConditionalExpectation f2)))} : 
+    rv_eq f1 f2 ->
+    rv_eq (FiniteConditionalVariance f1) (FiniteConditionalVariance f2).
+  Proof.
+    intros ??.
+    unfold FiniteConditionalVariance.
+    apply FiniteConditionalExpectation_ext.
+    intros ?.
+    unfold rvsqr, rvminus, rvplus, rvopp, rvscale.
+    do 3 f_equal.
+    now apply FiniteConditionalExpectation_ext.
+  Qed.      
+
+  Lemma FiniteVariance_eq (f : Ts -> R)
+    {rv    : RandomVariable dom borel_sa f}
+    {isfe  : IsFiniteExpectation prts f}
+    {isfe' : IsFiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation f)))} : 
+    ConditionalVariance f = (fun x : Ts => FiniteConditionalVariance f x).
+  Proof.
+    apply FiniteCondexp_eq.
+  Qed.
+  
   Lemma FiniteCondexp_is_cond_exp (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f}
