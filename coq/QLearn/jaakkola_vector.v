@@ -6160,12 +6160,36 @@ Section jaakola_vector2.
              (rvscale (Rsqr c) (FiniteConditionalVariance prts sub f)).
   Proof.
     
-    unfold FiniteConditionalVariance.
-    generalize (FiniteCondexp_scale prts sub c f); apply almost_impl.
+    assert (almostR2 (prob_space_sa_sub prts sub)  eq (rvsqr (rvminus (rvscale c f) (FiniteConditionalExpectation prts sub (rvscale c f))))
+              (rvscale c² (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f))))).
+    {
+      generalize (FiniteCondexp_scale prts sub c f); apply almost_impl.
+      apply all_almost; intros ??.
+      admit.
+    }
+    assert (RandomVariable dom borel_sa (rvscale c² (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f))))) by admit.
+    assert (IsFiniteExpectation prts (rvsqr (rvminus (rvscale c f) (FiniteConditionalExpectation prts sub (rvscale c f))))) by admit.
+
+    assert (IsFiniteExpectation prts (rvscale c² (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f))))) by admit.
+    assert (RandomVariable dom borel_sa (rvsqr (rvminus (rvscale c f) (FiniteConditionalExpectation prts sub (rvscale c f))))).
+    {
+      admit.
+    }
+    generalize (FiniteCondexp_proper prts sub
+      (rvsqr (rvminus (rvscale c f) (FiniteConditionalExpectation prts sub (rvscale c f)))) 
+      (rvscale c² (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f))))); intros.
+
+    revert H; apply almost_impl.
     generalize (FiniteCondexp_scale prts sub (Rsqr c) (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f))) (rv := variance_rv prts _ _)); apply almost_impl.
+    
+
+      intros.
     apply all_almost; intros ???.
-    rewrite <- H.
+(*
+    rewrite <- H5.
+
     apply FiniteConditionalExpectation_ext.
+    
     intros ?.
     unfold rvsqr, rvminus, rvplus, rvopp, rvscale.
     unfold Rsqr.
@@ -6182,6 +6206,7 @@ Section jaakola_vector2.
     - unfold rvscale in H0.
       rewrite <- Rpow_mult_distr.
       admit.
+*)
   Admitted.
               
 
