@@ -6197,7 +6197,8 @@ Section jaakola_vector2.
     {
       apply rvsqr_rv.
       apply rvminus_rv; trivial.
-      admit.
+      apply (RandomVariable_sa_sub sub).
+      apply FiniteCondexp_rv.
     }
     assert (isfe4 : IsFiniteExpectation prts
             (rvsqr (FiniteConditionalExpectation prts sub f))) by admit.
@@ -6207,7 +6208,13 @@ Section jaakola_vector2.
     assert (rv2' : RandomVariable dom borel_sa
           (rvsqr
              (rvminus (rvscale c f)
-                (FiniteConditionalExpectation prts sub (rvscale c f))))) by admit.
+                (FiniteConditionalExpectation prts sub (rvscale c f))))).
+    {
+      apply rvsqr_rv.
+      apply rvminus_rv; trivial.
+      apply (RandomVariable_sa_sub sub).
+      apply FiniteCondexp_rv.
+    }
     assert (isfe4' : IsFiniteExpectation prts
                        (rvsqr (FiniteConditionalExpectation prts sub (rvscale c f)))) by admit.
     assert (isfe5' : IsFiniteExpectation prts
