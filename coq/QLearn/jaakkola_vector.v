@@ -6144,14 +6144,15 @@ Section jaakola_vector2.
            intros ?.
            apply vector_nth_ext.
      Qed.
-
+     
      Lemma Finite_conditional_variance_alt_scale (x : Ts -> R) (c : R)
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa x}
         {isfe1 : IsFiniteExpectation prts x} 
-        {isfe2 : IsFiniteExpectation prts (rvsqr x)}        
-        {isfe3 :  IsFiniteExpectation prts (rvsqr (rvscale c x))} :
+        {isfe2 : IsFiniteExpectation prts (rvsqr x)}
+       {isfe3 : IsFiniteExpectation prts (rvsqr (rvscale c x))}
+:
     almostR2 (prob_space_sa_sub prts sub) eq
              (rvminus (FiniteConditionalExpectation prts sub (rvsqr (rvscale c x)))
                       (rvsqr (FiniteConditionalExpectation prts sub (rvscale c x))))
@@ -6176,7 +6177,37 @@ Section jaakola_vector2.
          - rewrite Rsqr_mult.
            lra.
      Qed.
-     
+
+       Lemma Finite_conditional_variance_alt_scale_isfe3 (x : Ts -> R) (c : R)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa x}
+        (isfe2 : IsFiniteExpectation prts (rvsqr x)) :
+         IsFiniteExpectation prts (rvsqr (rvscale c x)).
+       Proof.
+       generalize (IsFiniteExpectation_scale prts (Rsqr c) (rvsqr x)).
+       apply IsFiniteExpectation_proper.
+       intros ?.
+       unfold rvsqr, rvscale, Rsqr.
+       lra.
+       Qed.
+
+       Lemma Finite_conditional_variance_alt_scale' (x : Ts -> R) (c : R)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rv : RandomVariable dom borel_sa x}
+        {isfe1 : IsFiniteExpectation prts x} 
+        {isfe2 : IsFiniteExpectation prts (rvsqr x)}
+:    almostR2 (prob_space_sa_sub prts sub) eq
+             (rvminus (FiniteConditionalExpectation (isfe:=Finite_conditional_variance_alt_scale_isfe3 _ _ sub isfe2) prts sub (rvsqr (rvscale c x)))
+                      (rvsqr (FiniteConditionalExpectation prts sub (rvscale c x))))
+             (rvscale (Rsqr c)
+                (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
+                   (rvsqr (FiniteConditionalExpectation prts sub x)))).
+       Proof.
+         apply Finite_conditional_variance_alt_scale.
+       Qed.
+
   Lemma FiniteConditionalVariance_scale  {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) (c : R) (f : Ts -> R) 
     {rv : RandomVariable dom borel_sa f}
     {rv' : RandomVariable dom borel_sa (rvscale c f)}    
