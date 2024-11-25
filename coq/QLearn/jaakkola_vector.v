@@ -6287,14 +6287,7 @@ Section jaakola_vector2.
           apply FiniteCondexp_rv'.
         - apply rvsqr_rv.
           apply FiniteCondexp_rv'.
-        - cut (almostR2 prts eq (rvscale c (FiniteConditionalExpectation prts sub f))
-                 (FiniteConditionalExpectation prts sub (rvscale c f))).
-          {
-            apply almost_impl; apply all_almost; intros ??.
-            unfold rvsqr.
-            rewrite H0.
-            reflexivity.
-          }
+        - apply almostR2_eq_sqr_proper. 
           symmetry.
           apply (almost_prob_space_sa_sub_lift _ sub).
           apply FiniteCondexp_scale'.
@@ -6320,14 +6313,7 @@ Section jaakola_vector2.
           apply FiniteCondexp_rv'.
         - apply rvmult_rv; trivial.
           apply FiniteCondexp_rv'.
-        - cut (almostR2 prts eq (rvscale c (FiniteConditionalExpectation prts sub f))
-                 (FiniteConditionalExpectation prts sub (rvscale c f))).
-          {
-            apply almost_impl; apply all_almost; intros ??.
-            unfold rvmult.
-            rewrite H0.
-            reflexivity.
-          }
+        - apply almostR2_eq_mult_proper; try reflexivity.
           symmetry.
           apply (almost_prob_space_sa_sub_lift _ sub).
           apply FiniteCondexp_scale'.
