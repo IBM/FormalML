@@ -6707,7 +6707,7 @@ Proof.
 (*
         eapply (FiniteConditionalVariance_ext prts (filt_sub k)) in H1.
         rewrite H1.
-        rewrite Rbar_le_Rle.
+*)
         assert (IsFiniteExpectation prts
                   (rvsqr
                      (rvminus (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k)))
@@ -6719,7 +6719,7 @@ Proof.
         assert (almostR2 prts Rle
                          (FiniteConditionalVariance prts (filt_sub k)
                             (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k))))
-                         (const ((C * (vector_nth i pf W)² * (1 + Rvector_max_abs (X' k ω)) ^ 2)))).
+                         (fun x => ((C * (vector_nth i pf W)² * (1 + Rvector_max_abs (X' k x)) ^ 2)))).
         {
           assert (IsFiniteExpectation prts (rvsqr (vecrvnth i pf (XF k)))) by admit.
           assert (IsFiniteExpectation prts
@@ -6734,32 +6734,43 @@ Proof.
                       (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k))))))) by admit.
           generalize (FiniteConditionalVariance_scale (filt_sub k) 
                         (vector_nth i pf W) (vecrvnth i pf (XF k))); intros.
-          apply almost_prob_space_sa_sub_lift in H6.
-          revert H6; apply almost_impl.
+          apply almost_prob_space_sa_sub_lift in H8.
+          revert H8; apply almost_impl.
           apply all_almost; intros ??.
           assert (rvscale (vector_nth i pf W)²
-                    (FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) x <=
-                     const (C * (vector_nth i pf W)² * (1 + Rvector_max_abs (X' k ω)) ^ 2) x).
+                    (FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) x0 <=
+                     const (C * (vector_nth i pf W)² * (1 + Rvector_max_abs (X' k x0)) ^ 2) x0).
           {
             unfold rvscale, const.
-            specialize (HH k i pf ω).
-            rewrite Rbar_le_Rle in HH.
-            apply Rmult_le_compat_l with (r := (vector_nth i pf W)²)  in HH.
-            - replace  (pos_scaled_Rvector_max_abs (X k ω) W) with
-                (Rvector_max_abs (X' k ω)) in HH by reflexivity.
+            apply Rmult_le_compat_l with (r := (vector_nth i pf W)²)  in H1.
+            - replace  (pos_scaled_Rvector_max_abs (X k x0) W) with
+                (Rvector_max_abs (X' k x0)) in H1 by reflexivity.
               rewrite (Rmult_comm C), Rmult_assoc.
               eapply Rle_trans; cycle 1.
-              apply HH.
+(*
+              apply H1.
               apply Rmult_le_compat_l.
               + apply Rle_0_sqr.
-              + admit.
+              + right.
+                apply FiniteConditionalExpectation_ext.
+                intros ?.
+                unfold rvsqr, rvminus, vecrvnth, rvplus, rvopp, rvscale.
+                f_equal; f_equal; f_equal.
+                apply FiniteConditionalExpectation_ext.
+                reflexivity.
+*)
+              admit.
+              admit.
             - apply Rle_0_sqr.
         }
         eapply Rle_trans; cycle 1.
-        apply H8.
-        admit.
+        apply H9.
+        rewrite <- H8.
+        right.
+        apply FiniteConditionalExpectation_ext.
+        intros ?.
+        reflexivity.
         }
-*)
         admit.
     }
     generalize 
