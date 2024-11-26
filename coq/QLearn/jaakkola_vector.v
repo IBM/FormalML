@@ -6381,26 +6381,6 @@ Section jaakola_vector2.
       now apply FiniteConditionalExpectation_ext.              
   Qed.
 
-  Lemma FiniteConditionalVariance_ext (f1 f2 : Ts -> R)
-          {dom2 : SigmaAlgebra Ts}
-          {sub : sa_sub dom2 dom}
-        {rv1 : RandomVariable dom borel_sa f1}
-        {rv2 : RandomVariable dom borel_sa f2}
-        {isfe1:IsFiniteExpectation prts f1}
-        {isfe2:IsFiniteExpectation prts f2}
-        {isfesq1:IsFiniteExpectation prts (rvsqr (rvminus f1 (FiniteConditionalExpectation prts sub f1)))}
-        {isfesq2:IsFiniteExpectation prts (rvsqr (rvminus f2 (FiniteConditionalExpectation prts sub f2)))} :                                     
-      rv_eq f1 f2 ->
-      rv_eq (FiniteConditionalVariance prts sub f1) (FiniteConditionalVariance prts sub f2).
-  Proof.
-    intros ??.
-    apply FiniteConditionalExpectation_ext.
-    intros ?.
-    unfold rvsqr, rvminus, rvplus, rvopp, rvscale.
-    f_equal; f_equal; f_equal.
-    now apply FiniteConditionalExpectation_ext.
-  Qed.
-
  Theorem Jaakkola_alpha_beta_unbounded_uniformly_W (W : vector posreal (S N))
     (γ : R) 
     (X XF α β : nat -> Ts -> vector R (S N))
@@ -6713,18 +6693,30 @@ Proof.
         apply Rsqr_pos_lt.
         generalize (cond_pos (vector_nth i pf W)); lra.
       - assert (forall k,
-                   IsFiniteExpectation prts (rvsqr (vecrvnth i pf (XF k)))) by admit.
+                   IsFiniteExpectation prts (rvsqr (vecrvnth i pf (XF k)))).
+        {
+          intros.
+          admit.
+        }
         assert (forall k, IsFiniteExpectation prts
              (rvsqr
                 (rvminus (vecrvnth i pf (XF k))
                    (FiniteConditionalExpectation prts (filt_sub k)
-                      (vecrvnth i pf (XF k)))))) by admit.
+                      (vecrvnth i pf (XF k)))))).
+        {
+          intros.
+          admit.
+        }
         assert (forall k,
                    IsFiniteExpectation prts
              (rvsqr
                 (rvminus (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k)))
                    (FiniteConditionalExpectation prts (filt_sub k)
-                      (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k))))))) by admit.
+                      (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k))))))).
+        {
+          intros.
+          admit.
+        }
         apply almost_forall.
         intros k.
         generalize (FiniteConditionalVariance_scale (filt_sub k) 
