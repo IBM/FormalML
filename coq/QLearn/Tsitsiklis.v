@@ -2909,7 +2909,7 @@ Qed.
         (vecrvnth i pf (β (t + t0)%nat) ω) * (vecrvnth i pf (ww (t + t0)%nat) ω)) ->
     (forall k, rv_eq (x (S k)) 
                      (vecrvplus (vecrvminus (x k) (vecrvmult (α k) (x k))) (vecrvmult (β k) (vecrvplus (XF k) (vecrvscalerv (G k) (ww k)))))) ->
-    (forall k i pf, rv_le (rvabs (vecrvnth i pf (XF k))) (G k)) ->
+    (forall k i pf, Rabs (vecrvnth i pf (XF k) ω) <= G k ω) ->
     (forall t i pf, Rabs (W i pf t t0 ω) <= ε) -> 
     forall t i pf,
       (-1 + (W i pf t t0 ω)) * (G t0 ω) <= vecrvnth i pf (x (t + t0)%nat) ω <= (1 + (W i pf t t0 ω)) * (G t0 ω) /\
@@ -2940,7 +2940,7 @@ Qed.
         intros.
         unfold vecrvnth.
         rewrite xdef.
-        specialize (XFle t1 i pf ω).
+        specialize (XFle t1 i pf).
         unfold rvabs in XFle.
         rewrite Rabs_le_between in XFle.
         unfold vecrvminus, vecrvplus, vecrvmult, vecrvopp, vecrvscalerv, vecrvscale.
@@ -2976,7 +2976,7 @@ Qed.
           assert  (0 <= G t0 ω).
           {
             assert (0 < S n)%nat by lia.
-            specialize (XFle t0 0%nat H ω).
+            specialize (XFle t0 0%nat H).
             unfold rvabs in XFle.
             eapply Rle_trans; cycle 1.
             apply XFle.
@@ -3121,7 +3121,9 @@ Qed.
     (forall ω i pf t0, W i pf 0%nat t0 ω = 0) ->
     (forall k, rv_eq (x (S k)) 
                      (vecrvplus (vecrvminus (x k) (vecrvmult (α k) (x k))) (vecrvmult (β k) (vecrvplus (XF k) (vecrvscalerv (G k) (ww k)))))) ->
-    (forall k i pf, rv_le (rvabs (vecrvnth i pf (XF k ))) (G k)) ->
+    almost prts 
+      (fun ω =>
+         forall k i pf, (rvabs (vecrvnth i pf (XF k ))) ω <= G k ω) ->
     almost prts
       (fun ω : Ts =>
            is_lim_seq (fun k : nat => M k ω) p_infty ->
@@ -3135,10 +3137,11 @@ Qed.
    Proof.
      intros.
      revert H10; apply almost_impl.
+     revert H9; apply almost_impl.
      revert H3; apply almost_impl.
      revert H4; apply almost_impl.
      revert H5; apply almost_impl.     
-     apply all_almost; intros ??????.
+     apply all_almost; intros ???????.
      specialize (H10 H11).
      destruct H10 as [t0 [? ?]].
      assert (forall t (i: nat) (pf : (i < S n)%nat), G (t + t0)%nat x0 = G t0 x0).
@@ -4178,7 +4181,9 @@ Qed.
                                          k)))) ->
     0 <= β < 1 ->
     (exists (D : nonnegreal),
-        forall k ω, Rvector_max_abs (XF k ω) <= β * Rvector_max_abs (X k ω) + D) ->
+        almost prts (fun ω =>
+                       forall k, 
+                         Rvector_max_abs (XF k ω) <= β * Rvector_max_abs (X k ω) + D)) ->
     (forall k, rv_eq (X (S k)) 
                      (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (beta k) (vecrvplus (XF k) (w k))))) ->
     exists (D0 : Ts -> R),  forall k, almostR2 prts Rle (rvmaxabs (X k)) D0.
@@ -4208,10 +4213,12 @@ Qed.
         lra.
     }
     destruct H8 as [G0 [? ?]].
-    assert (forall k ω i pf,
+    assert (almost prts (fun ω => forall k i pf,
                Rabs (vector_nth i pf (XF k ω)) <=
-               γ * Rmax (Rvector_max_abs (X k ω)) G0).
+               γ * Rmax (Rvector_max_abs (X k ω)) G0)).
     {
+      revert H5; apply almost_impl.
+      apply all_almost; intros ω?.
       intros.
       eapply Rle_trans.
       - apply Rvector_max_abs_nth_le.
@@ -5021,7 +5028,9 @@ Qed.
         rewrite rvinv_Rinv; trivial.
         rewrite <- Rinv_r_sym; try lra.
         now rewrite Rvector_scale1.
-      - intros ????.
+      - revert H10; apply almost_impl.
+        apply all_almost; intros a?.
+        intros.
         eapply Rle_trans.
         apply H10.
         assert (Rvector_max_abs (X k a) <= (1 + ε) * G k a).
@@ -7576,7 +7585,19 @@ Proof.
       rewrite Rplus_0_r.
       apply H5.
     }
-    specialize (Tsit1 H7 H6).
+    assert (HH7: exists D : nonnegreal,
+             almost prts
+               (fun ω : Ts =>
+                forall k : nat,
+                Rvector_max_abs (XF k ω) <= β * Rvector_max_abs (X k ω) + D)).
+    {
+      destruct H7.
+      exists x.
+      apply all_almost; intros ?.
+      intros.
+      apply H7.
+    }
+    specialize (Tsit1 HH7 H6).
     destruct Tsit1 as [D0 Tsit1].
     pose (D0' := rvplus (const 1) (rvabs D0)).
     generalize (Tsitsiklis3_max_abs_Jaakkola_alpha_beta X w α beta β D0' XF isfilt filt_sub); intros Tsit3.
