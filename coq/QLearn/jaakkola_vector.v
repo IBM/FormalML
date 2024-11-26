@@ -6695,6 +6695,7 @@ Proof.
       - assert (forall k,
                    IsFiniteExpectation prts (rvsqr (vecrvnth i pf (XF k)))).
         {
+          (* I think this needs to be assumed (that all of XF is L2) *)
           intros.
           admit.
         }
@@ -6705,7 +6706,11 @@ Proof.
                       (vecrvnth i pf (XF k)))))).
         {
           intros.
-          admit.
+          generalize (isfe2 k i pf).
+          apply IsFiniteExpectation_proper; intros ?.
+          apply rvsqr_proper; intros ?.
+          apply rvminus_proper; try reflexivity; intros ?.
+          apply FiniteConditionalExpectation_ext; reflexivity.
         }
         assert (forall k,
                    IsFiniteExpectation prts
