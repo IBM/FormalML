@@ -6381,6 +6381,26 @@ Section jaakola_vector2.
       now apply FiniteConditionalExpectation_ext.              
   Qed.
 
+  Lemma FiniteConditionalVariance_ext (f1 f2 : Ts -> R)
+          {dom2 : SigmaAlgebra Ts}
+          {sub : sa_sub dom2 dom}
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2}
+        {isfe1:IsFiniteExpectation prts f1}
+        {isfe2:IsFiniteExpectation prts f2}
+        {isfesq1:IsFiniteExpectation prts (rvsqr (rvminus f1 (FiniteConditionalExpectation prts sub f1)))}
+        {isfesq2:IsFiniteExpectation prts (rvsqr (rvminus f2 (FiniteConditionalExpectation prts sub f2)))} :                                     
+      rv_eq f1 f2 ->
+      rv_eq (FiniteConditionalVariance prts sub f1) (FiniteConditionalVariance prts sub f2).
+  Proof.
+    intros ??.
+    apply FiniteConditionalExpectation_ext.
+    intros ?.
+    unfold rvsqr, rvminus, rvplus, rvopp, rvscale.
+    f_equal; f_equal; f_equal.
+    now apply FiniteConditionalExpectation_ext.
+  Qed.
+
  Theorem Jaakkola_alpha_beta_unbounded_uniformly_W (W : vector posreal (S N))
     (γ : R) 
     (X XF α β : nat -> Ts -> vector R (S N))
@@ -6801,16 +6821,9 @@ Proof.
         * eapply Rle_trans; cycle 1.
           apply H3.
           right.
-          unfold FiniteConditionalVariance.
-          apply FiniteConditionalExpectation_ext.
+          apply FiniteConditionalVariance_ext.
           intros ?.
-          unfold rvsqr, rvminus, vecrvnth, rvplus, rvopp, rvscale.
-          f_equal; f_equal.
-          -- apply vector_nth_ext.
-          -- f_equal.
-             apply FiniteConditionalExpectation_ext.
-             intros ?.
-             apply vector_nth_ext.
+          apply vector_nth_ext.
        * specialize (H2 n0 pf).
          destruct H2.
          revert H3; apply almost_impl.
