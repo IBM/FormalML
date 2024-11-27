@@ -6618,7 +6618,43 @@ Proof.
                       (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k))))))).
         {
           intros.
-          admit.
+          cut (IsFiniteExpectation prts
+                                   (rvscale (Rsqr (vector_nth i pf W))
+                 (rvsqr
+                    (rvminus (vecrvnth i pf (XF k))
+                       (FiniteConditionalExpectation prts (filt_sub k)
+                          (vecrvnth i pf (XF k))))))).
+          {
+            intros HH1.
+            eapply IsFiniteExpectation_proper_almostR2; try eapply HH1.
+            - apply rvscale_rv.
+              apply rvsqr_rv.
+              apply rvminus_rv.
+              + now apply vecrvnth_rv.
+              + apply FiniteCondexp_rv'.
+            - apply rvsqr_rv.
+              apply rvminus_rv.
+              + apply rvscale_rv.
+                now apply vecrvnth_rv.
+              + apply FiniteCondexp_rv'.
+            - cut (almostR2 prts eq
+                     (rvscale (vector_nth i pf W) (FiniteConditionalExpectation prts (filt_sub k)
+                        (vecrvnth i pf (XF k))))
+                     (FiniteConditionalExpectation prts (filt_sub k)
+                        (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k))))).
+              {
+                apply almost_impl.
+                apply all_almost; intros ?.
+                unfold impl, rvsqr, rvminus, rvplus, rvopp, rvscale; intros eqq.
+                rewrite <- eqq.
+                repeat rewrite Rsqr_def.
+                ring.
+              }
+              symmetry.
+              apply (almost_prob_space_sa_sub_lift _ (filt_sub k)).
+              apply FiniteCondexp_scale'.
+          }
+          now apply IsFiniteExpectation_scale.
         }
         apply almost_forall.
         intros k.
