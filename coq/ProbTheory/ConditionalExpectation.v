@@ -6702,6 +6702,12 @@ Section fin_cond_exp.
     apply FiniteCondexp_rv'.
   Qed.
 
+  Lemma FiniteConditionalVariance_exp_from_L2 (f : Ts -> R) 
+    {rv : RandomVariable dom borel_sa f} 
+    {isl:IsLp prts 2 f} : IsFiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation f))).
+  Proof.
+  Admitted.
+
   Definition ConditionalVariance (f : Ts -> R) 
     {rv : RandomVariable dom borel_sa f} 
     {isfe:IsFiniteExpectation prts f} : Ts -> Rbar :=
@@ -6712,6 +6718,11 @@ Section fin_cond_exp.
     {isfe:IsFiniteExpectation prts f} 
     {isfe2:IsFiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation f)))} : Ts -> R :=
     FiniteConditionalExpectation (rv := variance_rv f) _.
+
+  Definition FiniteConditionalVariance_new (f : Ts -> R) 
+    {rv  : RandomVariable dom borel_sa f} 
+    {isl : IsLp prts 2 f} : Ts -> R :=
+    FiniteConditionalExpectation (rv := variance_rv f) (isfe:=FiniteConditionalVariance_exp_from_L2 f) _.
 
   Lemma ConditionalVariance_ext (f1 f2 : Ts -> R)
         {rv1   : RandomVariable dom borel_sa f1}
