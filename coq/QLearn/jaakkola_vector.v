@@ -6198,7 +6198,7 @@ Section jaakola_vector2.
       {
         red; now rewrite rvpower_abs2_unfold.
       }         
-      destruct  (isfe_L2_variance f sub rv) as [_[_[_[_[HH1 HH2]]]]].
+      destruct  (isfe_L2_variance prts sub f rv) as [_[_[_[_[HH1 HH2]]]]].
       
     assert (isfe4 : IsFiniteExpectation prts
                       (rvsqr (FiniteConditionalExpectation prts sub f))).

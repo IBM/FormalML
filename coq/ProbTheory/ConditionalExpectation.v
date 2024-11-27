@@ -6702,12 +6702,6 @@ Section fin_cond_exp.
     apply FiniteCondexp_rv'.
   Qed.
 
-  Lemma FiniteConditionalVariance_exp_from_L2 (f : Ts -> R) 
-    {rv : RandomVariable dom borel_sa f} 
-    {isl:IsLp prts 2 f} : IsFiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation f))).
-  Proof.
-  Admitted.
-
   Definition ConditionalVariance (f : Ts -> R) 
     {rv : RandomVariable dom borel_sa f} 
     {isfe:IsFiniteExpectation prts f} : Ts -> Rbar :=
@@ -6718,11 +6712,6 @@ Section fin_cond_exp.
     {isfe:IsFiniteExpectation prts f} 
     {isfe2:IsFiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation f)))} : Ts -> R :=
     FiniteConditionalExpectation (rv := variance_rv f) _.
-
-  Definition FiniteConditionalVariance_new (f : Ts -> R) 
-    {rv  : RandomVariable dom borel_sa f} 
-    {isl : IsLp prts 2 f} : Ts -> R :=
-    FiniteConditionalExpectation (rv := variance_rv f) (isfe:=FiniteConditionalVariance_exp_from_L2 f) _.
 
   Lemma ConditionalVariance_ext (f1 f2 : Ts -> R)
         {rv1   : RandomVariable dom borel_sa f1}
@@ -6781,6 +6770,103 @@ Section fin_cond_exp.
     - apply all_almost; intros.
       now rewrite (FiniteCondexp_eq f).
   Qed.
+
+
+  Lemma isfe_L2_variance (x : Ts -> R) 
+        (rv : RandomVariable dom borel_sa x) 
+        {isl2: IsLp prts 2 x} :
+    IsFiniteExpectation prts x /\
+    IsFiniteExpectation prts (rvsqr x) /\
+    RandomVariable 
+      dom borel_sa
+      (rvsqr (rvminus x (FiniteConditionalExpectation x))) /\
+    IsFiniteExpectation 
+      prts
+      (rvsqr (rvminus x (FiniteConditionalExpectation x))) /\
+    IsFiniteExpectation
+      prts
+      (rvsqr (FiniteConditionalExpectation x)) /\
+    IsFiniteExpectation prts  (rvmult (FiniteConditionalExpectation x) x).
+  Proof.
+    generalize (conditional_expectation_L2fun_L2 prts sub x); intros.
+    assert (almostR2 (prob_space_sa_sub prts sub) eq 
+                     (conditional_expectation_L2fun prts sub x)
+                     (FiniteConditionalExpectation x)).
+    {
+      generalize (conditional_expectation_L2fun_eq3 prts sub x); intros.
+      generalize (FiniteCondexp_is_cond_exp x); intros.
+      generalize (is_conditional_expectation_unique prts sub x _ _ H0 H1); intros.
+      revert H2.
+      apply almost_impl, all_almost; intros ??.
+      now apply Rbar_finite_eq in H2.
+   }
+    apply almostR2_prob_space_sa_sub_lift in H0.
+    assert (RandomVariable dom borel_sa (FiniteConditionalExpectation x)).
+    {
+      apply FiniteCondexp_rv'.
+    }
+    repeat split.
+    - typeclasses eauto.
+    - typeclasses eauto.
+    - typeclasses eauto.
+    - assert (IsFiniteExpectation 
+                prts
+                (rvsqr (rvminus x (conditional_expectation_L2fun prts sub x)))).
+      {
+        assert (IsLp prts 2 (rvminus x (conditional_expectation_L2fun prts sub x))).
+        {
+          assert (0 <= 2) by lra.
+          apply (IsLp_minus prts (mknonnegreal 2 H2)); try easy.
+          apply RandomVariable_sa_sub; trivial.
+          apply conditional_expectation_L2fun_rv.
+        }
+        typeclasses eauto.
+      }
+      eapply (IsFiniteExpectation_proper_almostR2 
+               prts
+               (rvsqr (rvminus x (conditional_expectation_L2fun prts sub x)))
+               (rvsqr (rvminus x (FiniteConditionalExpectation x)))).
+      revert H0.
+      apply almost_impl, all_almost; intros ??.
+      rv_unfold.
+      now rewrite H0.
+    - assert (IsFiniteExpectation prts (rvsqr (conditional_expectation_L2fun prts sub x))).
+      {
+        typeclasses eauto.
+      }
+      eapply (IsFiniteExpectation_proper_almostR2
+               prts
+               (rvsqr (conditional_expectation_L2fun prts sub x))
+               (rvsqr (FiniteConditionalExpectation x))).
+      revert H0.
+      apply almost_impl, all_almost; intros ??.
+      rv_unfold.
+      now rewrite H0.
+    - assert (IsFiniteExpectation prts (rvmult (conditional_expectation_L2fun prts sub x) x)).
+      {
+        typeclasses eauto.
+      }
+      eapply (IsFiniteExpectation_proper_almostR2
+                    prts
+                    (rvmult (conditional_expectation_L2fun prts sub x) x)
+                    (rvmult (FiniteConditionalExpectation x) x)).
+      revert H0.
+      apply almost_impl, all_almost; intros ??.
+      rv_unfold.
+      now rewrite H0.
+  Qed.
+
+  Lemma FiniteConditionalVariance_exp_from_L2 (f : Ts -> R) 
+    {rv : RandomVariable dom borel_sa f} 
+    {isl:IsLp prts 2 f} : IsFiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation f))).
+  Proof.
+    apply (isfe_L2_variance f rv).
+  Qed.
+
+  Definition FiniteConditionalVariance_new (f : Ts -> R) 
+    {rv  : RandomVariable dom borel_sa f} 
+    {isl : IsLp prts 2 f} : Ts -> R :=
+    FiniteConditionalExpectation (rv := variance_rv f) (isfe:=FiniteConditionalVariance_exp_from_L2 f) _.
 
   Theorem FiniteCondexp_cond_exp (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
