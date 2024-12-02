@@ -663,6 +663,7 @@ Proof.
   revert ex_ser; apply almost_impl.
   apply all_almost; intros ???.
   rv_unfold'_in_star.
+  generalize H; intros HH.
   destruct H.
   rewrite series_seq in H.
   apply is_lim_seq_unique in H.
@@ -674,9 +675,33 @@ Proof.
   }
   assert (is_finite  (Lim_seq (sum_n (fun n0 : nat => (α (S x + n0)%nat x0)²)))).
   {
-    apply is_finite_Lim_bounded with (m := 0) (M := x1).
-    intros.
-    admit.
+    apply bounded_is_finite with (a := 0) (b := x1).
+    - apply Lim_seq_pos.
+      intros.
+      apply sum_n_nneg.
+      intros.
+      apply Rle_0_sqr.
+    - assert (forall n, 0 <= Rsqr (α n x0)).
+      {
+        intros.
+        apply Rle_0_sqr.
+     }
+     generalize (@Series_shift_le _ H2 HH); intros.
+      rewrite <- H.
+      rewrite ex_series_Lim_seq; trivial.
+      rewrite ex_series_Lim_seq; trivial.
+      + simpl.
+        assert (Series (fun n0 : nat => (α (S (x + n0)) x0)²) =
+                  Series (fun n0 : nat => ((α ((S x) + n0)%nat) x0)²)).
+        {
+          apply Series_ext.
+          intros.
+          f_equal.
+        }
+        rewrite H4.
+        apply H3.
+      + generalize (ex_series_incr_n (fun n => Rsqr (α n x0)) (S x)); intros.
+        now rewrite <- H4.
   }
   assert (Lim_seq (sum_n (fun n0 : nat => (α (S x + n0)%nat x0)²)) = 
             Rbar_minus (A x0) (sum_n (fun k : nat => (α k x0)²) x)).
