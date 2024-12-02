@@ -4147,6 +4147,26 @@ Proof.
   - trivial.
 Qed.
 
+Lemma Lim_seq_sum_nneg_bounded_ex_series (b:R) (u:nat->R):
+  (forall n, 0 <= u n) ->
+  Rbar_le (Lim_seq (sum_n u)) b ->
+  ex_series u.
+Proof.
+  intros.
+  rewrite <- ex_finite_lim_series.
+  apply lim_sum_abs_bounded.
+  apply (bounded_is_finite 0 b).
+  - apply Lim_seq_pos; intros.
+    apply sum_n_nneg; intros.
+    apply Rabs_pos.
+  - cut (Lim_seq (sum_n (fun n : nat => Rabs (u n))) = Lim_seq (sum_n (fun n : nat => u n))).
+    + now intros eqq; rewrite eqq.
+    + apply Lim_seq_ext; intros ?.
+      apply sum_n_ext; intros ?.
+      rewrite Rabs_right; try reflexivity.
+      now apply Rle_ge.
+Qed.
+
 Lemma Dvoretzky_converge_W_alpha_beta  (W w α β: nat -> Ts -> R) 
       {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
       {adaptZ : IsAdapted borel_sa W F} (adapt_alpha : IsAdapted borel_sa α F)
@@ -4178,23 +4198,12 @@ Lemma Dvoretzky_converge_W_alpha_beta  (W w α β: nat -> Ts -> R)
 Proof.
   intros condexpw condexpw2 alpha_inf beta_inf [A3 beta_sqr] (* W0 *) Wrel.
   apply (@Dvoretzky_converge_W_alpha_beta_uniform W w α β F isfilt filt_sub adaptZ adapt_alpha adapt_beta rvw); eauto.
-  - revert beta_sqr.
-    apply almost_impl; apply all_almost; intros ??.
-    rewrite <- ex_finite_lim_series.
-    apply lim_sum_abs_bounded.
-    apply (bounded_is_finite 0 A3).
-    + apply Lim_seq_pos; intros.
-      apply sum_n_nneg; intros.
-      apply Rabs_pos.
-    + eapply Rbar_lt_le in H.
-      eapply Rbar_le_trans; try eapply H.
-      Local Existing Instance Rbar_le_pre.
-      apply refl_refl.
-      apply Lim_seq_ext; intros ?.
-      apply sum_n_ext; intros ?.
-      rewrite Rabs_right; try reflexivity.
-      apply Rle_ge.
-      apply Rle_0_sqr.
+  -  revert beta_sqr.
+     apply almost_impl; apply all_almost; intros ??.
+     apply Rbar_lt_le in H.
+     eapply Lim_seq_sum_nneg_bounded_ex_series; try eassumption.
+     intros.
+     apply Rle_0_sqr.
   - pose (A3' := Rmax 1 A3).
     assert (A3'pos : 0 < A3').
     {
