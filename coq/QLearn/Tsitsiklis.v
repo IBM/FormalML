@@ -667,48 +667,35 @@ Proof.
   destruct H.
   rewrite series_seq in H.
   apply is_lim_seq_unique in H.
+  assert (is_finite  (Lim_seq (sum_n (fun n0 : nat => (α (S x + n0)%nat x0)²)))).
+  {
+    rewrite ex_series_incr_n with (n := S x) in HH.
+    rewrite <- ex_finite_lim_series in HH.
+    destruct HH.
+    apply is_lim_seq_unique in H1.
+    now rewrite H1.
+  }
   assert (Lim_seq (sum_n (fun k : nat => (α k x0)²)) =
             Rbar_plus (sum_n (fun k : nat => (α k x0)²) x)
               (Lim_seq (sum_n (fun n0 : nat => (α (S x + n0)%nat x0)²)))).
   {
-    admit.
-  }
-  assert (is_finite  (Lim_seq (sum_n (fun n0 : nat => (α (S x + n0)%nat x0)²)))).
-  {
-    apply bounded_is_finite with (a := 0) (b := x1).
-    - apply Lim_seq_pos.
-      intros.
-      apply sum_n_nneg.
-      intros.
-      apply Rle_0_sqr.
-    - assert (forall n, 0 <= Rsqr (α n x0)).
-      {
-        intros.
-        apply Rle_0_sqr.
-     }
-     generalize (@Series_shift_le _ H2 HH); intros.
-      rewrite <- H.
-      rewrite ex_series_Lim_seq; trivial.
-      rewrite ex_series_Lim_seq; trivial.
-      + simpl.
-        assert (Series (fun n0 : nat => (α (S (x + n0)) x0)²) =
-                  Series (fun n0 : nat => ((α ((S x) + n0)%nat) x0)²)).
-        {
-          apply Series_ext.
-          intros.
-          f_equal.
-        }
-        rewrite H4.
-        apply H3.
-      + generalize (ex_series_incr_n (fun n => Rsqr (α n x0)) (S x)); intros.
-        now rewrite <- H4.
+    assert (0 <= x)%nat by lia.
+    generalize (sum_n_m_Series (fun k : nat => (α k x0)²) 0%nat x H2 HH); intros.
+    unfold Series in H3.
+    rewrite <- H1.
+    simpl in H3.
+    simpl.
+    unfold sum_n in *.
+    rewrite H3, H, Rbar_finite_eq.
+    simpl.
+    lra.
   }
   assert (Lim_seq (sum_n (fun n0 : nat => (α (S x + n0)%nat x0)²)) = 
             Rbar_minus (A x0) (sum_n (fun k : nat => (α k x0)²) x)).
   {
     unfold A.
-    rewrite H1.
-    rewrite <- H2; simpl.
+    rewrite H2.
+    rewrite <- H1; simpl.
     rewrite Rbar_finite_eq.
     lra.
   }
@@ -719,12 +706,12 @@ Proof.
   unfold A in H0.
   rewrite H, Rabs_minus_sym, Rabs_right in H0; simpl in H0; try lra.
   rewrite <- H.
-  rewrite H1.
-  rewrite <- H2.
+  rewrite H2.
+  rewrite <- H1.
   simpl.
   ring_simplify.
   generalize (Lim_seq_pos (sum_n (fun n0 : nat => (α (S (x + n0)) x0)²))); intros.
-  rewrite <- H2 in H4.
+  rewrite <- H1 in H4.
   simpl in H4.
   apply Rle_ge.
   apply H4.
@@ -732,7 +719,7 @@ Proof.
   apply sum_n_nneg.
   intros.
   apply Rle_0_sqr.
- Admitted.
+Qed.
 
 Lemma lemma1_alpha_beta_shift (α β w B W : nat -> Ts -> R) (Ca Cb : R)
       {F : nat -> SigmaAlgebra Ts}
