@@ -3985,7 +3985,6 @@ Section jaakola_vector2.
       - revert H4.
         apply almost_impl.
         now apply all_almost; intros ??.
-      - apply H5.
       - apply H6.
       - intros.
         simpl.

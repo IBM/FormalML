@@ -115,14 +115,14 @@ Lemma lemma1_alpha_beta (α β w B W : nat -> Ts -> R) (Ca Cb : R)
 (*  (forall n x, 0 <= 1 - α n x )  -> *)
   (forall (n:nat), almostR2 prts Rle (β n) (const 1)) ->  
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
-  (almost prts (fun ω => is_lim_seq (sum_n (fun k => β k ω)) p_infty)) ->  
-  (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) (const Ca)) ->
+  (almost prts (fun ω => is_lim_seq (sum_n (fun k => β k ω)) p_infty)) ->
   (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (β k) ω))) (const Cb)) ->
   (forall n ω, W (S n) ω = (1 - α n ω) * (W n ω) + (β n ω) * (w n ω)) ->
   (exists (b : Ts -> R),
       almost prts (fun ω => forall n, B n ω <= Rabs (b ω))) ->
   almost prts (fun ω => is_lim_seq (fun n => W n ω) 0). 
 Proof.
+  assert (H7 : True) by trivial. (* fix auto naming from history. sigh. *)
   intros.
   unfold IsAdapted in adaptB.
   assert (rvB: forall j t,
@@ -235,8 +235,6 @@ Proof.
       + unfold b.
         apply Rle_ge.
         apply Rabs_pos.
-    - simpl.
-      now red.
   }
   pose (wk k n := rvmult (w n) (IB k n)).
   pose (Wk := fix Wk k n ω :=
@@ -428,8 +426,7 @@ Lemma lemma1_alpha_beta_alt (α β w W : nat -> Ts -> R) (Ca Cb : R)
 (*  (forall n x, 0 <= 1 - α n x )  -> *)
   (forall (n:nat), almostR2 prts Rle (β n) (const 1)) ->  
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
-  (almost prts (fun ω => is_lim_seq (sum_n (fun k => β k ω)) p_infty)) ->  
-  (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) (const Ca)) ->
+  (almost prts (fun ω => is_lim_seq (sum_n (fun k => β k ω)) p_infty)) ->
   (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (β k) ω))) (const Cb)) ->
   (forall n ω, W (S n) ω = (1 - α n ω) * (W n ω) + (β n ω) * (w n ω)) ->
   (exists (b : Ts -> R),
@@ -437,6 +434,7 @@ Lemma lemma1_alpha_beta_alt (α β w W : nat -> Ts -> R) (Ca Cb : R)
                        Rbar_le (ConditionalExpectation _ (filt_sub n) (rvsqr (w n)) ω) (b ω))) ->  
   almost prts (fun ω => is_lim_seq (fun n => W n ω) 0). 
 Proof.
+  assert (H6 : True) by trivial. (* fix auto naming from history. sigh. *)
   intros.
   pose (B := fun n ω => real (ConditionalExpectation _ (filt_sub n) (rvsqr (w n)) ω)).
   generalize (lemma1_alpha_beta α β w B W Ca Cb isfilt); intros.
@@ -665,7 +663,6 @@ Lemma lemma1_alpha_beta_shift (α β w B W : nat -> Ts -> R) (Ca Cb : R)
   (forall (n:nat), almostR2 prts Rle (const 0) (β n)) ->  
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => β k ω)) p_infty)) ->  
-  (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) (const Ca)) ->
   (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (β k) ω))) (const Cb)) ->
   (forall n ω, W (S n) ω = (1 - α n ω) * (W n ω) + (β n ω) * (w n ω)) ->
   is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (α k) ω) n) 
@@ -676,8 +673,9 @@ Lemma lemma1_alpha_beta_shift (α β w B W : nat -> Ts -> R) (Ca Cb : R)
       almost prts (fun ω => forall n, B n ω <= Rabs (b ω))) ->
   almost prts (fun ω => is_lim_seq (fun n => W n ω) 0).
 Proof.
-  
+  assert (H5 : True) by trivial. (* fix auto naming from history. sigh. *)
   intros.
+  
   destruct ( uniform_converge_sq _ H1 ( uniform_converge_sum_sq _ H8)).
   destruct ( uniform_converge_sq _ H2 ( uniform_converge_sum_sq _ H9)).
   pose (N := max x x0).
@@ -705,31 +703,6 @@ Proof.
       apply almost_impl, all_almost; intros ??.
       rewrite is_lim_seq_sum_shift_inf in H4.
       apply H4.
-    - revert H5; apply almost_impl.
-      apply all_almost; intros ??.
-      destruct N.
-      + rewrite Lim_seq_ext with
-            (v := (sum_n (fun k : nat => rvsqr (α k) x1))); trivial.
-        intros.
-        apply sum_n_ext; intros.
-        now replace (n0 + 0)%nat with n0 by lia.
-      + rewrite Lim_seq_ext with
-            (v :=  fun n => sum_n (fun k : nat => rvsqr (α k) x1) (n + S N) -
-                            sum_n (fun k : nat => rvsqr (α k) x1) N).
-        * apply Rbar_le_trans with
-              (y := Lim_seq (fun n : nat => sum_n (fun k : nat => rvsqr (α k) x1) (n + S N))).
-          -- apply Lim_seq_le_loc.
-             exists (0%nat); intros.
-             assert (0 <= sum_n (fun k : nat => rvsqr (α k) x1) N).
-             {
-               apply sum_n_nneg.
-               intros.
-               apply nnfsqr.
-             }
-             lra.
-          -- now rewrite <- Lim_seq_incr_n with (N := S N) in H5.
-        * intros.
-          now rewrite sum_shift_diff.
     - revert H6; apply almost_impl.
       apply all_almost; intros ??.
       destruct N.
@@ -4833,7 +4806,7 @@ Qed.
           (α := fun k => vecrvnth i pf (α k))
           (β := fun k => vecrvnth i pf (beta k))
           (w := fun k => vecrvnth i pf (ww k))
-          (filt_sub := filt_sub) (Cb := Cb) (Ca := Ca)
+          (filt_sub := filt_sub) (Cb := Cb)
           (rv := fun k => rvww k i pf)
           (B := fun _ => const K); try easy.
 
@@ -4895,12 +4868,6 @@ Qed.
       - revert beta_inf; apply almost_impl.
         apply all_almost; intros ??.
         apply H20.
-      - unfold const.
-        specialize (H1 i pf).
-        revert H1.
-        apply almost_impl, all_almost.
-        intros ??.
-        now unfold rvsqr, vecrvnth.
       - unfold const.
         specialize (H19 i pf).
         revert H19.
@@ -5942,7 +5909,7 @@ Qed.
 (*
          pose (BB := fun (n:nat) => rvplus (const A) (rvscale (Rabs B) (rvsqr D0))).
 *)
-         eapply lemma1_alpha_beta with (α := α1) (β := beta1) (w := w1) (W := W) (filt_sub := filt_sub) (B := BB) (Cb := Cb) (Ca := Ca); try easy.
+         eapply lemma1_alpha_beta with (α := α1) (β := beta1) (w := w1) (W := W) (filt_sub := filt_sub) (B := BB) (Cb := Cb); try easy.
          - simpl.
            typeclasses eauto.
          - intros ?.
@@ -6019,12 +5986,6 @@ Qed.
          - revert beta_inf; apply almost_impl.
            apply all_almost; intros ??.
            apply H13.
-         - unfold rvsqr, const.
-           unfold α1.
-           specialize (H1 i pf).
-           revert H1.
-           apply almost_impl, all_almost; intros ??.
-           apply H1.
          - unfold rvsqr, const.
            unfold beta1.
            specialize (H12 i pf).
@@ -6719,7 +6680,7 @@ Qed.
 (*
       pose (BB := fun (n:nat) => rvplus (const A) (rvscale (Rabs B) (rvsqr D0))).
 *)
-      eapply lemma1_alpha_beta with (α := α1) (β := beta1) (w := w1) (W := X1) (filt_sub := filt_sub) (B := BB) (Cb := Cb) (Ca := Ca); try easy.
+      eapply lemma1_alpha_beta with (α := α1) (β := beta1) (w := w1) (W := X1) (filt_sub := filt_sub) (B := BB) (Cb := Cb); try easy.
       - simpl.
         typeclasses eauto.
       - intros ?.
@@ -6796,12 +6757,6 @@ Qed.
       - revert beta_inf; apply almost_impl.
         apply all_almost; intros ??.
         apply H9.
-      - unfold rvsqr, const.
-        unfold α1.
-        specialize (H1 i pf).
-        revert H1.
-        apply almost_impl, all_almost; intros ??.
-        apply H1.
       - unfold rvsqr, const.
         unfold beta1.
         specialize (beta_fin i pf).
