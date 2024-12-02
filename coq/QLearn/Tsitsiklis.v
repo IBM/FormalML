@@ -647,37 +647,66 @@ Proof.
 Qed.
 
 Lemma uniform_converge_sum_sq_tails (α : nat -> Ts -> R) : 
-  (forall (n:nat), almostR2 prts Rle (const 0) (α n)) ->
-  (forall ω, is_finite (Lim_seq (sum_n (fun k => rvsqr (α k) ω)))) ->
+  almost prts (fun ω => ex_series (fun k => rvsqr (α k) ω)) ->
   let A := fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω)) in
+  
   is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (α k) ω) n) A ->
   forall (eps : posreal),
     eventually (fun n => almostR2 prts Rbar_le (fun ω : Ts => Lim_seq (sum_n (fun n0 : nat => (α (S n + n0)%nat ω)²))) (const eps)).
 Proof.
-  intros alpha_pos lim_fin A uniform eps.
-  assert (0 < eps/2).
-  {
-    generalize (cond_pos eps); intros; lra.
-  }
-  specialize (uniform (mkposreal _ H)).
+  intros ex_ser A uniform eps.
+  specialize (uniform eps).
   revert uniform.
   apply eventually_impl.
   apply all_eventually; intros ?.
   apply almost_impl.
-  apply almost_forall in alpha_pos.
-  revert alpha_pos; apply almost_impl.
+  revert ex_ser; apply almost_impl.
   apply all_almost; intros ???.
-  simpl in H1.
   rv_unfold'_in_star.
-  assert (Lim_seq (sum_n (fun n0 : nat => (α (S x + n0)%nat x0)²)) = 
-            Rbar_minus (Lim_seq (sum_n (fun k : nat => (α k x0)²)))
-              (sum_n (fun k : nat => (α k x0)²) x)).
+  destruct H.
+  rewrite series_seq in H.
+  apply is_lim_seq_unique in H.
+  assert (Lim_seq (sum_n (fun k : nat => (α k x0)²)) =
+            Rbar_plus (sum_n (fun k : nat => (α k x0)²) x)
+              (Lim_seq (sum_n (fun n0 : nat => (α (S x + n0)%nat x0)²)))).
   {
     admit.
   }
-  rewrite H2.
-  rewrite <- lim_fin.
+  assert (is_finite  (Lim_seq (sum_n (fun n0 : nat => (α (S x + n0)%nat x0)²)))).
+  {
+    apply is_finite_Lim_bounded with (m := 0) (M := x1).
+    intros.
+    admit.
+  }
+  assert (Lim_seq (sum_n (fun n0 : nat => (α (S x + n0)%nat x0)²)) = 
+            Rbar_minus (A x0) (sum_n (fun k : nat => (α k x0)²) x)).
+  {
+    unfold A.
+    rewrite H1.
+    rewrite <- H2; simpl.
+    rewrite Rbar_finite_eq.
+    lra.
+  }
+  rewrite H3.
+  unfold A.
+  rewrite H.
   simpl.
+  unfold A in H0.
+  rewrite H, Rabs_minus_sym, Rabs_right in H0; simpl in H0; try lra.
+  rewrite <- H.
+  rewrite H1.
+  rewrite <- H2.
+  simpl.
+  ring_simplify.
+  generalize (Lim_seq_pos (sum_n (fun n0 : nat => (α (S (x + n0)) x0)²))); intros.
+  rewrite <- H2 in H4.
+  simpl in H4.
+  apply Rle_ge.
+  apply H4.
+  intros.
+  apply sum_n_nneg.
+  intros.
+  apply Rle_0_sqr.
  Admitted.
 
 Lemma lemma1_alpha_beta_shift (α β w B W : nat -> Ts -> R) (Ca Cb : R)
