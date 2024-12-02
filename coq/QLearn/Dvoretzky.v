@@ -3830,163 +3830,6 @@ Lemma condexp_sqr_bounded (dom2 : SigmaAlgebra Ts) (sub2: sa_sub dom2 dom) (B : 
   - trivial.
 Qed.
 
-Lemma Dvoretzky_converge_W_alpha_beta  (W w α β: nat -> Ts -> R) 
-      {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
-      {adaptZ : IsAdapted borel_sa W F} (adapt_alpha : IsAdapted borel_sa α F)
-      (adapt_beta : IsAdapted borel_sa β F) 
-      {rvw : forall n, RandomVariable dom borel_sa (w n)}
-
-      {rvalpha : forall n, RandomVariable dom borel_sa (α n)}
-      {rvbeta : forall n, RandomVariable dom borel_sa (β n)}            
-      (apos: forall (n:nat), almostR2 prts Rle (const 0) (α n)) 
-      (aone: forall (n:nat), almostR2 prts Rle (α n) (const 1)) 
-      (bpos: forall (n:nat), almostR2 prts Rle (const 0) (β n)) 
-      (bone: forall (n:nat), almostR2 prts Rle (β n) (const 1)) :
-  (forall n,
-      almostR2 prts eq
-               (ConditionalExpectation prts (filt_sub n) (w n))
-               (const 0)) ->
-  (exists (C: R),
-      (forall n,
-          almostR2 prts Rbar_le
-            (ConditionalExpectation prts (filt_sub n) (rvsqr (w n)))
-            (const (Rsqr C)))) ->
-   almost prts (fun ω : Ts => is_lim_seq (sum_n(fun n : nat => α n ω)) p_infty)  ->
-   almost prts (fun ω : Ts => is_lim_seq (sum_n (fun n : nat => β n ω)) p_infty)  ->
-
-   (exists (A3 : R),
-       almost prts (fun ω => Rbar_lt (Lim_seq (sum_n (fun n : nat => rvsqr (β n) ω))) (Finite A3))) ->
-  (forall n, rv_eq (W (S n)) (rvplus (rvmult (rvminus (const 1) (α n)) (W n)) (rvmult (w n) (β n)))) ->
-  almost _ (fun ω => is_lim_seq (fun n => W n ω) (Finite 0)).
-Proof.
-  intros condexpw condexpw2 alpha_inf beta_inf beta_sqr (* W0 *) Wrel.
-
-  assert (svy1b: forall n : nat, IsFiniteExpectation prts (rvsqr (β n))).
-  {
-    intros.
-    now apply isfe_sqr_X_almost_01.
-  }
-  eapply (@Dvoretzky_converge_W_alpha_beta_isf_seq_sum W w α β F isfilt filt_sub adaptZ adapt_alpha adapt_beta rvw); eauto.
-
-  generalize (sum_expectation prts (fun n => rvsqr (β n))); intros HH.
-  assert (rv2 : forall n, RandomVariable dom borel_sa (rvsqr (β n))).
-  {
-    intros.
-    typeclasses eauto.
-  }
-  specialize (HH rv2 svy1b).
-  rewrite (Lim_seq_ext _ _ HH).
-  destruct beta_sqr as [A2 beta_sqr].
-  generalize (Dominated_convergence_almost 
-                prts 
-                (fun n omega => Finite (rvsum (fun n0 => rvsqr (β n0)) n omega))
-                (Rbar_rvlim (fun n omega => Finite (rvsum (fun n0 => rvsqr (β n0)) n omega)))
-             ); intros HH2.
-  specialize (HH2 (const (Finite A2))).
-  cut_to HH2.
-  - assert  (isfefn : forall n : nat,
-                 Rbar_IsFiniteExpectation prts
-                   (fun omega : Ts =>
-                      (rvsum (fun n0 : nat => rvsqr (β n0)) n omega))).
-     { 
-       intros.
-       apply Rbar_IsFiniteExpectation_nnf_bounded_almost with
-         (g := const (Finite A2)).
-       - typeclasses eauto.
-       - typeclasses eauto.
-       - revert beta_sqr.
-         apply almost_impl, all_almost.
-         intros x xlt.
-         simpl.
-         unfold rvsum.
-         left.
-         generalize (Lim_seq_increasing_le
-                       (sum_n  (fun n0 : nat => rvsqr (β n0) x))); intros HH3.
-         cut_to HH3.
-         --- specialize (HH3 n).
-             generalize (Rbar_le_lt_trans _ _ _ HH3 xlt); intros HH4.
-             simpl in HH4; lra.
-         --- intros.
-             apply sum_n_pos_incr; try lia.                     
-             intros.
-             apply nnfsqr.
-       - apply Rbar_IsFiniteExpectation_const.
-     }
-     assert
-       (isfe : Rbar_IsFiniteExpectation prts
-                 (Rbar_rvlim
-                    (fun (n : nat) (omega : Ts) =>
-                       (rvsum (fun n0 : nat => rvsqr (β n0)) n omega)))).
-     {
-       apply Rbar_IsFiniteExpectation_nnf_bounded_almost with
-         (g := const (Finite A2)).
-       - typeclasses eauto.
-       - typeclasses eauto.
-       - revert beta_sqr.
-         apply almost_impl, all_almost.
-         intros; red; intros.
-         unfold Rbar_rvlim.
-         rewrite Elim_seq_fin.
-         unfold const, rvsum.
-         now apply Rbar_lt_le.
-       - apply Rbar_IsFiniteExpectation_const.
-     }
-     specialize (HH2 isfefn isfe).
-     apply is_lim_seq_unique in HH2.
-     + rewrite Lim_seq_ext with
-          (v :=  (fun n : nat =>
-                    Rbar_FiniteExpectation 
-                      prts
-                      (fun omega : Ts =>
-                         Finite (rvsum (fun n0 : nat => rvsqr (β n0)) n omega)))).
-        * rewrite HH2.
-           now simpl.
-        * intros.
-           rewrite <- FinExp_Rbar_FinExp.
-           --- apply Rbar_FiniteExpectation_ext.
-               now intro z.
-           --- apply rvsum_rv.
-               intros.
-               typeclasses eauto.
-     + apply Rbar_IsFiniteExpectation_const.
-     + intros.
-        revert beta_sqr.
-        unfold almostR2.
-        apply almost_impl, all_almost.
-        intros; red; intros.
-        unfold Rbar_rvabs, const.
-        simpl.
-        unfold rvsum.
-        rewrite Rabs_right.
-        * generalize (Lim_seq_increasing_le (sum_n (fun n0 : nat => rvsqr (β n0) x))); intros HH3.
-           cut_to HH3.
-           -- specialize (HH3 n).
-               generalize (Rbar_le_lt_trans _ _ _ HH3 H); intros.
-               simpl in H0; lra.
-           -- intros.
-               apply sum_n_pos_incr; try lia.                     
-               intros.
-               apply nnfsqr.
-        * apply Rle_ge, sum_n_nneg.
-           intros.
-           apply nnfsqr.
-     + apply all_almost.
-        intros.
-        unfold Rbar_rvlim.
-        apply ELim_seq_correct.
-        rewrite ex_Elim_seq_fin.
-        apply ex_lim_seq_incr.
-        intros.
-        apply sum_n_pos_incr; try lia.
-        intros.
-        apply nnfsqr.
-  - intros.
-     typeclasses eauto.
-  - typeclasses eauto.
-  - typeclasses eauto.
-Qed.
-
-
 Lemma Rbar_le_fr_nneg (a b:Rbar) : Rbar_le 0 b -> Rbar_le a b -> Rbar_le (Finite (real a)) b.
 Proof.
   destruct b; destruct a; simpl; lra.
@@ -4302,6 +4145,84 @@ Proof.
      typeclasses eauto.
   - typeclasses eauto.
   - trivial.
+Qed.
+
+Lemma Dvoretzky_converge_W_alpha_beta  (W w α β: nat -> Ts -> R) 
+      {F : nat -> SigmaAlgebra Ts} (isfilt : IsFiltration F) (filt_sub : forall n, sa_sub (F n) dom)
+      {adaptZ : IsAdapted borel_sa W F} (adapt_alpha : IsAdapted borel_sa α F)
+      (adapt_beta : IsAdapted borel_sa β F) 
+      {rvw : forall n, RandomVariable dom borel_sa (w n)}
+
+      {rvalpha : forall n, RandomVariable dom borel_sa (α n)}
+      {rvbeta : forall n, RandomVariable dom borel_sa (β n)}            
+      (apos: forall (n:nat), almostR2 prts Rle (const 0) (α n)) 
+      (aone: forall (n:nat), almostR2 prts Rle (α n) (const 1)) 
+      (bpos: forall (n:nat), almostR2 prts Rle (const 0) (β n)) 
+      (bone: forall (n:nat), almostR2 prts Rle (β n) (const 1)) :
+  (forall n,
+      almostR2 prts eq
+               (ConditionalExpectation prts (filt_sub n) (w n))
+               (const 0)) ->
+  (exists (C: R),
+      (forall n,
+          almostR2 prts Rbar_le
+            (ConditionalExpectation prts (filt_sub n) (rvsqr (w n)))
+            (const (Rsqr C)))) ->
+   almost prts (fun ω : Ts => is_lim_seq (sum_n(fun n : nat => α n ω)) p_infty)  ->
+   almost prts (fun ω : Ts => is_lim_seq (sum_n (fun n : nat => β n ω)) p_infty)  ->
+
+   (exists (A3 : R),
+       almost prts (fun ω => Rbar_lt (Lim_seq (sum_n (fun n : nat => rvsqr (β n) ω))) (Finite A3))) ->
+  (forall n, rv_eq (W (S n)) (rvplus (rvmult (rvminus (const 1) (α n)) (W n)) (rvmult (w n) (β n)))) ->
+  almost _ (fun ω => is_lim_seq (fun n => W n ω) (Finite 0)).
+Proof.
+  intros condexpw condexpw2 alpha_inf beta_inf [A3 beta_sqr] (* W0 *) Wrel.
+  apply (@Dvoretzky_converge_W_alpha_beta_uniform W w α β F isfilt filt_sub adaptZ adapt_alpha adapt_beta rvw); eauto.
+  - revert beta_sqr.
+    apply almost_impl; apply all_almost; intros ??.
+    rewrite <- ex_finite_lim_series.
+    apply lim_sum_abs_bounded.
+    apply (bounded_is_finite 0 A3).
+    + apply Lim_seq_pos; intros.
+      apply sum_n_nneg; intros.
+      apply Rabs_pos.
+    + eapply Rbar_lt_le in H.
+      eapply Rbar_le_trans; try eapply H.
+      Local Existing Instance Rbar_le_pre.
+      apply refl_refl.
+      apply Lim_seq_ext; intros ?.
+      apply sum_n_ext; intros ?.
+      rewrite Rabs_right; try reflexivity.
+      apply Rle_ge.
+      apply Rle_0_sqr.
+  - pose (A3' := Rmax 1 A3).
+    assert (A3'pos : 0 < A3').
+    {
+      unfold A3'.
+      generalize (Rmax_l 1 A3).
+      lra.
+    } 
+    exists (mkposreal A3' A3'pos).
+    exists 1%nat; intros; simpl.
+    revert beta_sqr.
+    apply almost_impl; apply all_almost; intros ω ltt.
+    unfold A3'.
+    eapply Rbar_lt_le_trans; [eapply Rbar_le_lt_trans | ]; [| apply ltt |].
+    + destruct n; [lia |].
+      rewrite <- (Lim_seq_incr_n (sum_n (fun n0 : nat => rvsqr (β n0) ω)) (S n)).
+      apply Lim_seq_le; intros.
+      generalize (sum_split (fun n0 : nat => (β n0 ω)²) 0 ((n0 + S n)%nat) n)
+        ; intros HHH.
+        cut_to HHH; try lia.
+        unfold sum_n, rvsqr.
+        rewrite HHH.
+        unfold plus, rvsqr; simpl.
+        rewrite sum_shift.
+        cut (0 <=  sum_n_m (fun n1 : nat => (β n1 ω)²) 0 n); try lra.
+        apply sum_n_m_pos; intros.
+        apply Rle_0_sqr.
+    + simpl.
+      apply Rmax_r.
 Qed.
 
 End Dvoretzky_alpha_beta.
