@@ -2481,6 +2481,29 @@ Qed.
     rewrite <- (is_finite_Rbar_NonnegExpectation_le _ _ H2); simpl; trivial.
   Qed.
 
+  Lemma Rbar_IsFiniteExpectation_almost_bounded (rv_X1 rv_X2 rv_X3 : Ts -> Rbar) :
+    RandomVariable dom Rbar_borel_sa rv_X1 ->
+    RandomVariable dom Rbar_borel_sa rv_X3 -> 
+  Rbar_IsFiniteExpectation rv_X1 ->
+  Rbar_IsFiniteExpectation rv_X3 ->
+  almostR2 prts Rbar_le rv_X1 rv_X2 -> almostR2 prts Rbar_le rv_X2 rv_X3 -> Rbar_IsFiniteExpectation rv_X2.
+  Proof.
+    intros rv1 rv3 isfe1 isfe3 ale1 ale3.
+    destruct (almostR2_Rbar_le_split _ _ _ ale1)
+      as [g'1 [eqq1 [lee1 rvg'1]]].
+    destruct (almostR2_Rbar_le_split_r _ _ _ ale3)
+      as [g'3 [eqq3 [lee3 rvg'3]]].
+    assert (isfe1':Rbar_IsFiniteExpectation g'1).
+    {
+      eapply Rbar_IsFiniteExpectation_proper_almostR2; try eapply isfe1; auto.
+    } 
+    assert (isfe3':Rbar_IsFiniteExpectation g'3).
+    {
+      eapply Rbar_IsFiniteExpectation_proper_almostR2; try eapply isfe3; auto.
+    } 
+
+    now apply (Rbar_IsFiniteExpectation_bounded g'1 rv_X2 g'3).
+  Qed.
   
   Lemma Rbar_IsFiniteExpectation_parts f :
     Rbar_IsFiniteExpectation f ->
@@ -2588,7 +2611,6 @@ Qed.
   Qed.
 
   Lemma Rbar_IsFiniteExpectation_nnf_bounded_almost (f g : Ts -> Rbar.Rbar)
-          {rvf : RandomVariable dom Rbar_borel_sa f}
           {rvg : RandomVariable dom Rbar_borel_sa g} :
     Rbar_NonnegativeFunction f ->
     almostR2 prts Rbar.Rbar_le f g ->
