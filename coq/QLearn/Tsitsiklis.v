@@ -646,6 +646,40 @@ Proof.
   apply H0.
 Qed.
 
+Lemma uniform_converge_sum_sq_tails (α : nat -> Ts -> R) : 
+  (forall (n:nat), almostR2 prts Rle (const 0) (α n)) ->
+  (forall ω, is_finite (Lim_seq (sum_n (fun k => rvsqr (α k) ω)))) ->
+  let A := fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω)) in
+  is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (α k) ω) n) A ->
+  forall (eps : posreal),
+    eventually (fun n => almostR2 prts Rbar_le (fun ω : Ts => Lim_seq (sum_n (fun n0 : nat => (α (S n + n0)%nat ω)²))) (const eps)).
+Proof.
+  intros alpha_pos lim_fin A uniform eps.
+  assert (0 < eps/2).
+  {
+    generalize (cond_pos eps); intros; lra.
+  }
+  specialize (uniform (mkposreal _ H)).
+  revert uniform.
+  apply eventually_impl.
+  apply all_eventually; intros ?.
+  apply almost_impl.
+  apply almost_forall in alpha_pos.
+  revert alpha_pos; apply almost_impl.
+  apply all_almost; intros ???.
+  simpl in H1.
+  rv_unfold'_in_star.
+  assert (Lim_seq (sum_n (fun n0 : nat => (α (S x + n0)%nat x0)²)) = 
+            Rbar_minus (Lim_seq (sum_n (fun k : nat => (α k x0)²)))
+              (sum_n (fun k : nat => (α k x0)²) x)).
+  {
+    admit.
+  }
+  rewrite H2.
+  rewrite <- lim_fin.
+  simpl.
+ Admitted.
+
 Lemma lemma1_alpha_beta_shift (α β w B W : nat -> Ts -> R) (Ca Cb : R)
       {F : nat -> SigmaAlgebra Ts}
       (isfilt : IsFiltration F)
