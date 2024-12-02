@@ -4017,11 +4017,11 @@ Lemma Dvoretzky_converge_W_alpha_beta_uniform  (W w α β: nat -> Ts -> R)
    almost prts (fun ω : Ts => is_lim_seq (sum_n(fun n : nat => α n ω)) p_infty)  ->
    almost prts (fun ω : Ts => is_lim_seq (sum_n (fun n : nat => β n ω)) p_infty)  ->
    almost prts (fun ω => ex_series (fun n => Rsqr (β n ω))) ->
-   (forall epsilon : posreal, eventually (fun n => almostR2 prts Rbar_lt (fun ω => Lim_seq (sum_n (fun nn => rvsqr (β (nn+n)%nat) ω))) (const epsilon))) ->
+   (exists epsilon : posreal, eventually (fun n => almostR2 prts Rbar_lt (fun ω => Lim_seq (sum_n (fun nn => rvsqr (β (nn+n)%nat) ω))) (const epsilon))) ->
   (forall n, rv_eq (W (S n)) (rvplus (rvmult (rvminus (const 1) (α n)) (W n)) (rvmult (w n) (β n)))) ->
   almost _ (fun ω => is_lim_seq (fun n => W n ω) (Finite 0)).
 Proof.
-  intros condexpw condexpw2 alpha_inf beta_inf beta_sqr beta_bounded (* W0 *) Wrel.
+  intros condexpw condexpw2 alpha_inf beta_inf beta_sqr [ϵ beta_bounded] (* W0 *) Wrel.
 
   assert (svy1b: forall n : nat, IsFiniteExpectation prts (rvsqr (β n))).
   {
@@ -4112,12 +4112,12 @@ Proof.
   assert (A3isfe' : Rbar_IsFiniteExpectation prts (fun ω : Ts => A3' ω)).
   {
     unfold A3', Series.
-    destruct (beta_bounded posreal1) as [N betaN].
+    destruct (beta_bounded ) as [N betaN].
     specialize (betaN (S N)).
     cut_to betaN; try lia.
     
     pose (btail := (rvplus (fun ω => sum_n  (fun nn : nat => rvsqr (β nn) ω) N)
-                      (const posreal1))).
+                      (const (pos ϵ)))).
 
     assert (btail_rv : RandomVariable dom Rbar_borel_sa btail).
     {
@@ -4173,8 +4173,8 @@ Proof.
       rewrite Lim_seq_plus.
       + unfold rvplus.
         rewrite Lim_seq_const.
-        replace (Finite (sum_n (fun nn : nat => rvsqr (β nn) ω) N + const posreal1 ω)) with
-          (Rbar_plus (sum_n (fun nn : nat => rvsqr (β nn) ω) N) (const posreal1 ω)) by reflexivity.
+        replace (Finite (sum_n (fun nn : nat => rvsqr (β nn) ω) N + const (pos ϵ) ω)) with
+          (Rbar_plus (sum_n (fun nn : nat => rvsqr (β nn) ω) N) (const (pos ϵ) ω)) by reflexivity.
         apply Rbar_plus_le_compat.
         { apply Rbar_le_refl. }
         now apply Rbar_lt_le.
