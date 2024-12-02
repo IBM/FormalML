@@ -41,7 +41,6 @@ Lemma lemma1_bounded_alpha_beta (α β w W : nat -> Ts -> R) (Ca Cb B : R)
   (forall (n:nat), almostR2 prts Rle (β n) (const 1)) ->  
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => α k ω)) p_infty)) ->
   (almost prts (fun ω => is_lim_seq (sum_n (fun k => β k ω)) p_infty)) ->  
-  (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω))) (const Ca)) ->
   (almostR2 prts Rbar_le (fun ω => Lim_seq (sum_n (fun k => rvsqr (β k) ω))) (const Cb)) ->
   (forall n ω, W (S n) ω = (1 - α n ω) * (W n ω) + (β n ω) * (w n ω)) ->
   almost prts (fun ω => is_lim_seq (fun n => W n ω) 0).
@@ -52,7 +51,7 @@ Proof.
     intros ?.
     induction n.
     - trivial.
-    - specialize (H9 n).
+    - specialize (H8 n).
       assert (RandomVariable (F (S n)) borel_sa
                     (rvplus (rvmult (rvminus (const 1) (α n)) (W n))
                        (rvmult (β n) (w n)))).
@@ -67,10 +66,10 @@ Proof.
         - apply rvmult_rv; trivial.
           now apply (RandomVariable_sa_sub (isfilt n)).
       }
-      revert H10.
+      revert H9.
       apply RandomVariable_proper; try easy.
       intros ?.
-      rewrite H9.
+      rewrite H8.
       rv_unfold.
       lra.
   }
@@ -82,7 +81,7 @@ Proof.
     now apply (RandomVariable_sa_sub (filt_sub n)).
   - exists B.
     apply H0.
-  - exists (Ca + 1).
+  - exists (Cb + 1).
     revert H7.
     apply almost_impl, all_almost.
     unfold impl; intros.
@@ -90,16 +89,8 @@ Proof.
     apply H7.
     unfold const; simpl.
     lra.
-  - exists (Cb + 1).
-    revert H8.
-    apply almost_impl, all_almost.
-    unfold impl; intros.
-    eapply Rbar_le_lt_trans.
-    apply H8.
-    unfold const; simpl.
-    lra.
   - intros ??.
-    specialize (H9 n a).
+    specialize (H8 n a).
     rv_unfold.
     lra.
  Qed.
