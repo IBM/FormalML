@@ -2296,7 +2296,6 @@ Proof.
                  (g := const (Rbar.Finite A2)).
              - typeclasses eauto.
              - typeclasses eauto.
-             - typeclasses eauto.
              - revert alpha_sqr.
                apply almost_impl, all_almost.
                intros; red; intros.
@@ -2324,7 +2323,6 @@ Proof.
            {
              apply Rbar_IsFiniteExpectation_nnf_bounded_almost with
                  (g := const (Rbar.Finite A2)).
-             - typeclasses eauto.
              - typeclasses eauto.
              - typeclasses eauto.
              - revert alpha_sqr.
