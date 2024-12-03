@@ -5336,28 +5336,35 @@ Section jaakola_vector2.
                 Lim_seq
                   (sum_n (fun nn : nat => rvsqr (vecrvnth i pf (β (nn + n)%nat)) ω)))
                (fun x : Ts => const eps x)))); intros.
-         cut_to H14.
-         + destruct H14.
-           pose (eps := Rvector_max_abs (vector_map pos x)).
-           assert (0 < eps).
-           {
-             generalize (Rvector_max_abs_nth_le  (vector_map pos x) 0 (Nat.lt_0_succ _)).
-             rewrite vector_nth_map.
-             unfold eps.
-             intros leq.
-             eapply Rlt_le_trans; try eapply leq.
-             destruct ((vector_nth 0 (Nat.lt_0_succ N) x)); simpl in *.
-             rewrite Rabs_right; lra.
-           } 
-           exists (mkposreal _ H15).
-           apply eventually_bounded_forall in H14.
-           revert H14.
-           apply eventually_impl; apply all_eventually; intros ? HH ??.
-           specialize (HH i pf).
-           revert HH.
-           apply almost_impl; apply all_almost; intros ??.
-          admit.
-     Admitted.
+         cut_to H14; trivial.
+         destruct H14.
+         pose (eps := Rvector_max_abs (vector_map pos x)).
+         assert (0 < eps).
+         {
+           generalize (Rvector_max_abs_nth_le  (vector_map pos x) 0 (Nat.lt_0_succ _)).
+           rewrite vector_nth_map.
+           unfold eps.
+           intros leq.
+           eapply Rlt_le_trans; try eapply leq.
+           destruct ((vector_nth 0 (Nat.lt_0_succ N) x)); simpl in *.
+           rewrite Rabs_right; lra.
+         } 
+         exists (mkposreal _ H15).
+         apply eventually_bounded_forall in H14.
+         revert H14.
+         apply eventually_impl; apply all_eventually; intros ? HH ??.
+         specialize (HH i pf).
+         revert HH.
+         apply almost_impl; apply all_almost; intros ??.
+         eapply Rbar_lt_le_trans.
+         apply H14.
+         unfold const, eps; simpl.
+         generalize (Rvector_max_abs_nth_le (vector_map pos x) i pf); intros.
+         eapply Rle_trans; cycle 1.
+         apply H16.
+         rewrite vector_nth_map.
+         apply Rle_abs.
+     Qed.
 
      Lemma Binomial_C_2_1 : Binomial.C 2 1 = 2.
      Proof.
@@ -6086,9 +6093,8 @@ Section jaakola_vector2.
          }
          generalize 
            (bounded_nat_ex_choice_vector 
-              (A := R) (n := S N)
+              (A := posreal) (n := S N)
               (fun i pf eps =>
-                 0 < eps /\
                    eventually
             (fun n : nat =>
              almostR2 prts Rbar_lt
@@ -6096,22 +6102,35 @@ Section jaakola_vector2.
                 Lim_seq
                   (sum_n (fun nn : nat => rvsqr (vecrvnth i pf (β (nn + n)%nat)) ω)))
                (fun x : Ts => const eps x)))); intros.
-         cut_to H13.
-         + destruct H13.
-           pose (eps := Rvector_max_abs x).
-           assert (0 < eps).
-           {
-             assert (forall i pf, 0 < vector_nth i pf x).
-             {
-               intros.
-               specialize (H13 i pf).
-               apply H13.
-             }
-             admit.
-          }
-          exists (mkposreal _ H14).
-          admit.
-     Admitted.
+         cut_to H13; trivial.
+         destruct H13.
+         pose (eps := Rvector_max_abs (vector_map pos x)).
+         assert (0 < eps).
+         {
+           generalize (Rvector_max_abs_nth_le  (vector_map pos x) 0 (Nat.lt_0_succ _)).
+           rewrite vector_nth_map.
+           unfold eps.
+           intros leq.
+           eapply Rlt_le_trans; try eapply leq.
+           destruct ((vector_nth 0 (Nat.lt_0_succ N) x)); simpl in *.
+           rewrite Rabs_right; lra.
+         } 
+         exists (mkposreal _ H14).
+         apply eventually_bounded_forall in H13.
+         revert H13.
+         apply eventually_impl; apply all_eventually; intros ? HH ??.
+         specialize (HH i pf).
+         revert HH.
+         apply almost_impl; apply all_almost; intros ??.
+         eapply Rbar_lt_le_trans.
+         apply H13.
+         unfold const, eps; simpl.
+         generalize (Rvector_max_abs_nth_le (vector_map pos x) i pf); intros.
+         eapply Rle_trans; cycle 1.
+         apply H15.
+         rewrite vector_nth_map.
+         apply Rle_abs.
+    Qed.
 
      Definition Scaled_Rvector_max_abs {n} (x y :vector R n) : R :=
        Rvector_max_abs (Rvector_mult x y).
