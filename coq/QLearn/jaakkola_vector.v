@@ -2593,7 +2593,6 @@ Section jaakola_vector2.
                             (vecrvscalerv (rvmaxabs (X n))
                                (vecrvscale γ (β n))))
                          (pos_to_nneg C))) ->
-         (*         almost prts (fun ω => Lim_seq (fun n => rvmaxabs (X n) ω) = 0). *)
          almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
       Proof.
         intros.
@@ -4926,7 +4925,6 @@ Section jaakola_vector2.
                   ((FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
                     <=  (C * (1 + Rvector_max_abs (X k ω))^2)))) ->        
    (exists (C : Ts -> R), 
-(*        (RandomVariable (F 0%nat) borel_sa C) /\ *)
           almost prts (fun ω => forall k, Rvector_max_abs (X k ω) <= C ω)) ->
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
@@ -5190,10 +5188,7 @@ Section jaakola_vector2.
 
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω)) ->
-(*
-    eventually (fun k => almost prts (fun ω => forall i pf, vector_nth i pf (α k ω) <= 1)) ->          
-    eventually (fun k => almost prts (fun ω => forall i pf, vector_nth i pf (β k ω) <= 1)) ->      
-*)
+
     almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <=  vector_nth i pf (α k ω)) ->        
 
 
@@ -5220,7 +5215,6 @@ Section jaakola_vector2.
                   ((FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
                     <=  (C * (1 + Rvector_max_abs (X k ω))^2)))) ->
    (exists (C : Ts -> R), 
-(*        (RandomVariable (F 0%nat) borel_sa C) /\ *)
           almost prts (fun ω => forall k, Rvector_max_abs (X k ω) <= C ω)) ->
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
@@ -5456,11 +5450,7 @@ Section jaakola_vector2.
                (forall k i pf,
                   ((FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
                     <=  (C * (1 + Rvector_max_abs (X k ω))^2)))) ->        
-(*
-    (exists (C : Ts -> R), 
-        (RandomVariable (F 0%nat) borel_sa C) /\
-          almost prts (fun ω => forall k, Rvector_max_abs (X k ω) <= C ω)) ->
-*)
+
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k)))) ->
     (exists epsilon : posreal,
@@ -5705,10 +5695,7 @@ Section jaakola_vector2.
                (forall k i pf,
                   ((FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
                     <=  (C * (1 + Rvector_max_abs (X k ω))^2)))) ->        
-(*
-   (exists (C : Ts -> R), 
-          almost prts (fun ω => forall k, Rvector_max_abs (X k ω) <= C ω)) ->
-*)
+
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
     (exists epsilon : posreal,
@@ -5960,10 +5947,7 @@ Section jaakola_vector2.
 
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω)) ->
-(*
-    eventually (fun k => almost prts (fun ω => forall i pf, vector_nth i pf (α k ω) <= 1)) ->          
-    eventually (fun k => almost prts (fun ω => forall i pf, vector_nth i pf (β k ω) <= 1)) ->      
-*)
+
     almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <=  vector_nth i pf (α k ω)) ->        
 
 
