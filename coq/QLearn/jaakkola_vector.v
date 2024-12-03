@@ -5327,9 +5327,8 @@ Section jaakola_vector2.
          }
          generalize 
            (bounded_nat_ex_choice_vector 
-              (A := R) (n := S N)
+              (A := posreal) (n := S N)
               (fun i pf eps =>
-                 0 < eps /\
                    eventually
             (fun n : nat =>
              almostR2 prts Rbar_lt
@@ -5339,18 +5338,24 @@ Section jaakola_vector2.
                (fun x : Ts => const eps x)))); intros.
          cut_to H14.
          + destruct H14.
-           pose (eps := Rvector_max_abs x).
+           pose (eps := Rvector_max_abs (vector_map pos x)).
            assert (0 < eps).
            {
-             assert (forall i pf, 0 < vector_nth i pf x).
-             {
-               intros.
-               specialize (H14 i pf).
-               apply H14.
-             }
-             admit.
-          }
-          exists (mkposreal _ H15).
+             generalize (Rvector_max_abs_nth_le  (vector_map pos x) 0 (Nat.lt_0_succ _)).
+             rewrite vector_nth_map.
+             unfold eps.
+             intros leq.
+             eapply Rlt_le_trans; try eapply leq.
+             destruct ((vector_nth 0 (Nat.lt_0_succ N) x)); simpl in *.
+             rewrite Rabs_right; lra.
+           } 
+           exists (mkposreal _ H15).
+           apply eventually_bounded_forall in H14.
+           revert H14.
+           apply eventually_impl; apply all_eventually; intros ? HH ??.
+           specialize (HH i pf).
+           revert HH.
+           apply almost_impl; apply all_almost; intros ??.
           admit.
      Admitted.
 
