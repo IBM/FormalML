@@ -6940,18 +6940,6 @@ Proof.
     now apply (RandomVariable_sa_sub (filt_sub (S k))).
   Qed.
 
- Instance rvXF_I 
-   {F : nat -> SigmaAlgebra Ts} 
-   (filt_sub : forall k, sa_sub (F k) dom) 
-   (XF : nat -> Ts -> vector R (S N))
-   {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}  :
-   forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k)).
-  Proof.
-    intros.
-    apply (RandomVariable_sa_sub (filt_sub (S k))).
-    now apply vecrvnth_rv.
-  Qed.
-
   Instance vec_isfe (XF : nat -> Ts -> vector R (S N)) 
     {isl2 : forall k i pf, IsLp prts 2 (vecrvnth i pf (XF k))} 
     {vec_rvXF_I : forall k, RandomVariable dom (Rvector_borel_sa (S N)) (XF k)} :
@@ -7006,7 +6994,7 @@ Proof.
           almost prts 
             (fun ω =>
                (forall k i pf,
-                  ((FiniteConditionalVariance_new prts (filt_sub k) (vecrvnth i pf (XF k)) (rv := rvXF_I filt_sub XF k i pf)) ω)
+                  ((FiniteConditionalVariance_new prts (filt_sub k) (vecrvnth i pf (XF k)) (rv := vecrvnth_rv i pf (XF k) (rv := vec_rvXF_I filt_sub XF k))) ω)
                     <=  (C * (1 + pos_scaled_Rvector_max_abs (X k ω) W)^2)))) ->        
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
@@ -7015,37 +7003,8 @@ Proof.
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
  Proof.
    intros.
-   apply (Jaakkola_alpha_beta_unbounded_uniformly_W W γ X XF α β isfilt filt_sub)
+   now apply (Jaakkola_alpha_beta_unbounded_uniformly_W W γ X XF α β isfilt filt_sub)
       with (isl2 := isl2) (vec_rvXF_I := vec_rvXF_I filt_sub XF) (vec_isfe := vec_isfe XF (vec_rvXF_I := vec_rvXF_I filt_sub XF)).
-   - trivial.
-   - trivial.
-   - trivial.
-   - trivial.
-   - trivial.
-   - trivial.
-   - trivial.
-   - trivial.
-   - trivial.               
-   - trivial.
-   - trivial.
-   - trivial.               
-   - trivial.
-   - trivial.               
-   - trivial.
-   - destruct H10 as [C [??]].
-     exists C.
-     split.
-     + trivial.
-     + revert H12.
-       apply almost_impl; apply all_almost; intros ??.
-       intros.
-       specialize (H12 k i pf).
-       eapply Rle_trans; cycle 1.
-       apply H12.
-       right.
-       f_equal.
-       apply proof_irrelevance.
-   - trivial.               
  Qed.
 
 End jaakola_vector2.
