@@ -6928,5 +6928,126 @@ Proof.
     + unfold XF', pos_Rvector_mult.
       now rewrite Rvector_mult_assoc.      
  Qed.
-    
+
+ Instance vec_rvXF_I 
+   {F : nat -> SigmaAlgebra Ts} 
+   (filt_sub : forall k, sa_sub (F k) dom) 
+   (XF : nat -> Ts -> vector R (S N))
+   {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}  :
+   forall k, RandomVariable dom (Rvector_borel_sa (S N)) (XF k).
+  Proof.
+    intros.
+    now apply (RandomVariable_sa_sub (filt_sub (S k))).
+  Qed.
+
+ Instance rvXF_I 
+   {F : nat -> SigmaAlgebra Ts} 
+   (filt_sub : forall k, sa_sub (F k) dom) 
+   (XF : nat -> Ts -> vector R (S N))
+   {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}  :
+   forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k)).
+  Proof.
+    intros.
+    apply (RandomVariable_sa_sub (filt_sub (S k))).
+    now apply vecrvnth_rv.
+  Qed.
+
+  Instance vec_isfe (XF : nat -> Ts -> vector R (S N)) 
+    {isl2 : forall k i pf, IsLp prts 2 (vecrvnth i pf (XF k))} 
+    {vec_rvXF_I : forall k, RandomVariable dom (Rvector_borel_sa (S N)) (XF k)} :
+    forall k, vector_IsFiniteExpectation prts (XF k).
+  Proof.
+    intros.
+    apply vector_nth_IsFiniteExpectation.
+    intros.
+    specialize (isl2 k i pf).
+    assert (RandomVariable dom borel_sa (vecrvnth i pf (XF k))).
+    {
+      now apply vecrvnth_rv.
+    }
+    now apply IsL2_Finite.
+  Qed.
+
+ Theorem Jaakkola_alpha_beta_unbounded_uniformly_W_alt (W : vector posreal (S N))
+    (γ : R) 
+    (X XF α β : nat -> Ts -> vector R (S N))
+    {F : nat -> SigmaAlgebra Ts}
+    (isfilt : IsFiltration F) 
+    (filt_sub : forall k, sa_sub (F k) dom) 
+    (adapt_alpha : IsAdapted (Rvector_borel_sa (S N)) α F)
+    (adapt_beta : IsAdapted (Rvector_borel_sa (S N)) β F)    
+    {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
+    {isl2 : forall k i pf, IsLp prts 2 (vecrvnth i pf (XF k))} 
+    {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}
+(* should be able to remove following *)
+    {vec_rvXF_I : forall k, RandomVariable dom (Rvector_borel_sa (S N)) (XF k)}
+(*    {vec_isfe : forall k, vector_IsFiniteExpectation prts (XF k)} *) :
+
+    0 < γ < 1 ->
+
+    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
+    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω)) ->
+
+    almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <=  vector_nth i pf (α k ω)) ->        
+
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
+    (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (α n ω))))) ->
+    (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (β n ω))))) ->
+    almost prts 
+      (fun ω =>
+         (forall k,
+             (pos_scaled_Rvector_max_abs ((vector_FiniteConditionalExpectation _ (filt_sub k) (XF k) (* (rv := vec_rvXF_I filt_sub XF k) *)) ω) W) <
+               (γ * (pos_scaled_Rvector_max_abs (X k ω) W))))  ->
+    (forall i pf,
+        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω) n) 
+          (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω)))) ->
+    (forall i pf, 
+        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω) n) 
+          (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω)))) ->
+    (exists (C : R),
+        (0 < C)  /\
+          almost prts 
+            (fun ω =>
+               (forall k i pf,
+                  ((FiniteConditionalVariance_new prts (filt_sub k) (vecrvnth i pf (XF k)) (rv := rvXF_I filt_sub XF k i pf)) ω)
+                    <=  (C * (1 + pos_scaled_Rvector_max_abs (X k ω) W)^2)))) ->        
+    (forall k, rv_eq (X (S k)) 
+                 (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
+    almost prts (fun ω =>
+                   forall i pf,
+                     is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
+ Proof.
+   intros.
+   apply (Jaakkola_alpha_beta_unbounded_uniformly_W W γ X XF α β isfilt filt_sub) with (isl2 := isl2) (vec_rvXF_I := vec_rvXF_I) (vec_isfe := vec_isfe XF).
+   - trivial.
+   - trivial.
+   - trivial.
+   - trivial.
+   - trivial.
+   - trivial.
+   - trivial.
+   - trivial.
+   - trivial.               
+   - trivial.
+   - trivial.
+   - trivial.               
+   - trivial.
+   - trivial.               
+   - trivial.
+   - destruct H10 as [C [??]].
+     exists C.
+     split.
+     + trivial.
+     + revert H12.
+       apply almost_impl; apply all_almost; intros ??.
+       intros.
+       specialize (H12 k i pf).
+       eapply Rle_trans; cycle 1.
+       apply H12.
+       right.
+       admit.
+   - trivial.               
+Admitted.
+
 End jaakola_vector2.
