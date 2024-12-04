@@ -1045,7 +1045,7 @@ Qed.
 
 Lemma uniform_converge_sum_sq (α : nat -> Ts -> R) :
   let A := fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω)) in
-  is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (α k) ω) n) A ->
+  is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (α k) ω) n) A ->
   is_lim_seq'_uniform_almost (fun n => rvsqr (α n)) (const 0).
 Proof.
   unfold is_lim_seq'_uniform_almost; intros.
@@ -1103,7 +1103,7 @@ Lemma uniform_converge_sum_sq_tails (α : nat -> Ts -> R) :
   almost prts (fun ω => ex_series (fun k => rvsqr (α k) ω)) ->
   let A := fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω)) in
   
-  is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (α k) ω) n) A ->
+  is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (α k) ω) n) A ->
   forall (eps : posreal),
     eventually (fun n => almostR2 prts Rbar_le (fun ω : Ts => Lim_seq (sum_n (fun n0 : nat => (α (S n + n0)%nat ω)²))) (const eps)).
 Proof.
@@ -1166,6 +1166,57 @@ Proof.
   apply H1.
   intros.
   apply sum_n_nneg.
+  intros.
+  apply Rle_0_sqr.
+Qed.
+
+Lemma uniform_converge_series_sum_sq_tails (α : nat -> Ts -> R) : 
+  almost prts (fun ω => ex_series (fun k => rvsqr (α k) ω)) ->
+  let A := fun ω => Series (fun k => rvsqr (α k) ω) in
+  is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (α k) ω) n) A ->
+  forall (eps : posreal),
+    eventually (fun n => almostR2 prts Rle (fun ω : Ts => Series (fun n0 : nat => (α (S n + n0)%nat ω)²)) (const eps)).
+Proof.
+  intros ex_ser A uniform eps.
+  specialize (uniform eps).
+  revert uniform.
+  apply eventually_impl.
+  apply all_eventually; intros ?.
+  apply almost_impl.
+  revert ex_ser; apply almost_impl.
+  apply all_almost; intros ???.
+  rv_unfold'_in_star.
+  generalize H; intros HH.
+  destruct H.
+  apply is_series_unique in H.
+  assert (limeq1: Series (fun k : nat => (α k x0)²) =
+                    (sum_n (fun k : nat => (α k x0)²) x) + 
+                      (Series (fun n0 : nat => (α (S x + n0)%nat x0)²))).
+  {
+    assert (0 <= x)%nat by lia.
+    generalize (sum_n_m_Series (fun k : nat => (α k x0)²) 0%nat x H1 HH); intros.
+    unfold sum_n.
+    simpl in H2.
+    simpl.
+    lra.
+  }
+  assert (limeq2: Series (fun n0 : nat => (α (S x + n0)%nat x0)²) = 
+            (A x0) - (sum_n (fun k : nat => (α k x0)²) x)).
+  {
+    unfold A.
+    rewrite limeq1;  lra.
+  }
+  rewrite limeq2.
+  unfold A.
+  rewrite H.
+  simpl.
+  unfold A in H0.
+  rewrite H, Rabs_minus_sym, Rabs_right in H0; simpl in H0; try lra.
+  rewrite <- H, limeq1.
+  simpl.
+  ring_simplify.
+  apply Rle_ge.
+  apply Series_nonneg.
   intros.
   apply Rle_0_sqr.
 Qed.
