@@ -5202,10 +5202,10 @@ Section jaakola_vector2.
                  Rabs ((FiniteConditionalExpectation _ (filt_sub k) ((vecrvnth i pf (XF k)))) ω) <= (γ * (Rvector_max_abs (X k ω))))) ->
 
     (forall i pf,
-        is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω) n) 
+        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω) n) 
           (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω)))) ->
     (forall i pf, 
-        is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω) n) 
+        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω) n) 
           (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω)))) ->
     (exists (C : R),
         (0 < C)  /\
@@ -5960,10 +5960,10 @@ Section jaakola_vector2.
                forall k i pf,
                  Rabs ((FiniteConditionalExpectation _ (filt_sub k) ((vecrvnth i pf (XF k)))) ω) <= (γ * (Rvector_max_abs (X k ω))))) ->
     (forall i pf,
-        is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω) n) 
+        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω) n) 
           (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω)))) ->
     (forall i pf, 
-        is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω) n) 
+        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω) n) 
           (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω)))) ->
     (exists (C : R),
         (0 < C)  /\
@@ -6474,10 +6474,10 @@ Section jaakola_vector2.
              (pos_scaled_Rvector_max_abs ((vector_FiniteConditionalExpectation _ (filt_sub k) (XF k)) ω) W) <
                (γ * (pos_scaled_Rvector_max_abs (X k ω) W))))  ->
     (forall i pf,
-        is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω) n) 
+        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω) n) 
           (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω)))) ->
     (forall i pf, 
-        is_lim_seq'_uniform_almost (fun n => fun ω => sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω) n) 
+        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω) n) 
           (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω)))) ->
     (exists (C : R),
         (0 < C)  /\
