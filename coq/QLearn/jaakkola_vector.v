@@ -7043,8 +7043,9 @@ Proof.
        eapply Rle_trans; cycle 1.
        apply H12.
        right.
-       admit.
+       f_equal.
+       apply proof_irrelevance.
    - trivial.               
-Admitted.
+ Qed.
 
 End jaakola_vector2.
