@@ -7016,11 +7016,6 @@ Proof.
     (**r The sum of βs almost always increases without limit *)
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
     
-    (**r The sum of α²s almost always converges to a finite limit *)
-    (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (α n ω))))) ->
-    (**r The sum of β²s almost always converges to a finite limit *)
-    (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (β n ω))))) ->
-    
     (exists (γ : R),
         0 < γ < 1 /\
           almost prts 
@@ -7053,7 +7048,7 @@ Proof.
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
  Proof.
    intros.
-   destruct H6 as [γ [??]].
+   destruct H4 as [γ [??]].
    now apply (Jaakkola_alpha_beta_unbounded_uniformly_W W γ X XF α β isfilt filt_sub)
       with (isl2 := isl2) (vec_rvXF_I := vec_rvXF_I filt_sub XF) (vec_isfe := vec_isfe XF (vec_rvXF_I := vec_rvXF_I filt_sub XF)).
  Qed.
