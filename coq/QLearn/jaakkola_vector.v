@@ -43,6 +43,21 @@ Proof.
       apply HH.
 Qed.
 
+Lemma almost_eventually {Ts:Type} {σ: SigmaAlgebra Ts} (prts:ProbSpace σ) (P : nat -> Ts -> Prop) :
+  eventually (fun n => almost prts (fun ω => P n ω)) ->
+  almost prts (fun ω => eventually (fun n => P n ω)).
+Proof.
+  intros [N alm].
+  apply almost_bounded_forall in alm.
+  - revert alm.
+    apply almost_impl.
+    apply all_almost; intros ω Pω.
+    exists N; trivial.
+  - intros.
+    apply le_dec.
+  - trivial.
+Qed.
+
 Section jaakola_vector1.
   
 Context {Ts : Type} {SS:Type} (N:nat)
