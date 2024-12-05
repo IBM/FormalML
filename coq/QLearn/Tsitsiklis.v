@@ -1005,8 +1005,75 @@ Lemma is_lim_seq'_uniform_is_lim_almost (u : nat -> Ts -> R) (l : Ts -> R) :
   is_lim_seq'_uniform_almost u l ->
   almost prts (fun x => is_lim_seq (fun n => u n x) (l x)).
 Proof.
-  Admitted.
+  unfold is_lim_seq'_uniform_almost.
+  intros.
+  assert (forall eps : posreal,
+             almost prts (fun (x : Ts) => eventually (fun n =>
+                                                        (rvabs (rvminus (u n) l) x) < eps))).
+  {
+    intros.
+    specialize (H eps).
+    unfold const in H.
+    apply almost_eventually.
+    revert H.
+    apply eventually_impl.
+    apply all_eventually; intros ?.
+    apply almost_impl.
+    now apply all_almost; intros ??.
+  }
+  assert (forall N,
+             almost prts (fun x : Ts => eventually (fun n : nat => rvabs (rvminus (u n) l) x < / INR (S N)))).
+  {
+    intros.
+    assert (0 < / INR (S N)).
+    {
+      apply Rinv_0_lt_compat.
+      apply lt_0_INR.
+      lia.
+   }
+   now specialize (H0 (mkposreal _ H1)).
+  }
+  apply almost_forall in H1.
+  revert H1; apply almost_impl.
+  apply all_almost; intros ??.
+  apply is_lim_seq_spec.
+  intros ?.
+  assert (exists N,
+             / INR (S N) < eps).
+  {
+    generalize (archimed_cor1 eps (cond_pos eps)); intros.
+    destruct H2 as [N [??]].
+    exists (N-1)%nat.
+    now replace (S (N - 1)) with N by lia.
+  }
+  destruct H2 as [N ?].
+  specialize (H1 N).
+  revert H1.
+  apply eventually_impl.
+  apply all_eventually.
+  intros.
+  eapply Rlt_trans; cycle 1.
+  apply H2.
+  unfold rvabs, rvminus, rvplus, rvopp, rvscale in H1.
+  eapply Rle_lt_trans; cycle 1.
+  apply H1.
+  right.
+  f_equal.
+  lra.
+Qed.
 
+Lemma is_lim_seq'_uniform_ex_series_almost (u : nat -> Ts -> R) (l : Ts -> R) :
+  is_lim_seq'_uniform_almost (fun n ω => sum_n (fun n0 => u n0 ω) n) l ->
+  almost prts (fun x => ex_series (fun n => u n x)).
+Proof.
+  intros.
+  apply is_lim_seq'_uniform_is_lim_almost in H.
+  revert H.
+  apply almost_impl.
+  apply all_almost; intros ??.
+  exists (l x).
+  now rewrite series_seq.
+Qed.
 
 Lemma uniform_lim_all_almost (u : nat -> Ts -> R) (l : Ts -> R) :
   is_lim_seq'_uniform_fun u l ->
@@ -1177,14 +1244,16 @@ Proof.
 Qed.
 
 Lemma uniform_converge_sum_sq_tails (α : nat -> Ts -> R) : 
-  almost prts (fun ω => ex_series (fun k => rvsqr (α k) ω)) ->
   let A := fun ω => Lim_seq (sum_n (fun k => rvsqr (α k) ω)) in
-  
   is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (α k) ω) n) A ->
   forall (eps : posreal),
     eventually (fun n => almostR2 prts Rbar_le (fun ω : Ts => Lim_seq (sum_n (fun n0 : nat => (α (S n + n0)%nat ω)²))) (const eps)).
 Proof.
-  intros ex_ser A uniform eps.
+  intros A uniform eps.
+  assert (ex_ser :   almost prts (fun ω => ex_series (fun k => rvsqr (α k) ω))).
+  {
+    now apply is_lim_seq'_uniform_ex_series_almost with (l := A).
+  }
   specialize (uniform eps).
   revert uniform.
   apply eventually_impl.
@@ -1248,13 +1317,16 @@ Proof.
 Qed.
 
 Lemma uniform_converge_series_sum_sq_tails (α : nat -> Ts -> R) : 
-  almost prts (fun ω => ex_series (fun k => rvsqr (α k) ω)) ->
   let A := fun ω => Series (fun k => rvsqr (α k) ω) in
   is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (α k) ω) n) A ->
   forall (eps : posreal),
     eventually (fun n => almostR2 prts Rle (fun ω : Ts => Series (fun n0 : nat => (α (S n + n0)%nat ω)²)) (const eps)).
 Proof.
-  intros ex_ser A uniform eps.
+  intros A uniform eps.
+  assert (ex_ser :   almost prts (fun ω => ex_series (fun k => rvsqr (α k) ω))).
+  {
+    now apply is_lim_seq'_uniform_ex_series_almost with (l := A).
+  }
   specialize (uniform eps).
   revert uniform.
   apply eventually_impl.

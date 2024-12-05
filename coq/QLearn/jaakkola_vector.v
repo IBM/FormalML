@@ -5168,8 +5168,7 @@ Section jaakola_vector2.
 
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
-    (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (α n ω))))) ->
-    (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (β n ω))))) ->
+
      (almost prts
             (fun ω =>
                forall k i pf,
@@ -5211,21 +5210,21 @@ Section jaakola_vector2.
              - intros.
                apply lt_dec.
              - intros.
-               erewrite vector_nth_ext; try apply H13.
+               erewrite vector_nth_ext; try apply H11.
            }
-           destruct ( uniform_converge_sq _ H13 ( uniform_converge_sum_sq _ (H8 i pf))).
+           destruct ( uniform_converge_sq _ H11 ( uniform_converge_sum_sq _ (H6 i pf))).
            exists x.
-           apply H14.
+           apply H12.
          }
-         apply eventually_bounded_forall in H13.
-         revert H13.
+         apply eventually_bounded_forall in H11.
+         revert H11.
          apply eventually_impl.
          apply all_eventually; intros.
          apply  almost_bounded_forall.
          + intros; apply lt_dec.
          + intros.
-           erewrite vector_nth_ext; try apply H14.
-         + apply H13.
+           erewrite vector_nth_ext; try apply H12.
+         + apply H11.
        - assert (forall i pf,
                       eventually (fun n => almostR2 prts Rle  (vecrvnth i pf (β n)) (const 1))).
          {
@@ -5239,21 +5238,27 @@ Section jaakola_vector2.
              - intros.
                apply lt_dec.
              - intros.
-               erewrite vector_nth_ext; try apply H13.
+               erewrite vector_nth_ext; try apply H11.
            }
-           destruct ( uniform_converge_sq _ H13 ( uniform_converge_sum_sq _ (H9 i pf))).
+           destruct ( uniform_converge_sq _ H11 ( uniform_converge_sum_sq _ (H7 i pf))).
            exists x.
-           apply H14.
+           apply H12.
          }
-         apply eventually_bounded_forall in H13.
-         revert H13.
+         apply eventually_bounded_forall in H11.
+         revert H11.
          apply eventually_impl.
          apply all_eventually; intros.
          apply  almost_bounded_forall.
          + intros; apply lt_dec.
          + intros.
-           erewrite vector_nth_ext; try apply H14.
-         + apply H13.
+           erewrite vector_nth_ext; try apply H12.
+         + apply H11.
+       - intros.
+         eapply is_lim_seq'_uniform_ex_series_almost.
+         apply H6.
+       - intros.
+         eapply is_lim_seq'_uniform_ex_series_almost.
+         apply H7.
        - assert (forall i pf,
                   exists epsilon : posreal,
                      eventually
@@ -5265,28 +5270,28 @@ Section jaakola_vector2.
                             (fun x : Ts => const epsilon x))).
          {
            intros.
-           specialize (H9 i pf).
-           generalize (uniform_converge_sum_sq_tails _ (H6 i pf)); intros.
+           specialize (H7 i pf).
+           generalize (uniform_converge_sum_sq_tails _ H7); intros.
            assert (0 < 2) by lra.
-           exists (mkposreal _ H14).
+           exists (mkposreal _ H12).
            assert (0 < 1) by  lra.
-           simpl in H13.
-           specialize (H13 H9 (mkposreal _ H15)).
-           destruct H13.
+           simpl in H11.
+           specialize (H11 (mkposreal _ H13)).
+           destruct H11.
            exists (S x).
            intros.
-           specialize (H13 (n-1)%nat).
-           cut_to H13; try lia.
-           revert H13.
+           specialize (H11 (n-1)%nat).
+           cut_to H11; try lia.
+           revert H11.
            apply almost_impl.
            apply all_almost; intros ??.
            simpl.
-           simpl in H13.
+           simpl in H11.
            assert (Rbar_lt 1 2) by (simpl; lra).
            eapply Rbar_le_lt_trans; cycle 1.
-           apply H17.
+           apply H15.
            eapply Rbar_le_trans; cycle 1.
-           apply H13.
+           apply H11.
            apply slln.eq_Rbar_le.
            apply Lim_seq_ext; intros.
            apply sum_n_ext; intros.
@@ -5304,8 +5309,8 @@ Section jaakola_vector2.
                 Lim_seq
                   (sum_n (fun nn : nat => rvsqr (vecrvnth i pf (β (nn + n)%nat)) ω)))
                (fun x : Ts => const eps x)))); intros.
-         cut_to H14; trivial.
-         destruct H14.
+         cut_to H12; trivial.
+         destruct H12.
          pose (eps := Rvector_max_abs (vector_map pos x)).
          assert (0 < eps).
          {
@@ -5316,20 +5321,21 @@ Section jaakola_vector2.
            eapply Rlt_le_trans; try eapply leq.
            destruct ((vector_nth 0 (Nat.lt_0_succ N) x)); simpl in *.
            rewrite Rabs_right; lra.
-         } 
-         exists (mkposreal _ H15).
-         apply eventually_bounded_forall in H14.
-         revert H14.
+         }
+         
+         exists (mkposreal _ H13).
+         apply eventually_bounded_forall in H12.
+         revert H12.
          apply eventually_impl; apply all_eventually; intros ? HH ??.
          specialize (HH i pf).
          revert HH.
          apply almost_impl; apply all_almost; intros ??.
          eapply Rbar_lt_le_trans.
-         apply H14.
+         apply H12.
          unfold const, eps; simpl.
          generalize (Rvector_max_abs_nth_le (vector_map pos x) i pf); intros.
          eapply Rle_trans; cycle 1.
-         apply H16.
+         apply H14.
          rewrite vector_nth_map.
          apply Rle_abs.
      Qed.
@@ -5927,8 +5933,7 @@ Section jaakola_vector2.
 
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
-    (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (α n ω))))) ->
-    (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (β n ω))))) ->
+
      (almost prts
             (fun ω =>
                forall k i pf,
@@ -5967,21 +5972,21 @@ Section jaakola_vector2.
              - intros.
                apply lt_dec.
              - intros.
-               erewrite vector_nth_ext; try apply H12.
+               erewrite vector_nth_ext; try apply H10.
            }
-           destruct ( uniform_converge_sq _ H12 ( uniform_converge_sum_sq _ (H8 i pf))).
+           destruct ( uniform_converge_sq _ H10 ( uniform_converge_sum_sq _ (H6 i pf))).
            exists x.
-           apply H13.
+           apply H11.
          }
-         apply eventually_bounded_forall in H12.
-         revert H12.
+         apply eventually_bounded_forall in H10.
+         revert H10.
          apply eventually_impl.
          apply all_eventually; intros.
          apply  almost_bounded_forall.
          + intros; apply lt_dec.
          + intros.
-           erewrite vector_nth_ext; try apply H13.
-         + apply H12.
+           erewrite vector_nth_ext; try apply H11.
+         + apply H10.
        - assert (forall i pf,
                       eventually (fun n => almostR2 prts Rle  (vecrvnth i pf (β n)) (const 1))).
          {
@@ -5995,21 +6000,27 @@ Section jaakola_vector2.
              - intros.
                apply lt_dec.
              - intros.
-               erewrite vector_nth_ext; try apply H12.
+               erewrite vector_nth_ext; try apply H10.
            }
-           destruct ( uniform_converge_sq _ H12 ( uniform_converge_sum_sq _ (H9 i pf))).
+           destruct ( uniform_converge_sq _ H10 ( uniform_converge_sum_sq _ (H7 i pf))).
            exists x.
-           apply H13.
+           apply H11.
          }
-         apply eventually_bounded_forall in H12.
-         revert H12.
+         apply eventually_bounded_forall in H10.
+         revert H10.
          apply eventually_impl.
          apply all_eventually; intros.
          apply  almost_bounded_forall.
          + intros; apply lt_dec.
          + intros.
-           erewrite vector_nth_ext; try apply H13.
-         + apply H12.
+           erewrite vector_nth_ext; try apply H11.
+         + apply H10.
+       - intros.
+         eapply is_lim_seq'_uniform_ex_series_almost.
+         apply H6.
+       - intros.
+         eapply is_lim_seq'_uniform_ex_series_almost.
+         apply H7.
        - assert (forall i pf,
                   exists epsilon : posreal,
                     eventually
@@ -6021,28 +6032,28 @@ Section jaakola_vector2.
                            (fun x : Ts => const epsilon x))).
          {
            intros.
-           specialize (H9 i pf).
-           generalize (uniform_converge_sum_sq_tails _ (H6 i pf)); intros.
+           specialize (H7 i pf).
+           generalize (uniform_converge_sum_sq_tails _ H7); intros.
            assert (0 < 2) by lra.
-           exists (mkposreal _ H13).
+           exists (mkposreal _ H11).
            assert (0 < 1) by  lra.
-           simpl in H12.
-           specialize (H12 H9 (mkposreal _ H14)).
-           destruct H12.
+           simpl in H10.
+           specialize (H10 (mkposreal _ H12)).
+           destruct H10.
            exists (S x).
            intros.
-           specialize (H12 (n-1)%nat).
-           cut_to H12; try lia.
-           revert H12.
+           specialize (H10 (n-1)%nat).
+           cut_to H10; try lia.
+           revert H10.
            apply almost_impl.
            apply all_almost; intros ??.
            simpl.
-           simpl in H12.
+           simpl in H10.
            assert (Rbar_lt 1 2) by (simpl; lra).
            eapply Rbar_le_lt_trans; cycle 1.
-           apply H16.
+           apply H14.
            eapply Rbar_le_trans; cycle 1.
-           apply H12.
+           apply H10.
            apply slln.eq_Rbar_le.
            apply Lim_seq_ext; intros.
            apply sum_n_ext; intros.
@@ -6060,8 +6071,8 @@ Section jaakola_vector2.
                 Lim_seq
                   (sum_n (fun nn : nat => rvsqr (vecrvnth i pf (β (nn + n)%nat)) ω)))
                (fun x : Ts => const eps x)))); intros.
-         cut_to H13; trivial.
-         destruct H13.
+         cut_to H11; trivial.
+         destruct H11.
          pose (eps := Rvector_max_abs (vector_map pos x)).
          assert (0 < eps).
          {
@@ -6073,19 +6084,19 @@ Section jaakola_vector2.
            destruct ((vector_nth 0 (Nat.lt_0_succ N) x)); simpl in *.
            rewrite Rabs_right; lra.
          } 
-         exists (mkposreal _ H14).
-         apply eventually_bounded_forall in H13.
-         revert H13.
+         exists (mkposreal _ H12).
+         apply eventually_bounded_forall in H11.
+         revert H11.
          apply eventually_impl; apply all_eventually; intros ? HH ??.
          specialize (HH i pf).
          revert HH.
          apply almost_impl; apply all_almost; intros ??.
          eapply Rbar_lt_le_trans.
-         apply H13.
+         apply H11.
          unfold const, eps; simpl.
          generalize (Rvector_max_abs_nth_le (vector_map pos x) i pf); intros.
          eapply Rle_trans; cycle 1.
-         apply H15.
+         apply H13.
          rewrite vector_nth_map.
          apply Rle_abs.
     Qed.
@@ -6440,8 +6451,7 @@ Section jaakola_vector2.
 
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
-    (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (α n ω))))) ->
-    (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (β n ω))))) ->
+
     almost prts 
       (fun ω =>
          (forall k,
@@ -6473,7 +6483,7 @@ Proof.
   {
     intros.
     destruct (isfe_L2_variance prts (filt_sub k) (vecrvnth i pf (XF k)) _) as [?[?[?[?]]]].
-    revert H15.
+    revert H13.
     apply IsFiniteExpectation_proper.
     intros ?.
     unfold rvsqr, rvminus, rvplus, rvopp,rvscale, vecrvnth.
@@ -6519,7 +6529,7 @@ Proof.
       apply IsFiniteExpectation_scale.
       apply isfe.
     }
-    revert H13.
+    revert H11.
     apply IsFiniteExpectation_proper.
     intros ?.
     unfold vecrvnth.
@@ -6552,7 +6562,7 @@ Proof.
                                                          (rvsqr
        (rvminus (vecrvnth i pf (fun ω : Ts => pos_Rvector_mult (XF k ω) W))
           (FiniteConditionalExpectation prts (filt_sub k)
-             (vecrvnth i pf (fun ω : Ts => pos_Rvector_mult (XF k ω) W)))))) in H13; trivial.
+             (vecrvnth i pf (fun ω : Ts => pos_Rvector_mult (XF k ω) W)))))) in H11; trivial.
     - apply rvscale_rv.
       apply rvsqr_rv.
       apply rvminus_rv.
@@ -6567,9 +6577,9 @@ Proof.
       + apply (RandomVariable_sa_sub (filt_sub k)).
         apply FiniteCondexp_rv.
     - generalize (FiniteCondexp_scale prts (filt_sub k) (vector_nth i pf W) ); intros.
-      specialize (H14 _ _ (isfe k i pf)).      
-      apply almost_prob_space_sa_sub_lift in H14.
-      revert H14; apply almost_impl.
+      specialize (H12 _ _ (isfe k i pf)).      
+      apply almost_prob_space_sa_sub_lift in H12.
+      revert H12; apply almost_impl.
       apply all_almost; intros ??.
       unfold rvsqr, rvminus, vecrvnth, rvplus, rvopp, rvscale; simpl.
       assert (rv_eq 
@@ -6593,7 +6603,7 @@ Proof.
       {
         now apply FiniteConditionalExpectation_ext.
       }
-      rewrite H16, H15, H14.
+      rewrite H14, H13, H12.
       unfold rvscale, Rsqr.
       unfold vecrvnth.
       lra.
@@ -6613,7 +6623,7 @@ Proof.
     - apply (RandomVariable_sa_sub (filt_sub k)).
       apply FiniteCondexp_rv.
   }
-  specialize (jaak _ _ _ H H0 H1 H2 H3 H4 H5 H6).
+  specialize (jaak _ _ _ H H0 H1 H2 H3 H4).
   assert
      (almost prts
            (fun ω : Ts =>
@@ -6634,21 +6644,21 @@ Proof.
       intros.
       apply vector_nth_IsFiniteExpectation.
       intros.
-      specialize (H13 k).
-      apply vector_IsFiniteExpectation_nth with (i := i) (pf := pf) in H13.
-      revert H13.
+      specialize (H11 k).
+      apply vector_IsFiniteExpectation_nth with (i := i) (pf := pf) in H11.
+      revert H11.
       apply IsFiniteExpectation_proper.
       intros ?.
       reflexivity.
    }
     generalize (fun k => pos_scaled_vec_fincondexp W (filt_sub k) (XF k)); intros.
-    apply almost_forall in H15.
-    revert H15; apply almost_impl.
-    revert H7; apply almost_impl.
+    apply almost_forall in H13.
+    revert H13; apply almost_impl.
+    revert H5; apply almost_impl.
     apply all_almost; intros ω??.
     intros.
-    clear H0 H1 H2 H3 H4 H5 H6 H8 H9 jaak.
-    specialize (H7 k).
+    clear H0 H1 H2 H3 H4 jaak.
+    specialize (H5 k).
     generalize (vector_FiniteConditionalExpectation_nth prts (filt_sub k) (XF' k)); intros.
     specialize (H0 i pf ω).
     replace (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF' k)) ω) with
@@ -6657,16 +6667,16 @@ Proof.
       apply Rvector_max_abs_nth_le.
       left.
       eapply Rle_lt_trans; cycle 1.
-      apply H7.
+      apply H5.
       right.
       f_equal.
       unfold XF'.
-      unfold pre_inter_of_collection in H15.
-      now rewrite H15.
+      unfold pre_inter_of_collection in H13.
+      now rewrite H13.
     - rewrite vector_FiniteConditionalExpectation_nth.
       now apply FiniteConditionalExpectation_ext.
   }
-  specialize (jaak H13 H8 H9).
+  specialize (jaak H11 H6 H7).
   assert (exists C : R,
              0 < C /\
                almost prts
@@ -6676,8 +6686,8 @@ Proof.
                         (vecrvnth i pf (XF' k)) ω <=
                         C * (1 + Rvector_max_abs (X' k ω)) ^ 2)).
   {
-    clear H0 H1 H2 H3 H4 H5 H6 H8 H9 jaak.
-    destruct H10 as [C [Cpos HH]].
+    clear H0 H1 H2 H3 H4 H5 jaak.
+    destruct H8 as [C [Cpos HH]].
     assert (forall k i pf,
                rv_eq (vecrvnth i pf (XF' k))
                   (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k)))).
@@ -6805,7 +6815,7 @@ Proof.
             - apply Rle_0_sqr.
         }
         eapply Rle_trans; cycle 1.
-        apply H8.
+        apply H12.
         rewrite <- H5.
         right.
         apply FiniteConditionalVariance_ext.
@@ -6861,25 +6871,25 @@ Proof.
     - intros.
       apply H1.
   }
-  specialize (jaak H14).
+  specialize (jaak H12).
   cut_to jaak; trivial.
   - revert jaak.
     apply almost_impl.
     apply all_almost; intros ??.
     intros.
-    specialize (H15 i pf).
-    unfold X' in H15.
-    unfold pos_Rvector_mult in H15.
+    specialize (H13 i pf).
+    unfold X' in H13.
+    unfold pos_Rvector_mult in H13.
     assert (is_lim_seq (fun m => (vector_nth i pf W) * vector_nth i pf (X m x)) 0).
     {
-      revert H15.
+      revert H13.
       apply is_lim_seq_ext.
       intros.
       rewrite Rvector_nth_mult, vector_nth_map; lra.
     }
-    apply is_lim_seq_scal_l with (a := Rinv_mkpos (vector_nth i pf W)) in H16.
-    rewrite Rbar_mult_0_r in H16.
-    revert H16.
+    apply is_lim_seq_scal_l with (a := Rinv_mkpos (vector_nth i pf W)) in H14.
+    rewrite Rbar_mult_0_r in H14.
+    revert H14.
     apply is_lim_seq_ext.
     intros.
     unfold Rinv_mkpos.
@@ -6891,7 +6901,7 @@ Proof.
   - intros.
     unfold X'.
     intros ?.
-    rewrite H11.
+    rewrite H9.
     unfold pos_Rvector_mult, vecrvminus, vecrvplus, vecrvmult, vecrvopp, vecrvscale.
     repeat rewrite Rvector_mult_plus_distr_r.
     f_equal.
