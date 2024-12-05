@@ -6868,6 +6868,31 @@ Section fin_cond_exp.
     {isl : IsLp prts 2 f} : Ts -> R :=
     FiniteConditionalExpectation (rv := variance_rv f) (isfe:=FiniteConditionalVariance_exp_from_L2 f) _.
 
+  Lemma FiniteConditionalVariance_new_ext (f1 f2 : Ts -> R)
+        {rv1  : RandomVariable dom borel_sa f1}
+        {rv2  : RandomVariable dom borel_sa f2}
+        {isl1 : IsLp prts 2 f1}
+        {isl2 : IsLp prts 2 f2} :
+    rv_eq f1 f2 ->
+    rv_eq (FiniteConditionalVariance_new f1) (FiniteConditionalVariance_new f2).
+  Proof.
+    intros ??.
+    unfold FiniteConditionalVariance_new.
+    apply FiniteConditionalExpectation_ext.
+    intros ?.
+    unfold rvsqr, rvminus, rvplus, rvopp, rvscale.
+    do 3 f_equal.
+    now apply FiniteConditionalExpectation_ext.
+  Qed.      
+
+  Lemma FiniteVariance_new_eq (f : Ts -> R)
+    {rv  : RandomVariable dom borel_sa f}
+    {isl : IsLp prts 2 f} :
+    ConditionalVariance f = (fun x : Ts => FiniteConditionalVariance_new f x).
+  Proof.
+    apply FiniteCondexp_eq.
+  Qed.
+
   Theorem FiniteCondexp_cond_exp (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f}
