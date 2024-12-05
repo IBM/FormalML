@@ -7014,7 +7014,10 @@ Proof.
       (adapt_alpha : IsAdapted (Rvector_borel_sa (S N)) α F)
       (adapt_beta : IsAdapted (Rvector_borel_sa (S N)) β F)    
       {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
-      {isl2 : forall k i pf, IsLp prts 2 (vecrvnth i pf (XF k))} 
+      {isl2 : forall k i pf, IsLp prts 2 (vecrvnth i pf (XF k))}
+(*
+      {rvXF : IsAdpated (Rvector_borel_sa (S N)) XF (fun k => F (S k))} 
+*)
       {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)} :
       
    (**r α and β are almost always non-negative *)

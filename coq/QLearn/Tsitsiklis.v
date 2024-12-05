@@ -1001,6 +1001,13 @@ Definition is_lim_seq'_uniform_almost (u : nat -> Ts -> R) (l : Ts -> R) :=
    forall eps : posreal, 
      eventually (fun n => almostR2 prts Rlt (rvabs (rvminus (u n) l)) (const eps)).
 
+Lemma is_lim_seq'_uniform_is_lim_almost (u : nat -> Ts -> R) (l : Ts -> R) :
+  is_lim_seq'_uniform_almost u l ->
+  almost prts (fun x => is_lim_seq (fun n => u n x) (l x)).
+Proof.
+  Admitted.
+
+
 Lemma uniform_lim_all_almost (u : nat -> Ts -> R) (l : Ts -> R) :
   is_lim_seq'_uniform_fun u l ->
   is_lim_seq'_uniform_almost u l.
@@ -1037,12 +1044,55 @@ Proof.
   intros.
   apply is_lim_seq_spec.
   unfold is_lim_seq'.
-  match_destr.
-  - intros eps.
-    admit.
-    
-Admitted.
-
+  match_case; intros.
+  - specialize (H eps).
+    revert H.
+    apply eventually_impl.
+    apply all_eventually; intros ??.
+    specialize (H x).
+    now rewrite H0 in H.
+  - pose (eps := / Rmax M 1).
+    assert (0 < eps).
+    {
+      unfold eps.
+      apply Rinv_0_lt_compat.
+      generalize (Rmax_r M 1); intros.
+      lra.
+   }
+   generalize (H (mkposreal _ H1)).
+   apply eventually_impl.
+   apply all_eventually; intros ??.
+   specialize (H2 x).
+   rewrite H0 in H2.
+   simpl in H2.
+   eapply Rle_lt_trans; cycle 1.
+   apply H2.
+   unfold eps.
+   unfold Rdiv.
+   rewrite Rinv_inv, Rmult_1_l.
+   apply Rmax_l.
+ - pose (eps := / (- (Rmin M (-1)))).
+   assert (0 < eps).
+   {
+     unfold eps.
+     apply Rinv_0_lt_compat.
+     generalize (Rmin_r M (-1)); intros.
+     lra.
+   }
+   generalize (H (mkposreal _ H1)).
+   apply eventually_impl.
+   apply all_eventually; intros ??.
+   specialize (H2 x).
+   rewrite H0 in H2.
+   simpl in H2.
+   eapply Rlt_le_trans.
+   apply H2.
+   unfold eps.
+   unfold Rdiv.
+   rewrite Rinv_inv.
+   ring_simplify.
+   apply Rmin_l.
+ Qed.
 
 Lemma uniform_converge_sq (α : nat -> Ts -> R) :
   (forall (n:nat), almostR2 prts Rle (const 0) (α n)) -> 
