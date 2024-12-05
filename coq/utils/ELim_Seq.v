@@ -164,6 +164,31 @@ Proof.
     apply Nat.le_max_r.
 Qed.
 
+Lemma eventually_bounded_forall (N:nat) P : 
+  (forall (i : nat) (pf : (i < N)%nat), eventually (P i pf)) ->
+  eventually (fun n => forall i pf, P i pf n).
+Proof.
+  induction N.
+  - intros.
+    exists 0%nat; intros; lia.
+  - intros HH.
+    specialize (IHN (fun x pf => P x (lt_S _ _ pf))).
+    cut_to IHN.
+    + simpl in IHN.
+      specialize (HH N (Nat.lt_succ_diag_r _)).
+      revert HH; apply eventually_impl.
+      revert IHN; apply eventually_impl.
+      apply all_eventually; intros.
+      destruct (Nat.eq_dec i N).
+      * subst.
+        now rewrite (digit_pf_irrel _ _ pf  (Nat.lt_succ_diag_r N)).
+      * assert (pf2 : (i < N)%nat) by lia.
+        specialize (H i pf2).
+        now rewrite (digit_pf_irrel _ _ pf (Nat.lt_lt_succ_r i N pf2)).
+    + intros.
+      apply HH.
+Qed.
+
 Lemma is_ELimInf_seq_ext (u v : nat -> Rbar) (l : Rbar) :
   (forall n, u n = v n)
   -> is_ELimInf_seq u l -> is_ELimInf_seq v l.

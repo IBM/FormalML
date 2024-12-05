@@ -4,7 +4,7 @@ Require Import Equivalence.
 Require Import Program.Basics.
 Require Import Classical ClassicalChoice Reals Lra.
 Require Import utils.Utils ProbSpace.
-Require Import Coquelicot.Rbar.
+Require Import Coquelicot.Rbar Coquelicot.Hierarchy.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -466,6 +466,21 @@ Section almostR2_part.
     - intros HH ?.
       revert HH.
       apply almost_impl; apply all_almost; intros ??; auto.
+  Qed.
+
+  Lemma almost_eventually (P : nat -> Ts -> Prop) :
+    eventually (fun n => almost prts (fun ω => P n ω)) ->
+    almost prts (fun ω => eventually (fun n => P n ω)).
+  Proof.
+    intros [N alm].
+    apply almost_bounded_forall in alm.
+    - revert alm.
+      apply almost_impl.
+      apply all_almost; intros ω Pω.
+      exists N; trivial.
+    - intros.
+      apply le_dec.
+    - trivial.
   Qed.
 
   Lemma almost_map_split {B} {f:Ts->B} {P:B->Prop} :
