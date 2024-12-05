@@ -6122,6 +6122,9 @@ Section jaakola_vector2.
      Definition pos_scaled_Rvector_max_abs {n} (x : vector R n) (y :vector posreal n) : R :=
        Rvector_max_abs (pos_Rvector_mult x y).
 
+     Definition scaled_norm {n} (x : vector R n) (y :vector posreal n) : R :=
+       Rvector_max_abs (pos_Rvector_mult x y).
+
      Definition pos_vec {n} (x : vector posreal n) : vector R n := vector_map pos x.
 
      Lemma pos_scaled_vec_isfincondexp {n} (W : vector posreal n) (dom2 : SigmaAlgebra Ts) (sub : sa_sub dom2 dom) 
@@ -6455,8 +6458,8 @@ Section jaakola_vector2.
     almost prts 
       (fun ω =>
          (forall k,
-             (pos_scaled_Rvector_max_abs ((vector_FiniteConditionalExpectation _ (filt_sub k) (XF k)) ω) W) <
-               (γ * (pos_scaled_Rvector_max_abs (X k ω) W))))  ->
+             (scaled_norm((vector_FiniteConditionalExpectation _ (filt_sub k) (XF k)) ω) W) <
+               (γ * (scaled_norm(X k ω) W))))  ->
     (forall i pf,
         is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω) n) 
           (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω)))) ->
@@ -6469,7 +6472,7 @@ Section jaakola_vector2.
             (fun ω =>
                (forall k i pf,
                   ((FiniteConditionalVariance_new prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
-                    <=  (C * (1 + pos_scaled_Rvector_max_abs (X k ω) W)^2)))) ->        
+                    <=  (C * (1 + scaled_norm(X k ω) W)^2)))) ->        
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
     almost prts (fun ω =>
@@ -6801,7 +6804,7 @@ Proof.
         {
           unfold rvscale, const.
           apply Rmult_le_compat_l with (r := (vector_nth i pf W)²)  in H4.
-          - replace  (pos_scaled_Rvector_max_abs (X k x) W) with
+          - replace  (scaled_norm(X k x) W) with
               (Rvector_max_abs (X' k x)) in H4 by reflexivity.
             rewrite (Rmult_comm C), Rmult_assoc.
             eapply Rle_trans; cycle 1.
@@ -7022,8 +7025,8 @@ Proof.
           almost prts 
             (fun ω =>
                (forall k,
-                   (pos_scaled_Rvector_max_abs ((vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) (rv := vec_rvXF_I filt_sub XF k) (isfe := vec_isfe XF (vec_rvXF_I := vec_rvXF_I filt_sub XF) k)) ω) W) <
-                     (γ * (pos_scaled_Rvector_max_abs (X k ω) W)))))  ->
+                   (scaled_norm((vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) (rv := vec_rvXF_I filt_sub XF k) (isfe := vec_isfe XF (vec_rvXF_I := vec_rvXF_I filt_sub XF) k)) ω) W) <
+                     (γ * (scaled_norm(X k ω) W)))))  ->
 
     (**r sum of α^2 converges almost always uniformly *)
     (forall i pf,
@@ -7042,7 +7045,7 @@ Proof.
             (fun ω =>
                (forall k i pf,
                   ((FiniteConditionalVariance_new prts (filt_sub k) (vecrvnth i pf (XF k)) (rv := vecrvnth_rv i pf (XF k) (rv := vec_rvXF_I filt_sub XF k))) ω)
-                    <=  (C * (1 + pos_scaled_Rvector_max_abs (X k ω) W)^2)))) ->        
+                    <=  (C * (1 + scaled_norm(X k ω) W)^2)))) ->        
 
     (**r X (k + 1) = (1 - α_κ) * Χ (k) + β_k * XF (k) *)
     (forall k, rv_eq (X (S k)) 
