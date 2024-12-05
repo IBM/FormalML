@@ -6920,7 +6920,7 @@ Proof.
    {F : nat -> SigmaAlgebra Ts} 
    (filt_sub : forall k, sa_sub (F k) dom) 
    (XF : nat -> Ts -> vector R (S N))
-   {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}  :
+   {rvXF : IsAdapted (Rvector_borel_sa (S N)) XF (fun k => F (S k))} :
    forall k, RandomVariable dom (Rvector_borel_sa (S N)) (XF k).
   Proof.
     intros.
@@ -7002,10 +7002,7 @@ Proof.
       (adapt_beta : IsAdapted (Rvector_borel_sa (S N)) β F)    
       {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
       {isl2 : forall k i pf, IsLp prts 2 (vecrvnth i pf (XF k))}
-(*
-      {rvXF : IsAdpated (Rvector_borel_sa (S N)) XF (fun k => F (S k))} 
-*)
-      {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)} :
+      {rvXF : IsAdapted (Rvector_borel_sa (S N)) XF (fun k => F (S k))} :
       
    (**r α and β are almost always non-negative *)
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
@@ -7055,11 +7052,11 @@ Proof.
     almost prts (fun ω =>
                    forall i pf,
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
- Proof.
-   intros.
-   destruct H4 as [γ [??]].
-   now apply (Jaakkola_alpha_beta_unbounded_uniformly_W W γ X XF α β isfilt filt_sub)
-      with (isl2 := isl2) (vec_rvXF_I := vec_rvXF_I filt_sub XF) (vec_isfe := vec_isfe XF (vec_rvXF_I := vec_rvXF_I filt_sub XF)).
+    Proof.
+      intros.
+      destruct H4 as [γ [??]].
+      now apply (Jaakkola_alpha_beta_unbounded_uniformly_W W γ X XF α β isfilt filt_sub)
+        with (isl2 := isl2) (vec_rvXF_I := vec_rvXF_I filt_sub XF) (vec_isfe := vec_isfe XF (vec_rvXF_I := vec_rvXF_I filt_sub XF)).
  Qed.
 
 End jaakola_vector2.
