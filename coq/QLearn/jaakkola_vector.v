@@ -7016,7 +7016,7 @@ Proof.
     (**r The sum of βs almost always increases without limit *)
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
     
-    (**r W scaled norm of conditional Expectation of XF bounded by γ * W scaled norm of X *)
+    (**r W scaled norm of conditional Expectation of XF is almost always bounded by γ * W scaled norm of X *)
     (exists (γ : R),
         0 < γ < 1 /\
           almost prts 
@@ -7025,17 +7025,17 @@ Proof.
                    (pos_scaled_Rvector_max_abs ((vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) (rv := vec_rvXF_I filt_sub XF k) (isfe := vec_isfe XF (vec_rvXF_I := vec_rvXF_I filt_sub XF) k)) ω) W) <
                      (γ * (pos_scaled_Rvector_max_abs (X k ω) W)))))  ->
 
-    (**r sum of α^2 converges uniformly *)
+    (**r sum of α^2 converges almost always uniformly *)
     (forall i pf,
         is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω) n) 
           (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω)))) ->
 
-    (**r sum of β^2 converges uniformly *)
+    (**r sum of β^2 converges almost always uniformly *)
     (forall i pf, 
         is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω) n) 
           (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω)))) ->
 
-    (**r exists C, such that conditional variance of XF is bounded by C * (1 + W_scaled norm X)^2 *)
+    (**r exists C, such that conditional variance of XF is almost always bounded by C * (1 + W_scaled norm X)^2 *)
     (exists (C : R),
         (0 < C)  /\
           almost prts 
@@ -7048,7 +7048,7 @@ Proof.
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
 
-    (**r X converges to zero *)
+    (**r X converges to zero almost alwaYS *)
     almost prts (fun ω =>
                    forall i pf,
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
