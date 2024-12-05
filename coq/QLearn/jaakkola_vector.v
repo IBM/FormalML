@@ -7016,15 +7016,23 @@ Proof.
     {isl2 : forall k i pf, IsLp prts 2 (vecrvnth i pf (XF k))} 
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)} :
 
+   (**r α and β are almost always non-negative *)
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω)) ->
 
+   (**r α is almost always less than or equal to β, component-wise  *)
     almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <=  vector_nth i pf (α k ω)) ->        
 
+    (**r The sum of αs almost always increase without limit *)
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    (**r The sum of βs almost always increases without limit *)
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
+    
+    (**r The sum of α²s almost always converges to a finite limit *)
     (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (α n ω))))) ->
+    (**r The sum of β²s almost always converges to a finite limit *)
     (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (β n ω))))) ->
+    
     (exists (γ : R),
         0 < γ < 1 /\
           almost prts 
@@ -7032,21 +7040,26 @@ Proof.
                (forall k,
                    (pos_scaled_Rvector_max_abs ((vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) (rv := vec_rvXF_I filt_sub XF k) (isfe := vec_isfe XF (vec_rvXF_I := vec_rvXF_I filt_sub XF) k)) ω) W) <
                      (γ * (pos_scaled_Rvector_max_abs (X k ω) W)))))  ->
+
     (forall i pf,
         is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω) n) 
           (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω)))) ->
+
     (forall i pf, 
         is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω) n) 
           (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω)))) ->
-   (exists (C : R),
+
+    (exists (C : R),
         (0 < C)  /\
           almost prts 
             (fun ω =>
                (forall k i pf,
                   ((FiniteConditionalVariance_new prts (filt_sub k) (vecrvnth i pf (XF k)) (rv := vecrvnth_rv i pf (XF k) (rv := vec_rvXF_I filt_sub XF k))) ω)
                     <=  (C * (1 + pos_scaled_Rvector_max_abs (X k ω) W)^2)))) ->        
+
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
+
     almost prts (fun ω =>
                    forall i pf,
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
