@@ -6956,6 +6956,55 @@ Proof.
     now apply IsL2_Finite.
   Qed.
 
+  Lemma is_lim_alpha_inf (α β : nat -> Ts -> vector R (S N)) :
+    almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <=  vector_nth i pf (α k ω)) ->        
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty).
+  Proof.
+    intros ?.
+    apply almost_impl.
+    revert H; apply almost_impl.
+    apply all_almost; intros ???.
+    intros.
+    specialize (H0 i pf).
+    revert H0.
+    apply is_lim_seq_le_p_loc.
+    exists (0%nat).
+    intros.
+    apply sum_n_le_loc.
+    intros.
+    apply H.
+  Qed.
+
+  Lemma ex_series_beta (α β : nat -> Ts -> vector R (S N)) :
+    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω)) ->
+    almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <=  vector_nth i pf (α k ω)) ->        
+    (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (α n ω))))) ->
+    (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (β n ω))))).
+    Proof.
+      intros.
+      specialize (H1 i pf).
+      revert H1; apply almost_impl.
+      revert H0; apply almost_impl.
+      revert H; apply almost_impl.
+      apply all_almost; intros ????.
+      revert H1.
+      apply ex_series_nneg_bounded.
+      - intros.
+        apply Rle_0_sqr.
+      - intros.
+        apply Rsqr_le_abs_1.
+        rewrite Rabs_right.
+        rewrite Rabs_right.
+        + apply H0.
+        + apply Rle_ge.
+          eapply Rle_trans.
+          apply H.
+          apply H0.
+        + apply Rle_ge.
+          apply H.
+   Qed.
+
  Theorem Jaakkola_alpha_beta_unbounded_uniformly_W_alt (W : vector posreal (S N))
     (X XF α β : nat -> Ts -> vector R (S N))
     {F : nat -> SigmaAlgebra Ts}
