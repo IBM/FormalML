@@ -7027,13 +7027,13 @@ Proof.
 
     (**r sum of α^2 converges almost always uniformly *)
     (forall i pf,
-        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω) n) 
-          (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω)))) ->
+        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => (vector_nth i pf (α k ω))²) n) 
+          (fun ω => Lim_seq (sum_n (fun k => (vector_nth i pf (α k ω))²)))) ->
 
     (**r sum of β^2 converges almost always uniformly *)
     (forall i pf, 
-        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω) n) 
-          (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (β k)) ω)))) ->
+        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => (vector_nth i pf (β k ω))²)  n) 
+          (fun ω => Lim_seq (sum_n (fun k => (vector_nth i pf (β k ω))² )))) ->
 
     (**r exists C, such that conditional variance of XF is almost always bounded by C * (1 + W_scaled norm X)^2 *)
     (exists (C : R),
