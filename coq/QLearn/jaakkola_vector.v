@@ -7005,17 +7005,18 @@ Proof.
           apply H.
    Qed.
 
- Theorem Jaakkola_alpha_beta_unbounded_uniformly_W_alt (W : vector posreal (S N))
-    (X XF α β : nat -> Ts -> vector R (S N))
-    {F : nat -> SigmaAlgebra Ts}
-    (isfilt : IsFiltration F) 
-    (filt_sub : forall k, sa_sub (F k) dom) 
-    (adapt_alpha : IsAdapted (Rvector_borel_sa (S N)) α F)
-    (adapt_beta : IsAdapted (Rvector_borel_sa (S N)) β F)    
-    {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
-    {isl2 : forall k i pf, IsLp prts 2 (vecrvnth i pf (XF k))} 
-    {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)} :
-
+    Theorem Jaakkola_alpha_beta_unbounded_uniformly_W_final
+      (W : vector posreal (S N))
+      (X XF α β : nat -> Ts -> vector R (S N))
+      {F : nat -> SigmaAlgebra Ts}
+      (isfilt : IsFiltration F) 
+      (filt_sub : forall k, sa_sub (F k) dom) 
+      (adapt_alpha : IsAdapted (Rvector_borel_sa (S N)) α F)
+      (adapt_beta : IsAdapted (Rvector_borel_sa (S N)) β F)    
+      {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
+      {isl2 : forall k i pf, IsLp prts 2 (vecrvnth i pf (XF k))} 
+      {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)} :
+      
    (**r α and β are almost always non-negative *)
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω)) ->

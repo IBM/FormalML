@@ -984,6 +984,19 @@ Definition is_lim_seq'_uniform_fun {Ts} (u : nat -> Ts -> R) (l : Ts -> R) :=
    forall eps : posreal, 
      eventually (fun n => forall (x:Ts), Rabs (u n x - l x) < eps).
 
+Lemma is_lim_seq'_uniform_is_lim (u : nat -> Ts -> R) (l : Ts -> R) :
+  is_lim_seq'_uniform_fun u l ->
+  forall (x : Ts), is_lim_seq (fun n => u n x) (l x).
+Proof.
+  intros.
+  apply is_lim_seq_spec.
+  intros eps.
+  specialize (H eps).
+  revert H.
+  apply eventually_impl.
+  now apply all_eventually; intros ??.
+Qed.
+
 Definition is_lim_seq'_uniform_almost (u : nat -> Ts -> R) (l : Ts -> R) :=
    forall eps : posreal, 
      eventually (fun n => almostR2 prts Rlt (rvabs (rvminus (u n) l)) (const eps)).
@@ -1016,6 +1029,20 @@ Definition is_lim_seq'_uniform_fun_Rbar {Ts} (u : nat -> Ts -> R) (l : Ts -> Rba
                      | p_infty => 1/eps < u n x
                      | m_infty => u n x < - 1/eps
                      end).
+
+Lemma is_lim_seq'_uniform_Rbar_is_lim (u : nat -> Ts -> R) (l : Ts -> Rbar) :
+  is_lim_seq'_uniform_fun_Rbar u l ->
+  forall (x : Ts), is_lim_seq (fun n => u n x) (l x).
+Proof.
+  intros.
+  apply is_lim_seq_spec.
+  unfold is_lim_seq'.
+  match_destr.
+  - intros eps.
+    admit.
+    
+Admitted.
+
 
 Lemma uniform_converge_sq (α : nat -> Ts -> R) :
   (forall (n:nat), almostR2 prts Rle (const 0) (α n)) -> 
