@@ -3413,28 +3413,6 @@ Section jaakola_vector2.
      rewrite Rmult_assoc in H.
      rewrite Rinv_l in H; lra.
   Qed.
-
-      Lemma lemm3_counter_helper (α : nat -> Ts -> R) (d : posreal)
-        (rvα : forall n, RandomVariable dom borel_sa (α n)) :
-        (forall t ω, 0 <= α t ω <= 1) ->
-        (forall ω, l1_divergent (fun n : nat => α n ω)) ->
-        (forall t, IsFiniteExpectation prts (α t)) ->
-        let β := fun t => rvscale d (α t) in
-        (forall n, RandomVariable dom borel_sa (β n)) /\
-          (forall ω, l1_divergent (fun n : nat => β n ω)) /\
-          (forall t, IsFiniteExpectation prts (β t)).
-       Proof.
-         intros.
-         split.
-         - intros.
-           now apply rvscale_rv.
-         - split.
-           + intros.
-             now apply l1_divergent_scale.
-           + intros.
-             now apply IsFiniteExpectation_scale.
-     Qed.
-
        Lemma isfe_beta  (α : R) (d1 d2 : R) (ev : event dom) :
          let β :=
            rvplus
@@ -3459,18 +3437,21 @@ Section jaakola_vector2.
        Lemma lemma3_counter (α : nat -> R) (C : posreal) :
         (forall t, 0 <= α t < 1) ->
         l1_divergent (fun n : nat => α n) ->
+        ex_series (fun n : nat => Rsqr (α n)) ->        
         (exists (ev : event dom), 0 < ps_P ev <= 0.5) ->
         exists (β X : nat -> Ts -> R),
         exists (isfeβ : forall t, IsFiniteExpectation prts (β t)), 
         exists (rvX : forall t, RandomVariable dom borel_sa (X t)), 
           (forall n, RandomVariable dom borel_sa (β n)) /\
-          (forall ω, l1_divergent (fun n : nat => β n ω)) /\
+            (forall ω, l1_divergent (fun n : nat => β n ω)) /\
+            (forall ω, ex_series (fun n : nat => Rsqr (β n ω))) /\            
             (forall n, rv_eq (X (S n))
                          (rvplus 
                             (rvscale
                                (1 - (α n))
                                (X n))
                             (rvscale C (β n)))) /\
+            (forall n ω, 0 <= β n ω) /\
             (forall n, FiniteExpectation prts (β n) <= FiniteExpectation prts (const (α n))) /\
             ps_P (event_le dom (rvlim X) C) < 1.
        Proof.
@@ -3484,7 +3465,7 @@ Section jaakola_vector2.
          (*
          destruct (lemma3_counter_prob_choice d1 d2 d1_gt1 d2_lt1) as [p [??]].
          *)
-         destruct H1 as [ev ?].
+         destruct H2 as [ev ?].
          pose (β := fun n =>
                            rvplus
                              (rvscale (d1 * (α n))
@@ -3527,110 +3508,133 @@ Section jaakola_vector2.
              + now apply rvscale_rv.
          }
          exists rvX.
-         split; trivial.
+         split;trivial.
          split.
          - intros.
            unfold β.
            assert (d1 > 0) by lra.
            assert (d2 > 0) by (compute; lra).
-           generalize (l1_divergent_scale α (mkposreal _ H3) H0); intros.
-           generalize (l1_divergent_scale α (mkposreal _ H4) H0); intros.           
-           simpl in H5; simpl in H6.
+           generalize (l1_divergent_scale α (mkposreal _ H4) H0); intros.
+           generalize (l1_divergent_scale α (mkposreal _ H5) H0); intros.           
+           simpl in H6; simpl in H7.
            unfold rvplus, rvscale, EventIndicator, event_complement, pre_event_complement; simpl.
            repeat match_destr; try tauto.
-           + revert H5.
+           + revert H6.
              apply is_lim_seq_ext; intros ?.
              apply sum_n_ext; intros ?.
              lra.
-           + revert H6.
+           + revert H7.
              apply is_lim_seq_ext; intros ?.
              apply sum_n_ext; intros ?.
              lra.
          - split.
            + intros.
-             reflexivity.
-           + split.
+             unfold β.
+             unfold rvplus, rvscale, EventIndicator, event_complement, pre_event_complement; simpl.
+             repeat match_destr; try tauto.
+             * generalize (ex_series_scal_r (Rsqr d1) _ H1).
+               apply ex_series_ext.
+               intros.
+               unfold Rsqr; lra.
+             * generalize (ex_series_scal_r (Rsqr d2) _ H1).
+               apply ex_series_ext.
+               intros.
+               unfold Rsqr; lra.
+           + split; [intros; reflexivity|].
+             split.
              * intros.
                unfold β.
-               erewrite FiniteExpectation_plus'.
-               erewrite FiniteExpectation_scale.
-               erewrite FiniteExpectation_scale.
-               erewrite FiniteExpectation_indicator.
-               erewrite FiniteExpectation_indicator.               
-               rewrite ps_complement.
-               rewrite FiniteExpectation_const.
-               assert (ps_P ev*d1 + (1 - ps_P ev)*d2 <= 1).
-               {
-                 eapply Rle_trans; cycle 1.
-                 apply H2.
-                 replace (ps_P ev * d1 + (1 - ps_P ev) * d2) with
-                   (d2 + (ps_P ev)* ( d1 - d2)) by lra.
-                 replace (p * d1 + (1 - p) * d2) with
-                   (d2 + p * ( d1 - d2)) by lra.
-                 apply Rplus_le_compat_l.
-                 apply Rmult_le_compat_r; try lra.
-                 now unfold p.
-              }
-              apply Rmult_le_compat_l with (r := α n) in H3; try lra.
-              apply H.
-               -- apply rvscale_rv.
-                  apply EventIndicator_rv.
-               -- apply rvscale_rv.
-                  apply EventIndicator_rv.
-               -- apply rvplus_rv.
+               unfold rvplus, rvscale, EventIndicator, event_complement, pre_event_complement; simpl.
+               repeat match_destr; try tauto.
+               -- rewrite Rmult_0_r, Rplus_0_r, Rmult_1_r.
+                  apply Rmult_le_pos; try lra.
+                  apply H.
+               -- rewrite Rmult_0_r, Rplus_0_l, Rmult_1_r.
+                  apply Rmult_le_pos.
+                  ++ compute; lra.
+                  ++ apply H.
+            * split.
+               -- intros.
+                  unfold β.
+                  erewrite FiniteExpectation_plus'.
+                  erewrite FiniteExpectation_scale.
+                  erewrite FiniteExpectation_scale.
+                  erewrite FiniteExpectation_indicator.
+                  erewrite FiniteExpectation_indicator.               
+                  rewrite ps_complement.
+                  rewrite FiniteExpectation_const.
+                  assert (ps_P ev*d1 + (1 - ps_P ev)*d2 <= 1).
+                  {
+                    eapply Rle_trans; cycle 1.
+                    apply H3.
+                    replace (ps_P ev * d1 + (1 - ps_P ev) * d2) with
+                      (d2 + (ps_P ev)* ( d1 - d2)) by lra.
+                    replace (p * d1 + (1 - p) * d2) with
+                      (d2 + p * ( d1 - d2)) by lra.
+                    apply Rplus_le_compat_l.
+                    apply Rmult_le_compat_r; try lra.
+                    now unfold p.
+                  }
+                  apply Rmult_le_compat_l with (r := α n) in H4; try lra.
+                  apply H.
                   ++ apply rvscale_rv.
-                     apply EventIndicator_rv.         
+                     apply EventIndicator_rv.
                   ++ apply rvscale_rv.
-                     apply EventIndicator_rv.         
-             * assert (forall ω, ev ω -> (rvlim X ω) > C).
-               {
-                 intros.
-                 unfold rvlim.
-                 pose (XX := fix XX (n : nat) : R :=
-                             match n with
-                             | 0%nat => pos C
-                             | S n0 => (1 - α n0) * (XX n0) 
-                                                      + (C * d1 * (α n0))
-                             end : R).
-                 assert (forall n,
-                            X n ω = XX n).
-                 {
-                   intros.
-                   induction n.
-                   - now simpl.
-                   - simpl.
-                     rv_unfold.
-                     rewrite IHn.
-                     f_equal.
-                     rewrite Rmult_assoc.
-                     f_equal.
-                     unfold β.
-                     unfold event_complement, pre_event_complement; simpl.
-                     repeat match_destr; try tauto.
-                     lra.
-                }
-                rewrite (Lim_seq_ext _ _ H4).
-                 generalize (lemma3_helper_iter_conv  XX α (d1 * C) H H0); intros.
-                 cut_to H5.
-                 - apply is_lim_seq_unique in H5.
-                   assert (is_finite (Lim_seq (fun n : nat => XX n))).
-                   {
-                     rewrite H5.
-                     now simpl.
-                   }
-                   rewrite <- H6 in H5.
-                   rewrite Rbar_finite_eq in H5.
-                   replace (Lim_seq XX) with (Lim_seq (fun n => XX n)).
-                   + rewrite H5.
-                     generalize (cond_pos C); intros.
-                     apply Rmult_gt_compat_r with (r := C) in d1_gt1; lra.
-                   + apply Lim_seq_ext.
-                     reflexivity.
-               - intros.
-                 simpl.
-                 rv_unfold.
-                 ring.
-               }
+                     apply EventIndicator_rv.
+                  ++ apply rvplus_rv.
+                     ** apply rvscale_rv.
+                        apply EventIndicator_rv.         
+                     ** apply rvscale_rv.
+                        apply EventIndicator_rv.         
+               -- assert (forall ω, ev ω -> (rvlim X ω) > C).
+                  {
+                    intros.
+                    unfold rvlim.
+                    pose (XX := fix XX (n : nat) : R :=
+                            match n with
+                            | 0%nat => pos C
+                            | S n0 => (1 - α n0) * (XX n0) 
+                                      + (C * d1 * (α n0))
+                            end : R).
+                    assert (forall n,
+                               X n ω = XX n).
+                    {
+                      intros.
+                      induction n.
+                      - now simpl.
+                      - simpl.
+                        rv_unfold.
+                        rewrite IHn.
+                        f_equal.
+                        rewrite Rmult_assoc.
+                        f_equal.
+                        unfold β.
+                        unfold event_complement, pre_event_complement; simpl.
+                        repeat match_destr; try tauto.
+                        lra.
+                    }
+                    rewrite (Lim_seq_ext _ _ H5).
+                    generalize (lemma3_helper_iter_conv  XX α (d1 * C) H H0); intros.
+                    cut_to H6.
+                    - apply is_lim_seq_unique in H6.
+                      assert (is_finite (Lim_seq (fun n : nat => XX n))).
+                      {
+                        rewrite H6.
+                        now simpl.
+                      }
+                      rewrite <- H7 in H6.
+                      rewrite Rbar_finite_eq in H6.
+                      replace (Lim_seq XX) with (Lim_seq (fun n => XX n)).
+                      + rewrite H6.
+                        generalize (cond_pos C); intros.
+                        apply Rmult_gt_compat_r with (r := C) in d1_gt1; lra.
+                      + apply Lim_seq_ext.
+                        reflexivity.
+                    - intros.
+                      simpl.
+                      rv_unfold.
+                      ring.
+                  }
                
                cut (ps_P (event_le dom (rvlim X) C) <= ps_P (event_complement ev)).
                {
@@ -3640,7 +3644,7 @@ Section jaakola_vector2.
                apply ps_sub; intros ?; simpl.
                unfold pre_event_complement.
                intros ??.
-               specialize (H3 _ H5).
+               specialize (H4 _ H6).
                lra.
        Qed.
 
