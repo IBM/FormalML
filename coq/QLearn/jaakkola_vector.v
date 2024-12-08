@@ -3392,6 +3392,28 @@ Section jaakola_vector2.
        now ring.
    Qed.
 
+   Lemma l1_divergent_scale (a : nat -> R) (d : posreal) :
+     l1_divergent a ->
+     l1_divergent (fun n => d * (a n)).
+   Proof.
+     unfold l1_divergent.
+     intros.
+     apply is_lim_seq_spec in H.
+     apply is_lim_seq_spec.
+     intros ?.
+     specialize (H (M / d)).
+     revert H.
+     apply eventually_impl.
+     apply all_eventually.
+     intros.
+     rewrite <- sum_n_Rscal_l.
+     generalize (cond_pos d); intros.
+     apply Rmult_lt_compat_r with (r := d) in H; try lra.
+     unfold Rdiv in H.
+     rewrite Rmult_assoc in H.
+     rewrite Rinv_l in H; lra.
+  Qed.
+
       Lemma lemm3_counter_helper (α : nat -> Ts -> R) (d : posreal)
         (rvα : forall n, RandomVariable dom borel_sa (α n)) :
         (forall t ω, 0 <= α t ω <= 1) ->
@@ -3408,49 +3430,189 @@ Section jaakola_vector2.
            now apply rvscale_rv.
          - split.
            + intros.
-             specialize (H0 ω).
-             unfold l1_divergent in *.
-             apply is_lim_seq_spec in H0.
-             apply is_lim_seq_spec.
-             intros ?.
-             specialize (H0 (M / d)).
-             revert H0.
-             apply eventually_impl.
-             apply all_eventually.
-             intros.
-             unfold β, rvscale.
-             rewrite <- sum_n_Rscal_l.
-             generalize (cond_pos d); intros.
-             apply Rmult_lt_compat_r with (r := d) in H0; try lra.
-             unfold Rdiv in H0.
-             rewrite Rmult_assoc in H0.
-             rewrite Rinv_l in H0; lra.
+             now apply l1_divergent_scale.
            + intros.
              now apply IsFiniteExpectation_scale.
      Qed.
 
-       Lemma lemma3_counter (α : nat -> Ts -> R) (C : posreal)
-        (rvα : forall n, RandomVariable dom borel_sa (α n))
-        (isfeα : (forall t, IsFiniteExpectation prts (α t))) :
-        (forall t ω, 0 <= α t ω <= 1) ->
-        (forall ω, l1_divergent (fun n : nat => α n ω)) ->
-        
+       Lemma isfe_beta  (α : R) (d1 d2 : R) (ev : event dom) :
+         let β :=
+           rvplus
+             (rvscale (d1 * α)
+                (EventIndicator (classic_dec ev)))
+             (rvscale (d2 * α)
+                (EventIndicator (classic_dec (event_complement ev)))) in
+        IsFiniteExpectation prts β.
+      Proof.
+        intros.
+        apply IsFiniteExpectation_plus.
+        - apply rvscale_rv.
+          apply EventIndicator_rv.
+        - apply rvscale_rv.
+          apply EventIndicator_rv.
+        - apply IsFiniteExpectation_scale.
+          apply ProductSpace.indicator_isfe.
+        - apply IsFiniteExpectation_scale.
+          apply ProductSpace.indicator_isfe.
+       Qed.
+       
+       Lemma lemma3_counter (α : nat -> R) (C : posreal) :
+        (forall t, 0 <= α t < 1) ->
+        l1_divergent (fun n : nat => α n) ->
+        (forall p, 0 < p < 1 ->
+           exists (ev : event dom),
+             ps_P ev = p) ->
         exists (β X : nat -> Ts -> R),
         exists (isfeβ : forall t, IsFiniteExpectation prts (β t)), 
-        exists (rvX : forall n, RandomVariable dom borel_sa (X n)),
+        exists (rvX : forall t, RandomVariable dom borel_sa (X t)), 
           (forall n, RandomVariable dom borel_sa (β n)) /\
           (forall ω, l1_divergent (fun n : nat => β n ω)) /\
             (forall n, rv_eq (X (S n))
                          (rvplus 
-                            (rvmult
-                               (rvminus (const 1) (α n))
+                            (rvscale
+                               (1 - (α n))
                                (X n))
                             (rvscale C (β n)))) /\
-            (forall n, FiniteExpectation prts (β n) <= FiniteExpectation prts (α n)) /\
+            (forall n, FiniteExpectation prts (β n) <= FiniteExpectation prts (const (α n))) /\
             ps_P (event_le dom (rvlim X) C) < 1.
-      Proof.
+       Proof.
+         intros.
+         pose (d1 := 3/2).
+         pose (d2 := 1/2).
+         assert (d1_gt1: d1 > 1) by (compute; lra).
+         assert (d2_lt1: d2 < 1) by (compute; lra).
+         destruct (lemma3_counter_prob_choice d1 d2 d1_gt1 d2_lt1) as [p [??]].
+         specialize (H1 p H2).
+         destruct H1 as [ev ?].
+         pose (β := fun n =>
+                           rvplus
+                             (rvscale (d1 * (α n))
+                                (EventIndicator (classic_dec ev)))
+                             (rvscale (d2 * (α n))
+                                (EventIndicator (classic_dec (event_complement ev))))).
+         exists β.
+         pose (X := fix X n :=
+          match n with
+                | 0%nat => const (pos C)
+                | S n =>
+                    (rvplus 
+                       (rvscale
+                          (1 - (α n))
+                          (X n))
+                       (rvscale C (β n)))
+          end).
+         exists X.
+         exists (fun t => isfe_beta (α t) d1 d2 ev).
+         assert (rvb: forall t,
+                    RandomVariable dom borel_sa (β t)).                    
+         {
+           intros.
+           apply rvplus_rv.
+           - apply rvscale_rv.
+             apply EventIndicator_rv.
+           - apply rvscale_rv.
+             apply EventIndicator_rv.
+         }
+         assert (rvX: forall t,
+                    RandomVariable dom borel_sa (X t)).
+         {
+           intros.
+           induction t.
+           - simpl.
+             apply rvconst.
+           - simpl.
+             apply rvplus_rv.
+             + now apply rvscale_rv.
+             + now apply rvscale_rv.
+         }
+         exists rvX.
+         split; trivial.
+         split.
+         - intros.
+           unfold β.
+           assert (d1 > 0) by lra.
+           assert (d2 > 0) by (compute; lra).
+           generalize (l1_divergent_scale α (mkposreal _ H4) H0); intros.
+           generalize (l1_divergent_scale α (mkposreal _ H5) H0); intros.           
+           simpl in H6; simpl in H7.
+           
+           admit.
+         - split.
+           + intros.
+             reflexivity.
+           + split.
+             * intros.
+               unfold β.
+               erewrite FiniteExpectation_plus'.
+               erewrite FiniteExpectation_scale.
+               erewrite FiniteExpectation_scale.
+               erewrite FiniteExpectation_indicator.
+               erewrite FiniteExpectation_indicator.               
+               rewrite ps_complement.
+               rewrite FiniteExpectation_const.
+               right.
+               apply (f_equal (fun z => z * (α n))) in H3.
+               rewrite H1.
+               lra.
+               -- apply rvscale_rv.
+                  apply EventIndicator_rv.
+               -- apply rvscale_rv.
+                  apply EventIndicator_rv.
+               -- apply rvplus_rv.
+                  ++ apply rvscale_rv.
+                     apply EventIndicator_rv.         
+                  ++ apply rvscale_rv.
+                     apply EventIndicator_rv.         
+             * assert (forall ω, ev ω -> (rvlim X ω) > C).
+               {
+                 intros.
+                 unfold rvlim.
+                 pose (XX := fix XX (n : nat) : R :=
+                             match n with
+                             | 0%nat => pos C
+                             | S n0 => (1 - α n0) * (XX n0) 
+                                                      + (C * d1 * (α n0))
+                             end : R).
+                 assert (forall n,
+                            X n ω = XX n).
+                 {
+                   intros.
+                   induction n.
+                   - now simpl.
+                   - simpl.
+                     rv_unfold.
+                     rewrite IHn.
+                     f_equal.
+                     rewrite Rmult_assoc.
+                     f_equal.
+                     unfold β.
+                     admit.
+                }
+                rewrite (Lim_seq_ext _ _ H5).
+                 generalize (lemma3_helper_iter_conv  XX α (d1 * C) H H0); intros.
+                 cut_to H6.
+                 - apply is_lim_seq_unique in H6.
+                   assert (is_finite (Lim_seq (fun n : nat => XX n))).
+                   {
+                     rewrite H6.
+                     now simpl.
+                   }
+                   rewrite <- H7 in H6.
+                   rewrite Rbar_finite_eq in H6.
+                   replace (Lim_seq XX) with (Lim_seq (fun n => XX n)).
+                   + rewrite H6.
+                     generalize (cond_pos C); intros.
+                     apply Rmult_gt_compat_r with (r := C) in d1_gt1; lra.
+                   + apply Lim_seq_ext.
+                     reflexivity.
+               - intros.
+                 simpl.
+                 rv_unfold.
+                 ring.
+             }
+             
+             admit.
       Admitted.
-
 
       Lemma vecrvclip_max_bound (rvec : Ts -> vector R (S N)) (C : posreal) :
         forall a,
