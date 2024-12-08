@@ -3479,7 +3479,11 @@ Section jaakola_vector2.
          pose (d2 := 0.5).
          assert (d1_gt1: d1 > 1) by (compute; lra).
          assert (d2_lt1: d2 < 1) by (compute; lra).
+         pose (p := 0.5).
+         assert(p * d1 + (1-p)*d2 <= 1) by (compute; lra).
+         (*
          destruct (lemma3_counter_prob_choice d1 d2 d1_gt1 d2_lt1) as [p [??]].
+         *)
          destruct H1 as [ev ?].
          pose (β := fun n =>
                            rvplus
@@ -3529,16 +3533,16 @@ Section jaakola_vector2.
            unfold β.
            assert (d1 > 0) by lra.
            assert (d2 > 0) by (compute; lra).
-           generalize (l1_divergent_scale α (mkposreal _ H4) H0); intros.
-           generalize (l1_divergent_scale α (mkposreal _ H5) H0); intros.           
-           simpl in H6; simpl in H7.
+           generalize (l1_divergent_scale α (mkposreal _ H3) H0); intros.
+           generalize (l1_divergent_scale α (mkposreal _ H4) H0); intros.           
+           simpl in H5; simpl in H6.
            unfold rvplus, rvscale, EventIndicator, event_complement, pre_event_complement; simpl.
            repeat match_destr; try tauto.
-           + revert H6.
+           + revert H5.
              apply is_lim_seq_ext; intros ?.
              apply sum_n_ext; intros ?.
              lra.
-           + revert H7.
+           + revert H6.
              apply is_lim_seq_ext; intros ?.
              apply sum_n_ext; intros ?.
              lra.
@@ -3555,10 +3559,20 @@ Section jaakola_vector2.
                erewrite FiniteExpectation_indicator.               
                rewrite ps_complement.
                rewrite FiniteExpectation_const.
-               right.
-               apply (f_equal (fun z => z * (α n))) in H3.
-               rewrite H1.
-               lra.
+               assert (ps_P ev*d1 + (1 - ps_P ev)*d2 <= 1).
+               {
+                 eapply Rle_trans; cycle 1.
+                 apply H2.
+                 replace (ps_P ev * d1 + (1 - ps_P ev) * d2) with
+                   (d2 + (ps_P ev)* ( d1 - d2)) by lra.
+                 replace (p * d1 + (1 - p) * d2) with
+                   (d2 + p * ( d1 - d2)) by lra.
+                 apply Rplus_le_compat_l.
+                 apply Rmult_le_compat_r; try lra.
+                 now unfold p.
+              }
+              apply Rmult_le_compat_l with (r := α n) in H3; try lra.
+              apply H.
                -- apply rvscale_rv.
                   apply EventIndicator_rv.
                -- apply rvscale_rv.
@@ -3595,19 +3609,19 @@ Section jaakola_vector2.
                      repeat match_destr; try tauto.
                      lra.
                 }
-                rewrite (Lim_seq_ext _ _ H5).
+                rewrite (Lim_seq_ext _ _ H4).
                  generalize (lemma3_helper_iter_conv  XX α (d1 * C) H H0); intros.
-                 cut_to H6.
-                 - apply is_lim_seq_unique in H6.
+                 cut_to H5.
+                 - apply is_lim_seq_unique in H5.
                    assert (is_finite (Lim_seq (fun n : nat => XX n))).
                    {
-                     rewrite H6.
+                     rewrite H5.
                      now simpl.
                    }
-                   rewrite <- H7 in H6.
-                   rewrite Rbar_finite_eq in H6.
+                   rewrite <- H6 in H5.
+                   rewrite Rbar_finite_eq in H5.
                    replace (Lim_seq XX) with (Lim_seq (fun n => XX n)).
-                   + rewrite H6.
+                   + rewrite H5.
                      generalize (cond_pos C); intros.
                      apply Rmult_gt_compat_r with (r := C) in d1_gt1; lra.
                    + apply Lim_seq_ext.
