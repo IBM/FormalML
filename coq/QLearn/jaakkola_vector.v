@@ -3429,18 +3429,17 @@ Section jaakola_vector2.
              now apply IsFiniteExpectation_scale.
      Qed.
 
-(*
-      Lemma lemma3_counter (α : nat -> Ts -> R) (C : posreal)
-        (rvα : forall n, RandomVariable dom borel_sa (α n)) :
+       Lemma lemma3_counter (α : nat -> Ts -> R) (C : posreal)
+        (rvα : forall n, RandomVariable dom borel_sa (α n))
+        (isfeα : (forall t, IsFiniteExpectation prts (α t))) :
         (forall t ω, 0 <= α t ω <= 1) ->
         (forall ω, l1_divergent (fun n : nat => α n ω)) ->
-        (forall t, IsFiniteExpectation prts (α t)) ->
         
         exists (β X : nat -> Ts -> R),
+        exists (isfeβ : forall t, IsFiniteExpectation prts (β t)), 
+        exists (rvX : forall n, RandomVariable dom borel_sa (X n)),
           (forall n, RandomVariable dom borel_sa (β n)) /\
           (forall ω, l1_divergent (fun n : nat => β n ω)) /\
-          (forall t, IsFiniteExpectation prts (β t)) /\
-            (forall n, RandomVariable dom borel_sa (X n)) /\
             (forall n, rv_eq (X (S n))
                          (rvplus 
                             (rvmult
@@ -3449,7 +3448,9 @@ Section jaakola_vector2.
                             (rvscale C (β n)))) /\
             (forall n, FiniteExpectation prts (β n) <= FiniteExpectation prts (α n)) /\
             ps_P (event_le dom (rvlim X) C) < 1.
-*)
+      Proof.
+      Admitted.
+
 
       Lemma vecrvclip_max_bound (rvec : Ts -> vector R (S N)) (C : posreal) :
         forall a,
