@@ -3381,6 +3381,54 @@ Section jaakola_vector2.
           apply Rdiv_diag; lra.
       Qed.
 
+   Lemma sum_n_Rscal_l (f : nat -> R) (c:R)  (n : nat):
+     c * (sum_n f n)  = (sum_n (fun k => c * (f k)) n).
+   Proof.
+     induction n.
+     - now do 2 rewrite sum_O.
+     - do 2 rewrite sum_Sn.
+       rewrite <- IHn.
+       unfold plus; simpl.
+       now ring.
+   Qed.
+
+      Lemma lemm3_counter_helper (α : nat -> Ts -> R) (d : posreal)
+        (rvα : forall n, RandomVariable dom borel_sa (α n)) :
+        (forall t ω, 0 <= α t ω <= 1) ->
+        (forall ω, l1_divergent (fun n : nat => α n ω)) ->
+        (forall t, IsFiniteExpectation prts (α t)) ->
+        let β := fun t => rvscale d (α t) in
+        (forall n, RandomVariable dom borel_sa (β n)) /\
+          (forall ω, l1_divergent (fun n : nat => β n ω)) /\
+          (forall t, IsFiniteExpectation prts (β t)).
+       Proof.
+         intros.
+         split.
+         - intros.
+           now apply rvscale_rv.
+         - split.
+           + intros.
+             specialize (H0 ω).
+             unfold l1_divergent in *.
+             apply is_lim_seq_spec in H0.
+             apply is_lim_seq_spec.
+             intros ?.
+             specialize (H0 (M / d)).
+             revert H0.
+             apply eventually_impl.
+             apply all_eventually.
+             intros.
+             unfold β, rvscale.
+             rewrite <- sum_n_Rscal_l.
+             generalize (cond_pos d); intros.
+             apply Rmult_lt_compat_r with (r := d) in H0; try lra.
+             unfold Rdiv in H0.
+             rewrite Rmult_assoc in H0.
+             rewrite Rinv_l in H0; lra.
+           + intros.
+             now apply IsFiniteExpectation_scale.
+     Qed.
+
 (*
       Lemma lemma3_counter (α : nat -> Ts -> R) (C : posreal)
         (rvα : forall n, RandomVariable dom borel_sa (α n)) :
@@ -3390,7 +3438,7 @@ Section jaakola_vector2.
         
         exists (β X : nat -> Ts -> R),
           (forall n, RandomVariable dom borel_sa (β n)) /\
-          (forall ω, l1_divergent (fun n : nat => β n ω)) ->
+          (forall ω, l1_divergent (fun n : nat => β n ω)) /\
           (forall t, IsFiniteExpectation prts (β t)) /\
             (forall n, RandomVariable dom borel_sa (X n)) /\
             (forall n, rv_eq (X (S n))
