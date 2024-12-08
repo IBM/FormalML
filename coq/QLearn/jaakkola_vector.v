@@ -3379,7 +3379,29 @@ Section jaakola_vector2.
           + rewrite <- Rdiv_lt_1; lra.
         - field_simplify; try lra.
           apply Rdiv_diag; lra.
-     Qed.
+      Qed.
+
+(*
+      Lemma lemma3_counter (α : nat -> Ts -> R) (C : posreal)
+        (rvα : forall n, RandomVariable dom borel_sa (α n)) :
+        (forall t ω, 0 <= α t ω <= 1) ->
+        (forall ω, l1_divergent (fun n : nat => α n ω)) ->
+        (forall t, IsFiniteExpectation prts (α t)) ->
+        
+        exists (β X : nat -> Ts -> R),
+          (forall n, RandomVariable dom borel_sa (β n)) /\
+          (forall ω, l1_divergent (fun n : nat => β n ω)) ->
+          (forall t, IsFiniteExpectation prts (β t)) /\
+            (forall n, RandomVariable dom borel_sa (X n)) /\
+            (forall n, rv_eq (X (S n))
+                         (rvplus 
+                            (rvmult
+                               (rvminus (const 1) (α n))
+                               (X n))
+                            (rvscale C (β n)))) /\
+            (forall n, FiniteExpectation prts (β n) <= FiniteExpectation prts (α n)) /\
+            ps_P (event_le dom (rvlim X) C) < 1.
+*)
 
       Lemma vecrvclip_max_bound (rvec : Ts -> vector R (S N)) (C : posreal) :
         forall a,
