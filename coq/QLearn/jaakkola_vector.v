@@ -3632,9 +3632,17 @@ Section jaakola_vector2.
                  ring.
                }
                
-             
-             admit.
-      Admitted.
+               cut (ps_P (event_le dom (rvlim X) C) <= ps_P (event_complement ev)).
+               {
+                 rewrite ps_complement.
+                 lra.
+               } 
+               apply ps_sub; intros ?; simpl.
+               unfold pre_event_complement.
+               intros ??.
+               specialize (H3 _ H5).
+               lra.
+       Qed.
 
       Lemma vecrvclip_max_bound (rvec : Ts -> vector R (S N)) (C : posreal) :
         forall a,
