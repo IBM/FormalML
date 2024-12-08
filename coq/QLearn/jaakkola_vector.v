@@ -3648,6 +3648,23 @@ Section jaakola_vector2.
                lra.
        Qed.
 
+       Lemma not01_ex05 : (~ forall (e : event dom), ps_P e = 0 \/ ps_P e = 1) -> (exists (ev : event dom), 0 < ps_P ev <= 0.5).
+       Proof.
+         intros HH.
+         apply not_all_ex_not in HH.
+         destruct HH as [e nprob].
+         apply not_or_and in nprob.
+         destruct (Rle_dec (ps_P e) 0.5).
+         - exists e; generalize (ps_pos e); lra.
+         - exists (event_complement e).
+           split.
+           + destruct (ps_pos (event_complement e)); trivial.
+             rewrite ps_complement in H.
+             lra.
+           + rewrite ps_complement.
+             lra.
+       Qed.
+       
       Lemma vecrvclip_max_bound (rvec : Ts -> vector R (S N)) (C : posreal) :
         forall a,
           Rvector_max_abs (vecrvclip (S N) rvec (pos_to_nneg C) a) <= C.
