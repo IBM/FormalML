@@ -3459,7 +3459,7 @@ Section jaakola_vector2.
        Lemma lemma3_counter (α : nat -> R) (C : posreal) :
         (forall t, 0 <= α t < 1) ->
         l1_divergent (fun n : nat => α n) ->
-        (exists (ev : event dom), ps_P ev <= 0.5) ->
+        (exists (ev : event dom), 0 < ps_P ev <= 0.5) ->
         exists (β X : nat -> Ts -> R),
         exists (isfeβ : forall t, IsFiniteExpectation prts (β t)), 
         exists (rvX : forall t, RandomVariable dom borel_sa (X t)), 
