@@ -3367,6 +3367,20 @@ Section jaakola_vector2.
           apply H10.
       Qed.
 
+      Lemma lemma3_counter_prob_choice (d1 d2 : R) :
+        d1 > 1 ->
+        d2 < 1 ->
+        exists p, 0 < p < 1 /\ p * d1 + (1-p)*d2 = 1.
+      Proof.
+        exists ((1-d2)/(d1-d2)).
+        split.
+        - split.
+          + apply Rdiv_lt_0_compat; lra.
+          + rewrite <- Rdiv_lt_1; lra.
+        - field_simplify; try lra.
+          apply Rdiv_diag; lra.
+     Qed.
+
       Lemma vecrvclip_max_bound (rvec : Ts -> vector R (S N)) (C : posreal) :
         forall a,
           Rvector_max_abs (vecrvclip (S N) rvec (pos_to_nneg C) a) <= C.
@@ -7044,7 +7058,7 @@ Proof.
                   ((FiniteConditionalVariance_new prts (filt_sub k) (vecrvnth i pf (XF k)) (rv := vecrvnth_rv i pf (XF k) (rv := vec_rvXF_I filt_sub XF k))) ω)
                     <=  (C * (1 + scaled_norm(X k ω) W)^2)))) ->        
 
-    (**r X (k + 1) = (1 - α_κ) * Χ (k) + β_k * XF (k) *)
+    (**r X (k + 1) = (1 - α_κ) * Χ (k) + β_k * XF (k) defined componentwise *)
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
 
