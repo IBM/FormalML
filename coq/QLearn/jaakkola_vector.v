@@ -3459,9 +3459,7 @@ Section jaakola_vector2.
        Lemma lemma3_counter (α : nat -> R) (C : posreal) :
         (forall t, 0 <= α t < 1) ->
         l1_divergent (fun n : nat => α n) ->
-        (forall p, 0 < p < 1 ->
-           exists (ev : event dom),
-             ps_P ev = p) ->
+        (exists (ev : event dom), ps_P ev <= 0.5) ->
         exists (β X : nat -> Ts -> R),
         exists (isfeβ : forall t, IsFiniteExpectation prts (β t)), 
         exists (rvX : forall t, RandomVariable dom borel_sa (X t)), 
@@ -3477,12 +3475,11 @@ Section jaakola_vector2.
             ps_P (event_le dom (rvlim X) C) < 1.
        Proof.
          intros.
-         pose (d1 := 3/2).
-         pose (d2 := 1/2).
+         pose (d1 := 1.5).
+         pose (d2 := 0.5).
          assert (d1_gt1: d1 > 1) by (compute; lra).
          assert (d2_lt1: d2 < 1) by (compute; lra).
          destruct (lemma3_counter_prob_choice d1 d2 d1_gt1 d2_lt1) as [p [??]].
-         specialize (H1 p H2).
          destruct H1 as [ev ?].
          pose (β := fun n =>
                            rvplus
@@ -3535,8 +3532,16 @@ Section jaakola_vector2.
            generalize (l1_divergent_scale α (mkposreal _ H4) H0); intros.
            generalize (l1_divergent_scale α (mkposreal _ H5) H0); intros.           
            simpl in H6; simpl in H7.
-           
-           admit.
+           unfold rvplus, rvscale, EventIndicator, event_complement, pre_event_complement; simpl.
+           repeat match_destr; try tauto.
+           + revert H6.
+             apply is_lim_seq_ext; intros ?.
+             apply sum_n_ext; intros ?.
+             lra.
+           + revert H7.
+             apply is_lim_seq_ext; intros ?.
+             apply sum_n_ext; intros ?.
+             lra.
          - split.
            + intros.
              reflexivity.
@@ -3586,7 +3591,9 @@ Section jaakola_vector2.
                      rewrite Rmult_assoc.
                      f_equal.
                      unfold β.
-                     admit.
+                     unfold event_complement, pre_event_complement; simpl.
+                     repeat match_destr; try tauto.
+                     lra.
                 }
                 rewrite (Lim_seq_ext _ _ H5).
                  generalize (lemma3_helper_iter_conv  XX α (d1 * C) H H0); intros.
@@ -3609,7 +3616,8 @@ Section jaakola_vector2.
                  simpl.
                  rv_unfold.
                  ring.
-             }
+               }
+               
              
              admit.
       Admitted.
