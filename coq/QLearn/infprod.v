@@ -1426,6 +1426,33 @@ Proof.
     apply Rinv_0_lt_compat; apply cond_pos.    
 Qed.
 
+Lemma genharmonic_series_sq0 (c : posreal) :
+  ex_series (fun n => Rsqr (/ (c * INR (S n)))).
+Proof.
+  generalize sum_inv_sqr_bounded; intros.
+  unfold ex_finite_lim_seq in H.
+  destruct H.
+  apply (ex_series_ext (fun n => Rsqr (/ c) * Rsqr (/ INR (S n)))).
+  + intros.
+    rewrite Rinv_mult_distr.
+    * now rewrite Rsqr_mult.
+    * apply Rgt_not_eq; apply cond_pos.
+    * apply Rgt_not_eq.
+      apply RealAdd.INR_zero_lt; lia.
+  + apply (@ex_series_scal R_AbsRing).
+    unfold ex_series.
+    exists x.
+    apply is_series_Reals.
+    apply infinite_sum_is_lim_seq.
+    apply (is_lim_seq_ext (fun n : nat => sum_f_R0 (fun i : nat => 1 / (INR i + 1)²) n)); trivial; intros.
+    apply sum_f_R0_ext; intros.
+    unfold Rdiv.
+    rewrite  Rmult_1_l.
+    rewrite Rsqr_inv.
+    * now rewrite S_INR.
+    * apply not_0_INR; lia.
+Qed.
+
 Lemma genharmonic_series_sq (b c : posreal) :
   ex_series (fun n => Rsqr (/ (b + c * INR (S n)))).
 Proof.
@@ -1441,29 +1468,8 @@ Proof.
         apply H0.
       * apply Rle_ge.
         apply Rle_0_sqr.
-  - generalize sum_inv_sqr_bounded; intros.
-    unfold ex_finite_lim_seq in H.
-    destruct H.
-    apply (ex_series_ext (fun n => Rsqr (/ c) * Rsqr (/ INR (S n)))).
-    + intros.
-      rewrite Rinv_mult_distr.
-      * now rewrite Rsqr_mult.
-      * apply Rgt_not_eq; apply cond_pos.
-      * apply Rgt_not_eq.
-        apply RealAdd.INR_zero_lt; lia.
-    + apply (@ex_series_scal R_AbsRing).
-      unfold ex_series.
-      exists x.
-      apply is_series_Reals.
-      apply infinite_sum_is_lim_seq.
-      apply (is_lim_seq_ext (fun n : nat => sum_f_R0 (fun i : nat => 1 / (INR i + 1)²) n)); trivial; intros.
-      apply sum_f_R0_ext; intros.
-      unfold Rdiv.
-      rewrite  Rmult_1_l.
-      rewrite Rsqr_inv.
-      * now rewrite S_INR.
-      * apply not_0_INR; lia.
-Qed.
+  - apply genharmonic_series_sq0.
+ Qed.
 
 Lemma genharmonic_sq_lim (b c : posreal) :
   is_lim_seq (fun n => Rsqr (/ (b + c * INR (S n)))) 0.

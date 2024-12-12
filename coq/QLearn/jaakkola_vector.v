@@ -3432,10 +3432,46 @@ Section jaakola_vector2.
           apply ProductSpace.indicator_isfe.
         - apply IsFiniteExpectation_scale.
           apply ProductSpace.indicator_isfe.
-       Qed.
-       
-       Lemma lemma3_counter (α : nat -> R) (C : posreal) :
-        (forall t, 0 <= α t < 1) ->
+      Qed.
+
+      Lemma lemm3_counter_alpha :
+        let α := fun n => / INR (S n) in
+        (forall t, 0 <= α t <= 1) /\
+        l1_divergent (fun n : nat => α n) /\
+          ex_series (fun n : nat => Rsqr (α n)).
+      Proof.
+        split.
+        - intros.
+          split.
+          + left.
+            apply Rinv_0_lt_compat.
+            apply lt_0_INR.
+            lia.
+          + replace 1 with (/ 1) by lra.
+            apply Rinv_le_contravar; try lra.
+            rewrite <- INR_1.
+            apply le_INR.
+            lia.
+        - split.
+          + unfold l1_divergent.
+            generalize harmonic_series; intros.
+            apply is_lim_seq_incr_1 in H.
+            revert H.
+            apply is_lim_seq_ext.
+            intros.
+            rewrite <- sum_f_R0_sum_f_R0', <- sum_n_Reals.
+            apply sum_n_ext.
+            intros.
+            lra.
+          + generalize (genharmonic_series_sq0 (mkposreal _ Rlt_0_1)).
+            apply ex_series_ext.
+            intros.
+            f_equal; f_equal.
+            simpl; lra.
+       Qed.              
+
+      Lemma lemma3_counter_example (α : nat -> R) (C : posreal) :
+        (forall t, 0 <= α t <= 1) ->
         l1_divergent (fun n : nat => α n) ->
         ex_series (fun n : nat => Rsqr (α n)) ->        
         (exists (ev : event dom), 0 < ps_P ev <= 0.5) ->
@@ -3462,9 +3498,6 @@ Section jaakola_vector2.
          assert (d2_lt1: d2 < 1) by (compute; lra).
          pose (p := 0.5).
          assert(p * d1 + (1-p)*d2 <= 1) by (compute; lra).
-         (*
-         destruct (lemma3_counter_prob_choice d1 d2 d1_gt1 d2_lt1) as [p [??]].
-         *)
          destruct H2 as [ev ?].
          pose (β := fun n =>
                            rvplus
@@ -3614,7 +3647,7 @@ Section jaakola_vector2.
                         lra.
                     }
                     rewrite (Lim_seq_ext _ _ H5).
-                    generalize (lemma3_helper_iter_conv  XX α (d1 * C) H H0); intros.
+                    generalize (lemma3_helper_iter_conv2  XX α (d1 * C) H H0); intros.
                     cut_to H6.
                     - apply is_lim_seq_unique in H6.
                       assert (is_finite (Lim_seq (fun n : nat => XX n))).
