@@ -1382,6 +1382,15 @@ Proof.
     apply cond_pos.
 Qed.
 
+Lemma inv_bound_ge (a : posreal) (b : nonnegreal) :
+  / a  >= / (a + b).
+Proof.
+  apply Rle_ge.
+  generalize (cond_pos a); intros.
+  generalize (cond_nonneg b); intros.
+  apply Rinv_le_contravar; lra.
+Qed.
+
 Lemma inv_bound_sq_gt (a b : posreal) :
   Rsqr (/ a)  > Rsqr (/ (a + b)).
 Proof.
@@ -1392,6 +1401,21 @@ Proof.
     apply Rplus_lt_0_compat; apply cond_pos.    
   + left.
     apply Rinv_0_lt_compat; apply cond_pos.
+Qed.
+
+Lemma inv_bound_sq_ge (a : posreal) (b : nonnegreal) :
+  Rsqr (/ a)  >= Rsqr (/ (a + b)).
+Proof.
+  generalize (cond_pos a); intros.
+  generalize (cond_nonneg b); intros.
+  apply Rle_ge.
+  apply Rsqr_incr_1.
+  + apply Rge_le.
+    apply inv_bound_ge.
+  + left.
+    apply Rinv_0_lt_compat; lra.
+  + left.
+    apply Rinv_0_lt_compat; lra.
 Qed.
 
 Lemma inv_bound_exists_lt  (a b : posreal) :
@@ -1471,11 +1495,35 @@ Proof.
   - apply genharmonic_series_sq0.
  Qed.
 
+Lemma genharmonic_series_sq' (b : nonnegreal) (c : posreal) :
+  ex_series (fun n => Rsqr (/ (b + c * INR (S n)))).
+Proof.
+  apply (@ex_series_le R_AbsRing) with (b := fun n => Rsqr ( / (c * INR (S n)))).
+  - intros.
+    assert (0 < c * INR (S n)).    
+    + apply Rmult_lt_0_compat; [apply cond_pos | ].
+      apply lt_0_INR; lia.
+    + rewrite Rabs_right.
+      * apply Rge_le.
+        rewrite Rplus_comm.
+        apply (inv_bound_sq_ge (mkposreal _ H) b).
+      * apply Rle_ge.
+        apply Rle_0_sqr.
+  - apply genharmonic_series_sq0.
+ Qed.
+
 Lemma genharmonic_sq_lim (b c : posreal) :
   is_lim_seq (fun n => Rsqr (/ (b + c * INR (S n)))) 0.
 Proof.  
   apply ex_series_lim_0.
   apply genharmonic_series_sq.
+Qed.
+
+Lemma genharmonic_sq_lim' (b : nonnegreal) (c : posreal) :
+  is_lim_seq (fun n => Rsqr (/ (b + c * INR (S n)))) 0.
+Proof.  
+  apply ex_series_lim_0.
+  apply genharmonic_series_sq'.
 Qed.
 
 Lemma harmonic_increasing :
