@@ -1377,9 +1377,7 @@ Proof.
   - apply Rmult_lt_0_compat.
     + apply cond_pos.
     + apply Rplus_lt_0_compat; apply cond_pos.
-  - replace (pos a) with (a + 0) at 1 by lra.
-    apply Rplus_lt_compat_l.
-    apply cond_pos.
+  - generalize (cond_pos b); lra.
 Qed.
 
 Lemma inv_bound_ge (a : posreal) (b : nonnegreal) :
@@ -1387,7 +1385,7 @@ Lemma inv_bound_ge (a : posreal) (b : nonnegreal) :
 Proof.
   apply Rle_ge.
   generalize (cond_pos a); intros.
-  generalize (cond_nonneg b); intros.
+  generalize (cond_nonneg b); intros. 
   apply Rinv_le_contravar; lra.
 Qed.
 
