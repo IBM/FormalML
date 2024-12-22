@@ -1070,6 +1070,20 @@ Section combining.
 
 End combining.
 
+Lemma fst_split {A B:Type} (l:list (A*B)) : fst (List.split l) = map fst l.
+Proof.
+  induction l; simpl; trivial.
+  destruct a; destruct (List.split l); simpl in *.
+  congruence.
+Qed.
+
+Lemma snd_split {A B:Type} (l:list (A*B)) : snd (List.split l) = map snd l.
+Proof.
+  induction l; simpl; trivial.
+  destruct a; destruct (List.split l); simpl in *.
+  congruence.
+Qed.
+
 Definition adjacent_pairs {A:Type} (l:list A) := (combine l (tl l)).
 
 Definition adjacent_pairs_alt {A:Type} (l:list A) := (combine (removelast l) (tl l)).

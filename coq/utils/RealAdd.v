@@ -4106,6 +4106,27 @@ Proof.
   now apply Rle_max_compat_l.
 Qed.
 
+Lemma max_min_list_s (l : list (R * R)) : l <> nil ->
+ let '(l1, l2) := split l in
+  Rabs ((Rmin_list l1) - (Rmin_list l2)) <=
+    Rmax_list (map (fun '(x,y) => Rabs(x - y)) l).
+Proof.
+  generalize (max_min_list l).
+  rewrite <- fst_split, <- snd_split.
+  destruct (split l); trivial.
+Qed.
+
+Lemma max_min_list2 (l1 l2 : list R) : l1 <> nil -> length l1 = length l2 ->
+  Rabs ((Rmin_list l1) - (Rmin_list l2)) <=
+    Rmax_list (map (fun '(x,y) => Rabs(x - y)) (combine l1 l2)).
+Proof.
+  intros nnil eqlen.
+  generalize (max_min_list_s (combine l1 l2)).
+  rewrite combine_split; trivial; intros HH.
+  rewrite HH; [reflexivity |].
+  destruct l1; destruct l2; simpl in *; congruence.
+Qed.
+
 End Rmax_list.
 
 Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50) : rmax_scope.
