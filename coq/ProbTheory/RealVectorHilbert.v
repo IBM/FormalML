@@ -63,6 +63,12 @@ Section Rvector_defs.
   Definition Rvector_max_sqr (x:vector R n) : R 
     := vector_fold_left Rmax (Rvector_sqr x) 0.
 
+  Definition Rvector_max (x:vector R (S n)) : R 
+    := Rmax_list (proj1_sig x).
+
+  Definition Rvector_min (x:vector R (S n)) : R 
+    := Rmin_list (proj1_sig x).
+
   Notation "x ²" := (Rvector_sqr x) (at level 1) : Rvector_scope.
 
   Program Definition Rvector_sum (v:vector R n) : R
@@ -1451,6 +1457,76 @@ Section more_lemmas.
     rewrite Rabs_m1.
     lra.
   Qed.
+
+    Lemma Rvector_max_spec {n} (v : vector R (S n)) :
+      forall i pf,
+        vector_nth i pf v <= Rvector_max v.
+   Proof.
+     intros.
+     apply Rmax_spec.
+     apply vector_nth_In.
+   Qed.
+
+  Lemma Rvector_min_spec {n} (v : vector R (S n)) :
+      forall i pf,
+        vector_nth i pf v >= Rvector_min v.
+   Proof.
+     intros.
+     apply Rmin_spec.
+     apply vector_nth_In.
+   Qed.
+
+  Lemma Rvector_max_in {n} (v:vector R (S n)) :
+    In (Rvector_max v) (proj1_sig v).
+  Proof.
+    unfold Rvector_max.
+    apply Rmax_list_In.
+    destruct v; simpl.
+    destruct x; simpl; try discriminate.
+  Qed.
+
+  Lemma Rvector_min_in {n} (v:vector R (S n)) :
+    In (Rvector_min v) (proj1_sig v).
+  Proof.
+    unfold Rvector_min.
+    apply Rmin_list_In.
+    destruct v; simpl.
+    destruct x; simpl; try discriminate.
+  Qed.
+
+  Lemma Rvector_max_nth_in {n} (v:vector R (S n)) :
+    exists i pf, Rvector_max v = vector_nth i pf v.
+  Proof.
+    generalize (Rvector_max_in v)
+    ; intros HH.
+    apply In_vector_nth_ex in HH.
+    destruct HH as [?[? eqq]].
+    symmetry in eqq.
+    eauto.
+  Qed.
+
+  Lemma Rvector_min_nth_in {n} (v:vector R (S n)) :
+    exists i pf, Rvector_min v = vector_nth i pf v.
+  Proof.
+    generalize (Rvector_min_in v)
+    ; intros HH.
+    apply In_vector_nth_ex in HH.
+    destruct HH as [?[? eqq]].
+    symmetry in eqq.
+    eauto.
+  Qed.
+
+  Lemma vector_max_min {n} (l1 l2 : vector R (S n)) : 
+    Rabs ((Rvector_min l1) - (Rvector_min l2)) <=
+      Rvector_max (vector_map (fun '(x,y) => Rabs(x - y)) (vector_zip l1 l2)).
+  Proof.
+    unfold Rvector_min, Rvector_max.
+    destruct l1; destruct l2; simpl.
+    apply max_min_list2.
+    - destruct x; simpl in *; congruence.
+    - congruence.
+  Qed.
+
 
 End more_lemmas.
 
