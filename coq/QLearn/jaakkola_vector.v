@@ -29,15 +29,23 @@ Lemma vector_max_min {N : nat} (l1 l2 : vector R (S N)) :
     Rvector_max (vector_map (fun '(x,y) => Rabs(x - y)) (vector_zip l1 l2)).
 Proof.
   generalize (max_min_list (proj1_sig (vector_zip l1 l2))); intros.
-  
+  assert (fstzip: map fst (` (vector_zip l1 l2)) = `l1).
+  {
+    simpl.
+    
+    admit.
+  }
+  assert (sndzip: map snd (` (vector_zip l1 l2)) = `l2).
+  {
+    admit.
+  }
   assert (Rvector_min l1 = Rmin_list (map fst (` (vector_zip l1 l2)))).
   {
-    unfold Rvector_min.
-    admit.
+    now rewrite fstzip.
   }
   assert (Rvector_min l2 = Rmin_list (map snd (` (vector_zip l1 l2)))).
   {
-    admit.
+    now rewrite sndzip.
   }
   rewrite H0, H1.
   eapply Rle_trans.
