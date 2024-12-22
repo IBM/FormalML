@@ -17,6 +17,42 @@ Require Import RelationClasses.
 
 Set Bullet Behavior "Strict Subproofs".
 
+
+  Definition Rvector_max {n} (x:vector R (S n)) : R 
+    := Rmax_list (proj1_sig x).
+
+  Definition Rvector_min {n} (x:vector R (S n)) : R 
+    := Rmin_list (proj1_sig x).
+
+Lemma vector_max_min {N : nat} (l1 l2 : vector R (S N)) : 
+  Rabs ((Rvector_min l1) - (Rvector_min l2)) <=
+    Rvector_max (vector_map (fun '(x,y) => Rabs(x - y)) (vector_zip l1 l2)).
+Proof.
+  generalize (max_min_list (proj1_sig (vector_zip l1 l2))); intros.
+  
+  assert (Rvector_min l1 = Rmin_list (map fst (` (vector_zip l1 l2)))).
+  {
+    unfold Rvector_min.
+    admit.
+  }
+  assert (Rvector_min l2 = Rmin_list (map snd (` (vector_zip l1 l2)))).
+  {
+    admit.
+  }
+  rewrite H0, H1.
+  eapply Rle_trans.
+  apply H.
+  - simpl.
+    generalize (DVector.vector_zip_obligation_1 _ _ _ l1 l2); intros.
+    intros ?.
+    apply (f_equal (fun x => length x)) in H3.
+    rewrite H2 in H3.
+    simpl in H3.
+    lia.
+  - right.
+    now simpl.
+  Admitted.
+
 Section jaakola_vector1.
   
 Context {Ts : Type} {SS:Type} (N:nat)
