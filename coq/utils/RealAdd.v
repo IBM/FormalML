@@ -4061,6 +4061,51 @@ Section Rmax_list.
        now repeat rewrite Rabs_Rabsolu.
    Qed.
 
+Lemma max_min2 (a1 a2 b1 b2 : R) :
+  Rabs ((Rmin a1 a2) - (Rmin b1 b2)) <=
+    Rmax (Rabs (a1 - b1)) (Rabs (a2 - b2)).
+Proof.
+   unfold Rmin; match_destr; match_destr.
+  - apply Rmax_l.
+  - unfold Rmax, Rabs; match_destr; match_destr.
+    + repeat match_destr_in r1; lra.
+    + repeat match_destr_in n0; lra.
+    + repeat match_destr_in r1; lra.
+    + repeat match_destr_in n0; lra.
+  - unfold Rmax, Rabs; match_destr; match_destr.
+    + repeat match_destr_in r1; lra.
+    + repeat match_destr_in n0; lra.
+    + repeat match_destr_in r1; lra.
+    + repeat match_destr_in n0; lra.
+  - apply Rmax_r.
+Qed.
+
+Lemma max_min_list (l : list (R * R)) : l <> nil ->
+  let l1 := map fst l in
+  let l2 := map snd l in
+  Rabs ((Rmin_list l1) - (Rmin_list l2)) <=
+    Rmax_list (map (fun '(x,y) => Rabs(x - y)) l).
+Proof.
+  simpl.
+  induction l; simpl; [congruence | intros _].
+  destruct a as [x y].
+  destruct l; [reflexivity |].
+  simpl map; cbv match.
+                      cut_to IHl; [| congruence].  
+  repeat rewrite map_cons in IHl.
+  
+  revert IHl.
+  generalize (Rmin_list (fst p :: map fst l)).
+  generalize (Rmin_list (snd p :: map snd l)).
+  generalize ((Rmax_list
+                 ((let '(x0, y0) := p in Rabs (x0 - y0)) :: map (fun '(x0, y0) => Rabs (x0 - y0)) l))).
+  simpl; intros.
+  generalize (max_min2 x r1 y r0).
+  intros.
+  rewrite H.
+  now apply Rle_max_compat_l.
+Qed.
+
 End Rmax_list.
 
 Notation "Max_{ l } ( f )" := (Rmax_list (List.map f l)) (at level 50) : rmax_scope.
