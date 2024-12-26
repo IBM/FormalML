@@ -7654,7 +7654,7 @@ Section qlearn.
     {iscond : forall k sa, is_conditional_expectation prts (F k) (fun ω => w k ω sa) (ConditionalExpectation prts (filt_sub k) (fun ω => w k ω sa))} 
 *)
 :
-    
+    (forall k sa ω, 0 <= α k ω sa <= 1) ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
     (forall sa ω, ex_series (fun k : nat => Rsqr (α k ω sa))) ->
 
@@ -7682,7 +7682,7 @@ Section qlearn.
                    forall sa,
                      is_lim_seq (fun n => X n ω sa) 0).
   Proof.
-    intros.
+    intros abound liminf exser betalim eqq.
 (*    pose (N := length (nodup EqDecsigT fin_elms)). *)
 
     pose (Xvec := fun t ω => our_iso_f_M (X t ω)).
@@ -7702,8 +7702,8 @@ Section qlearn.
         apply adapt_alpha.
       }
       generalize (finite_fun_vector_iso_nth_fun (α n)); intros.
-      rewrite H4 in H3.
-      apply H3.
+      rewrite H0 in H.
+      apply H.
       intros.
       apply RandomVariable_proper; try reflexivity.
     }
@@ -7749,8 +7749,8 @@ Section qlearn.
         apply adapt_XF.
       }
       generalize (finite_fun_vector_iso_nth_fun (XF k)); intros.
-      rewrite H7 in H6.
-      apply H6.
+      rewrite H3 in H2.
+      apply H2.
       intros.
       apply RandomVariable_proper; try reflexivity.
     }
@@ -7762,15 +7762,18 @@ Section qlearn.
       apply vecrvnth_rv.
       now apply (RandomVariable_sa_sub (filt_sub (S k))).
     }
-    specialize (jaak H3 H4 rvXFvec H6).
     assert   (isfex : forall (k i : nat)
                      (pf : (i < length (nodup EqDecsigT fin_elms))%nat),
                    IsFiniteExpectation prts (vecrvnth i pf (XFvec k))).
     {
       intros.
-      
-      admit.
+      generalize (finite_fun_vector_iso_nth_fun (XF k)); intros.
+      generalize (isfe k); intros.
+      rewrite H3 in H4.
+      apply H4.
+      apply IsFiniteExpectation_proper.
     }
+    specialize (jaak H H0 rvXFvec H2 isfex).
     assert (isfe2x : forall (k i : nat)
                             (pf : (i < length (nodup EqDecsigT fin_elms))%nat),
                IsFiniteExpectation prts
@@ -7780,10 +7783,35 @@ Section qlearn.
                           (filt_sub k) (vecrvnth i pf (XFvec k)))))).
     {
       intros.
+      generalize (finite_fun_vector_iso_nth_fun (XF k)); intros.
+      specialize (isfe2 k).
       admit.
     }
-    specialize (jaak isfex isfe2x H1 ).
+    specialize (jaak isfe2x betalim).
     cut_to jaak; trivial.
+    - revert jaak.
+      apply almost_impl.
+      apply all_almost; intros ??.
+      intros sa.
+      specialize (H3 _ (fin_finite_index_bound _ sa)).
+      unfold Xvec, our_iso_f_M in H3.
+      simpl in H3.
+      revert H3.
+      apply is_lim_seq_ext; intros.
+      admit.
+   (*
+      generalize (FiniteTypeVector.finite_fun_iso_b_f (act_finite M) EqDecsigT x).
+      unfold vector_to_finite_fun; intros eqq1.
+      apply (f_equal (fun x => x sa)) in eqq1.
+      rewrite eqq1 in H6.
+      revert H6.
+      apply is_lim_seq_ext; intros.
+      unfold Xvec, our_iso_f; simpl.
+      generalize (finite_fun_iso_b_f finA EqDecsigT (X n x)).
+      unfold vector_to_finite_fun; intros eqq2.
+      now apply (f_equal (fun x => x sa)) in eqq2.
+    *)
+    - 
 (*    
     
     
