@@ -7785,11 +7785,15 @@ Section qlearn.
                           (filt_sub k) (vecrvnth i pf (XFvec k)))))).
     {
       intros.
-      generalize (finite_fun_vector_iso_nth_fun (XF k)); intros.
-      generalize (isfe2 k); intros.
-      generalize (IsFiniteExpectation_proper_almostR2); intros.
-      
-      admit.
+      generalize (isfe2 k); intros HH.
+      eapply IsFiniteExpectation_proper; try eapply HH; intros ?.
+      unfold rvsqr, rvminus, vecrvnth, rvplus, rvopp, rvscale.
+      unfold XFvec, our_iso_f_M; simpl.
+      unfold FiniteTypeVector.finite_fun_to_vector.
+      rewrite vector_nth_map.
+      do 3 f_equal.
+      apply FiniteConditionalExpectation_ext; intros ?.
+      now rewrite vector_nth_map.
     }
     specialize (jaak isfe2x gammalim).
     cut_to jaak; trivial.
