@@ -7669,12 +7669,22 @@ Section qlearn.
 *)
     (forall k ω sa, X (S k) ω sa = 
                     (X k ω sa) +  ((α k ω sa) * (((XF k ω sa) - (X k ω sa) ) ))) ->
-(*    almost prts (fun ω => is_lim_seq (fun n => Rmax_norm _ (Rfct_minus _ (X n ω) x')) 0). *)
+    (*    almost prts (fun ω => is_lim_seq (fun n => Rmax_norm _ (Rfct_minus _ (X n ω) x')) 0). *)
+    (exists epsilon : posreal,
+        eventually
+          (fun n : nat =>
+             forall sa,
+               almostR2 prts Rbar_lt
+                 (fun ω : Ts =>
+                    Lim_seq
+                      (sum_n
+                         (fun nn : nat => rvsqr (fun ω => α (nn + n)%nat ω sa) ω)))
+                 (fun x : Ts => const epsilon x))) ->
     almost prts (fun ω =>
                    forall sa,
                      is_lim_seq (fun n => X n ω sa) 0).
   Proof.
-    intros abound liminf exser exp_norm var_norm gammalim eqq.
+    intros abound liminf exser exp_norm var_norm gammalim eqq aeps.
 (*    pose (N := length (nodup EqDecsigT fin_elms)). *)
 
     pose (Xvec := fun t ω => our_iso_f_M (X t ω)).
@@ -7849,7 +7859,12 @@ Section qlearn.
       repeat (rewrite Rvector_nth_plus || rewrite Rvector_nth_mult || rewrite Rvector_nth_scale || rewrite vector_nth_map).
       rewrite eqq.
       lra.
-    - admit.
+    - destruct aeps as [eps ?].
+      exists eps.
+      revert H3.
+      apply eventually_impl.
+      apply all_eventually; intros ??.
+      admit.
  Admitted.      
 
 
