@@ -7647,30 +7647,22 @@ Section qlearn.
     {isfe : forall k sa, IsFiniteExpectation prts (fun ω => XF k ω sa)}
     {isfe2 : forall k sa, IsFiniteExpectation prts 
                               (rvsqr (rvminus (fun ω => XF k ω sa)
-                                        (FiniteConditionalExpectation prts (filt_sub k) (fun ω => XF k ω sa))))} 
-(*
-
-    {rvw : forall k sa, RandomVariable dom borel_sa (fun ω : Ts => w k ω sa)}
-    {iscond : forall k sa, is_conditional_expectation prts (F k) (fun ω => w k ω sa) (ConditionalExpectation prts (filt_sub k) (fun ω => w k ω sa))} 
-*)
-:
+                                        (FiniteConditionalExpectation prts (filt_sub k) (fun ω => XF k ω sa))))} :
     (forall k sa ω, 0 <= α k ω sa <= 1) ->
     (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
     (forall sa ω, ex_series (fun k : nat => Rsqr (α k ω sa))) ->
 
-(*
-    (forall k sa, almostR2 prts eq (ConditionalExpectation _ (filt_sub k) (fun ω => w k ω sa)) (const 0)) ->
-    (exists (A B : R),
-        0 < A /\ 0 < B /\
-        forall k sa, 
-          almostR2 prts Rbar_le (ConditionalExpectation 
-                                   _ (filt_sub k) 
-                                   (rvsqr (fun ω => (w k ω sa))))
-                   (rvplus (const A) 
-                           (rvscale B (rvmaxlist 
-                                         (fun j ω => Rsqr (Rmax_norm _ (X j ω)))
-                                         k)))) ->
-*)
+    (almost prts
+       (fun ω =>
+          forall k sa,
+            Rabs ((FiniteConditionalExpectation _ (filt_sub k) (fun ω => XF k ω sa)) ω) <= (γ * (Rmax_norm _ (X k ω))))) ->
+    (exists (C : R),
+        (0 < C)  /\
+          almost prts 
+            (fun ω =>
+               (forall k sa,
+                  ((FiniteConditionalVariance prts (filt_sub k) (fun ω => XF k ω sa)) ω)
+                    <=  (C * (1 + Rmax_norm _ (X k ω))^2)))) ->       
     0 < β < 1 ->
 (*    
      (forall k x, Rmax_norm _ (Rfct_minus _ (XF k x) x') <= β * Rmax_norm _ (Rfct_minus _ x x')) ->
@@ -7682,7 +7674,7 @@ Section qlearn.
                    forall sa,
                      is_lim_seq (fun n => X n ω sa) 0).
   Proof.
-    intros abound liminf exser betalim eqq.
+    intros abound liminf exser exp_norm var_norm betalim eqq.
 (*    pose (N := length (nodup EqDecsigT fin_elms)). *)
 
     pose (Xvec := fun t ω => our_iso_f_M (X t ω)).
@@ -7784,7 +7776,9 @@ Section qlearn.
     {
       intros.
       generalize (finite_fun_vector_iso_nth_fun (XF k)); intros.
-      specialize (isfe2 k).
+      generalize (isfe2 k); intros.
+      generalize (IsFiniteExpectation_proper_almostR2); intros.
+      
       admit.
     }
     specialize (jaak isfe2x betalim).
