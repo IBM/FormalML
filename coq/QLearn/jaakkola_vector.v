@@ -7788,23 +7788,14 @@ Section qlearn.
       apply all_almost; intros ??.
       intros sa.
       specialize (H3 _ (fin_finite_index_bound _ sa)).
-      unfold Xvec, our_iso_f_M in H3.
+      unfold our_iso_f_M in H3.
       simpl in H3.
       revert H3.
       apply is_lim_seq_ext; intros.
-   (*
-      generalize (FiniteTypeVector.finite_fun_iso_b_f (act_finite M) EqDecsigT x).
-      unfold vector_to_finite_fun; intros eqq1.
-      apply (f_equal (fun x => x sa)) in eqq1.
-      rewrite eqq1 in H6.
-      revert H6.
-      apply is_lim_seq_ext; intros.
-      unfold Xvec, our_iso_f; simpl.
-      generalize (finite_fun_iso_b_f finA EqDecsigT (X n x)).
-      unfold vector_to_finite_fun; intros eqq2.
+      unfold Xvec, our_iso_f_M; simpl.
+      generalize (FiniteTypeVector.finite_fun_iso_b_f (act_finite M) EqDecsigT (X n x)).
+      unfold FiniteTypeVector.vector_to_finite_fun; intros eqq2.
       now apply (f_equal (fun x => x sa)) in eqq2.
-    *)
-      admit.
     - revert abound; apply almost_impl.
       apply all_almost; intros ??.
       intros k.
