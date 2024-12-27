@@ -1001,6 +1001,25 @@ Definition is_lim_seq'_uniform_almost (u : nat -> Ts -> R) (l : Ts -> R) :=
    forall eps : posreal, 
      eventually (fun n => almostR2 prts Rlt (rvabs (rvminus (u n) l)) (const eps)).
 
+Global Instance is_lim_seq'_uniform_almost_ext : Proper (pointwise_relation _ (pointwise_relation _ eq) ==> pointwise_relation _ eq ==> iff) is_lim_seq'_uniform_almost.
+  Proof.
+
+    cut ( Proper (pointwise_relation _ (pointwise_relation _ eq) ==> pointwise_relation _ eq ==> impl) is_lim_seq'_uniform_almost).
+    {
+      intros HH ??????.
+      split; apply HH; trivial; now symmetry.
+    }
+    intros ?? eqq1 ?? eqq2 islim.
+    unfold is_lim_seq'_uniform_almost in *.
+    intros eps.
+    generalize (islim eps).
+    apply eventually_impl.
+    apply all_eventually; intros ?.
+    apply almost_impl; apply all_almost; intros ??.
+    rv_unfold.
+    now rewrite <- eqq1, <- eqq2.
+  Qed.
+
 Lemma is_lim_seq'_uniform_is_lim_almost (u : nat -> Ts -> R) (l : Ts -> R) :
   is_lim_seq'_uniform_almost u l ->
   almost prts (fun x => is_lim_seq (fun n => u n x) (l x)).

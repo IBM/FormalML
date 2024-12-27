@@ -7667,8 +7667,6 @@ Context {Ts : Type} {SS:Type} (N:nat)
 
 End SN.
 
-Require Import Morphisms.
-
 Section qlearn.
 
   Context {M : MDP}  (γ : R).
@@ -8012,25 +8010,6 @@ Section qlearn.
       rewrite vector_nth_map.
       reflexivity.
  Qed.
-
-  Global Instance is_lim_seq'_uniform_almost_ext : Proper (pointwise_relation _ (pointwise_relation _ eq) ==> pointwise_relation _ eq ==> iff) is_lim_seq'_uniform_almost.
-  Proof.
-
-    cut ( Proper (pointwise_relation _ (pointwise_relation _ eq) ==> pointwise_relation _ eq ==> impl) is_lim_seq'_uniform_almost).
-    {
-      intros HH ??????.
-      split; apply HH; trivial; now symmetry.
-    }
-    intros ?? eqq1 ?? eqq2 islim.
-    unfold is_lim_seq'_uniform_almost in *.
-    intros eps.
-    generalize (islim eps).
-    apply eventually_impl.
-    apply all_eventually; intros ?.
-    apply almost_impl; apply all_almost; intros ??.
-    rv_unfold.
-    now rewrite <- eqq1, <- eqq2.
-  Qed.
 
   Theorem Jaakkola_alpha_uniformly_fintype
     (X : nat -> Ts -> Rfct (sigT M.(act)))
