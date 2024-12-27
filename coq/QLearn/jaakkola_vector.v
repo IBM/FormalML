@@ -7838,12 +7838,28 @@ Section qlearn.
       + revert exser.
         apply almost_impl.
         apply all_almost; intros ??.
-        admit.
+        generalize (finite_fun_vector_iso_nth_fun (fun k => α k x) 
+                      (fun afun => (ex_series (rvsqr afun)))); intros HH.
+        cut_to HH.
+        * apply HH; intros.
+          apply H3.
+        * intros ???.
+          apply ex_series_proper; intros ?.
+          unfold rvsqr; f_equal; apply H4.
     - revert exp_norm; apply almost_impl.
       apply all_almost; intros ??.
       intros k.
       specialize (H3 k).
-      admit.
+      unfold XFvec, Xvec, XFvec, our_iso_f_M; intros i pf.
+      eapply Rle_trans; [| eapply Rle_trans]; [| eapply H3 |]; apply refl_refl.
+      + f_equal.
+        apply FiniteConditionalExpectation_ext; intros ?.
+        unfold vecrvnth; simpl.
+        unfold FiniteTypeVector.finite_fun_to_vector.
+        rewrite vector_nth_map.
+        reflexivity.
+      + f_equal.
+        admit.
     - destruct var_norm as [C [Cpos ?]].
       exists C.
       split; trivial.
@@ -7851,8 +7867,15 @@ Section qlearn.
       apply almost_impl.
       apply all_almost; intros ??.
       intros k.
-      specialize (H3 k).
-      admit.
+      unfold XFvec, Xvec, XFvec, our_iso_f_M; intros i pf.
+      eapply Rle_trans; [| eapply Rle_trans]; [| eapply (H3 k) |]; apply refl_refl.
+      + apply FiniteConditionalVariance_ext; intros ?.
+        unfold vecrvnth; simpl.
+        unfold FiniteTypeVector.finite_fun_to_vector.
+        rewrite vector_nth_map.
+        reflexivity.
+      + do 3 f_equal.
+        admit.
     - revert eqq.
       intros.
       intros ?.
@@ -7867,10 +7890,20 @@ Section qlearn.
       exists eps.
       revert H3.
       apply eventually_impl.
-      apply all_eventually; intros ??.
-      admit.
- Admitted.      
-
+      apply all_eventually; intros ????.
+      eapply almost_impl; [| eapply H3].
+      apply all_almost; intros ??.
+      assert (HHH:forall a b c, a = b -> Rbar_lt a c -> Rbar_lt b c) by congruence.
+      revert H4.
+      apply HHH.
+      apply Lim_seq_ext; intros ?.
+      apply sum_n_ext; intros ?.
+      unfold rvsqr; f_equal.
+      unfold vecrvnth, αvec, our_iso_f_M; simpl.
+      unfold FiniteTypeVector.finite_fun_to_vector.
+      rewrite vector_nth_map.
+      reflexivity.
+ Admitted.
 
       
 (*    
