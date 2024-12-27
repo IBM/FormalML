@@ -7859,7 +7859,17 @@ Section qlearn.
         rewrite vector_nth_map.
         reflexivity.
       + f_equal.
-        admit.
+        unfold Rmax_norm, Rvector_max_abs.
+        destruct (act_finite M).
+        generalize (nodup_equiv EqDecsigT fin_elms)
+        ; intros eqq1.
+        rewrite <- (map_equivlist (fun s : sigT (act M) => Rabs (X k x s)) _ (reflexivity _) _ _ eqq1).
+        rewrite <- fold_left_Rmax_abs.
+        * unfold vector_fold_left; simpl.
+          now rewrite map_map.
+        * apply Forall_map.
+          apply Forall_forall; intros.
+          apply Rabs_pos.
     - destruct var_norm as [C [Cpos ?]].
       exists C.
       split; trivial.
@@ -7875,7 +7885,17 @@ Section qlearn.
         rewrite vector_nth_map.
         reflexivity.
       + do 3 f_equal.
-        admit.
+        unfold Rmax_norm, Rvector_max_abs.
+        destruct (act_finite M).
+        generalize (nodup_equiv EqDecsigT fin_elms)
+        ; intros eqq1.
+        rewrite <- (map_equivlist (fun s : sigT (act M) => Rabs (X k x s)) _ (reflexivity _) _ _ eqq1).
+        rewrite <- fold_left_Rmax_abs.
+        * unfold vector_fold_left; simpl.
+          now rewrite map_map.
+        * apply Forall_map.
+          apply Forall_forall; intros.
+          apply Rabs_pos.
     - revert eqq.
       intros.
       intros ?.
@@ -7903,300 +7923,7 @@ Section qlearn.
       unfold FiniteTypeVector.finite_fun_to_vector.
       rewrite vector_nth_map.
       reflexivity.
- Admitted.
-
-      
-(*    
-    
-    
-      unfold XFvec.
-      apply (rv_cod_iso_sa_b (Isomorphism_symm (finite_fun_vec_encoder finA EqDecsigT (B := R)))).
-      apply (RandomVariable_proper
-               _ _ (reflexivity _)
-               _ finfun_sa (reflexivity _) _ 
-               (fun ω' => XF k (our_iso_b ω'))).
-      {
-        intros ?.
-        apply iso_b_f.
-      }
-      unfold our_iso_b.
-      generalize (rv_dom_iso_sa_f (finite_fun_vec_encoder finA EqDecsigT (B := R)) (rvXF k)).
-      apply RandomVariable_proper; try reflexivity.
-      symmetry.
-      apply iso_sa_symm_id.
-    }
-
-
-    
-    
-
-    
-
-      Search Rvector_borel_sa.
-      
-    (γ : R) 
-    (X XF α β : nat -> Ts -> vector R (S N))
-    {F : nat -> SigmaAlgebra Ts}
-    (isfilt : IsFiltration F) 
-
-
-    generalize (Tsitsiklis_1_3_orig β Xvec wvec αvec xvec' XFvec isfilt filt_sub); intros.
-    assert (IsAdapted (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) αvec F).
-    {
-      unfold IsAdapted.
-      intros.
-      apply rv_vecrvnth; intros.
-      assert (forall sa, RandomVariable (F n) borel_sa (fun ω => α n ω sa)).
-      {
-        intros.
-        apply adapt_alpha.
-      }
-      generalize (finite_fun_vector_iso_nth_fun (α n)); intros.
-      rewrite H8 in H7.
-      apply H7.
-      intros.
-      apply RandomVariable_proper; try reflexivity.
-    }
-    assert ( RandomVariable (F 0) (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) (Xvec 0%nat)).
-    {
-      apply rv_vecrvnth.
-      rewrite finite_fun_vector_iso_nth_fun in rvX0.
-      apply rvX0.
-      apply RandomVariable_proper; try reflexivity.
-    }
-    assert (0 < length (nodup EqDecsigT fin_elms))%nat.
-    {
-      assert (NonEmpty (sigT M.(act))).
-      {
-        unfold NonEmpty.
-        generalize (M.(ne)); intros.
-        red in X0.
-        generalize (M.(na) X0); intros.
-        red in X1.
-        exact (existT _ X0 X1).
-      }
-      red in X0.
-      apply nodup_length_nzero.
-      generalize (fin_finite X0).
-      clear.
-      destruct fin_elms; simpl; [tauto | lia].
-    }
-    assert (IsAdapted (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) wvec (fun k : nat => F (S k))).
-    {
-      unfold IsAdapted.
-      intros.
-      apply rv_vecrvnth; intros.
-      assert (forall sa, RandomVariable (F (S n)) borel_sa (fun ω => w n ω sa)).
-      {
-        intros.
-        apply adapt_w.
-      }
-      rewrite finite_fun_vector_iso_nth_fun in H10.
-      apply H10.
-      apply RandomVariable_proper; try reflexivity.
-    }
-    assert (forall k i pf, RandomVariable dom borel_sa (fun ω : Ts => vector_nth i pf (wvec k ω))).
-    {
-      intros k.
-      generalize (rvw k); intros rvw1.
-      rewrite finite_fun_vector_iso_nth_fun in rvw1.
-      apply rvw1.
-      apply RandomVariable_proper; try reflexivity.
-    }
-    assert (forall k i pf, is_conditional_expectation prts (F k) (vecrvnth i pf (wvec k)) (ConditionalExpectation prts (filt_sub k) (vecrvnth i pf (wvec k)))).
-    {
-      intros k.
-      specialize (iscond k).
-      unfold vecrvnth.
-      clear H0 H1 H2 H6.
-      generalize (finite_fun_vector_iso_nth_fun (w k)); intros.
-      unfold wvec.
-      specialize (iscond (vector_nth i pf (vector_from_list (nodup EqDecsigT fin_elms)))).
-      revert iscond.
-      apply is_conditional_expectation_proper; trivial.
-      - apply all_almost; intros.
-        unfold our_iso_f, iso_f; simpl.
-        unfold finite_fun_to_vector; simpl.
-        now rewrite vector_nth_map.
-      - apply almost_prob_space_sa_sub_lift with (sub := filt_sub k).
-        apply Condexp_proper.
-        apply all_almost; intros.
-        unfold our_iso_f, iso_f; simpl.
-        unfold finite_fun_to_vector; simpl.
-        now rewrite vector_nth_map.
-    }
-    assert (rvXFvec: forall k, RandomVariable (Rvector_borel_sa (length (nodup EqDecsigT fin_elms)))
-                           (Rvector_borel_sa (length (nodup EqDecsigT fin_elms))) (XFvec k)).
-    {
-      intros.
-      unfold XFvec.
-      apply (rv_cod_iso_sa_b (Isomorphism_symm (finite_fun_vec_encoder finA EqDecsigT (B := R)))).
-      apply (RandomVariable_proper
-               _ _ (reflexivity _)
-               _ finfun_sa (reflexivity _) _ 
-               (fun ω' => XF k (our_iso_b ω'))).
-      {
-        intros ?.
-        apply iso_b_f.
-      }
-      unfold our_iso_b.
-      generalize (rv_dom_iso_sa_f (finite_fun_vec_encoder finA EqDecsigT (B := R)) (rvXF k)).
-      apply RandomVariable_proper; try reflexivity.
-      symmetry.
-      apply iso_sa_symm_id.
-    }
-    specialize (H6 _ _ H9 _ _ _ H12).
-    cut_to H6; trivial.
-    - revert H6.
-      apply almost_impl, all_almost; intros ??.
-      intros sa.
-      specialize (H6 _ (fin_finite_index_bound _ sa)).
-      unfold xvec', our_iso_f in H6.
-      simpl in H6.
-      generalize (finite_fun_iso_b_f finA EqDecsigT x').
-      unfold vector_to_finite_fun; intros eqq1.
-      apply (f_equal (fun x => x sa)) in eqq1.
-      rewrite eqq1 in H6.
-      revert H6.
-      apply is_lim_seq_ext; intros.
-      unfold Xvec, our_iso_f; simpl.
-      generalize (finite_fun_iso_b_f finA EqDecsigT (X n x)).
-      unfold vector_to_finite_fun; intros eqq2.
-      now apply (f_equal (fun x => x sa)) in eqq2.
-    - intros k ω.
-      generalize  (alpha_bound k ω); intros ab.
-      generalize (finite_fun_vector_iso_nth (α k ω) (fun r => 0 <= r <= 1)); intros.
-      now rewrite H13 in ab.
-    - assert (forall ω i pf,
-                 is_lim_seq (sum_n (fun k : nat => vector_nth i pf (αvec k ω))) p_infty).
-      {
-        intros ω.
-        assert (forall sa, is_lim_seq (sum_n (fun k : nat => α k ω sa)) p_infty).
-        {
-          intros.
-          apply H.
-        }
-        generalize (finite_fun_vector_iso_nth_fun (fun k => α k ω) 
-                                                  (fun afun => is_lim_seq (sum_n afun) p_infty)); intros.
-        rewrite H14 in H13.
-        apply H13.
-        intros ???.
-        apply is_lim_seq_proper; trivial.
-        intros ?.
-        now apply sum_n_ext.
-      }
-      intros.
-      apply H13.
-    - destruct H0 as [C ?].
-      exists C.
-      revert H0.
-      intros HH i pf.
-      generalize (HH (vector_nth i pf (vector_from_list (nodup EqDecsigT fin_elms)))).
-      apply almost_impl; apply all_almost; intros ??.
-      rewrite <- H0.
-      apply refl_refl.
-      apply Lim_seq_ext; intros ?.
-      apply sum_n_ext; intros.
-      unfold αvec, our_iso_f, iso_f; simpl.
-      unfold finite_fun_to_vector; simpl.
-      now rewrite vector_nth_map.
-    - clear H6.
-      intros k i pf.
-      specialize (H1 k (vector_nth i pf (vector_from_list (nodup EqDecsigT fin_elms)))).
-      rewrite <- H1.
-      apply almost_prob_space_sa_sub_lift with (sub := filt_sub k).
-      apply Condexp_proper.
-      apply all_almost; intros.
-      unfold vecrvnth, wvec, our_iso_f, iso_f; simpl.
-      unfold finite_fun_to_vector; simpl.
-      now rewrite vector_nth_map.
-    - destruct H2 as [A [B [? [? ?]]]].
-      exists A; exists B.
-      split; trivial.
-      split; trivial; clear H6.
-      intros.
-      specialize (H14 k (vector_nth i pf (vector_from_list (nodup EqDecsigT fin_elms)))).
-      revert H14.
-      apply almost_impl; apply all_almost; intros ??.
-      etransitivity; [| etransitivity]; [| apply H6 |]; apply refl_refl.
-      + apply ConditionalExpectation_ext.
-        intros ?.
-        unfold rvsqr, vecrvnth.
-        f_equal.
-        unfold wvec, our_iso_f; simpl.
-        unfold finite_fun_to_vector.
-        now rewrite vector_nth_map.
-      + unfold rvplus, rvscale, rvmaxlist, const, rvsqr, rvmaxabs, Rvector_max_abs.
-        do 3 f_equal.
-        apply Rmax_list_map_ext; intros.
-        f_equal.
-        unfold Rmax_norm.
-        unfold fin_elms; destruct finA.
-        generalize (nodup_equiv EqDecsigT fin_elms)
-        ; intros eqq1.
-        rewrite <- (map_equivlist (fun s : sigT (act M) => Rabs (X x0 x s)) _ (reflexivity _) _ _ eqq1).
-        rewrite <- fold_left_Rmax_abs.
-        * unfold vector_fold_left; simpl.
-          now rewrite map_map.
-        * apply Forall_map.
-          apply Forall_forall; intros.
-          apply Rabs_pos.
-    - intros k x.
-      generalize (H4 k (our_iso_b x)); intros HH.
-      unfold XFvec.
-      unfold Rmax_norm in HH.
-      unfold fin_elms in *.
-      destruct finA.
-      generalize (nodup_equiv EqDecsigT fin_elms)
-      ; intros eqq1.
-      repeat rewrite <- (map_equivlist (fun s : sigT (act M) => Rabs _) _ (reflexivity _) _ _ eqq1) in HH.
-      unfold our_iso_f; simpl.
-      etransitivity; [etransitivity |]; [| apply HH |]; right.
-      + rewrite <- fold_left_Rmax_abs.
-        * unfold Rvector_max_abs, vector_fold_left; simpl.
-          rewrite map_map, map_map, combine_map_l, combine_map_r, combine_self, map_map, map_map, map_map.
-          f_equal; apply map_ext; intros.
-          f_equal.
-          unfold Rfct_minus; lra.
-        * apply Forall_map.
-          apply Forall_forall; intros.
-          apply Rabs_pos.
-      + rewrite <- fold_left_Rmax_abs.
-        * unfold Rvector_max_abs, vector_fold_left; simpl.
-          f_equal.
-          rewrite <- map_map.
-          repeat rewrite (fold_left_map _ Rabs).
-          f_equal.
-          unfold our_iso_b; simpl.
-          unfold vector_to_finite_fun; simpl in *.
-          generalize (vector_map_nth_finite (Build_FiniteType _ fin_elms fin_finite) EqDecsigT (B:=R) x); intros HH2.
-          apply (f_equal (@proj1_sig _ _)) in HH2.
-          simpl in HH2.
-          rewrite <- HH2.
-          rewrite map_map, combine_map_l, combine_map_r, combine_self, map_map, map_map, map_map.
-          apply map_ext; intros.
-          unfold Rfct_minus; lra.
-        * apply Forall_map.
-          apply Forall_forall; intros.
-          apply Rabs_pos.
-    - revert H5.
-      intros.
-      intros ?.
-      apply vector_nth_eq; intros.
-      unfold Xvec, XFvec, αvec, wvec, our_iso_f, iso_f; simpl.
-      unfold finite_fun_to_vector.
-      unfold vecrvminus, vecrvopp, vecrvscale, vecrvplus, vecrvmult.
-      repeat (rewrite Rvector_nth_plus || rewrite Rvector_nth_mult || rewrite Rvector_nth_scale || rewrite vector_nth_map).
-      rewrite H5.
-      unfold our_iso_b.
-      simpl.
-      generalize (finite_fun_iso_b_f finA EqDecsigT (X k a)); intros HH.
-      unfold finite_fun_to_vector in HH.
-      rewrite HH.
-      lra.
-  Qed.
- *)
-    
+ Qed.
 
 (*
   Existing Instance qlearn_Q_rv_dom.
