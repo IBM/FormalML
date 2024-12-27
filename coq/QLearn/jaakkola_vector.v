@@ -7667,6 +7667,8 @@ Context {Ts : Type} {SS:Type} (N:nat)
 
 End SN.
 
+Require Import Morphisms.
+
 Section qlearn.
 
   Context {M : MDP}  (γ : R).
@@ -8011,6 +8013,25 @@ Section qlearn.
       reflexivity.
  Qed.
 
+  Global Instance is_lim_seq'_uniform_almost_ext : Proper (pointwise_relation _ (pointwise_relation _ eq) ==> pointwise_relation _ eq ==> iff) is_lim_seq'_uniform_almost.
+  Proof.
+
+    cut ( Proper (pointwise_relation _ (pointwise_relation _ eq) ==> pointwise_relation _ eq ==> impl) is_lim_seq'_uniform_almost).
+    {
+      intros HH ??????.
+      split; apply HH; trivial; now symmetry.
+    }
+    intros ?? eqq1 ?? eqq2 islim.
+    unfold is_lim_seq'_uniform_almost in *.
+    intros eps.
+    generalize (islim eps).
+    apply eventually_impl.
+    apply all_eventually; intros ?.
+    apply almost_impl; apply all_almost; intros ??.
+    rv_unfold.
+    now rewrite <- eqq1, <- eqq2.
+  Qed.
+
   Theorem Jaakkola_alpha_uniformly_fintype
     (X : nat -> Ts -> Rfct (sigT M.(act)))
     (XF : nat -> Ts -> Rfct (sigT M.(act)))
@@ -8218,7 +8239,21 @@ Section qlearn.
           apply Rabs_pos.
     - clear jaak.
       intros.
-      admit.
+      eapply  is_lim_seq'_uniform_almost_ext; try eapply uniform.
+      + intros ??.
+        apply sum_n_ext; intros ?.
+        unfold rvsqr, vecrvnth, αvec, our_iso_f_M; simpl.
+        unfold FiniteTypeVector.finite_fun_to_vector.
+        rewrite vector_nth_map.
+        reflexivity.
+      + intros ?.
+        f_equal.
+        apply Lim_seq_ext; intros ?.
+        apply sum_n_ext; intros ?.
+        unfold rvsqr, vecrvnth, αvec, our_iso_f_M; simpl.
+        unfold FiniteTypeVector.finite_fun_to_vector.
+        rewrite vector_nth_map.
+        reflexivity.
     - destruct var_norm as [C [Cpos ?]].
       exists C.
       split; trivial.
@@ -8255,7 +8290,7 @@ Section qlearn.
       repeat (rewrite Rvector_nth_plus || rewrite Rvector_nth_mult || rewrite Rvector_nth_scale || rewrite vector_nth_map).
       rewrite eqq.
       lra.
-  Admitted.
+  Qed.
 
 (*
   Existing Instance qlearn_Q_rv_dom.
