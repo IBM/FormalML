@@ -7648,9 +7648,9 @@ Section qlearn.
     {isfe2 : forall k sa, IsFiniteExpectation prts 
                               (rvsqr (rvminus (fun ω => XF k ω sa)
                                         (FiniteConditionalExpectation prts (filt_sub k) (fun ω => XF k ω sa))))} :
-    (forall k sa ω, 0 <= α k ω sa <= 1) ->
-    (forall sa ω, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
-    (forall sa ω, ex_series (fun k : nat => Rsqr (α k ω sa))) ->
+    almost prts (fun ω => forall k sa, 0 <= α k ω sa <= 1) ->
+    almost prts (fun ω => forall sa, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
+    almost prts (fun ω => forall sa ω, ex_series (fun k : nat => Rsqr (α k ω sa))) ->
 
     (almost prts
        (fun ω =>
@@ -7663,7 +7663,7 @@ Section qlearn.
                (forall k sa,
                   ((FiniteConditionalVariance prts (filt_sub k) (fun ω => XF k ω sa)) ω)
                     <=  (C * (1 + Rmax_norm _ (X k ω))^2)))) ->       
-    0 < β < 1 ->
+    0 < γ < 1 ->
 (*    
      (forall k x, Rmax_norm _ (Rfct_minus _ (XF k x) x') <= β * Rmax_norm _ (Rfct_minus _ x x')) ->
 *)
@@ -7674,7 +7674,7 @@ Section qlearn.
                    forall sa,
                      is_lim_seq (fun n => X n ω sa) 0).
   Proof.
-    intros abound liminf exser exp_norm var_norm betalim eqq.
+    intros abound liminf exser exp_norm var_norm gammalim eqq.
 (*    pose (N := length (nodup EqDecsigT fin_elms)). *)
 
     pose (Xvec := fun t ω => our_iso_f_M (X t ω)).
@@ -7725,7 +7725,7 @@ Section qlearn.
       clear.
       destruct fin_elms; simpl; [tauto | lia].
     }
-     generalize (Jaakkola_alpha_unbounded_N (length (nodup EqDecsigT fin_elms)) β Xvec XFvec αvec _ filt_sub); intros jaak.
+     generalize (Jaakkola_alpha_unbounded_N (length (nodup EqDecsigT fin_elms)) γ Xvec XFvec αvec _ filt_sub); intros jaak.
 
 
     assert (rvXFvec: forall k,   RandomVariable (F (S k))
@@ -7781,7 +7781,7 @@ Section qlearn.
       
       admit.
     }
-    specialize (jaak isfe2x betalim).
+    specialize (jaak isfe2x gammalim).
     cut_to jaak; trivial.
     - revert jaak.
       apply almost_impl.
@@ -7792,7 +7792,6 @@ Section qlearn.
       simpl in H3.
       revert H3.
       apply is_lim_seq_ext; intros.
-      admit.
    (*
       generalize (FiniteTypeVector.finite_fun_iso_b_f (act_finite M) EqDecsigT x).
       unfold vector_to_finite_fun; intros eqq1.
@@ -7805,7 +7804,65 @@ Section qlearn.
       unfold vector_to_finite_fun; intros eqq2.
       now apply (f_equal (fun x => x sa)) in eqq2.
     *)
-    - 
+      admit.
+    - revert abound; apply almost_impl.
+      apply all_almost; intros ??.
+      intros k.
+      specialize (H3 k).
+      generalize (finite_fun_vector_iso_nth (α k x) (fun r => 0 <= r <= 1)); intros.
+      now rewrite H4 in H3.
+    - revert liminf.
+      apply almost_impl.
+      apply all_almost; intros ??.
+      generalize (finite_fun_vector_iso_nth_fun (fun k => α k x) 
+                    (fun afun => is_lim_seq (sum_n afun) p_infty)); intros.
+      unfold αvec.
+      rewrite H4 in H3.
+      apply H3.
+      intros ???.
+      apply is_lim_seq_proper; trivial.
+      intros ?.
+      now apply sum_n_ext.
+    - apply bounded_forall_almost.
+      + intros; apply lt_dec.
+      + intros ????.
+        apply ex_series_ext.
+        intros.
+        f_equal.
+        apply vector_nth_ext.
+      + revert exser.
+        apply almost_impl.
+        apply all_almost; intros ??.
+        admit.
+    - revert exp_norm; apply almost_impl.
+      apply all_almost; intros ??.
+      intros k.
+      specialize (H3 k).
+      admit.
+    - destruct var_norm as [C [Cpos ?]].
+      exists C.
+      split; trivial.
+      revert H3.
+      apply almost_impl.
+      apply all_almost; intros ??.
+      intros k.
+      specialize (H3 k).
+      admit.
+    - revert eqq.
+      intros.
+      intros ?.
+      apply vector_nth_eq; intros.
+      unfold Xvec, XFvec, αvec, our_iso_f_M, iso_f; simpl.
+      unfold FiniteTypeVector.finite_fun_to_vector.
+      unfold vecrvminus, vecrvopp, vecrvscale, vecrvplus, vecrvmult.
+      repeat (rewrite Rvector_nth_plus || rewrite Rvector_nth_mult || rewrite Rvector_nth_scale || rewrite vector_nth_map).
+      rewrite eqq.
+      lra.
+    - admit.
+ Admitted.      
+
+
+      
 (*    
     
     
@@ -8096,7 +8153,6 @@ Section qlearn.
       lra.
   Qed.
  *)
-    Admitted.
     
 
 (*
