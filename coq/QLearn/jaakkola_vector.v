@@ -6768,7 +6768,9 @@ Section jaakola_vector2.
       apply (almost_prob_space_sa_sub_lift _ sub) in H.
       revert H; apply almost_impl.
       apply all_almost; intros ??.
-      admit.
+      rv_unfold.
+      rewrite H.
+      unfold Rsqr; lra.
     }
     assert (rv1: RandomVariable dom borel_sa
                    (rvsqr
