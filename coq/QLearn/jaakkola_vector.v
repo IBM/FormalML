@@ -6809,6 +6809,11 @@ Section jaakola_vector2.
     simpl in H.
     unfold Rbar_rvscale.
     unfold Rbar_rvmult, const in H.
+    etransitivity; [|etransitivity]; cycle 1.
+    apply H.
+    - f_equal.
+      now apply ConditionalExpectation_ext.
+    - admit.
   Admitted.
 
 
