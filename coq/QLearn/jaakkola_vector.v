@@ -3963,10 +3963,7 @@ Section jaakola_vector2.
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
-    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
-(*    {isfe2 : forall k i pf, IsFiniteExpectation prts 
-                              (rvsqr (rvminus (vecrvnth i pf (XF k))
-                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} *) :
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))} :
     0 < γ < 1 ->
       
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
@@ -4194,19 +4191,6 @@ Section jaakola_vector2.
       rewrite vector_dep_zip_nth_proj1.
       now rewrite vector_nth_fun_to_vector.
     }
-(*    
-    assert (forall k i pf, IsFiniteExpectation prts (rvsqr (vecrvnth i pf (r k)))).
-    {
-      intros.
-      unfold r.
-      generalize (isfe2 k i pf).
-      apply IsFiniteExpectation_proper.
-      intros ?.
-      unfold rvsqr.
-      f_equal.
-      now rewrite eqvec.
-    }
-*)
     assert (exists (B : Ts -> R),
                  almost prts 
                    (fun ω =>
@@ -5181,10 +5165,7 @@ Section jaakola_vector2.
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
-    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
-(*    {isfe2 : forall k i pf, IsFiniteExpectation prts 
-                              (rvsqr (rvminus (vecrvnth i pf (XF k))
-                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} *) :
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))} :
 
     0 < γ < 1 ->
 
@@ -5303,26 +5284,6 @@ Section jaakola_vector2.
       intros.
       apply isfe.
     }
-(*
-    assert (isfe2_XXF :  forall (k i : nat) (pf : (i < S N)%nat),
-                   IsFiniteExpectation prts
-                     (rvsqr
-                        (rvminus (vecrvnth i pf (XXF k))
-                           (FiniteConditionalExpectation prts (filt_sub (k + xx)%nat) (vecrvnth i pf (XXF k)))))).
-    {
-      intros.
-      unfold XXF.
-      generalize (isfe2 (k + xx)%nat i pf); intros.
-      revert H14.
-      apply IsFiniteExpectation_proper.
-      intros ?.
-      unfold rvsqr; f_equal.
-      unfold rvminus, rvplus; f_equal.
-      unfold rvopp, rvscale; f_equal.
-      apply FiniteConditionalExpectation_ext.
-      reflexivity.
-    }
-*)
     generalize (Jaakkola_alpha_beta_bounded γ XX XXF αα ββ isfilt_FF (fun k => filt_sub (k + xx)%nat) adapt_aa adapt_bb H); intros jak_bound.
     cut_to jak_bound; trivial.
     cut_to jak_bound.
@@ -5464,14 +5425,7 @@ Section jaakola_vector2.
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
-    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
-(*
-    {isfe2 : forall k i pf, IsFiniteExpectation prts 
-                              (rvsqr (rvminus (vecrvnth i pf (XF k))
-                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} 
-    {rv2 : forall k i pf, RandomVariable dom borel_sa
-                            (rvsqr (rvminus (vecrvnth i pf (XF k))
-                                      (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} *) : 
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))} : 
     0 < γ < 1 ->
 
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
@@ -5719,11 +5673,7 @@ Section jaakola_vector2.
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
-    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
-    (*
-    {isfe2 : forall k i pf, IsFiniteExpectation prts 
-                              (rvsqr (rvminus (vecrvnth i pf (XF k))
-                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} *) :
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))} :
     0 < γ < 1 ->
       
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
@@ -5958,10 +5908,7 @@ Section jaakola_vector2.
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
-    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
-(*    {isfe2 : forall k i pf, IsFiniteExpectation prts 
-                              (rvsqr (rvminus (vecrvnth i pf (XF k))
-                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} *) :
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))} :
     0 < γ < 1 ->
 
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
@@ -6078,26 +6025,6 @@ Section jaakola_vector2.
       intros.
       apply isfe.
     }
-(*
-    assert (isfe2_XXF :  forall (k i : nat) (pf : (i < S N)%nat),
-                   IsFiniteExpectation prts
-                     (rvsqr
-                        (rvminus (vecrvnth i pf (XXF k))
-                           (FiniteConditionalExpectation prts (filt_sub (k + xx)%nat) (vecrvnth i pf (XXF k)))))).
-    {
-      intros.
-      unfold XXF.
-      generalize (isfe2 (k + xx)%nat i pf); intros.
-      revert H13.
-      apply IsFiniteExpectation_proper.
-      intros ?.
-      unfold rvsqr; f_equal.
-      unfold rvminus, rvplus; f_equal.
-      unfold rvopp, rvscale; f_equal.
-      apply FiniteConditionalExpectation_ext.
-      reflexivity.
-    }
-*)
     generalize (Jaakkola_alpha_beta_unbounded γ XX XXF αα ββ isfilt_FF (fun k => filt_sub (k + xx)%nat) adapt_aa adapt_bb H); intros jak_bound.
     cut_to jak_bound; trivial.
     - revert jak_bound; apply almost_impl.
@@ -6231,10 +6158,7 @@ Section jaakola_vector2.
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa (S N)) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
-    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
-(*    {isfe2 : forall k i pf, IsFiniteExpectation prts 
-                              (rvsqr (rvminus (vecrvnth i pf (XF k))
-                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))}  *):
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}:
     0 < γ < 1 ->
 
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
@@ -6867,22 +6791,6 @@ Section jaakola_vector2.
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
 Proof.
   intros.
-(*
-  assert (isfe2 : forall k i pf, IsFiniteExpectation prts 
-                              (rvsqr (rvminus (vecrvnth i pf (XF k))
-                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))).
-  {
-    intros.
-    destruct (isfe_L2_variance prts (filt_sub k) (vecrvnth i pf (XF k)) _) as [?[?[?[?]]]].
-    revert H13.
-    apply IsFiniteExpectation_proper.
-    intros ?.
-    unfold rvsqr, rvminus, rvplus, rvopp,rvscale, vecrvnth.
-    f_equal; f_equal; f_equal.
-    apply FiniteConditionalExpectation_ext.
-    reflexivity.
-  }
-*)
   pose (X' := fun n ω => pos_Rvector_mult (X n ω) W).
   pose (XF' := fun n ω => pos_Rvector_mult (XF n ω) W).  
   generalize (Jaakkola_alpha_beta_unbounded_uniformly γ X' XF' α β isfilt filt_sub); intros jaak.
@@ -6927,81 +6835,6 @@ Proof.
     unfold vecrvnth.
     rewrite Rvector_nth_mult, vector_nth_map; lra.
   }
-(*
-  assert (isfe2'' : forall (k i : nat) (pf : (i < S N)%nat),
-                   IsFiniteExpectation prts
-                     (rvsqr
-                        (rvminus (vecrvnth i pf (XF' k)) (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF' k)))))).
-  {
-    intros.
-    unfold XF'.
-    assert (IsFiniteExpectation prts
-              (rvscale (Rsqr (vector_nth i pf W))
-                        (rvsqr
-               (rvminus (vecrvnth i pf (XF k))
-                  (FiniteConditionalExpectation prts (filt_sub k)
-                     (vecrvnth i pf (XF k))))))).
-    {
-      apply IsFiniteExpectation_scale.
-      generalize (isfe2 k i pf).
-      apply IsFiniteExpectation_proper.
-      unfold rvsqr, rvminus, vecrvnth, rvplus, rvopp, rvscale; simpl.
-      intros ?.
-      do 3 f_equal.
-      apply FiniteConditionalExpectation_ext; intros ?.
-      reflexivity.
-    }
-    apply IsFiniteExpectation_proper_almostR2 with (rv_X2 :=
-                                                         (rvsqr
-       (rvminus (vecrvnth i pf (fun ω : Ts => pos_Rvector_mult (XF k ω) W))
-          (FiniteConditionalExpectation prts (filt_sub k)
-             (vecrvnth i pf (fun ω : Ts => pos_Rvector_mult (XF k ω) W)))))) in H11; trivial.
-    - apply rvscale_rv.
-      apply rvsqr_rv.
-      apply rvminus_rv.
-      + now apply vecrvnth_rv.
-      + apply (RandomVariable_sa_sub (filt_sub k)).
-        apply FiniteCondexp_rv.
-    - apply rvsqr_rv.
-      apply rvminus_rv.
-      + apply vecrvnth_rv.
-        apply Rvector_mult_rv; trivial.
-        apply rvconst.
-      + apply (RandomVariable_sa_sub (filt_sub k)).
-        apply FiniteCondexp_rv.
-    - generalize (FiniteCondexp_scale prts (filt_sub k) (vector_nth i pf W) ); intros.
-      specialize (H12 _ _ (isfe k i pf)).      
-      apply almost_prob_space_sa_sub_lift in H12.
-      revert H12; apply almost_impl.
-      apply all_almost; intros ??.
-      unfold rvsqr, rvminus, vecrvnth, rvplus, rvopp, rvscale; simpl.
-      assert (rv_eq 
-                (fun omega : Ts => vector_nth i pf (pos_Rvector_mult (XF k omega) W))
-                (rvscale (vector_nth i pf W)
-                         (vecrvnth i pf (XF k)))).
-      {
-        intros ?.
-        unfold rvscale, pos_Rvector_mult.
-        rewrite Rvector_nth_mult, vector_nth_map.
-        rewrite Rmult_comm.
-        reflexivity.
-      }
-      assert (rv_eq
-                (FiniteConditionalExpectation prts (filt_sub k)
-                   (fun omega : Ts => vector_nth i pf (pos_Rvector_mult (XF k omega) W)) )
-                
-                (FiniteConditionalExpectation prts (filt_sub k)
-                   (rvscale (vector_nth i pf W)
-                      (vecrvnth i pf (XF k))))).
-      {
-        now apply FiniteConditionalExpectation_ext.
-      }
-      rewrite H14, H13, H12.
-      unfold rvscale, Rsqr.
-      unfold vecrvnth.
-      lra.
-  }
-*)
   assert (rv_XF'_sq :forall (k i : nat) (pf : (i < S N)%nat),
           RandomVariable dom borel_sa
             (rvsqr
@@ -7114,69 +6947,6 @@ Proof.
           generalize (isfe_L2_variance prts (filt_sub k) (vecrvnth i pf (XF k)) _); intros.
           apply H1.
         }
-(*
-        assert (forall k, IsFiniteExpectation prts
-             (rvsqr
-                (rvminus (vecrvnth i pf (XF k))
-                   (FiniteConditionalExpectation prts (filt_sub k)
-                      (vecrvnth i pf (XF k)))))).
-        {
-          intros.
-          generalize (isfe2 k i pf).
-          apply IsFiniteExpectation_proper; intros ?.
-          apply rvsqr_proper; intros ?.
-          apply rvminus_proper; try reflexivity; intros ?.
-          apply FiniteConditionalExpectation_ext; reflexivity.
-        }
-*)
-(*
-        assert (forall k,
-                   IsFiniteExpectation prts
-             (rvsqr
-                (rvminus (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k)))
-                   (FiniteConditionalExpectation prts (filt_sub k)
-                      (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k))))))).
-        {
-          intros.
-          cut (IsFiniteExpectation prts
-                                   (rvscale (Rsqr (vector_nth i pf W))
-                 (rvsqr
-                    (rvminus (vecrvnth i pf (XF k))
-                       (FiniteConditionalExpectation prts (filt_sub k)
-                          (vecrvnth i pf (XF k))))))).
-          {
-            intros HH1.
-            eapply IsFiniteExpectation_proper_almostR2; try eapply HH1.
-            - apply rvscale_rv.
-              apply rvsqr_rv.
-              apply rvminus_rv.
-              + now apply vecrvnth_rv.
-              + apply FiniteCondexp_rv'.
-            - apply rvsqr_rv.
-              apply rvminus_rv.
-              + apply rvscale_rv.
-                now apply vecrvnth_rv.
-              + apply FiniteCondexp_rv'.
-            - cut (almostR2 prts eq
-                     (rvscale (vector_nth i pf W) (FiniteConditionalExpectation prts (filt_sub k)
-                        (vecrvnth i pf (XF k))))
-                     (FiniteConditionalExpectation prts (filt_sub k)
-                        (rvscale (vector_nth i pf W) (vecrvnth i pf (XF k))))).
-              {
-                apply almost_impl.
-                apply all_almost; intros ?.
-                unfold impl, rvsqr, rvminus, rvplus, rvopp, rvscale; intros eqq.
-                rewrite <- eqq.
-                repeat rewrite Rsqr_def.
-                ring.
-              }
-              symmetry.
-              apply (almost_prob_space_sa_sub_lift _ (filt_sub k)).
-              apply FiniteCondexp_scale'.
-          }
-          now apply IsFiniteExpectation_scale.
-        }
-*)
         apply almost_forall.
         intros k.
         generalize (ConditionalVariance_scale (filt_sub k) 
@@ -7482,10 +7252,7 @@ Context {Ts : Type} {SS:Type} (N:nat)
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa N) (X 0%nat)}
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa N) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
-    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
-(*    {isfe2 : forall k i pf, IsFiniteExpectation prts 
-                              (rvsqr (rvminus (vecrvnth i pf (XF k))
-                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} *) :
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))} :
     0 < γ < 1 ->
       
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
@@ -7558,10 +7325,7 @@ Context {Ts : Type} {SS:Type} (N:nat)
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa N) (X 0%nat)}
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa N) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
-    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
-(*    {isfe2 : forall k i pf, IsFiniteExpectation prts 
-                              (rvsqr (rvminus (vecrvnth i pf (XF k))
-                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} *) :
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))} :
     0 < γ < 1 ->
       
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
@@ -7617,10 +7381,7 @@ Context {Ts : Type} {SS:Type} (N:nat)
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa N) (X 0%nat)}
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa N) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
-    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
-(*    {isfe2 : forall k i pf, IsFiniteExpectation prts 
-                              (rvsqr (rvminus (vecrvnth i pf (XF k))
-                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))} *) :
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))} :
     0 < γ < 1 ->
 
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
@@ -7692,10 +7453,7 @@ Context {Ts : Type} {SS:Type} (N:nat)
     {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa N) (X 0%nat)}
     {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa N) (XF k)}
     {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
-    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))}
-(*    {isfe2 : forall k i pf, IsFiniteExpectation prts 
-                              (rvsqr (rvminus (vecrvnth i pf (XF k))
-                                        (FiniteConditionalExpectation prts (filt_sub k) (vecrvnth i pf (XF k)))))}  *):
+    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))} :
     0 < γ < 1 ->
 
     almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
@@ -7806,10 +7564,7 @@ Section qlearn.
     {rvX0 : forall sa, RandomVariable (F 0%nat) borel_sa (fun ω => X 0%nat ω sa)}
     (adapt_XF : forall sa, IsAdapted borel_sa (fun t ω => XF t ω sa) (fun k => F (S k)))
     {rvXF : forall k sa, RandomVariable dom borel_sa (fun ω => XF k ω sa)}
-    {isfe : forall k sa, IsFiniteExpectation prts (fun ω => XF k ω sa)}
-(*    {isfe2 : forall k sa, IsFiniteExpectation prts 
-                              (rvsqr (rvminus (fun ω => XF k ω sa)
-                                        (FiniteConditionalExpectation prts (filt_sub k) (fun ω => XF k ω sa))))} *) :
+    {isfe : forall k sa, IsFiniteExpectation prts (fun ω => XF k ω sa)} :
     almost prts (fun ω => forall k sa, 0 <= α k ω sa <= 1) ->
     almost prts (fun ω => forall sa, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
     almost prts (fun ω => forall sa ω, ex_series (fun k : nat => Rsqr (α k ω sa))) ->
@@ -8073,10 +7828,7 @@ Section qlearn.
     {rvX0 : forall sa, RandomVariable (F 0%nat) borel_sa (fun ω => X 0%nat ω sa)}
     (adapt_XF : forall sa, IsAdapted borel_sa (fun t ω => XF t ω sa) (fun k => F (S k)))
     {rvXF : forall k sa, RandomVariable dom borel_sa (fun ω => XF k ω sa)}
-    {isfe : forall k sa, IsFiniteExpectation prts (fun ω => XF k ω sa)}
-(*    {isfe2 : forall k sa, IsFiniteExpectation prts 
-                              (rvsqr (rvminus (fun ω => XF k ω sa)
-                                        (FiniteConditionalExpectation prts (filt_sub k) (fun ω => XF k ω sa))))} *) :
+    {isfe : forall k sa, IsFiniteExpectation prts (fun ω => XF k ω sa)} :
     almost prts (fun ω => forall k sa, 0 <= α k ω sa) ->
     almost prts (fun ω => forall sa, is_lim_seq (sum_n (fun k => α k ω sa)) p_infty) ->
 
