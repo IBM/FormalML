@@ -7643,6 +7643,7 @@ Context {Ts : Type} {SS:Type} (N:nat)
                (forall k i pf,
                   ((FiniteConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
                     <=  (C * (1 + Rvector_max_abs (X k ω))^2)))) ->        
+
     (forall k, rv_eq (X (S k)) 
                  (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (α k) (XF k) ))) ->
 
@@ -8607,15 +8608,22 @@ Section qlearn.
      - apply all_almost.
        intros.
        apply alpha_bound.
-     - admit.
+     - apply all_almost; intros.
+       assert (forall x,
+                  Rabs (FiniteExpectation prts (fun ω : Ts => FT k sa ω)) <=
+                    γ * Rmax_norm {x : state M & act M x} (fun sa0 : {x : state M & act M x} => X k x sa0 - x' sa0)).
+       {
+         intros.
+         unfold FT, X.
+         admit.
+       }
+       admit.
      - admit.
      - intros.
        unfold X, FT.
        simpl.
        now ring_simplify.
     Admitted.
-       
-       
               
      
 (*     
