@@ -6751,16 +6751,16 @@ Section jaakola_vector2.
     {rv : RandomVariable dom borel_sa f}
     {rv' : RandomVariable dom borel_sa (rvscale c f)}    
     {isfe:IsFiniteExpectation prts f}
-    {isfe_sqr:IsFiniteExpectation prts (rvsqr f)}
     {isfe':IsFiniteExpectation prts (rvscale c f)}     
-(*    {isfe2:IsFiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f)))} 
-    {isfe2':IsFiniteExpectation prts (rvsqr (rvminus (rvscale c f) (FiniteConditionalExpectation prts sub (rvscale c f))))} *) :
+    :
     
     almostR2 (prob_space_sa_sub prts sub) eq
              (ConditionalVariance prts sub (rvscale c f))
              (Rbar_rvscale (Rsqr c) (ConditionalVariance prts sub f)).
   Proof.
-    assert (IsFiniteExpectation prts (rvsqr (rvscale c f))).
+    unfold ConditionalVariance.
+    
+(*    assert (IsFiniteExpectation prts (rvsqr (rvscale c f))).
     {
       generalize (IsFiniteExpectation_scale prts (Rsqr c) (rvsqr f)).
       apply IsFiniteExpectation_proper.
@@ -6777,6 +6777,7 @@ Section jaakola_vector2.
       apply (RandomVariable_sa_sub sub).
       apply FiniteCondexp_rv.
     }
+*)
     Admitted.
 (*
     assert (flp2:IsLp prts 2 f).
@@ -7541,7 +7542,11 @@ Proof.
       specialize (H7 k i pf).
       apply H7.
       apply slln.eq_Rbar_le.
-      Admitted.
+      generalize (FiniteVariance_new_eq prts (filt_sub k) (vecrvnth i pf (XF k)) (rv:=(@vecrvnth_rv Ts dom (S N) i pf (XF k) (@vec_rvXF_I F filt_sub XF rvXF k)))); intros HH.
+      apply (f_equal (fun a => a x)) in HH.
+      rewrite <- HH.
+      now apply ConditionalVariance_ext.
+    Qed.
 
 End jaakola_vector2.
 
