@@ -6813,9 +6813,9 @@ Section jaakola_vector2.
     apply H.
     - f_equal.
       now apply ConditionalExpectation_ext.
-    - admit.
-  Admitted.
-
+    - etransitivity; [|etransitivity]; [|apply H1|];
+        now apply ConditionalExpectation_ext.
+ Qed.
 
  Theorem Jaakkola_alpha_beta_unbounded_uniformly_W (W : vector posreal (S N))
     (γ : R) 
