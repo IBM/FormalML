@@ -8235,32 +8235,41 @@ Section qlearn.
          unfold Rfct_minus in contrac.
          eapply Rle_trans; cycle 1.
          apply contrac.
-         right.
          unfold FT.
          unfold qlearn_XF.
          assert (FiniteExpectation prts (fun ω : Ts => cost k sa ω + γ * qlearn_Qmin (X k ω) (next_state k sa ω) - x' sa) =
                    qlearn_XF next_state cost cost_rv islp_cost filt_sub γ (X k x0) sa -
                      qlearn_XF next_state cost cost_rv islp_cost filt_sub γ x' sa).
          {
-           assert (RandomVariable dom borel_sa (fun ω : Ts =>  γ * qlearn_Qmin (X k ω) (next_state k sa ω) - x' sa)).
-           {
-             admit.
-           }
-           assert (IsFiniteExpectation prts (fun ω : Ts => γ * qlearn_Qmin (X k ω) (next_state k sa ω) - x' sa)).
-           {
-             admit.
-           }
-           assert (RandomVariable dom borel_sa (cost k sa)) by admit.
-           assert (IsFiniteExpectation prts (cost k sa)) by admit.
-           generalize (FiniteExpectation_plus' prts (cost k sa)
-                         (fun ω => γ * qlearn_Qmin (X k ω) (next_state k sa ω) - x' sa)); intros.
-           admit.
+             assert (isfe_cost : IsFiniteExpectation prts (cost k sa)) by admit.
+             assert (isfe_mul : IsFiniteExpectation prts (fun ω : Ts => γ * qlearn_Qmin (X k ω) (next_state k sa ω))) by admit.
+           assert (isfem1 : IsFiniteExpectation prts
+   (rvplus (cost k sa) (fun ω : Ts => γ * qlearn_Qmin (X k ω) (next_state k sa ω)))) by admit.
+           
+           assert (isfem : IsFiniteExpectation prts
+                                  (rvminus
+                                     (fun ω : Ts =>
+                                      cost k sa ω + γ * qlearn_Qmin (X k ω) (next_state k sa ω))
+                                     (const (x' sa)))) by admit.
+
+           replace (FiniteExpectation prts
+                      (fun ω : Ts => cost k sa ω + γ * qlearn_Qmin (X k ω) (next_state k sa ω) - x' sa) ) with
+             (FiniteExpectation prts
+                (rvminus (rvplus (cost k sa) (fun ω => γ * qlearn_Qmin (X k ω) (next_state k sa ω))) (const (x' sa)))).
+             - erewrite FiniteExpectation_minus'; [erewrite FiniteExpectation_plus' | ..]; trivial; admit.
+             - apply FiniteExpectation_ext; intros ?.
+               rv_unfold.
+               lra.
          }
          rewrite H4.
          unfold Rmax_norm.
          simpl.
-         admit.
+         apply Rmax_spec.
+         apply in_map_iff.
+         eexists; split; [reflexivity |].
+         apply FiniteType.fin_finite_dep_prod_obligation_2.
        }
+       
        admit.
      - clear jaak.
        admit.
