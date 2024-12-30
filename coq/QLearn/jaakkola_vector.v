@@ -7067,34 +7067,6 @@ Proof.
       now rewrite Rvector_mult_assoc.      
  Qed.
 
- Instance vec_rvXF_I 
-   {F : nat -> SigmaAlgebra Ts} 
-   (filt_sub : forall k, sa_sub (F k) dom) 
-   (XF : nat -> Ts -> vector R (S N))
-   {rvXF : IsAdapted (Rvector_borel_sa (S N)) XF (fun k => F (S k))} :
-   forall k, RandomVariable dom (Rvector_borel_sa (S N)) (XF k).
-  Proof.
-    intros.
-    now apply (RandomVariable_sa_sub (filt_sub (S k))).
-  Qed.
-
-
-  Instance vec_isfe (XF : nat -> Ts -> vector R (S N)) 
-    {isl2 : forall k i pf, IsLp prts 2 (vecrvnth i pf (XF k))} 
-    {vec_rvXF_I : forall k, RandomVariable dom (Rvector_borel_sa (S N)) (XF k)} :
-    forall k, vector_IsFiniteExpectation prts (XF k).
-  Proof.
-    intros.
-    apply vector_nth_IsFiniteExpectation.
-    intros.
-    specialize (isl2 k i pf).
-    assert (RandomVariable dom borel_sa (vecrvnth i pf (XF k))).
-    {
-      now apply vecrvnth_rv.
-    }
-    now apply IsL2_Finite.
-  Qed.
-
   Lemma is_lim_alpha_inf (α β : nat -> Ts -> vector R (S N)) :
     almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <=  vector_nth i pf (α k ω)) ->        
     almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
@@ -7145,7 +7117,7 @@ Proof.
    Qed.
 
 
- Instance vec_rvXF_I_N
+ Instance vec_rvXF_I
    {F : nat -> SigmaAlgebra Ts} 
    (filt_sub : forall k, sa_sub (F k) dom) 
    (XF : nat -> Ts -> vector R N)
@@ -7303,7 +7275,7 @@ Context {Ts : Type} {SS:Type} (N:nat)
           almost prts 
             (fun ω =>
                (forall k,
-                   (scaled_norm((vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) (rv := vec_rvXF_I_N N filt_sub XF k) (* (isfe := vec_isfe XF (vec_rvXF_I := vec_rvXF_I filt_sub XF) k)*) ) ω) W) <
+                   (scaled_norm((vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) (rv := vec_rvXF_I N filt_sub XF k) (* (isfe := vec_isfe XF (vec_rvXF_I := vec_rvXF_I filt_sub XF) k)*) ) ω) W) <
                      (γ * (scaled_norm(X k ω) W)))))  ->
 
     (**r sum of α^2 converges almost always uniformly *)
@@ -7323,7 +7295,7 @@ Context {Ts : Type} {SS:Type} (N:nat)
             (fun ω =>
                (forall k i pf,
                    Rbar_le
-                     ((ConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k)) (rv := vecrvnth_rv i pf (XF k) (rv := vec_rvXF_I_N N filt_sub XF k))) ω)
+                     ((ConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k)) (rv := vecrvnth_rv i pf (XF k) (rv := vec_rvXF_I N filt_sub XF k))) ω)
                     (C * (1 + scaled_norm(X k ω) W)^2)))) ->        
 
     (**r X (k + 1) = (1 - α_κ) * Χ (k) + β_k * XF (k) defined componentwise *)
@@ -7344,7 +7316,7 @@ Context {Ts : Type} {SS:Type} (N:nat)
         lia.
       - destruct H4 as [γ [??]].
         apply (Jaakkola_alpha_beta_unbounded_uniformly_W n W γ X XF α β isfilt filt_sub)
-          with (vec_rvXF_I := vec_rvXF_I_N (S n) filt_sub XF) (vec_isfe := vec_isfe); trivial.
+          with (vec_rvXF_I := vec_rvXF_I (S n) filt_sub XF) (vec_isfe := vec_isfe); trivial.
    Qed.
 
 End SN.
