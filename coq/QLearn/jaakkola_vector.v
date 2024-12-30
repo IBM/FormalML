@@ -7078,6 +7078,7 @@ Proof.
     now apply (RandomVariable_sa_sub (filt_sub (S k))).
   Qed.
 
+
   Instance vec_isfe (XF : nat -> Ts -> vector R (S N)) 
     {isl2 : forall k i pf, IsLp prts 2 (vecrvnth i pf (XF k))} 
     {vec_rvXF_I : forall k, RandomVariable dom (Rvector_borel_sa (S N)) (XF k)} :
@@ -7143,73 +7144,17 @@ Proof.
           apply H.
    Qed.
 
-    Theorem Jaakkola_alpha_beta_unbounded_uniformly_W_final
-      (W : vector posreal (S N))
-      (X XF α β : nat -> Ts -> vector R (S N))
-      {F : nat -> SigmaAlgebra Ts}
-      (isfilt : IsFiltration F) 
-      (filt_sub : forall k, sa_sub (F k) dom) 
-      (adapt_alpha : IsAdapted (Rvector_borel_sa (S N)) α F)
-      (adapt_beta : IsAdapted (Rvector_borel_sa (S N)) β F)    
-      {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa (S N)) (X 0%nat)}
-      {vec_isfe : forall k, vector_IsFiniteExpectation prts (XF k)} 
-      {rvXF : IsAdapted (Rvector_borel_sa (S N)) XF (fun k => F (S k))} :
-      
-   (**r α and β are almost always non-negative *)
-    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
-    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω)) ->
 
-   (**r α is almost always less than or equal to β, component-wise  *)
-    almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <=  vector_nth i pf (α k ω)) ->        
-
-    (**r The sum of αs almost always increase without limit *)
-    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
-    (**r The sum of βs almost always increases without limit *)
-    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
-    
-    (**r W scaled norm of conditional Expectation of XF is almost always bounded by γ * W scaled norm of X *)
-    (exists (γ : R),
-        0 < γ < 1 /\
-          almost prts 
-            (fun ω =>
-               (forall k,
-                   (scaled_norm((vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) (rv := vec_rvXF_I filt_sub XF k) (* (isfe := vec_isfe XF (vec_rvXF_I := vec_rvXF_I filt_sub XF) k)*) ) ω) W) <
-                     (γ * (scaled_norm(X k ω) W)))))  ->
-
-    (**r sum of α^2 converges almost always uniformly *)
-    (forall i pf,
-        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => (vector_nth i pf (α k ω))²) n) 
-          (fun ω => Lim_seq (sum_n (fun k => (vector_nth i pf (α k ω))²)))) ->
-
-    (**r sum of β^2 converges almost always uniformly *)
-    (forall i pf, 
-        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => (vector_nth i pf (β k ω))²)  n) 
-          (fun ω => Lim_seq (sum_n (fun k => (vector_nth i pf (β k ω))² )))) ->
-
-    (**r exists C, such that conditional variance of XF is almost always bounded by C * (1 + W_scaled norm X)^2 *)
-    (exists (C : R),
-        (0 < C)  /\
-          almost prts 
-            (fun ω =>
-               (forall k i pf,
-                   Rbar_le
-                     ((ConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k)) (rv := vecrvnth_rv i pf (XF k) (rv := vec_rvXF_I filt_sub XF k))) ω)
-                    (C * (1 + scaled_norm(X k ω) W)^2)))) ->        
-
-    (**r X (k + 1) = (1 - α_κ) * Χ (k) + β_k * XF (k) defined componentwise *)
-    (forall k, rv_eq (X (S k)) 
-                 (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
-
-    (**r X converges to zero almost alwaYS *)
-    almost prts (fun ω =>
-                   forall i pf,
-                     is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
-    Proof.
-      intros.
-      destruct H4 as [γ [??]].
-      apply (Jaakkola_alpha_beta_unbounded_uniformly_W W γ X XF α β isfilt filt_sub)
-        with (vec_rvXF_I := vec_rvXF_I filt_sub XF) (vec_isfe := vec_isfe); trivial.
-    Qed.
+ Instance vec_rvXF_I_N
+   {F : nat -> SigmaAlgebra Ts} 
+   (filt_sub : forall k, sa_sub (F k) dom) 
+   (XF : nat -> Ts -> vector R N)
+   {rvXF : IsAdapted (Rvector_borel_sa N) XF (fun k => F (S k))} :
+   forall k, RandomVariable dom (Rvector_borel_sa N) (XF k).
+  Proof.
+    intros.
+    now apply (RandomVariable_sa_sub (filt_sub (S k))).
+  Qed.
 
 End jaakola_vector2.
 
@@ -7217,79 +7162,6 @@ Section SN.
 
 Context {Ts : Type} {SS:Type} (N:nat)
         {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
-
-    Theorem Jaakkola_alpha_unbounded_maxnorm_N
-    (γ : R) 
-    (X XF α : nat -> Ts -> vector R N)
-    {F : nat -> SigmaAlgebra Ts}
-    (isfilt : IsFiltration F) 
-    (filt_sub : forall k, sa_sub (F k) dom) 
-    (adapt_alpha : IsAdapted (Rvector_borel_sa N) α F)
-    {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa N) (X 0%nat)}
-    {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa N) (XF k)}
-    {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
-    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))} :
-    0 < γ < 1 ->
-      
-    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω) <= 1) ->
-
-    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
-
-    (forall i pf, almost prts (fun ω => ex_series (fun n => Rsqr (vector_nth i pf (α n ω))))) ->
-
-     (almost prts
-            (fun ω =>
-               forall k i pf,
-                 Rabs ((FiniteConditionalExpectation _ (filt_sub k) ((vecrvnth i pf (XF k)))) ω) <= (γ * (Rvector_max_abs (X k ω))))) ->
-
-    (exists (C : R),
-        (0 < C)  /\
-          almost prts 
-            (fun ω =>
-               (forall k i pf,
-                   Rbar_le 
-                     ((ConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
-                     (C * (1 + Rvector_max_abs (X k ω))^2)))) ->        
-
-    (forall k, rv_eq (X (S k)) 
-                 (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (α k) (XF k)))) ->
-    (exists epsilon : posreal,
-        eventually (fun n => forall i pf,
-                        almostR2 prts Rbar_lt (fun ω => Lim_seq (sum_n (fun nn => rvsqr (vecrvnth i pf (α (nn+n)%nat)) ω))) (const epsilon))) ->
-    almost prts (fun ω =>
-                   is_lim_seq (fun m => Rvector_max_abs (X m ω)) 0).
-  Proof.
-    intros.
-    destruct N.
-    - apply all_almost; intros.
-      assert (forall m, 0 = Rvector_max_abs (X m x)).
-      {
-        intros.
-        unfold Rvector_max_abs.
-        unfold vector_fold_left.
-        simpl.
-        destruct (X m x).
-        simpl.
-        rewrite length_zero_iff_nil in e.
-        rewrite e.
-        now simpl.
-      }
-      apply (is_lim_seq_ext _ _ 0 H7).
-      apply is_lim_seq_const.
-    - assert (almost prts (fun ω =>
-                             forall i pf,
-                               is_lim_seq (fun m => vector_nth i pf (X m ω)) 0)).
-      {
-        apply Jaakkola_alpha_beta_unbounded with (γ := γ) (XF := XF) (α := α) (β := α)
-                                                 (filt_sub := filt_sub) (rvXF_I := rvXF_I) (isfe := isfe); trivial.
-        apply all_almost; intros.
-        now right.
-      }
-      revert H7.
-      apply almost_impl.
-      apply all_almost; intros ??.
-      now apply lim_seq_maxabs0_b.
-  Qed.
 
  Theorem Jaakkola_alpha_unbounded_N
     (γ : R) 
@@ -7334,90 +7206,17 @@ Context {Ts : Type} {SS:Type} (N:nat)
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
    Proof.
      intros.
-     assert (almost prts (fun ω =>
-                   is_lim_seq (fun m => Rvector_max_abs (X m ω)) 0)).
-     {
-       apply Jaakkola_alpha_unbounded_maxnorm_N with
-         (γ := γ) (XF := XF) (α := α) 
-         (filt_sub := filt_sub) (rvXF_I := rvXF_I) (isfe := isfe); trivial.
-     }
-     revert H7.
-     apply almost_impl.
-     apply all_almost; intros ??.
-     now apply lim_seq_maxabs0.
-   Qed.
-
- Theorem Jaakkola_alpha_unbounded_uniformly_maxnorm_N
-    (γ : R) 
-    (X XF α : nat -> Ts -> vector R N)
-    {F : nat -> SigmaAlgebra Ts}
-    (isfilt : IsFiltration F) 
-    (filt_sub : forall k, sa_sub (F k) dom) 
-    (adapt_alpha : IsAdapted (Rvector_borel_sa N) α F)
-    {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa N) (X 0%nat)}
-    {rvXF : forall k, RandomVariable (F (S k)) (Rvector_borel_sa N) (XF k)}
-    {rvXF_I : forall k i pf, RandomVariable dom borel_sa (vecrvnth i pf (XF k))}
-    {isfe : forall k i pf, IsFiniteExpectation prts (vecrvnth i pf (XF k))} :
-    0 < γ < 1 ->
-
-    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
-
-    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
-
-     (almost prts
-            (fun ω =>
-               forall k i pf,
-                 Rabs ((FiniteConditionalExpectation _ (filt_sub k) ((vecrvnth i pf (XF k)))) ω) <= (γ * (Rvector_max_abs (X k ω))))) ->
-
-     (forall i pf,
-        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω) n) 
-          (fun ω => Lim_seq (sum_n (fun k => rvsqr (vecrvnth i pf (α k)) ω)))) ->
-
-    (exists (C : R),
-        (0 < C)  /\
-          almost prts 
-            (fun ω =>
-               (forall k i pf,
-                   Rbar_le 
-                     ((ConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k))) ω)
-                     (C * (1 + Rvector_max_abs (X k ω))^2)))) ->        
-    (forall k, rv_eq (X (S k)) 
-                 (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (α k) (XF k) ))) ->
-    almost prts (fun ω =>
-                   is_lim_seq (fun m => Rvector_max_abs (X m ω)) 0).
- Proof.
-    intros.
-    destruct N.
-    - apply all_almost; intros.
-      assert (forall m, 0 = Rvector_max_abs (X m x)).
-      {
-        intros.
-        unfold Rvector_max_abs.
-        unfold vector_fold_left.
-        simpl.
-        destruct (X m x).
-        simpl.
-        rewrite length_zero_iff_nil in e.
-        rewrite e.
-        now simpl.
-      }
-      apply (is_lim_seq_ext _ _ 0 H6).
-      apply is_lim_seq_const.
-    - assert (almost prts (fun ω =>
-                             forall i pf,
-                               is_lim_seq (fun m => vector_nth i pf (X m ω)) 0)).
-      {
-        apply Jaakkola_alpha_beta_unbounded_uniformly with (γ := γ) (XF := XF) (α := α) (β := α)
-                                                 (filt_sub := filt_sub) (rvXF_I := rvXF_I) (isfe := isfe); trivial.
+     destruct N.
+     - apply all_almost; intros.
+       assert (is_lim_seq (fun m => 0) 0) by apply is_lim_seq_const.
+       revert H7.
+       apply is_lim_seq_ext.
+       lia.
+     - apply Jaakkola_alpha_beta_unbounded with (γ := γ) (XF := XF) (α := α) (β := α)
+                                                (filt_sub := filt_sub) (rvXF_I := rvXF_I) (isfe := isfe); trivial.
         apply all_almost; intros.
         now right.
-      }
-      revert H6.
-      apply almost_impl.
-      apply all_almost; intros ??.
-      now apply lim_seq_maxabs0_b.
- Qed.
-
+   Qed.
 
   Theorem Jaakkola_alpha_unbounded_uniformly_N
     (γ : R) 
@@ -7462,17 +7261,90 @@ Context {Ts : Type} {SS:Type} (N:nat)
                      is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
    Proof.
      intros.
-     assert (almost prts (fun ω =>
-                   is_lim_seq (fun m => Rvector_max_abs (X m ω)) 0)).
-     {
-       apply Jaakkola_alpha_unbounded_uniformly_maxnorm_N with
-         (γ := γ) (XF := XF) (α := α) 
-         (filt_sub := filt_sub) (rvXF_I := rvXF_I) (isfe := isfe); trivial.
-     }
-     revert H6.
-     apply almost_impl.
-     apply all_almost; intros ??.
-     now apply lim_seq_maxabs0.
+     destruct N.
+     - apply all_almost; intros.
+       assert (is_lim_seq (fun m => 0) 0) by apply is_lim_seq_const.
+       revert H6.
+       apply is_lim_seq_ext.
+       lia.
+     - apply Jaakkola_alpha_beta_unbounded_uniformly with (γ := γ) (XF := XF) (α := α) (β := α)
+                                                (filt_sub := filt_sub) (rvXF_I := rvXF_I) (isfe := isfe); trivial.
+        apply all_almost; intros.
+        now right.
+   Qed.
+
+    Theorem Jaakkola_alpha_beta_unbounded_uniformly_W_final
+      (W : vector posreal N)
+      (X XF α β : nat -> Ts -> vector R N)
+      {F : nat -> SigmaAlgebra Ts}
+      (isfilt : IsFiltration F) 
+      (filt_sub : forall k, sa_sub (F k) dom) 
+      (adapt_alpha : IsAdapted (Rvector_borel_sa N) α F)
+      (adapt_beta : IsAdapted (Rvector_borel_sa N) β F)    
+      {rvX0 : RandomVariable (F 0%nat) (Rvector_borel_sa N) (X 0%nat)}
+      {vec_isfe : forall k, vector_IsFiniteExpectation prts (XF k)} 
+      {rvXF : IsAdapted (Rvector_borel_sa N) XF (fun k => F (S k))} :
+      
+   (**r α and β are almost always non-negative *)
+    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (α k ω)) ->
+    almost prts (fun ω => forall k i pf, 0 <= vector_nth i pf (β k ω)) ->
+
+   (**r α is almost always less than or equal to β, component-wise  *)
+    almost prts (fun ω => forall k i pf, vector_nth i pf (β k ω) <=  vector_nth i pf (α k ω)) ->        
+
+    (**r The sum of αs almost always increase without limit *)
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (α k ω))) p_infty) ->
+    (**r The sum of βs almost always increases without limit *)
+    almost prts (fun ω => forall i pf, is_lim_seq (sum_n (fun k => vector_nth i pf (β k ω))) p_infty) ->
+    
+    (**r W scaled norm of conditional Expectation of XF is almost always bounded by γ * W scaled norm of X *)
+    (exists (γ : R),
+        0 < γ < 1 /\
+          almost prts 
+            (fun ω =>
+               (forall k,
+                   (scaled_norm((vector_FiniteConditionalExpectation prts (filt_sub k) (XF k) (rv := vec_rvXF_I_N N filt_sub XF k) (* (isfe := vec_isfe XF (vec_rvXF_I := vec_rvXF_I filt_sub XF) k)*) ) ω) W) <
+                     (γ * (scaled_norm(X k ω) W)))))  ->
+
+    (**r sum of α^2 converges almost always uniformly *)
+    (forall i pf,
+        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => (vector_nth i pf (α k ω))²) n) 
+          (fun ω => Lim_seq (sum_n (fun k => (vector_nth i pf (α k ω))²)))) ->
+
+    (**r sum of β^2 converges almost always uniformly *)
+    (forall i pf, 
+        is_lim_seq'_uniform_almost (fun n ω => sum_n (fun k => (vector_nth i pf (β k ω))²)  n) 
+          (fun ω => Lim_seq (sum_n (fun k => (vector_nth i pf (β k ω))² )))) ->
+
+    (**r exists C, such that conditional variance of XF is almost always bounded by C * (1 + W_scaled norm X)^2 *)
+    (exists (C : R),
+        (0 < C)  /\
+          almost prts 
+            (fun ω =>
+               (forall k i pf,
+                   Rbar_le
+                     ((ConditionalVariance prts (filt_sub k) (vecrvnth i pf (XF k)) (rv := vecrvnth_rv i pf (XF k) (rv := vec_rvXF_I_N N filt_sub XF k))) ω)
+                    (C * (1 + scaled_norm(X k ω) W)^2)))) ->        
+
+    (**r X (k + 1) = (1 - α_κ) * Χ (k) + β_k * XF (k) defined componentwise *)
+    (forall k, rv_eq (X (S k)) 
+                 (vecrvplus (vecrvminus (X k) (vecrvmult (α k) (X k))) (vecrvmult (β k) (XF k) ))) ->
+
+    (**r X converges to zero almost alwaYS *)
+    almost prts (fun ω =>
+                   forall i pf,
+                     is_lim_seq (fun m => vector_nth i pf (X m ω)) 0).
+    Proof.
+      intros.
+      destruct N.
+      - apply all_almost; intros.
+        assert (is_lim_seq (fun m => 0) 0) by apply is_lim_seq_const.
+        revert H9.
+        apply is_lim_seq_ext.
+        lia.
+      - destruct H4 as [γ [??]].
+        apply (Jaakkola_alpha_beta_unbounded_uniformly_W n W γ X XF α β isfilt filt_sub)
+          with (vec_rvXF_I := vec_rvXF_I_N (S n) filt_sub XF) (vec_isfe := vec_isfe); trivial.
    Qed.
 
 End SN.
