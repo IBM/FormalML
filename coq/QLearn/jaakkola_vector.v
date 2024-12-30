@@ -8241,25 +8241,70 @@ Section qlearn.
                    qlearn_XF next_state cost cost_rv islp_cost filt_sub γ (X k x0) sa -
                      qlearn_XF next_state cost cost_rv islp_cost filt_sub γ x' sa).
          {
-             assert (isfe_cost : IsFiniteExpectation prts (cost k sa)) by admit.
-             assert (isfe_mul : IsFiniteExpectation prts (fun ω : Ts => γ * qlearn_Qmin (X k ω) (next_state k sa ω))) by admit.
-           assert (isfem1 : IsFiniteExpectation prts
-   (rvplus (cost k sa) (fun ω : Ts => γ * qlearn_Qmin (X k ω) (next_state k sa ω)))) by admit.
-           
-           assert (isfem : IsFiniteExpectation prts
-                                  (rvminus
-                                     (fun ω : Ts =>
-                                      cost k sa ω + γ * qlearn_Qmin (X k ω) (next_state k sa ω))
-                                     (const (x' sa)))) by admit.
-
+           unfold qlearn_XF.
+           assert (rv_cost : RandomVariable dom borel_sa (cost k sa)).
+           {
+             apply (RandomVariable_sa_sub (filt_sub (S k))).
+             apply cost_rv.
+           }
+           assert (isfe_cost : IsFiniteExpectation prts (cost k sa)).
+           {
+             apply IsL2_Finite; trivial.
+           }
+           assert (rv_qmin:  RandomVariable dom borel_sa
+                               (fun ω : Ts => qlearn_Qmin (X k ω) (next_state k sa ω))).
+           {
+             apply rv_qmin1.
+             - apply qlearn_Q_rv_dom; try typeclasses eauto.
+               apply filt_sub.
+             - apply (RandomVariable_sa_sub (filt_sub (S k))).
+               apply next_state_rv.
+           }
+           assert (isfe_mul : IsFiniteExpectation prts (fun ω : Ts => γ * qlearn_Qmin (X k ω) (next_state k sa ω))).
+           {
+             apply IsFiniteExpectation_scale.
+             eapply isfe_qmin1.
+             - apply qlearn_Q_rv_dom; try typeclasses eauto.
+               apply filt_sub.
+             - apply isfe_qlearn_Q; try typeclasses eauto.
+               + apply alpha_bound.
+               + apply filt_sub.
+          }
+          assert (isfem1 : IsFiniteExpectation prts
+                             (rvplus (cost k sa) (fun ω : Ts => γ * qlearn_Qmin (X k ω) (next_state k sa ω)))).
+           {
+             apply IsFiniteExpectation_plus; trivial.
+             apply rvscale_rv; trivial.
+          }
+          assert (isfem : IsFiniteExpectation prts
+                            (rvminus
+                               (fun ω : Ts =>
+                                  cost k sa ω + γ * qlearn_Qmin (X k ω) (next_state k sa ω))
+                               (const (x' sa)))).
+           {
+             apply IsFiniteExpectation_minus; trivial; try typeclasses eauto.
+           }
            replace (FiniteExpectation prts
                       (fun ω : Ts => cost k sa ω + γ * qlearn_Qmin (X k ω) (next_state k sa ω) - x' sa) ) with
              (FiniteExpectation prts
                 (rvminus (rvplus (cost k sa) (fun ω => γ * qlearn_Qmin (X k ω) (next_state k sa ω))) (const (x' sa)))).
-             - erewrite FiniteExpectation_minus'; [erewrite FiniteExpectation_plus' | ..]; trivial; admit.
-             - apply FiniteExpectation_ext; intros ?.
-               rv_unfold.
-               lra.
+           - erewrite FiniteExpectation_minus'; [erewrite FiniteExpectation_plus' | ..]; trivial; try typeclasses eauto.
+             unfold qlearn_XF.
+             f_equal.
+             + f_equal.
+               * symmetry.
+                 apply ident_distr_finite_exp_eq
+                   with (rvx := RandomVariable_sa_sub 
+                                  (filt_sub (S O)) (cost O sa))
+                        (rvy := RandomVariable_sa_sub 
+                                  (filt_sub (S k)) (cost k sa)); trivial.
+               * rewrite <- FiniteExpectation_scale.
+                 unfold rvscale.
+                 admit.
+             + admit.
+           - apply FiniteExpectation_ext; intros ?.
+             rv_unfold.
+             lra.
          }
          rewrite H4.
          unfold Rmax_norm.
