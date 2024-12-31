@@ -8271,19 +8271,12 @@ Section qlearn.
                + apply filt_sub.
           }
           assert (isfem1 : IsFiniteExpectation prts
-                             (rvplus (cost k sa) (fun ω : Ts => γ * qlearn_Qmin (X k ω) (next_state k sa ω)))).
-           {
-             apply IsFiniteExpectation_plus; trivial.
-             apply rvscale_rv; trivial.
-          }
+                             (rvplus (cost k sa) (fun ω : Ts => γ * qlearn_Qmin (X k ω) (next_state k sa ω)))) by typeclasses eauto.
           assert (isfem : IsFiniteExpectation prts
                             (rvminus
                                (fun ω : Ts =>
                                   cost k sa ω + γ * qlearn_Qmin (X k ω) (next_state k sa ω))
-                               (const (x' sa)))).
-           {
-             apply IsFiniteExpectation_minus; trivial; try typeclasses eauto.
-           }
+                               (const (x' sa)))) by typeclasses eauto.
            replace (FiniteExpectation prts
                       (fun ω : Ts => cost k sa ω + γ * qlearn_Qmin (X k ω) (next_state k sa ω) - x' sa) ) with
              (FiniteExpectation prts
@@ -8301,7 +8294,10 @@ Section qlearn.
                * rewrite <- FiniteExpectation_scale.
                  unfold rvscale.
                  admit.
-             + admit.
+             + rewrite FiniteExpectation_const.
+               replace (x' sa) with
+                 (qlearn_XF next_state cost cost_rv islp_cost filt_sub γ x' sa); trivial.
+               now rewrite fixpt.
            - apply FiniteExpectation_ext; intros ?.
              rv_unfold.
              lra.
