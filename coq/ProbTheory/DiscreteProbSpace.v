@@ -25,48 +25,8 @@ Set Bullet Behavior "Strict Subproofs".
 Local Open Scope prob.
 
 Section discrete.
-
-  Class Countable (A:Type) :=
-    { countable_index  : A -> nat
-      ; countable_index_inj : Injective countable_index
-    }.
-
-  Definition countable_inv {A:Type} {countableA:Countable A} (n:nat) : option A.
-  Proof.
-    destruct (excluded_middle_informative (exists s, countable_index s = n)).
-    - refine (Some (proj1_sig (constructive_definite_description (fun z:A => countable_index z = n) _))).
-      destruct e as [a ca].
-      exists a.
-      split; trivial.
-      intros.
-      apply countable_index_inj; congruence.
-    - exact None.
-  Defined.
-
-  Lemma countable_inv_sound {A:Type} {countableA:Countable A} (n:nat) (a:A) :
-    countable_inv n = Some a -> countable_index a = n.
-  Proof.
-    unfold countable_inv; intros HH.
-    match_destr_in HH.
-    invcs HH.
-    unfold proj1_sig.
-    match_destr.
-  Qed.
-
-  (* completeness *)
-  Lemma countable_inv_index {A:Type} {countableA:Countable A} (a:A) :
-    countable_inv (countable_index a) = Some a.
-  Proof.
-    unfold countable_inv.
-    match_destr.
-    - unfold proj1_sig.
-      match_destr.
-      apply countable_index_inj in e0.
-      congruence.
-    - elim n; eauto.
-  Qed.
-    
-  Definition countable_sum {A:Type} {countableA:Countable A}
+  
+Definition countable_sum {A:Type} {countableA:Countable A}
              (f:A->R) (l:R)
     := infinite_sum' (fun n =>
                         match countable_inv n with
@@ -916,96 +876,6 @@ End discrete.
 (* TODO? show that which countable instance does not matter *)
 
 Section fin.
-
-  Fixpoint find_index {A:Type} {dec:EqDec A eq} (x:A) (l:list A) : nat
-    := match l with
-       | nil => 0
-       | y::ls=> if y == x
-               then 0
-               else S (find_index x ls)
-       end.
-
-  Lemma nth_find_index {A:Type} {dec:EqDec A eq} (x:A) l :
-    nth (find_index x l) l x = x.
-  Proof.
-    induction l; simpl; trivial.
-    now destruct (equiv_dec a x).
-  Qed.
-
-  Lemma find_index_le {A:Type} {dec:EqDec A eq} (x:A) l :
-    (find_index x l <= length l)%nat.
-  Proof.
-    induction l; simpl; [lia | intros].
-    match_destr; lia.
-  Qed.
-    
-  Lemma find_index_in {A:Type} {dec:EqDec A eq} (x:A) l :
-    In x l <->
-    (find_index x l < length l)%nat.
-  Proof.
-    split.
-    - induction l; simpl; [tauto|]; intros.
-      match_destr.
-      + lia.
-      + cut_to IHl; [lia |].
-        destruct H; congruence.
-    - induction l; simpl; intros.
-      + lia.
-      + match_destr_in H.
-        * eauto.
-        * eauto with arith.
-  Qed.
-
-  Lemma find_index_nin {A:Type} {dec:EqDec A eq} (x:A) l :
-    ~ In x l <->
-    (find_index x l = length l)%nat.
-  Proof.
-    generalize (find_index_in x l); intros.
-    destruct (le_lt_or_eq _ _ (find_index_le x l))
-    ; firstorder.
-    - lia.
-    - intros inn.
-      apply H in inn.
-      lia.
-  Qed.
-
-  Program Global Instance finite_countable (A:Type) {dec:EqDec A eq}
-         {finA:FiniteType A} : Countable A
-    := {|
-    countable_index a := find_index a (fin_elms)
-      |}.
-  Next Obligation.
-    intros ?? eqq.
-    apply (f_equal (fun a => nth a fin_elms x)) in eqq.
-    rewrite nth_find_index in eqq.
-    erewrite nth_in_default in eqq.
-    - now rewrite nth_find_index in eqq.
-    - apply find_index_in.
-      apply fin_finite.
-  Qed.
-     
-  Lemma finite_countable_inv { A : Type} 
-        (fsA : FiniteType A) (eqdec: EqDec A eq) :
-    exists (n:nat), 
-      forall m, (m>n)%nat ->
-                (@countable_inv A _ m) = None.
-  Proof.
-    intros.
-    exists (list_max (map countable_index (@fin_elms _ fsA))).
-    intros.
-    unfold countable_inv.
-    match_destr.
-    destruct e.
-    generalize (list_max_upper (map countable_index (@fin_elms _ fsA))); intros.
-    destruct (Forall_forall
-                  (fun k : nat => (k <= list_max (map countable_index (@fin_elms _ fsA)))%nat) (map countable_index (@fin_elms _ fsA))).
-    specialize (H1 H0 m).
-    cut_to H1; try lia.
-    apply in_map_iff.
-    exists x.
-    split; trivial.
-    apply fsA.
-  Qed.
                               
   Lemma finite_countable_inv_sum { A : Type} (g : A -> R)
     (fsA : FiniteType A) (eqdec: EqDec A eq) :

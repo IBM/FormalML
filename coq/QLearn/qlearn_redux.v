@@ -149,7 +149,7 @@ Section stuff.
       apply in_map_iff in inn.
       destruct inn as [? [??]]; subst.
       now apply in_dep_prod_iff.
-    - destruct (M a).
+    - destruct (M.(fa) a).
       rewrite nodup_app_distr.
       + rewrite map_app.
         rewrite fold_right_app.
@@ -158,7 +158,7 @@ Section stuff.
           (nodup (sigT_eqdec M act_eqdec)
              (list_dep_prod fin_elms
                 (fun a0 : state M =>
-                 match M a0 with
+                 match M.(fa) a0 with
                  | {| fin_elms := fin_elms1 |} => fin_elms1
                  end)))))).
         f_equal.

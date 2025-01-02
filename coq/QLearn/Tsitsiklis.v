@@ -12498,7 +12498,7 @@ End FixedPoint_contract.
         apply Rmult_le_compat_l; [apply ps_pos |].
         apply Rmax_list_incl.
         * unfold act_list.
-          destruct (M a).
+          destruct (M.(fa) a).
           specialize (fin_finite0 (na M a)).
           destruct fin_elms0; simpl in *; congruence.
         * intros ? HH.

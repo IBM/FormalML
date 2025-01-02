@@ -119,7 +119,7 @@ Proof.
        eapply Rle_trans. apply expt_value_Rabs_Rle.
        apply expt_value_bdd; intro s0.
        unfold act_list.
-       destruct (M s0).
+       destruct (M.(fa) s0).
        eapply Rle_trans. apply Rmax_list_minus_le_abs.
        rewrite Rmax_list_le_iff; try (rewrite map_not_nil).
        intros r'.
@@ -163,7 +163,7 @@ Theorem isContraction_bellmanQbar_gamma (Hg : 0 < γ) :
        eapply Rle_trans. apply expt_value_Rabs_Rle.
        apply expt_value_bdd; intro s0.
        unfold act_list.
-       destruct (M s0).
+       destruct (M.(fa) s0).
        eapply Rle_trans. apply Rmax_list_minus_le_abs.
        rewrite Rmax_list_le_iff; try (rewrite map_not_nil).
        intros r'.
@@ -188,7 +188,7 @@ Lemma bellmanQbar_bellman_max_op_fixpt Q' :
    unfold bellmanQbar, bellman_max_op; intros.
    apply functional_extensionality.
    intros.
-   destruct (M x).
+   destruct (M.(fa) x).
    apply Rmax_list_Proper.
    apply refl_refl.
    apply map_ext.
@@ -199,7 +199,7 @@ Lemma bellmanQbar_bellman_max_op_fixpt Q' :
    apply expt_value_Proper; trivial.
    intros ?.
    unfold act_list.
-   now destruct (M a0).
+   now destruct (M.(fa) a0).
  Qed.
 
 Lemma bellmanQbar_bellman_max_op_fixpt' Q' :
@@ -252,7 +252,7 @@ Proof.
     apply functional_extensionality_dep.
     intros.
     unfold greedy, greedy'.
-    destruct (M x).
+    destruct (M.(fa) x).
     f_equal.
     apply functional_extensionality.    
     intros.
@@ -264,7 +264,7 @@ Proof.
     intros ?.
     rewrite (bellmanQbar_bellman_max_op_fixpt' Q' H).
     unfold act_list.
-    now destruct (M a).
+    now destruct (M.(fa) a).
   Qed.
 
   Lemma exists_fixpt_policy' Q'  : 

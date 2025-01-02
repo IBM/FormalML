@@ -374,6 +374,8 @@ Section almostR2_part.
     congruence.
   Qed.
 
+  
+
     Lemma almost_bounded_forall 
         (P:nat->Prop)
         (dec:forall n, {P n} + {~ P n})
@@ -452,7 +454,7 @@ Section almostR2_part.
     - now apply almost_bounded_forall.
     - now apply bounded_forall_almost.
   Qed.
-
+  
   (* classically true *)
   Lemma almost_independent_impl (P:Prop) (Q:Ts->Prop) :
     (P -> almost prts Q) <-> almost prts (fun ts => P -> Q ts).
@@ -612,3 +614,73 @@ Section sa_restricted.
 
 End sa_restricted.
 
+Section countableType.
+
+      Lemma almost_countable_forall {Ts} (σ:SigmaAlgebra Ts) (prts:ProbSpace σ) {A}
+                              {countA: Countable A}
+        (P:A->pre_event Ts) :
+    (forall a, almost prts (P a)) ->
+    almost prts (fun x => forall a, P a x).
+  Proof.
+    intros Pa.
+    assert (forall n, almost prts (
+                          match countable_inv n with
+                          | Some a => P a
+                          | None => fun _ => True
+                          end
+                        )).
+    {
+      intros.
+      match_destr.
+      now apply all_almost.
+    }
+    apply almost_forall in H.
+    revert H.
+    apply almost_impl.
+    apply all_almost.
+    intros ??.
+    red in H.
+    intros.
+    specialize (H (countable_index a)).
+    now rewrite countable_inv_index in H.
+  Qed.
+
+  Lemma countable_forall_almost
+    {Ts} (σ:SigmaAlgebra Ts) (prts:ProbSpace σ) {A}
+    {countA: Countable A}
+    (P:A->pre_event Ts) :
+    almost prts (fun x => forall a, P a x) ->
+    (forall a, almost prts (P a)).
+  Proof.
+    intros prop.
+    cut (forall n:nat, almost prts (
+                          match countable_inv n with
+                          | Some a => P a
+                          | None => fun _ => True
+                          end
+                        )).
+    {
+      intros.
+      specialize (H (countable_index a)).
+      now rewrite countable_inv_index in H.
+    }
+    apply forall_almost.
+    revert prop.
+    apply almost_impl.
+    apply all_almost; intros ?? n.
+    match_destr.
+  Qed.
+
+  Lemma almost_countable_forall_iff
+    {Ts} (σ:SigmaAlgebra Ts) (prts:ProbSpace σ) {A}
+    {countA: Countable A}
+    (P:A->pre_event Ts) :
+    (forall a, almost prts (P a)) <->
+      almost prts (fun x => forall a, P a x).
+  Proof.
+    split.
+    - now apply almost_countable_forall.
+    - now apply countable_forall_almost.
+  Qed.
+
+End countableType.

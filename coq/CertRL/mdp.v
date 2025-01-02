@@ -62,6 +62,7 @@ Record MDP := mkMDP {
  
  (** The state space has decidable equality.*)
  st_eqdec :> EqDec state eq;
+ act_eqdec :> (forall s, EqDec (act s) eq);
 
  (** The state and action spaces are finite. *)
  fs :> FiniteType (state) ;
@@ -101,6 +102,9 @@ Qed.
 
 Global Instance act_finite (M : MDP) : FiniteType (sigT M.(act))
   := fin_finite_dep_prod M.(fs) M.(fa).
+
+Global Instance stact_eqdec (M : MDP) : EqDec (sigT M.(act)) eq
+  := sigT_eqdec M.(st_eqdec) M.(act_eqdec).
 
 Global Instance nonempty_dec_rule (M : MDP) : NonEmpty (dec_rule M)
   := fun s => na M s.
@@ -1462,12 +1466,13 @@ Proof.
   apply functional_extensionality.
   intro s0.
   unfold σ', greedy, bellman_op, step_expt_reward,V'.
-  destruct (M s0). 
-   rewrite (argmax_is_max _ (fun a =>  expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op) init))). 
+  destruct (M.(fa) s0).
+  
+  rewrite (argmax_is_max _ (fun a =>  expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op) init))). 
   replace ( Max_{fin_elms} (fun a => expt_value (t s0 a) (reward s0 a) + γ * expt_value (t s0 a) (fixpt (bellman_max_op) init))) with (bellman_max_op (fixpt (bellman_max_op) init) s0).
   - apply equal_f. apply (fixpt_is_fixpt (is_contraction_bellman_max_op) (fun _ => True)) ; trivial.
     apply closed_true.
-  - unfold bellman_max_op. destruct (M s0).
+  - unfold bellman_max_op. destruct (M.(fa) s0).
     assert (H : equivlist fin_elms fin_elms0) by (intros ; split ; trivial).
     now rewrite H.
 Qed.
@@ -1706,7 +1711,7 @@ Proof.
   unfold improved_tot.
   apply improved_is_better.
   unfold act_list. intros σ0 s.
-  now destruct (M s).
+  now destruct (M.(fa) s).
 Qed.
 
 Theorem improved_has_better_value (σ : dec_rule M) : forall s,
