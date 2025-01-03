@@ -6707,6 +6707,11 @@ Section fin_cond_exp.
     {isfe:IsFiniteExpectation prts f} : Ts -> Rbar :=
     ConditionalExpectation prts sub (rv := variance_rv f) _ .
 
+  Definition ConditionalVariance' (f : Ts -> R) 
+    {rv : RandomVariable dom borel_sa f} 
+    {isfe:IsFiniteExpectation prts f} : Ts -> Rbar :=
+    NonNegCondexp prts sub (rv := variance_rv f) _ .
+
   Definition FiniteConditionalVariance (f : Ts -> R) 
     {rv : RandomVariable dom borel_sa f} 
     {isfe:IsFiniteExpectation prts f} 

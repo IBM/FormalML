@@ -7939,6 +7939,43 @@ Section qlearn.
     - f_equal; apply FiniteExpectation_ext; reflexivity.
   Qed.
 
+  Lemma ConditionalVariance_minus_const (x : Ts -> R) (y : R)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rvx : RandomVariable dom borel_sa x} 
+        {isfex : IsFiniteExpectation prts x}
+        {isfe2 : IsFiniteExpectation prts (fun ω : Ts => x ω - y)} :
+    almostR2  (prob_space_sa_sub prts sub) eq
+      (ConditionalVariance prts sub (fun ω => x ω - y))
+      (ConditionalVariance prts sub x).
+  Proof.
+    unfold ConditionalVariance.
+(*
+    apply Condic
+    apply Con
+    generalize (FiniteCondexp_minus' prts sub x (const y)); apply almost_impl.
+    apply all_almost; intros ??.
+
+    do 2 erewrite Condexp_nneg_simpl.
+    apply NonNegCondexp_ext.
+    
+    unfold rvsqr.
+    f_equal.
+    do 2 rewrite rvminus_unfold.
+    Search FiniteConditionalExpectation.
+
+             
+    generalize (variance_rv prts sub x); intros.
+    generalize (Condexp_nneg_simpl prts sub); intros.
+    specialize (H _ r).
+    rewrite H.
+    Search NonNegCondexp.
+
+    unfold ConditionalVariance.
+    Search ConditionalExpectation.
+*)
+
+
   Theorem qlearn_jaakkola
       (x' : Rfct (sigT M.(act)))
       (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
@@ -8486,8 +8523,37 @@ Section qlearn.
      - clear jaak.
        eexists; split.
        + admit.
-       + unfold FT.
-         unfold ConditionalVariance.
+       + apply almost_forall; intros.
+         apply almost_countable_forall; try typeclasses eauto; intros.
+         generalize (@nncondexp_sqr_sum_bound_nneg); intros.
+         unfold FT.
+                      (fun ω : Ts =>
+                         cost k sa ω - FiniteExpectation prts (cost k sa))
+                      (rvscale 
+                         γ 
+                         (fun ω => (Xmin k sa ω) -
+                                   (FiniteConditionalExpectation 
+                                      prts (filt_sub k)
+                                      (Xmin k sa) ω)))
+                      (filt_sub k)
+                 ); intros.                           
+
+unfold ConditionalVariance.
+         pose (w := fun t sa ω => 
+                  qlearn_w next_state cost cost_rv islp_cost filt_sub γ X
+                           t ω sa 
+                    (qlearn_Q_rv_dom next_state next_state_rv cost cost_rv Q0 α _ filt_sub _ _) (isfe_qlearn_Q next_state next_state_rv cost cost_rv _ _ _ alpha_bound rvα filt_sub γ t)).
+         assert (forall k sa,
+                    almostR2 prts eq
+                           (rvminus
+                              (FT k sa)
+                              (FiniteConditionalExpectation prts 
+                                 (filt_sub k)
+                                 (FT k sa)))
+                           (w k sa)).
+         {
+           admit.
+         }
        admit.
      - intros.
        unfold X, FT.
