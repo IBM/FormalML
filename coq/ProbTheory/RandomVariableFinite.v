@@ -344,6 +344,24 @@ Section fe.
     lra.
   Qed.
 
+  Lemma FiniteExpectation_minus'
+        (rv_X1 rv_X2 : Ts -> R)
+        {rv1 : RandomVariable dom borel_sa rv_X1}
+        {rv2 : RandomVariable dom borel_sa rv_X2} 
+        {isfe1:IsFiniteExpectation rv_X1}
+        {isfe2:IsFiniteExpectation rv_X2} :
+    FiniteExpectation (fun ω => (rv_X1 ω) - (rv_X2 ω)) =
+    FiniteExpectation rv_X1 - FiniteExpectation rv_X2.
+  Proof.
+    unfold rvminus.
+    generalize (FiniteExpectation_minus rv_X1 rv_X2); intros.
+    rewrite <- H.
+    apply FiniteExpectation_ext.
+    rv_unfold.
+    intros ?.
+    lra.
+  Qed.
+
   Hint Rewrite FiniteExpectation_plus : prob.
 
   Lemma IsFiniteExpectation_proper_almostR2 rv_X1 rv_X2

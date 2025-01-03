@@ -93,7 +93,24 @@ Section defs.
       rvplus rv_X1 (rvopp rv_X2).
     Definition rvminus' (rv_X1 rv_X2 : Ts -> R) :=
       rvplus rv_X1 (rvopp' rv_X2).
+    Definition rvminus'' (rv_X1 rv_X2 : Ts -> R) :=
+      (fun omega =>  (rv_X1 omega) - (rv_X2 omega)).
 
+    Lemma rvminus'_eq (rv_X1 rv_X2 : Ts -> R) :
+      rv_eq (rvminus' rv_X1 rv_X2) (rvminus rv_X1 rv_X2).
+    Proof.
+      intros ?.
+      unfold rvminus', rvminus, rvplus, rvopp', rvopp, rvscale.
+      lra.
+    Qed.
+
+    Lemma rvminus''_eq (rv_X1 rv_X2 : Ts -> R) :
+      rv_eq (rvminus'' rv_X1 rv_X2) (rvminus rv_X1 rv_X2).
+    Proof.
+      intros ?.
+      unfold rvminus'', rvminus, rvplus, rvopp, rvscale.
+      lra.
+    Qed.
 
     Definition rvmult (rv_X1 rv_X2 : Ts -> R) := 
       fun omega => (rv_X1 omega) * (rv_X2 omega).

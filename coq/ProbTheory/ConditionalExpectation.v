@@ -7162,6 +7162,25 @@ Section fin_cond_exp.
     lra.
   Qed.
 
+  Lemma FiniteCondexp_minus' (f1 f2 : Ts -> R) 
+        {rv1 : RandomVariable dom borel_sa f1}
+        {rv2 : RandomVariable dom borel_sa f2}
+        {isfe1:IsFiniteExpectation prts f1}
+        {isfe2:IsFiniteExpectation prts f2} :
+    almostR2 (prob_space_sa_sub prts sub) eq
+      (FiniteConditionalExpectation (fun ω => f1 ω - f2 ω))
+      (rvminus (FiniteConditionalExpectation f1) (FiniteConditionalExpectation f2)).
+  Proof.
+    generalize (Condexp_minus' prts sub f1 f2).
+    rewrite (FiniteCondexp_eq f1), (FiniteCondexp_eq f2), (FiniteCondexp_eq (fun ω => f1 ω - f2 ω)).
+    apply almost_impl.
+    apply all_almost.
+    unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp, rvminus, rvplus, rvopp, rvscale; simpl.
+    intros ? eqq.
+    invcs eqq.
+    lra.
+  Qed.
+
   Lemma FiniteCondexp_Jensen (rv_X : Ts -> R) (phi : R -> R)
         {rv : RandomVariable dom borel_sa rv_X}
         {rvphi : RandomVariable dom borel_sa (fun x => phi (rv_X x))}
