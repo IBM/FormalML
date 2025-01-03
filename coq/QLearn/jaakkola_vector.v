@@ -8467,27 +8467,27 @@ Section qlearn.
         reflexivity.
        }
        apply almost_forall; intros.
-       apply almost_countable_forall.
-       + admit.
-       + intros.
-         specialize (H7 n a).
-         revert H7; apply almost_impl.
-         apply all_almost; intros ??.
-         rewrite H7.
-         generalize  (@qlearn_XF_contraction M Ts dom prts F next_state _ cost _ _ filt_sub γ (act_finite M)); intros contrac.
-         assert (0 <= γ < 1) by lra.
-         specialize (contrac H8 (X n x) x').
-         unfold Rfct_minus in contrac.
-         eapply Rle_trans; cycle 1.
-         apply contrac.
-         rewrite fixpt.
-         unfold Rmax_norm.
-         simpl.
-         apply Rmax_spec.
-         apply in_map_iff.
-         eexists; split; [reflexivity |].
-         apply FiniteType.fin_finite_dep_prod_obligation_2.
+       apply almost_countable_forall; try typeclasses eauto.
+       intros.
+       specialize (H7 n a).
+       revert H7; apply almost_impl.
+       apply all_almost; intros ??.
+       rewrite H7.
+       generalize  (@qlearn_XF_contraction M Ts dom prts F next_state _ cost _ _ filt_sub γ (act_finite M)); intros contrac.
+       assert (0 <= γ < 1) by lra.
+       specialize (contrac H8 (X n x) x').
+       eapply Rle_trans; cycle 1.
+       apply contrac.
+       rewrite fixpt.
+       apply Rmax_spec.
+       apply in_map_iff.
+       eexists; split; [reflexivity |].
+       apply FiniteType.fin_finite_dep_prod_obligation_2.
      - clear jaak.
+       eexists; split.
+       + admit.
+       + unfold FT.
+         unfold ConditionalVariance.
        admit.
      - intros.
        unfold X, FT.
