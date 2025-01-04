@@ -8634,7 +8634,34 @@ Section qlearn.
                (rvminus (cost k sa)
                   (FiniteConditionalExpectation prts (filt_sub k) (cost k sa))))).
         {
-          admit.
+          eapply (IsFiniteExpectation_proper_almostR2 prts (fun ω : Ts => (cost k sa ω - FiniteExpectation prts (cost k sa))²) ); try typeclasses eauto.
+          - apply rvsqr_rv.
+            apply rvminus_rv; try typeclasses eauto.
+            apply FiniteCondexp_rv'.
+          - assert (almostR2 prts eq
+                             (FiniteConditionalExpectation prts (filt_sub k) (cost k sa))
+                             (const (FiniteExpectation prts (cost k sa)))).
+            {
+              generalize (is_conditional_expectation_independent_sa prts (filt_sub k) (cost k sa)); intros.
+              generalize (FiniteCondexp_is_cond_exp prts (filt_sub k) (cost k sa)); intros.
+              generalize (is_conditional_expectation_unique prts (filt_sub k) ); intros.
+              cut_to H6.
+              - specialize (H8 _ _ _ _ _ _ _ H7 H6).
+                apply almost_prob_space_sa_sub_lift in H8.
+                revert H8.
+                apply almost_impl.
+                apply all_almost; intros ??.
+                rewrite Rbar_finite_eq in H8.
+                now rewrite H8.
+              - specialize (indep_cost k sa).
+                revert indep_cost.
+                now apply independent_sas_proper.
+            }
+            revert H6; apply almost_impl.
+            apply all_almost; intros ??.
+            unfold rvsqr; rewrite rvminus_unfold.
+            rewrite H6.
+            now unfold const.
         }
         generalize (variance_exp_independent prts (filt_sub k) (cost k sa)); intros var_ind.
         assert (independent_sas prts (pullback_rv_sub dom borel_sa (cost k sa) (cost_rv' k sa))
