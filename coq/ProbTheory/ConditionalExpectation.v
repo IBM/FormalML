@@ -6898,6 +6898,103 @@ Section fin_cond_exp.
     apply FiniteCondexp_eq.
   Qed.
 
+  Lemma variance_exp_independent_exp  (f : Ts -> R) 
+    {rv:RandomVariable dom borel_sa f} 
+    {isfe : IsFiniteExpectation prts f}
+    {isfe1: IsFiniteExpectation prts
+               (fun ω : Ts => (f ω - FiniteExpectation prts f)²)} :
+    independent_sas prts (pullback_rv_sub _ _ _ rv) sub ->
+    (almostR2 (prob_space_sa_sub prts sub) eq
+       (fun _ : Ts =>
+          FiniteExpectation prts
+            (fun ω : Ts => (f ω - FiniteExpectation prts f)²))
+       (fun x : Ts =>
+          FiniteConditionalExpectation 
+            (fun ω : Ts => (f ω - FiniteExpectation prts f)²) x)).
+    Proof.
+      intros.
+      generalize (is_conditional_expectation_independent_sa prts sub
+                    (fun ω : Ts => (f ω - FiniteExpectation prts f)²)); intros.
+      cut_to H0.
+      - unfold const in H0.
+        generalize (FiniteCondexp_is_cond_exp 
+                      (fun ω : Ts => (f ω - FiniteExpectation prts f)²)
+                     ); intros.
+        generalize (is_conditional_expectation_unique prts sub ); intros.
+        specialize (H2 _ _ _ _ _ _ _ H0 H1).
+        revert H2.
+        apply almost_impl, all_almost; intros ??.
+        now apply Rbar_finite_eq in H2.
+      - revert H.
+        apply independent_sas_sub_proper; try easy.
+        apply pullback_rv_sub.
+        apply rvsqr_rv.
+        unfold Rminus.
+        apply rvplus_rv; try typeclasses eauto.
+        apply pullback_rv.
+   Qed.
+
+  Lemma variance_exp_independent  (f : Ts -> R) 
+    {rv:RandomVariable dom borel_sa f} 
+    {isfe : IsFiniteExpectation prts f}
+    {isfe1: IsFiniteExpectation prts
+               (fun ω : Ts => (f ω - FiniteExpectation prts f)²)} 
+    {isfe2: IsFiniteExpectation prts
+              (rvsqr
+                 (rvminus f (FiniteConditionalExpectation f))) } :
+    independent_sas prts (pullback_rv_sub _ _ _ rv) sub ->
+
+    (almostR2 (prob_space_sa_sub prts sub) eq
+       (fun _ : Ts =>
+          FiniteExpectation prts
+            (fun ω : Ts => (f ω - FiniteExpectation prts f)²))
+       (FiniteConditionalExpectation 
+          (rvsqr
+             (rvminus f (FiniteConditionalExpectation f))))).
+    Proof.
+      intros.
+      generalize (variance_exp_independent_exp f H); intros.
+      assert (almostR2 (prob_space_sa_sub prts sub) eq
+                (FiniteConditionalExpectation
+                   (fun ω : Ts => (f ω - FiniteExpectation prts f)²))
+                (FiniteConditionalExpectation
+                   (rvsqr (rvminus f (FiniteConditionalExpectation f))))).
+      {
+        assert (almostR2 (prob_space_sa_sub prts sub) eq
+                (ConditionalExpectation prts sub
+                   (fun ω : Ts => (f ω - FiniteExpectation prts f)²))
+                (ConditionalExpectation prts sub
+                   (rvsqr (rvminus f (FiniteConditionalExpectation f))))).
+        {
+          apply Condexp_proper.
+          generalize (is_conditional_expectation_independent_sa prts sub f H); intros.
+          generalize (is_conditional_expectation_unique prts sub ); intros.
+          generalize (Condexp_cond_exp prts sub f); intros.
+          specialize (H2 _ _ _ _ _ _ _ H3 H1).
+          apply almostR2_prob_space_sa_sub_lift in H2.          
+          revert H2; apply almost_impl.
+          apply all_almost; intros ??.
+          unfold rvsqr.
+          rewrite rvminus_unfold.
+          f_equal; f_equal.
+          unfold const in H2.
+          rewrite FiniteCondexp_eq with (isfe := isfe) in H2.
+          rewrite Rbar_finite_eq in H2.
+          now rewrite H2.
+        }
+        revert H1; apply almost_impl.
+        apply all_almost; intros ??.
+        rewrite FiniteCondexp_eq with (isfe := isfe1) in H1.
+        rewrite FiniteCondexp_eq with (isfe := isfe2) in H1.        
+        rewrite Rbar_finite_eq in H1.
+        now rewrite H1.
+      }
+      revert H0; apply almost_impl.
+      revert H1; apply almost_impl.
+      apply all_almost; intros ???.
+      now rewrite <- H0, <- H1.
+  Qed.
+
   Theorem FiniteCondexp_cond_exp (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
         {isfe:IsFiniteExpectation prts f}
