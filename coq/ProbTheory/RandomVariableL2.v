@@ -54,6 +54,18 @@ Section L2.
     - apply nnfabs.
   Qed.
 
+  Lemma islp2_isfe_sqr (f : Ts -> R) :
+    IsLp prts 2 f ->
+    IsFiniteExpectation prts (rvsqr f).
+  Proof.
+    intros.
+    unfold IsLp in H.
+    rewrite rvpower2 in H; [| apply nnfabs].
+    revert H; apply IsFiniteExpectation_proper; intros ?.
+    unfold rvsqr, rvabs.
+    now rewrite Rsqr_abs.
+  Qed.
+
   Global Instance is_L2_mult_finite x y 
         {xrv:RandomVariable dom borel_sa x}
         {yrv:RandomVariable dom borel_sa y} : 
