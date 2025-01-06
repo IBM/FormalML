@@ -7996,8 +7996,6 @@ Section qlearn.
     lra.
   Qed.
 
-    
-
   Theorem qlearn_jaakkola
       (x' : Rfct (sigT M.(act)))
       (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
@@ -8944,16 +8942,22 @@ Section qlearn.
                rewrite <- Rbar_le_Rle in H15.
                eapply Rle_trans; cycle 1.
                apply H15.
-               assert (0 < Rsqr γ < 1).
+               assert ( Rsqr γ <= 1).
                {
-                 split.
-                 - apply Rsqr_pos_lt; lra.
-                 - rewrite <- Rsqr_1.
-                   apply Rsqr_lt_abs_1.
-                   rewrite Rabs_right; try lra.
-                   rewrite Rabs_right; try lra.
-               }                   
-               admit.
+                 rewrite <- Rsqr_1.
+                 apply Rsqr_le_abs_1.
+                 rewrite Rabs_right; try lra.
+                 rewrite Rabs_right; try lra.
+               }
+               eapply Rle_trans.
+               apply Rmult_le_compat_r.
+               - apply FiniteCondexp_nneg.
+                 apply nnfsqr.
+               - apply H18.
+               - rewrite Rmult_1_l.
+                 right.
+                 apply FiniteConditionalExpectation_ext.
+                 reflexivity.
          }
          rewrite <- Rsqr_pow2.         
         rewrite <- H13 in H17.
