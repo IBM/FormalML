@@ -8928,14 +8928,7 @@ Section qlearn.
                erewrite FiniteCondexp_eq.
                unfold Rbar_rvscale.
                rewrite <- Rmax_all_norm_nneg in H15 by apply nnfsqr.
-               assert (Rmax_norm {x : state M & act M x}
-                         (fun sa : {x : state M & act M x} => (X n x sa)²) =
-                           (Rmax_norm {x0 : state M & act M x0}
-                              (fun sa0 : {x0 : state M & act M x0} => X n x sa0))²).
-               {
-                 apply Rmax_norm_sqr.
-               }
-               rewrite <- H17.
+               rewrite <- Rmax_norm_sqr.
                rewrite <- Rbar_le_Rle in H15.
                eapply Rle_trans; cycle 1.
                apply H15.
@@ -8950,7 +8943,7 @@ Section qlearn.
                apply Rmult_le_compat_r.
                - apply FiniteCondexp_nneg.
                  apply nnfsqr.
-               - apply H18.
+               - apply H17.
                - rewrite Rmult_1_l.
                  right.
                  apply FiniteConditionalExpectation_ext.
