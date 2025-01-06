@@ -7950,37 +7950,6 @@ Section qlearn.
     - f_equal; apply FiniteExpectation_ext; reflexivity.
   Qed.
 
-  Lemma ConditionalVariance_minus_const (x : Ts -> R) (y : R)
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rvx : RandomVariable dom borel_sa x} 
-        {isfex : IsFiniteExpectation prts x}
-        {isfe2 : IsFiniteExpectation prts (fun ω : Ts => x ω - y)} :
-    almostR2  (prob_space_sa_sub prts sub) eq
-      (ConditionalVariance prts sub (fun ω => x ω - y))
-      (ConditionalVariance prts sub x).
-  Proof.
-    unfold ConditionalVariance.
-    apply Condexp_proper.
-    generalize (FiniteCondexp_minus' prts sub x (const y)); intros.
-    apply almost_prob_space_sa_sub_lift in H.
-    revert H; apply almost_impl.
-    apply all_almost; intros ??.
-    unfold rvsqr.
-    do 2 rewrite rvminus_unfold.
-    f_equal.
-    rewrite rvminus_unfold in H.
-    rewrite FiniteCondexp_const in H.
-    unfold const in H.
-    apply (f_equal (fun z => z + y)) in H.
-    ring_simplify in H.
-    rewrite <- H.
-    ring_simplify.
-    f_equal.
-    apply FiniteConditionalExpectation_ext.
-    reflexivity.
-  Qed.
-
   Existing Instance isl2_qlearn_Q.
 
   Lemma Rmax_all_norm_nneg (f:Rfct (sigT M.(act))) (fnneg:NonnegativeFunction f) :
@@ -8889,8 +8858,8 @@ Section qlearn.
         generalize (conditional_variance_bound_sum  prts (filt_sub n)
                       (cost n a) 
                       (rvscale γ (Xmin n a))); apply almost_impl.
-        generalize (ConditionalVariance_minus_const  (fun ω0 : Ts =>
-        cost n a ω0 + γ * qlearn_Qmin (X n ω0) (next_state n a ω0)) (x' a) (filt_sub n)); intros.
+        generalize (ConditionalVariance_minus_const  prts (filt_sub n)(fun ω0 : Ts =>
+        cost n a ω0 + γ * qlearn_Qmin (X n ω0) (next_state n a ω0)) (x' a) ); intros.
         apply almost_prob_space_sa_sub_lift in H10.
         revert H10; apply almost_impl.
         generalize (ConditionalVariance_scale (filt_sub n) γ (Xmin n a)); intros.

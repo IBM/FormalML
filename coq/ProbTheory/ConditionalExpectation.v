@@ -8680,6 +8680,74 @@ Section condexp.
         apply nnfsqr.
   Qed.
 
+  Lemma ConditionalVariance_plus_const {Ts : Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        (x : Ts -> R) (y : R)
+        {rvx : RandomVariable dom borel_sa x} 
+        {isfex : IsFiniteExpectation prts x}
+        {isfe2 : IsFiniteExpectation prts (fun ω : Ts => x ω + y)} :
+    almostR2  (prob_space_sa_sub prts sub) eq
+      (ConditionalVariance prts sub (fun ω => x ω + y))
+      (ConditionalVariance prts sub x).
+  Proof.
+    unfold ConditionalVariance.
+    apply Condexp_proper.
+    generalize (FiniteCondexp_plus prts sub x (const y)); intros.
+    apply almost_prob_space_sa_sub_lift in H.
+    revert H; apply almost_impl.
+    apply all_almost; intros ??.
+    unfold rvsqr.
+    do 2 rewrite rvminus_unfold.
+    f_equal.
+    unfold rvplus in H.
+    rewrite FiniteCondexp_const in H.
+    unfold const in H.
+    apply (f_equal (fun z => z - y)) in H.
+    ring_simplify in H.
+    rewrite <- H.
+    ring_simplify.
+    f_equal.
+    apply FiniteConditionalExpectation_ext.
+    reflexivity.
+  Qed.
+
+  Lemma ConditionalVariance_minus_const {Ts : Type}
+        {dom: SigmaAlgebra Ts}
+        (prts: ProbSpace dom)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        (x : Ts -> R) (y : R)
+        {rvx : RandomVariable dom borel_sa x} 
+        {isfex : IsFiniteExpectation prts x}
+        {isfe2 : IsFiniteExpectation prts (fun ω : Ts => x ω - y)} :
+    almostR2  (prob_space_sa_sub prts sub) eq
+      (ConditionalVariance prts sub (fun ω => x ω - y))
+      (ConditionalVariance prts sub x).
+  Proof.
+    unfold ConditionalVariance.
+    apply Condexp_proper.
+    generalize (FiniteCondexp_minus' prts sub x (const y)); intros.
+    apply almost_prob_space_sa_sub_lift in H.
+    revert H; apply almost_impl.
+    apply all_almost; intros ??.
+    unfold rvsqr.
+    do 2 rewrite rvminus_unfold.
+    f_equal.
+    rewrite rvminus_unfold in H.
+    rewrite FiniteCondexp_const in H.
+    unfold const in H.
+    apply (f_equal (fun z => z + y)) in H.
+    ring_simplify in H.
+    rewrite <- H.
+    ring_simplify.
+    f_equal.
+    apply FiniteConditionalExpectation_ext.
+    reflexivity.
+  Qed.
+
 End condexp.
 
 Ltac rewrite_condexp H
