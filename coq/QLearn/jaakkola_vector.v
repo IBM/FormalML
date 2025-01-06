@@ -8886,10 +8886,9 @@ Section qlearn.
         revert H13; apply almost_impl.
         specialize (H10 n a).
         revert H10; apply almost_impl.
-        generalize (conditional_variance_bound_sum 
+        generalize (conditional_variance_bound_sum  prts (filt_sub n)
                       (cost n a) 
-                      (rvscale γ (Xmin n a))
-                      (filt_sub n)); apply almost_impl.
+                      (rvscale γ (Xmin n a))); apply almost_impl.
         generalize (ConditionalVariance_minus_const  (fun ω0 : Ts =>
         cost n a ω0 + γ * qlearn_Qmin (X n ω0) (next_state n a ω0)) (x' a) (filt_sub n)); intros.
         apply almost_prob_space_sa_sub_lift in H10.

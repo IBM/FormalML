@@ -10612,101 +10612,6 @@ Proof.
     apply SimpleExpectation_compose_Finite_type.
   Qed.
 
-  Lemma nncondexp_sqr_sum_bound_nneg (x y : Ts -> R)
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rvx : RandomVariable dom borel_sa x}
-        {rvy : RandomVariable dom borel_sa y} :
-    almostR2 prts Rbar_le
-             (NonNegCondexp prts sub (rvsqr (rvplus x y)))
-             (Rbar_rvmult (const 2)
-                          (Rbar_rvplus (NonNegCondexp prts sub (rvsqr x)) 
-                                       (NonNegCondexp prts sub (rvsqr y)))).
-  Proof.
-    intros.
-    generalize (NonNegCondexp_plus prts sub (rvsqr x) (rvsqr y)); intros.
-    assert (0 <= 2) by lra.
-    assert (nnegsc: NonnegativeFunction (rvscale (mknonnegreal 2 H0) (rvplus (rvsqr x) (rvsqr y)))).
-    {
-      typeclasses eauto.
-    }
-    generalize (NonNegCondexp_scale prts sub (mknonnegreal 2 H0) (rvplus (rvsqr x) (rvsqr y))); intros.
-    generalize (NonNegCondexp_ale prts sub
-                                  (rvsqr (rvplus x y))
-                                  (rvscale (mknonnegreal 2 H0)
-                                           (rvplus (rvsqr x) 
-                                                   (rvsqr y)))); intros.
-    apply almost_prob_space_sa_sub_lift in H.
-    apply almost_prob_space_sa_sub_lift in H1.
-    apply almost_prob_space_sa_sub_lift in H2.    
-    - revert H; apply almost_impl.
-      revert H1; apply almost_impl.
-      revert H2; apply almost_impl.
-      apply all_almost; intros ????.
-      unfold Rbar_rvmult.
-      rewrite <- H2.
-      simpl in H1.
-      unfold Rbar_rvmult, const  in H1.
-      unfold const.
-      rewrite <- H1.
-      apply H.
-    - apply all_almost.
-      intros.
-      generalize (rvprod_bound x y); intros.
-      rv_unfold.
-      specialize (H3 x0); simpl in H3.
-      rewrite Rsqr_plus.
-      simpl; lra.
-  Qed.
-
-  Lemma conditional_variance_bound_sum  (x y : Ts -> R)
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rvx : RandomVariable dom borel_sa x}
-        {rvy : RandomVariable dom borel_sa y} 
-        {isfex : IsFiniteExpectation prts x}
-        {isfey : IsFiniteExpectation prts y} :
-    almostR2 prts Rbar_le
-      (ConditionalVariance prts sub (rvplus x y))
-      (Rbar_rvmult (const 2)
-         (Rbar_rvplus (ConditionalVariance prts sub x)
-            (ConditionalVariance prts sub y))).
-  Proof.
-    Local Existing Instance Rbar_le_pre.
-    etransitivity; cycle 1.
-    - generalize (nncondexp_sqr_sum_bound_nneg
-                  (rvminus x (FiniteConditionalExpectation prts sub x))
-                  (rvminus y (FiniteConditionalExpectation prts sub y))
-                  sub
-               (rvx := (@rvminus_rv Ts dom x
-                          (FiniteConditionalExpectation prts sub x)
-                   rvx (FiniteCondexp_rv' prts sub x)))
-               (rvy := (@rvminus_rv Ts dom y
-                          (FiniteConditionalExpectation prts sub y)
-                          rvy (FiniteCondexp_rv' prts sub y)))).
-      apply almost_impl; apply all_almost; intros ??.
-      etransitivity; [apply H |].
-      unfold ConditionalVariance.
-      unfold Rbar_rvmult, Rbar_rvplus in *.
-      repeat erewrite Condexp_nneg_simpl.
-      reflexivity.
-    - unfold ConditionalVariance.
-      rewrite Condexp_nneg_simpl.
-      apply (@almostR2_subrelation _ _ _ prts _ Rbar_le (eq_subrelation _)).
-      apply (almost_prob_space_sa_sub_lift prts sub).
-      apply NonNegCondexp_proper; intros.
-      apply almostR2_eq_sqr_proper.
-      transitivity (rvminus (rvplus x y) (rvplus  (FiniteConditionalExpectation prts sub x)  (FiniteConditionalExpectation prts sub y))).
-      + apply almostR2_eq_minus_proper; try reflexivity.
-        apply (almost_prob_space_sa_sub_lift prts sub).
-        apply FiniteCondexp_plus.
-      + apply all_almost; intros ?.
-        rv_unfold.
-        lra.
-        Unshelve.
-        apply nnfsqr.
-  Qed.
-
   Lemma conditional_variance_bound1_alt (x : Ts -> R) (c : R) 
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
@@ -12593,94 +12498,6 @@ End FixedPoint_contract.
       apply fin_finite.
    Qed.
 
-  Lemma prod_le_sum_sq (x y : R) :
-    2 * x * y <= x² + y².
-   Proof.
-     apply Rplus_le_reg_r with (r := - 2 * x * y).
-     ring_simplify.
-     replace (-2 * x * y + x² + y²) with
-       (Rsqr (x - y)).
-     - apply Rle_0_sqr.
-     - unfold Rsqr.
-       ring.
-  Qed.
-  
-  Lemma neg_sum_seq_le_prod (x y : R) :
-    - (x² + y²) <= 2 * x * y.
-   Proof.
-     apply Rplus_le_reg_r with (r := (x² + y²)).
-     ring_simplify.
-     replace (x² + y² + 2 * x * y) with
-       (Rsqr (x + y)).
-     - apply Rle_0_sqr.
-     - unfold Rsqr.
-       ring.
-  Qed.
-
-  Lemma sq_sum_le_2sum_sq (x y : R) :
-    (x + y)² <= 2 * (x² + y²).
-  Proof.
-    generalize (prod_le_sum_sq x y); intros.
-    unfold Rsqr in *.
-    lra.
-  Qed.
-
-  Lemma rvscale_plus (f g : Ts -> R) (c : R) :
-    rv_eq
-      (rvscale c (rvplus f g))
-      (rvplus (rvscale c f) (rvscale c g)).
-  Proof.
-    intros ?.
-    rv_unfold.
-    ring.
-  Qed.
-  
-  Lemma condexp_sq_sum_le_2sum_sq (f g : Ts -> R)
-    {dom2 : SigmaAlgebra Ts}
-    (sub : sa_sub dom2 dom) 
-    {rvf : RandomVariable dom borel_sa f}
-    {rvg : RandomVariable dom borel_sa g}
-    {rv : RandomVariable dom borel_sa (rvsqr (rvplus f g))}     
-    {isfef : IsFiniteExpectation prts (rvsqr f)}
-    {isfeg : IsFiniteExpectation prts (rvsqr g)}
-    {isfe : IsFiniteExpectation prts (rvsqr (rvplus f g))} :
-  almostR2 (prob_space_sa_sub prts sub) Rle
-    (FiniteConditionalExpectation prts sub (rvsqr (rvplus f g)))
-    (rvscale 2 (rvplus (FiniteConditionalExpectation prts sub (rvsqr f))
-                  (FiniteConditionalExpectation prts sub (rvsqr g)))).
-  Proof.
-    generalize (FiniteCondexp_scale prts sub 2 (rvsqr f)); intros.
-    generalize (FiniteCondexp_scale prts sub 2 (rvsqr g)); intros.    
-    generalize (FiniteCondexp_plus prts sub (rvscale 2 (rvsqr f)) (rvscale 2 (rvsqr g))); intros.
-    generalize (FiniteCondexp_ale prts sub (rvsqr (fun omega : Ts => f omega + g omega))
-                                   (fun omega : Ts => rvscale 2 (rvsqr f) omega + rvscale 2 (rvsqr g) omega)); intros.
-    cut_to H2.
-    - revert H2; apply almost_impl.
-      revert H1; apply almost_impl.
-      revert H0; apply almost_impl.
-      revert H; apply almost_impl.
-      apply all_almost; intros ?????.
-      rewrite rvscale_plus.
-      unfold rvplus.
-      rewrite <- H.
-      rewrite <- H0.
-      unfold rvplus in H1.
-      rewrite <- H1.
-      apply H2.
-    - apply all_almost; intros ?.
-      rv_unfold.
-      generalize (sq_sum_le_2sum_sq (f x) (g x)); lra.
-  Qed.
-
-    Global Instance Condexp_rv' {dom2 : SigmaAlgebra Ts}
-          (sub : sa_sub dom2 dom) (f : Ts -> R) 
-         {rv : RandomVariable dom borel_sa f} :
-    RandomVariable dom Rbar_borel_sa (ConditionalExpectation prts sub f).
-    Proof.
-      generalize (Condexp_rv prts sub  f).
-      eapply RandomVariable_proper_le; trivial; try reflexivity.
-    Qed.
-
     Theorem qlearn
       (x' : Rfct (sigT M.(act)))
       (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
@@ -13103,6 +12920,8 @@ End FixedPoint_contract.
       }
       generalize (fun k sa =>
                     nncondexp_sqr_sum_bound_nneg
+                      prts
+                      (filt_sub k)
                       (fun ω : Ts =>
                          cost k sa ω - FiniteExpectation prts (cost k sa))
                       (rvscale 
@@ -13111,7 +12930,6 @@ End FixedPoint_contract.
                                    (FiniteConditionalExpectation 
                                       prts (filt_sub k)
                                       (Xmin k sa) ω)))
-                      (filt_sub k)
                  ); intros.                           
       assert (forall k sa,
                  IsFiniteExpectation 
