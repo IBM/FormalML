@@ -6700,7 +6700,7 @@ Section fin_cond_exp.
     apply rvsqr_rv.
     apply rvminus_rv; trivial.
     apply FiniteCondexp_rv'.
-  Qed.
+  Defined.
 
   Definition ConditionalVariance (f : Ts -> R) 
     {rv : RandomVariable dom borel_sa f} 

@@ -10659,6 +10659,60 @@ Proof.
       simpl; lra.
   Qed.
 
+  Lemma conditional_variance_bound_sum  (x y : Ts -> R)
+        {dom2 : SigmaAlgebra Ts}
+        (sub : sa_sub dom2 dom)
+        {rvx : RandomVariable dom borel_sa x}
+        {rvy : RandomVariable dom borel_sa y} 
+        {isfex : IsFiniteExpectation prts x}
+        {isfey : IsFiniteExpectation prts y} :
+    almostR2 prts Rbar_le
+      (ConditionalVariance prts sub (rvplus x y))
+      (Rbar_rvmult (const 2)
+         (Rbar_rvplus (ConditionalVariance prts sub x)
+            (ConditionalVariance prts sub y))).
+  Proof.
+    generalize (nncondexp_sqr_sum_bound_nneg
+                  (rvminus x (FiniteConditionalExpectation prts sub x))
+                  (rvminus y (FiniteConditionalExpectation prts sub y))
+                  sub
+               (rvx := (@rvminus_rv Ts dom x
+                          (FiniteConditionalExpectation prts sub x)
+                   rvx (FiniteCondexp_rv' prts sub x)))
+               (rvy := (@rvminus_rv Ts dom y
+                          (FiniteConditionalExpectation prts sub y)
+                          rvy (FiniteCondexp_rv' prts sub y)))).
+    apply almost_impl.
+(*
+    assert (NonnegativeFunction
+              (rvsqr
+                 (rvplus (rvminus x (FiniteConditionalExpectation prts sub x))
+                    (rvminus y (FiniteConditionalExpectation prts sub y))))).
+    {
+      apply nnfsqr.
+    }
+    assert (almostR2 prts eq
+              (NonNegCondexp prts sub
+                 (rvsqr
+                    (rvminus (rvplus x y) (FiniteConditionalExpectation prts sub (rvplus x y)))))
+              (NonNegCondexp prts sub
+                 (rvsqr
+                    (rvplus (rvminus x (FiniteConditionalExpectation prts sub x))
+                       (rvminus y (FiniteConditionalExpectation prts sub y)))))).
+*)
+    apply all_almost; intros ??.
+    unfold ConditionalVariance.
+    erewrite Condexp_nneg_simpl.
+    unfold Rbar_rvmult, Rbar_rvplus in *.
+    erewrite Condexp_nneg_simpl.
+    erewrite Condexp_nneg_simpl.
+    unfold variance_rv.
+    eapply Rbar_le_trans; cycle 1.
+    apply H.
+    apply slln.eq_Rbar_le.
+    generalize NonNegCondexp_proper; intros.
+    Admitted.
+
   Lemma conditional_variance_bound1_alt (x : Ts -> R) (c : R) 
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
