@@ -10672,7 +10672,9 @@ Proof.
          (Rbar_rvplus (ConditionalVariance prts sub x)
             (ConditionalVariance prts sub y))).
   Proof.
-    generalize (nncondexp_sqr_sum_bound_nneg
+    Local Existing Instance Rbar_le_pre.
+    etransitivity; cycle 1.
+    - generalize (nncondexp_sqr_sum_bound_nneg
                   (rvminus x (FiniteConditionalExpectation prts sub x))
                   (rvminus y (FiniteConditionalExpectation prts sub y))
                   sub
@@ -10682,36 +10684,28 @@ Proof.
                (rvy := (@rvminus_rv Ts dom y
                           (FiniteConditionalExpectation prts sub y)
                           rvy (FiniteCondexp_rv' prts sub y)))).
-    apply almost_impl.
-(*
-    assert (NonnegativeFunction
-              (rvsqr
-                 (rvplus (rvminus x (FiniteConditionalExpectation prts sub x))
-                    (rvminus y (FiniteConditionalExpectation prts sub y))))).
-    {
-      apply nnfsqr.
-    }
-    assert (almostR2 prts eq
-              (NonNegCondexp prts sub
-                 (rvsqr
-                    (rvminus (rvplus x y) (FiniteConditionalExpectation prts sub (rvplus x y)))))
-              (NonNegCondexp prts sub
-                 (rvsqr
-                    (rvplus (rvminus x (FiniteConditionalExpectation prts sub x))
-                       (rvminus y (FiniteConditionalExpectation prts sub y)))))).
-*)
-    apply all_almost; intros ??.
-    unfold ConditionalVariance.
-    erewrite Condexp_nneg_simpl.
-    unfold Rbar_rvmult, Rbar_rvplus in *.
-    erewrite Condexp_nneg_simpl.
-    erewrite Condexp_nneg_simpl.
-    unfold variance_rv.
-    eapply Rbar_le_trans; cycle 1.
-    apply H.
-    apply slln.eq_Rbar_le.
-    generalize NonNegCondexp_proper; intros.
-    Admitted.
+      apply almost_impl; apply all_almost; intros ??.
+      etransitivity; [apply H |].
+      unfold ConditionalVariance.
+      unfold Rbar_rvmult, Rbar_rvplus in *.
+      repeat erewrite Condexp_nneg_simpl.
+      reflexivity.
+    - unfold ConditionalVariance.
+      rewrite Condexp_nneg_simpl.
+      apply (@almostR2_subrelation _ _ _ prts _ Rbar_le (eq_subrelation _)).
+      apply (almost_prob_space_sa_sub_lift prts sub).
+      apply NonNegCondexp_proper; intros.
+      apply almostR2_eq_sqr_proper.
+      transitivity (rvminus (rvplus x y) (rvplus  (FiniteConditionalExpectation prts sub x)  (FiniteConditionalExpectation prts sub y))).
+      + apply almostR2_eq_minus_proper; try reflexivity.
+        apply (almost_prob_space_sa_sub_lift prts sub).
+        apply FiniteCondexp_plus.
+      + apply all_almost; intros ?.
+        rv_unfold.
+        lra.
+        Unshelve.
+        apply nnfsqr.
+  Qed.
 
   Lemma conditional_variance_bound1_alt (x : Ts -> R) (c : R) 
         {dom2 : SigmaAlgebra Ts}

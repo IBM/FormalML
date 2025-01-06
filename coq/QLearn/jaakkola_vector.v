@@ -7983,6 +7983,20 @@ Section qlearn.
 
   Existing Instance isl2_qlearn_Q.
 
+  Lemma Rmax_all_norm_nneg (f:Rfct (sigT M.(act))) (fnneg:NonnegativeFunction f) :
+    Rmax_norm _ f = Rmax_all f.
+  Proof.
+    unfold Rmax_norm, Rmax_all.
+    destruct (act_finite M).
+    apply Rmax_list_Proper.
+    apply refl_refl.
+    apply map_ext; intros ?.
+    rewrite Rabs_right; trivial.
+    specialize (fnneg a).
+    lra.
+  Qed.
+
+    
 
   Theorem qlearn_jaakkola
       (x' : Rfct (sigT M.(act)))
@@ -8951,7 +8965,9 @@ Section qlearn.
                 apply slln.eq_Rbar_le.
                 apply NonNegCondexp_ext.
                 reflexivity.
-              * admit.
+              * rewrite <- Rmax_all_norm_nneg in H14 by apply nnfsqr.
+                rewrite <- Rbar_le_Rle  in H14.
+                admit.
           - unfold ConditionalVariance.
             erewrite Condexp_nneg_simpl.
             apply NonNegCondexp_ext.
@@ -8987,7 +9003,28 @@ Section qlearn.
         exists (2 * (Rmax_norm {x : state M & act M x} x')^2).
         exists 2.
         intros.
-        admit.
+        split; [| split].
+        - apply Rmult_le_pos; [lra |].
+          apply pow2_ge_0.
+        - lra.
+        - intros k ω.
+          specialize (H11 (Rmax_norm {x : state M & act M x} (fun sa0 : {x : state M & act M x} => X k ω sa0)) (Rmax_norm {x : state M & act M x} x')).
+          repeat rewrite <- Rsqr_pow2.
+          etransitivity; [eapply H11 |].
+          rewrite <- Rmult_plus_distr_l.
+          apply Rmult_le_compat_l; [lra |].
+          rewrite Rplus_comm.
+          apply Rplus_le_compat_l.
+          apply Rsqr_le_abs_1.
+          etransitivity; [apply Rmax_list_minus_le_abs |]; simpl.
+          rewrite Rabs_right.
+          + apply Rmax_list_le_proper.
+            apply Forall2_map_f.
+            apply Forall2_refl_in.
+            rewrite Forall_forall; intros ? _.
+            apply Rabs_triang_inv2.
+          + apply Rle_ge.
+            apply Rmax_list_Rabs_pos.
       }
       destruct H16 as [c1 [c2 [? [??]]]].
       exists ((A + B*c1) + B*c2).
@@ -9032,7 +9069,7 @@ Section qlearn.
       do 2 rewrite <- Rsqr_pow2.
       assert (0 <= Rmax_norm {x0 : state M & act M x0} (fun sa0 : {x0 : state M & act M x0} => X k x sa0 - x' sa0)).
       {
-        admit.
+        apply Rmax_norm_nneg.
       }
       apply (jaakkola_tsitsilis_coefs2 (mknonnegreal _ H22) (mknonnegreal _ H20) (mknonnegreal _ H21)).
       
