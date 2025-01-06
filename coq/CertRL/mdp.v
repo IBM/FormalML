@@ -484,6 +484,14 @@ Definition Rmax_sq_norm : Rfct A -> R := let (ls,_) := finA in fun (f:Rfct A) =>
 
 Definition Rmax_ball :=  fun (f: Rfct A) eps g => Rmax_norm (fun s => minus (g s) (f s)) < eps.
 
+Lemma Rmax_norm_nneg f : 0 <= Rmax_norm f.
+Proof.
+  unfold Rmax_norm.
+  destruct finA.
+  apply Rmax_list_map_nonneg; intros.
+  apply Rabs_pos.
+Qed.
+
 Lemma Rmax_ball_le (f g : Rfct A) {eps1 eps2 : R} :
   eps1 <= eps2 -> Rmax_ball f eps1 g -> Rmax_ball f eps2 g.
 Proof. 
