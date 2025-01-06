@@ -7996,6 +7996,21 @@ Section qlearn.
     lra.
   Qed.
 
+  Lemma Rmax_norm_sqr (f:Rfct (sigT M.(act))) :
+    Rmax_norm _ (fun sa => (f sa)²) = (Rmax_norm _ (fun sa => f sa))².
+  Proof.
+    unfold Rmax_norm.
+    destruct (act_finite M).
+    rewrite <- (map_map f Rabs).
+    rewrite Rmax_list_abs_sqr.
+    rewrite map_map.
+    apply Rmax_list_Proper; apply refl_refl.
+    apply map_ext; intros ?.
+    rewrite Rabs_right; trivial.
+    apply Rle_ge.
+    apply nnfsqr.
+  Qed.    
+
   Theorem qlearn_jaakkola
       (x' : Rfct (sigT M.(act)))
       (adapt_alpha : forall sa, IsAdapted borel_sa (fun t ω => α t ω sa) F)
@@ -8918,8 +8933,7 @@ Section qlearn.
                            (Rmax_norm {x0 : state M & act M x0}
                               (fun sa0 : {x0 : state M & act M x0} => X n x sa0))²).
                {
-                 generalize Rsqr_le_abs_1; intros.
-                 admit.
+                 apply Rmax_norm_sqr.
                }
                rewrite <- H17.
                rewrite <- Rbar_le_Rle in H15.
