@@ -8890,44 +8890,18 @@ Section qlearn.
         revert H13; apply almost_impl.
         specialize (H10 n a).
         revert H10; apply almost_impl.
-        assert (rvf : RandomVariable dom borel_sa
-                        (rvminus (cost n a) 
-                           (FiniteConditionalExpectation prts (filt_sub n) (cost n a)))).
-        {
-          apply rvminus_rv.
-          - now apply (RandomVariable_sa_sub (filt_sub (S n))).
-          - apply FiniteCondexp_rv'.
-        }
-        assert (rvg : RandomVariable dom borel_sa 
-                        (rvminus (rvscale γ (Xmin n a))
-                           (FiniteConditionalExpectation prts (filt_sub n)
-                              (rvscale γ (Xmin n a))))).
-        {
-          apply rvminus_rv.
-          - apply rvscale_rv.
-            unfold Xmin.
-            apply rv_qmin1.
-            + intros.
-              apply (RandomVariable_sa_sub (filt_sub n)); typeclasses eauto.
-            + apply (RandomVariable_sa_sub (filt_sub (S n))); typeclasses eauto.
-          - apply FiniteCondexp_rv'.
-       }
-        generalize (nncondexp_sqr_sum_bound_nneg
-                      (rvminus
-                         (cost n a)
-                         (FiniteConditionalExpectation prts (filt_sub n) (cost n a)))
-                      (rvminus
-                         (rvscale γ (Xmin n a))
-                         (FiniteConditionalExpectation 
-                            prts (filt_sub n)
-                            (rvscale γ (Xmin n a))))
-                      (filt_sub n)
-                   ); apply almost_impl.
+        generalize (conditional_variance_bound_sum 
+                      (cost n a) 
+                      (rvscale γ (Xmin n a))
+                      (filt_sub n)); apply almost_impl.
         generalize (ConditionalVariance_minus_const  (fun ω0 : Ts =>
         cost n a ω0 + γ * qlearn_Qmin (X n ω0) (next_state n a ω0)) (x' a) (filt_sub n)); intros.
         apply almost_prob_space_sa_sub_lift in H10.
         revert H10; apply almost_impl.
-        apply all_almost; intros ?????.
+        generalize (ConditionalVariance_scale (filt_sub n) γ (Xmin n a)); intros.
+        apply almost_prob_space_sa_sub_lift in H10.
+        revert H10; apply almost_impl.
+        apply all_almost; intros ??????.
         unfold FT.
         assert ( Rbar_le
                    (ConditionalVariance prts (filt_sub n)
@@ -8935,60 +8909,56 @@ Section qlearn.
                          cost n a ω0 + γ * qlearn_Qmin (X n ω0) (next_state n a ω0)) x)
                    (2 * A +
                       2 *
-                        Rmax_norm {x0 : state M & act M x0}
-                          (fun sa0 : {x0 : state M & act M x0} => X n x sa0) ^ 2)).
+                        Rsqr (Rmax_norm {x0 : state M & act M x0}
+                                (fun sa0 : {x0 : state M & act M x0} => X n x sa0)))).
         {
-          
-          
-          replace (
-              (ConditionalVariance prts (filt_sub n)
-                 (fun ω0 : Ts => cost n a ω0 + γ * qlearn_Qmin (X n ω0) (next_state n a ω0))
-                 x)) with
-             (NonNegCondexp prts (filt_sub n)
-             (rvsqr
-                (rvplus (rvminus (cost n a) (FiniteConditionalExpectation prts (filt_sub n) (cost n a)))
-                   (rvminus (rvscale γ (Xmin n a)) (FiniteConditionalExpectation prts (filt_sub n) (rvscale γ (Xmin n a)))))) x).
-          - eapply Rbar_le_trans.
-            apply H13.
-            rewrite <- Rmult_plus_distr_l.
-            unfold Rbar_rvmult, Rbar_rvplus, const.
-            replace  (Finite (2 * (A + Rmax_norm {x0 : state M & act M x0} (fun sa0 : {x0 : state M & act M x0} => X n x sa0) ^ 2)))
+           eapply Rbar_le_trans.
+           apply H14.
+           rewrite <- Rmult_plus_distr_l.
+           unfold Rbar_rvmult, Rbar_rvplus, const.
+           replace (Finite
+                      (2 *
+                         (A +
+                            Rsqr (Rmax_norm {x0 : state M & act M x0}
+                                    (fun sa0 : {x0 : state M & act M x0} => X n x sa0)))))
               with
-              (Rbar_mult 2 (Rbar_plus A (Rmax_norm {x0 : state M & act M x0} (fun sa0 : {x0 : state M & act M x0} => X n x sa0) ^ 2))) by now simpl.
-            apply Rbar_mult_le_compat_l.
-            + simpl; lra.
-            + apply Rbar_plus_le_compat.
-              * unfold ConditionalVariance, const in H15.
-                erewrite Condexp_nneg_simpl in H15.
-                eapply Rbar_le_trans; cycle 1.
-                apply H15.
-                apply slln.eq_Rbar_le.
-                apply NonNegCondexp_ext.
-                reflexivity.
-              * rewrite <- Rmax_all_norm_nneg in H14 by apply nnfsqr.
-                rewrite <- Rbar_le_Rle  in H14.
-                admit.
-          - unfold ConditionalVariance.
-            erewrite Condexp_nneg_simpl.
-            apply NonNegCondexp_ext.
-            intros ?.
-            unfold rvsqr, rvplus.
-            do 3 rewrite rvminus_unfold.
-            f_equal.
-            unfold Rminus.
-            repeat rewrite Rplus_assoc.
-            f_equal.
-            unfold rvscale.
-            replace (FiniteConditionalExpectation prts (filt_sub n) (fun ω0 : Ts => cost n a ω0 + γ * qlearn_Qmin (X n ω0) (next_state n a ω0)) a0)
-              with (FiniteConditionalExpectation prts (filt_sub n) (cost n a) a0 +
-                       FiniteConditionalExpectation prts (filt_sub n) (fun omega : Ts => γ * Xmin n a omega) a0).
-            + unfold Xmin.
-              ring.
-            + admit.
-        }
-        rewrite <- H10 in H16.
+              (Rbar_mult 2 (Rbar_plus A (Rsqr (Rmax_norm {x0 : state M & act M x0} (fun sa0 : {x0 : state M & act M x0} => X n x sa0) )))) by now simpl.
+           apply Rbar_mult_le_compat_l.
+           + simpl; lra.
+           + apply Rbar_plus_le_compat.
+             * apply H16.
+             * rewrite H10.
+               unfold ConditionalVariance.
+               erewrite FiniteCondexp_eq.
+               unfold Rbar_rvscale.
+               rewrite <- Rmax_all_norm_nneg in H15 by apply nnfsqr.
+               assert (Rmax_norm {x : state M & act M x}
+                         (fun sa : {x : state M & act M x} => (X n x sa)²) =
+                           (Rmax_norm {x0 : state M & act M x0}
+                              (fun sa0 : {x0 : state M & act M x0} => X n x sa0))²).
+               {
+                 generalize Rsqr_le_abs_1; intros.
+                 admit.
+               }
+               rewrite <- H17.
+               rewrite <- Rbar_le_Rle in H15.
+               eapply Rle_trans; cycle 1.
+               apply H15.
+               assert (0 < Rsqr γ < 1).
+               {
+                 split.
+                 - apply Rsqr_pos_lt; lra.
+                 - rewrite <- Rsqr_1.
+                   apply Rsqr_lt_abs_1.
+                   rewrite Rabs_right; try lra.
+                   rewrite Rabs_right; try lra.
+               }                   
+               admit.
+         }
+         rewrite <- Rsqr_pow2.         
+        rewrite <- H13 in H17.
         eapply Rbar_le_trans; cycle 1.
-        apply H16.
+        apply H17.
         apply slln.eq_Rbar_le.
         apply ConditionalVariance_ext.
         reflexivity.
@@ -9072,80 +9042,10 @@ Section qlearn.
         apply Rmax_norm_nneg.
       }
       apply (jaakkola_tsitsilis_coefs2 (mknonnegreal _ H22) (mknonnegreal _ H20) (mknonnegreal _ H21)).
-      
-(*
-        Search Rmax_norm.
-       + admit.
-       + apply almost_forall; intros.
-         apply almost_countable_forall; try typeclasses eauto; intros.
-         unfold FT.
-(*
-         assert (cost_rv': RandomVariable dom borel_sa (cost n a)).
-         {
-           now apply (RandomVariable_sa_sub (filt_sub (S n))).
-         }
-*)
-         assert (next_state_rv': RandomVariable dom (discrete_sa (state M)) (next_state n a)).
-         {
-           now apply (RandomVariable_sa_sub (filt_sub (S n))).
-         }
-         assert (rvx : RandomVariable dom borel_sa
-                         (fun ω : Ts => cost n a ω + γ * qlearn_Qmin (X n ω) (next_state n a ω))).
-         {
-           typeclasses eauto.
-         }
-         assert (isfex : IsFiniteExpectation prts
-                    (fun ω : Ts => cost n a ω + γ * qlearn_Qmin (X n ω) (next_state n a ω))).
-         {
-           apply IsFiniteExpectation_plus; try typeclasses eauto.
-         }
-         assert (isfe2 : IsFiniteExpectation prts
-                           (fun ω : Ts => cost n a ω + γ * qlearn_Qmin (X n ω) (next_state n a ω) - x' a)).
-         {
-           apply IsFiniteExpectation_minus'; try typeclasses eauto.
-           apply IsFiniteExpectation_const.
-         }
-
-         generalize (ConditionalVariance_minus_const (fun ω : Ts => cost n a ω + γ * qlearn_Qmin (X n ω) (next_state n a ω)) (x' a) (filt_sub n)); intros.
-         generalize (@nncondexp_sqr_sum_bound_nneg); intros.
-         generalize (@condexp_sq_sum_le_2sum_sq); intros.
-         unfold FT.
-(*
-                      (fun ω : Ts =>
-                         cost k sa ω - FiniteExpectation prts (cost k sa))
-                      (rvscale 
-                         γ 
-                         (fun ω => (Xmin k sa ω) -
-                                   (FiniteConditionalExpectation 
-                                      prts (filt_sub k)
-                                      (Xmin k sa) ω)))
-                      (filt_sub k)
-                 ); intros.                           
-*)
-         unfold ConditionalVariance.
-         pose (w := fun t sa ω => 
-                  qlearn_w next_state cost cost_rv islp_cost filt_sub γ X
-                           t ω sa 
-                    (qlearn_Q_rv_dom next_state next_state_rv cost cost_rv Q0 α _ filt_sub _ _) (isfe_qlearn_Q next_state next_state_rv cost cost_rv _ _ _ alpha_bound rvα filt_sub γ t)).
-         assert (forall k sa,
-                    almostR2 prts eq
-                           (rvminus
-                              (FT k sa)
-                              (FiniteConditionalExpectation prts 
-                                 (filt_sub k)
-                                 (FT k sa)))
-                           (w k sa)).
-         {
-           admit.
-         }
-       admit.
-*)
      - intros.
        unfold X, FT.
        simpl.
        now ring_simplify.
-       Unshelve.
-       apply nnfsqr.
     Admitted.
               
      
