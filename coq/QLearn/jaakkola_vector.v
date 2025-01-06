@@ -8014,15 +8014,8 @@ Section qlearn.
                      is_lim_seq (fun n => X n ω sa) (x' sa)).
    Proof.
      intros gammalin pinf uniform X.
-(*
-     pose (QQ := (qlearn_Q next_state cost Q0 α γ)).
-     pose (ww := qlearn_w next_state cost cost_rv islp_cost filt_sub γ QQ).
-     pose (w := fun t ω sa => 
-                  qlearn_w next_state cost cost_rv islp_cost filt_sub β QQ
-                           t ω sa 
-                    (qlearn_Q_rv_dom next_state next_state_rv cost cost_rv Q0 α _ filt_sub _ _) (isfe_qlearn_Q next_state next_state_rv cost cost_rv _ _ _ alpha_bound rvα filt_sub β t)).
- *)
-     pose (FT := fun k sa ω => (cost k sa ω) + γ * (qlearn_Qmin (X k ω) (next_state k sa ω)) - (x' sa)).
+     pose (Xmin := fun k sa ω => qlearn_Qmin (X k ω) (next_state k sa ω)).
+     pose (FT := fun k sa ω => (cost k sa ω) + γ * (Xmin k sa ω) - (x' sa)).
      assert (rvXF : RandomVariable finfun_sa finfun_sa 
                       (qlearn_XF next_state cost cost_rv islp_cost filt_sub γ)).
      {
@@ -8271,17 +8264,6 @@ Section qlearn.
        - now apply (RandomVariable_sa_sub (filt_sub (S k))).
     }
        
-(*
-    assert (forall k sa,
-                (almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
-                   (ConditionalExpectation prts (filt_sub k)
-                      (fun ω : Ts => qlearn_Qmin (X k ω) (next_state k sa ω)))
-                   (ConditionalExpectation prts (filt_sub k)
-                      (fun ω : Ts =>
-                         FiniteExpectation prts (fun ω0 : Ts => qlearn_Qmin (X k ω) (next_state k sa ω0)))))).
-     {
-       intros.
-*)
      assert (freeze: forall k sa,
                 almostR2 (prob_space_sa_sub prts (filt_sub k)) eq
                   (ConditionalExpectation prts (filt_sub k)
@@ -8528,6 +8510,7 @@ Section qlearn.
        specialize (H7 n a).
        revert H7; apply almost_impl.
        apply all_almost; intros ??.
+       unfold Xmin.
        rewrite H7.
        generalize  (@qlearn_XF_contraction M Ts dom prts F next_state _ cost _ _ filt_sub γ (act_finite M)); intros contrac.
        assert (0 <= γ < 1) by lra.
@@ -8710,7 +8693,7 @@ Section qlearn.
         apply FiniteConditionalExpectation_ext.
         reflexivity.
       }
-      pose (Xmin := fun k sa ω => qlearn_Qmin (X k ω) (next_state k sa ω)).
+
       assert (forall k sa, IsLp prts 2 (Xmin k sa)).
       {
         intros.
