@@ -9047,6 +9047,6 @@ Section qlearn.
        unfold X, FT.
        simpl.
        now ring_simplify.
-    Admitted.
+   Qed.
               
 End qlearn.
