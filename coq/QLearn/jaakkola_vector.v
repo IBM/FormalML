@@ -8767,7 +8767,7 @@ Section qlearn.
           apply isfe_Rmax_all; intros.
           - apply rvsqr_rv.
             apply (RandomVariable_sa_sub (filt_sub k)); try typeclasses eauto.
-          -  admit.
+          - now apply islp2_isfe_sqr.
         }
         generalize (conditional_variance_bound_L2_fun (dom2 := F k)
                       (Xmin k sa)
@@ -8814,7 +8814,7 @@ Section qlearn.
             apply rvsqr_rv.
             now apply (RandomVariable_sa_sub (filt_sub k)).
           + intros.
-            admit.
+            now apply islp2_isfe_sqr.
       }
       assert (forall (x y : R),
                  x² <= 2*((x-y)² + y²)).
@@ -8878,11 +8878,26 @@ Section qlearn.
         revert H10; apply almost_impl.
         assert (rvf : RandomVariable dom borel_sa
                         (rvminus (cost n a) 
-                           (FiniteConditionalExpectation prts (filt_sub n) (cost n a)))) by admit.
+                           (FiniteConditionalExpectation prts (filt_sub n) (cost n a)))).
+        {
+          apply rvminus_rv.
+          - now apply (RandomVariable_sa_sub (filt_sub (S n))).
+          - apply FiniteCondexp_rv'.
+        }
         assert (rvg : RandomVariable dom borel_sa 
                         (rvminus (rvscale γ (Xmin n a))
                            (FiniteConditionalExpectation prts (filt_sub n)
-                              (rvscale γ (Xmin n a))))) by admit.
+                              (rvscale γ (Xmin n a))))).
+        {
+          apply rvminus_rv.
+          - apply rvscale_rv.
+            unfold Xmin.
+            apply rv_qmin1.
+            + intros.
+              apply (RandomVariable_sa_sub (filt_sub n)); typeclasses eauto.
+            + apply (RandomVariable_sa_sub (filt_sub (S n))); typeclasses eauto.
+          - apply FiniteCondexp_rv'.
+       }
         generalize (nncondexp_sqr_sum_bound_nneg
                       (rvminus
                          (cost n a)
