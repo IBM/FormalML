@@ -8804,35 +8804,6 @@ Section qlearn.
         apply H11.
         right; unfold Rsqr; lra.
       }
-      assert (forall a b,
-               exists c,
-                 forall x,
-                   a + b * (Rabs x)² <= c * (1 + (Rabs x))²).
-      {
-        intros.
-        exists (Rmax (Rabs a) (Rabs b)).
-        intros.
-        apply Rle_trans with (r2 := Rmax (Rabs a) (Rabs b) * (1 + (Rabs x)²)).
-        - rewrite Rmult_plus_distr_l.
-          apply Rplus_le_compat.
-          + rewrite Rmult_1_r.
-            apply Rle_trans with (r2 := Rabs a).
-            * apply Rle_abs.
-            * apply Rmax_l.
-          + apply Rmult_le_compat_r.
-            * apply Rle_0_sqr.
-            * apply Rle_trans with (r2 := Rabs b).
-              -- apply Rle_abs.
-              -- apply Rmax_r.
-        - apply Rmult_le_compat_l.
-          + apply Rle_trans with (r2 := Rabs a).
-            * apply Rabs_pos.
-            * apply Rmax_l.
-          + unfold Rsqr.
-            ring_simplify.
-            generalize (Rabs_pos x); intros.
-            lra.
-     }          
      assert (exists (A B : R),
                 0 < A /\ 0 < B /\
                     almost prts
@@ -8851,8 +8822,8 @@ Section qlearn.
         split; try lra.
         apply almost_forall; intros.
         apply almost_countable_forall; try typeclasses eauto; intros.        
-        specialize (H13 n a).
-        revert H13; apply almost_impl.
+        specialize (H12 n a).
+        revert H12; apply almost_impl.
         specialize (H10 n a).
         revert H10; apply almost_impl.
         generalize (conditional_variance_bound_sum  prts (filt_sub n)
@@ -8877,7 +8848,7 @@ Section qlearn.
                                 (fun sa0 : {x0 : state M & act M x0} => X n x sa0)))).
         {
            eapply Rbar_le_trans.
-           apply H14.
+           apply H13.
            rewrite <- Rmult_plus_distr_l.
            unfold Rbar_rvmult, Rbar_rvplus, const.
            replace (Finite
@@ -8890,16 +8861,16 @@ Section qlearn.
            apply Rbar_mult_le_compat_l.
            + simpl; lra.
            + apply Rbar_plus_le_compat.
-             * apply H16.
+             * apply H15.
              * rewrite H10.
                unfold ConditionalVariance.
                erewrite FiniteCondexp_eq.
                unfold Rbar_rvscale.
-               rewrite <- Rmax_all_norm_nneg in H15 by apply nnfsqr.
+               rewrite <- Rmax_all_norm_nneg in H14 by apply nnfsqr.
                rewrite <- Rmax_norm_sqr.
-               rewrite <- Rbar_le_Rle in H15.
+               rewrite <- Rbar_le_Rle in H14.
                eapply Rle_trans; cycle 1.
-               apply H15.
+               apply H14.
                assert ( Rsqr γ <= 1).
                {
                  rewrite <- Rsqr_1.
@@ -8911,21 +8882,21 @@ Section qlearn.
                apply Rmult_le_compat_r.
                - apply FiniteCondexp_nneg.
                  apply nnfsqr.
-               - apply H17.
+               - apply H16.
                - rewrite Rmult_1_l.
                  right.
                  apply FiniteConditionalExpectation_ext.
                  reflexivity.
          }
          rewrite <- Rsqr_pow2.         
-        rewrite <- H13 in H17.
+        rewrite <- H12 in H16.
         eapply Rbar_le_trans; cycle 1.
-        apply H17.
+        apply H16.
         apply slln.eq_Rbar_le.
         apply ConditionalVariance_ext.
         reflexivity.
       }
-      destruct H13 as [A [B [? [??]]]].
+      destruct H12 as [A [B [? [??]]]].
       assert (exists (c1 c2 : R),
                  0 <= c1 /\ 0 <= c2 /\
                  forall k ω,
@@ -8958,12 +8929,12 @@ Section qlearn.
           + apply Rle_ge.
             apply Rmax_list_Rabs_pos.
       }
-      destruct H16 as [c1 [c2 [? [??]]]].
+      destruct H15 as [c1 [c2 [? [??]]]].
       exists ((A + B*c1) + B*c2).
       assert (0 < A + B*c1 + B*c2).
       {
         eapply Rlt_le_trans.
-        apply H13.
+        apply H12.
         assert (0 <= B * c1 + B * c2).
         {
           rewrite <- Rmult_plus_distr_l.
@@ -8972,19 +8943,19 @@ Section qlearn.
         lra.
       }
       split; trivial.
-      revert H15.
+      revert H14.
       apply almost_impl.
       apply all_almost; intros ??.
       intros.
-      specialize (H15 k sa).
+      specialize (H14 k sa).
       eapply Rbar_le_trans.
-      apply H15.
+      apply H14.
       rewrite Rbar_le_Rle.
-      specialize (H18 k x).
-      apply Rmult_le_compat_l with (r := B) in H18; try lra.
-      apply Rplus_le_compat_l with (r := A) in H18.
+      specialize (H17 k x).
+      apply Rmult_le_compat_l with (r := B) in H17; try lra.
+      apply Rplus_le_compat_l with (r := A) in H17.
       eapply Rle_trans.
-      apply H18.
+      apply H17.
       rewrite Rmult_plus_distr_l.
       rewrite <- Rplus_assoc.
       rewrite <- Rmult_assoc.
@@ -9003,7 +8974,7 @@ Section qlearn.
       {
         apply Rmax_norm_nneg.
       }
-      apply (jaakkola_tsitsilis_coefs2 (mknonnegreal _ H22) (mknonnegreal _ H20) (mknonnegreal _ H21)).
+      apply (jaakkola_tsitsilis_coefs2 (mknonnegreal _ H21) (mknonnegreal _ H19) (mknonnegreal _ H20)).
      - intros.
        unfold X, FT.
        simpl.
