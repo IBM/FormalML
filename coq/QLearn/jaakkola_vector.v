@@ -5609,12 +5609,7 @@ Section jaakola_vector2.
          apply Rle_abs.
      Qed.
 
-     Lemma Binomial_C_2_1 : Binomial.C 2 1 = 2.
-     Proof.
-       vm_compute; lra.
-     Qed.
-
-     Lemma jaakkola_tsitsilis_coefs1 (x : R) :
+     Lemma jaakkola_tsitsiklis_coefs1 (x : R) :
        Rsqr (1 + x) <= 3 + 3 * Rsqr (x).
      Proof.
        unfold Rsqr; ring_simplify.
@@ -5624,7 +5619,7 @@ Section jaakola_vector2.
          apply Rmult_le_compat_l with (r := x) in H; lra.         
     Qed.         
            
-     Lemma jaakkola_tsitsilis_coefs2 (x A B : nonnegreal) :
+     Lemma jaakkola_tsitsiklis_coefs2 (x A B : nonnegreal) :
        A + B * Rsqr x <= (A + B) *  Rsqr (1 + x).
      Proof.
        unfold Rsqr; ring_simplify.
@@ -5639,7 +5634,7 @@ Section jaakola_vector2.
        lra.
      Qed.
        
-     Lemma jaakkola_tsitsilis_coefs2_alt (x : nonnegreal) (A B : R):
+     Lemma jaakkola_tsitsiklis_coefs2_alt (x : nonnegreal) (A B : R):
        0 <= Rmax A B ->
        A + B * Rsqr x <= (Rmax A B) *  Rsqr (1 + x).
      Proof.
@@ -5662,13 +5657,13 @@ Section jaakola_vector2.
          + apply Rmax_r.
     Qed.
 
-     Lemma jaakkola_tsitsilis_coefs2_alt2 (A B x : R):
+     Lemma jaakkola_tsitsiklis_coefs2_alt2 (A B x : R):
        0 <= Rmax A B ->
        A + B * Rsqr (Rabs x) <= (Rmax A B) *  Rsqr (1 + (Rabs x)).
      Proof.
        intros.
        generalize (Rabs_pos x); intros.
-       now apply (jaakkola_tsitsilis_coefs2_alt (mknonnegreal _ H0)).
+       now apply (jaakkola_tsitsiklis_coefs2_alt (mknonnegreal _ H0)).
     Qed.
 
   Theorem Jaakkola_alpha_beta_unbounded
@@ -5865,7 +5860,7 @@ Section jaakola_vector2.
           rewrite (Rmult_comm 3), Rmult_assoc.
           rewrite <- Rmult_plus_distr_l, <- Rsqr_pow2.
           apply Rmult_le_compat_l; try lra.
-          apply jaakkola_tsitsilis_coefs1.
+          apply jaakkola_tsitsiklis_coefs1.
         }
         intros ω.
         specialize (H8 ω).
@@ -8939,7 +8934,7 @@ Section qlearn.
       {
         apply Rmax_norm_nneg.
       }
-      apply (jaakkola_tsitsilis_coefs2 (mknonnegreal _ H21) (mknonnegreal _ H19) (mknonnegreal _ H20)).
+      apply (jaakkola_tsitsiklis_coefs2 (mknonnegreal _ H21) (mknonnegreal _ H19) (mknonnegreal _ H20)).
      - intros.
        unfold X, FT.
        simpl.
