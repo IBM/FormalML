@@ -7894,17 +7894,10 @@ Section qlearn.
   Existing Instance isfe_qmin .
   Existing Instance finfun_sa.
 
-  Program Instance frf_Qmin (g : Rfct (sigT M.(act))) (f : Ts -> M.(state))
+  Instance frf_Qmin (g : Rfct (sigT M.(act))) (f : Ts -> M.(state))
            {rvf : RandomVariable dom (discrete_sa M.(state)) f} :
     FiniteRangeFunction (fun ω0 : Ts => qlearn_Qmin g (f ω0))
-    := { frf_vals := map (fun s => qlearn_Qmin g s) fin_elms }.
-  Next Obligation.
-    apply in_map_iff.
-    exists (f x).
-    split; trivial.
-    destruct (M.(fs)).
-    apply fin_finite.
-  Qed.
+    := frf_Qmin g f.
 
   Existing Instance st_eqdec.
 
@@ -8053,8 +8046,7 @@ Section qlearn.
              apply (RandomVariable_sa_sub (filt_sub k)).
              unfold X.
              apply qlearn_Q_rv; try typeclasses eauto.
-           * apply (RandomVariable_sa_sub (filt_sub (S k))).
-             apply next_state_rv.
+           * apply (RandomVariable_sa_sub (filt_sub (S k))); trivial.
        - apply rvconst.
     }
      assert (isfe_finexp: forall k sa,
@@ -8076,10 +8068,8 @@ Section qlearn.
                apply rv_qmin2; try easy.
                intros.
                unfold X.
-               apply qlearn_Q_rv_dom; try typeclasses eauto.
-               apply filt_sub.
-               apply qlearn_next_state_rv2; try typeclasses eauto.
-               apply filt_sub.
+               - now apply qlearn_Q_rv_dom; try typeclasses eauto.
+               - now apply qlearn_next_state_rv2; try typeclasses eauto.
              }
              apply borel_Rbar_borel in H.
              revert H.
@@ -8094,12 +8084,9 @@ Section qlearn.
             unfold X.
             apply isfe_qmin2'.
             - intros.
-              apply qlearn_Q_rv_dom; try typeclasses eauto.
-              apply filt_sub.
+              now apply qlearn_Q_rv_dom; try typeclasses eauto.
             - intros.
-              apply isfe_qlearn_Q; try typeclasses eauto.
-              + apply alpha_bound.
-              + apply filt_sub.
+              now apply isfe_qlearn_Q; try typeclasses eauto.
           }
            assert (isfef: Rbar_IsFiniteExpectation (ProductSpace.product_ps prts prts)
                             (fun '(ω, ω0) => qlearn_Qmin (X k ω) (next_state k sa ω0))).
@@ -8118,8 +8105,7 @@ Section qlearn.
                                                                         (fun ω0 : Ts => qlearn_Qmin (X k a) (next_state k sa ω0))
                                                                         (isfe_qmin next_state (X k a) k sa)))).
            + apply rv_qmin1; try typeclasses eauto.
-             apply (RandomVariable_sa_sub (filt_sub (S k))).
-             apply next_state_rv.
+             now apply (RandomVariable_sa_sub (filt_sub (S k))).
          }
      }
      
@@ -8137,8 +8123,7 @@ Section qlearn.
              apply (RandomVariable_sa_sub (filt_sub k)).
              unfold X.
              apply qlearn_Q_rv; try typeclasses eauto.
-           * apply (RandomVariable_sa_sub (filt_sub (S k))).
-             apply next_state_rv.
+           * now apply (RandomVariable_sa_sub (filt_sub (S k))).
        - apply rvconst.
        - apply IsFiniteExpectation_plus.
          + apply (RandomVariable_sa_sub (filt_sub (S k))).
@@ -8149,20 +8134,15 @@ Section qlearn.
              apply (RandomVariable_sa_sub (filt_sub k)).
              unfold X.
              apply qlearn_Q_rv; try typeclasses eauto.
-           * apply (RandomVariable_sa_sub (filt_sub (S k))).
-             apply next_state_rv.
+           * now apply (RandomVariable_sa_sub (filt_sub (S k))).
          + apply IsL2_Finite; trivial.
-           apply (RandomVariable_sa_sub (filt_sub (S k))).
-           apply cost_rv.
+           now apply (RandomVariable_sa_sub (filt_sub (S k))).
          + apply IsFiniteExpectation_scale.
            apply isfe_qmin1.
            * intros.
-             apply qlearn_Q_rv_dom; try typeclasses eauto.
-             apply filt_sub.
+             now apply qlearn_Q_rv_dom; try typeclasses eauto.
            * intros.
-             apply isfe_qlearn_Q; try typeclasses eauto.
-             -- apply alpha_bound.
-             -- apply filt_sub.
+             now apply isfe_qlearn_Q; try typeclasses eauto.
        - apply IsFiniteExpectation_const.
      }
      assert (forall n sa, RandomVariable (F n) borel_sa (fun ω : Ts => X n ω sa)).
@@ -8260,9 +8240,7 @@ Section qlearn.
          intros.
          - now apply (RandomVariable_sa_sub (filt_sub k)).
          - intros.
-           apply isfe_qlearn_Q; try typeclasses eauto.
-           apply alpha_bound.
-           apply filt_sub.
+           now apply isfe_qlearn_Q; try typeclasses eauto.
        }
        specialize (freez rvx rvy rvPsi _ _).       
        cut_to freez; [|apply ProductSpace.independent_sas_comm, indep_next_state].
@@ -8340,9 +8318,7 @@ Section qlearn.
            - intros.
              now apply (RandomVariable_sa_sub (filt_sub k)).
            - intros.
-             apply isfe_qlearn_Q; try typeclasses eauto.
-             + apply alpha_bound.
-             + apply filt_sub.
+             now apply isfe_qlearn_Q; try typeclasses eauto.
          }
          generalize (Condexp_plus prts (filt_sub k)
                        (cost k sa)
@@ -8422,9 +8398,7 @@ Section qlearn.
            - intros.
              now apply (RandomVariable_sa_sub (filt_sub k)).
            - intros.
-             apply isfe_qlearn_Q; try typeclasses eauto.
-             + apply alpha_bound.
-             + apply filt_sub.
+             now apply isfe_qlearn_Q; try typeclasses eauto.
          }
          generalize (FiniteCondexp_minus' prts (filt_sub k)
                         (fun ω : Ts =>
@@ -8641,13 +8615,9 @@ Section qlearn.
       assert (forall k sa, IsLp prts 2 (Xmin k sa)).
       {
         intros.
-        apply isl2_qmin1.
-        - intros.
-          now apply (RandomVariable_sa_sub (filt_sub k)).
-        - intros.
-          apply isl2_qlearn_Q; try typeclasses eauto.
-          apply alpha_bound.
-          apply filt_sub.
+        apply isl2_qmin1; intros.
+        - now apply (RandomVariable_sa_sub (filt_sub k)).
+        - now apply isl2_qlearn_Q; try typeclasses eauto.
       }
       assert (forall k sa,
                  IsFiniteExpectation prts (Xmin k sa)).
@@ -8683,9 +8653,7 @@ Section qlearn.
       assert (isl2_X :forall k sa,
                  IsLp prts 2 (fun ω => X k ω sa)).
       {
-        apply isl2_qlearn_Q; try typeclasses eauto.
-        apply alpha_bound.
-        apply filt_sub.
+        now apply isl2_qlearn_Q; try typeclasses eauto.
       }
       assert (forall k sa,
                  almostR2 prts Rle 
