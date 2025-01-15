@@ -7911,24 +7911,6 @@ Section qlearn.
     apply fin_finite.
   Qed.
 
-(*
-
-  Instance finfun_sa : SigmaAlgebra (Rfct (sigT M.(act))) :=
-    iso_sa (iso := Isomorphism_symm (FiniteTypeVector.finite_fun_vec_encoder finA EqDecsigT (B := R)))
-      (Rvector_borel_sa _).
-*)
-
-  Program Instance inner_frf_compose {A B C} (g1 : A -> B) (g2 : B -> C)
-          (frf1 : FiniteRangeFunction g1) :
-    FiniteRangeFunction (compose g2 g1)
-    := { frf_vals := map g2 frf_vals }.
-  Next Obligation.
-    apply in_map_iff.
-    exists (g1 x).
-    split; trivial.
-    now destruct frf1.
-  Qed.
-
   Existing Instance st_eqdec.
 
   (*  Context {finA : FiniteType (sigT M.(act))}. *)
