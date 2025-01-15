@@ -7933,23 +7933,6 @@ Section qlearn.
 
   (*  Context {finA : FiniteType (sigT M.(act))}. *)
 
-   Lemma FiniteExpectation_minus':
-    forall (rv_X1 rv_X2 : Ts -> R)
-      {rv1 : RandomVariable dom borel_sa rv_X1} {rv2 : RandomVariable dom borel_sa rv_X2}
-      {rv12 : RandomVariable dom borel_sa (rvminus rv_X1 rv_X2)}
-      {isfe1 : IsFiniteExpectation prts rv_X1} {isfe2 : IsFiniteExpectation prts rv_X2}
-      {isfe12 : IsFiniteExpectation prts (rvminus rv_X1 rv_X2)},
-      FiniteExpectation prts (rvminus rv_X1 rv_X2) = FiniteExpectation prts rv_X1 - FiniteExpectation prts rv_X2.
-  Proof.
-    intros.
-    generalize (FiniteExpectation_minus prts rv_X1 rv_X2)
-    ; intros eqq.
-    etransitivity.
-    - etransitivity; [| eapply eqq].
-      apply FiniteExpectation_ext; reflexivity.
-    - f_equal; apply FiniteExpectation_ext; reflexivity.
-  Qed.
-
   Existing Instance isl2_qlearn_Q.
 
   Lemma Rmax_all_norm_nneg (f:Rfct (sigT M.(act))) (fnneg:NonnegativeFunction f) :
