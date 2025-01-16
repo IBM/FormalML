@@ -133,6 +133,7 @@ Lemma lemma2_0_w (w : Ts)
      now rewrite Rvector_scale1.
  Qed.
 
+
  Lemma Rmult_not_0 (x y : R) :
        (x <> 0) /\ (y <> 0) -> x * y <> 0.
  Proof.
@@ -912,25 +913,6 @@ Qed.
       apply H4.
     Qed.   
     
-   Lemma ps_inter_cond_prob_r {T:Type} {σ:SigmaAlgebra T} 
-      (A B : event σ) (prts' : ProbSpace σ) :
-     ps_P B > 0 ->
-     ps_P (event_inter A B) = (cond_prob prts' A B) * ps_P B.
-   Proof.
-     intros.
-     unfold cond_prob, Rdiv.
-     rewrite Rmult_assoc, Rinv_l; lra.
-   Qed.
-
-   Lemma ps_inter_cond_prob_l {T:Type} {σ:SigmaAlgebra T} 
-      (A B : event σ) (prts' : ProbSpace σ) :
-     ps_P A > 0 ->
-     ps_P (event_inter A B) = ps_P A * (cond_prob prts' B A).
-   Proof.
-     intros.
-     rewrite event_inter_comm, ps_inter_cond_prob_r; lra.
-   Qed.
-
 
    Lemma lemma3_helper_iter_conv  (f α : nat -> R) (C : R) :
       (forall n, 0 <= α n < 1) ->
@@ -1850,6 +1832,24 @@ Section jaakola_vector2.
   Context {Ts : Type} {SS:Type} (N:nat)
     {dom: SigmaAlgebra Ts} {prts: ProbSpace dom}.
 
+ Lemma rvmaxabs_vecrvclip (X : Ts -> vector R (S N)) (C : nonnegreal) :
+     rv_le 
+       (rvmaxabs (vecrvclip (S N) X C))
+       (const C).
+   Proof.
+     intros ?.
+     unfold rvmaxabs, const, vecrvclip.
+     match_destr; try lra.
+     rewrite Rvector_max_abs_scale.
+     generalize (cond_nonneg C); intros.
+     rewrite Rabs_right.
+     - unfold Rdiv.
+       rewrite Rmult_assoc.
+       rewrite Rinv_l; lra.
+     - apply Rle_ge.
+       apply Rdiv_le_0_compat; lra.
+   Qed.
+
   Lemma lemma3_vector_forall_eventually_cond_prob_almost (α β X : nat -> Ts -> vector R (S N)) (C C0 γ : posreal)
         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n))
         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n))        
@@ -2535,19 +2535,6 @@ Section jaakola_vector2.
          match_destr.
        Qed.
 
-       Lemma event_sub_eventually {A} {σ: SigmaAlgebra A} (pe: nat -> event σ):
-         forall n,
-           event_sub (inter_of_collection (fun n0 => pe (n + n0)%nat))
-                     (event_eventually pe).
-       Proof.
-         intros ???.
-         exists n.
-         intros.
-         specialize (H (n0 - n)%nat).
-         simpl in H.
-         now replace (n + (n0 - n))%nat with n0 in H by lia.
-       Qed.
-
       Lemma lemma3_almost (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
          (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
          (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
@@ -2952,23 +2939,6 @@ Section jaakola_vector2.
         now rewrite H12 in H11.
    Qed.
 
-   Lemma rvmaxabs_vecrvclip (X : Ts -> vector R (S N)) (C : nonnegreal) :
-     rv_le 
-       (rvmaxabs (vecrvclip (S N) X C))
-       (const C).
-   Proof.
-     intros ?.
-     unfold rvmaxabs, const, vecrvclip.
-     match_destr; try lra.
-     rewrite Rvector_max_abs_scale.
-     generalize (cond_nonneg C); intros.
-     rewrite Rabs_right.
-     - unfold Rdiv.
-       rewrite Rmult_assoc.
-       rewrite Rinv_l; lra.
-     - apply Rle_ge.
-       apply Rdiv_le_0_compat; lra.
-   Qed.
 
    Definition vecrvchoice {Ts : Type} {n : nat} (c : Ts -> bool) (rv_X1 rv_X2 : Ts -> vector R n) (omega : Ts) := if c omega then rv_X1 omega else rv_X2 omega.
 
@@ -8360,7 +8330,7 @@ Section qlearn.
                            (next_state k sa)
                            (qlearn_Qmin (X k x))
                            (ident_distr_next_state k sa)).
-             apply identically_distributed_rvs_proper; try easy.
+             now apply identically_distributed_rvs_proper.
          }
          rewrite H15.
          simpl.
@@ -8369,7 +8339,7 @@ Section qlearn.
          apply ident_distr_finite_exp_eq with (rvy := H4 k sa) (rvx := H4 0%nat sa).
          specialize (ident_distr_cost k sa).
          revert ident_distr_cost.
-         apply identically_distributed_rvs_proper; try easy.
+         now apply identically_distributed_rvs_proper.
          Unshelve.
          - apply rv_qmin1.
            + intros; apply rvconst.
@@ -8590,7 +8560,7 @@ Section qlearn.
         }
         generalize (variance_exp_independent prts (filt_sub k) (cost k sa)); intros var_ind.
         assert (independent_sas prts (pullback_rv_sub dom borel_sa (cost k sa) (cost_rv' k sa))
-    (filt_sub k)).
+                  (filt_sub k)).
         {
           specialize (indep_cost k sa).
           revert indep_cost.
@@ -8910,3 +8880,4 @@ Section qlearn.
    Qed.
               
 End qlearn.
+

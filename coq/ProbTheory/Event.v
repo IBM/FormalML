@@ -3010,6 +3010,19 @@ Section eventually_event.
                              event_impl (event_const (n <= i)%nat) (pe i))))).
   Qed.
 
+  Lemma event_sub_eventually {A} {σ: SigmaAlgebra A} (pe: nat -> event σ):
+    forall n,
+      event_sub (inter_of_collection (fun n0 => pe (n + n0)%nat))
+        (event_eventually pe).
+  Proof.
+    intros ???.
+    exists n.
+    intros.
+    specialize (H (n0 - n)%nat).
+    simpl in H.
+    now replace (n + (n0 - n))%nat with n0 in H by lia.
+  Qed.
+
 End eventually_event.
 
 Coercion event_pre : event >-> Funclass.

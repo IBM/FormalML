@@ -877,6 +877,23 @@ Section conditional_probability.
                (A B : event σ) 
     := ps_P (A ∩ B)/ps_P(B).
 
+  Lemma ps_inter_cond_prob_r (A B : event σ) :
+    ps_P B > 0 ->
+    ps_P (event_inter A B) = (cond_prob A B) * ps_P B.
+  Proof.
+    intros.
+    unfold cond_prob, Rdiv.
+    rewrite Rmult_assoc, Rinv_l; lra.
+  Qed.
+
+  Lemma ps_inter_cond_prob_l (A B : event σ) :
+    ps_P A > 0 ->
+    ps_P (event_inter A B) = ps_P A * (cond_prob B A).
+  Proof.
+    intros.
+    rewrite event_inter_comm, ps_inter_cond_prob_r; lra.
+  Qed.
+
   Lemma infinite_sum'_scal_r {f1 : nat -> R} {sum1 : R} (c : R) :
     infinite_sum' f1 sum1 ->
     infinite_sum' (fun x : nat => f1 x * c) (sum1 * c).
