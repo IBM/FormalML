@@ -133,51 +133,6 @@ Lemma lemma2_0_w (w : Ts)
      now rewrite Rvector_scale1.
  Qed.
 
-
- Lemma Rmult_not_0 (x y : R) :
-       (x <> 0) /\ (y <> 0) -> x * y <> 0.
- Proof.
-   intros.
-   unfold not.
-   intro zz.
-   destruct H.
-   replace 0 with (x * 0) in zz.
-   apply Rmult_eq_reg_l in zz; try lra.
-   apply Rmult_0_r.
- Qed.
-
- 
- Lemma Rdiv_not_0 (x y : R) :
-       (x <> 0) /\ (y <> 0) -> x / y <> 0.
- Proof.
-   intros.
-   unfold Rdiv.
-   apply Rmult_not_0.
-   destruct H.
-   split; trivial.
-   now apply Rinv_neq_0_compat.
- Qed.
-
- Lemma Rvector_scale_not_0 (x:R) (y : vector R N) :
-       (x <> 0) /\ (y <> Rvector_zero) -> Rvector_scale x y <> Rvector_zero.
- Proof.
-   intros.
-   unfold not.
-   intro zz.
-   destruct H.
-   rewrite <- Rvector_scale_zero with (c := x) in zz.
-   now apply Rvector_scale_inj in zz.
- Qed.
-
- Lemma Rvector_max_abs_nzero (v : vector R N) :
-   v <> Rvector_zero -> Rvector_max_abs v <> 0.
- Proof.
-   unfold not.
-   intros.
-   apply Rvector_max_abs_zero in H0.
-   now apply H in H0.
- Qed.
-
  Lemma vecrvclip_not_0 (x : Ts -> vector R N) (C : posreal) (w : Ts) :
    x w <> Rvector_zero ->
    vecrvclip x (pos_to_nneg C) w <> Rvector_zero.

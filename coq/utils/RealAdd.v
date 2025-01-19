@@ -7047,3 +7047,27 @@ Lemma max_abs_sqr (a b : R) :
     apply Rplus_le_le_0_compat; apply Rabs_pos.
   Qed.
 
+
+ Lemma Rmult_not_0 (x y : R) :
+       (x <> 0) /\ (y <> 0) -> x * y <> 0.
+ Proof.
+   intros.
+   unfold not.
+   intro zz.
+   destruct H.
+   replace 0 with (x * 0) in zz.
+   apply Rmult_eq_reg_l in zz; try lra.
+   apply Rmult_0_r.
+ Qed.
+
+ 
+ Lemma Rdiv_not_0 (x y : R) :
+       (x <> 0) /\ (y <> 0) -> x / y <> 0.
+ Proof.
+   intros.
+   unfold Rdiv.
+   apply Rmult_not_0.
+   destruct H.
+   split; trivial.
+   now apply Rinv_neq_0_compat.
+ Qed.

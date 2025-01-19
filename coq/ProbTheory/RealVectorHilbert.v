@@ -375,6 +375,17 @@ Section Rvector_defs.
     now repeat rewrite Rvector_scale1 in H0.
   Qed.
   
+ Lemma Rvector_scale_not_0 (x:R) (y : vector R n) :
+       (x <> 0%R) /\ (y <> Rvector_zero) -> Rvector_scale x y <> Rvector_zero.
+ Proof.
+   intros.
+   unfold not.
+   intro zz.
+   destruct H.
+   rewrite <- Rvector_scale_zero with (c := x) in zz.
+   now apply Rvector_scale_inj in zz.
+ Qed.
+
   Lemma Rvector_inner_comm (x y:vector R n) : x ⋅ y = y ⋅ x.
   Proof.
     unfold Rvector_inner.
@@ -1336,6 +1347,15 @@ Section more_lemmas.
         rewrite Rvector_nth_zero.
         now rewrite Rabs_R0.
   Qed.
+
+ Lemma Rvector_max_abs_nzero {n} (v : vector R n) :
+   v <> Rvector_zero -> Rvector_max_abs v <> 0.
+ Proof.
+   unfold not.
+   intros.
+   apply Rvector_max_abs_zero in H0.
+   now apply H in H0.
+ Qed.
 
   Lemma Rvector_max_abs_scale {n} c (v : vector R n) :
     Rvector_max_abs (Rvector_scale c v) = Rabs c * Rvector_max_abs v.
