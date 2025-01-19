@@ -10,6 +10,19 @@ Import ListNotations.
 Definition vector (T:Type) (n:nat)
   := { l : list T | length l = n}.
 
+Program Definition vector_conv {n1 n2} {T} (neq: n1 = n2) (v : vector T n1) : vector T n2.
+Proof.
+  destruct v.
+  rewrite neq in e.
+  exact (exist _ x e).
+Defined.
+
+Lemma vector_conv_eq {n1 n2} {T} (neq: n1 = n2) (v : vector T n1) :
+  proj1_sig v = proj1_sig (vector_conv neq v).
+Proof.
+  now destruct v.
+Qed.  
+
 Lemma length_pf_irrel {T} {n:nat} {l:list T} (pf1 pf2:length l = n) : pf1 = pf2.
 Proof.
   apply UIP_dec.
