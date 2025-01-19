@@ -12842,18 +12842,7 @@ End FixedPoint_contract.
          now apply identically_distributed_rvs_proper.
    Qed.
 
-   Program Definition vdrop_last {T} {n} (v:vector T (S n)) : vector T n := removelast v.
-   Next Obligation.
-     rewrite removelast_length.
-     destruct v.
-     simpl.
-     now rewrite e.
-   Qed.
-
-   Definition vlast {T} {n} (v:vector T (S n)) : T := vector_nth n (Nat.lt_succ_diag_r n) v.
-
-   Definition vfirst {T} {n} (v:vector T (S n)) : T := vector_nth 0 (Nat.lt_0_succ n) v.
-   
+(*
    Definition ps_P_nneg {T} {dom : SigmaAlgebra T} (ps : ProbSpace dom) (ev : event dom) :=
      mknonnegreal (ps_P (ProbSpace := ps) ev) (ps_pos _).
 
@@ -12865,10 +12854,10 @@ End FixedPoint_contract.
      match N with
      | 0 => fun v s => ps_P_nneg p1 (discrete_singleton s)
      | (S n) => fun v s =>
-         let vn := vlast v in
-         mknonnegreal ((policy_prob_s d p1 ns n (vdrop_last v) (projT1 vn) ) *
+         let vn := vector_last v in
+         mknonnegreal ((policy_prob_s d p1 ns n (vector_removelast v) (projT1 vn) ) *
                          (mknonnegreal
-                            ((ps_P_nneg (d n (vdrop_last v) (projT1 vn)) (discrete_singleton (projT2 vn))) *
+                            ((ps_P_nneg (d n (vector_removelast v) (projT1 vn)) (discrete_singleton (projT2 vn))) *
                                (ps_P_nneg (ns vn) (discrete_singleton s))) (prod_nonnegreal _ _)))
                            (prod_nonnegreal _ _)
      end.
@@ -12883,15 +12872,16 @@ End FixedPoint_contract.
                                         (ps_P_nneg (d 0%nat v (projT1 sa)) (discrete_singleton (projT2 sa))))
                                      (prod_nonnegreal _ _)
      | (S n) => fun v sa =>
-         let vn := vlast v in
+         let vn := vector_last v in
          mknonnegreal
-           ((policy_prob_sa d p1 ns n (vdrop_last v) vn ) *
+           ((policy_prob_sa d p1 ns n (vector_removelast v) vn ) *
               (mknonnegreal 
                  ((ps_P_nneg (ns vn) (discrete_singleton (projT1 sa))) *
                     (ps_P_nneg (d (S n) v (projT1 sa)) (discrete_singleton (projT2 sa))))
                  (prod_nonnegreal _ _)))
            (prod_nonnegreal _ _)
      end.
+  *)
 
    (*
    Instance dep_ps_product_ps {X : Type} {Y : Type} (A : SigmaAlgebra X) (B : SigmaAlgebra Y)

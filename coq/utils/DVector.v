@@ -1077,6 +1077,8 @@ Qed.
 Definition vector_last  {A} {n} (v:vector A (S n)) : A
   := vector_nth n (Nat.lt_succ_diag_r n) v.
 
+Definition vector_first {A} {n} (v:vector A (S n)) : A
+  := vector_nth 0 (Nat.lt_0_succ n) v.
 
 Lemma vector_removelast_eq {n} {A} (v:vector A (S n)) :
   v = vector_add_to_end (vector_last v) (vector_removelast v).
