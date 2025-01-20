@@ -2960,3 +2960,4 @@ Proof.
   rewrite H.
   now rewrite ELimInf_seq_opp.
 Qed.
+

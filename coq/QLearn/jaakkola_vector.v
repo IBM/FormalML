@@ -1986,50 +1986,6 @@ Section jaakola_vector2.
           apply ps_union_sup0.
         Qed.
 
-         Lemma Inf_seq_ElimInf_seq_le (f : nat -> Rbar) :
-           Rbar_le (Inf_seq f) (ELimInf_seq f).
-         Proof.
-           generalize (inf_ElimInf f 0%nat); intros.
-           eapply Rbar_le_trans; cycle 1.
-           apply H.
-           apply Inf_seq_le.
-           intros.
-           replace (n + 0)%nat with n by lia.
-           apply Rbar_le_refl.
-         Qed.
-
-         Lemma Inf_seq_Elim_seq_le (f : nat -> Rbar) :
-           Rbar_le (Inf_seq f) (ELim_seq f).
-         Proof.
-           eapply Rbar_le_trans.
-           apply Inf_seq_ElimInf_seq_le.
-           apply ELimInf_ELim_seq_le.
-        Qed.
-
-         Lemma ElimSup_Sup (f : nat -> Rbar) :
-           Rbar_le (ELimSup_seq f) (Sup_seq f).
-           Proof.
-             rewrite ELimSup_InfSup_seq.
-             rewrite Inf_eq_glb.
-             unfold Rbar_glb.
-             match goal with
-               [|- context [proj1_sig ?x ]] => destruct x; simpl
-             end.
-             destruct r as [lb glb].
-             apply lb; eauto.
-             exists (0%nat).
-             apply Sup_seq_ext.
-             intros.
-             now replace (n + 0)%nat with n by lia.
-           Qed.
-
-         Lemma ELim_seq_Sup_seq_le (f : nat -> Rbar) :
-           Rbar_le (ELim_seq f) (Sup_seq f).
-         Proof.
-           eapply Rbar_le_trans.
-           apply ELimSup_ELim_seq_le.
-           apply ElimSup_Sup.
-         Qed.
 
         Lemma ps_is_lim_seq  (E : nat -> event dom) :
           let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
