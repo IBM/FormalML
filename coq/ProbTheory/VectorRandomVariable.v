@@ -1484,6 +1484,120 @@ Section vector_ops_ext.
     Qed.
 
 
+   Definition vecrvchoice {n : nat} (c : Ts -> bool) (rv_X1 rv_X2 : Ts -> vector R n) (omega : Ts) := if c omega then rv_X1 omega else rv_X2 omega.
+
+   Instance vecrvchoice_measurable {n} (c: Ts -> R) (f g : Ts -> vector R n) :
+      RealMeasurable dom c ->
+      RealVectorMeasurable f ->
+      RealVectorMeasurable g ->
+      RealVectorMeasurable (vecrvchoice (fun x => if Req_EM_T (c x) 0 then false else true) f g).
+    Proof.
+      unfold RealVectorMeasurable.
+      intros.
+      generalize (rvchoice_measurable dom c (vector_nth i pf (fun_to_vector_to_vector_of_funs f)) (vector_nth i pf (fun_to_vector_to_vector_of_funs g))); intros.
+      cut_to H2; trivial.
+      revert H2.
+      apply RealMeasurable_proper.
+      intros ?.
+      unfold vecrvchoice, rvchoice; simpl.
+      rewrite vector_nth_fun_to_vector.
+      now match_destr; rewrite vector_nth_fun_to_vector.
+    Qed.
+
+    Global Instance vecrvchoice_rv {n} (c: Ts -> R) (f g : Ts -> vector R n)
+      {rvc:RandomVariable dom borel_sa c}
+      {rvf:RandomVariable dom (Rvector_borel_sa n) f}
+      {rvg:RandomVariable dom (Rvector_borel_sa n) g} :
+      RandomVariable dom (Rvector_borel_sa n) (vecrvchoice (fun x => if Req_EM_T (c x) 0 then false else true) f g).
+    Proof.
+      apply RealVectorMeasurableRandomVariable.
+      apply vecrvchoice_measurable.
+      - now apply rv_measurable.
+      - now apply RandomVariableRealVectorMeasurable.
+      - now apply RandomVariableRealVectorMeasurable.
+    Qed.
+
+    Global Instance vecrvchoiceb_rv {n} (c: Ts -> bool) (f g : Ts -> vector R n)
+      {rvc:RandomVariable dom (discrete_sa bool) c}
+      {rvf:RandomVariable dom (Rvector_borel_sa n) f}
+      {rvg:RandomVariable dom (Rvector_borel_sa n) g} :
+      RandomVariable dom (Rvector_borel_sa n) (vecrvchoice c f g).
+    Proof.
+      cut (RandomVariable dom (Rvector_borel_sa n)
+             (vecrvchoice
+                (fun x => if Req_EM_T (if (c x) then 1 else 0) 0
+                       then false else true) f g)).
+        {
+          apply RandomVariable_proper; try reflexivity.
+          intros ?.
+          unfold vecrvchoice.
+          destruct (c a); destruct (Req_EM_T _ _); trivial; lra.
+        }
+        apply vecrvchoice_rv; trivial.
+        assert (frf_complete : forall x : Ts, In ((fun x : Ts => if c x then 1 else 0) x) (0::1::nil)).
+        {
+          intros ?; match_destr; simpl; tauto.
+        } 
+        apply (frf_singleton_rv _ (Build_FiniteRangeFunction _ _ frf_complete)).
+        intros ? [?|[?|?]]; [subst .. | tauto].
+        - unfold pre_event_singleton, pre_event_preimage.
+          assert (saf:sa_sigma (discrete_sa bool) (fun x => x = false)) by apply I.
+          generalize (rvc (exist _ _ saf)).
+          apply sa_proper.
+          intros ?; simpl.
+          match_destr; try tauto.
+          split.
+          + lra.
+          + intros; discriminate.
+        - unfold pre_event_singleton, pre_event_preimage.
+          assert (sat:sa_sigma (discrete_sa bool) (fun x => x = true)) by apply I.
+          generalize (rvc (exist _ _ sat)).
+          apply sa_proper.
+          intros ?; simpl.
+          match_destr; try tauto.
+          split.
+          + lra.
+          + intros; discriminate.
+      Qed.
+
+    Instance vecrvchoiceb_restricted_rv {n}
+      (rv_C : Ts -> bool)
+      (rv_X1 rv_X2 : Ts -> vector R n)
+      {rvc : RandomVariable dom (discrete_sa bool) rv_C}
+      {rv1 : RandomVariable (event_restricted_sigma
+              (exist (sa_sigma dom) (fun x : Ts => rv_C x = true)
+                 (rvc
+                    (exist (fun e : pre_event bool => sa_sigma (discrete_sa bool) e)
+                       (fun x : bool => x = true) I))))
+               (Rvector_borel_sa n) (event_restricted_function (exist _ (fun x => rv_C x = true) (rvc (exist _ (fun x => x = true) I))) rv_X1)}
+      {rv2 : RandomVariable (event_restricted_sigma
+              (exist (sa_sigma dom) (fun x : Ts => rv_C x = false)
+                 (rvc
+                    (exist (fun e : pre_event bool => sa_sigma (discrete_sa bool) e)
+                       (fun x : bool => x = false) I))))
+               (Rvector_borel_sa n) (event_restricted_function (exist _ (fun x => rv_C x = false) (rvc (exist _ (fun x => x = false) I))) rv_X2)}  :
+      RandomVariable dom (Rvector_borel_sa n) (vecrvchoice rv_C rv_X1 rv_X2).
+    Proof.
+      apply rv_vecrvnth; intros i pf.
+      generalize (@rvchoiceb_restricted_rv _ dom rv_C (vector_nth i pf (fun_to_vector_to_vector_of_funs rv_X1)) (vector_nth i pf (fun_to_vector_to_vector_of_funs rv_X2)) rvc); intros.
+      cut_to H; trivial.
+      - revert H.
+        apply RandomVariable_proper; try reflexivity.
+        intros ?.
+        unfold vecrvnth, vecrvchoice, rvchoice.
+        rewrite vector_nth_fun_to_vector.
+        match_destr.
+        now rewrite vector_nth_fun_to_vector.
+      - apply (@vecrvnth_rv _ _ _ _ pf) in rv1.
+        revert rv1.
+        apply RandomVariable_proper; try reflexivity; intros ?.
+        now rewrite vector_nth_fun_to_vector.
+      - apply (@vecrvnth_rv _ _ _ _ pf) in rv2.
+        revert rv2.
+        apply RandomVariable_proper; try reflexivity; intros ?.
+        now rewrite vector_nth_fun_to_vector.
+    Qed.
+
 End vector_ops_ext.
 
 Section real_pullback.
