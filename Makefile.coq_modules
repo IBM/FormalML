@@ -118,6 +118,7 @@ QLEARN = \
    	slln \
 	vecslln \
 	uniform_converge \
+	lim_add \
 	Tsitsiklis \
 	jaakkola_vector
 
