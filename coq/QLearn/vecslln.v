@@ -506,6 +506,45 @@ Section conv_as.
       now apply conv_as_prob_1_rvmaxabs_forall.
    Qed.
 
+    Lemma conv_as_prob_1_eps_vector_forall {prts: ProbSpace dom} {size} (f : nat -> Ts -> vector R size) (fstar: vector R size)
+      {rv : forall n, RandomVariable dom (Rvector_borel_sa size) (f n)} :
+      (forall i pf, almost prts (fun x => is_lim_seq (fun n => vector_nth i pf (f n x)) (vector_nth i pf fstar))) ->
+      forall (eps1 eps2:posreal),
+        eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (vecrvminus (f (n + n0)%nat) (const fstar))) eps1))) >= 1 - eps2).
+    Proof.
+      intros.
+      generalize (conv_as_prob_1_rvmaxabs_forall_le (fun n =>  vecrvminus (f n) (const fstar))); intros.
+      cut_to H0.
+      - apply H0.
+      - apply conv_as_prob_1_vec.
+        + intros.
+          apply Rvector_minus_rv; trivial.
+          apply rvconst.
+        + intros.
+          specialize (H i pf).
+          revert H.
+          apply almost_impl; apply all_almost.
+          intros ??.
+          assert (is_lim_seq
+                    (fun n : nat => rvminus (vecrvnth i pf (f n)) (const (vector_nth i pf fstar)) x)
+                    0).
+          {
+            apply is_lim_seq_plus with (l1 := vector_nth i pf fstar) (l2 := -1 * (vector_nth i pf fstar)); trivial.
+            + apply is_lim_seq_const.
+            + unfold is_Rbar_plus; simpl.
+              f_equal.
+              f_equal.
+              lra.
+         }
+         revert H1.
+         apply is_lim_seq_ext.
+         intros.
+         unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, const.
+         rewrite Rvector_nth_plus, Rvector_nth_scale.
+         rv_unfold.
+         now unfold vecrvnth.
+    Qed.
+
 End conv_as.
 
 Section vec_cauchy.

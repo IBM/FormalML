@@ -107,6 +107,20 @@ Lemma lemma2_0_w (w : Ts)
         Rvector_scale (c/Rvector_max_abs v) v else
         v.
 
+ Lemma Rvector_clip_le  (v : vector R N) (c : nonnegreal) : 
+   Rvector_max_abs (Rvector_clip v c) <= c.
+ Proof.
+   unfold Rvector_clip.
+   match_destr.
+   - rewrite Rvector_max_abs_scale.
+     unfold Rdiv.
+     rewrite Rabs_mult, Rabs_inv, Rabs_Rvector_max_abs.
+     generalize (cond_nonneg c); intros.
+     field_simplify; try lra.
+     rewrite Rabs_right; lra.
+   - lra.
+ Qed.
+
  Definition vecrvclip {Ts:Type} (f : Ts -> vector R N) 
             (c : nonnegreal) : Ts -> vector R N
    := fun x => if Rgt_dec (Rvector_max_abs (f x)) c then 
@@ -739,45 +753,6 @@ Proof.
       apply cond_pos.
 Qed.
 
-    Lemma conv_as_prob_1_eps_vector_forall_alt (f : nat -> Ts -> vector R N) (fstar: vector R N)
-      {rv : forall n, RandomVariable dom (Rvector_borel_sa N) (f n)} :
-      (forall i pf, almost prts (fun x => is_lim_seq (fun n => vector_nth i pf (f n x)) (vector_nth i pf fstar))) ->
-      forall (eps1 eps2:posreal),
-        eventually (fun n0 => ps_P (inter_of_collection (fun n => (event_le dom (rvmaxabs (vecrvminus (f (n + n0)%nat) (const fstar))) eps1))) >= 1 - eps2).
-    Proof.
-      intros.
-      generalize (conv_as_prob_1_rvmaxabs_forall_le (fun n =>  vecrvminus (f n) (const fstar))); intros.
-      cut_to H0.
-      - apply H0.
-      - apply conv_as_prob_1_vec.
-        + intros.
-          apply Rvector_minus_rv; trivial.
-          apply rvconst.
-        + intros.
-          specialize (H i pf).
-          revert H.
-          apply almost_impl; apply all_almost.
-          intros ??.
-          assert (is_lim_seq
-                    (fun n : nat => rvminus (vecrvnth i pf (f n)) (const (vector_nth i pf fstar)) x)
-                    0).
-          {
-            apply is_lim_seq_plus with (l1 := vector_nth i pf fstar) (l2 := -1 * (vector_nth i pf fstar)); trivial.
-            + apply is_lim_seq_const.
-            + unfold is_Rbar_plus; simpl.
-              f_equal.
-              f_equal.
-              lra.
-         }
-         revert H1.
-         apply is_lim_seq_ext.
-         intros.
-         unfold vecrvminus, vecrvplus, vecrvopp, vecrvscale, const.
-         rewrite Rvector_nth_plus, Rvector_nth_scale.
-         rv_unfold.
-         now unfold vecrvnth.
-    Qed.
-
 Lemma lemma3_gamma_eps_le (gamma : posreal) :
   gamma < 1 ->
   {eps : posreal |  gamma + (1 - gamma)/2 <= / (1 + eps)}.
@@ -812,7 +787,7 @@ Qed.
         - apply cond_pos.
       }
       
-     generalize (conv_as_prob_1_eps_vector_forall_alt f fstar H (mkposreal _ H1) eps2).
+     generalize (conv_as_prob_1_eps_vector_forall f fstar H (mkposreal _ H1) eps2).
      apply eventually_impl.
      apply all_eventually; intros.
      eapply Rge_trans; cycle 1.
