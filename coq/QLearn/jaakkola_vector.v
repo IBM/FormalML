@@ -2065,7 +2065,7 @@ Section jaakola_vector2.
           {
             unfold Lim_seq.
             rewrite H1.
-            rewrite x_plus_x_div_2.
+            rewrite Rbar_x_plus_x_div_2.
             apply Rbar_le_antisym.
             - rewrite LimSup_InfSup_seq.
               eapply Rbar_le_trans.

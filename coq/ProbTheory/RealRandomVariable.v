@@ -735,14 +735,6 @@ Section RealRandomVariables.
         apply H.
     Qed.
 
-    Lemma x_plus_x_div_2 (x : Rbar) :
-      (Rbar_div_pos (Rbar_plus x x ) (mkposreal 2 Rlt_R0_R2)) = x.
-    Proof.
-      case_eq x; intros; simpl; trivial.
-      rewrite Rbar_finite_eq.
-      field.
-    Qed.
-
     Instance rvlim_measurable (f : nat -> Ts -> R) :
       (forall n, RealMeasurable (f n)) ->
       (forall (omega:Ts), ex_finite_lim_seq (fun n => f n omega)) ->
@@ -763,7 +755,7 @@ Section RealRandomVariables.
         rewrite ex_lim_LimSup_LimInf_seq in H1.
         unfold Lim_seq.
         rewrite H1.
-        now rewrite x_plus_x_div_2.
+        now rewrite Rbar_x_plus_x_div_2.
       }
       apply RealMeasurable_proper with
           (x := fun omega => LimSup_seq (fun n => f n omega)).

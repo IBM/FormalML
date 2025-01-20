@@ -2140,3 +2140,11 @@ Qed.
         apply H0.
    Qed.        
 
+    Lemma Rbar_x_plus_x_div_2 (x : Rbar) :
+      (Rbar_div_pos (Rbar_plus x x ) (mkposreal 2 Rlt_R0_R2)) = x.
+    Proof.
+      case_eq x; intros; simpl; trivial.
+      rewrite Rbar_finite_eq.
+      field.
+    Qed.
+

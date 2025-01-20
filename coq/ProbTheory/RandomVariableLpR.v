@@ -3525,7 +3525,7 @@ Section complete.
     rewrite ex_lim_LimSup_LimInf_seq in H.
     unfold Lim_seq.
     rewrite H.
-    now rewrite x_plus_x_div_2.
+    now rewrite Rbar_x_plus_x_div_2.
   Qed.
 
   Lemma is_finite_LimInf_seq_continuous (f : R -> R) (u : nat -> R) :

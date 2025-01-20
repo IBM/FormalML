@@ -1620,7 +1620,7 @@ Section RbarExpectation.
     rewrite ex_Elim_LimSup_LimInf_seq in H0.
     unfold ELim_seq.
     rewrite H0.
-    now rewrite x_plus_x_div_2.
+    now rewrite Rbar_x_plus_x_div_2.
   Qed.
 
   Lemma inf_ElimInf
@@ -3741,7 +3741,7 @@ Theorem Dominated_convergence
       {
         unfold Lim_seq.
         rewrite H13, H14.
-        now rewrite x_plus_x_div_2.
+        now rewrite Rbar_x_plus_x_div_2.
       }
       rewrite <- H15.
       apply Lim_seq_correct.
