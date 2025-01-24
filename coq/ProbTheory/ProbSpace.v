@@ -619,6 +619,164 @@ Section ascending.
     now apply is_lim_descending.
   Qed.
 
+  Lemma is_ps_lim_inf (ps:ProbSpace σ) (E : nat -> event σ) :
+    let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
+    is_lim_seq (fun n => ps_P (Einf n)) (ps_P (union_of_collection Einf)).
+  Proof.
+    apply is_lim_ascending.
+    intros ??.
+    simpl.
+    intros.
+    specialize (H (S n0)).
+    now replace (n0 + S n)%nat with (S n0 + n)%nat by lia.
+  Qed.
+
+  Lemma ps_lim_inf (ps:ProbSpace σ) (E : nat -> event σ) :
+    let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
+    Lim_seq (fun n => ps_P (Einf n)) = (ps_P (union_of_collection Einf)).
+  Proof.
+    apply lim_ascending.
+    intros ??.
+    simpl.
+    intros.
+    specialize (H (S n0)).
+    now replace (n0 + S n)%nat with (S n0 + n)%nat by lia.
+  Qed.
+
+  Lemma ps_inter_inf0 (ps:ProbSpace σ) (E : nat -> event σ) :
+    Rbar_le (ps_P (inter_of_collection E)) (Inf_seq (fun k : nat => ps_P (E k))).
+  Proof.
+    rewrite <- (Inf_seq_const (ps_P (inter_of_collection E))).
+    apply Inf_seq_le.
+    intros.
+    simpl.
+    apply ps_sub.
+    intros ??.
+    now specialize (H n).
+  Qed.
+
+  Lemma ps_inter_inf (ps:ProbSpace σ) (E : nat -> event σ) :
+    let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
+    Rbar_le 
+      (ps_P (union_of_collection Einf))
+      (ELim_seq (fun n => Inf_seq (fun k => ps_P (E (k + n)%nat)))).
+  Proof.
+    intros.
+    unfold Einf.
+    rewrite <- ps_lim_inf.
+    rewrite <- Elim_seq_fin.
+    apply ELim_seq_le.
+    intros.
+    apply ps_inter_inf0.
+  Qed.
+
+  Lemma is_ps_lim_sup (ps:ProbSpace σ) (E : nat -> event σ) :
+    let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
+    is_lim_seq (fun n => ps_P (Esup n)) (ps_P (inter_of_collection Esup)).
+  Proof.
+    apply is_lim_descending.
+    intros ??.
+    simpl.
+    intros.
+    destruct H.
+    exists (S x0).
+    now replace (S x0 + n)%nat with (x0 +S n)%nat by lia.
+  Qed.
+
+  Lemma ps_lim_sup (ps:ProbSpace σ) (E : nat -> event σ) :
+    let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
+    Lim_seq (fun n => ps_P (Esup n)) = (ps_P (inter_of_collection Esup)).
+  Proof.
+    apply lim_descending.
+    intros ??.
+    simpl.
+    intros.
+    destruct H.
+    exists (S x0).
+    now replace (S x0 + n)%nat with (x0 +S n)%nat by lia.
+  Qed.
+
+  Lemma ps_union_sup0 (ps:ProbSpace σ) (E : nat -> event σ) :
+    Rbar_le (Sup_seq (fun k : nat => ps_P (E k))) (ps_P (union_of_collection E)).
+  Proof.
+    rewrite <- (Sup_seq_const (ps_P (union_of_collection E))).
+    apply Sup_seq_le.
+    intros.
+    simpl.
+    apply ps_sub.
+    intros ??.
+    simpl.
+    now exists n.
+  Qed.
+
+  Lemma ps_union_sup (ps:ProbSpace σ) (E : nat -> event σ) :
+    let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
+    Rbar_le 
+      (ELim_seq (fun n => Sup_seq (fun k => ps_P (E (k + n)%nat))))
+      (ps_P (inter_of_collection Esup)).
+  Proof.
+    intros.
+    unfold Esup.
+    rewrite <- ps_lim_sup.
+    rewrite <- Elim_seq_fin.
+    apply ELim_seq_le.
+    intros.
+    apply ps_union_sup0.
+  Qed.
+
+
+  Lemma ps_is_lim_seq (ps:ProbSpace σ) (E : nat -> event σ) :
+    let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
+    let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
+    event_equiv (union_of_collection Einf) (inter_of_collection Esup) ->
+    is_lim_seq (fun n => ps_P (E n)) (ps_P (inter_of_collection Esup)).
+  Proof.
+    intros.
+    assert (ps_P (union_of_collection Einf) = ps_P (inter_of_collection Esup)).
+    {
+      apply ps_proper.
+      now rewrite H.
+    }
+    generalize (ps_union_sup ps E); intros union.
+    generalize (ps_inter_inf ps E); intros inter.
+    assert (LimInf_seq (fun n => ps_P (E n)) = LimSup_seq (fun n => ps_P (E n))).
+    {
+      apply Rbar_le_antisym.
+      - apply LimSup_LimInf_seq_le.
+      - rewrite LimInf_SupInf_seq.
+        rewrite LimSup_InfSup_seq.
+        eapply Rbar_le_trans.
+        apply Inf_seq_Elim_seq_le.
+        eapply Rbar_le_trans.
+        apply union.
+        unfold Esup in H0.
+        rewrite <- H0.
+        eapply Rbar_le_trans.
+        apply inter.
+        apply ELim_seq_Sup_seq_le.
+    }
+    assert (Lim_seq (fun n => ps_P (E n)) = ps_P (inter_of_collection Esup)).
+    {
+      unfold Lim_seq.
+      rewrite H1.
+      rewrite Rbar_x_plus_x_div_2.
+      apply Rbar_le_antisym.
+      - rewrite LimSup_InfSup_seq.
+        eapply Rbar_le_trans.
+        apply Inf_seq_Elim_seq_le.
+        apply union.
+      - rewrite <- H1.
+        rewrite LimInf_SupInf_seq.
+        rewrite <- H0.
+        eapply Rbar_le_trans.
+        apply inter.
+        apply ELim_seq_Sup_seq_le.
+    }
+    rewrite <- H2.
+    apply Lim_seq_correct.
+    now rewrite ex_lim_LimSup_LimInf_seq.
+  Qed.
+
 End ascending.
 
 Hint Resolve ps_none ps_one : prob.

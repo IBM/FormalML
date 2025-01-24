@@ -1827,7 +1827,6 @@ Section jaakola_vector2.
           now apply (lemma3_vector_forall_eventually_prob_iter_almost α β) with (γ := γ).
         Qed.
 
-
         Lemma eps_pos_eventually (C eps eps0: posreal) :
           eventually (fun k => C / (1 + eps)^k < eps0).
         Proof.
@@ -1880,165 +1879,6 @@ Section jaakola_vector2.
           - left.
             apply cond_pos.
        Qed.
-
-        Lemma is_ps_lim_inf  (E : nat -> event dom) :
-          let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
-          is_lim_seq (fun n => ps_P (Einf n)) (ps_P (union_of_collection Einf)).
-        Proof.
-          apply is_lim_ascending.
-          intros ??.
-          simpl.
-          intros.
-          specialize (H (S n0)).
-          now replace (n0 + S n)%nat with (S n0 + n)%nat by lia.
-        Qed.
-
-        Lemma ps_lim_inf  (E : nat -> event dom) :
-          let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
-          Lim_seq (fun n => ps_P (Einf n)) = (ps_P (union_of_collection Einf)).
-        Proof.
-          apply lim_ascending.
-          intros ??.
-          simpl.
-          intros.
-          specialize (H (S n0)).
-          now replace (n0 + S n)%nat with (S n0 + n)%nat by lia.
-        Qed.
-
-        Lemma ps_inter_inf0  (E : nat -> event dom) :
-          Rbar_le (ps_P (inter_of_collection E)) (Inf_seq (fun k : nat => ps_P (E k))).
-        Proof.
-          rewrite <- (Inf_seq_const (ps_P (inter_of_collection E))).
-          apply Inf_seq_le.
-          intros.
-          simpl.
-          apply ps_sub.
-          intros ??.
-          now specialize (H n).
-        Qed.
-
-        Lemma ps_inter_inf  (E : nat -> event dom) :
-          let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
-          Rbar_le 
-            (ps_P (union_of_collection Einf))
-            (ELim_seq (fun n => Inf_seq (fun k => ps_P (E (k + n)%nat)))).
-        Proof.
-          intros.
-          unfold Einf.
-          rewrite <- ps_lim_inf.
-          rewrite <- Elim_seq_fin.
-          apply ELim_seq_le.
-          intros.
-          apply ps_inter_inf0.
-        Qed.
-
-        Lemma is_ps_lim_sup  (E : nat -> event dom) :
-          let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
-          is_lim_seq (fun n => ps_P (Esup n)) (ps_P (inter_of_collection Esup)).
-        Proof.
-          apply is_lim_descending.
-          intros ??.
-          simpl.
-          intros.
-          destruct H.
-          exists (S x0).
-          now replace (S x0 + n)%nat with (x0 +S n)%nat by lia.
-       Qed.
-
-        Lemma ps_lim_sup  (E : nat -> event dom) :
-          let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
-          Lim_seq (fun n => ps_P (Esup n)) = (ps_P (inter_of_collection Esup)).
-        Proof.
-          apply lim_descending.
-          intros ??.
-          simpl.
-          intros.
-          destruct H.
-          exists (S x0).
-          now replace (S x0 + n)%nat with (x0 +S n)%nat by lia.
-       Qed.
-
-        Lemma ps_union_sup0  (E : nat -> event dom) :
-          Rbar_le (Sup_seq (fun k : nat => ps_P (E k))) (ps_P (union_of_collection E)).
-        Proof.
-          rewrite <- (Sup_seq_const (ps_P (union_of_collection E))).
-          apply Sup_seq_le.
-          intros.
-          simpl.
-          apply ps_sub.
-          intros ??.
-          simpl.
-          now exists n.
-        Qed.
-
-        Lemma ps_union_sup  (E : nat -> event dom) :
-          let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
-          Rbar_le 
-            (ELim_seq (fun n => Sup_seq (fun k => ps_P (E (k + n)%nat))))
-            (ps_P (inter_of_collection Esup)).
-        Proof.
-          intros.
-          unfold Esup.
-          rewrite <- ps_lim_sup.
-          rewrite <- Elim_seq_fin.
-          apply ELim_seq_le.
-          intros.
-          apply ps_union_sup0.
-        Qed.
-
-
-        Lemma ps_is_lim_seq  (E : nat -> event dom) :
-          let Einf := fun k => inter_of_collection (fun n => E (n + k)%nat) in
-          let Esup := fun k => union_of_collection (fun n => E (n + k)%nat) in
-          event_equiv (union_of_collection Einf) (inter_of_collection Esup) ->
-          is_lim_seq (fun n => ps_P (E n)) (ps_P (inter_of_collection Esup)).
-        Proof.
-          intros.
-          assert (ps_P (union_of_collection Einf) = ps_P (inter_of_collection Esup)).
-          {
-            apply ps_proper.
-            now rewrite H.
-          }
-          generalize (ps_union_sup E); intros union.
-          generalize (ps_inter_inf E); intros inter.
-          assert (LimInf_seq (fun n => ps_P (E n)) = LimSup_seq (fun n => ps_P (E n))).
-          {
-            apply Rbar_le_antisym.
-            - apply LimSup_LimInf_seq_le.
-            - rewrite LimInf_SupInf_seq.
-              rewrite LimSup_InfSup_seq.
-              eapply Rbar_le_trans.
-              apply Inf_seq_Elim_seq_le.
-              eapply Rbar_le_trans.
-              apply union.
-              unfold Esup in H0.
-              rewrite <- H0.
-              eapply Rbar_le_trans.
-              apply inter.
-              apply ELim_seq_Sup_seq_le.
-          }
-          assert (Lim_seq (fun n => ps_P (E n)) = ps_P (inter_of_collection Esup)).
-          {
-            unfold Lim_seq.
-            rewrite H1.
-            rewrite Rbar_x_plus_x_div_2.
-            apply Rbar_le_antisym.
-            - rewrite LimSup_InfSup_seq.
-              eapply Rbar_le_trans.
-              apply Inf_seq_Elim_seq_le.
-              apply union.
-            - rewrite <- H1.
-              rewrite LimInf_SupInf_seq.
-              rewrite <- H0.
-              eapply Rbar_le_trans.
-              apply inter.
-              apply ELim_seq_Sup_seq_le.
-          }
-          rewrite <- H2.
-          apply Lim_seq_correct.
-          now rewrite ex_lim_LimSup_LimInf_seq.
-        Qed.
-
 
        Lemma lemma3_plim0 :
          filterlim (fun y => real (Lim_seq (fun m => prod_f_R0 (fun n => 1 - (Rabs y) ^ S n) m)))
@@ -2489,503 +2329,504 @@ Section jaakola_vector2.
 
  Lemma vecrvclip_choice {M} (f : Ts -> vector R M) (c : nonnegreal) :
    rv_eq (vecrvclip _ f c) (vecrvchoice (fun x => if Rgt_dec (Rvector_max_abs (f x)) c then true else false)
-                             (fun x => Rvector_scale (c/Rvector_max_abs (f x)) (f x))
-                             f).
+                              (fun x => Rvector_scale (c/Rvector_max_abs (f x)) (f x))
+                              f).
  Proof.
    intros ?.
    unfold vecrvclip, vecrvchoice.
    match_destr.
  Qed.
 
-   Lemma vecrvclip_rv (X : Ts -> vector R (S N)) (C : nonnegreal) :
-     RandomVariable dom (Rvector_borel_sa (S N)) X ->
-     RandomVariable dom (Rvector_borel_sa (S N)) (vecrvclip (S N) X C).
-   Proof.
-     intros.
-     rewrite vecrvclip_choice.
-     assert (rv_C: RandomVariable dom (discrete_sa bool)
-                     (fun x : Ts => if Rgt_dec (Rvector_max_abs (X x)) C then true else false)).
-     { Existing Instance FiniteRange_FiniteRangeFunction.
-       apply (frf_singleton_rv _ _).
-       intros [|] _; unfold pre_event_singleton, pre_event_singleton, pre_event_preimage; simpl.
-       * apply sa_proper with
-           (x := (fun ω => Rvector_max_abs (X ω) > C)).
-            -- intros ?.
-               now match_destr.
-            -- apply sa_le_gt_rv.
-               now apply Rvector_max_abs_rv.
-       * apply sa_proper with
-           (x := (fun ω => ~(Rvector_max_abs (X ω) > C))).               
-         -- intros ?.
-            now match_destr.
-         -- apply sa_proper with
-              (x := (fun ω => (Rvector_max_abs (X ω) <= C))).               
-            ++ intros ?; lra.
-            ++ apply sa_le_le_rv.
-               now apply Rvector_max_abs_rv.
-     } 
-     apply (@vecrvchoiceb_restricted_rv _ _ _ _ _ _ rv_C); trivial.
-     - apply RealVectorMeasurableRandomVariable; intros i pf; simpl.
-       rewrite vector_nth_fun_to_vector.
-       unfold Rvector_scale.
-       eapply RealMeasurable_proper.
+ Lemma vecrvclip_rv (X : Ts -> vector R (S N)) (C : nonnegreal) :
+   RandomVariable dom (Rvector_borel_sa (S N)) X ->
+   RandomVariable dom (Rvector_borel_sa (S N)) (vecrvclip (S N) X C).
+ Proof.
+   intros.
+   rewrite vecrvclip_choice.
+   assert (rv_C: RandomVariable dom (discrete_sa bool)
+                   (fun x : Ts => if Rgt_dec (Rvector_max_abs (X x)) C then true else false)).
+   { Existing Instance FiniteRange_FiniteRangeFunction.
+     apply (frf_singleton_rv _ _).
+     intros [|] _; unfold pre_event_singleton, pre_event_singleton, pre_event_preimage; simpl.
+     * apply sa_proper with
+         (x := (fun ω => Rvector_max_abs (X ω) > C)).
+       -- intros ?.
+          now match_destr.
+       -- apply sa_le_gt_rv.
+          now apply Rvector_max_abs_rv.
+     * apply sa_proper with
+         (x := (fun ω => ~(Rvector_max_abs (X ω) > C))).               
+       -- intros ?.
+          now match_destr.
+       -- apply sa_proper with
+            (x := (fun ω => (Rvector_max_abs (X ω) <= C))).               
+          ++ intros ?; lra.
+          ++ apply sa_le_le_rv.
+             now apply Rvector_max_abs_rv.
+   } 
+   apply (@vecrvchoiceb_restricted_rv _ _ _ _ _ _ rv_C); trivial.
+   - apply RealVectorMeasurableRandomVariable; intros i pf; simpl.
+     rewrite vector_nth_fun_to_vector.
+     unfold Rvector_scale.
+     eapply RealMeasurable_proper.
+     {
+       intro.
+       unfold event_restricted_function, Rdiv.
+       rewrite vector_nth_map, Rmult_assoc.
+       reflexivity.
+     }
+     apply scale_measurable.
+     apply mult_measurable.
+     + intros ?.
+       simpl.
+       apply (sa_proper _ (fun a : Ts =>
+                             C < Rvector_max_abs (X a) /\ / Rvector_max_abs (X a) <= r)).
        {
-         intro.
-         unfold event_restricted_function, Rdiv.
-         rewrite vector_nth_map, Rmult_assoc.
-         reflexivity.
+         intros ?.
+         split; intros ?.
+         - destruct H0.
+           unfold event_restricted_domain.
+           simpl.
+           assert (Hpf:(if Rgt_dec (Rvector_max_abs (X x)) C then true else false) = true).
+           {
+             match_destr; lra.
+           } 
+           exists (exist _ x Hpf); simpl.
+           tauto.
+         - destruct H0 as [?[??]]; subst.
+           destruct x0; simpl in *.
+           match_destr_in e.
+           lra.
        }
-       apply scale_measurable.
-       apply mult_measurable.
-       + intros ?.
-         simpl.
-         apply (sa_proper _ (fun a : Ts =>
-                               C < Rvector_max_abs (X a) /\ / Rvector_max_abs (X a) <= r)).
+       assert (vmax_rv: RealMeasurable dom (fun a => Rvector_max_abs (X a))).
+       {
+         apply Rvector_max_abs_measurable.
+         now apply RandomVariableRealVectorMeasurable.
+       }
+       destruct (Rlt_dec 0 r).
+       { red in vmax_rv.
+         generalize (sa_le_ge _ vmax_rv (/ r)); intros HH.
+         apply (sa_proper _ (fun a : Ts => C < Rvector_max_abs (X a) /\ Rvector_max_abs (X a) >= / r)).
          {
            intros ?.
-           split; intros ?.
-           - destruct H0.
-             unfold event_restricted_domain.
-             simpl.
-             assert (Hpf:(if Rgt_dec (Rvector_max_abs (X x)) C then true else false) = true).
-             {
-               match_destr; lra.
-             } 
-             exists (exist _ x Hpf); simpl.
-             tauto.
-           - destruct H0 as [?[??]]; subst.
-             destruct x0; simpl in *.
-             match_destr_in e.
+           rewrite <- (Rinv_inv r) at 2.
+           intuition.
+           - apply Rinv_le_contravar.
+             + now apply Rinv_pos.
+             + lra.
+           - apply Rinv_le_cancel in H2.
+             + lra.
+             + eapply Rle_lt_trans; try apply H1.
+               apply cond_nonneg.
+         }
+         apply sa_inter; trivial.
+         apply event_Rgt_sa.
+         - now apply measurable_rv.
+         - apply rvconst.
+       }
+       apply (sa_proper _ event_none).
+       * intros ?.
+         split; [unfold event_none, pre_event_none; simpl; tauto |].
+         intros [??].
+         assert (r <= 0) by lra.
+         {
+           destruct (Req_dec C 0).
+           - rewrite H3 in H0.
+             apply Rinv_pos in H0.
+             lra.
+           - assert (0 < Rvector_max_abs (X x)).
+             { eapply Rle_lt_trans; try apply H0.
+               destruct C; simpl in *; lra.
+             }
+             assert (0 < / Rvector_max_abs (X x))
+               by now apply Rinv_pos.
              lra.
          }
-         assert (vmax_rv: RealMeasurable dom (fun a => Rvector_max_abs (X a))).
-         {
-           apply Rvector_max_abs_measurable.
-           now apply RandomVariableRealVectorMeasurable.
-         }
-         destruct (Rlt_dec 0 r).
-         { red in vmax_rv.
-           generalize (sa_le_ge _ vmax_rv (/ r)); intros HH.
-           apply (sa_proper _ (fun a : Ts => C < Rvector_max_abs (X a) /\ Rvector_max_abs (X a) >= / r)).
-           {
-             intros ?.
-             rewrite <- (Rinv_inv r) at 2.
-             intuition.
-             - apply Rinv_le_contravar.
-               + now apply Rinv_pos.
-               + lra.
-             - apply Rinv_le_cancel in H2.
-               + lra.
-               + eapply Rle_lt_trans; try apply H1.
-                 apply cond_nonneg.
-           }
-           apply sa_inter; trivial.
-           apply event_Rgt_sa.
-           - now apply measurable_rv.
-           - apply rvconst.
-         }
-         apply (sa_proper _ event_none).
-         * intros ?.
-           split; [unfold event_none, pre_event_none; simpl; tauto |].
-           intros [??].
-           assert (r <= 0) by lra.
-           {
-             destruct (Req_dec C 0).
-             - rewrite H3 in H0.
-               apply Rinv_pos in H0.
-               lra.
-             - assert (0 < Rvector_max_abs (X x)).
-               { eapply Rle_lt_trans; try apply H0.
-                 destruct C; simpl in *; lra.
-               }
-               assert (0 < / Rvector_max_abs (X x))
-                 by now apply Rinv_pos.
-               lra.
-           }
-         * apply sa_none.
-       + apply (RealMeasurable_proper _
-                  (fun a => event_restricted_function _ (fun a => vector_nth i pf (X a)) a)); try reflexivity.
-         apply rv_measurable.
-         apply Restricted_RandomVariable.
-         apply (vec_rv _ _ pf) in H.
-         revert H.
-         apply RandomVariable_proper; try reflexivity.
-         intros ?; simpl.
-         now rewrite vector_nth_fun_to_vector.
-     - now apply Restricted_RandomVariable.
-   Qed.
+       * apply sa_none.
+     + apply (RealMeasurable_proper _
+                (fun a => event_restricted_function _ (fun a => vector_nth i pf (X a)) a)); try reflexivity.
+       apply rv_measurable.
+       apply Restricted_RandomVariable.
+       apply (vec_rv _ _ pf) in H.
+       revert H.
+       apply RandomVariable_proper; try reflexivity.
+       intros ?; simpl.
+       now rewrite vector_nth_fun_to_vector.
+   - now apply Restricted_RandomVariable.
+ Qed.
 
-       Lemma lemma3_full_almost (α β X : nat -> Ts -> vector R (S N)) (γ : posreal)
-         (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
-         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
-         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n)) :           
-         almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
-         almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
-         almost prts (fun ω => forall t i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->       
+ Lemma lemma3_full_almost (α β X : nat -> Ts -> vector R (S N)) (γ : posreal)
+   (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
+   (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
+   (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n)) :           
+   almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
+   almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
+   almost prts (fun ω => forall t i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->       
 
-         almost prts (fun ω => forall i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
-         γ < 1 ->
-         (forall n, rv_eq (X (S n))
-                      (vecrvplus 
-                         (vecrvminus (X n)
-                            (vecrvmult (α n) (X n)))
-                         (vecrvscalerv (rvmaxabs (X n))
-                            (vecrvscale γ (β n))))) ->
-         almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
-       Proof.
-         intros.
-         assert (0 < 1) by lra.
-         pose (C := mkposreal 1 H5).
-         pose (G := fun n ω Y =>
-                      Rvector_plus
-                        (Rvector_plus Y
-                                      (Rvector_scale (-1)  (Rvector_mult (α n ω) Y)))
-                        (Rvector_scale (γ * Rvector_max_abs Y)
-                                       (β n ω))).
-         pose (XC := fix XC nn :=
-                 match nn with
-                 | 0%nat => vecrvclip (S N) (X 0%nat) (pos_to_nneg C)
-                 | S n =>
-                     vecrvclip (S N)
-                       (vecrvplus 
-                          (vecrvminus (XC n)
-                             (vecrvmult (α n) (XC n)))
-                          (vecrvscalerv (rvmaxabs (XC n))
-                             (vecrvscale γ (β n))))
-                       (pos_to_nneg C)
-                   end).
-         generalize (lemma3_almost α β XC C γ); intros.
-         cut_to H6; trivial.
-         - apply (lemma2 (S N) X XC G C).
-           + intros ??.
-             rewrite H4.
-             unfold G, vecrvminus, vecrvmult, vecrvscalerv, rvmaxabs.
-             unfold vecrvplus, vecrvopp, vecrvscale.
-             rewrite Rvector_scale_scale.
-             now rewrite Rmult_comm.
-           + intros ??.
-             simpl.
-             unfold G, vecrvminus, vecrvmult, vecrvscalerv, rvmaxabs.
-             unfold vecrvplus, vecrvopp, vecrvscale.
-             f_equal.
-             apply functional_extensionality.
-             intros.
-             rewrite Rvector_scale_scale.
-             now rewrite Rmult_comm.
-           + simpl.
-             reflexivity.
-           + intros ???.
-             unfold G.
-             rewrite Rvector_scale_plus_l.
-             rewrite Rvector_scale_plus_l.
-             repeat rewrite (Rvector_scale_comm beta).
-             rewrite Rvector_scale_mult_r.
-             rewrite Rvector_max_abs_scale.
-             repeat rewrite Rvector_scale_scale.
-             generalize (cond_nonneg beta); intros.
-             rewrite Rabs_right; try lra.
-             rewrite (Rmult_comm beta).
-             now rewrite Rmult_assoc.
-           + intros ???.
-             unfold G.
-             rewrite Rvector_scale_plus_l.
-             rewrite Rvector_scale_plus_l.
-             repeat rewrite (Rvector_scale_comm beta).
-             rewrite Rvector_scale_mult_r.
-             rewrite Rvector_max_abs_scale.
-             repeat rewrite Rvector_scale_scale.
-             generalize (cond_nonneg beta); intros.
-             rewrite Rabs_right; try lra.
-             rewrite (Rmult_comm beta).
-             now rewrite Rmult_assoc.
-           + apply H6.
-         - intros.
-           induction n.
-           + simpl.
-             now apply vecrvclip_rv.
-           + simpl.
-             apply vecrvclip_rv.
-             apply Rvector_plus_rv.
-             * apply Rvector_minus_rv; trivial.
-               now apply Rvector_mult_rv.
-             * apply Rvector_scale_rv_rv.
-               -- now apply Rvector_max_abs_rv.
-               -- now apply Rvector_scale_rv.
-         - intros.
-           induction n; simpl; apply rvmaxabs_vecrvclip.
-         - intros.
-           now simpl.
-       Qed.
-
-       Lemma lemma3'_almost (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
-         (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
-         (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
-         (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n)) :           
-         almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
-         almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
-         almost prts (fun ω => forall t i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->       
-
-         almost prts (fun ω => forall i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
-         γ < 1 ->
-         (forall n, rv_le (rvmaxabs (X n)) (const C)) ->
-         (forall n, rv_eq (X (S n))
-                      (vecrvclip (S N)
-                         (vecrvplus 
-                            (vecrvminus (X n)
-                               (vecrvmult (α n) (X n)))
-                            (vecrvscalerv (rvmaxabs (X n))
-                               (vecrvscale γ (β n))))
-                         (pos_to_nneg C))) ->
-         forall i pf,
-           almost prts (fun ω => Lim_seq (fun n => vector_nth i pf (X n ω)) = 0).
-      Proof.
-        intros.
-        generalize (lemma3_almost α β X C γ _ _ _ H H0 H1 H2 H3 H4 H5).
-        apply almost_impl.
-        apply all_almost.
-        intros ??.
-        apply is_lim_seq_unique in H6.
-        assert (Lim_seq (fun n => - (rvmaxabs (X n) x)) = 0).
-        {
-          rewrite Lim_seq_opp, H6.
-          simpl.
-          now rewrite Ropp_0.
-        }
-        generalize (Lim_seq_le  (fun n : nat => - rvmaxabs (X n) x) (fun n : nat => vector_nth i pf (X n x))); intros.
-        generalize (Lim_seq_le   (fun n : nat => vector_nth i pf (X n x)) (fun n : nat => rvmaxabs (X n) x)); intros.       
-        assert (forall n, - rvmaxabs (X n) x <= vector_nth i pf (X n x) <=  rvmaxabs (X n) x).
-        {
-          intros.
-          apply Rabs_le_between.
-          apply Rvector_max_abs_nth_le.
-        }
-        rewrite H6 in H9.
-        rewrite H7 in H8.
-        cut_to H8.
-        cut_to H9.
-        - now apply Rbar_le_antisym.
-        - intros.
-          apply H10.
-        - intros.
-          apply H10.
-      Qed.
-
-      Lemma lemma3_counter_prob_choice (d1 d2 : R) :
-        d1 > 1 ->
-        d2 < 1 ->
-        exists p, 0 < p < 1 /\ p * d1 + (1-p)*d2 = 1.
-      Proof.
-        exists ((1-d2)/(d1-d2)).
-        split.
-        - split.
-          + apply Rdiv_lt_0_compat; lra.
-          + rewrite <- Rdiv_lt_1; lra.
-        - field_simplify; try lra.
-          apply Rdiv_diag; lra.
-      Qed.
-
-   Lemma sum_n_Rscal_l (f : nat -> R) (c:R)  (n : nat):
-     c * (sum_n f n)  = (sum_n (fun k => c * (f k)) n).
-   Proof.
+   almost prts (fun ω => forall i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+   γ < 1 ->
+   (forall n, rv_eq (X (S n))
+                (vecrvplus 
+                   (vecrvminus (X n)
+                      (vecrvmult (α n) (X n)))
+                   (vecrvscalerv (rvmaxabs (X n))
+                      (vecrvscale γ (β n))))) ->
+   almost prts (fun ω => is_lim_seq (fun n => rvmaxabs (X n) ω) 0).
+ Proof.
+   intros.
+   assert (0 < 1) by lra.
+   pose (C := mkposreal 1 H5).
+   pose (G := fun n ω Y =>
+                Rvector_plus
+                  (Rvector_plus Y
+                     (Rvector_scale (-1)  (Rvector_mult (α n ω) Y)))
+                  (Rvector_scale (γ * Rvector_max_abs Y)
+                     (β n ω))).
+   pose (XC := fix XC nn :=
+           match nn with
+           | 0%nat => vecrvclip (S N) (X 0%nat) (pos_to_nneg C)
+           | S n =>
+               vecrvclip (S N)
+                 (vecrvplus 
+                    (vecrvminus (XC n)
+                       (vecrvmult (α n) (XC n)))
+                    (vecrvscalerv (rvmaxabs (XC n))
+                       (vecrvscale γ (β n))))
+                 (pos_to_nneg C)
+           end).
+   generalize (lemma3_almost α β XC C γ); intros.
+   cut_to H6; trivial.
+   - apply (lemma2 (S N) X XC G C).
+     + intros ??.
+       rewrite H4.
+       unfold G, vecrvminus, vecrvmult, vecrvscalerv, rvmaxabs.
+       unfold vecrvplus, vecrvopp, vecrvscale.
+       rewrite Rvector_scale_scale.
+       now rewrite Rmult_comm.
+     + intros ??.
+       simpl.
+       unfold G, vecrvminus, vecrvmult, vecrvscalerv, rvmaxabs.
+       unfold vecrvplus, vecrvopp, vecrvscale.
+       f_equal.
+       apply functional_extensionality.
+       intros.
+       rewrite Rvector_scale_scale.
+       now rewrite Rmult_comm.
+     + simpl.
+       reflexivity.
+     + intros ???.
+       unfold G.
+       rewrite Rvector_scale_plus_l.
+       rewrite Rvector_scale_plus_l.
+       repeat rewrite (Rvector_scale_comm beta).
+       rewrite Rvector_scale_mult_r.
+       rewrite Rvector_max_abs_scale.
+       repeat rewrite Rvector_scale_scale.
+       generalize (cond_nonneg beta); intros.
+       rewrite Rabs_right; try lra.
+       rewrite (Rmult_comm beta).
+       now rewrite Rmult_assoc.
+     + intros ???.
+       unfold G.
+       rewrite Rvector_scale_plus_l.
+       rewrite Rvector_scale_plus_l.
+       repeat rewrite (Rvector_scale_comm beta).
+       rewrite Rvector_scale_mult_r.
+       rewrite Rvector_max_abs_scale.
+       repeat rewrite Rvector_scale_scale.
+       generalize (cond_nonneg beta); intros.
+       rewrite Rabs_right; try lra.
+       rewrite (Rmult_comm beta).
+       now rewrite Rmult_assoc.
+     + apply H6.
+   - intros.
      induction n.
-     - now do 2 rewrite sum_O.
-     - do 2 rewrite sum_Sn.
-       rewrite <- IHn.
-       unfold plus; simpl.
-       now ring.
-   Qed.
+     + simpl.
+       now apply vecrvclip_rv.
+     + simpl.
+       apply vecrvclip_rv.
+       apply Rvector_plus_rv.
+       * apply Rvector_minus_rv; trivial.
+         now apply Rvector_mult_rv.
+       * apply Rvector_scale_rv_rv.
+         -- now apply Rvector_max_abs_rv.
+         -- now apply Rvector_scale_rv.
+   - intros.
+     induction n; simpl; apply rvmaxabs_vecrvclip.
+   - intros.
+     now simpl.
+ Qed.
 
-   Lemma l1_divergent_scale (a : nat -> R) (d : posreal) :
-     l1_divergent a ->
-     l1_divergent (fun n => d * (a n)).
-   Proof.
-     unfold l1_divergent.
+ Lemma lemma3'_almost (α β X : nat -> Ts -> vector R (S N)) (C γ : posreal)
+   (rvX : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (X n)) 
+   (rva : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (α n)) 
+   (rvb : forall n, RandomVariable dom (Rvector_borel_sa (S N)) (β n)) :           
+   almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (α t ω) <= 1) ->
+   almost prts (fun ω => forall t i pf, 0 <= vector_nth i pf (β t ω) <= 1) ->
+   almost prts (fun ω => forall t i pf, vector_nth i pf (β t ω) <= vector_nth i pf (α t ω)) ->       
+
+   almost prts (fun ω => forall i pf, l1_divergent (fun n : nat => vector_nth i pf (α n ω))) ->
+   γ < 1 ->
+   (forall n, rv_le (rvmaxabs (X n)) (const C)) ->
+   (forall n, rv_eq (X (S n))
+                (vecrvclip (S N)
+                   (vecrvplus 
+                      (vecrvminus (X n)
+                         (vecrvmult (α n) (X n)))
+                      (vecrvscalerv (rvmaxabs (X n))
+                         (vecrvscale γ (β n))))
+                   (pos_to_nneg C))) ->
+   forall i pf,
+     almost prts (fun ω => Lim_seq (fun n => vector_nth i pf (X n ω)) = 0).
+ Proof.
+   intros.
+   generalize (lemma3_almost α β X C γ _ _ _ H H0 H1 H2 H3 H4 H5).
+   apply almost_impl.
+   apply all_almost.
+   intros ??.
+   apply is_lim_seq_unique in H6.
+   assert (Lim_seq (fun n => - (rvmaxabs (X n) x)) = 0).
+   {
+     rewrite Lim_seq_opp, H6.
+     simpl.
+     now rewrite Ropp_0.
+   }
+   generalize (Lim_seq_le  (fun n : nat => - rvmaxabs (X n) x) (fun n : nat => vector_nth i pf (X n x))); intros.
+   generalize (Lim_seq_le   (fun n : nat => vector_nth i pf (X n x)) (fun n : nat => rvmaxabs (X n) x)); intros.       
+   assert (forall n, - rvmaxabs (X n) x <= vector_nth i pf (X n x) <=  rvmaxabs (X n) x).
+   {
      intros.
-     apply is_lim_seq_spec in H.
-     apply is_lim_seq_spec.
-     intros ?.
-     specialize (H (M / d)).
-     revert H.
-     apply eventually_impl.
-     apply all_eventually.
-     intros.
-     rewrite <- sum_n_Rscal_l.
-     generalize (cond_pos d); intros.
-     apply Rmult_lt_compat_r with (r := d) in H; try lra.
-     unfold Rdiv in H.
-     rewrite Rmult_assoc in H.
-     rewrite Rinv_l in H; lra.
-  Qed.
-       Lemma isfe_beta  (α : R) (d1 d2 : R) (ev : event dom) :
-         let β :=
-           rvplus
-             (rvscale (d1 * α)
-                (EventIndicator (classic_dec ev)))
-             (rvscale (d2 * α)
-                (EventIndicator (classic_dec (event_complement ev)))) in
-        IsFiniteExpectation prts β.
-      Proof.
-        intros.
-        apply IsFiniteExpectation_plus.
-        - apply rvscale_rv.
-          apply EventIndicator_rv.
-        - apply rvscale_rv.
-          apply EventIndicator_rv.
-        - apply IsFiniteExpectation_scale.
-          apply ProductSpace.indicator_isfe.
-        - apply IsFiniteExpectation_scale.
-          apply ProductSpace.indicator_isfe.
-      Qed.
+     apply Rabs_le_between.
+     apply Rvector_max_abs_nth_le.
+   }
+   rewrite H6 in H9.
+   rewrite H7 in H8.
+   cut_to H8.
+   cut_to H9.
+   - now apply Rbar_le_antisym.
+   - intros.
+     apply H10.
+   - intros.
+     apply H10.
+ Qed.
 
-      Lemma lemm3_counter_alpha :
-        let α := fun n => / INR (S n) in
-        (forall t, 0 <= α t <= 1) /\
-        l1_divergent (fun n : nat => α n) /\
-          ex_series (fun n : nat => Rsqr (α n)).
-      Proof.
-        split.
-        - intros.
-          split.
-          + left.
-            apply Rinv_0_lt_compat.
-            apply lt_0_INR.
-            lia.
-          + replace 1 with (/ 1) by lra.
-            apply Rinv_le_contravar; try lra.
-            rewrite <- INR_1.
-            apply le_INR.
-            lia.
-        - split.
-          + unfold l1_divergent.
-            generalize harmonic_series; intros.
-            apply is_lim_seq_incr_1 in H.
-            revert H.
-            apply is_lim_seq_ext.
-            intros.
-            rewrite <- sum_f_R0_sum_f_R0', <- sum_n_Reals.
-            apply sum_n_ext.
-            intros.
-            lra.
-          + generalize (genharmonic_series_sq0 (mkposreal _ Rlt_0_1)).
-            apply ex_series_ext.
-            intros.
-            f_equal; f_equal.
-            simpl; lra.
-       Qed.              
+ Lemma lemma3_counter_prob_choice (d1 d2 : R) :
+   d1 > 1 ->
+   d2 < 1 ->
+   exists p, 0 < p < 1 /\ p * d1 + (1-p)*d2 = 1.
+ Proof.
+   exists ((1-d2)/(d1-d2)).
+   split.
+   - split.
+     + apply Rdiv_lt_0_compat; lra.
+     + rewrite <- Rdiv_lt_1; lra.
+   - field_simplify; try lra.
+     apply Rdiv_diag; lra.
+ Qed.
 
-      Lemma lemma3_counter_example (α : nat -> R) (C : posreal) :
-        (forall t, 0 <= α t <= 1) ->
-        l1_divergent (fun n : nat => α n) ->
-        ex_series (fun n : nat => Rsqr (α n)) ->        
-        (exists (ev : event dom), 0 < ps_P ev <= 0.5) ->
-        exists (β X : nat -> Ts -> R),
-        exists (isfeβ : forall t, IsFiniteExpectation prts (β t)), 
-        exists (rvX : forall t, RandomVariable dom borel_sa (X t)), 
-          (forall n, RandomVariable dom borel_sa (β n)) /\
-            (forall ω, l1_divergent (fun n : nat => β n ω)) /\
-            (forall ω, ex_series (fun n : nat => Rsqr (β n ω))) /\            
-            (forall n, rv_eq (X (S n))
-                         (rvplus 
-                            (rvscale
-                               (1 - (α n))
-                               (X n))
-                            (rvscale C (β n)))) /\
-            (forall n ω, 0 <= β n ω) /\
-            (forall n, FiniteExpectation prts (β n) <= FiniteExpectation prts (const (α n))) /\
-            ps_P (event_le dom (rvlim X) C) < 1.
-       Proof.
-         intros.
-         pose (d1 := 1.5).
-         pose (d2 := 0.5).
-         assert (d1_gt1: d1 > 1) by (compute; lra).
-         assert (d2_lt1: d2 < 1) by (compute; lra).
-         pose (p := 0.5).
-         assert(p * d1 + (1-p)*d2 <= 1) by (compute; lra).
-         destruct H2 as [ev ?].
-         pose (β := fun n =>
-                           rvplus
-                             (rvscale (d1 * (α n))
-                                (EventIndicator (classic_dec ev)))
-                             (rvscale (d2 * (α n))
-                                (EventIndicator (classic_dec (event_complement ev))))).
-         exists β.
-         pose (X := fix X n :=
-          match n with
-                | 0%nat => const (pos C)
-                | S n =>
+ Lemma sum_n_Rscal_l (f : nat -> R) (c:R)  (n : nat):
+   c * (sum_n f n)  = (sum_n (fun k => c * (f k)) n).
+ Proof.
+   induction n.
+   - now do 2 rewrite sum_O.
+   - do 2 rewrite sum_Sn.
+     rewrite <- IHn.
+     unfold plus; simpl.
+     now ring.
+ Qed.
+
+ Lemma l1_divergent_scale (a : nat -> R) (d : posreal) :
+   l1_divergent a ->
+   l1_divergent (fun n => d * (a n)).
+ Proof.
+   unfold l1_divergent.
+   intros.
+   apply is_lim_seq_spec in H.
+   apply is_lim_seq_spec.
+   intros ?.
+   specialize (H (M / d)).
+   revert H.
+   apply eventually_impl.
+   apply all_eventually.
+   intros.
+   rewrite <- sum_n_Rscal_l.
+   generalize (cond_pos d); intros.
+   apply Rmult_lt_compat_r with (r := d) in H; try lra.
+   unfold Rdiv in H.
+   rewrite Rmult_assoc in H.
+   rewrite Rinv_l in H; lra.
+ Qed.
+
+ Lemma isfe_beta  (α : R) (d1 d2 : R) (ev : event dom) :
+   let β :=
+     rvplus
+       (rvscale (d1 * α)
+          (EventIndicator (classic_dec ev)))
+       (rvscale (d2 * α)
+          (EventIndicator (classic_dec (event_complement ev)))) in
+   IsFiniteExpectation prts β.
+ Proof.
+   intros.
+   apply IsFiniteExpectation_plus.
+   - apply rvscale_rv.
+     apply EventIndicator_rv.
+   - apply rvscale_rv.
+     apply EventIndicator_rv.
+   - apply IsFiniteExpectation_scale.
+     apply ProductSpace.indicator_isfe.
+   - apply IsFiniteExpectation_scale.
+     apply ProductSpace.indicator_isfe.
+ Qed.
+
+ Lemma lemm3_counter_alpha :
+   let α := fun n => / INR (S n) in
+   (forall t, 0 <= α t <= 1) /\
+     l1_divergent (fun n : nat => α n) /\
+     ex_series (fun n : nat => Rsqr (α n)).
+ Proof.
+   split.
+   - intros.
+     split.
+     + left.
+       apply Rinv_0_lt_compat.
+       apply lt_0_INR.
+       lia.
+     + replace 1 with (/ 1) by lra.
+       apply Rinv_le_contravar; try lra.
+       rewrite <- INR_1.
+       apply le_INR.
+       lia.
+   - split.
+     + unfold l1_divergent.
+       generalize harmonic_series; intros.
+       apply is_lim_seq_incr_1 in H.
+       revert H.
+       apply is_lim_seq_ext.
+       intros.
+       rewrite <- sum_f_R0_sum_f_R0', <- sum_n_Reals.
+       apply sum_n_ext.
+       intros.
+       lra.
+     + generalize (genharmonic_series_sq0 (mkposreal _ Rlt_0_1)).
+       apply ex_series_ext.
+       intros.
+       f_equal; f_equal.
+       simpl; lra.
+ Qed.              
+
+ Lemma lemma3_counter_example (α : nat -> R) (C : posreal) :
+   (forall t, 0 <= α t <= 1) ->
+   l1_divergent (fun n : nat => α n) ->
+   ex_series (fun n : nat => Rsqr (α n)) ->        
+   (exists (ev : event dom), 0 < ps_P ev <= 0.5) ->
+   exists (β X : nat -> Ts -> R),
+   exists (isfeβ : forall t, IsFiniteExpectation prts (β t)), 
+   exists (rvX : forall t, RandomVariable dom borel_sa (X t)), 
+     (forall n, RandomVariable dom borel_sa (β n)) /\
+       (forall ω, l1_divergent (fun n : nat => β n ω)) /\
+       (forall ω, ex_series (fun n : nat => Rsqr (β n ω))) /\            
+       (forall n, rv_eq (X (S n))
                     (rvplus 
                        (rvscale
                           (1 - (α n))
                           (X n))
-                       (rvscale C (β n)))
-          end).
-         exists X.
-         exists (fun t => isfe_beta (α t) d1 d2 ev).
-         assert (rvb: forall t,
-                    RandomVariable dom borel_sa (β t)).                    
-         {
-           intros.
-           apply rvplus_rv.
-           - apply rvscale_rv.
-             apply EventIndicator_rv.
-           - apply rvscale_rv.
-             apply EventIndicator_rv.
-         }
-         assert (rvX: forall t,
-                    RandomVariable dom borel_sa (X t)).
-         {
-           intros.
-           induction t.
-           - simpl.
-             apply rvconst.
-           - simpl.
-             apply rvplus_rv.
-             + now apply rvscale_rv.
-             + now apply rvscale_rv.
-         }
-         exists rvX.
-         split;trivial.
-         split.
-         - intros.
-           unfold β.
-           assert (d1 > 0) by lra.
-           assert (d2 > 0) by (compute; lra).
-           generalize (l1_divergent_scale α (mkposreal _ H4) H0); intros.
-           generalize (l1_divergent_scale α (mkposreal _ H5) H0); intros.           
-           simpl in H6; simpl in H7.
-           unfold rvplus, rvscale, EventIndicator, event_complement, pre_event_complement; simpl.
-           repeat match_destr; try tauto.
-           + revert H6.
-             apply is_lim_seq_ext; intros ?.
-             apply sum_n_ext; intros ?.
-             lra.
-           + revert H7.
-             apply is_lim_seq_ext; intros ?.
-             apply sum_n_ext; intros ?.
-             lra.
-         - split.
-           + intros.
-             unfold β.
-             unfold rvplus, rvscale, EventIndicator, event_complement, pre_event_complement; simpl.
-             repeat match_destr; try tauto.
-             * generalize (ex_series_scal_r (Rsqr d1) _ H1).
-               apply ex_series_ext.
-               intros.
-               unfold Rsqr; lra.
-             * generalize (ex_series_scal_r (Rsqr d2) _ H1).
-               apply ex_series_ext.
-               intros.
-               unfold Rsqr; lra.
-           + split; [intros; reflexivity|].
-             split.
-             * intros.
-               unfold β.
-               unfold rvplus, rvscale, EventIndicator, event_complement, pre_event_complement; simpl.
-               repeat match_destr; try tauto.
-               -- rewrite Rmult_0_r, Rplus_0_r, Rmult_1_r.
-                  apply Rmult_le_pos; try lra.
-                  apply H.
-               -- rewrite Rmult_0_r, Rplus_0_l, Rmult_1_r.
+                       (rvscale C (β n)))) /\
+       (forall n ω, 0 <= β n ω) /\
+       (forall n, FiniteExpectation prts (β n) <= FiniteExpectation prts (const (α n))) /\
+       ps_P (event_le dom (rvlim X) C) < 1.
+ Proof.
+   intros.
+   pose (d1 := 1.5).
+   pose (d2 := 0.5).
+   assert (d1_gt1: d1 > 1) by (compute; lra).
+   assert (d2_lt1: d2 < 1) by (compute; lra).
+   pose (p := 0.5).
+   assert(p * d1 + (1-p)*d2 <= 1) by (compute; lra).
+   destruct H2 as [ev ?].
+   pose (β := fun n =>
+                rvplus
+                  (rvscale (d1 * (α n))
+                     (EventIndicator (classic_dec ev)))
+                  (rvscale (d2 * (α n))
+                     (EventIndicator (classic_dec (event_complement ev))))).
+   exists β.
+   pose (X := fix X n :=
+           match n with
+           | 0%nat => const (pos C)
+           | S n =>
+               (rvplus 
+                  (rvscale
+                     (1 - (α n))
+                     (X n))
+                  (rvscale C (β n)))
+           end).
+   exists X.
+   exists (fun t => isfe_beta (α t) d1 d2 ev).
+   assert (rvb: forall t,
+              RandomVariable dom borel_sa (β t)).                    
+   {
+     intros.
+     apply rvplus_rv.
+     - apply rvscale_rv.
+       apply EventIndicator_rv.
+     - apply rvscale_rv.
+       apply EventIndicator_rv.
+   }
+   assert (rvX: forall t,
+              RandomVariable dom borel_sa (X t)).
+   {
+     intros.
+     induction t.
+     - simpl.
+       apply rvconst.
+     - simpl.
+       apply rvplus_rv.
+       + now apply rvscale_rv.
+       + now apply rvscale_rv.
+   }
+   exists rvX.
+   split;trivial.
+   split.
+   - intros.
+     unfold β.
+     assert (d1 > 0) by lra.
+     assert (d2 > 0) by (compute; lra).
+     generalize (l1_divergent_scale α (mkposreal _ H4) H0); intros.
+     generalize (l1_divergent_scale α (mkposreal _ H5) H0); intros.           
+     simpl in H6; simpl in H7.
+     unfold rvplus, rvscale, EventIndicator, event_complement, pre_event_complement; simpl.
+     repeat match_destr; try tauto.
+     + revert H6.
+       apply is_lim_seq_ext; intros ?.
+       apply sum_n_ext; intros ?.
+       lra.
+     + revert H7.
+       apply is_lim_seq_ext; intros ?.
+       apply sum_n_ext; intros ?.
+       lra.
+   - split.
+     + intros.
+       unfold β.
+       unfold rvplus, rvscale, EventIndicator, event_complement, pre_event_complement; simpl.
+       repeat match_destr; try tauto.
+       * generalize (ex_series_scal_r (Rsqr d1) _ H1).
+         apply ex_series_ext.
+         intros.
+         unfold Rsqr; lra.
+       * generalize (ex_series_scal_r (Rsqr d2) _ H1).
+         apply ex_series_ext.
+         intros.
+         unfold Rsqr; lra.
+     + split; [intros; reflexivity|].
+       split.
+       * intros.
+         unfold β.
+         unfold rvplus, rvscale, EventIndicator, event_complement, pre_event_complement; simpl.
+         repeat match_destr; try tauto.
+           -- rewrite Rmult_0_r, Rplus_0_r, Rmult_1_r.
+              apply Rmult_le_pos; try lra.
+              apply H.
+           -- rewrite Rmult_0_r, Rplus_0_l, Rmult_1_r.
                   apply Rmult_le_pos.
                   ++ compute; lra.
                   ++ apply H.
