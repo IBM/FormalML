@@ -5678,218 +5678,6 @@ Section jaakola_vector2.
            apply vector_nth_ext.
      Qed.
      
-     Lemma Finite_conditional_variance_alt_scale (x : Ts -> R) (c : R)
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rv : RandomVariable dom borel_sa x}
-        {isfe1 : IsFiniteExpectation prts x} 
-        {isfe2 : IsFiniteExpectation prts (rvsqr x)}
-       {isfe3 : IsFiniteExpectation prts (rvsqr (rvscale c x))}
-:
-    almostR2 (prob_space_sa_sub prts sub) eq
-             (rvminus (FiniteConditionalExpectation prts sub (rvsqr (rvscale c x)))
-                      (rvsqr (FiniteConditionalExpectation prts sub (rvscale c x))))
-             (rvscale (Rsqr c)
-                (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
-                   (rvsqr (FiniteConditionalExpectation prts sub x)))).
-       Proof.
-         generalize (FiniteCondexp_scale prts sub c x); apply almost_impl.         
-         generalize (FiniteCondexp_scale prts sub (Rsqr c) (rvsqr x)); apply almost_impl.                  
-         apply all_almost; intros ???.
-         unfold rvminus, rvplus, rvsqr, rvopp, rvscale.
-         unfold rvscale in H0.
-         rewrite H0.
-         clear H0.
-         unfold rvsqr, rvscale in H.
-         rewrite Rmult_plus_distr_l.
-         rewrite <- H.
-         f_equal.
-         - apply FiniteConditionalExpectation_ext.
-           intros ?.
-           now rewrite Rsqr_mult.
-         - rewrite Rsqr_mult.
-           lra.
-     Qed.
-
-       Lemma Finite_conditional_variance_alt_scale_isfe3 (x : Ts -> R) (c : R)
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rv : RandomVariable dom borel_sa x}
-        (isfe2 : IsFiniteExpectation prts (rvsqr x)) :
-         IsFiniteExpectation prts (rvsqr (rvscale c x)).
-       Proof.
-       generalize (IsFiniteExpectation_scale prts (Rsqr c) (rvsqr x)).
-       apply IsFiniteExpectation_proper.
-       intros ?.
-       unfold rvsqr, rvscale, Rsqr.
-       lra.
-       Qed.
-
-       Lemma Finite_conditional_variance_alt_scale' (x : Ts -> R) (c : R)
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rv : RandomVariable dom borel_sa x}
-        {isfe1 : IsFiniteExpectation prts x} 
-        {isfe2 : IsFiniteExpectation prts (rvsqr x)}
-:    almostR2 (prob_space_sa_sub prts sub) eq
-             (rvminus (FiniteConditionalExpectation (isfe:=Finite_conditional_variance_alt_scale_isfe3 _ _ sub isfe2) prts sub (rvsqr (rvscale c x)))
-                      (rvsqr (FiniteConditionalExpectation prts sub (rvscale c x))))
-             (rvscale (Rsqr c)
-                (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
-                   (rvsqr (FiniteConditionalExpectation prts sub x)))).
-       Proof.
-         apply Finite_conditional_variance_alt_scale.
-       Qed.
-
-  Lemma FiniteConditionalVariance_scale  {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) (c : R) (f : Ts -> R) 
-    {rv : RandomVariable dom borel_sa f}
-    {rv' : RandomVariable dom borel_sa (rvscale c f)}    
-    {isfe:IsFiniteExpectation prts f}
-    {isfe_sqr:IsFiniteExpectation prts (rvsqr f)}
-    {isfe':IsFiniteExpectation prts (rvscale c f)}     
-    {isfe2:IsFiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f)))} 
-    {isfe2':IsFiniteExpectation prts (rvsqr (rvminus (rvscale c f) (FiniteConditionalExpectation prts sub (rvscale c f))))} :    
-
-    almostR2 (prob_space_sa_sub prts sub) eq
-             (FiniteConditionalVariance prts sub (rvscale c f))
-             (rvscale (Rsqr c) (FiniteConditionalVariance prts sub f)).
-  Proof.
-    assert (IsFiniteExpectation prts (rvsqr (rvscale c f))).
-    {
-      generalize (IsFiniteExpectation_scale prts (Rsqr c) (rvsqr f)).
-      apply IsFiniteExpectation_proper.
-      intros ?.
-      unfold rvsqr, rvscale, Rsqr.
-      lra.
-    }
-    generalize (Finite_conditional_variance_alt_scale f c sub); apply almost_impl.
-    assert (rv2 : RandomVariable dom borel_sa
-          (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f)))).
-    {
-      apply rvsqr_rv.
-      apply rvminus_rv; trivial.
-      apply (RandomVariable_sa_sub sub).
-      apply FiniteCondexp_rv.
-    }
-    assert (flp2:IsLp prts 2 f).
-      {
-        red; now rewrite rvpower_abs2_unfold.
-      }         
-      destruct  (isfe_L2_variance prts sub f rv) as [_[_[_[_[HH1 HH2]]]]].
-      
-    assert (isfe4 : IsFiniteExpectation prts
-                      (rvsqr (FiniteConditionalExpectation prts sub f))).
-    {
-      revert HH1.
-      apply IsFiniteExpectation_proper; intros ?.
-      unfold rvsqr; f_equal.
-      apply FiniteConditionalExpectation_ext.
-      reflexivity.
-    } 
-      
-    assert (isfe5 : IsFiniteExpectation prts
-                      (rvmult (FiniteConditionalExpectation prts sub f) f)).
-    {
-      revert HH2.
-      apply IsFiniteExpectation_proper; intros ?.
-      unfold rvmult; f_equal.
-      apply FiniteConditionalExpectation_ext.
-      reflexivity.
-
-    } 
-    generalize (conditional_variance_alt f sub); apply almost_impl.
-    assert (rv2' : RandomVariable dom borel_sa
-          (rvsqr
-             (rvminus (rvscale c f)
-                (FiniteConditionalExpectation prts sub (rvscale c f))))).
-    {
-      apply rvsqr_rv.
-      apply rvminus_rv; trivial.
-      apply (RandomVariable_sa_sub sub).
-      apply FiniteCondexp_rv.
-    }
-    assert (isfe4' : IsFiniteExpectation prts
-                       (rvsqr (FiniteConditionalExpectation prts sub (rvscale c f)))).
-    {
-      cut (IsFiniteExpectation prts (rvsqr (rvscale c (FiniteConditionalExpectation prts sub f)))).
-      {
-        intros HH.
-        eapply IsFiniteExpectation_proper_almostR2; try eapply HH.
-        - apply rvsqr_rv.
-          apply rvscale_rv.
-          apply FiniteCondexp_rv'.
-        - apply rvsqr_rv.
-          apply FiniteCondexp_rv'.
-        - apply almostR2_eq_sqr_proper. 
-          symmetry.
-          apply (almost_prob_space_sa_sub_lift _ sub).
-          apply FiniteCondexp_scale'.
-      } 
-      cut (IsFiniteExpectation prts (rvscale c² (rvsqr (FiniteConditionalExpectation prts sub f)))).
-      {
-        apply IsFiniteExpectation_proper; intros ?.
-        unfold rvsqr, rvscale.
-        now rewrite Rsqr_mult.
-      }
-      now apply IsFiniteExpectation_scale.
-    }
-    assert (isfe5' : IsFiniteExpectation prts
-            (rvmult (FiniteConditionalExpectation prts sub (rvscale c f))
-               (rvscale c f))).
-    {
-      cut (IsFiniteExpectation prts (rvmult (rvscale c (FiniteConditionalExpectation prts sub f)) (rvscale c f))).
-      {
-        intros HH.
-        eapply IsFiniteExpectation_proper_almostR2; try eapply HH.
-        - apply rvmult_rv; trivial.
-          apply rvscale_rv.
-          apply FiniteCondexp_rv'.
-        - apply rvmult_rv; trivial.
-          apply FiniteCondexp_rv'.
-        - apply almostR2_eq_mult_proper; try reflexivity.
-          symmetry.
-          apply (almost_prob_space_sa_sub_lift _ sub).
-          apply FiniteCondexp_scale'.
-      } 
-      cut (IsFiniteExpectation prts (rvscale c² (rvmult (FiniteConditionalExpectation prts sub f) f))).
-      {
-        apply IsFiniteExpectation_proper; intros ?.
-        unfold rvscale, rvmult.
-        rewrite Rsqr_def.
-        lra.
-      }
-      now apply IsFiniteExpectation_scale.      
-    }
-    
-    generalize (conditional_variance_alt (rvscale c f) sub); apply almost_impl.
-    apply all_almost; intros ????.
-    unfold FiniteConditionalVariance.
-    replace
-      (FiniteConditionalExpectation prts sub
-         (rvsqr
-            (rvminus (rvscale c f) (FiniteConditionalExpectation prts sub (rvscale c f))))
-         x) with
-      (rvminus (FiniteConditionalExpectation prts sub (rvsqr (rvscale c f)))
-         (rvsqr (FiniteConditionalExpectation prts sub (rvscale c f))) x).
-    - unfold rvscale.
-      replace
-        (FiniteConditionalExpectation prts sub
-           (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f))) x) with
-        (rvminus (FiniteConditionalExpectation prts sub (rvsqr f))
-         (rvsqr (FiniteConditionalExpectation prts sub f)) x).
-      + unfold rvscale in H2.
-        rewrite <- H2.
-        unfold rvminus, rvplus, rvopp, rvscale, rvsqr.
-        f_equal.
-        -- now apply FiniteConditionalExpectation_ext.
-        -- f_equal; f_equal.
-           now apply FiniteConditionalExpectation_ext.
-      + rewrite <- H1.
-        now apply FiniteConditionalExpectation_ext.        
-    - rewrite <- H0.
-      now apply FiniteConditionalExpectation_ext.              
-  Qed.
-
   Lemma ConditionalVariance_scale  {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) (c : R) (f : Ts -> R) 
     {rv : RandomVariable dom borel_sa f}
     {isfe:IsFiniteExpectation prts f}
@@ -5958,6 +5746,36 @@ Section jaakola_vector2.
       now apply ConditionalExpectation_ext.
     - etransitivity; [|etransitivity]; [|apply H1|];
         now apply ConditionalExpectation_ext.
+  Qed.
+
+    Lemma FiniteConditionalVariance_scale  {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) (c : R) (f : Ts -> R) 
+    {rv : RandomVariable dom borel_sa f}
+    {rv' : RandomVariable dom borel_sa (rvscale c f)}    
+    {isfe:IsFiniteExpectation prts f}
+    {isfe_sqr:IsFiniteExpectation prts (rvsqr f)}
+    {isfe':IsFiniteExpectation prts (rvscale c f)}     
+    {isfe2:IsFiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f)))} 
+    {isfe2':IsFiniteExpectation prts (rvsqr (rvminus (rvscale c f) (FiniteConditionalExpectation prts sub (rvscale c f))))} :    
+
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (FiniteConditionalVariance prts sub (rvscale c f))
+             (rvscale (Rsqr c) (FiniteConditionalVariance prts sub f)).
+ Proof.
+   generalize (ConditionalVariance_scale sub c f).
+   apply almost_impl; apply all_almost; intros ??.
+   rewrite <- Rbar_finite_eq.
+   etransitivity; [|etransitivity]; [|apply H|].
+   - erewrite FiniteVariance_eq.
+     rewrite Rbar_finite_eq.
+     now apply FiniteConditionalVariance_ext.
+     Unshelve.
+     revert isfe2'.
+     apply IsFiniteExpectation_proper.
+     intros ?.
+     rv_unfold'.
+     f_equal; f_equal.
+     now apply FiniteConditionalExpectation_ext.
+   - now erewrite FiniteVariance_eq.
  Qed.
 
  Theorem Jaakkola_alpha_beta_unbounded_uniformly_W (W : vector posreal (S N))
