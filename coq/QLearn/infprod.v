@@ -673,6 +673,50 @@ Proof.
     destruct H6; [lra|].
     now apply Rsqr_eq_0 in H6.
 Qed.
+    
+  Lemma exp_sum_prod_f_R0 (a : nat -> R) (n : nat) :
+    exp(sum_n a n) = prod_f_R0 (fun j => exp (a j)) n.
+  Proof.
+    induction n.
+    - simpl.
+      now rewrite sum_O.
+    - simpl.
+      rewrite sum_Sn.
+      unfold plus; simpl.
+      rewrite exp_plus.
+      now rewrite IHn.
+  Qed.
+
+  Lemma series_sq_finite_lim_0 (a : nat -> R) :
+    ex_series (fun n => Rsqr (a n)) ->
+    is_lim_seq a 0.
+  Proof.
+    intros.
+    apply ex_series_lim_0 in H.
+    apply is_lim_seq_spec in H.
+    apply is_lim_seq_spec.
+    unfold is_lim_seq' in *.
+    intros.
+    assert (0 < Rsqr eps).
+    {
+      unfold Rsqr.
+      generalize (cond_pos eps); intros.
+      now apply Rmult_lt_0_compat.
+    }
+    specialize (H (mkposreal _ H0)).
+    destruct H.
+    exists x.
+    intros.
+    rewrite Rminus_0_r.
+    specialize (H n H1).
+    rewrite Rminus_0_r in H.
+    simpl in H.
+    rewrite Rabs_right in H.
+    - apply Rsqr_lt_abs_0 in H.
+      rewrite (Rabs_right eps) in H; trivial.
+      generalize (cond_pos eps); lra.
+    - apply Rle_ge, Rle_0_sqr.
+  Qed.
 
 End series_sequences.
 
