@@ -162,15 +162,6 @@ Proof.
     lra.
 Qed.
 
-Lemma Rinv_pos n :
-  0 < n ->
-  0 < / n.
-Proof.
-  intros.
-  rewrite <- (Rmult_1_l ( / n)).
-  apply Rdiv_lt_0_compat; lra.
-Qed.
-
 Lemma pos_Rl_nth (l:list R) n : pos_Rl l n = nth n l 0.
 Proof.
   revert n.

@@ -174,6 +174,33 @@ Section Rvector_defs.
       congruence.
     Qed.
 
+    Definition Scaled_Rvector_max_abs  (x y :vector R n) : R :=
+      Rvector_max_abs (Rvector_mult x y).
+    
+    Definition Rvector_inv (x : vector R n) : vector R n :=
+      vector_map (fun c => Rinv c) x.
+    
+    Definition Rinv_mkpos (c : posreal) : posreal :=
+      mkposreal _ (Rinv_pos c (cond_pos c)).
+    
+    Definition Rvector_inv_pos (x : vector posreal n) : vector posreal n :=
+      vector_map (fun c => Rinv_mkpos c) x.
+    
+    Definition Div_scaled_Rvector_max_abs (x y :vector R n) : R :=
+      Scaled_Rvector_max_abs x (Rvector_inv y).
+    
+    Definition pos_Rvector_mult (x : vector R n) (y :vector posreal n) : (vector R n) :=
+      Rvector_mult x (vector_map (fun c => pos c) y).
+    
+    Definition pos_scaled_Rvector_max_abs (x : vector R n) (y :vector posreal n) : R :=
+      Rvector_max_abs (pos_Rvector_mult x y).
+    
+    Definition scaled_norm (x : vector R n) (y :vector posreal n) : R :=
+      Rvector_max_abs (pos_Rvector_mult x y).
+    
+    Definition pos_vec (x : vector posreal n) : vector R n := vector_map pos x.
+
+
   (* TODO: move *)
   Lemma combine_assoc {A B C} (x:list A) (y:list B) (z:list C):
     combine x (combine y z) = map (fun '(x,y,z) => (x,(y,z))) (combine (combine x y) z).

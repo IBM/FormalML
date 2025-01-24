@@ -1043,7 +1043,8 @@ End rv_expressible.
            apply Rlt_gt. apply Rge_le in hk2.
            apply Rinv_pos.
            eapply Rlt_le_trans with (r2 := /α k); auto.
-           apply Rinv_pos; auto.
+           apply Rinv_pos.
+           now apply Rlt_gt.
         -- intros n. specialize (HM n).
            destruct HM as [k [hk1 hk2]].
            exists k. split; try auto.
@@ -1053,7 +1054,8 @@ End rv_expressible.
            apply Rle_ge. apply Rge_le in hk2.
            rewrite <-(Rinv_involutive (α k)); try auto.
            apply Rinv_le_contravar; auto.
-           apply Rinv_pos; auto.
+           apply Rinv_pos.
+           now apply Rlt_gt.
       + generalize (cv_infty_cv_R0 (fun n => /α n) H0); intros.
         specialize (H2 H1).
         intros eps Heps. specialize (H2 eps Heps).
