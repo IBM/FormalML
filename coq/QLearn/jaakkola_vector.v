@@ -6049,9 +6049,6 @@ Section jaakola_vector2.
       now apply FiniteConditionalExpectation_ext.              
   Qed.
 
-  Definition Rbar_rvscale (c : Rbar) (x:Ts->Rbar) omega :=
-    Rbar_mult c (x omega).
-  
   Lemma ConditionalVariance_scale  {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) (c : R) (f : Ts -> R) 
     {rv : RandomVariable dom borel_sa f}
     {isfe:IsFiniteExpectation prts f}

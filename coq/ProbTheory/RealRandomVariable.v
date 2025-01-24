@@ -2495,6 +2495,9 @@ Section RbarRandomVariables.
   Definition Rbar_rvopp (rv_X : Ts -> Rbar) :=
     (fun omega =>  Rbar_opp (rv_X omega)).
 
+  Definition Rbar_rvscale (c : Rbar) (x:Ts->Rbar) omega :=
+    Rbar_mult c (x omega).
+  
   Instance Rbar_rvopp_measurable (f : Ts -> Rbar) :
     RbarMeasurable f ->
     RbarMeasurable (Rbar_rvopp f).
