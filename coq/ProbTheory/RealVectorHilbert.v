@@ -586,6 +586,14 @@ Section Rvector_defs.
     lra.
   Qed.
 
+  Lemma Rvector_mult_plus_distr_l (x y z : vector R n) :
+    x * (y + z) =  (x * y) + (x * z).
+  Proof.
+    rewrite Rvector_mult_comm.
+    rewrite Rvector_mult_plus_distr_r.
+    now repeat rewrite (Rvector_mult_comm x _).
+  Qed.
+
   Lemma Rvector_sum_plus_distr (x y:vector R n) :
     ∑ (x + y) = (∑ x + ∑ y)%R.
   Proof.
