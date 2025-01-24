@@ -929,7 +929,29 @@ Section sum_n.
       lia.
   Qed.
 
-  Lemma pos_ind_sum (gamma : nat -> R) (N : nat) :
+ Lemma sum_n_Rscal_l (f : nat -> R) (c:R)  (n : nat):
+   c * (sum_n f n)  = (sum_n (fun k => c * (f k)) n).
+ Proof.
+   induction n.
+   - now do 2 rewrite sum_O.
+   - do 2 rewrite sum_Sn.
+     rewrite <- IHn.
+     unfold plus; simpl.
+     now ring.
+ Qed.
+
+ Lemma sum_n_Rscal_r (f : nat -> R) (c:R)  (n : nat):
+   (sum_n f n)*c  = (sum_n (fun k => (f k)*c) n).
+ Proof.
+   induction n.
+   - now do 2 rewrite sum_O.
+   - do 2 rewrite sum_Sn.
+     rewrite <- IHn.
+     unfold plus; simpl.
+     now ring.
+ Qed.
+
+ Lemma pos_ind_sum (gamma : nat -> R) (N : nat) :
     0 < sum_n gamma N ->
     exists M : nat, 0 < gamma M.
   Proof.
@@ -1476,6 +1498,20 @@ Section Rpower.
   Lemma pow0_Sbase n : pow 0 (S n) = 0.
   Proof.
     simpl; field.
+  Qed.
+
+  Lemma pow_le_1 (y : R) :
+    0 <= y <= 1 ->
+    forall n,
+      y ^ S n <= y.
+  Proof.
+    induction n.
+    - now rewrite pow_1; right.
+    - rewrite <- tech_pow_Rmult.
+      destruct H.
+      apply Rmult_le_compat_l with (r := y) in IHn; trivial.
+      apply Rmult_le_compat_l with (r := y) in H0; trivial.        
+      lra.
   Qed.
 
   Lemma pow_integral n y :

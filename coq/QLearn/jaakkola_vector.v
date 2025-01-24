@@ -1007,20 +1007,6 @@ Qed.
        apply Rabs_pos.
      Qed.
 
-    Lemma pow_le_1 (y : R) :
-      0 <= y <= 1 ->
-      forall n,
-        y ^ S n <= y.
-    Proof.
-      induction n.
-      - now rewrite pow_1; right.
-      - rewrite <- tech_pow_Rmult.
-        destruct H.
-        apply Rmult_le_compat_l with (r := y) in IHn; trivial.
-        apply Rmult_le_compat_l with (r := y) in H0; trivial.        
-        lra.
-    Qed.
-
     Lemma prod_pow_m1_le :
       exists (x : posreal),
       forall y, 
@@ -2622,17 +2608,6 @@ Section jaakola_vector2.
      + rewrite <- Rdiv_lt_1; lra.
    - field_simplify; try lra.
      apply Rdiv_diag; lra.
- Qed.
-
- Lemma sum_n_Rscal_l (f : nat -> R) (c:R)  (n : nat):
-   c * (sum_n f n)  = (sum_n (fun k => c * (f k)) n).
- Proof.
-   induction n.
-   - now do 2 rewrite sum_O.
-   - do 2 rewrite sum_Sn.
-     rewrite <- IHn.
-     unfold plus; simpl.
-     now ring.
  Qed.
 
  Lemma l1_divergent_scale (a : nat -> R) (d : posreal) :
