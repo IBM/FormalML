@@ -7191,7 +7191,7 @@ Section qlearn.
        {
          intros ?.
          rewrite (FiniteExpectation_simple _ _).
-         eapply SimpleExpectation_compose_Finite_type.
+         now rewrite (SimpleExpectation_compose _ _).
        }
        apply list_sum_rv; intros; try typeclasses eauto.
        apply rvmult_rv; [| apply rvconst].

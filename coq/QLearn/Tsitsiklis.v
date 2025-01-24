@@ -9617,54 +9617,6 @@ Qed.
    apply fin_finite.
  Qed.
  
-  Lemma SimpleExpectation_compose_Finite_type {Td} (f1 : Ts -> Td) (f2 : Td -> R)
-        {dec : EqDec Td eq}
-        {fin : FiniteType Td}
-        {σd: SigmaAlgebra Td} 
-        {has_pre: HasPreimageSingleton σd}
-        {rv1: RandomVariable dom σd f1}
-        {rv2: RandomVariable dom borel_sa (fun v => f2 (f1 v))}
-        {frf2 : FiniteRangeFunction (fun v => f2 (f1 v))} :
-    SimpleExpectation (fun v => f2 (f1 v)) = 
-    list_sum (map (fun (v : Td) => (f2 v) * (ps_P (preimage_singleton f1 v)))
-                  (fin_elms (FiniteType := fin_finite_nodup _))).
-  Proof.
-    now rewrite (SimpleExpectation_compose _ _).
-  Qed.
-
-  Program Instance inner_frf_compose {A B C} (g1 : A -> B) (g2 : B -> C)
-          (frf1 : FiniteRangeFunction g1) :
-    FiniteRangeFunction (compose g2 g1)
-    := { frf_vals := map g2 frf_vals }.
-  Next Obligation.
-    apply in_map_iff.
-    exists (g1 x).
-    split; trivial.
-    now destruct frf1.
-  Qed.
-
-  Lemma FiniteExpectation_compose_Finite_type {Td} (f1 : Ts -> Td) (f2 : Td -> R)
-        {dec : EqDec Td eq}
-        {fin : FiniteType Td}
-        {σd: SigmaAlgebra Td} 
-        {has_pre: HasPreimageSingleton σd}
-        {rv1: RandomVariable dom σd f1}
-        {rv2: RandomVariable dom borel_sa (fun v => f2 (f1 v))}
-(*        {frf2 : FiniteRangeFunction (fun v => f2 (f1 v))} *)
-        {isfe : IsFiniteExpectation prts (fun v : Ts => f2 (f1 v))} :
-    FiniteExpectation prts (fun v => f2 (f1 v)) = 
-    list_sum (map (fun (v : Td) => (f2 v) * (ps_P (preimage_singleton f1 v)))
-                  (fin_elms (FiniteType := fin_finite_nodup _))).
-  Proof.
-    assert (frf2 : FiniteRangeFunction (fun v => f2 (f1 v))).
-    {
-      assert (FiniteRangeFunction f1) by apply fin_image_frf.
-      now apply inner_frf_compose.
-    }
-    erewrite FiniteExpectation_simple.
-    apply SimpleExpectation_compose_Finite_type.
-  Qed.
-
   Lemma conditional_variance_bound1_alt (x : Ts -> R) (c : R) 
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
@@ -11425,8 +11377,8 @@ End FixedPoint_contract.
                   (fin_elms (FiniteType := fin_finite_nodup _))).
   Proof.
     intros.
-    apply FiniteExpectation_compose_Finite_type.
-    typeclasses eauto.
+    erewrite FiniteExpectation_simple.
+    now rewrite (SimpleExpectation_compose _ _).
   Qed.
 
    Lemma qlearn_XF_contraction0 :
@@ -11584,7 +11536,7 @@ End FixedPoint_contract.
        {
          intros ?.
          rewrite (FiniteExpectation_simple _ _).
-         apply SimpleExpectation_compose_Finite_type.
+         now rewrite (SimpleExpectation_compose _ _).
        }
        apply list_sum_rv; intros; try typeclasses eauto.
        apply rvmult_rv; [| apply rvconst].
