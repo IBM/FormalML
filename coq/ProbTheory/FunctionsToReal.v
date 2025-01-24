@@ -122,6 +122,20 @@ Section defs.
 
     Definition rvpower (rv_X1 rv_X2 : Ts -> R) := fun omega => power (rv_X1 omega) (rv_X2 omega).
 
+    Definition rvinv (rv_X : Ts -> R) := rvpower rv_X (const (-1)).
+  
+    Lemma rvinv_Rinv (rv_X : Ts -> R) (ω : Ts) :
+      0 < rv_X ω ->
+      rvinv rv_X ω = / (rv_X ω).
+    Proof.
+      unfold rvinv, rvpower, const.
+      intros.
+      replace (-1) with (Ropp 1) by lra.
+      rewrite power_Ropp; trivial.
+      f_equal.
+      rewrite power_1; lra.
+    Qed.
+
     Definition rvabs  (rv_X : Ts -> R) := fun omega => Rabs (rv_X omega).
 
     Definition rvsign (rv_X : Ts -> R) := fun omega => sign(rv_X omega).

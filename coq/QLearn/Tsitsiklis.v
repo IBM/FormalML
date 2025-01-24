@@ -2741,51 +2741,6 @@ Qed.
   Qed.
 *)
 
-  Lemma powerRZ_ge_fun_rv (base : R) :
-    RandomVariable borel_sa borel_sa (fun v => powerRZ_ge_fun base v).
-  Proof.
-    apply increasing_rv.
-    intros.
-    unfold powerRZ_ge_fun.
-    match_destr; try lra.
-    match_destr.
-    - match_destr.
-      + rewrite powerRZ_Rpower; try lra.
-        rewrite powerRZ_Rpower; try lra.
-        apply Rle_Rpower; try lra.
-        apply IZR_le.
-        now apply powerRZ_up_log_alt_increasing.
-      + assert (v <= 0) by lra.
-        generalize (Rlt_le_trans 0 u v); intros.
-        cut_to H1; try lra.
-    - match_destr; try lra.
-      apply powerRZ_le; try lra.
-  Qed.
-
-
-  Definition rvinv (x : Ts -> R) := rvpower x (const (-1)).
-  
-  Global Instance rvinv_rv (x : Ts -> R) (dom2 : SigmaAlgebra Ts) :
-    RandomVariable dom2 borel_sa x ->
-    RandomVariable dom2 borel_sa (rvinv x).
-  Proof.
-    intros.
-    typeclasses eauto.
-  Qed.
-
-   Lemma rvinv_Rinv (x : Ts -> R) (ω : Ts) :
-     0 < x ω ->
-     rvinv x ω = / (x ω).
-   Proof.
-     unfold rvinv, rvpower, const.
-     intros.
-     replace (-1) with (Ropp 1) by lra.
-     rewrite power_Ropp; trivial.
-     f_equal.
-     rewrite power_1; lra.
-   Qed.
-     
-
   Lemma lemma3_pre0  (ω : Ts) (ε : posreal)
         (G M : nat -> Ts -> R) :
     is_lim_seq (fun k => M k ω) p_infty ->

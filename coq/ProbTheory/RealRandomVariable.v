@@ -906,6 +906,14 @@ Section RealRandomVariables.
         ; apply rv_measurable; trivial.
       Qed.
 
+      Global Instance rvinv_rv (x : Ts -> R) :
+        RandomVariable dom borel_sa x ->
+        RandomVariable dom borel_sa (rvinv x).
+      Proof.
+        intros.
+        typeclasses eauto.
+      Qed.
+
       Global Instance rvsqr_rv
              (rv_X : Ts -> R)
              {rv : RandomVariable dom borel_sa rv_X} :
@@ -6118,6 +6126,28 @@ Section monotonic.
     intros.
     apply measurable_rv.
     now apply decreasing_measurable.
+  Qed.
+
+
+  Lemma powerRZ_ge_fun_rv (base : R) :
+    RandomVariable borel_sa borel_sa (fun v => powerRZ_ge_fun base v).
+  Proof.
+    apply increasing_rv.
+    intros.
+    unfold powerRZ_ge_fun.
+    match_destr; try lra.
+    match_destr.
+    - match_destr.
+      + rewrite powerRZ_Rpower; try lra.
+        rewrite powerRZ_Rpower; try lra.
+        apply Rle_Rpower; try lra.
+        apply IZR_le.
+        now apply powerRZ_up_log_alt_increasing.
+      + assert (v <= 0) by lra.
+        generalize (Rlt_le_trans 0 u v); intros.
+        cut_to H1; try lra.
+    - match_destr; try lra.
+      apply powerRZ_le; try lra.
   Qed.
 
 End monotonic.
