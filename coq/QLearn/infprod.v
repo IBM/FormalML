@@ -141,6 +141,7 @@ Definition part_prod (a : nat -> posreal) (n : nat) : R :=
   part_prod_n a 0 n.
 
 Lemma pos_part_prod_n  (a : nat -> posreal) (m n : nat) :
+
   0 < part_prod_n a m n.
 Proof.
   unfold part_prod_n.
@@ -199,6 +200,20 @@ Proof.
   replace (S n - m)%nat with (0%nat) by lia.
   now simpl.
 Qed.  
+
+Lemma part_prod_prod_f_R0 (a : nat -> posreal) (n : nat) :
+  part_prod a n = prod_f_R0 a n.
+Proof.
+  induction n.
+  - unfold part_prod, part_prod_n.
+    simpl.
+    lra.
+  - unfold part_prod.
+    rewrite part_prod_n_S; try lia.
+    simpl.
+    unfold part_prod in IHn.
+    now rewrite IHn.
+Qed.
 
 Theorem ln_part_prod_n (a : nat -> posreal) (n1 n2 : nat) :
   ln (part_prod_n_pos a n1 n2) = sum_n_m (fun n1 => ln (a n1)) n1 n2.
