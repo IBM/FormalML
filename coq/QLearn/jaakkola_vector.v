@@ -5678,106 +5678,6 @@ Section jaakola_vector2.
            apply vector_nth_ext.
      Qed.
      
-  Lemma ConditionalVariance_scale  {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) (c : R) (f : Ts -> R) 
-    {rv : RandomVariable dom borel_sa f}
-    {isfe:IsFiniteExpectation prts f}
-    {isfe':IsFiniteExpectation prts (rvscale c f)} :
-    
-    almostR2 (prob_space_sa_sub prts sub) eq
-             (ConditionalVariance prts sub (rvscale c f))
-             (Rbar_rvscale (Rsqr c) (ConditionalVariance prts sub f)).
-  Proof.
-    unfold ConditionalVariance.
-    assert (almostR2 prts eq  
-              (rvsqr
-                 (rvminus (rvscale c f)
-                    (FiniteConditionalExpectation prts sub (rvscale c f))))
-              (rvscale c²
-                 (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f))))).
-    {
-      generalize (FiniteCondexp_scale' prts sub c f); intros.
-      apply (almost_prob_space_sa_sub_lift _ sub) in H.
-      revert H; apply almost_impl.
-      apply all_almost; intros ??.
-      rv_unfold.
-      rewrite H.
-      unfold Rsqr; lra.
-    }
-    assert (rv1: RandomVariable dom borel_sa
-                   (rvsqr
-                      (rvminus (rvscale c f)
-                         (FiniteConditionalExpectation prts sub (rvscale c f))))).
-    {
-      apply rvsqr_rv.
-      apply rvminus_rv.
-      - now apply rvscale_rv.
-      - apply FiniteCondexp_rv'.
-    }
-    assert (rv2: RandomVariable dom borel_sa
-                   (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f)))).
-    {
-      apply rvsqr_rv.
-      apply rvminus_rv; trivial.
-      apply FiniteCondexp_rv'.
-    }
-    assert (rv3: RandomVariable dom borel_sa
-              (rvscale c²
-                 (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f))))).
-    {
-      now apply rvscale_rv.
-    }
-    apply Condexp_proper with (sub := sub) (rv1 := rv1) (rv2 := rv3) in H.
-    assert (0 <= c²).
-    {
-      apply Rle_0_sqr.
-    }
-    generalize (Condexp_scale_nneg prts sub (mknonnegreal _ H0)
-                  (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f)))
-                  ); intros.
-    revert H; apply almost_impl.
-    revert H1; apply almost_impl.
-    apply all_almost; intros ???.
-    simpl in H.
-    unfold Rbar_rvscale.
-    unfold Rbar_rvmult, const in H.
-    etransitivity; [|etransitivity]; cycle 1.
-    apply H.
-    - f_equal.
-      now apply ConditionalExpectation_ext.
-    - etransitivity; [|etransitivity]; [|apply H1|];
-        now apply ConditionalExpectation_ext.
-  Qed.
-
-    Lemma FiniteConditionalVariance_scale  {dom2 : SigmaAlgebra Ts} (sub : sa_sub dom2 dom) (c : R) (f : Ts -> R) 
-    {rv : RandomVariable dom borel_sa f}
-    {rv' : RandomVariable dom borel_sa (rvscale c f)}    
-    {isfe:IsFiniteExpectation prts f}
-    {isfe_sqr:IsFiniteExpectation prts (rvsqr f)}
-    {isfe':IsFiniteExpectation prts (rvscale c f)}     
-    {isfe2:IsFiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation prts sub f)))} 
-    {isfe2':IsFiniteExpectation prts (rvsqr (rvminus (rvscale c f) (FiniteConditionalExpectation prts sub (rvscale c f))))} :    
-
-    almostR2 (prob_space_sa_sub prts sub) eq
-             (FiniteConditionalVariance prts sub (rvscale c f))
-             (rvscale (Rsqr c) (FiniteConditionalVariance prts sub f)).
- Proof.
-   generalize (ConditionalVariance_scale sub c f).
-   apply almost_impl; apply all_almost; intros ??.
-   rewrite <- Rbar_finite_eq.
-   etransitivity; [|etransitivity]; [|apply H|].
-   - erewrite FiniteVariance_eq.
-     rewrite Rbar_finite_eq.
-     now apply FiniteConditionalVariance_ext.
-     Unshelve.
-     revert isfe2'.
-     apply IsFiniteExpectation_proper.
-     intros ?.
-     rv_unfold'.
-     f_equal; f_equal.
-     now apply FiniteConditionalExpectation_ext.
-   - now erewrite FiniteVariance_eq.
- Qed.
-
  Theorem Jaakkola_alpha_beta_unbounded_uniformly_W (W : vector posreal (S N))
     (γ : R) 
     (X XF α β : nat -> Ts -> vector R (S N))
@@ -5978,7 +5878,7 @@ Proof.
         generalize (cond_pos (vector_nth i pf W)); lra.
       - apply almost_forall.
         intros k.
-        generalize (ConditionalVariance_scale (filt_sub k) 
+        generalize (ConditionalVariance_scale prts (filt_sub k) 
                       (vector_nth i pf W) (vecrvnth i pf (XF k))); intros.
         apply almost_prob_space_sa_sub_lift in H1.
         revert H1; apply almost_impl.
@@ -7794,7 +7694,7 @@ Section qlearn.
         cost n a ω0 + γ * qlearn_Qmin (X n ω0) (next_state n a ω0)) (x' a) ); intros.
         apply almost_prob_space_sa_sub_lift in H10.
         revert H10; apply almost_impl.
-        generalize (ConditionalVariance_scale (filt_sub n) γ (Xmin n a)); intros.
+        generalize (ConditionalVariance_scale prts (filt_sub n) γ (Xmin n a)); intros.
         apply almost_prob_space_sa_sub_lift in H10.
         revert H10; apply almost_impl.
         apply all_almost; intros ??????.
