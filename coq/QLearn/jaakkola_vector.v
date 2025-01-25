@@ -1786,59 +1786,6 @@ Section jaakola_vector2.
           now apply (lemma3_vector_forall_eventually_prob_iter_almost α β) with (γ := γ).
         Qed.
 
-        Lemma eps_pos_eventually (C eps eps0: posreal) :
-          eventually (fun k => C / (1 + eps)^k < eps0).
-        Proof.
-          generalize (lemma3_lim_eps C eps); intros.          
-          assert (lim_C_eps1: is_lim_seq (fun n => C / (1 + eps)^n) 0).
-          {
-            revert H.
-            apply is_lim_seq_ext.
-            intros.
-            unfold Rdiv.
-            now rewrite pow_inv.
-          }
-          apply is_lim_seq_spec in lim_C_eps1.
-          specialize (lim_C_eps1 eps0).
-          revert lim_C_eps1.
-          apply eventually_impl.
-          apply all_eventually.
-          intros.
-          rewrite Rminus_0_r in H0.
-          rewrite Rabs_right in H0; trivial.
-          apply Rle_ge.
-          apply Rdiv_le_0_compat.
-          - left; apply cond_pos.
-          - apply pow_lt.
-            generalize (cond_pos eps); lra.
-      Qed.
-
-        Lemma is_lim_seq_eventually_0 (f : nat -> posreal)  (C eps : posreal) :
-          (forall (k : nat),
-              eventually (fun n0 =>  f (n0) <= C / (1 + eps)^k)) ->
-          is_lim_seq f 0.
-        Proof.
-          intros.
-          apply is_lim_seq_spec.
-          intros ?.
-          generalize (eps_pos_eventually C eps eps0); intros.
-          destruct H0.
-          specialize (H x).
-          specialize (H0 x).
-          cut_to H0; try lia.
-          revert H.
-          apply eventually_impl.
-          apply all_eventually.
-          intros.
-          rewrite Rminus_0_r.
-          rewrite Rabs_right.
-          - eapply Rle_lt_trans.
-            apply H.
-            apply H0.
-          - left.
-            apply cond_pos.
-       Qed.
-
        Lemma lemma3_plim0 :
          filterlim (fun y => real (Lim_seq (fun m => prod_f_R0 (fun n => 1 - (Rabs y) ^ S n) m)))
            (at_right 0) (Rbar_locally 1).
@@ -2985,68 +2932,6 @@ Section jaakola_vector2.
        lra.
    Qed.
   
-  Lemma LimSup_pos_0 (f : nat -> R) :
-    (forall n, 0 <= f n) ->
-    LimSup_seq f = 0->
-    Lim_seq f = 0.
-  Proof.
-    intros.
-    generalize (Lim_seq_sup_le f); intros.
-    rewrite H0 in H1.
-    apply Rbar_le_antisym; trivial.
-    replace (Finite 0) with (Lim_seq (const 0)).
-    - apply Lim_seq_le.
-      apply H.
-    - unfold const.
-      now rewrite Lim_seq_const.
-  Qed.
-
-  Lemma is_lim_seq_pos_0 (f : nat -> R) :
-    (forall n, 0 <= f n) ->
-    (forall (eps: posreal),
-        eventually (fun n => f n < eps)) ->
-    is_lim_seq f 0.
-  Proof.
-    intros.
-    apply is_lim_seq_spec.
-    intros ?.
-    specialize (H0 eps).
-    revert H0.
-    apply eventually_impl.
-    apply all_eventually.
-    intros.
-    rewrite Rminus_0_r, Rabs_right; try lra.
-    now apply Rle_ge.
-  Qed.
-  
-
-  Lemma LimSup_pos_bounded_finite (f : nat -> R) (c : R) :
-    (forall n, 0 <= f n) ->
-    Rbar_le (LimSup_seq f) c ->
-    is_finite (LimSup_seq f).
-  Proof.
-    intros.
-    apply bounded_is_finite with (a := 0) (b := c); trivial.
-    replace (Finite 0) with (LimSup_seq (fun _ => 0)).
-    - apply LimSup_le.
-      exists 0%nat.
-      intros.
-      apply H.
-    - apply LimSup_seq_const.
-  Qed.
-
-  Lemma Lim_seq_pos_bounded_finite (f : nat -> R) (c : R) :
-    (forall n, 0 <= f n) ->
-    Rbar_le (Lim_seq f) c ->
-    is_finite (Lim_seq f).
-  Proof.
-    intros.
-    apply bounded_is_finite with (a := 0) (b := c); trivial.
-    replace (Finite 0) with (Lim_seq (fun _ => 0)).
-    - apply Lim_seq_le.
-      apply H.
-    - apply Lim_seq_const.
-  Qed.
 
   Theorem Jaakkola_alpha_beta_bounded
     (γ : R) 

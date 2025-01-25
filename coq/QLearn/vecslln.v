@@ -3494,15 +3494,6 @@ End ash.
                       simpl. now push_neg_in Hnot.
   Qed.
 
-  Lemma Lim_seq_le (u v : nat -> R):
-    (forall n, u n <= v n) -> Rbar_le (Lim_seq u) (Lim_seq v).
-  Proof.
-    intros.
-    apply Lim_seq_le_loc.
-    exists (0%nat); intros.
-    apply H.
-  Qed.
-
   Lemma event_ge_pf_irrel {x}
         {rv_X : Ts -> R}
         {rv1 : RandomVariable dom borel_sa rv_X}

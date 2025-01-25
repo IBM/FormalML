@@ -2266,4 +2266,76 @@ Proof.
   now rewrite Rmult_comm, tech_pow_Rmult.
 Qed.
 
+Lemma Lim_seq_le (u v : nat -> R):
+  (forall n, u n <= v n) -> Rbar_le (Lim_seq u) (Lim_seq v).
+Proof.
+  intros.
+  apply Lim_seq_le_loc.
+  exists (0%nat); intros.
+  apply H.
+Qed.
+
+Lemma LimSup_pos_0 (f : nat -> R) :
+  (forall n, 0 <= f n) ->
+  LimSup_seq f = 0->
+  Lim_seq f = 0.
+Proof.
+  intros.
+  generalize (Lim_seq_sup_le f); intros.
+  rewrite H0 in H1.
+  apply Rbar_le_antisym; trivial.
+  replace (Finite 0) with (Lim_seq (fun _ => 0)).
+  - apply Lim_seq_le.
+    apply H.
+  - now rewrite Lim_seq_const.
+Qed.
+
+Lemma is_lim_seq_pos_0 (f : nat -> R) :
+  (forall n, 0 <= f n) ->
+  (forall (eps: posreal),
+      Hierarchy.eventually (fun n => f n < eps)) ->
+  is_lim_seq f 0.
+Proof.
+  intros.
+  apply is_lim_seq_spec.
+  intros ?.
+  specialize (H0 eps).
+  revert H0.
+  apply eventually_impl.
+  apply all_eventually.
+  intros.
+  rewrite Rminus_0_r, Rabs_right; try lra.
+  now apply Rle_ge.
+Qed.
+  
+
+Lemma LimSup_pos_bounded_finite (f : nat -> R) (c : R) :
+  (forall n, 0 <= f n) ->
+  Rbar_le (LimSup_seq f) c ->
+  is_finite (LimSup_seq f).
+Proof.
+  intros.
+  apply bounded_is_finite with (a := 0) (b := c); trivial.
+  replace (Finite 0) with (LimSup_seq (fun _ => 0)).
+  - apply LimSup_le.
+    exists 0%nat.
+    intros.
+    apply H.
+  - apply LimSup_seq_const.
+Qed.
+
+Lemma Lim_seq_pos_bounded_finite (f : nat -> R) (c : R) :
+  (forall n, 0 <= f n) ->
+  Rbar_le (Lim_seq f) c ->
+  is_finite (Lim_seq f).
+Proof.
+  intros.
+  apply bounded_is_finite with (a := 0) (b := c); trivial.
+  replace (Finite 0) with (Lim_seq (fun _ => 0)).
+  - apply Lim_seq_le.
+    apply H.
+  - apply Lim_seq_const.
+Qed.
+  
+
   
