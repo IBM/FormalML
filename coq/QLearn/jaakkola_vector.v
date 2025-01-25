@@ -6646,7 +6646,7 @@ Section qlearn.
        {
          intros ?.
          rewrite (FiniteExpectation_simple _ _).
-         now rewrite (SimpleExpectation_compose _ _).
+         now erewrite SimpleExpectation_compose.
        }
        apply list_sum_rv; intros; try typeclasses eauto.
        apply rvmult_rv; [| apply rvconst].
