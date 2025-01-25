@@ -3701,6 +3701,27 @@ Section Expectation_sec.
       now apply is_lim_seq_plus with (l1 := rv_X1 omega) (l2 := rv_X2 omega).
   Qed.
 
+  Lemma expec_sqr_sum_bound (x y : Ts -> R)
+        {rvx : RandomVariable dom borel_sa x}
+        {rvy : RandomVariable dom borel_sa y} :
+    Rbar_le
+      (NonnegExpectation (rvsqr (rvplus x y)))
+      (Rbar_mult 2 (Rbar_plus (NonnegExpectation (rvsqr x)) 
+                              (NonnegExpectation (rvsqr y)))).
+  Proof.
+    rewrite <- NonnegExpectation_sum; try typeclasses eauto.
+    assert (0 < 2) by lra.
+    replace 2 with (pos (mkposreal _ H)); try now simpl.
+    erewrite <- NonnegExpectation_scale.
+    apply NonnegExpectation_le.
+    generalize (rvprod_bound x y); intros.
+    intros ?.
+    rv_unfold.
+    specialize (H0 a); simpl in H0.
+    rewrite Rsqr_plus.
+    simpl; lra.
+  Qed.
+
   Lemma Expectation_dif_pos_unique2 
         (rxp1 rxn1 rxp2 rxn2 : Ts -> R)
         (rp1 : RandomVariable dom borel_sa rxp1)
