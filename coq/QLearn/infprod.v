@@ -955,6 +955,156 @@ Proof.
       apply prod_sq_bounded_1; trivial.
 Qed.      
 
+  Lemma Ropp_sum_Ropp (a : nat -> R) (n : nat) :
+    sum_n a n = - sum_n (fun j : nat => - a j) n.
+  Proof.
+    unfold sum_n, sum_n_m, Iter.iter_nat.
+    rewrite Iter.iter_iter', iota_is_an_annoying_seq.
+    rewrite Iter.iter_iter'.
+    generalize (List.seq 0 (S n - 0)); intros l; simpl.
+    unfold Iter.iter', zero, plus; simpl.
+    induction l; simpl; lra.
+ Qed.
+
+  Definition l1_divergent (a : nat -> R) := is_lim_seq (sum_n a) p_infty.
+
+  Lemma a1_pos_pf {a : R} :
+    (0 <= a < 1) -> 0 < 1- a.
+  Proof.
+    lra.
+  Qed.
+
+  Lemma exp_sum (a : nat -> R) (n : nat) :
+    exp(sum_n a n) = part_prod (fun j => mkposreal (exp (a j)) (exp_pos (a j))) n.
+  Proof.
+    unfold part_prod, sum_n, sum_n_m, Iter.iter_nat.
+    rewrite Iter.iter_iter', iota_is_an_annoying_seq.
+    unfold Iter.iter', part_prod_n.
+    generalize (List.seq 0 (S n - 0)); intros l; simpl.
+    rewrite ListAdd.fold_right_map.
+    induction l; simpl.
+    - apply exp_0.
+    - rewrite exp_plus.
+      now rewrite IHl.
+  Qed.
+
+  Lemma part_prod_le2 (a b : nat -> posreal) (n : nat) :
+    (forall j, a j <= b j) -> part_prod a n <= part_prod b n.
+  Proof.
+    generalize (pos_part_prod a n).
+    unfold part_prod, part_prod_n.
+    generalize (List.seq 0 (S n - 0)); intros l; simpl.
+    rewrite ListAdd.fold_right_map; intros.
+    induction l; simpl; intros.
+    - lra.
+    - simpl in H.
+      replace (0) with ((a a0)*0) in H by lra.
+      apply Rmult_lt_reg_l in H.
+      specialize (IHl H).
+      apply Rmult_le_compat; trivial.
+      + left; apply cond_pos.
+      + left; trivial.
+      + apply cond_pos.
+  Qed.
+
+  Lemma Fprod_0 (a : nat -> R) 
+    (abounds : forall n, 0 <= a n < 1) :
+    l1_divergent a ->
+    is_lim_seq (part_prod (fun n => (mkposreal (1 - a n)  (a1_pos_pf (abounds  n))))) 0.
+  Proof.
+    intros.
+    apply is_lim_seq_le_le_loc with (u := fun _ => 0) 
+                                    (w := fun n => exp (sum_n (fun j => -a j) n)).
+    - unfold eventually; exists (0%nat); intros.
+      split; [left; apply pos_part_prod |].
+      rewrite exp_sum.
+      apply part_prod_le2.
+      intros; apply exp_ineq.
+    - apply is_lim_seq_const.
+    - apply is_lim_seq_spec; unfold is_lim_seq'.
+      intros; unfold eventually.
+      assert (is_lim_seq (sum_n (fun j => - a j)) m_infty).
+      + apply is_lim_seq_opp.
+        apply (is_lim_seq_ext (sum_n a)); [apply Ropp_sum_Ropp | apply H].
+      + apply is_lim_seq_spec in H0; unfold is_lim_seq' in H0.
+        unfold eventually in H0.
+        specialize (H0 (ln eps)); destruct H0.
+        exists x; intros.
+        specialize (H0 n H1).
+        rewrite Rminus_0_r, Rabs_right by (left; apply exp_pos).
+        replace (pos eps) with (exp (ln eps)); [| apply exp_ln, cond_pos].
+        now apply exp_increasing.
+  Qed.
+
+  Lemma sum_inf_prod_0_lt1 (a : nat -> R) :
+    (forall n, 0 <= a n < 1) ->
+    is_lim_seq (sum_n a) p_infty ->
+    is_lim_seq (prod_f_R0 (fun k => 1 - a k)) 0.
+  Proof.
+    intros.
+    generalize (Fprod_0 a H H0); intros.
+    apply is_lim_seq_ext with (v :=  (prod_f_R0 (fun k : nat => 1 - a k))) in H1; trivial.
+    intros.
+    induction n.
+    - unfold part_prod, part_prod_n.
+      simpl; lra.
+    - simpl.
+      unfold part_prod.
+      rewrite part_prod_n_S; [|lia].
+      unfold part_prod in IHn.
+      rewrite IHn.
+      reflexivity.
+  Qed.
+    
+  Lemma sum_inf_prod_0 (a : nat -> R) :
+    (forall n, 0 <= a n <= 1) ->
+    is_lim_seq (sum_n a) p_infty ->
+    is_lim_seq (prod_f_R0 (fun k => 1 - a k)) 0.
+  Proof.
+    intros.
+    assert (forall n, 0 <= 1 - a n).
+    {
+      intros.
+      specialize (H n); lra.
+    }
+    assert (forall n, 1 - a n <= exp(- a n)).
+    {
+      intros.
+      apply exp_ineq.
+    }
+    generalize (prod_f_R0_nonneg H1); intros.
+    apply is_lim_seq_le_le with (u := fun _ => 0) (w := prod_f_R0 (fun n => exp (- a n))).
+    - intros.
+      split; trivial.
+      apply prod_SO_Rle.
+      intros.
+      split; [apply H1 | apply H2].
+    - apply is_lim_seq_const.
+    - apply is_lim_seq_ext with (u := fun n => exp (- sum_n a n)).
+      + intros.
+        rewrite Ropp_sum_Ropp.
+        rewrite Ropp_involutive.
+        apply exp_sum_prod_f_R0.
+      + apply is_lim_seq_spec; unfold is_lim_seq'.
+        intros; unfold eventually.
+        assert (is_lim_seq (fun n => - sum_n a n) m_infty).
+        {
+          apply is_lim_seq_opp.
+          apply (is_lim_seq_ext (sum_n a)).
+          - intros.
+            now rewrite Ropp_involutive.
+          - now simpl.
+        }
+        apply is_lim_seq_spec in H4; unfold is_lim_seq' in H4.
+        unfold eventually in H4.
+        specialize (H4 (ln eps)); destruct H4.
+        exists x; intros.
+        specialize (H4 n H5).
+        rewrite Rminus_0_r, Rabs_right by (left; apply exp_pos).
+        replace (pos eps) with (exp (ln eps)); [| apply exp_ln, cond_pos].
+        now apply exp_increasing.
+   Qed.
+
 Section Dvoretsky.
 
 Theorem Dvoretzky4_0 (F: nat -> posreal) (sigma V : nat -> R) :
