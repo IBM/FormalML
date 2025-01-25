@@ -9950,25 +9950,6 @@ Qed.
     apply H1.
  Qed.
 
-  Lemma conditional_variance_bound_L2 (x : Ts -> R) (c : R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rv : RandomVariable dom borel_sa x}
-        {isl2: IsLp prts 2 x} :
-    almostR2 prts Rle (rvsqr x) (const c²) ->
-    almostR2 (prob_space_sa_sub prts sub) Rle (FiniteConditionalExpectation prts sub (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))))
-          (const c²).
-  Proof.
-    intros.
-    generalize (conditional_variance_L2_alt x sub); intros.
-    generalize (conditional_variance_bound1 x c sub H); intros.
-    revert H1; apply almost_impl.
-    revert H0; apply almost_impl.
-    apply all_almost; intros ???.
-    rewrite H0.
-    apply H1.
- Qed.
-
   Lemma conditional_variance_bound_L2_fun (x c : Ts -> R)
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)

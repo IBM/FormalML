@@ -2237,4 +2237,33 @@ Proof.
   apply ELimSup_ELim_seq_le.
   apply ElimSup_Sup.
 Qed.
+
+Lemma is_lim_seq_geom_inv (c : R) :
+  1 < c ->
+  is_lim_seq (fun n => (/ c)^n) 0.
+Proof.
+  intros.
+  apply is_lim_seq_geom.
+  rewrite Rabs_right.
+  - replace (1) with (/1) by lra.
+    apply Rinv_lt_contravar; lra.
+  - left.
+    apply Rinv_pos.
+    lra.
+Qed.
+
+Lemma is_series_geom_S (q : R):
+  Rabs q < 1 -> is_series (fun n : nat => q ^ (S n)) (q / (1 - q)).
+Proof.
+  intros.
+  generalize (is_series_geom q H); intros.
+  apply is_series_scal_r with (c := q) in H0.
+  unfold Rdiv.
+  rewrite Rmult_comm.
+  revert H0.
+  apply is_series_ext.
+  intros.
+  now rewrite Rmult_comm, tech_pow_Rmult.
+Qed.
+
   

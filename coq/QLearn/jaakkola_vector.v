@@ -941,44 +941,17 @@ Qed.
        lra.
    Qed.     
 
-    Lemma lemma3_lim_eps (eps : posreal) :
-      is_lim_seq (fun n => (/ (1 + eps))^n) 0.
-    Proof.
-      apply is_lim_seq_geom.
-      generalize (cond_pos eps); intros.
-      rewrite Rabs_right.
-      - replace (1) with (/1) at 2 by lra.
-        apply Rinv_lt_contravar; lra.
-      - left.
-        apply Rinv_pos.
-        generalize (cond_pos eps); intros.
-        lra.
-    Qed.
-
-    Lemma lemma3_lim_eps_alt (C eps : posreal) :
+    Lemma lemma3_lim_eps (C eps : posreal) :
       is_lim_seq (fun n => C * (/ (1 + eps))^n) 0.
     Proof.
       replace (Finite 0) with (Rbar_mult C 0).
       apply is_lim_seq_scal_l.
-      - apply lemma3_lim_eps.
+      - apply is_lim_seq_geom_inv.
+        generalize (cond_pos eps); lra.
       - simpl.
         now rewrite Rmult_0_r.
     Qed.
     
-    Lemma is_series_geom_S (q : R):
-      Rabs q < 1 -> is_series (fun n : nat => q ^ (S n)) (q / (1 - q)).
-    Proof.
-      intros.
-      generalize (is_series_geom q H); intros.
-      apply is_series_scal_r with (c := q) in H0.
-      unfold Rdiv.
-      rewrite Rmult_comm.
-      revert H0.
-      apply is_series_ext.
-      intros.
-      now rewrite Rmult_comm, tech_pow_Rmult.
-    Qed.
-
     Lemma xm1_exp2 :
       exists (x : posreal),
       forall y, 
@@ -1816,7 +1789,7 @@ Section jaakola_vector2.
         Lemma eps_pos_eventually (C eps eps0: posreal) :
           eventually (fun k => C / (1 + eps)^k < eps0).
         Proof.
-          generalize (lemma3_lim_eps_alt C eps); intros.          
+          generalize (lemma3_lim_eps C eps); intros.          
           assert (lim_C_eps1: is_lim_seq (fun n => C / (1 + eps)^n) 0).
           {
             revert H.
@@ -1934,7 +1907,7 @@ Section jaakola_vector2.
         generalize (lemma3_vector_forall_eventually_prob_iter_alt_almost α β X C γ _ _ _); intros.
         cut_to H6; trivial.
         destruct (lemma3_gamma_eps_le _ H3) as [eps1 eps1_prop].
-        generalize (lemma3_lim_eps_alt C eps1); intros.
+        generalize (lemma3_lim_eps C eps1); intros.
         assert (lim_C_eps1: is_lim_seq (fun n => C / (1 + eps1)^n) 0).
         {
           revert H7.
@@ -2113,7 +2086,7 @@ Section jaakola_vector2.
             intros ?.
             assert (eventually (fun n => C / (1 + eps0) ^ n < eps2)).
             {
-              generalize (lemma3_lim_eps_alt C eps0); intros.
+              generalize (lemma3_lim_eps C eps0); intros.
               assert (is_lim_seq (fun n => C / (1 + eps0)^n) 0).
               {
                 revert H9.
