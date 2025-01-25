@@ -2336,6 +2336,28 @@ Proof.
     apply H.
   - apply Lim_seq_const.
 Qed.
-  
+
+Lemma LimSup_lt_bound (f : nat -> R) (B : R) :
+  Rbar_lt (LimSup_seq f) B ->
+  Hierarchy.eventually (fun n => f n < B).
+Proof.
+    intros.
+    unfold LimSup_seq, proj1_sig in H.
+    match_destr_in H.
+    unfold is_LimSup_seq in i.
+    match_destr_in i.
+    - simpl in H.
+      assert (0 < (B - r)/2) by lra.
+      specialize (i (mkposreal _ H0)).
+      destruct i.
+      destruct H2.
+      exists x.
+      intros.
+      specialize (H2 n H3).
+      simpl in H2.
+      lra.
+    - now simpl in H.
+    - apply i.
+Qed.
 
   

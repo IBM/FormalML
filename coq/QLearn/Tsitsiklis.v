@@ -2000,35 +2000,15 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
        apply Rbar_le_refl.
   Qed.
 
-   Lemma LimSup_lt_nneg (f : nat -> R) (B : R) :
-    (forall n, 0 <= f n) ->
+   Lemma LimSup_lt_le (f : nat -> R) (B : R) :
     Rbar_lt (LimSup_seq f) B ->
-    exists (N : nat),
-    forall (n : nat), 
-      (N <= n)%nat ->
-      f n <= B.
+    eventually (fun n => f n <= B).
   Proof.
     intros.
-    unfold LimSup_seq, proj1_sig in H0.
-    match_destr_in H0.
-    unfold is_LimSup_seq in i.
-    match_destr_in i.
-    - simpl in H0.
-      assert (0 < (B - r)/2) by lra.
-      specialize (i (mkposreal _ H1)).
-      destruct i.
-      destruct H3.
-      exists x.
-      intros.
-      specialize (H3 n H4).
-      simpl in H3.
-      lra.
-    - now simpl in H0.
-    - specialize (i (-1)).
-      destruct i.
-      specialize (H1 x).
-      specialize (H x).
-      cut_to H1; try lia; try lra.
+    generalize (LimSup_lt_bound f B H).
+    apply eventually_impl.
+    apply all_eventually.
+    intros; lra.
  Qed.
 
   Lemma lemma8_abs_combined  (x Y W : nat -> Ts -> R) 
@@ -2060,24 +2040,19 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
        forall t,
          (t >= T)%nat ->
          Rabs (W t ω) <= β * eps * D) ->
-   exists (N : nat),
-   forall (t : nat), 
-     (N <= t)%nat ->
-     Rabs (x t ω) <=  (β * (1 + 2 * eps) * D).
+   eventually (fun t => Rabs (x t ω) <=  (β * (1 + 2 * eps) * D)).
   Proof.
     intros.
-    apply LimSup_lt_nneg.
-    - intros.
-      apply Rabs_pos.
-    - apply Rbar_le_lt_trans with (y:= β * (1 + eps) * D).
-      + apply lemma8_abs_part2 with (Y := Y) (W :=W) (α := α) (w := w); trivial.
-        intros.
-        apply lemma8_abs with (β := β) (D := D) (α := α) (w := w); trivial.
-      + simpl.
-        apply Rmult_lt_compat_r; [apply cond_pos |].
-        apply Rmult_lt_compat_l; trivial.
-        generalize (cond_pos eps); intros.
-        lra.
+    apply LimSup_lt_le.
+    apply Rbar_le_lt_trans with (y:= β * (1 + eps) * D).
+    + apply lemma8_abs_part2 with (Y := Y) (W :=W) (α := α) (w := w); trivial.
+      intros.
+      apply lemma8_abs with (β := β) (D := D) (α := α) (w := w); trivial.
+    + simpl.
+      apply Rmult_lt_compat_r; [apply cond_pos |].
+      apply Rmult_lt_compat_l; trivial.
+      generalize (cond_pos eps); intros.
+      lra.
    Qed.
 
   Lemma lemma8_abs_combined_beta  (x Y W : nat -> Ts -> R) 
@@ -2110,25 +2085,20 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
        forall t,
          (t >= T)%nat ->
          Rabs (W t ω) <= b * eps * D) ->
-   exists (N : nat),
-   forall (t : nat), 
-     (N <= t)%nat ->
-     Rabs (x t ω) <=  (b * (1 + 2 * eps) * D).
+   eventually (fun t => Rabs (x t ω) <=  (b * (1 + 2 * eps) * D)).
   Proof.
     intros.
-    apply LimSup_lt_nneg.
-    - intros.
-      apply Rabs_pos.
-    - apply Rbar_le_lt_trans with (y:= b * (1 + eps) * D).
-      + apply lemma8_abs_part2_beta with (Y := Y) (W :=W) (α := α) (β := β) (w := w); trivial.
-        intros.
-        apply lemma8_abs_beta with (b := b) (β := β) (D := D) (α := α) (w := w); trivial.
-      + simpl.
-        apply Rmult_lt_compat_r; [apply cond_pos |].
-        apply Rmult_lt_compat_l; trivial.
-        generalize (cond_pos eps); intros.
-        lra.
-   Qed.
+    apply LimSup_lt_le.
+    apply Rbar_le_lt_trans with (y:= b * (1 + eps) * D).
+    - apply lemma8_abs_part2_beta with (Y := Y) (W :=W) (α := α) (β := β) (w := w); trivial.
+      intros.
+      apply lemma8_abs_beta with (b := b) (β := β) (D := D) (α := α) (w := w); trivial.
+    - simpl.
+      apply Rmult_lt_compat_r; [apply cond_pos |].
+      apply Rmult_lt_compat_l; trivial.
+      generalize (cond_pos eps); intros.
+      lra.
+  Qed.
 
   Lemma lemma8_abs_combined_almost  (x Y W : nat -> Ts -> R) 
         (α w : nat -> Ts -> R) (eps : posreal) (β : R) (D : Ts -> posreal) :
