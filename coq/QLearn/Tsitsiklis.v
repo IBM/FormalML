@@ -1927,10 +1927,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
    (forall t,
        Rabs (x t ω) <= Rabs (W t ω) + (Y t ω)) ->
    is_lim_seq (fun t => Y t ω) (β * D) ->
-   (exists (T : nat),
-       forall t,
-         (t >= T)%nat ->
-         Rabs (W t ω) <= β * eps * D) ->
+   eventually (fun t => Rabs (W t ω) <= β * eps * D) ->
    Rbar_le (LimSup_seq (fun t => Rabs (x t ω))) (β * (1 + eps) * D).
  Proof.
    intros.
@@ -1974,10 +1971,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
    (forall t,
        Rabs (x t ω) <= Rabs (W t ω) + (Y t ω)) ->
    (forall C, Rbar_le (LimSup_seq (fun t => C + Y t ω)) (C + (b * D))) ->
-   (exists (T : nat),
-       forall t,
-         (t >= T)%nat ->
-         Rabs (W t ω) <= b * eps * D) ->
+   eventually (fun t => Rabs (W t ω) <= b * eps * D) ->
    Rbar_le (LimSup_seq (fun t => Rabs (x t ω))) (b * (1 + eps) * D).
  Proof.
    intros.
@@ -2036,10 +2030,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
    (forall t,
        Rabs (x t ω) <= D) ->
    is_lim_seq (fun t => Y t ω) (β * D) ->
-   (exists (T : nat),
-       forall t,
-         (t >= T)%nat ->
-         Rabs (W t ω) <= β * eps * D) ->
+   eventually (fun t => Rabs (W t ω) <= β * eps * D) ->
    eventually (fun t => Rabs (x t ω) <=  (β * (1 + 2 * eps) * D)).
   Proof.
     intros.
@@ -2081,10 +2072,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
    (forall t,
        Rabs (x t ω) <= D) ->
    (forall C, Rbar_le (LimSup_seq (fun t => C + Y t ω)) (C + (b * D))) ->
-   (exists (T : nat),
-       forall t,
-         (t >= T)%nat ->
-         Rabs (W t ω) <= b * eps * D) ->
+   eventually (fun t => Rabs (W t ω) <= b * eps * D) ->
    eventually (fun t => Rabs (x t ω) <=  (b * (1 + 2 * eps) * D)).
   Proof.
     intros.
@@ -2128,10 +2116,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
                      Rabs (x t ω) <= D ω)) ->
    (forall ω, is_lim_seq (fun t => Y t ω) (β * D ω)) ->
    almost prts (fun ω =>
-               exists (T : nat),
-                 forall t,
-                   (t >= T)%nat ->
-                   Rabs (W t ω) <= β * eps * D ω) ->
+                  eventually (fun t => Rabs (W t ω) <= β * eps * D ω)) ->
    exists (N : Ts -> nat),
      almost prts (fun ω =>
                     forall (t : nat), 
@@ -2187,10 +2172,8 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
    almost prts (fun ω => forall C, 
                     Rbar_le (LimSup_seq (fun t => C + Y t ω)) (C + (b * D ω))) ->
    almost prts (fun ω =>
-               exists (T : nat),
-                 forall t,
-                   (t >= T)%nat ->
-                   Rabs (W t ω) <= b * eps * D ω) ->
+                  eventually (fun t => 
+                                Rabs (W t ω) <= b * eps * D ω)) ->
    exists (N : Ts -> nat),
      almost prts (fun ω =>
                     forall (t : nat), 
@@ -2234,9 +2217,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
    (exists (T : Ts -> nat),
        (almost prts
                (fun ω =>
-                  forall t,
-                    (t >= T ω)%nat ->
-                    Rabs (W t ω) <= β * eps * D ω))) ->
+                  eventually (fun t => Rabs (W t ω) <= β * eps * D ω)))) ->
    almost prts (fun ω => 
                   Rbar_le (LimSup_seq (fun t => Rabs (x t ω))) (β * (1 + eps) * D ω)).
  Proof.
@@ -2245,8 +2226,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
    revert H4; apply almost_impl.
    revert H5; apply almost_impl.
    apply all_almost; intros ???.
-   apply lemma8_abs_part2 with (Y := Y) (W := W) (α := α) (w := w); try easy.
-   now exists (x0 x1).
+   now apply lemma8_abs_part2 with (Y := Y) (W := W) (α := α) (w := w).
  Qed.
 
  Lemma lemma8_abs_part2_almost_beta  (x Y W : nat -> Ts -> R) 
@@ -2265,9 +2245,8 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
    (exists (T : Ts -> nat),
        (almost prts
                (fun ω =>
-                  forall t,
-                    (t >= T ω)%nat ->
-                    Rabs (W t ω) <= b * eps * D ω))) ->
+                  eventually (fun t => 
+                                Rabs (W t ω) <= b * eps * D ω)))) ->
    almost prts (fun ω => 
                   Rbar_le (LimSup_seq (fun t => Rabs (x t ω))) (b * (1 + eps) * D ω)).
  Proof.
@@ -2276,8 +2255,7 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
    revert H5; apply almost_impl.
    revert H6; apply almost_impl.
    apply all_almost; intros ???.
-   apply lemma8_abs_part2_beta with (Y := Y) (W := W) (α := α) (β := β) (w := w); try easy.
-   now exists (x0 x1).
+   now apply lemma8_abs_part2_beta with (Y := Y) (W := W) (α := α) (β := β) (w := w).
  Qed.
 
  Lemma Y_prod (Y : nat -> Ts -> R) (D : Ts -> R) (β : R) 
@@ -6770,7 +6748,7 @@ Qed.
              exists (N2 x).
              intros.
              unfold Wtau.
-             specialize (H14 (tauk x) t).
+             specialize (H14 (tauk x) n0).
              apply H14.
              unfold tauk.
              lia.
@@ -7270,7 +7248,7 @@ Qed.
              exists (N2 x).
              intros.
              unfold Wtau.
-             specialize (H14 (tauk x) t).
+             specialize (H14 (tauk x) n0).
              apply H14.
              unfold tauk.
              lia.
