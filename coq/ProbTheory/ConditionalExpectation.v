@@ -7559,7 +7559,7 @@ Section fin_cond_exp.
       apply H.
     Qed.
 
-
+(*
 
   Ltac rewrite_condexp_pf_irrel H
   := match type of H with
@@ -7582,6 +7582,7 @@ Section fin_cond_exp.
                                  Ts dom prts dom2 sub f f rv1 rv2 nnf1 nnf2 pf x); [rewrite H | reflexivity]
          end
      end.
+*)
 
   Lemma Finite_conditional_variance_alt (x : Ts -> R)
         {rv : RandomVariable dom borel_sa x}
@@ -7691,23 +7692,32 @@ Section fin_cond_exp.
       revert H; apply almost_impl.
       apply all_almost; intros ??????.
       rewrite H.
-(*
-      rewrite_condexp_pf_irrel H0.
-      unfold rvplus at 1.
-      rewrite_condexp_pf_irrel H1.
-      unfold rvplus at 1.
-      rewrite H2.
-      unfold rvscale.
-      rewrite H3.
-      rv_unfold.
-      unfold Rsqr.
-
-      rewrite (FiniteCondexp_id _ _ (fun omega : Ts =>
-                                       FiniteConditionalExpectation prts sub x omega * FiniteConditionalExpectation prts sub x omega)).
-      lra.
+      etransitivity; [|etransitivity]; [|apply H0|].
+      - apply FiniteConditionalExpectation_ext.
+        reflexivity.
+      - unfold rvminus.
+        unfold rvplus.
+        f_equal.
+        etransitivity; [|etransitivity]; [|apply H1|].        
+        + apply FiniteConditionalExpectation_ext.
+          reflexivity.
+        + unfold rvplus.
+          rewrite H2.
+          unfold rvscale.
+          rewrite H3.
+          unfold rvmult, rvopp, rvsqr, rvscale.
+          rewrite <- Rsqr_def.
+          assert (FiniteConditionalExpectation
+                    (fun omega : Ts => (FiniteConditionalExpectation x omega)²) x0 =
+                  (FiniteConditionalExpectation x x0)²).
+          {
+            rewrite FiniteCondexp_id; trivial.
+            apply rvsqr_rv.
+            apply FiniteCondexp_rv.
+          }
+          rewrite H4.
+          lra.
   Qed.
-*)
-  Admitted.
          
    Lemma Finite_conditional_variance_L2_alt (x : Ts -> R)
         {rv : RandomVariable dom borel_sa x}
