@@ -10535,19 +10535,6 @@ End FixedPoint_contract.
     
   Existing Instance Rbar_le_pre.
 
-  Lemma fold_left_Rmax_abs l : List.Forall (Rle 0) l -> fold_left Rmax l 0 = Rmax_list l.
-  Proof.
-    intros.
-    rewrite fold_symmetric.
-    - induction l; simpl; trivial.
-      invcs H.
-      rewrite IHl; trivial.
-      destruct l; simpl; trivial.
-      rewrite Rmax_left; trivial.
-    - apply Rmax_assoc.
-    - apply Rmax_comm.
-  Qed.
-
   Instance finfun_sa : SigmaAlgebra (Rfct (sigT M.(act))) :=
     iso_sa (iso := Isomorphism_symm (finite_fun_vec_encoder finA EqDecsigT (B := R)))
       (Rvector_borel_sa _).

@@ -3321,6 +3321,20 @@ Section Rmax_list.
     - assumption.
   Qed.
 
+  Lemma fold_left_Rmax_abs l : List.Forall (Rle 0) l -> fold_left Rmax l 0 = Rmax_list l.
+  Proof.
+    intros.
+    rewrite fold_symmetric.
+    - induction l; simpl; trivial.
+      invcs H.
+      rewrite IHl; trivial.
+      destruct l; simpl; trivial.
+      rewrite Rmax_left; trivial.
+    - apply Rmax_assoc.
+    - apply Rmax_comm.
+  Qed.
+
+
   Definition Rmax_list_map {A} (l : list A) (f : A -> R) := Rmax_list (List.map f l).
   Definition Rmin_list_map {A} (l : list A) (f : A -> R) := Rmin_list (List.map f l).  
 
