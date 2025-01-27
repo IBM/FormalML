@@ -9203,81 +9203,6 @@ Qed.
    apply fin_finite.
  Qed.
  
-  Lemma conditional_variance_bound1_alt (x : Ts -> R) (c : R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rv : RandomVariable dom borel_sa x}
-        {isfe : IsFiniteExpectation prts x} :
-    almostR2 prts Rle (rvsqr x) (const c²) ->
-    almostR2 prts Rbar_le (Rbar_rvminus (ConditionalExpectation prts sub (rvsqr x))
-                                        (rvsqr (FiniteConditionalExpectation prts sub x)))
-          (const c²).
-  Proof.
-    intros.
-    assert (csqr_nn:NonnegativeFunction (const (B := Ts) (c²))).
-    {
-      intros ?.
-      unfold const.
-      apply Rle_0_sqr.
-    }
-    generalize (NonNegCondexp_ale 
-                  prts sub (rvsqr x) (const (c²))); intros.
-    cut_to H0; try easy.
-    apply almost_prob_space_sa_sub_lift in H0.
-    revert H0; apply almost_impl.
-    revert H; apply almost_impl.
-    apply all_almost; intros ???.
-    rewrite <- Condexp_nneg_simpl in H0.
-    rewrite <- Condexp_nneg_simpl in H0.    
-    rewrite Condexp_const in H0.
-    rv_unfold.
-    unfold Rbar_rvminus, Rbar_rvplus, Rbar_rvopp.
-    eapply Rbar_le_trans.
-    shelve.
-    apply H0.
-    Unshelve.
-    simpl.
-    destruct  (ConditionalExpectation prts sub (fun omega : Ts => (x omega)²) x0).
-    - simpl.
-      assert (0 <=  (FiniteConditionalExpectation prts sub x x0)²).
-      {
-        apply Rle_0_sqr.
-      }
-      lra.
-    - now simpl.
-    - now simpl.
- Qed.
-
-  Lemma conditional_variance_bound1 (x : Ts -> R) (c : R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rv : RandomVariable dom borel_sa x}
-        {isfe : IsFiniteExpectation prts x}
-        {isfe0 : IsFiniteExpectation prts (rvsqr x)} :
-    almostR2 prts Rle (rvsqr x) (const c²) ->
-    almostR2 (prob_space_sa_sub prts sub) Rle (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
-                               (rvsqr (FiniteConditionalExpectation prts sub x)))
-          (const c²).
-  Proof.
-    intros.
-    generalize (FiniteCondexp_ale 
-                  prts sub (rvsqr x) (const c²)); intros.
-    cut_to H0; try easy.
-    revert H0; apply almost_impl.
-    apply all_almost; intros ??.
-    rewrite FiniteCondexp_const in H0.
-    rv_unfold.
-    eapply Rle_trans.
-    shelve.
-    apply H0.
-    Unshelve.
-    assert (0 <=  (FiniteConditionalExpectation prts sub x x0)²).
-    {
-      apply Rle_0_sqr.
-    }
-    lra.
-  Qed.
-
   Lemma conditional_variance_bound1_fun (x c : Ts -> R)
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
@@ -9506,36 +9431,6 @@ Qed.
        apply conditional_variance_alt; apply (isfe_L2_variance prts sub x).
      Qed.       
 
-  Lemma conditional_variance_bound (x : Ts -> R) (c : R) 
-        {dom2 : SigmaAlgebra Ts}
-        (sub : sa_sub dom2 dom)
-        {rv : RandomVariable dom borel_sa x}
-        {isfe : IsFiniteExpectation prts x}
-        {isfe2 : IsFiniteExpectation prts (rvsqr x)}        
-        {rv2 : RandomVariable 
-                 dom borel_sa
-                 (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))}
-        {isfe0 : IsFiniteExpectation 
-                   prts
-                   (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x)))}
-        {isfe4 : IsFiniteExpectation prts
-            (rvsqr (FiniteConditionalExpectation prts sub x))}
-        {isfe5 : IsFiniteExpectation prts
-            (rvmult (FiniteConditionalExpectation prts sub x) x)}    :
-    almostR2 prts Rle (rvsqr x) (const c²) ->
-    almostR2 (prob_space_sa_sub prts sub) Rle (FiniteConditionalExpectation prts sub (rvsqr (rvminus x (FiniteConditionalExpectation prts sub x))))
-          (const c²).
-  Proof.
-    intros.
-    generalize (conditional_variance_alt x sub); intros.
-    generalize (conditional_variance_bound1 x c sub H); intros.
-    revert H1; apply almost_impl.
-    revert H0; apply almost_impl.
-    apply all_almost; intros ???.
-    rewrite H0.
-    apply H1.
- Qed.
-
   Lemma conditional_variance_bound_L2_fun (x c : Ts -> R)
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
@@ -9610,28 +9505,6 @@ End Stochastic_convergence.
       simpl.
       apply rvmax_rv; trivial.
   Qed.
-
-  Ltac rewrite_condexp_pf_irrel H
-  := match type of H with
-     | @NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?nnf1 ?x = _ =>
-         match goal with
-           [|- context [@NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?g ?rv2 ?nnf2 ?x]] =>
-             rewrite <- (fun pf => @NonNegCondexp_ext
-                                 Ts dom prts dom2 sub f g rv1 rv2 nnf1 nnf2 pf x); [rewrite H | reflexivity]
-         end
-     | @ConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?x = _ =>
-         match goal with
-           [|- context [@ConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?g ?rv2 ?x]] =>
-             rewrite <- (fun pf => @ConditionalExpectation_ext
-                                 Ts dom prts dom2 sub f g rv1 rv2 pf x); [rewrite H | reflexivity]
-         end
-     | @FiniteConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?nnf1 ?x = _ =>
-         match goal with
-           [|- context [@FiniteConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv2 ?nnf2 ?x]] =>
-             rewrite <- (fun pf => @FiniteConditionalExpectation_ext
-                                 Ts dom prts dom2 sub f f rv1 rv2 nnf1 nnf2 pf x); [rewrite H | reflexivity]
-         end
-     end.
 
 (*
 Require Bellman.
