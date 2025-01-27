@@ -1994,17 +1994,6 @@ Lemma lemma2_beta (W : nat -> nat -> Ts -> R) (ω : Ts)
        apply Rbar_le_refl.
  Qed.
 
-   Lemma LimSup_lt_le (f : nat -> R) (B : R) :
-    Rbar_lt (LimSup_seq f) B ->
-    eventually (fun n => f n <= B).
-  Proof.
-    intros.
-    generalize (LimSup_lt_bound f B H).
-    apply eventually_impl.
-    apply all_eventually.
-    intros; lra.
- Qed.
-
   Lemma lemma8_abs_combined  (x Y W : nat -> Ts -> R) 
         (α w : nat -> Ts -> R) (ω : Ts) (β : R) (eps D : posreal) :
     (0 < β) ->
@@ -8149,91 +8138,6 @@ Qed.
       now apply (@Tsitsiklis3_beta_0_Jaakkola_alpha_beta _ X w α beta β D0 XF _ _ filt_sub
                    _ _ _ _ posD0 _ rvw).
   Qed.
-
-  Lemma lim_seq_maxabs0 {n} (X : nat -> vector R n) :
-    is_lim_seq (fun m => Rvector_max_abs (X m)) 0 ->
-    forall i pf,
-      is_lim_seq (fun m => vector_nth i pf (X m)) 0.
-  Proof.
-    intros.
-    apply is_lim_seq_abs_0.
-    apply is_lim_seq_le_le with 
-      (u := const 0) 
-      (w := fun m : nat => Rvector_max_abs (X m))
-    ; trivial; [| apply is_lim_seq_const].
-    intros.
-    split.
-    + unfold const; apply Rabs_pos.
-    + apply Rvector_max_abs_nth_le.
-  Qed.
-
-  Lemma lim_seq_maxabs0_b {n} (X : nat -> vector R n) :
-    (forall i pf,
-      is_lim_seq (fun m => vector_nth i pf (X m)) 0) ->
-    is_lim_seq (fun m => Rvector_max_abs (X m)) 0.
-  Proof.
-    intros.
-    apply is_lim_seq_spec.
-    intros eps.
-    assert (HH:forall (i : nat) (pf : (i < n)%nat),
-               eventually (fun m : nat => Rabs (vector_nth i pf (X m)) < eps)).
-    {
-      intros i pf.
-      specialize (H i pf).
-      apply is_lim_seq_spec in H.
-      specialize (H eps).
-      simpl in H.
-      revert H.
-      apply eventually_impl, all_eventually; intros.
-      now rewrite Rminus_0_r in H.
-    }
-    apply bounded_nat_ex_choice_vector in HH.
-    destruct HH as [v HH].
-    exists (list_max (proj1_sig v)).
-    intros n0 n0ge.
-    destruct n.
-    - destruct (Rvector_max_abs_zero (X n0)) as [? HH2].
-      rewrite HH2.
-      + rewrite Rminus_0_r, Rabs_R0.
-        apply cond_pos.
-      + apply vector_eq; simpl.
-        now rewrite (vector0_0 (X n0)); simpl.
-    - destruct (Rvector_max_abs_nth_in (X n0)) as [?[? eqq]].
-      rewrite Rminus_0_r.
-      rewrite eqq.
-      rewrite Rabs_Rabsolu.
-      apply HH.
-      rewrite <- n0ge.
-      generalize (list_max_upper (` v)); intros HH2.
-      rewrite Forall_forall in HH2.
-      apply HH2.
-      apply vector_nth_In.
-  Qed.
-  
-  Lemma lim_seq_maxabs {n} (X : nat -> vector R n) (x: vector R n) :
-    is_lim_seq (fun m => Rvector_max_abs (Rvector_minus (X m) x)) 0 <->
-    forall i pf,
-      is_lim_seq (fun m => vector_nth i pf (X m)) (vector_nth i pf x).
-  Proof.
-    split; intros.
-    - generalize (lim_seq_maxabs0 (fun m => Rvector_minus (X m) x) H i pf); intros.
-      generalize (is_lim_seq_const (vector_nth i pf x)); intros.
-      generalize (is_lim_seq_plus' _ _ _ _  H0 H1); intros.
-      rewrite Rplus_0_l in H2.
-      revert H2.
-      apply is_lim_seq_ext.
-      intros.
-      rewrite Rvector_nth_minus.
-      lra.
-    - apply lim_seq_maxabs0_b.
-      intros.
-      specialize (H i pf).
-      generalize (is_lim_seq_const (vector_nth i pf x)); intros.
-      generalize (is_lim_seq_minus' _ _ _ _  H H0); intros.
-      setoid_rewrite Rvector_nth_minus.
-      now rewrite Rminus_eq_0 in H1.
-  Qed.
-
 
   Theorem Tsitsiklis3 {n} 
     (X w α : nat -> Ts -> vector R n) 

@@ -2360,4 +2360,15 @@ Proof.
     - apply i.
 Qed.
 
+   Lemma LimSup_lt_le (f : nat -> R) (B : R) :
+    Rbar_lt (LimSup_seq f) B ->
+    Hierarchy.eventually (fun n => f n <= B).
+  Proof.
+    intros.
+    generalize (LimSup_lt_bound f B H).
+    apply eventually_impl.
+    apply all_eventually.
+    intros; lra.
+ Qed.
+
   
