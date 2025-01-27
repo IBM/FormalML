@@ -9824,36 +9824,6 @@ End FixedPoint_contract.
           split; trivial.
   Qed.
 
-  Lemma isfe_prod_fst (f : Ts -> R)
-      {rv : RandomVariable dom borel_sa f}
-      {isfe : IsFiniteExpectation prts f} :
-  IsFiniteExpectation (product_ps prts prts)
-    (fun p : Ts * Ts => f (fst p)).
-  Proof.
-    generalize (@pullback_law (Ts * Ts) Ts (product_sa dom dom) dom
-                  (product_ps prts prts) fst f); intros.
-    generalize (fst_rv (T1 := Ts * Ts) (T2 := Ts) (product_sa dom dom) dom ); intros.
-    specialize (H _ _).
-    unfold compose in H.
-    rewrite <- Expectation_Rbar_Expectation in H.
-    rewrite <- Expectation_Rbar_Expectation in H.
-    unfold IsFiniteExpectation.
-    rewrite H.
-    assert (Expectation 
-              (Prts :=
-                 (@pullback_ps (prod Ts Ts) Ts (@product_sa Ts Ts dom dom) dom
-                    (@product_ps Ts Ts dom dom prts prts) (@fst Ts Ts) 
-                    (@fst_rv Ts Ts dom dom))) f  =
-              Expectation (Prts := prts) f).
-    {
-      apply Expectation_ext_ps'; try easy.
-      intros ?.
-      now rewrite <- product_pullback_fst.
-    }
-    rewrite H1.
-    apply isfe.
-  Qed.
-
   Instance isfe_qmin2' (Q : Ts -> Rfct (sigT M.(act)))
     (isrvQ : forall sa, RandomVariable dom borel_sa (fun ω => Q ω sa))
     (isfeQ : forall sa, IsFiniteExpectation prts (fun ω => Q ω sa))
@@ -9865,8 +9835,8 @@ End FixedPoint_contract.
     intros.
     apply IsFiniteExpectation_bounded with
       (rv_X1 := fun p => Rmin_all (Q (fst p))) (rv_X3 := fun p => Rmax_all (Q (fst p))).
-    - apply (isfe_prod_fst (fun ω => Rmin_all (Q ω))).
-    - apply (isfe_prod_fst (fun ω => Rmax_all (Q ω))).
+    - apply (isfe_prod_fst prts (fun ω => Rmin_all (Q ω))).
+    - apply (isfe_prod_fst prts (fun ω => Rmax_all (Q ω))).
     - intros ?.
       unfold Rmin_all, qlearn_Qmin.
       match_destr.

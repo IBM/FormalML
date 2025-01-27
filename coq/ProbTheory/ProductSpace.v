@@ -8597,6 +8597,66 @@ Proof.
   reflexivity.
 Qed.
 
+  Lemma isfe_prod_fst {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> R)
+      {rv : RandomVariable dom borel_sa f}
+      {isfe : IsFiniteExpectation prts f} :
+  IsFiniteExpectation (product_ps prts prts)
+    (fun p : Ts * Ts => f (fst p)).
+  Proof.
+    generalize (@pullback_law (Ts * Ts) Ts (product_sa dom dom) dom
+                  (product_ps prts prts) fst f); intros.
+    generalize (fst_rv (T1 := Ts * Ts) (T2 := Ts) (product_sa dom dom) dom ); intros.
+    specialize (H _ _).
+    unfold compose in H.
+    rewrite <- Expectation_Rbar_Expectation in H.
+    rewrite <- Expectation_Rbar_Expectation in H.
+    unfold IsFiniteExpectation.
+    rewrite H.
+    assert (Expectation 
+              (Prts :=
+                 (@pullback_ps (prod Ts Ts) Ts (@product_sa Ts Ts dom dom) dom
+                    (@product_ps Ts Ts dom dom prts prts) (@fst Ts Ts) 
+                    (@fst_rv Ts Ts dom dom))) f  =
+              Expectation (Prts := prts) f).
+    {
+      apply Expectation_ext_ps'; try easy.
+      intros ?.
+      now rewrite <- product_pullback_fst.
+    }
+    rewrite H1.
+    apply isfe.
+  Qed.
+
+  Lemma isfe_prod_snd {Ts} {dom : SigmaAlgebra Ts} (prts : ProbSpace dom) (f : Ts -> R)
+      {rv : RandomVariable dom borel_sa f}
+      {isfe : IsFiniteExpectation prts f} :
+  IsFiniteExpectation (product_ps prts prts)
+    (fun p : Ts * Ts => f (snd p)).
+  Proof.
+    generalize (@pullback_law (Ts * Ts) Ts (product_sa dom dom) dom
+                  (product_ps prts prts) snd f); intros.
+    generalize (fst_rv (T1 := Ts * Ts) (T2 := Ts) (product_sa dom dom) dom ); intros.
+    specialize (H _ _).
+    unfold compose in H.
+    rewrite <- Expectation_Rbar_Expectation in H.
+    rewrite <- Expectation_Rbar_Expectation in H.
+    unfold IsFiniteExpectation.
+    rewrite H.
+    assert (Expectation 
+              (Prts :=
+                 (@pullback_ps (prod Ts Ts) Ts (@product_sa Ts Ts dom dom) dom
+                    (@product_ps Ts Ts dom dom prts prts) (@snd Ts Ts) 
+                    (@snd_rv Ts Ts dom dom))) f  =
+              Expectation (Prts := prts) f).
+    {
+      apply Expectation_ext_ps'; try easy.
+      intros ?.
+      now rewrite <- product_pullback_snd.
+    }
+    rewrite H1.
+    apply isfe.
+  Qed.
+
 Require Import Dynkin.
 Section monotone_class.
 
