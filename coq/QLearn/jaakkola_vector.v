@@ -7346,10 +7346,10 @@ Section qlearn.
             apply (RandomVariable_sa_sub (filt_sub k)); try typeclasses eauto.
           - now apply islp2_isfe_sqr.
         }
-        generalize (conditional_variance_bound_L2_fun (dom2 := F k)
-                      (Xmin k sa)
-                      (fun ω => (Rmax_all (fun sa => Rsqr (X k ω sa))))); intros.
-        specialize (H12 (filt_sub k) H10).
+        generalize (Finite_conditional_variance_bound_L2_fun (dom2 := F k) prts        
+                      (filt_sub k)
+                      (Xmin k sa)); intros.
+        specialize (H12 (fun ω => (Rmax_all (fun sa => Rsqr (X k ω sa)))) H10); intros.
         cut_to H12.
         specialize (H12 (H6 k sa)).
         cut_to H12.

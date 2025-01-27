@@ -6699,7 +6699,7 @@ Section fin_cond_exp.
       eapply RandomVariable_proper_le; trivial; try reflexivity.
     Qed.
     
-  Lemma variance_rv  (f : Ts -> R) 
+  Instance variance_rv  (f : Ts -> R) 
     {rv : RandomVariable dom borel_sa f} 
     {isfe:IsFiniteExpectation prts f}  :
     RandomVariable dom borel_sa
@@ -6869,12 +6869,13 @@ Section fin_cond_exp.
       now rewrite H0.
   Qed.
 
-  Lemma FiniteConditionalVariance_exp_from_L2 (f : Ts -> R) 
+   Instance FiniteConditionalVariance_exp_from_L2 (f : Ts -> R) 
     {rv : RandomVariable dom borel_sa f} 
     {isl:IsLp prts 2 f} : IsFiniteExpectation prts (rvsqr (rvminus f (FiniteConditionalExpectation f))).
   Proof.
     apply (isfe_L2_variance f rv).
   Qed.
+
 
   Definition FiniteConditionalVariance_new (f : Ts -> R) 
     {rv  : RandomVariable dom borel_sa f} 
@@ -7216,7 +7217,6 @@ Section fin_cond_exp.
     apply FiniteConditionalExpectation_ext.
     reflexivity.
   Qed.
-
   
   Lemma ConditionalVariance_scale (c : R) (f : Ts -> R) 
     {rv : RandomVariable dom borel_sa f}
@@ -7317,6 +7317,7 @@ Section fin_cond_exp.
      now apply FiniteConditionalExpectation_ext.
    - now erewrite FiniteVariance_eq.
  Qed.
+
 
   Lemma FiniteCondexp_opp (f : Ts -> R) 
         {rv : RandomVariable dom borel_sa f}
@@ -7557,6 +7558,220 @@ Section fin_cond_exp.
       apply (almost_f_equal _ real) in H.
       apply H.
     Qed.
+
+
+
+  Ltac rewrite_condexp_pf_irrel H
+  := match type of H with
+     | @NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?nnf1 ?x = _ =>
+         match goal with
+           [|- context [@NonNegCondexp ?Ts ?dom ?prts ?dom2 ?sub ?g ?rv2 ?nnf2 ?x]] =>
+             rewrite <- (fun pf => @NonNegCondexp_ext
+                                 Ts dom prts dom2 sub f g rv1 rv2 nnf1 nnf2 pf x); [rewrite H | reflexivity]
+         end
+     | @ConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?x = _ =>
+         match goal with
+           [|- context [@ConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?g ?rv2 ?x]] =>
+             rewrite <- (fun pf => @ConditionalExpectation_ext
+                                 Ts dom prts dom2 sub f g rv1 rv2 pf x); [rewrite H | reflexivity]
+         end
+     | @FiniteConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv1 ?nnf1 ?x = _ =>
+         match goal with
+           [|- context [@FiniteConditionalExpectation ?Ts ?dom ?prts ?dom2 ?sub ?f ?rv2 ?nnf2 ?x]] =>
+             rewrite <- (fun pf => @FiniteConditionalExpectation_ext
+                                 Ts dom prts dom2 sub f f rv1 rv2 nnf1 nnf2 pf x); [rewrite H | reflexivity]
+         end
+     end.
+
+  Lemma Finite_conditional_variance_alt (x : Ts -> R)
+        {rv : RandomVariable dom borel_sa x}
+        {isfe1 : IsFiniteExpectation prts x} 
+        {isfe2 : IsFiniteExpectation prts (rvsqr x)}        
+        {rv2 : RandomVariable 
+                 dom borel_sa
+                 (rvsqr (rvminus x (FiniteConditionalExpectation x)))} 
+        {isfe3 : IsFiniteExpectation 
+                   prts
+                   (rvsqr (rvminus x (FiniteConditionalExpectation x)))}
+        {isfe4 : IsFiniteExpectation
+                   prts
+                   (rvsqr (FiniteConditionalExpectation x))}
+        {isfe5 : IsFiniteExpectation prts  (rvmult (FiniteConditionalExpectation x) x)}  :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (FiniteConditionalExpectation 
+                (rvsqr (rvminus x (FiniteConditionalExpectation x)))) 
+             (rvminus (FiniteConditionalExpectation (rvsqr x))
+                      (rvsqr (FiniteConditionalExpectation x))).
+  Proof.
+      assert (rv3: RandomVariable dom2 borel_sa (FiniteConditionalExpectation x)).
+      {
+        apply FiniteCondexp_rv.
+      }
+      assert (rv4: RandomVariable dom borel_sa (FiniteConditionalExpectation x)).
+      {
+        apply FiniteCondexp_rv'.
+      }
+      assert (rv5: RandomVariable dom borel_sa (rvsqr (FiniteConditionalExpectation x))).
+      {
+        typeclasses eauto.
+      }
+      assert (rv6: RandomVariable dom borel_sa (rvmult (FiniteConditionalExpectation x) x)).
+      {
+        typeclasses eauto.
+      }
+      assert (rv7: RandomVariable dom borel_sa
+                             (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation x) x))
+                                     (rvsqr (FiniteConditionalExpectation x)))).
+      {
+        typeclasses eauto.
+      }
+      assert (rv8: RandomVariable 
+                dom borel_sa
+                (rvplus (rvsqr x)
+                        (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation x) x))
+                                (rvsqr (FiniteConditionalExpectation x))))).
+      {
+        typeclasses eauto.
+      }
+
+     assert (isfe6: IsFiniteExpectation prts (FiniteConditionalExpectation x)).
+      {
+        apply FiniteCondexp_isfe.
+      }
+      
+      assert (isfe7: IsFiniteExpectation prts
+                                  (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation x) x))
+                                          (rvsqr (FiniteConditionalExpectation x)))).
+      {
+        apply IsFiniteExpectation_plus; try typeclasses eauto.
+      }
+
+      assert (isfe8: IsFiniteExpectation 
+                prts
+                (rvplus (rvsqr x)
+                        (rvplus (rvscale (-2) (rvmult (FiniteConditionalExpectation x) x))
+                                (rvsqr (FiniteConditionalExpectation x))))).
+      {
+        apply IsFiniteExpectation_plus; try typeclasses eauto.
+      }
+      assert (almostR2 (prob_space_sa_sub prts sub) eq
+                       (FiniteConditionalExpectation 
+                          (rvsqr (rvminus x (FiniteConditionalExpectation x))))
+                       (FiniteConditionalExpectation 
+                          (rvplus (rvsqr x)
+                                  (rvplus
+                                     (rvscale (- 2)
+                                      (rvmult (FiniteConditionalExpectation x) x))
+                                     (rvsqr (FiniteConditionalExpectation x)))))).
+      {
+        apply FiniteCondexp_proper.
+        apply all_almost; intros ?.
+        rv_unfold.
+        unfold Rsqr.
+        lra.
+      }
+      generalize (FiniteCondexp_plus 
+                    (rvsqr x)
+                    (rvplus (rvscale (-2)
+                             (rvmult (FiniteConditionalExpectation x) x))
+                            (rvsqr (FiniteConditionalExpectation x))) ); intros.
+      generalize (FiniteCondexp_plus 
+                    (rvscale (-2)
+                             (rvmult (FiniteConditionalExpectation x) x))
+                    (rvsqr (FiniteConditionalExpectation x))) ; intros.
+
+      generalize (FiniteCondexp_scale (-2)
+                    (rvmult (FiniteConditionalExpectation x) x)); intros.
+      generalize (FiniteCondexp_factor_out_l x (FiniteConditionalExpectation x)); intros.
+
+      revert H3; apply almost_impl.
+      revert H2; apply almost_impl.
+      revert H1; apply almost_impl.
+      revert H0; apply almost_impl.      
+      revert H; apply almost_impl.
+      apply all_almost; intros ??????.
+      rewrite H.
+(*
+      rewrite_condexp_pf_irrel H0.
+      unfold rvplus at 1.
+      rewrite_condexp_pf_irrel H1.
+      unfold rvplus at 1.
+      rewrite H2.
+      unfold rvscale.
+      rewrite H3.
+      rv_unfold.
+      unfold Rsqr.
+
+      rewrite (FiniteCondexp_id _ _ (fun omega : Ts =>
+                                       FiniteConditionalExpectation prts sub x omega * FiniteConditionalExpectation prts sub x omega)).
+      lra.
+  Qed.
+*)
+  Admitted.
+         
+   Lemma Finite_conditional_variance_L2_alt (x : Ts -> R)
+        {rv : RandomVariable dom borel_sa x}
+        {isl2: IsLp prts 2 x} :
+    almostR2 (prob_space_sa_sub prts sub) eq
+             (FiniteConditionalExpectation 
+                (rvsqr (rvminus x (FiniteConditionalExpectation x)))) 
+             (rvminus (FiniteConditionalExpectation (rvsqr x))
+                      (rvsqr (FiniteConditionalExpectation x))).
+     Proof.
+       apply Finite_conditional_variance_alt; apply (isfe_L2_variance x).
+     Qed.       
+
+  Lemma Finite_conditional_variance_bound1_fun (x c : Ts -> R)
+        {rv : RandomVariable dom borel_sa x}
+        {rv2 : RandomVariable dom2 borel_sa c}        
+        {isfe : IsFiniteExpectation prts x}
+        {isfe2 : IsFiniteExpectation prts c}
+        {isfe0 : IsFiniteExpectation prts (rvsqr x)} :
+    almostR2 prts Rle (rvsqr x) (c) ->
+    almostR2 (prob_space_sa_sub prts sub) Rle (rvminus (FiniteConditionalExpectation (rvsqr x))
+                               (rvsqr (FiniteConditionalExpectation x)))
+             (c).
+  Proof.
+    intros.
+    assert (rv3: RandomVariable dom borel_sa c).
+    {
+      now apply (RandomVariable_sa_sub sub).
+    }
+    generalize (FiniteCondexp_ale (rvsqr x) (c)); intros.
+    cut_to H0; try easy.
+    revert H0; apply almost_impl.
+    apply all_almost; intros ??.
+    rewrite FiniteCondexp_id with (f := c) in H0; trivial.
+    rv_unfold.
+    eapply Rle_trans.
+    shelve.
+    apply H0.
+    Unshelve.
+    assert (0 <=  (FiniteConditionalExpectation x x0)²).
+    {
+      apply Rle_0_sqr.
+    }
+    lra.
+  Qed.
+
+  Lemma Finite_conditional_variance_bound_L2_fun (x c : Ts -> R)
+        {rv : RandomVariable dom borel_sa x}
+        {rv2 : RandomVariable dom2 borel_sa c}        
+        {isfe2 : IsFiniteExpectation prts c}
+        {isl2: IsLp prts 2 x} :
+    almostR2 prts Rle (rvsqr x) (c) ->
+    almostR2 (prob_space_sa_sub prts sub) Rle (FiniteConditionalExpectation(rvsqr (rvminus x (FiniteConditionalExpectation x))))
+          (c).
+  Proof.
+    intros.
+    generalize (Finite_conditional_variance_L2_alt x); intros.
+    generalize (Finite_conditional_variance_bound1_fun x c H); intros.
+    revert H1; apply almost_impl.
+    revert H0; apply almost_impl.
+    apply all_almost; intros ???.
+    rewrite H0.
+    apply H1.
+ Qed.
 
   Lemma IsLp_almost_bounded n rv_X1 rv_X2
         (rle:almostR2 prts Rle (rvpower (rvabs rv_X1) (const n)) rv_X2)

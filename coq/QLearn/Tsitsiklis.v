@@ -9203,7 +9203,7 @@ Qed.
    apply fin_finite.
  Qed.
  
-  Lemma conditional_variance_bound1_fun (x c : Ts -> R)
+  Lemma Finite_conditional_variance_bound1_fun (x c : Ts -> R)
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa x}
@@ -9261,7 +9261,7 @@ Qed.
          end
      end.
 
-  Lemma conditional_variance_alt (x : Ts -> R)
+  Lemma Finite_conditional_variance_alt (x : Ts -> R)
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa x}
@@ -9391,7 +9391,7 @@ Qed.
       lra.
   Qed.
 
-  Instance conditional_variance_L2_alt_rv (x : Ts -> R)
+  Instance Finite_conditional_variance_L2_alt_rv (x : Ts -> R)
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa x}
@@ -9403,7 +9403,7 @@ Qed.
      apply (isfe_L2_variance prts sub x).
    Qed.
 
-  Instance conditional_variance_L2_alt_isfe (x : Ts -> R)
+  Instance Finite_conditional_variance_L2_alt_isfe (x : Ts -> R)
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa x}
@@ -9416,7 +9416,7 @@ Qed.
    Qed.    
 
            
-   Lemma conditional_variance_L2_alt (x : Ts -> R)
+   Lemma Finite_conditional_variance_L2_alt (x : Ts -> R)
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa x}
@@ -9428,10 +9428,10 @@ Qed.
              (rvminus (FiniteConditionalExpectation prts sub (rvsqr x))
                       (rvsqr (FiniteConditionalExpectation prts sub x))).
      Proof.
-       apply conditional_variance_alt; apply (isfe_L2_variance prts sub x).
+       apply Finite_conditional_variance_alt; apply (isfe_L2_variance prts sub x).
      Qed.       
 
-  Lemma conditional_variance_bound_L2_fun (x c : Ts -> R)
+  Lemma Finite_conditional_variance_bound_L2_fun (x c : Ts -> R)
         {dom2 : SigmaAlgebra Ts}
         (sub : sa_sub dom2 dom)
         {rv : RandomVariable dom borel_sa x}
@@ -9443,8 +9443,8 @@ Qed.
           (c).
   Proof.
     intros.
-    generalize (conditional_variance_L2_alt x sub); intros.
-    generalize (conditional_variance_bound1_fun x c sub H); intros.
+    generalize (Finite_conditional_variance_L2_alt x sub); intros.
+    generalize (Finite_conditional_variance_bound1_fun x c sub H); intros.
     revert H1; apply almost_impl.
     revert H0; apply almost_impl.
     apply all_almost; intros ???.
@@ -11284,7 +11284,7 @@ End FixedPoint_contract.
        {
          intros.
 
-         generalize (conditional_variance_L2_alt_isfe (Xmin k sa) (filt_sub k)); intros.
+         generalize (Finite_conditional_variance_L2_alt_isfe (Xmin k sa) (filt_sub k)); intros.
          revert H7.
          apply IsFiniteExpectation_proper.
          intros ?.
@@ -11313,7 +11313,7 @@ End FixedPoint_contract.
         {
           apply isfe_Rmax_all; intros; typeclasses eauto.
         }
-        generalize (conditional_variance_bound_L2_fun 
+        generalize (Finite_conditional_variance_bound_L2_fun 
                       (Xmin k sa)
                       (fun ω => (Rmax_all (fun sa => Rsqr (qlearn_Q k ω sa))))
                       (filt_sub k)); intros.
