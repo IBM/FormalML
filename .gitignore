@@ -6,9 +6,9 @@
 *.aux
 .coqdeps.d
 .#*
-Makefile.coq
-Makefile.coq.conf
-.Makefile.coq.d
+Makefile.rocq
+Makefile.rocq.conf
+.Makefile.rocq.d
 extracted
 ocaml/_build
 bin
