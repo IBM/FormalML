@@ -17,8 +17,6 @@
 (** This module provides support for bags (or multisets). *)
 
 Require Import Arith.
-Require Import Min.
-Require Import Max.
 Require Import ZArith.
 Require Import Lia.
 Require Import Permutation.
@@ -843,8 +841,8 @@ Section Bag.
     generalize (mult x0 a); intro; auto with arith.
     rewrite H2.
     rewrite IHl; rewrite H2.
-    generalize (mult l a); intro; rewrite <- succ_min_distr; auto with arith.
-    rewrite H0; rewrite min_0_l; simpl.
+    generalize (mult l a); intro; rewrite <- Nat.succ_min_distr; auto with arith.
+    rewrite H0; rewrite Nat.min_0_l; simpl.
     elim (equiv_dec a a); intro; try congruence.
     rewrite IHl; rewrite H0; auto with arith.
     rewrite IHl.
@@ -878,10 +876,10 @@ Section Bag.
       + rewrite H in *; clear H.
         case (equiv_dec x x); try congruence.
         intros.
-        apply gt_Sn_O.
+        auto with arith.
       + case (equiv_dec x a).
         * intros.
-          apply gt_Sn_O.
+          auto with arith.
         * intros.
           apply IHl.
           assumption.
@@ -896,7 +894,7 @@ Section Bag.
     apply mult_pos_equiv_in.
     apply mult_pos_equiv_in in Hx.
     rewrite bdistinct_mult.
-    apply min_case; auto.
+    apply Nat.min_case; auto.
   Qed.
 
   Lemma bdistinct_nil {l:list A} :
@@ -1033,7 +1031,7 @@ Section Bag.
   Proof.
     intros; revert s.
     induction t; simpl.
-    intro. rewrite <- minus_n_O; reflexivity.
+    intro. rewrite Nat.sub_0_r; reflexivity.
     intros; rewrite IHt.
     destruct (equiv_dec x a).
     rewrite e in *; clear e.
@@ -1103,7 +1101,7 @@ Section Bag.
     forall (n n0:nat), n0 - (n0 - n) = min n0 n.
   Proof.
     induction n.
-    intros; rewrite min_0_r; rewrite <- minus_n_O; rewrite minus_diag; reflexivity.
+    intros; rewrite Nat.min_0_r; rewrite Nat.sub_0_r; rewrite Nat.sub_diag; reflexivity.
     intros.
     generalize eq_nat_dec; intro.
     elim (H n n0); intro; clear H.
@@ -1120,7 +1118,7 @@ Section Bag.
     forall (n n0:nat), n0 + (n - n0) = max n0 n.
   Proof.
     induction n; intros.
-    rewrite max_0_r; auto with arith.
+    rewrite Nat.max_0_r; auto with arith.
     generalize eq_nat_dec; intro.
     elim (H n n0); intro; clear H.
     rewrite a in *; clear a.
@@ -1171,7 +1169,7 @@ Section Bag.
     intro.
     rewrite (bmin_mult s t a).
     rewrite (bmin_mult t s a).
-    rewrite min_comm.
+    rewrite Nat.min_comm.
     reflexivity.
   Qed.
 
@@ -1183,7 +1181,7 @@ Section Bag.
     intro.
     rewrite (bmax_mult s t a).
     rewrite (bmax_mult t s a).
-    rewrite max_comm.
+    rewrite Nat.max_comm.
     reflexivity.
   Qed.
 
@@ -1255,7 +1253,7 @@ Section Bag.
       revert H IHl1 H0; generalize (mult l1 a); generalize (mult l2 a); intros.
       assert (n = 0).
       + apply min_zero with (n2 := 0); assumption.
-      + clear H; rewrite H1 in *; rewrite plus_0_r in *; assumption.
+      + clear H; rewrite H1 in *; rewrite Nat.add_0_r in *; assumption.
     - apply IHl1; assumption.
   Qed.
   
@@ -1281,7 +1279,7 @@ Section Bag.
       rewrite H; assumption.
     - assert (n = 0).
       apply min_zero with (n2 := 0); assumption.
-      rewrite H; rewrite plus_0_r; assumption.
+      rewrite H; rewrite Nat.add_0_r; assumption.
     - assert (1 <= n).
       apply min_one_yields_one; assumption.
       assert (1 <= n0).
@@ -1317,17 +1315,17 @@ Section Bag.
       (mult l1 x = 0) \/ (mult l2 x = 0) -> mult (l1 min-b l2) x = 0.
   Proof.
     induction l2; simpl; intros; rewrite bmin_mult; simpl.
-    rewrite min_0_r; reflexivity.
+    rewrite Nat.min_0_r; reflexivity.
     revert H; elim (equiv_dec x a); intros.
     rewrite a0 in *; clear a0.
     elim H; intro; clear H.
     rewrite H0 in *.
     generalize (mult l2 a); auto.
     rewrite H0 in *.
-    generalize (mult l1 a); intro; rewrite min_0_r; reflexivity.
+    generalize (mult l1 a); intro; rewrite Nat.min_0_r; reflexivity.
     elim H; intro; clear H; rewrite H0.
     generalize (mult l1 a); auto.
-    generalize (mult l1 a); intro; rewrite min_0_r; reflexivity.
+    generalize (mult l1 a); intro; rewrite Nat.min_0_r; reflexivity.
   Qed.
 
   Lemma bdistinct_over_bmin:
@@ -1350,7 +1348,7 @@ Section Bag.
     assert (n = 0); try (apply (min_zero n 0); assumption).
     rewrite H0; auto with arith.
     assert (n0 = 0); try (apply (min_zero n0 0); assumption).
-    rewrite H0; rewrite min_0_r; auto with arith.
+    rewrite H0; rewrite Nat.min_0_r; auto with arith.
     simpl; generalize (compare_either n n0); intro.
     elim H0; intro; clear H0.
     assert (min n n0 = n). try (rewrite min_l; [reflexivity|assumption]).

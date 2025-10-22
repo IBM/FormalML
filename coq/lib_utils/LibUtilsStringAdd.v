@@ -22,7 +22,6 @@ Require Import Ascii.
 Require Import List.
 Require Import String.
 Require Import Arith.
-Require Import Min.
 Require Import Equivalence.
 Require Import EquivDec.
 Require Import Compare_dec.
@@ -379,7 +378,7 @@ Section Prefix.
     rewrite <- (substring_all l) at 3.
     apply substring_le_prefix.
     replace (String.length l - 0) with (String.length l) by lia.
-    apply le_min_r.
+    apply Nat.le_min_r.
   Qed.
 
   Lemma in_of_append pre y l :

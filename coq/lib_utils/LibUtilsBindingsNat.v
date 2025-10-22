@@ -18,7 +18,6 @@
 natural number. *)
 
 Require Import Arith.
-Require Import NPeano.
 Require Import LibUtilsBindings.
 
 Section BindingsNat.

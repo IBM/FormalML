@@ -17,7 +17,7 @@ RUN ["/bin/bash", "--login", "-c", "set -x \
 
 
 COPY --chown=coq:coq breast-cancer-wisconsin.data breast-cancer-wisconsin.names ./formal_ml/
-COPY --chown=coq:coq _CoqProject Makefile Makefile.coq_modules ./formal_ml/
+COPY --chown=coq:coq _CoqProject Makefile Makefile.rocq_modules ./formal_ml/
 COPY --chown=coq:coq coq ./formal_ml/coq
 COPY --chown=coq:coq ocaml ./formal_ml/ocaml
 

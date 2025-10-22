@@ -30,7 +30,6 @@ Require Import EquivDec.
 Require Import Equivalence.
 Require Import Peano_dec.
 Require Import ZArith.
-Require Import Zdigits.
 Require Import Znat.
 Require Import Recdef.
 Require Import Compare_dec.
@@ -186,7 +185,7 @@ Section CoqLibAdd.
     Lemma nin_app_or (x:A) a b :
       (~ In x (a ++ b)) <-> (~ In x a /\ ~ In x b).
     Proof.
-      intuition. apply in_app_or in H0; intuition.
+      intuition (auto with *). apply in_app_or in H0; intuition.
     Qed.
 
     Lemma in_in_app_false {l l1 l2} :
@@ -463,7 +462,7 @@ Section CoqLibAdd.
       (forallb f l1 = true /\ forallb f l2 = true).
     Proof.
       repeat rewrite forallb_forall.
-      intuition; rewrite in_app_iff in *; intuition.
+      intuition (auto with *); rewrite in_app_iff in *; intuition (auto with *).
     Qed.
     
     Lemma forallb_map {A B} f (mf:A->B) m : forallb f (map mf m) = forallb ((fun x => f (mf x))) m.
@@ -575,7 +574,7 @@ Section CoqLibAdd.
       reflexivity.
       assert (exists (n3:nat), min (S n1) (S n2) = (S n3)).
       exists (min n1 n2).
-      rewrite Min.succ_min_distr; reflexivity.
+      rewrite Nat.succ_min_distr; reflexivity.
       elim H0; intros.
       congruence.
     Qed.
@@ -622,8 +621,8 @@ Section CoqLibAdd.
       revert x0; induction l; simpl; intros; try lia.
       rewrite (IHl (n0 * f a + x0)); simpl.
       rewrite (fold_left_arith_dist1 (f a + 0)).
-      rewrite mult_plus_distr_l.
-      rewrite mult_plus_distr_l.
+      rewrite Nat.mul_add_distr_l.
+      rewrite Nat.mul_add_distr_l.
       lia.
     Qed.
 
@@ -633,7 +632,7 @@ Section CoqLibAdd.
     Proof.
       generalize 0.
       revert x0; induction l; simpl; intros; try lia.
-      assert (f a + n = n + f a) by apply plus_comm.
+      assert (f a + n = n + f a) by apply Nat.add_comm.
       rewrite H; clear H.
       rewrite (IHl x0 (n + f a)); reflexivity.
     Qed.
@@ -1015,3 +1014,4 @@ Ltac string_eqdec_to_equiv :=
 
 Ltac string_dec_to_equiv :=
   replace string_dec with (equiv_dec (EqDec:=string_dec)) in * by trivial.
+

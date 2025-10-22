@@ -54,8 +54,8 @@ Section Lattice.
         meet : A -> A -> A;
         join : A -> A -> A;
 
-        meet_morphism :> Proper (eqA ==> eqA ==> eqA) meet ;
-        join_morphism :> Proper (eqA ==> eqA ==> eqA) join ;
+        meet_morphism :: Proper (eqA ==> eqA ==> eqA) meet ;
+        join_morphism :: Proper (eqA ==> eqA ==> eqA) join ;
         
         meet_commutative : commutative eqA meet;
         meet_associative    : associative eqA meet;

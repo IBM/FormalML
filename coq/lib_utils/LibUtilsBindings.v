@@ -43,20 +43,21 @@ Require Import LibUtilsStringAdd.
 Section Bindings.
 
   Class ODT {K:Type}
-    := mkODT { ODT_eqdec:>EqDec K eq;
+    := mkODT { ODT_eqdec::EqDec K eq;
                ODT_lt:K -> K -> Prop;
-               ODT_lt_strorder:>StrictOrder ODT_lt;
+               ODT_lt_strorder::StrictOrder ODT_lt;
                ODT_lt_dec: forall (a b:K), {ODT_lt a b} + {~ODT_lt a b};
                ODT_compare:K -> K -> comparison;
                ODT_compare_spec: forall x y : K,
                    CompareSpec (eq x y) (ODT_lt x y) (ODT_lt y x) (ODT_compare x y) }.
+
 
   Generalizable Variables K.
   Context `{odt:@ODT K}.
 
   Lemma ODT_lt_irr (k:K) :
     ~(ODT_lt k k).
-  Proof.
+  Proof.    
     apply irreflexivity.
   Qed.
 

@@ -17,7 +17,7 @@
 # User-level configuration
 # include ../Makefile.config
 # Contains the list of all the Coq modules
-include ../Makefile.coq_modules
+include ../Makefile.rocq_modules
 
 ## Configuraton
 NNOPT_HOME=$(CURDIR)/..

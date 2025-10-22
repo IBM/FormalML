@@ -17,8 +17,6 @@
 (** This module provides support for monadic iterators over bags. *)
 
 Require Import Arith.
-Require Import Min.
-Require Import Max.
 Require Import Lia.
 Require Import Permutation.
 Require Import Equivalence.

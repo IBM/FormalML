@@ -61,13 +61,13 @@ Section prelude.
     generalize (refl_equal n).
     pattern n at 2 4 6 10, q; case q; [intro | intros m l e].
     rewrite <- eq_rect_eq_nat; trivial.
-    contradiction (le_Sn_n m); rewrite <- e; assumption.
+    contradiction (Nat.nle_succ_diag_l m); rewrite <- e; assumption.
     replace (le_S n m p) with
     (eq_rect _ (fun n0 => n <= n0) (le_S n m p) _ (refl_equal (S m))).
     2:reflexivity.
     generalize (refl_equal (S m)).
     pattern (S m) at 1 3 4 6, q; case q; [intro Heq | intros m0 l HeqS].
-    contradiction (le_Sn_n m); rewrite Heq; assumption.
+    contradiction (Nat.nle_succ_diag_l m); rewrite Heq; assumption.
     injection HeqS; intro Heq; generalize l HeqS.
     rewrite <- Heq; intros; rewrite <- eq_rect_eq_nat.
     rewrite (IHp l0); reflexivity.
@@ -157,7 +157,7 @@ Section Digits.
       split. 
       - unfold digits_to_nat in e1.
         rewrite e1.
-        rewrite mult_comm.
+        rewrite Nat.mul_comm.
         rewrite <- Nat.div_mod; trivial.
         lia.
       - intros ? HH. destruct (rev x); simpl in * .
@@ -167,7 +167,7 @@ Section Digits.
           simpl in *.
           rewrite <- Nat.div_exact by lia.
           rewrite <- e1.
-          rewrite mult_comm.
+          rewrite Nat.mul_comm.
           simpl.
           lia.
         + auto.
@@ -192,8 +192,8 @@ Section Digits.
       induction l; simpl; trivial.
       intros.
       apply IHl.
-      apply plus_le_compat_r.
-      apply mult_le_compat_r.
+      apply Nat.add_le_mono_r.
+      apply Nat.mul_le_mono_r.
       trivial.
     Qed.
 
@@ -209,9 +209,9 @@ Section Digits.
           transitivity (acc*base).
           * transitivity (acc * 1).
             { lia. }
-            apply mult_le_compat_l.
+            apply Nat.mul_le_mono_l.
             lia.
-          * apply le_plus_l.
+          *  apply Nat.le_add_r.
     Qed.
 
     Lemma digits_to_nat_aux_bound l c:
@@ -221,34 +221,28 @@ Section Digits.
       induction l; simpl.
       - split.
         + lia.
-        + destruct (mult_O_le c (base*1)).
-          * lia.
-          * rewrite mult_comm.
-            lia.
+        + lia. 
       - intros.
         destruct (IHl (c * base + proj1_sig a)) as [le1 le2].
         clear IHl.
         split.
         + rewrite <- le1.
-          rewrite mult_plus_distr_r.
-          rewrite mult_assoc.
-          apply le_plus_l.
-        + eapply lt_le_trans; [apply le2 | ].
-          repeat rewrite mult_plus_distr_r.
-          repeat rewrite mult_assoc.
+          lia.
+        + eapply Nat.lt_le_trans; [apply le2 | ].
+          repeat rewrite Nat.mul_add_distr_r.
+          repeat rewrite Nat.mul_assoc.
           repeat rewrite Nat.mul_1_l.
-          rewrite plus_assoc_reverse.
-          apply plus_le_compat_l.
+          rewrite <- Nat.add_assoc.
+          apply Nat.add_le_mono_l.
           replace 
             (proj1_sig a * base ^ Datatypes.length l + base ^ Datatypes.length l)
             with
               ((proj1_sig a +1) * base ^ Datatypes.length l).
-          * apply mult_le_compat_r.
+          * apply Nat.mul_le_mono_r.
             destruct a; simpl.
-            rewrite plus_comm; simpl.
-            apply lt_le_S.
-            trivial.
-          * rewrite mult_plus_distr_r, Nat.mul_1_l; trivial.
+            rewrite Nat.add_comm; simpl.
+            auto with arith.
+          * rewrite Nat.mul_add_distr_r, Nat.mul_1_l; trivial.
     Qed.
 
     Lemma digits_to_nat_aux_acc_inj_helper1 a b c n1 n2 :
@@ -260,71 +254,64 @@ Section Digits.
     Proof.  
       intros ? ? ? lt1 ltn.
       assert (le12:c * base * base ^ n2 + 0 <= c * base * base ^ n2 + a * base ^ n2).
-      { apply plus_le_compat_l.
+      { apply Nat.add_le_mono_l.
         apply Peano.le_0_n.
       }
-      rewrite plus_0_r in le12.
-      rewrite mult_plus_distr_r in lt1.
-      eapply le_lt_trans in lt1; try eapply le12.
+      rewrite Nat.add_0_r in le12.
+      rewrite Nat.mul_add_distr_r in lt1.
+      eapply Nat.le_lt_trans in lt1; try eapply le12.
       assert (le13:(c * base + b + 1) * (base ^ n1)
                    <=
                    (c * base + base) * (base ^ n1 )).
       {
-        apply mult_le_compat_r.
-        rewrite plus_assoc_reverse.
-        apply plus_le_compat_l.
+        apply Nat.mul_le_mono_r.
+        rewrite <- Nat.add_assoc.
+        apply Nat.add_le_mono_l.
         lia.
       }
-      eapply lt_le_trans in le13; try eapply lt1.
-      rewrite (le_plus_minus n1 n2) in le13 by lia.
+      eapply Nat.lt_le_trans in le13; try eapply lt1.
+      rewrite <- (Nat.sub_add n1 n2) in le13 by lia.
       rewrite Nat.pow_add_r in le13.
-      rewrite mult_assoc in le13.
+      rewrite Nat.mul_assoc in le13.
       assert (le14:c*base+base <= c*base*base).
       {
         replace (c*base+base) with ((c+1)*base).
-        - apply mult_le_compat_r.
-          rewrite mult_comm.
+        - apply Nat.mul_le_mono.
+          rewrite Nat.mul_comm.
           destruct base.
           + lia.
           + simpl.
-            apply plus_le_compat_l.
+            apply Nat.add_le_mono_l.
             destruct n. lia.
             destruct c. lia.
-            apply lt_le_S.
-            replace 0 with (S n *0) by auto.
-            apply mult_lt_compat_l; lia.
-        - rewrite mult_plus_distr_r.
-          rewrite mult_1_l.
+            apply Nat.lt_succ_r.
+            auto with arith.
+          + reflexivity.
+        - rewrite Nat.mul_add_distr_r.
+          rewrite Nat.mul_1_l.
           trivial.
       }
       assert (le15:(c * base + base) * base ^ n1 <= (c * base * base) * base ^ n1).
       {
-        apply mult_le_compat_r.
+        apply Nat.mul_le_mono_r.
         auto.
       }
-      eapply lt_le_trans in le15; try eapply le13.
+      eapply Nat.lt_le_trans in le15; try eapply le13.
       assert (le16:c * base * base ^ n1 * base <= c * base * base ^ n1 * base ^ (n2 - n1)).
       {
-        apply mult_le_compat_l.
+        apply Nat.mul_le_mono_l.
         generalize (Nat.sub_gt _ _ ltn).
         destruct (n2-n1).
         - congruence.
         - simpl; intros _ .
           replace base with (base*base^0) at 1.
-          + apply mult_le_compat_l.
+          + apply Nat.mul_le_mono_l.
             apply Nat.pow_le_mono_r; lia.
           + simpl.
-            rewrite mult_1_r.
+            rewrite Nat.mul_1_r.
             trivial.
       }
-      eapply le_lt_trans in le16; try eapply le15.
-      replace (c * base * base ^ n1 * base) with
-          (c * base * base * base ^ n1) in le16.
-      - intuition.
-      - repeat rewrite mult_assoc_reverse.
-        f_equal. f_equal.
-        rewrite mult_comm.
-        trivial.
+      lia.
     Qed.
 
     Lemma digits_to_nat_aux_acc_inj_helper12 a b c n1 n2 :
@@ -339,15 +326,14 @@ Section Digits.
       ; [ | eapply (digits_to_nat_aux_acc_inj_helper1 a b c n1 n2); eauto].
       red in e; subst.
       simpl in *.
-      rewrite (le_plus_minus n1 n2) in lt1 by lia.
+      rewrite <- (Nat.sub_add n1 n2) in lt1 by lia.
       rewrite Nat.pow_add_r in lt1.
-      rewrite (mult_comm (base ^ n1)) in lt1.
-      rewrite mult_assoc in lt1.
+      rewrite Nat.mul_assoc in lt1.
       assert (le2:base*base^n1 <= a*base^(n2 - n1) * base ^ n1).
       {
-        apply mult_le_compat_r.
+        apply Nat.mul_le_mono_r.
         replace base with (1*base) at 1 by lia.
-        apply mult_le_compat.
+        apply Nat.mul_le_mono.
         - replace 1 with (1*1) by lia.
           simpl. lia.
         - simpl.
@@ -355,13 +341,13 @@ Section Digits.
           + apply Nat.pow_le_mono_r; lia.
           + apply Nat.pow_1_r.
       } 
-      eapply le_lt_trans in lt1; try eapply le2; clear le2.
+      eapply Nat.le_lt_trans in lt1; try eapply le2; clear le2.
       assert (le3:(b + 1) * base ^ n1 <= base * base^n1).
       {
-        apply mult_le_compat_r.
+        apply Nat.mul_le_mono_r.
         lia.
       }
-      eapply le_lt_trans in lt1; try eapply le3; clear le3.
+      eapply Nat.le_lt_trans in lt1; try eapply le3; clear le3.
       lia.
     Qed.
 
@@ -370,11 +356,10 @@ Section Digits.
       ~ b < a.
     Proof.
       intros lt1 l2.
-      apply lt_not_le in lt1.
+      apply Nat.le_ngt in lt1.
       apply lt1.
-      apply mult_le_compat_r.
-      rewrite plus_assoc_reverse.
-      apply plus_le_compat_l.
+      apply Nat.lt_succ_r.
+      apply Nat.mul_le_mono_r.
       lia.
     Qed.
 
@@ -386,21 +371,21 @@ Section Digits.
       ~ n2 < n1.
     Proof.
       intros ? ? ? lt1 l2.
-      apply lt_not_le in lt1.
+      apply Nat.le_ngt in lt1.
       apply lt1.
-      rewrite (le_plus_minus n2 n1) by lia.
+      apply Nat.lt_succ_r.
+      rewrite <- (Nat.sub_add n2 n1) by lia.
       rewrite Nat.pow_add_r.
-      rewrite (mult_comm a).
-      rewrite (mult_comm (b+1)).
-      rewrite <- mult_assoc.
-      apply mult_le_compat_l.
+      rewrite Nat.mul_assoc.
+      apply Nat.mul_le_mono_r.
       transitivity base; try lia.
       transitivity (base^1*a).
       - rewrite Nat.pow_1_r.
         transitivity (base * 1); try lia.
-        apply mult_le_compat_l.
+        apply Nat.mul_le_mono_l.
         lia.
-      - apply mult_le_compat_r.
+      - rewrite Nat.mul_comm.
+        apply Nat.mul_le_mono_l.
         apply Nat.pow_le_mono_r; lia.
     Qed.
     
@@ -414,8 +399,8 @@ Section Digits.
       destruct (digits_to_nat_aux_bound l1 (c*base+a)) as [lb1 ub1].
       destruct (digits_to_nat_aux_bound l2 (c*base+b)) as [lb2 ub2].
       rewrite eqq1 in lb1,ub1.
-      eapply le_lt_trans in lb1; [ | eapply ub2].
-      eapply le_lt_trans in lb2; [ | eapply ub1].
+      eapply Nat.le_lt_trans in lb1; [ | eapply ub2].
+      eapply Nat.le_lt_trans in lb2; [ | eapply ub1].
       clear eqq1 ub1 ub2.
       revert lb1 lb2.
       generalize (Datatypes.length l1).
@@ -448,8 +433,8 @@ Section Digits.
       destruct (digits_to_nat_aux_bound l1 (c*base+a)) as [lb1 ub1].
       destruct (digits_to_nat_aux_bound l2 (c*base+b)) as [lb2 ub2].
       rewrite eqq1 in lb1,ub1.
-      eapply le_lt_trans in lb1; [ | eapply ub2].
-      eapply le_lt_trans in lb2; [ | eapply ub1].
+      eapply Nat.le_lt_trans in lb1; [ | eapply ub2].
+      eapply Nat.le_lt_trans in lb2; [ | eapply ub1].
       clear eqq1 ub1 ub2.
       revert lb1 lb2.
       generalize (Datatypes.length l1).
@@ -485,15 +470,13 @@ Section Digits.
         assert (le1:n * base <= n*1) by lia.
         assert (le2:n * base <= n*1) by lia.
         destruct n; [congruence|].
-        apply mult_S_le_reg_l in le2.
-        lia.
+        apply Nat.mul_le_mono_pos_l in le2; lia.
       - generalize (digits_to_nat_aux_le l1 (n * base + proj1_sig a)); intros eqq.
         rewrite H0 in eqq.
         assert (le1:n * base <= n*1) by lia.
         assert (le2:n * base <= n*1) by lia.
         destruct n; [congruence|].
-        apply mult_S_le_reg_l in le2.
-        lia.
+        apply Nat.mul_le_mono_pos_l in le2; lia.
       - assert (lt0:0<n * base).
         { assert (equ1:0<n) by lia.
           assert (eqq1:n*0<n * base).
@@ -532,10 +515,7 @@ Section Digits.
       revert x.
       induction l; simpl; trivial; intros.
       apply IHl.
-      cut (0 < x*base + proj1_sig a); [lia | ].
-      cut (0 < x * base); [lia | ].
-      cut (0*base < x*base); [lia | ].
-      apply mult_lt_compat_r; lia.
+      lia.
     Qed.
 
     Lemma trim_nat_to_digits x :

@@ -20,7 +20,7 @@ as strings). *)
 Require Import String.
 Require Import List.
 Require Import Permutation.
-Require Import Arith Min.
+Require Import Arith.
 Require Import EquivDec.
 Require Import Morphisms.
 Require Import Lia.
@@ -121,7 +121,7 @@ Section Fresh.
   Defined.
   
   Definition find_fresh_inj_f {A:Type} {dec:EqDec A eq} f (inj:forall x y, f x = f y -> x = y) (dom:list A) : A
-    := proj1_sig (find_bounded_S_nin_finds f dom (S (length dom)) (gt_Sn_n _) inj).
+    := proj1_sig (find_bounded_S_nin_finds f dom (S (length dom)) (Nat.lt_succ_diag_r _) inj).
 
   Lemma find_fresh_inj_f_fresh {A:Type} {dec:EqDec A eq} f (inj:forall x y, f x = f y -> x = y) (dom:list A) :
     ~ In (find_fresh_inj_f f inj dom) dom.
