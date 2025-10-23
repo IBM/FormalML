@@ -218,7 +218,7 @@ Section sums.
     unfold sum_Rbar_n; intros.
     induction n; [simpl; f_equal; lra | ].
     rewrite seq_Sn.
-    rewrite plus_0_l.
+    rewrite Nat.add_0_l.
 
     repeat rewrite map_app.
     repeat rewrite list_Rbar_sum_nneg_plus; simpl
@@ -895,8 +895,8 @@ Qed.
         + now rewrite iso_b_f.
         + apply in_seq.
           split; [lia |].
-          rewrite plus_0_l.
-          apply le_lt_n_Sm.
+          rewrite Nat.add_0_l.
+          apply Nat.lt_succ_r.
           destruct H1.
           apply in_seq in H1.
           apply in_seq in H2.
@@ -1616,7 +1616,7 @@ Proof.
     split.
     + now apply classic_min_of_some in H0.
     + intros.
-      apply NPeano.Nat.nlt_ge; intros nlt.
+      apply Nat.nlt_ge; intros nlt.
       eapply classic_min_of_some_first in H0; try apply nlt.
       tauto.
   - intros.
@@ -1624,7 +1624,7 @@ Proof.
     apply zerotails in H.
     apply is_lim_seq_spec in H.
     simpl in H.
-    elimtype False.
+    exfalso.
     destruct (H ϵ) as [N ?].
     elim (H1 N).
     red; intros.
@@ -1752,10 +1752,10 @@ Proof.
 Qed.
 
 Definition zerotails_incr_mult (a : nat -> R) (pf:ex_series a) n : R
-  := Series (fun n0 : nat => if le_dec (S (zerotails_eps2k_fun a pf n0)) n then 1 else 0).
+  := Series (fun n0 : nat => if Compare_dec.le_dec (S (zerotails_eps2k_fun a pf n0)) n then 1 else 0).
 
 Lemma zerotails_incr_mult_ex (a : nat -> R) (pf:ex_series a) n :
-  ex_series (fun n0 : nat => if le_dec (S (zerotails_eps2k_fun a pf n0)) n then 1 else 0).
+  ex_series (fun n0 : nat => if Compare_dec.le_dec (S (zerotails_eps2k_fun a pf n0)) n then 1 else 0).
 Proof.
   apply (ex_series_incr_n _ n).
   apply (ex_series_ext (fun _ => 0)).
@@ -1769,7 +1769,7 @@ Proof.
 Qed.
 
 Lemma zerotails_incr_mult_trunc  (a : nat -> R) (pf:ex_series a) n :
-  zerotails_incr_mult a pf n = sum_n (fun n0 : nat => if le_dec (S (zerotails_eps2k_fun a pf n0)) n then 1 else 0) n.
+  zerotails_incr_mult a pf n = sum_n (fun n0 : nat => if Compare_dec.le_dec (S (zerotails_eps2k_fun a pf n0)) n then 1 else 0) n.
 Proof.
   unfold zerotails_incr_mult.
   apply is_series_unique.
@@ -1777,11 +1777,12 @@ Proof.
   apply is_lim_seq_spec.
   simpl; intros.
   exists n; intros.
-  generalize (sum_n_m_sum_n (fun n1 : nat => if le_dec (S (zerotails_eps2k_fun a pf n1)) n then 1 else 0) n n0).
+  generalize (sum_n_m_sum_n (fun n1 : nat => if Compare_dec.le_dec (S (zerotails_eps2k_fun a pf n1)) n then 1 else 0) n n0 H).
   match goal with
     [|- context [minus ?x ?y]] => replace (minus x y) with (x - y) by reflexivity
   end; simpl.
-  intros HH;  rewrite <- HH; trivial.
+  intros HH.
+  eapply Rle_lt_trans; [right; apply (symmetry (f_equal Rabs HH)) |].
   erewrite (sum_n_m_ext_loc _ (fun _ => zero)).
   - rewrite sum_n_m_const_zero.
     unfold zero; simpl.
@@ -1826,7 +1827,7 @@ Proof.
       assert (0 <=  sum_f_R0'
     (fun x : nat =>
      if
-      le_dec (S (zerotails_eps2k_fun a pf (S (x + S n))))
+      Compare_dec.le_dec (S (zerotails_eps2k_fun a pf (S (x + S n))))
         (n + S (zerotails_eps2k_fun a pf m))
      then 1
      else 0) (zerotails_eps2k_fun a pf m)
@@ -1941,13 +1942,13 @@ Proof.
   transitivity (
       Series (fun k : nat => Series (fun n : nat =>
                                   a n *
-                                    if le_dec (S (zerotails_eps2k_fun a pf k)) n 
+                                    if Compare_dec.le_dec (S (zerotails_eps2k_fun a pf k)) n 
                                     then 1 else 0))).
   {
     apply Series_ext; intros.
     rewrite (Series_incr_n_aux
                (fun n0 : nat =>
-                  a n0 * (if le_dec (S (zerotails_eps2k_fun a pf n))%nat n0 then 1 else 0))
+                  a n0 * (if Compare_dec.le_dec (S (zerotails_eps2k_fun a pf n))%nat n0 then 1 else 0))
                (S (zerotails_eps2k_fun a pf n))).
     - apply Series_ext; intros.
       match_destr.
@@ -1965,7 +1966,7 @@ Proof.
     (fun n : nat =>
      Series
        (fun k : nat =>
-        a n * (if le_dec (S (zerotails_eps2k_fun a pf k)) n then 1 else 0)))).
+        a n * (if Compare_dec.le_dec (S (zerotails_eps2k_fun a pf k)) n then 1 else 0)))).
   {
     apply Series_nneg_nested_swap.
     - intros.
@@ -1983,7 +1984,7 @@ Proof.
         unfold pointwise_relation; simpl; intros.
         rewrite <- ELim_seq_incr_1.
         rewrite ELim_seq_ext with
-            (v := (fun n => Finite (sum_n (fun j : nat => a j * (if le_dec (S (zerotails_eps2k_fun a pf a0)) j then 1 else 0)) n))).
+            (v := (fun n => Finite (sum_n (fun j : nat => a j * (if Compare_dec.le_dec (S (zerotails_eps2k_fun a pf a0)) j then 1 else 0)) n))).
         rewrite Elim_seq_fin.
         rewrite <- ELim_seq_incr_1.        
         rewrite ELim_seq_ext with
@@ -1993,7 +1994,7 @@ Proof.
           rewrite ex_series_Lim_seq.
           -- rewrite (Series_incr_n_aux
                         (fun n0 : nat =>
-                           a n0 * (if le_dec (S (zerotails_eps2k_fun a pf a0))%nat n0 then 1 else 0))
+                           a n0 * (if Compare_dec.le_dec (S (zerotails_eps2k_fun a pf a0))%nat n0 then 1 else 0))
                         (S (zerotails_eps2k_fun a pf a0))).
              ++ apply Rbar_finite_eq.
                 apply Series_ext; intros.
@@ -2011,7 +2012,7 @@ Proof.
                       (fun x => a ((S (zerotails_eps2k_fun a pf a0)) + x)%nat)).
              ++ intros; f_equal; lia.
              ++ now apply ex_series_incr_n.
-          -- apply (ex_series_le (fun j : nat => a j * (if le_dec (S (zerotails_eps2k_fun a pf a0)) j then 1 else 0)) a); trivial.
+          -- apply (ex_series_le (fun j : nat => a j * (if Compare_dec.le_dec (S (zerotails_eps2k_fun a pf a0)) j then 1 else 0)) a); trivial.
              intros.
              unfold norm; simpl.
              unfold abs; simpl.
@@ -2068,7 +2069,7 @@ Qed.
     - intros.
       simpl.
       destruct H2.
-      destruct (le_dec x n).
+      destruct (Compare_dec.le_dec x n).
       + now apply H2.
       + specialize (H2 x).
         cut_to H2; try lia; simpl in H2.
@@ -2085,7 +2086,7 @@ Qed.
       split; try lia.
       assert (Rbar_le (f x) (f (Init.Nat.max x N))).
       {
-        destruct (le_dec N x).
+        destruct (Compare_dec.le_dec N x).
         - rewrite Nat.max_l; try lia.
           apply Rbar_le_refl.
         - rewrite Nat.max_r; try lia.
@@ -2116,7 +2117,7 @@ Qed.
         split; try lia.
         assert (Rbar_le (f x) (f (Init.Nat.max x N))).
         {
-          destruct (le_dec N x).
+          destruct (Compare_dec.le_dec N x).
           - rewrite Nat.max_l; try lia.
             apply Rbar_le_refl.
           - rewrite Nat.max_r; try lia.
@@ -2129,7 +2130,7 @@ Qed.
     - unfold is_ELimSup_seq, is_sup_seq.
       split; intros.
       + destruct (H0 M).
-        destruct (le_dec x n).
+        destruct (Compare_dec.le_dec x n).
         * now apply H1.
         * assert (n <= x)%nat by lia.
           apply Rbar_le_lt_trans with (y := f x).

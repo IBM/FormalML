@@ -1,4 +1,4 @@
-Require Import BinNums Nat List BinInt.
+Require Import Arith BinNums Nat List BinInt.
 Require Import Lia.
 
 Require Import LibUtils Isomorphism ListAdd.
@@ -1255,7 +1255,7 @@ Global Instance nat_pair_encoder : Isomorphism (nat*nat) nat := pair_encoder nat
        now subst.
      - destruct (Compare_dec.le_dec c1 c).
        + specialize (IHc l).
-         eapply Le.le_trans.
+         eapply Nat.le_trans.
          apply IHc.
          rewrite seq_S with (len := (S c)).
          rewrite map_app, list_max_app.

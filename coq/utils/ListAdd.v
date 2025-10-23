@@ -398,15 +398,15 @@ Section fp.
         rewrite Forall_forall in H.
         apply H.
         apply nth_In.
-        now apply lt_S_n.
+        auto with arith.
       + right.
         rewrite Forall_forall in H.
         symmetry.
         apply H.
         apply nth_In.
-        now apply lt_S_n.
-      + apply lt_S_n in n1bound.
-        apply lt_S_n in n2bound.
+        auto with arith.
+      + apply Nat.succ_lt_mono in n1bound.
+        apply Nat.succ_lt_mono in n2bound.
         destruct (IHFP _ _ n1bound n2bound) as [?|?]; auto.
   Qed.
 
@@ -2036,7 +2036,7 @@ Section cross_product.
         apply Forall_impl; intros.
         lia.
       +
-        rewrite <- Plus.plus_Snm_nSm.
+        replace (n + S (length l0)) with (S (n + length l0)) by auto with arith.
         specialize (IHl0 (map (fun '(a0, b0) => b0 ++ [a0]) (list_prod a acc)) (S n)).
         apply IHl0.
         rewrite Forall_map; simpl.
@@ -2212,12 +2212,12 @@ Qed.
 Lemma list_max_in l : l <> nil -> In (list_max l) l.
 Proof.
   induction l; simpl; [eauto |]; intros _.
-  destruct (Max.max_dec a (list_max l))
+  destruct (Nat.max_dec a (list_max l))
   ; rewrite e in *
   ; eauto.
   destruct l.
   - simpl in e.
-    rewrite Max.max_0_r in e; simpl
+    rewrite Nat.max_0_r in e; simpl
     ; eauto.
   - right; apply IHl; congruence.
 Qed.

@@ -360,7 +360,7 @@ Lemma vector_list_create_shiftS
       (start len:nat)
       (f:(forall m, S start <= m -> m < S start + len -> T)%nat) :
   vector_list_create (S start) len f =
-  vector_list_create start len (fun x pf1 pf2 => f (S x)%nat (le_n_S _ _ pf1) (lt_n_S _ _ pf2)).
+  vector_list_create start len (fun x pf1 pf2 => f (S x)%nat (le_n_S _ _ pf1) (proj1 (Nat.succ_lt_mono _ _) pf2)).
 Proof.
   revert start f.
   induction len; simpl; trivial; intros.
@@ -376,7 +376,7 @@ Lemma vector_list_create_shift0
       (start len:nat)
       (f:(forall m, start <= m -> m < start + len -> T)%nat) :
   vector_list_create start len f =
-  vector_list_create 0 len (fun x _ pf2 => f (start+x)%nat (le_plus_l start _) (plus_lt_compat_l _ _ start pf2)).
+  vector_list_create 0 len (fun x _ pf2 => f (start+x)%nat (Nat.le_add_r start _) (proj1 (Nat.add_lt_mono_l _ _ start) pf2)).
 Proof.
   induction start; simpl.
   - apply vector_list_create_ext; intros.
@@ -448,7 +448,7 @@ Lemma vector_nth_create
       (i : nat)
       (pf2: i < len)
       (f:(forall m, start <= m -> m < start + len -> T)%nat) :
-  vector_nth i pf2 (vector_create start len f) = f (start + i) (PeanoNat.Nat.le_add_r start i) (Plus.plus_lt_compat_l _ _ start pf2).
+  vector_nth i pf2 (vector_create start len f) = f (start + i) (PeanoNat.Nat.le_add_r start i) (proj1 (Nat.add_lt_mono_l _ _ start) pf2).
 Proof.
   unfold vector_nth, proj1_sig.
   repeat match_destr.
@@ -507,7 +507,7 @@ Program Definition vector_zip {A B:Type}
 Next Obligation.
   rewrite combine_length.
   repeat rewrite vector_length.
-  now rewrite Min.min_idempotent.
+  now rewrite Nat.min_idempotent.
 Qed.
 
 (* move this *)
@@ -907,7 +907,7 @@ Qed.
 Lemma vector_nthS {A} a i (l:list A) pf1 pf2 :
   (vector_nth (S i) pf1
               (exist (fun l0 : list A => length l0 = S (length l)) (a :: l) pf2))
-  = vector_nth i (lt_S_n _ _ pf1) (exist (fun l0 : list A => length l0 = length l) (l) (eq_add_S _ _ pf2)).
+  = vector_nth i (proj2 (Nat.succ_lt_mono _ _) pf1) (exist (fun l0 : list A => length l0 = length l) (l) (eq_add_S _ _ pf2)).
 Proof.
   unfold vector_nth, proj1_sig.
   repeat match_destr.
@@ -1186,7 +1186,7 @@ Section ivector.
     | 0%nat => fun pf _ => False_rect _ (Nat.nlt_0_r _ pf)
     | S n' => match idx with
              | 0%nat => fun pf '(hd,tl) => hd
-             | S m' => fun pf '(hd,tl) => ivector_nth m' (lt_S_n _ _ pf) tl
+             | S m' => fun pf '(hd,tl) => ivector_nth m' (proj2 (Nat.succ_lt_mono _ _) pf) tl
              end
     end.
 
@@ -1456,7 +1456,7 @@ Section ivector.
       + specialize (H 0 ((Nat.lt_0_succ _))).
         apply H.
       + apply IHn; intros.
-        specialize (H (S i1) ( (lt_n_S _ _ pf))).
+        specialize (H (S i1) ( (proj1 (Nat.succ_lt_mono _ _) pf))).
         simpl in H.
         rewrite (ivector_nth_prf_irrelevance _ i _ _ pf) in H.
         now rewrite (ivector_nth_prf_irrelevance _ i0 _ _ pf) in H.
@@ -1488,7 +1488,7 @@ Qed.
     := match n as n' return  (forall i (pf:(i<n')%nat), B) -> ivector B n' with
        | 0%nat => fun _ => tt
        | S m =>
-           fun f => (f 0%nat (Nat.lt_0_succ _) , ivector_create m (fun i pf => f (S i) (lt_n_S _ _ pf)))
+           fun f => (f 0%nat (Nat.lt_0_succ _) , ivector_create m (fun i pf => f (S i) (proj1 (Nat.succ_lt_mono _ _) pf)))
        end.
 
   Lemma ivector_nth_from_list {A} 
@@ -1576,7 +1576,7 @@ Qed.
 
   Lemma vector_nth_cons_S {A} {n} a (vec : vector A n) i pf :
     vector_nth (S i) pf (vector_cons a vec) = 
-    vector_nth i (lt_S_n i n pf) vec.
+    vector_nth i (proj2 (Nat.succ_lt_mono i n) pf) vec.
   Proof.
     unfold vector_cons, vector_nth, proj1_sig.
     destruct vec.

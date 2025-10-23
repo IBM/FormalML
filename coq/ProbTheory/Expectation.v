@@ -1252,7 +1252,7 @@ Section Expectation_sec.
           rewrite Rbar_le_div_l in r0 ; [| apply pow2_pos].
           {
             destruct (lt_eq_lt_dec (length d) k) as [[lt1|]|lt1]; trivial
-            ; elimtype False.
+            ; exfalso.
             - generalize (f_equal (fun x => nth k x 0)%nat); intros HH.
               specialize (HH _ _ eqq2).
               {
@@ -1538,7 +1538,7 @@ Section Expectation_sec.
             apply Rmult_eq_compat_r.
             f_equal.
             destruct (lt_eq_lt_dec (length (rev l2)) k) as [[lt1|]|lt1]; trivial
-            ; elimtype False.
+            ; exfalso.
             - generalize (f_equal (fun x => nth k x ((fun x : nat => INR x / 2 ^ n) 0%nat))); intros HH.
               specialize (HH _ _ eqq2).
               {

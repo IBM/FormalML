@@ -558,9 +558,9 @@ Section inf_sum'.
     intros n ngt.
 
     specialize (H1 n).
-    cut_to H1; [ | apply (le_trans _ (max N1 N2)); auto with arith].
+    cut_to H1; [ | apply (Nat.le_trans _ (max N1 N2)); auto with arith].
     specialize (H2 n).
-    cut_to H2; [ | apply (le_trans _ (max N1 N2)); auto with arith].
+    cut_to H2; [ | apply (Nat.le_trans _ (max N1 N2)); auto with arith].
 
     rewrite sum_f_R0'_plus.
     generalize (R_dist_plus (sum_f_R0' f1 n) sum1 (sum_f_R0' f2 n) sum2); intros.
@@ -685,8 +685,8 @@ Section harmonic.
     intros neq.
     induction b; simpl.
     - lia.
-    - apply gt_n_S in IHb.
-      eapply le_gt_trans; try eassumption.
+    - apply Nat.succ_lt_mono in IHb.
+      eapply Nat.lt_le_trans; try eassumption.
       apply Sle_mult_gt1; lia. 
   Qed.      
   Lemma sum_f_R0'_eq2 n :
@@ -763,10 +763,10 @@ Section harmonic.
       lra.
     - rewrite Nat.pow_mul_r.
       simpl.
-      rewrite NPeano.Nat.pow_add_r.
+      rewrite Nat.pow_add_r.
       unfold ge.
       replace N with (N * 1)%nat at 1 by lia.
-      apply mult_le_compat.
+      apply Nat.mul_le_mono.
       + generalize (pow_exp_gt 4 N)
         ; lia.
       + generalize (Z.to_nat (up l)); intros n.
@@ -1004,7 +1004,7 @@ Proof.
     apply in_seq.
     split; [lia|].
     simpl.
-    eapply lt_le_trans; try apply mbig.
+    eapply Nat.lt_le_trans; try apply mbig.
     unfold M.
     unfold lt.
     generalize (list_max_upper (map ginv (seq 0 N))); intros FF.
@@ -1034,7 +1034,7 @@ Proof.
   assert(l2_lower: (forall x, In x l2 -> x >= N)%nat).
   {
     intros.
-    destruct (ge_dec x N); trivial.
+    destruct (Compare_dec.ge_dec x N); trivial.
     apply Compare_dec.not_ge in n.
     assert (inn:In x gpre).
     { 
@@ -1047,7 +1047,7 @@ Proof.
   } 
   pose (nn:=List.list_max l2).
   destruct (list_max_le l2 nn) as [l2_upper _].
-  specialize (l2_upper (le_refl _)).
+  specialize (l2_upper (Nat.le_refl _)).
   assert (incl1:incl l2 (seq N (S nn-N))).
   {
     intros ? inn.
@@ -1099,7 +1099,7 @@ Proof.
 
   rewrite map_map.
   specialize (N2_lt nn (max N1 N2))%nat.
-  cut_to N2_lt.
+  cut_to N2_lt; try lia.
   - unfold R_dist in N2_lt.
     repeat rewrite sum_f_R0_sum_f_R0' in N2_lt.
     repeat rewrite sum_f_R0'_list_sum in N2_lt.
@@ -1115,11 +1115,7 @@ Proof.
         apply in_map_iff in H.
         destruct H as [?[??]]; subst.
         apply Rabs_pos.
-    + apply le_plus_minus_r.
-      lia.
-  - red.
-    transitivity N; lia.
-  - lia.
+    + lia.
 Qed.
 
 Corollary infinite_sum'_pos_perm (g:nat->nat) (f:nat -> R) l:
@@ -1349,7 +1345,7 @@ Section Sequences.
     destruct H.
     exists (Rmax ((Rabs x)+1) (Rmax_list (map (fun n => Rabs (f n)) (seq 0 x0)))).
     intros.
-    destruct (dec_le x0 n).
+    destruct (Compare_dec.dec_le x0 n).
     - specialize (H n H1).
       apply Rle_trans with (r2 := Rabs x + 1).
       + simpl in H.
@@ -1862,7 +1858,7 @@ Qed.
      rewrite <-H2. simpl.
      do 2 rewrite <-sum_n_Reals.
      replace n with (S (pred n)) by lia.
-     rewrite sum_n_m_sum_n; try lia.
+     rewrite (@sum_n_m_sum_n R_AbelianGroup); try lia.
      reflexivity.
    Qed.
 
@@ -1882,7 +1878,7 @@ Qed.
      rewrite <-H2. simpl.
      do 2 rewrite <-sum_n_Reals.
      replace n with (S (pred n)) by lia.
-     rewrite sum_n_m_sum_n; try lia.
+     rewrite (@sum_n_m_sum_n R_AbelianGroup); try lia.
      reflexivity.
    Qed.
 
@@ -1894,7 +1890,7 @@ Qed.
                      Series (fun i => f (S m + i)%nat).
    Proof.
      intros.
-     destruct (lt_dec 0 n).
+     destruct (Compare_dec.lt_dec 0 n).
      - apply sum_n_m_Series1; trivial; lia.
      - assert (n=0)%nat by lia.
        setoid_rewrite H1.
@@ -1929,7 +1925,7 @@ Qed.
      apply Rmax_list_map_seq_lt_gen; try lia.
      intros.
      specialize (H0 (N+k)%nat n).
-     destruct (le_dec (N + k)%nat n).
+     destruct (Compare_dec.le_dec (N + k)%nat n).
      - apply H0; lia.
      - assert (n < N + k)%nat by lia.
        rewrite sum_n_m_zero; try lia.
@@ -1957,7 +1953,7 @@ Qed.
      apply Rmax_list_map_seq_lt_gen; try lia.
      intros.
      specialize (H0 (S (N + k)) (n - 1)%nat).
-     destruct (lt_dec (n-1)%nat (S (N + k))).
+     destruct (Compare_dec.lt_dec (n-1)%nat (S (N + k))).
      - rewrite sum_n_m_zero; try lia.
        unfold zero; simpl.
        cbn.
@@ -2306,7 +2302,7 @@ Section tails.
      {
        intros.
        unfold s.
-       destruct (lt_dec n m).
+       destruct (Compare_dec.lt_dec n m).
        - unfold sum_n.
          apply Rge_le.
          rewrite (sum_n_m_Chasles _ _ n); try lia.
@@ -2339,7 +2335,7 @@ Section tails.
        - unfold Rdiv.
          rewrite sum_n_m_ext with (b := (fun n : nat => scal (/ s (S N + k)%nat) (gamma n))).
          + rewrite sum_n_m_scal_l.
-           rewrite sum_n_m_sum_n; try lia.
+           rewrite (@sum_n_m_sum_n R_AbelianGroup); try lia.
            unfold s.
            unfold scal; simpl.
            unfold mult; simpl.
@@ -2387,7 +2383,8 @@ Section tails.
            rewrite sum_n_m_ext with (b := fun n => / s n * gamma n) by (intros; unfold Rdiv; now rewrite Rmult_comm).
            generalize (sum_n_m_sum_n (fun n : nat => / s n * gamma n) N (S N + k)); intros.
            cut_to H5; try lia.
-           rewrite H5.
+           eapply Rle_lt_trans; [right; apply H5 |].
+
            unfold minus; simpl.
            unfold plus, opp; simpl.
            rewrite Rabs_minus_sym in H3.
@@ -2396,7 +2393,7 @@ Section tails.
            unfold minus, plus, opp in H5; simpl in H5.
            unfold Rminus.
            replace (S N + k)%nat with (S (N + k))%nat by lia.
-           rewrite <- H5.
+           etransitivity; [right; symmetry; apply H5 |].
            apply Rle_ge.
            apply sum_n_m_pos.
            intros.
@@ -2457,7 +2454,7 @@ Section tails.
      sum_n (fun n0 : nat => X (n0 + S m)%nat) a.
    Proof.
      rewrite <-sum_n_m_shift.
-     rewrite sum_n_m_sum_n; try lia.
+     rewrite (@sum_n_m_sum_n R_AbelianGroup); try lia.
      reflexivity.
    Qed.
 
@@ -2517,7 +2514,7 @@ Section tails.
     cut_to H2; trivial.
     - destruct H2 as [rho [? ?]].
       assert (0 < 1) by lra.
-      exists (fun n => if (lt_dec n N) then (mkposreal _ H4) else rho (n - N)%nat).
+      exists (fun n => if (Compare_dec.lt_dec n N) then (mkposreal _ H4) else rho (n - N)%nat).
       split.
       + apply is_lim_seq_incr_n with (N := N).
         apply is_lim_seq_ext with (u := rho); trivial.

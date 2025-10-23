@@ -6,7 +6,7 @@ Require Import Coq.Reals.Rfunctions.
 Require Import Coq.Reals.Rprod Coq.Reals.ROrderedType.
 Require Import Ranalysis_reg.
 Require Import Coquelicot.Coquelicot.
-Require Import Lia Lra.
+Require Import ZArith Lia Lra.
 Require Import Reals.Integration.
 Require Import Coq.Reals.SeqProp.
 Require Import Rtrigo_def.
@@ -1615,7 +1615,7 @@ Proof.
   unfold Rpower.
   unfold ln.
   match_destr; try lra.
-  - elimtype False; try tauto; lra.
+  - exfalso; try tauto; lra.
   - rewrite Rmult_0_r.
     now rewrite exp_0.
 Qed.
@@ -1641,7 +1641,7 @@ Lemma Rpower_base_0 e : Rpower 0 e = 1.
 Proof.
   unfold Rpower, ln.
   match_destr.
-  - elimtype False; try tauto; lra.
+  - exfalso; try tauto; lra.
   - rewrite Rmult_0_r.
     now rewrite exp_0.
 Qed.
@@ -3371,7 +3371,7 @@ Section Rmax_list.
         (ex:exists x, In x l /\ P x) : {x | In x l /\ P x}.
   Proof.
     induction l; simpl.
-    - elimtype False.
+    - exfalso.
       destruct ex ; intuition.
     - destruct (dec a).
       + exists a ; eauto.
@@ -6652,7 +6652,7 @@ Section powerRZ.
     unfold proj1_sig.
     match_destr; match_destr.
     destruct (Z_le_gt_dec x x0); trivial.
-    elimtype False.
+    exfalso.
     assert (x0 <= x - 1)%Z by lia.
     assert (powerRZ base x0 <= powerRZ base (x-1)%Z).
     {

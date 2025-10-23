@@ -2797,7 +2797,7 @@ Section mct.
       destruct (Qs_between_Rbars _ _ r) as [a [b [age [ab blt]]]].
       specialize (H0 a b ab).
       destruct (is_finite_witness _ H0) as [nmax eqq].
-      elimtype False.
+      exfalso.
       unfold Rbar_rvlim in eqq.
 
       generalize (Elim_seq_incr_elem

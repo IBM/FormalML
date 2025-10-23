@@ -135,7 +135,7 @@ Section Cutting.
     List.firstn i (firstn j s) = List.firstn j (firstn i s).
   Proof.
     repeat rewrite firstn_firstn.
-    rewrite Min.min_comm.
+    rewrite PeanoNat.Nat.min_comm.
     trivial.
   Qed.
   

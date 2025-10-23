@@ -172,7 +172,7 @@ Proof.
   - intros.
     exists 0%nat; intros; lia.
   - intros HH.
-    specialize (IHN (fun x pf => P x (lt_S _ _ pf))).
+    specialize (IHN (fun x pf => P x (Nat.lt_lt_succ_r _ _ pf))).
     cut_to IHN.
     + simpl in IHN.
       specialize (HH N (Nat.lt_succ_diag_r _)).

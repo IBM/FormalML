@@ -2983,8 +2983,8 @@ Qed.
     - apply fst_rv.
     - generalize compose_rv; intros HH.
       cut (
-          RandomVariable (product_sa s (ivector_sa i)) (ivector_nth idx (lt_S_n idx n idx_lt) i)
-                         (ivector_nth idx (lt_S_n idx n idx_lt) ∘ snd)).
+          RandomVariable (product_sa s (ivector_sa i)) (ivector_nth idx (Nat.succ_lt_mono idx n idx_lt) i)
+                         (ivector_nth idx (Nat.succ_lt_mono idx n idx_lt) ∘ snd)).
       {
         apply RandomVariable_proper; try reflexivity.
         now intros [??].
@@ -3011,12 +3011,12 @@ Qed.
    Proof.
      intros.
      destruct n; try lia.
-     assert (RandomVariable (ivector_sa (ivector_const (S n) σ)) σ (fun x : ivector T (S n) => ivector_nth idx2 (lt_S_n idx2 n pf2) (ivector_tl x))).
+     assert (RandomVariable (ivector_sa (ivector_const (S n) σ)) σ (fun x : ivector T (S n) => ivector_nth idx2 (Nat.succ_lt_mono idx2 n pf2) (ivector_tl x))).
      {
        generalize (compose_rv (dom1 := (ivector_sa (ivector_const (S n) σ)))
                               (dom2 := (ivector_sa (ivector_const n σ)))
                               ivector_tl
-                              (fun x => ivector_nth idx2 (lt_S_n idx2 n pf2) x)); intros.
+                              (fun x => ivector_nth idx2 (Nat.succ_lt_mono idx2 n pf2) x)); intros.
        apply H; typeclasses eauto.
      }
      assert (independent_rvs (ivector_ps ivec_ps) σ σ ivector_hd
@@ -3025,7 +3025,7 @@ Qed.
        generalize (independent_rv_compose 
                      (ivector_ps ivec_ps) σ (ivector_sa (ivector_const n σ)) σ σ
                      ivector_hd ivector_tl
-                     (fun x => x) (fun x => ivector_nth idx2 (lt_S_n idx2 n pf2) x)
+                     (fun x => x) (fun x => ivector_nth idx2 (Nat.succ_lt_mono idx2 n pf2) x)
                   ); intros.
        cut_to H0.
        - revert H0.
@@ -3059,14 +3059,14 @@ Qed.
       destruct idx2; [lia |].
       destruct idx1.
       + apply (ivector_nth_independent_rvs_0 (n:=S n) (p,i) idx2).
-      + generalize (IHn i idx1 idx2 (lt_S_n idx1 n pf1) (lt_S_n idx2 n pf2) (lt_S_n idx1 idx2 H)).
+      + generalize (IHn i idx1 idx2 (Nat.succ_lt_mono idx1 n pf1) (Nat.succ_lt_mono idx2 n pf2) (Nat.succ_lt_mono idx1 idx2 H)).
         unfold independent_rvs, independent_events; intros HH A B.
         specialize (HH A B).
         etransitivity; [| etransitivity; [apply HH |]].
         * generalize (product_sa_product p (ivector_ps i)
                                          Ω
-                                         (rv_preimage (fun tl => ivector_nth idx1 (lt_S_n idx1 n pf1) tl) A
-                                                      ∩ rv_preimage (fun tl => ivector_nth idx2 (lt_S_n idx2 n pf2) tl) B)); intros HH2.
+                                         (rv_preimage (fun tl => ivector_nth idx1 (Nat.succ_lt_mono idx1 n pf1) tl) A
+                                                      ∩ rv_preimage (fun tl => ivector_nth idx2 (Nat.succ_lt_mono idx2 n pf2) tl) B)); intros HH2.
         rewrite ps_one, Rmult_1_l in HH2.
         rewrite <- HH2.
         apply ps_proper; intros [??]; simpl.
@@ -3074,14 +3074,14 @@ Qed.
         * { f_equal.
             - generalize (product_sa_product p (ivector_ps i)
                                              Ω
-                                             (rv_preimage (fun tl => ivector_nth idx1 (lt_S_n idx1 n pf1) tl) A)); intros HH2.
+                                             (rv_preimage (fun tl => ivector_nth idx1 (Nat.succ_lt_mono idx1 n pf1) tl) A)); intros HH2.
               rewrite ps_one, Rmult_1_l in HH2.
               rewrite <- HH2.
               apply ps_proper; intros [??]; simpl.
               unfold pre_Ω, event_preimage, pre_event_inter; tauto.
             - generalize (product_sa_product p (ivector_ps i)
                                              Ω
-                                             (rv_preimage (fun tl => ivector_nth idx2 (lt_S_n idx2 n pf2) tl) B)); intros HH2.
+                                             (rv_preimage (fun tl => ivector_nth idx2 (Nat.succ_lt_mono idx2 n pf2) tl) B)); intros HH2.
               rewrite ps_one, Rmult_1_l in HH2.
               rewrite <- HH2.
               apply ps_proper; intros [??]; simpl.

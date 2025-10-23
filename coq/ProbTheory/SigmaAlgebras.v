@@ -1635,8 +1635,8 @@ Qed.
         reflexivity.
   Qed.
 
-  Lemma lt_S_n_S i1 n pf :
-    (Lt.lt_S_n i1 n (Lt.lt_n_S i1 n pf)) = pf.
+  Lemma Nat.succ_lt_mono_S i1 n pf :
+    (Lt.Nat.succ_lt_mono i1 n (Lt.lt_n_S i1 n pf)) = pf.
   Proof.
     apply digit_pf_irrel.
   Qed.
@@ -1669,7 +1669,7 @@ Qed.
           -- apply H0; intros.
              destruct x0.
              specialize (HH (S i0) (Lt.lt_n_S _ _ pf)); simpl in *.
-             now rewrite lt_S_n_S in HH.
+             now rewrite Nat.succ_lt_mono_S in HH.
   Qed.
 
   Lemma ivector_rectangles_generate_sa {n} {T} 
@@ -1772,7 +1772,7 @@ Qed.
           -- intros.
              specialize (H1 (S i1) (Lt.lt_n_S i1 n pf)).
              simpl in H1.
-             now rewrite lt_S_n_S in H1.
+             now rewrite Nat.succ_lt_mono_S in H1.
           -- intros ?.
              now rewrite <- ivector_Forall2_nth_iff.
         * rewrite H2.
@@ -1786,7 +1786,7 @@ Qed.
              intros.
              specialize (H4 (S i2) (Lt.lt_n_S i2 n pf)).
              simpl in H4.
-             now rewrite lt_S_n_S in H4.             
+             now rewrite Nat.succ_lt_mono_S in H4.             
           -- destruct H4.
              rewrite <- ivector_Forall2_nth_iff in H5.
              destruct i2.

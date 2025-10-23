@@ -1,5 +1,5 @@
 Require Import ClassicalDescription.
-Require Import FinFun List EquivDec FunctionalExtensionality Lia Eqdep_dec.
+Require Import Arith FinFun List EquivDec FunctionalExtensionality Lia Eqdep_dec.
 
 Require Import LibUtils.
 Require Import Isomorphism ListAdd BasicUtils.
@@ -202,13 +202,12 @@ Lemma fold_right_add_const {A:Type} c (l:list A) :
 Proof.
   induction l; simpl; trivial.
   rewrite IHl; simpl.
-  rewrite NPeano.Nat.mul_succ_r.
-  now rewrite NPeano.Nat.add_comm.
+  lia.
 Qed.
 
 Lemma fold_right_mult_const {A:Type} c (l:list A) :
   fold_right Nat.mul 1
-    (map (fun _  => c) l) =  NPeano.Nat.pow c (length l).
+    (map (fun _  => c) l) =  Nat.pow c (length l).
 Proof.
   induction l; simpl; trivial.
   now rewrite IHl; simpl.
@@ -232,12 +231,12 @@ Proof.
           (FiniteType_fun_dep_elems_aux fin_elms0 (fun (x0 : A) (_ : In_strong x0 fin_elms0) => fin_elms))))
     by (intros; now rewrite map_length).
   rewrite fold_right_add_const.
-  rewrite NPeano.Nat.mul_comm.
+  rewrite Nat.mul_comm.
   now rewrite <- IHfin_elms0.
 Qed.
 
 Lemma FiniteType_fun_size {A:Type} {dec:EqDec A eq} {B:Type} (finA:FiniteType A) (finB:FiniteType B)
-  : length (@fin_elms _ (FiniteType_fun finA finB)) = NPeano.pow (length (@fin_elms _ finB)) (length (@fin_elms _ finA)).
+  : length (@fin_elms _ (FiniteType_fun finA finB)) = Nat.pow (length (@fin_elms _ finB)) (length (@fin_elms _ finA)).
 Proof.
   unfold FiniteType_fun.
   rewrite FiniteType_fun_dep_size.
@@ -507,7 +506,7 @@ Qed.
       intros index eqq.
       match_destr_in eqq.
       - invcs eqq.
-        rewrite PeanoNat.Nat.sub_diag; simpl.
+        rewrite Nat.sub_diag; simpl.
         congruence.
       - specialize (IHl _ eqq).
         generalize (find_index_aux_bounds eqq); intros le1.
@@ -523,7 +522,7 @@ Qed.
     Proof.
       intros HH.
       specialize (find_index_aux_correct HH).
-      now rewrite PeanoNat.Nat.sub_0_r.
+      now rewrite Nat.sub_0_r.
     Qed.      
 
     Lemma find_index_aux_first {l:list A} {a} {index:nat} {n} :
@@ -537,7 +536,7 @@ Qed.
       intros index eqq.
       match_destr_in eqq.
       - invcs eqq.
-        rewrite PeanoNat.Nat.sub_diag; simpl.
+        rewrite Nat.sub_diag; simpl.
         lia.
       - specialize (IHl _ eqq).
         intros [|]; simpl; intros eqq2.
@@ -768,10 +767,11 @@ Section countableType.
     (find_index' x l = length l)%nat.
   Proof.
     generalize (find_index'_in x l); intros.
-    destruct (Lt.le_lt_or_eq _ _ (find_index'_le x l))
-    ; firstorder.
-    - lia.
-    - intros inn.
+    destruct (proj1 (Nat.lt_eq_cases (find_index' x l) (length l))).
+    - apply find_index'_le.
+    - firstorder; lia.
+    - firstorder.
+      intros inn.
       apply H in inn.
       lia.
   Qed.

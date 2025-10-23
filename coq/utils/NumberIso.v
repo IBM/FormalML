@@ -1,4 +1,4 @@
-Require Import BinNums BinNat Nat List.
+Require Import ZArith BinNums BinNat Nat List.
 Require Import Lia.
 
 Require Import LibUtils Isomorphism PairEncoding.
