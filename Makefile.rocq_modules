@@ -115,17 +115,10 @@ QLEARN = \
 	Tsitsiklis \
 	jaakkola_vector
 
-FHE = \
-      nth_root \
-      encode \
-      encrypt \
-      zp_prim_root \
-      arith
-
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	$(addprefix CertRL/LM/,$(ELFIC_UTILS)) \
 	$(addprefix utils/,$(UTILS)) \
 	$(addprefix ProbTheory/,$(PROB_THEORY)) \
 	$(addprefix CertRL/,$(CERTRL)) \
 	$(addprefix QLearn/,$(QLEARN)) \
-	$(addprefix FHE/,$(FHE))
+
