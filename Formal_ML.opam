@@ -13,8 +13,6 @@ depends: [
   "rocq-stdlib"
   "rocq-mathcomp-ssreflect"
   "coq-coquelicot"
-  "coq-flocq" {>= "4.0.0" }
-  "coq-interval" {>= "4.8.0"}
   "coq-ext-lib" {<= "1.0.0"}
   "ocamlbuild"
   "base64"

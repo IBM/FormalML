@@ -30,7 +30,6 @@ UTILS = BasicUtils \
 	ClassicUtils \
 	CoquelicotAdd \
 	ELim_Seq \
-	ExtrFloatishIEEE \
 	improper_integrals \
 	Isomorphism \
 	ListAdd \
@@ -49,14 +48,7 @@ UTILS = BasicUtils \
 	Vector \
 	PushNeg \
 	DVector \
-	Utils \
-	Floatish/FloatishDef \
-	Floatish/FloatishOps \
-	Floatish/FloatishRealOps \
-	Floatish/FloatishInterval \
-	Floatish/FloatishIEEE \
-	Floatish/FloatishReal \
-	Floatish
+	Utils 
 
 CERTRL = pmf_monad \
 	qvalues \
