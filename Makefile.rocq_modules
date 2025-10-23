@@ -46,7 +46,6 @@ UTILS = BasicUtils \
 	StreamAdd \
 	StreamLimits \
 	Sums \
-	nvector \
 	Vector \
 	PushNeg \
 	DVector \
@@ -58,12 +57,6 @@ UTILS = BasicUtils \
 	Floatish/FloatishIEEE \
 	Floatish/FloatishReal \
 	Floatish
-
-NEURAL_NETWORKS = AxiomaticNormedRealVectorSpace \
-		DefinedFunctions \
-		derivlemmas \
-		Gen_NN
-		
 
 CERTRL = pmf_monad \
 	qvalues \
@@ -132,7 +125,6 @@ FHE = \
 MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	$(addprefix CertRL/LM/,$(ELFIC_UTILS)) \
 	$(addprefix utils/,$(UTILS)) \
-	$(addprefix NeuralNetworks/,$(NEURAL_NETWORKS)) \
 	$(addprefix ProbTheory/,$(PROB_THEORY)) \
 	$(addprefix CertRL/,$(CERTRL)) \
 	$(addprefix QLearn/,$(QLEARN)) \
