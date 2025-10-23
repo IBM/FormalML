@@ -500,7 +500,7 @@ Section martingale.
              FiniteExpectation prts (Y s) <= FiniteExpectation prts (Y t).
   Proof.
     intros s t sltt.
-    destruct (le_lt_or_eq _ _ sltt).
+    destruct (proj1 (Nat.lt_eq_cases _ _) sltt).
     - eapply is_sub_martingale_lt in mart; try eapply H.
       assert (rv1:RandomVariable dom borel_sa (FiniteConditionalExpectation prts (sub s) (Y t))).
       {
@@ -546,7 +546,7 @@ Section martingale.
     cut (forall s t, (s <= t)%nat -> FiniteExpectation prts (Y s) = FiniteExpectation prts (Y t)).
     {
       intros.
-      destruct (NPeano.Nat.le_ge_cases s t).
+      destruct (Nat.le_ge_cases s t).
       - now apply H.
       - symmetry; now apply H.
     } 
@@ -876,7 +876,7 @@ Section martingale.
                                           end}
                   with
                   | None => right (fun x => x)
-                  | Some a => le_dec a n
+                  | Some a => Compare_dec.le_dec a n
                 end).
 
 
@@ -931,7 +931,7 @@ Section martingale.
           split; intros HH2.
           * invcs HH2.
             reflexivity.
-          * apply le_n_0_eq in HH2; congruence.
+          * apply Nat.le_0_r in HH2; congruence.
         + generalize (HH (S n)); intros HH1.
           generalize (HH n); intros HH2.
           apply sa_complement in HH2.
@@ -954,7 +954,7 @@ Section martingale.
       unfold stopping_time_pre_event, const.
       apply sa_sigma_const.
       destruct c.
-      - destruct (le_dec n0 n); try tauto.
+      - destruct (Compare_dec.le_dec n0 n); try tauto.
       - tauto.
     Qed.
     
@@ -1341,14 +1341,14 @@ Section martingale.
         intros ?.
         unfold pre_event_union, pre_event_complement.
         split; intros.
-        - destruct (le_dec n0 n1); eauto.
+        - destruct (Compare_dec.le_dec n0 n1); eauto.
         - destruct H; tauto.
       }
       rewrite eqq2; clear eqq2.
       apply sa_union.
       - apply sa_complement.
         apply sa_sigma_const.
-        destruct (le_dec n0 n1); tauto.
+        destruct (Compare_dec.le_dec n0 n1); tauto.
       - apply stop'.
     Qed.
     
@@ -1724,13 +1724,13 @@ Section martingale.
     unfold rvsum.
     destruct k; simpl.
     - lra.
-    - generalize (@Hierarchy.sum_n_plus Hierarchy.R_AbelianGroup
+    - generalize (@Hierarchy.sum_n_plus Hierarchy.R_AbelianMonoid
                  (fun n0 : nat => H1 (S n0) a * (X (S n0) a + -1 * X n0 a))
                  (fun n0 : nat => H2 (S n0) a * (X (S n0) a + -1 * X n0 a))
                  k); intros eqq.
       unfold Hierarchy.plus in eqq; simpl in eqq.
       rewrite <- eqq.
-      apply (@Hierarchy.sum_n_ext Hierarchy.R_AbelianGroup); intros.
+      apply (@Hierarchy.sum_n_ext Hierarchy.R_AbelianMonoid); intros.
       lra.
   Qed.
 
@@ -1741,7 +1741,7 @@ Section martingale.
     unfold martingale_transform.
     destruct k; trivial.
     unfold rvsum; simpl.
-    apply (@Hierarchy.sum_n_ext Hierarchy.R_AbelianGroup); intros.
+    apply (@Hierarchy.sum_n_ext Hierarchy.R_AbelianMonoid); intros.
     rv_unfold.
     now rewrite eqq1, eqq2.
   Qed.
@@ -1797,7 +1797,7 @@ Section martingale.
         * destruct HH as [??].
           f_equal.
           apply antisymmetry
-          ; apply not_lt
+          ; apply Nat.le_ngt
           ; intros HH.
           -- eapply classic_min_of_some_first in H; eauto.
           -- specialize (H1 _ HH).
@@ -1811,7 +1811,7 @@ Section martingale.
     - apply sa_inter.
       + apply adaptX.
       + apply sa_pre_countable_inter; intros.
-        destruct (lt_dec n0 n).
+        destruct (Compare_dec.lt_dec n0 n).
         * apply (sa_proper _ (fun x => ~ B (X n0 x))).
           -- intros ?; tauto.
           -- apply sa_complement.
@@ -1872,7 +1872,7 @@ Section martingale.
              f_equal; lia.
       + apply sa_countable_union; intros.
         unfold IsStoppingTime, stopping_time_pre_event in IHn.
-        * destruct (lt_dec n0 a).
+        * destruct (Compare_dec.lt_dec n0 a).
           -- apply sa_inter.
              ++ apply sa_sigma_const.
                 now left.
@@ -1926,7 +1926,7 @@ Section martingale.
         + split; [| congruence].
           intros [?[?[??]]]; congruence.
       - apply sa_countable_union; intros old.
-        destruct (le_dec old n).
+        destruct (Compare_dec.le_dec old n).
         + apply sa_inter.
           * eapply sa_proper; try eapply sa_all.
             firstorder.
@@ -1972,7 +1972,7 @@ Section martingale.
       shelve.
       {
         intros ?.
-        rewrite plus_0_r.
+        rewrite Nat.add_0_r.
         reflexivity.
       }
       {
@@ -1980,7 +1980,7 @@ Section martingale.
       }
       Unshelve.
       match_destr.
-      now rewrite plus_0_r.
+      now rewrite Nat.add_0_r.
     Qed.
     
     Lemma hitting_time_from_is_stop
@@ -1992,7 +1992,7 @@ Section martingale.
     unfold hitting_time_from, hitting_time.
     intros ?.
     unfold stopping_time_pre_event.
-    destruct (le_dec old n).
+    destruct (Compare_dec.le_dec old n).
     - apply (sa_proper _ (fun x => B (X (n)%nat x) /\
                                 forall k, (old <= k < n)%nat -> ~ B (X k x))).
       {
@@ -2002,7 +2002,7 @@ Section martingale.
           + destruct HH as [??].
             f_equal.
             apply antisymmetry
-            ; apply not_lt
+            ; apply Nat.le_ngt
             ; intros HH.
             * apply (classic_min_of_some_first _ _ H (n-old)); [lia |].
               now replace (n - old + old)%nat with n by lia.
@@ -2026,9 +2026,9 @@ Section martingale.
       apply sa_inter.
       + apply adaptX.
       + apply sa_pre_countable_inter; intros.
-        destruct (le_dec old n0).
+        destruct (Compare_dec.le_dec old n0).
         {
-          destruct (lt_dec n0 n).
+          destruct (Compare_dec.lt_dec n0 n).
           - apply (sa_proper _ (fun x => ~ B (X n0 x))).
             + intros ?; tauto.
             + apply sa_complement.

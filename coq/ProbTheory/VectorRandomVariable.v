@@ -354,7 +354,7 @@ Section vector_ops.
   Qed.
 
   Lemma vecrvsum_rvsum {n} (f : Ts -> vector R n) :
-    rv_eq (vecrvsum f) (rvsum (fun i x => match lt_dec i n with
+    rv_eq (vecrvsum f) (rvsum (fun i x => match Compare_dec.lt_dec i n with
                                         | left pf => vector_nth i pf (f x)
                                         | right _ => 0%R
                                         end)
@@ -365,8 +365,8 @@ Section vector_ops.
     destruct (f a); simpl.
     subst.
     rewrite list_sum_sum_n.
-    apply (@Hierarchy.sum_n_ext Hierarchy.R_AbelianGroup); intros.
-    destruct (lt_dec n (length x)).
+    apply (@Hierarchy.sum_n_ext Hierarchy.R_AbelianMonoid); intros.
+    destruct (Compare_dec.lt_dec n (length x)).
     - unfold vector_nth.
       match goal with
         [|- context [proj1_sig ?x]] => destruct x
@@ -1800,7 +1800,7 @@ Section real_pullback.
       rewrite <- vector_Forall2_nth_iff.
       intros.
       rewrite vector_nth_const.
-      destruct (lt_dec i n).
+      destruct (Compare_dec.lt_dec i n).
       - rewrite vector_nth_add_to_end_prefix with (pf2 := l).
         now rewrite vector_nth_const.
       - assert (i = n)%nat by lia.
@@ -1911,7 +1911,7 @@ Section real_pullback.
     rewrite <- vector_Forall2_nth_iff.
     intros.
     rewrite vector_nth_const.
-    destruct (lt_dec i n).
+    destruct (Compare_dec.lt_dec i n).
     - rewrite vector_nth_add_to_end_prefix with (pf2 := l).
       now rewrite vector_nth_const.
     - assert (i = n)%nat by lia.
@@ -2012,7 +2012,7 @@ Section real_pullback.
           exists (vector_add_to_end x0 (vector_const pre_Ω n)).
           split; intros.
           -- rewrite vector_nth_map, vector_nth_const.
-             destruct (lt_dec i n).
+             destruct (Compare_dec.lt_dec i n).
              ++ rewrite vector_nth_add_to_end_prefix with (pf2 := l).
                 rewrite vector_nth_const.
                 apply sa_all.
@@ -2021,7 +2021,7 @@ Section real_pullback.
                 now rewrite vector_nth_add_to_end_suffix.
           -- intro z.
              split; intros.
-             ++ destruct (lt_dec i n).
+             ++ destruct (Compare_dec.lt_dec i n).
                 ** rewrite vector_nth_add_to_end_prefix with (pf2 := l).
                    rewrite vector_nth_const.
                    apply I.
@@ -2145,7 +2145,7 @@ Section almost.
         apply all_almost; intros ??.
         now apply vector_Forall2_nth_iff.
       + intros.
-        apply lt_dec.
+        apply Compare_dec.lt_dec.
       + unfold vecrvnth.
         intros.
         now repeat rewrite (vector_nth_ext _ _ pf2 pf1).

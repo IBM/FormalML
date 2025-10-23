@@ -372,7 +372,7 @@ Lemma Dvoretzky_rel (n:nat) (theta:R) (X Y : nat -> Ts -> R)
     part_prod_n a n m <= part_prod_n b n m.
   Proof.
     intros.
-    destruct (le_dec n m).
+    destruct (Compare_dec.le_dec n m).
     - pose (h := (m - n)%nat).
       replace (m) with (n + h)%nat by lia.
       apply part_prod_n_le_h.
@@ -2829,7 +2829,7 @@ Theorem Dvoretzky_DS_scale_prop
        (m n i:nat) pf1 pf2 ts :
    vector_nth i pf1 (DS_Xn_v X0 T Y m ts) = vector_nth i pf2 (DS_Xn_v X0 T Y n ts).
  Proof.
-   destruct (le_dec n m).
+   destruct (Compare_dec.le_dec n m).
    - now apply DS_Xn_v_same_prefix_le_helper.
    - symmetry.
      apply DS_Xn_v_same_prefix_le_helper.

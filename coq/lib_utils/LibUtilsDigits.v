@@ -687,7 +687,7 @@ Section Digits.
     Program Definition char_to_digit (a:ascii) : option digit
       := match char_to_digit_aux a with
          | Some n =>
-           match lt_dec n base with
+           match Compare_dec.lt_dec n base with
            | left pf => Some (exist _ n pf)
            | right _ => None
            end
@@ -848,7 +848,7 @@ Section Digits.
     Proof.
       unfold char_to_digit.
       simpl.
-      destruct (lt_dec 0 base).
+      destruct (Compare_dec.lt_dec 0 base).
       - f_equal.
         apply digit_ext.
         simpl; trivial.
@@ -914,7 +914,7 @@ Section Digits.
       destruct (ascii_dec a "0"%char).
       - subst.
         unfold char_to_digit in eqq; simpl in eqq.
-        destruct (lt_dec 0 base); [ | lia].
+        destruct (Compare_dec.lt_dec 0 base); [ | lia].
         inversion eqq; clear eqq; subst.
         case_eq (string_to_digits s)
         ; [intros ? eqq2 | intros eqq2]
@@ -1268,21 +1268,21 @@ End Digits.
 Section Bases.
  
   Definition lt_decider (a b:nat) :
-    match lt_dec a b with
+    match Compare_dec.lt_dec a b with
     | left pf => lt a b
     | right _ => True
     end.
   Proof.
-    destruct (lt_dec); trivial.
+    destruct (Compare_dec.lt_dec); trivial.
   Defined.
 
   Definition le_decider (a b:nat) :
-    match le_dec a b with
+    match Compare_dec.le_dec a b with
     | left pf => le a b
     | right _ => True
     end.
   Proof.
-    destruct (le_dec); trivial.
+    destruct (Compare_dec.le_dec); trivial.
   Defined.
 
   (** ** Base 2 *)

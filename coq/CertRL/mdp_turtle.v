@@ -33,14 +33,14 @@ Section turtle.
   Definition turtle_state max_x max_y :=  prod ({x:nat | x < max_x}%nat) ({y:nat | y < max_y}%nat).
 
   (* Convenience method for creating a state with known in-bounds constant co-ordinates *)
-  Definition make_turtle_state max_x max_y x y : if lt_dec x max_x
-                                                 then if lt_dec y max_y
+  Definition make_turtle_state max_x max_y x y : if Compare_dec.lt_dec x max_x
+                                                 then if Compare_dec.lt_dec y max_y
                                                       then turtle_state max_x max_y
                                                       else True
                                                  else True.
   Proof.
-    destruct (lt_dec x max_x).
-    - destruct (lt_dec y max_y).
+    destruct (Compare_dec.lt_dec x max_x).
+    - destruct (Compare_dec.lt_dec y max_y).
       + apply pair.
         * exists x; trivial.
         * exists y; trivial.
@@ -126,9 +126,9 @@ Section turtle.
     := (let '(x,y) := s in
         match a with
         | Up => if proj1_sig y == 0 then None else Some (x, y-1)
-        | Down => if lt_dec (y+1) max_y then Some (x, y+1) else None
+        | Down => if Compare_dec.lt_dec (y+1) max_y then Some (x, y+1) else None
         | Left => if proj1_sig x == 0 then None else Some (x-1, y)
-        | Right => if lt_dec (x+1) max_x then Some (x+1, y) else None
+        | Right => if Compare_dec.lt_dec (x+1) max_x then Some (x+1, y) else None
         end)%nat.
   Next Obligation.
     lia.

@@ -32,7 +32,7 @@ Definition sum_of_probs_equals {T:Type} {σ:SigmaAlgebra T}
 Class ProbSpace {T:Type} (σ:SigmaAlgebra T) :=
   {
     ps_P : event σ -> R;
-    ps_proper :> Proper (event_equiv ==> eq) ps_P ;
+    ps_proper ::> Proper (event_equiv ==> eq) ps_P ;
     
     ps_countable_disjoint_union (collection: nat -> event σ) :
       (* Assume: collection is a subset of Sigma and its elements are pairwise disjoint. *)
@@ -292,7 +292,7 @@ Qed.
 
 Definition make_collection_disjoint {T:Type} {σ:SigmaAlgebra T} (coll:nat->event σ) : nat -> event σ
   := fun x => coll x \ (union_of_collection (fun y =>
-                                               if lt_dec y x
+                                               if Compare_dec.lt_dec y x
                                                then coll y
                                                else ∅)).
 
@@ -328,13 +328,13 @@ Proof.
     intros y ylt cy.
     apply H2.
     exists y.
-    destruct (lt_dec y x); intuition.
+    destruct (Compare_dec.lt_dec y x); intuition.
   - intros [ce fce].
     unfold make_collection_disjoint.
     split; trivial.
     unfold union_of_collection.
     intros [n Hn].
-    destruct (lt_dec n x); trivial.
+    destruct (Compare_dec.lt_dec n x); trivial.
     eapply fce; eauto.
 Qed.
   
@@ -346,7 +346,7 @@ Proof.
   apply make_collection_disjoint_in in e2.
   destruct e1 as [H11 H12].
   destruct e2 as [H21 H22].
-  destruct (not_eq _ _ xyneq) as [xlt|ylt].
+  destruct (Compare_dec.not_eq _ _ xyneq) as [xlt|ylt].
   - eapply H22; eauto.
   - eapply H12; eauto.
 Qed.
@@ -395,7 +395,7 @@ Section classic.
       split; trivial.
       unfold union_of_collection.
       intros [nn Hnn].
-      destruct (lt_dec nn m); [ | tauto].
+      destruct (Compare_dec.lt_dec nn m); [ | tauto].
       specialize (H0 _ Hnn).
       lia.
     - apply make_collection_disjoint_in in Hn.
@@ -478,7 +478,7 @@ Section ascending.
      replace m with (0%nat) by lia.
      reflexivity.
    - intros.
-     apply le_lt_or_eq in H.
+     apply Nat.lt_eq_cases in H.
      destruct H.
      + red in asc.
        rewrite <- asc.
@@ -522,7 +522,7 @@ Section ascending.
        * now apply make_collection_disjoint_sub.
      + red.
        unfold make_collection_disjoint.
-       destruct (classic (proj1_sig (union_of_collection (fun y : nat => if lt_dec y (S n) then En y else event_none)) a)).
+       destruct (classic (proj1_sig (union_of_collection (fun y : nat => if Compare_dec.lt_dec y (S n) then En y else event_none)) a)).
        * destruct H as [x HH2].
          match_destr_in HH2; [ | red in HH2; tauto].
          left.

@@ -469,8 +469,8 @@ Qed.
     Record LpRRV : Type
       := LpRRV_of {
              LpRRV_rv_X :> Ts -> R
-             ; LpRRV_rv :> RandomVariable dom borel_sa LpRRV_rv_X
-             ; LpRRV_lp :> IsLp p LpRRV_rv_X
+             ; LpRRV_rv ::> RandomVariable dom borel_sa LpRRV_rv_X
+             ; LpRRV_lp ::> IsLp p LpRRV_rv_X
            }.
     
     Global Existing Instance LpRRV_rv.
@@ -886,13 +886,19 @@ Qed.
         apply LpRRV_plus_inv.
       Qed.
       
-      Definition LpRRVq_AbelianGroup_mixin : AbelianGroup.mixin_of (LpRRVq p)
-        := AbelianGroup.Mixin (LpRRVq p) LpRRVq_plus LpRRVq_opp LpRRVq_zero
+      Definition LpRRVq_AbelianMonoid_mixin : AbelianMonoid.mixin_of (LpRRVq p)
+        := AbelianMonoid.Mixin (LpRRVq p) LpRRVq_plus LpRRVq_zero
                               LpRRVq_plus_comm LpRRVq_plus_assoc
-                              LpRRVq_plus_zero LpRRVq_plus_inv.
+                              LpRRVq_plus_zero.
+
+      Canonical LpRRVq_AbelianMonoid :=
+        AbelianMonoid.Pack (LpRRVq p) LpRRVq_AbelianMonoid_mixin (LpRRVq p).
+      
+      Definition LpRRVq_AbelianGroup_mixin : AbelianGroup.mixin_of LpRRVq_AbelianMonoid
+        := AbelianGroup.Mixin LpRRVq_AbelianMonoid LpRRVq_opp LpRRVq_plus_inv.
 
       Canonical LpRRVq_AbelianGroup :=
-        AbelianGroup.Pack (LpRRVq p) LpRRVq_AbelianGroup_mixin (LpRRVq p).
+        AbelianGroup.Pack (LpRRVq p) (AbelianGroup.Class _ (LpRRVq_AbelianMonoid_mixin) LpRRVq_AbelianGroup_mixin) (LpRRVq p).
 
       Ltac LpRRVq_simpl ::=
         repeat match goal with
@@ -938,7 +944,7 @@ Qed.
                              LpRRVq_scale_plus_l LpRRVq_scale_plus_r.
 
       Canonical LpRRVq_ModuleSpace :=
-        ModuleSpace.Pack R_Ring (LpRRVq p) (ModuleSpace.Class R_Ring (LpRRVq p) LpRRVq_AbelianGroup_mixin LpRRVq_ModuleSpace_mixin) (LpRRVq p).
+        ModuleSpace.Pack R_Ring (LpRRVq p) (ModuleSpace.Class R_Ring (LpRRVq p) _ LpRRVq_ModuleSpace_mixin) (LpRRVq p).
 
     End quotnneg.
   End packednonneg.
@@ -1409,7 +1415,7 @@ Qed.
         sum_n_m (fun k => pow c k) (S n) m = (pow c (S m) - pow c (S n))/(c-1).
       Proof.
         intros.
-        rewrite sum_n_m_sum_n; [|lia].
+        rewrite (@sum_n_m_sum_n R_AbelianGroup); [|lia].
         rewrite sum_geom; trivial.
         rewrite sum_geom; trivial.
         unfold minus, plus, opp; simpl.

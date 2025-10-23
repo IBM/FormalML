@@ -2762,7 +2762,7 @@ Section lim_seq_sup_seq.
       simpl.
       split; intros.
       + destruct H1.
-        destruct (le_dec x n).
+        destruct (Compare_dec.le_dec x n).
         * now apply H1.
         * assert (n <= x)%nat by lia.
           apply Rle_lt_trans with (r2 := f x).
@@ -2782,7 +2782,7 @@ Section lim_seq_sup_seq.
       unfold is_sup_seq; simpl; intros.
       specialize (H0 M).
       destruct H0 as [N H0].
-      destruct (le_dec N n).
+      destruct (Compare_dec.le_dec N n).
       + now apply H0.
       + assert (n <= N)%nat by lia.
         apply Rle_lt_trans with (r2 := f N).
@@ -4741,7 +4741,7 @@ Proof.
   destruct (Hx posreal_one).
   destruct (fin_seq_bounded x x0).
   exists (Rmax x1 ((Rabs c)+1)); intros.
-  destruct (lt_dec n x0).
+  destruct (Compare_dec.lt_dec n x0).
   - eapply Rle_trans.
     + apply H0; lia.
     + apply Rmax_l.
@@ -4905,7 +4905,7 @@ Qed.
 Lemma sum_n_sum_f_clipped (f : nat -> R) (N : nat) :
   forall (n:nat),
     (n >= N)%nat ->
-    sum_n f N = sum_n (fun j => if (le_dec j N) then (f j) else 0) n.
+    sum_n f N = sum_n (fun j => if (Compare_dec.le_dec j N) then (f j) else 0) n.
 Proof.
   intros.
   replace (n) with (N + (n - N))%nat by lia.
@@ -6820,7 +6820,7 @@ Qed.
     Proof.
       induction l; try now simpl.
       simpl.
-      destruct (lt_dec 0 (length l)).
+      destruct (Compare_dec.lt_dec 0 (length l)).
       + rewrite prod_f_R0_succ; try assumption.
         rewrite IHl. rewrite Rmult_assoc.
         f_equal. rewrite prod_f_R0_pred; try assumption.
@@ -6894,7 +6894,7 @@ Qed.
       prod_f_R0 f n2 = 0.
     Proof.
       intros.
-      destruct (lt_dec n1 n2).
+      destruct (Compare_dec.lt_dec n1 n2).
       - rewrite prod_SO_split with (k := n1) (n := n2); trivial.
         rewrite prod_f_R0_n; trivial.
         apply Rmult_0_l.

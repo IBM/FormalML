@@ -348,7 +348,7 @@ Section conv_as.
       intros.
       apply almost_bounded_forall; trivial.
       - intros.
-        apply lt_dec.
+        apply Compare_dec.lt_dec.
       - intros.
         revert H0.
         apply is_lim_seq_ext.
@@ -806,7 +806,7 @@ Section ash.
         (hb1 : forall n, 0 < sum_f_R0 a n)(hb2 : is_lim_seq (sum_f_R0 a) p_infty)  (hx : is_lim_seq x x0):
     is_lim_seq (fun n => (sum_f_R0 (fun j => a j * x j) n)/(sum_f_R0 a n)) x0.
   Proof.
-    pose (A := fun (n j : nat) => if (le_dec j  n) then (a j)/(sum_f_R0 a n) else 0).
+    pose (A := fun (n j : nat) => if (Compare_dec.le_dec j  n) then (a j)/(sum_f_R0 a n) else 0).
     assert (Apos: forall n j, 0 <= A n j).
     {
       intros.
@@ -843,7 +843,7 @@ Section ash.
       + now rewrite Lim_seq_const.
       + exists n; intros.
         rewrite sum_n_ext with
-            (b := (fun j : nat => (if le_dec j n then (((a j)*(x j)) / sum_f_R0 a n) else 0))).
+            (b := (fun j : nat => (if Compare_dec.le_dec j n then (((a j)*(x j)) / sum_f_R0 a n) else 0))).
         * rewrite <- sum_n_sum_f_clipped with (N := n); try lia.
           rewrite sum_n_Reals.
           unfold Rdiv.
@@ -948,7 +948,7 @@ Section ash.
         cut_to H3; trivial.
         * eapply (is_lim_seq_ext _ _ x0 _ H3).
         * intros.
-          destruct (lt_dec 0 n).
+          destruct (Compare_dec.lt_dec 0 n).
           -- specialize (hb1 (n-1)%nat).
              replace (S (n-1)) with (n) in hb1 by lia.
              lra.
@@ -1013,7 +1013,7 @@ Section ash.
         (hx : ex_series x):
     is_lim_seq (fun n => (sum_n_m (fun j => b j * x j) 1 n)/(b n)) 0.
   Proof.
-    pose (bb  := fun n => if (lt_dec 0 n) then (b n) else 0).
+    pose (bb  := fun n => if (Compare_dec.lt_dec 0 n) then (b n) else 0).
     generalize (@ash_6_1_3 bb x); intros.
     cut_to H; trivial.
     - apply is_lim_seq_ext with (v := fun n => sum_n_m (fun j => b j * x j) 1 (S n) / (b (S n))) in H.
@@ -2695,7 +2695,7 @@ End ash.
       apply in_map_iff.
       exists j'; split; trivial.
       apply in_seq; lia.
-    - destruct (le_dec k' k).
+    - destruct (Compare_dec.le_dec k' k).
       + specialize (IHk l).
         eapply Rle_trans.
         * apply IHk.

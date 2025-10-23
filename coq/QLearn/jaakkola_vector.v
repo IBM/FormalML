@@ -2879,7 +2879,7 @@ Section jaakola_vector2.
             apply all_almost; intros ??.
             now apply lim_seq_maxabs0_b.
           - intros.
-            apply lt_dec.
+            apply Compare_dec.lt_dec.
           - intros.
             revert H0.
             apply is_lim_seq_ext.
@@ -3274,7 +3274,7 @@ Section jaakola_vector2.
         apply H18.
    }
     apply almost_bounded_forall; intros.
-    - apply lt_dec.
+    - apply Compare_dec.lt_dec.
     - revert H19.
       apply is_lim_seq_ext.
       intros.
@@ -4458,7 +4458,7 @@ Section jaakola_vector2.
              apply bounded_forall_almost with (n := i) (pf := pf) in H0.
              - apply H0.
              - intros.
-               apply lt_dec.
+               apply Compare_dec.lt_dec.
              - intros.
                erewrite vector_nth_ext; try apply H11.
            }
@@ -4471,7 +4471,7 @@ Section jaakola_vector2.
          apply eventually_impl.
          apply all_eventually; intros.
          apply  almost_bounded_forall.
-         + intros; apply lt_dec.
+         + intros; apply Compare_dec.lt_dec.
          + intros.
            erewrite vector_nth_ext; try apply H12.
          + apply H11.
@@ -4486,7 +4486,7 @@ Section jaakola_vector2.
              apply bounded_forall_almost with (n := i) (pf := pf) in H1.
              - apply H1.
              - intros.
-               apply lt_dec.
+               apply Compare_dec.lt_dec.
              - intros.
                erewrite vector_nth_ext; try apply H11.
            }
@@ -4499,7 +4499,7 @@ Section jaakola_vector2.
          apply eventually_impl.
          apply all_eventually; intros.
          apply  almost_bounded_forall.
-         + intros; apply lt_dec.
+         + intros; apply Compare_dec.lt_dec.
          + intros.
            erewrite vector_nth_ext; try apply H12.
          + apply H11.
@@ -5192,7 +5192,7 @@ Section jaakola_vector2.
              apply bounded_forall_almost with (n := i) (pf := pf) in H0.
              - apply H0.
              - intros.
-               apply lt_dec.
+               apply Compare_dec.lt_dec.
              - intros.
                erewrite vector_nth_ext; try apply H10.
            }
@@ -5205,7 +5205,7 @@ Section jaakola_vector2.
          apply eventually_impl.
          apply all_eventually; intros.
          apply  almost_bounded_forall.
-         + intros; apply lt_dec.
+         + intros; apply Compare_dec.lt_dec.
          + intros.
            erewrite vector_nth_ext; try apply H11.
          + apply H10.
@@ -5220,7 +5220,7 @@ Section jaakola_vector2.
              apply bounded_forall_almost with (n := i) (pf := pf) in H1.
              - apply H1.
              - intros.
-               apply lt_dec.
+               apply Compare_dec.lt_dec.
              - intros.
                erewrite vector_nth_ext; try apply H10.
            }
@@ -5233,7 +5233,7 @@ Section jaakola_vector2.
          apply eventually_impl.
          apply all_eventually; intros.
          apply  almost_bounded_forall.
-         + intros; apply lt_dec.
+         + intros; apply Compare_dec.lt_dec.
          + intros.
            erewrite vector_nth_ext; try apply H11.
          + apply H10.
@@ -5395,7 +5395,7 @@ Section jaakola_vector2.
          unfold rvscale.
          now rewrite Rmult_comm.
        - intros.
-         apply lt_dec.
+         apply Compare_dec.lt_dec.
        - intros.
          assert (FiniteConditionalExpectation prts sub (fun ω : Ts => vector_nth i pf1 (pos_Rvector_mult (f ω) W)) x =
                    FiniteConditionalExpectation prts sub (fun ω : Ts => vector_nth i pf2 (pos_Rvector_mult (f ω) W)) x).
@@ -5676,7 +5676,7 @@ Proof.
         apply Rle_abs.
       + apply almost_forall; intros.
         apply almost_bounded_forall; intros.
-        * apply lt_dec.
+        * apply Compare_dec.lt_dec.
         * eapply Rbar_le_trans; cycle 1.
           apply H3.
           apply slln.eq_Rbar_le.
@@ -6221,7 +6221,7 @@ Section qlearn.
       intros ?.
       now apply sum_n_ext.
     - apply bounded_forall_almost.
-      + intros; apply lt_dec.
+      + intros; apply Compare_dec.lt_dec.
       + intros ????.
         apply ex_series_ext.
         intros.

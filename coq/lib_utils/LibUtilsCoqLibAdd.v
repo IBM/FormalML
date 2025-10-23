@@ -802,7 +802,7 @@ Section CoqLibAdd.
     Context {A:Type}.
     Function iter_cost (optim: A -> A) (cost: A -> nat) (p: A) { measure cost p } :=
       let p' := optim p in
-      if lt_dec (cost p') (cost p)
+      if Compare_dec.lt_dec (cost p') (cost p)
       then iter_cost optim cost p'
       else p.
     Proof.

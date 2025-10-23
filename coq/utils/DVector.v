@@ -211,7 +211,7 @@ Proof.
   apply In_nth_error in inn.
   destruct inn as [i eqq].
   destruct x; simpl in *.
-  destruct (lt_dec i (length x)).
+  destruct (Compare_dec.lt_dec i (length x)).
   - subst.
     exists i, l.
     unfold vector_nth, proj1_sig.
@@ -1749,7 +1749,7 @@ Section Sequence.
   Definition ivector_to_sequence {T} {n} (v : ivector T n) (default : T) 
     : nat -> T :=
     (fun i => 
-       match lt_dec i n with
+       match Compare_dec.lt_dec i n with
        | left pf => ivector_nth i pf v
        | right _ => default
        end).

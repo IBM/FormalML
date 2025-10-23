@@ -69,10 +69,10 @@ Section stopped_process.
     unfold lift1_min.
     rv_unfold; unfold rvsum.
     destruct n; match_option.
-    - destruct (Min.min_dec (S n) n0).
+    - destruct (Nat.min_dec (S n) n0).
       + assert (nle: (S n <= n0)%nat) by lia.
         rewrite e.
-        rewrite (@Hierarchy.sum_n_ext_loc Hierarchy.R_AbelianGroup _ (fun _ => 0)).
+        rewrite (@Hierarchy.sum_n_ext_loc Hierarchy.R_AbelianMonoid _ (fun _ => 0)).
         * rewrite sum_n_zero.
           field_simplify.
           match_destr; try lra.
@@ -93,7 +93,7 @@ Section stopped_process.
           rewrite eqq in p.
           assert (n0 = S n) by lia.
           subst.
-          rewrite (@Hierarchy.sum_n_ext_loc Hierarchy.R_AbelianGroup _ (fun _ => 0)).
+          rewrite (@Hierarchy.sum_n_ext_loc Hierarchy.R_AbelianMonoid _ (fun _ => 0)).
           -- rewrite sum_n_zero.
              lra.
           -- intros.
@@ -116,7 +116,7 @@ Section stopped_process.
               elim n.
               now red.
             - rewrite Hierarchy.sum_Sn.
-              destruct (le_lt_dec n2 n).
+              destruct (Compare_dec.le_lt_dec n2 n).
               + specialize (IHn l).
                 rewrite <- IHn.
                 unfold Hierarchy.plus; simpl.
@@ -126,7 +126,7 @@ Section stopped_process.
                 lia.
               + assert (n2 = S n) by lia.
                 subst.
-                rewrite (@Hierarchy.sum_n_ext_loc Hierarchy.R_AbelianGroup _ (fun _ => 0)).
+                rewrite (@Hierarchy.sum_n_ext_loc Hierarchy.R_AbelianMonoid _ (fun _ => 0)).
                 -- rewrite sum_n_zero.
                    unfold Hierarchy.plus; simpl.
                    match_destr; try lra.
@@ -137,7 +137,7 @@ Section stopped_process.
                    assert (S n = n0) by congruence.
                    lia.
           } 
-    - rewrite (@Hierarchy.sum_n_ext Hierarchy.R_AbelianGroup _ (fun _ => 0)).
+    - rewrite (@Hierarchy.sum_n_ext Hierarchy.R_AbelianMonoid _ (fun _ => 0)).
       + rewrite sum_n_zero.
         field_simplify.
         match_destr; try lra.
@@ -689,7 +689,7 @@ Section stopped_process.
           unfold Hierarchy.plus; simpl.
           destruct (Nat.eq_dec n (S n0)).
           * subst.
-            assert (0 <= @Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n0 : nat => Rabs (Y n0 x)) n0).
+            assert (0 <= @Hierarchy.sum_n Hierarchy.R_AbelianMonoid (fun n0 : nat => Rabs (Y n0 x)) n0).
             {
               apply sum_n_nneg; intros.
               apply Rabs_pos.
@@ -1078,7 +1078,7 @@ Section stopped_process.
       Qed.
 
       Lemma Rabs_sum_n_triang f n :
-        Rabs (@Hierarchy.sum_n Hierarchy.R_AbelianGroup f n) <= @Hierarchy.sum_n Hierarchy.R_AbelianGroup  (fun k => Rabs (f k)) n.
+        Rabs (@Hierarchy.sum_n Hierarchy.R_AbelianMonoid f n) <= @Hierarchy.sum_n Hierarchy.R_AbelianMonoid  (fun k => Rabs (f k)) n.
       Proof.
         induction n.
         - now repeat rewrite Hierarchy.sum_O.
@@ -1181,7 +1181,7 @@ Section stopped_process.
             unfold rvsum.
             simpl.
             rewrite Rabs_sum_n_triang.
-            transitivity (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun _ => K) n0).
+            transitivity (@Hierarchy.sum_n Hierarchy.R_AbelianMonoid (fun _ => K) n0).
             {
               apply sum_n_le_loc; intros.
               replace (Y (S n1) x + -1 * Y n1 x)

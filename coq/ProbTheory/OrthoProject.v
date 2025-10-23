@@ -371,9 +371,9 @@ Section ortho_project.
           exists (max NP NQ); intros n nN.
           split.
           * apply HP.
-            generalize (Max.le_max_l NP NQ); lia.
+            generalize (Nat.le_max_l NP NQ); lia.
           * apply HQ.
-            generalize (Max.le_max_r NP NQ); lia.
+            generalize (Nat.le_max_r NP NQ); lia.
         + intros P Q Himp [N HP].
           exists N; intros n nN.
           auto.

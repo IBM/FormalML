@@ -202,7 +202,7 @@ Proof.
   }
 
   pose (tau_coll k t j :=
-          match (le_dec j t) with
+          match (Compare_dec.le_dec j t) with
           | left pf =>  event_lt (rv := rvB j t pf) (F t) (B j) (INR k)
           | _ =>  Ω
           end).
@@ -516,7 +516,7 @@ Proof.
   }
 
   pose (tau_coll k t j :=
-          match (le_dec j t) with
+          match (Compare_dec.le_dec j t) with
           | left pf =>  event_lt (rv := rvB j t pf) (F t) (B j) (INR k)
           | _ =>  Ω
           end).
@@ -3991,7 +3991,7 @@ Qed.
     {
       apply almost_bounded_forall.
       intros.
-      - apply lt_dec.
+      - apply Compare_dec.lt_dec.
       - intros.
         apply is_lim_seq_ext with (u := (fun k : nat => WW i pf1 k 0%nat x)); trivial.
         intros.
@@ -4128,7 +4128,7 @@ Qed.
       destruct (H21 H22).
       exists ((1 + ε) * (G x0 x)).
       intros.
-      destruct (le_dec t x0).
+      destruct (Compare_dec.le_dec t x0).
       - apply Rle_trans with (r2 := M x0 x).
         + unfold M.
           apply Rmax_seq_map_monotone.
@@ -5001,7 +5001,7 @@ Qed.
     {
       apply almost_bounded_forall.
       intros.
-      - apply lt_dec.
+      - apply Compare_dec.lt_dec.
       - intros.
         apply is_lim_seq_ext with (u := (fun k : nat => WW i pf1 k 0%nat x)); trivial.
         intros.
@@ -5145,7 +5145,7 @@ Qed.
       destruct (H21 H22).
       exists ((1 + ε) * (G x0 x)).
       intros.
-      destruct (le_dec t x0).
+      destruct (Compare_dec.le_dec t x0).
       - apply Rle_trans with (r2 := M x0 x).
         + unfold M.
           apply Rmax_seq_map_monotone.
@@ -6022,7 +6022,7 @@ Qed.
     {
       apply almost_bounded_forall.
       intros.
-      - apply lt_dec.
+      - apply Compare_dec.lt_dec.
       - intros.
         apply is_lim_seq_ext with (u := (fun k : nat => WW i pf1 k 0%nat x)); trivial.
         intros.
@@ -6166,7 +6166,7 @@ Qed.
       destruct (H21 H22).
       exists ((1 + ε) * (G x0 x)).
       intros.
-      destruct (le_dec t x0).
+      destruct (Compare_dec.le_dec t x0).
       - apply Rle_trans with (r2 := M x0 x).
         + unfold M.
           apply Rmax_seq_map_monotone.
@@ -6767,7 +6767,7 @@ Qed.
        {
          apply almost_bounded_forall.
          intros.
-         - apply le_dec.
+         - apply Compare_dec.le_dec.
          - intros.
            rewrite (digit_pf_irrel _ _ pf2 pf1).
            apply H14.
@@ -7378,7 +7378,7 @@ Qed.
        {
          apply almost_bounded_forall.
          intros.
-         - apply le_dec.
+         - apply Compare_dec.le_dec.
          - intros.
            rewrite (digit_pf_irrel _ _ pf2 pf1).
            apply H14.
@@ -7717,7 +7717,7 @@ Qed.
           apply H11.
       + apply Rle_ge, Rvector_max_abs_nonneg.
     - intros.
-      apply lt_dec.
+      apply Compare_dec.lt_dec.
     - intros i pf1 pf2 x.
       apply is_lim_seq_ext.
       intros.
@@ -8001,7 +8001,7 @@ Qed.
           apply H11.
       + apply Rle_ge, Rvector_max_abs_nonneg.
     - intros.
-      apply lt_dec.
+      apply Compare_dec.lt_dec.
     - intros i pf1 pf2 x.
       apply is_lim_seq_ext.
       intros.
@@ -8972,7 +8972,7 @@ Qed.
         * apply H14.
           lia.
       + intros.
-        apply le_dec.
+        apply Compare_dec.le_dec.
       + intros.
         apply H14.
     - revert alpha_betaprop; apply almost_impl.
@@ -9038,7 +9038,7 @@ Qed.
         * apply H0.
           lia.
       + intros.
-        apply le_dec.
+        apply Compare_dec.le_dec.
       + intros.
         apply H14.
     - revert H1; apply almost_impl.

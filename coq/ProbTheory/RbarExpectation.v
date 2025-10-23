@@ -3673,8 +3673,8 @@ Theorem Dominated_convergence
       erewrite (Rbar_NonnegExpectation_ext _ _ H7) in le2.
       erewrite (Rbar_NonnegExpectation_ext _ _ H8) in le3.
 
-      rewrite (Rbar_FiniteExpectation_Rbar_NonnegExpectation _) in le2.
-      rewrite (Rbar_FiniteExpectation_Rbar_NonnegExpectation _) in le3.
+      erewrite (Rbar_FiniteExpectation_Rbar_NonnegExpectation _) in le2.
+      erewrite (Rbar_FiniteExpectation_Rbar_NonnegExpectation _) in le3.
 
       rewrite (ELimInf_proper _ (fun n => (Rbar_FiniteExpectation g) +
                                         (Rbar_FiniteExpectation (fn n)))) in le2.
@@ -3772,6 +3772,10 @@ Theorem Dominated_convergence
           -- apply is_Elim_seq_const.
           -- apply lim1.
           -- destruct (f x); reflexivity.
+      + eauto.
+      + eauto.
+      + eauto.
+      + eauto.
   Qed.
 
   Theorem Dominated_convergence_almost
@@ -4543,7 +4547,7 @@ Section rv_expressible.
         rewrite <- H4.
         apply is_lim_seq_spec in H1.
         destruct (H1 M).
-        destruct (le_dec x1 n).
+        destruct (Compare_dec.le_dec x1 n).
         * now apply H5.
         * assert (n <= x1)%nat by lia.
           apply Rle_lt_trans with (r2 := simple_approx Y x1 x).

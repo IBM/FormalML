@@ -481,7 +481,7 @@ Section almostR2_part.
       apply all_almost; intros ω Pω.
       exists N; trivial.
     - intros.
-      apply le_dec.
+      apply Compare_dec.le_dec.
     - trivial.
   Qed.
 

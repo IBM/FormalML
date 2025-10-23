@@ -1209,7 +1209,7 @@ Section countable_products.
     intros.
     apply Rge_minus.
     unfold double_sum.
-    destruct (lt_dec n2 n1).
+    destruct (Compare_dec.lt_dec n2 n1).
     - rewrite (sum_f_R0_split _ n1 n2); trivial.
       apply Rge_trans with (r2 := sum_f_R0 (fun i : nat => sum_f_R0 (fun j : nat => f i j) m1) n2).
       + rewrite <- Rplus_0_r.
@@ -1220,7 +1220,7 @@ Section countable_products.
         intros; apply H.
       + apply Rle_ge, sum_f_R0_le.
         intros.
-        destruct (lt_dec m2 m1).
+        destruct (Compare_dec.lt_dec m2 m1).
         * rewrite (sum_f_R0_split _ m1 m2); trivial.
           rewrite <- Rplus_0_r at 1.
           apply Rplus_le_compat_l.
@@ -1230,7 +1230,7 @@ Section countable_products.
     - assert (n1 = n2) by lia; subst.
       apply Rle_ge, sum_f_R0_le.
       intros.
-      destruct (lt_dec m2 m1).
+      destruct (Compare_dec.lt_dec m2 m1).
       + rewrite (sum_f_R0_split _ m1 m2); trivial.
         apply Rplus_le_pos_l.
         apply sum_f_R0_nneg.
@@ -1284,7 +1284,7 @@ Section countable_products.
             Rabs ((double_sum f m n) - (double_sum f n n)) =
             Rabs ((double_sum f m m) - (double_sum f n n))).
     {
-      destruct (ge_dec m n)%nat.
+      destruct (Compare_dec.ge_dec m n)%nat.
       rewrite Rabs_right, Rabs_right, Rabs_right; try lra.
       apply double_sum_ge; trivial; lia.
       apply double_sum_ge; trivial; lia.
@@ -1385,7 +1385,7 @@ Section countable_products.
     rewrite <- Lim_seq_const.
     apply Lim_seq_le_loc.
     exists n; intros.
-    destruct (lt_dec n n0).
+    destruct (Compare_dec.lt_dec n n0).
     generalize (sum_f_R0_split f n0 n); intros.
     rewrite H1; try lia.
     apply Rplus_le_pos_l.

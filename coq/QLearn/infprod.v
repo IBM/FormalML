@@ -885,7 +885,7 @@ Proof.
   destruct H0 as [k H0]; destruct H0.
   exists k.
   split; trivial; intros.
-  destruct (lt_dec m n).
+  destruct (Compare_dec.lt_dec m n).
   + remember (n - S m)%nat as nm.
     replace (n) with (S m + nm)%nat; [|lia].
     rewrite initial_seg_prod_n; trivial.

@@ -115,7 +115,7 @@ Section rv_expressible.
       split.
       + intros.
         generalize (H1 n); intros.
-        destruct (le_dec x0 n).
+        destruct (Compare_dec.le_dec x0 n).
         * specialize (H2 l).
           rewrite Rabs_lt_between in H2.
           lra.
@@ -174,7 +174,7 @@ Section rv_expressible.
        specialize (H0 M).
        destruct H0.
        simpl.
-       destruct (le_dec x n).
+       destruct (Compare_dec.le_dec x n).
        * now apply H0.
        * assert (n < x)%nat by lia.
          generalize (increasing_seq f H n (x - n)%nat); intros.
@@ -742,7 +742,7 @@ End rv_expressible.
         assert (n = 0%nat ) by lia.
         rewrite H2.
         apply H0.
-      - destruct (le_dec n N).
+      - destruct (Compare_dec.le_dec n N).
         + apply IHN; trivial.
           intros; apply H; lia.
           rewrite sum_Sn in H0.

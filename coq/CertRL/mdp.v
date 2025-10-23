@@ -61,12 +61,12 @@ Record MDP := mkMDP {
  act  : forall s: state, Type;
  
  (** The state space has decidable equality.*)
- st_eqdec :> EqDec state eq;
- act_eqdec :> (forall s, EqDec (act s) eq);
+ st_eqdec ::> EqDec state eq;
+ act_eqdec ::> (forall s, EqDec (act s) eq);
 
  (** The state and action spaces are finite. *)
- fs :> FiniteType (state) ;
- fa :> forall s, FiniteType (act s);
+ fs ::> FiniteType (state) ;
+ fa ::> forall s, FiniteType (act s);
 
  (** The state space and the fibered action spaces are nonempty. *)
  ne : NonEmpty (state) ;

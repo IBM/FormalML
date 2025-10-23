@@ -333,13 +333,19 @@ Section Rvector_defs.
     apply Rvector_inv_plus.
   Qed.
 
-  Definition Rvector_AbelianGroup_mixin : AbelianGroup.mixin_of (vector R n)
-    := AbelianGroup.Mixin (vector R n) Rvector_plus Rvector_opp Rvector_zero
+  Definition Rvector_AbelianMonoid_mixin : AbelianMonoid.mixin_of (vector R n)
+    := AbelianMonoid.Mixin (vector R n) Rvector_plus Rvector_zero
                           Rvector_plus_comm Rvector_plus_assoc
-                          Rvector_plus_zero Rvector_plus_inv.
+                          Rvector_plus_zero.
+  
+  Canonical Rvector_AbelianMonoid :=
+    AbelianMonoid.Pack (vector R n) Rvector_AbelianMonoid_mixin (vector R n).
+
+  Definition Rvector_AbelianGroup_mixin : AbelianGroup.mixin_of (Rvector_AbelianMonoid)
+    := AbelianGroup.Mixin Rvector_AbelianMonoid Rvector_opp Rvector_plus_inv.
   
   Canonical Rvector_AbelianGroup :=
-    AbelianGroup.Pack (vector R n) Rvector_AbelianGroup_mixin (vector R n).
+    AbelianGroup.Pack (vector R n) (AbelianGroup.Class _ (Rvector_AbelianMonoid_mixin) Rvector_AbelianGroup_mixin) (vector R n).
 
   Lemma Rvector_scale_scale (a b:R) (v:vector R n) :
     a .* (b .* v) = (a * b) .* v.
@@ -390,7 +396,7 @@ Section Rvector_defs.
                              Rvector_scale_plus_l Rvector_scale_plus_r.
 
   Canonical Rvector_ModuleSpace :=
-    ModuleSpace.Pack R_Ring (vector R n) (ModuleSpace.Class R_Ring (vector R n) Rvector_AbelianGroup_mixin Rvector_ModuleSpace_mixin) (vector R n).
+    ModuleSpace.Pack R_Ring (vector R n) (ModuleSpace.Class R_Ring (vector R n) _ Rvector_ModuleSpace_mixin) (vector R n).
 
   Lemma Rvector_scale_inj (c:R) (x y:vector R n) :
     c <> 0%R -> c .* x = c .* y  -> x = y.
@@ -950,7 +956,7 @@ Section Rvector_defs.
     forall m (pf2:(m <= n)%nat),
     F (fun v : vector R n =>
          forall (i : nat) (pf : (i < m)%nat),
-           P i (lt_le_trans _ _ _ pf pf2) (vector_nth i (lt_le_trans _ _ _ pf pf2) v)).
+           P i (Nat.lt_le_trans _ _ _ pf pf2) (vector_nth i (Nat.lt_le_trans _ _ _ pf pf2) v)).
   Proof.
     intros [???] FA.
     induction m; simpl; intros mle.
@@ -964,8 +970,8 @@ Section Rvector_defs.
                  forall (i : nat) (pf : (i < m)%nat),
                    P i (Nat.lt_le_trans i (S m) n (pft _ pf) mle) (vector_nth i (Nat.lt_le_trans i (S m) n (pft _ pf) mle) v))).
       + apply filter_imp; intros.
-        generalize (lt_n_Sm_le _ _ pf); intros pf2.
-        apply le_lt_or_eq in pf2.
+        generalize (proj1 (Nat.lt_succ_r _ _) pf); intros pf2.
+        apply Nat.lt_eq_cases in pf2.
         destruct H.
         destruct pf2.
         * generalize (H0 _ H1).
@@ -992,7 +998,7 @@ Section Rvector_defs.
            P i pf (vector_nth i pf v)).
   Proof.
     intros.
-    generalize (Filter_Forall_commute_aux _ _ H H0 n (le_refl n)).
+    generalize (Filter_Forall_commute_aux _ _ H H0 n (Nat.le_refl n)).
     destruct H.
     apply filter_imp; intros.
     specialize (H i pf).
@@ -1064,7 +1070,7 @@ Section Rvector_defs.
       destruct H as [?[???]].
       generalize filter_true.
       apply filter_imp; intros.
-      rewrite (vector_zero0 e (Rvector_lim (fun x : vector R n -> Prop => F x))).
+      rewrite (vector_zero0 e (Rvector_lim F)).
       rewrite (vector_zero0 e x).
       apply ball_center.
     - apply Rvector_lim_complete_pos.

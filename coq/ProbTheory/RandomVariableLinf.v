@@ -1537,14 +1537,20 @@ Qed.
         LiRRVq_simpl.
         apply LiRRV_plus_inv.
       Qed.
-      
-      Definition LiRRVq_AbelianGroup_mixin : AbelianGroup.mixin_of LiRRVq
-        := AbelianGroup.Mixin LiRRVq LiRRVq_plus LiRRVq_opp LiRRVq_zero
+
+      Definition LiRRVq_AbelianMonoid_mixin : AbelianMonoid.mixin_of LiRRVq
+        := AbelianMonoid.Mixin LiRRVq LiRRVq_plus LiRRVq_zero
                               LiRRVq_plus_comm LiRRVq_plus_assoc
-                              LiRRVq_plus_zero LiRRVq_plus_inv.
+                              LiRRVq_plus_zero.
+
+      Canonical LiRRVq_AbelianMonoid :=
+        AbelianMonoid.Pack LiRRVq LiRRVq_AbelianMonoid_mixin LiRRVq.
+      
+      Definition LiRRVq_AbelianGroup_mixin : AbelianGroup.mixin_of LiRRVq_AbelianMonoid
+        := AbelianGroup.Mixin LiRRVq_AbelianMonoid LiRRVq_opp LiRRVq_plus_inv.
 
       Canonical LiRRVq_AbelianGroup :=
-        AbelianGroup.Pack LiRRVq LiRRVq_AbelianGroup_mixin LiRRVq.
+        AbelianGroup.Pack LiRRVq (AbelianGroup.Class _ (LiRRVq_AbelianMonoid_mixin) LiRRVq_AbelianGroup_mixin) LiRRVq.
 
       Ltac LiRRVq_simpl ::=
         repeat match goal with
@@ -1590,7 +1596,7 @@ Qed.
                              LiRRVq_scale_plus_l LiRRVq_scale_plus_r.
 
       Canonical LiRRVq_ModuleSpace :=
-        ModuleSpace.Pack R_Ring LiRRVq (ModuleSpace.Class R_Ring LiRRVq LiRRVq_AbelianGroup_mixin LiRRVq_ModuleSpace_mixin) LiRRVq.
+        ModuleSpace.Pack R_Ring LiRRVq (ModuleSpace.Class R_Ring LiRRVq _ LiRRVq_ModuleSpace_mixin) LiRRVq.
 
       Definition LiRRVq_norm : LiRRVq -> R
         := quot_rec LiRRV_norm_proper.

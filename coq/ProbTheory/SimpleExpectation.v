@@ -2443,8 +2443,8 @@ Section SimpleConditionalExpectation.
         unfold pre_list_collection in H2.
         assert (n'bound:(n' < length (map event_pre l))%nat).
         {
-          destruct (lt_dec n' (length (map event_pre l))%nat); trivial.
-          apply not_lt in n0.
+          destruct (Compare_dec.lt_dec n' (length (map event_pre l))%nat); trivial.
+          apply Nat.le_ngt in n0.
           unfold pre_event in H2.
           rewrite (nth_overflow (map event_pre l) pre_event_none n0) in H2.
           elim (Cn'ne H2).

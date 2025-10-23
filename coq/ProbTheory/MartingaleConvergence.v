@@ -80,7 +80,7 @@ Section mct.
     Definition upcrossing_var_expr a b n ts k
       := match upcrossing_times a b (2*k) ts with
          | None => 0%nat
-         | Some upn => if le_dec upn n then k else 0%nat
+         | Some upn => if Compare_dec.le_dec upn n then k else 0%nat
          end.
     
     Definition upcrossing_var a b n (ts:Ts) : R
@@ -190,7 +190,7 @@ Section mct.
           } 
         * apply sa_countable_union; intros.
           {
-            destruct (le_dec n0 m)%nat.
+            destruct (Compare_dec.le_dec n0 m)%nat.
             - apply sa_inter.
               + generalize (upcrossing_times_is_stop a b (2 * n - 1) n0); unfold IsStoppingTime, stopping_time_pre_event.
                 eapply is_filtration_le; trivial.
@@ -209,7 +209,7 @@ Section mct.
             split.
             - match_destr.
               intros HH.
-              destruct (le_dec (S m) n0)%nat; trivial.
+              destruct (Compare_dec.le_dec (S m) n0)%nat; trivial.
               elim HH.
               eexists; split; [reflexivity |].
               lia.
@@ -223,7 +223,7 @@ Section mct.
           apply sa_complement.
           apply sa_countable_union; intros.
           {
-            destruct (le_dec n0 m)%nat.
+            destruct (Compare_dec.le_dec n0 m)%nat.
             - apply sa_inter.
               + generalize (upcrossing_times_is_stop a b (2 * n) n0); unfold IsStoppingTime, stopping_time_pre_event.
                 eapply is_filtration_le; trivial.
@@ -267,7 +267,7 @@ Section mct.
     Proof.
       replace (x + S x)%nat with (S (x + x))%nat by lia.
       rewrite Nat.even_succ.
-      rewrite <- NPeano.Nat.negb_even.
+      rewrite <- Nat.negb_even.
       now rewrite plus_self_even.
     Qed.
 
@@ -425,7 +425,7 @@ Section mct.
         match_case; intros.
         match_case_in IHh; intros.
         + rewrite H2 in IHh.
-          eapply lt_trans.
+          eapply Nat.lt_trans.
           apply IHh.
           apply upcrossing_times_some with (n0 := n1) in H1; trivial; try lia.
         + apply  upcrossing_times_none in H2; try lia.
@@ -466,7 +466,7 @@ Section mct.
     Proof.
       intros.
       destruct (upcrossing_times_some_S a b (S k) a0 n1 H0); intros.
-      destruct (lt_dec 0 k).
+      destruct (Compare_dec.lt_dec 0 k).
       - generalize (upcrossing_times_some a b k a0 n0 x l H H1); intros.
         generalize (upcrossing_times_some a b (S k) a0 x n1); intros.
         cut_to H3; try lia; trivial.
@@ -630,7 +630,7 @@ Section mct.
        - contrapose.
          intros.
          assert (m1 <= m0)%nat by lia.
-         destruct (lt_dec m1 m0).
+         destruct (Compare_dec.lt_dec m1 m0).
          + generalize (upcrossing_times_monotonic_l a b a0 n1 n0 m1 m0 ); intros.
            cut_to H5; trivial.
            lia.
@@ -710,12 +710,12 @@ Section mct.
          assert (2 * k + 1 < 2*S x)%nat by lia.
          apply upcrossing_times_none_plus_alt with (kk := (2 * S x)%nat) in H1; try lia.
          congruence.         
-       + destruct (lt_dec (2 * S x)%nat (2 *  k)%nat).
+       + destruct (Compare_dec.lt_dec (2 * S x)%nat (2 *  k)%nat).
          * apply upcrossing_times_none_plus_alt with (kk := (2 * k)%nat) in H6; try lia.
            congruence.
-         * destruct (lt_dec (2 * k)%nat (2 * S x)%nat).
+         * destruct (Compare_dec.lt_dec (2 * k)%nat (2 * S x)%nat).
            -- assert (2 * k + 1 <= 2 * S x - 1)%nat by lia.
-              destruct (lt_dec (2 * k + 1)%nat (2 * S x - 1)%nat).
+              destruct (Compare_dec.lt_dec (2 * k + 1)%nat (2 * S x - 1)%nat).
               ++ apply upcrossing_times_none_plus_alt with (kk := (2 * S x - 1)%nat) in H1; try lia.
                  congruence.                 
               ++ assert ( 2 * k + 1 = 2  * S x - 1)%nat by lia.
@@ -794,8 +794,8 @@ Section mct.
       (k2 < k)%nat.
     Proof.
       intros.
-      destruct (le_dec k k2); try lia.
-      destruct (lt_dec k k2).
+      destruct (Compare_dec.le_dec k k2); try lia.
+      destruct (Compare_dec.lt_dec k k2).
       - now apply (upcrossing_times_none_plus_alt a b k k2 a0) in H; try lia.
       - assert (k = k2) by lia.
         now rewrite H1 in H.
@@ -829,18 +829,18 @@ Section mct.
        - match_case_in H; intros; rewrite H5 in H; try easy.
          match_case_in H; intros; rewrite H6 in H; try easy.
          destruct H.
-         destruct (lt_dec (S x) k).
+         destruct (Compare_dec.lt_dec (S x) k).
          + assert (n1 < n2)%nat.
            {
              specialize (H0 n1 n2 (2 * S x)%nat (2 * k)%nat).
              cut_to H0; try lia; trivial.
            }
            lia.
-         + destruct (lt_dec k (S x)).
+         + destruct (Compare_dec.lt_dec k (S x)).
            * assert (2 * k + 1 <= 2 * S x - 1)%nat by lia.
              assert (n3 <= n0)%nat.
              {
-               destruct (lt_dec (2 * k + 1)%nat (2 * S x - 1)%nat).
+               destruct (Compare_dec.lt_dec (2 * k + 1)%nat (2 * S x - 1)%nat).
                - specialize (H0 n3 n0 (2 * k + 1)%nat (2 * S x - 1)%nat).
                  cut_to H0; try lia; trivial.
                - assert (2 * k + 1 = 2 * S x - 1)%nat by lia.
@@ -868,7 +868,7 @@ Section mct.
          match_case_in H; intros; rewrite H8 in H.
          + assert (n2 <= n0)%nat.
            {
-             destruct (lt_dec (2 * k + 1)%nat (2 * S x - 1)%nat).
+             destruct (Compare_dec.lt_dec (2 * k + 1)%nat (2 * S x - 1)%nat).
              - specialize (H0 n2 n0 (2 * k + 1)%nat (2 * S x - 1)%nat).
                cut_to H0; try lia; trivial.
              - assert (2 * k + 1 = 2 * S x - 1)%nat by lia.
@@ -877,7 +877,7 @@ Section mct.
                now invcs H3.
            }
            lia.
-         + destruct (lt_dec (2 * k + 1)%nat (2 * S x - 1)).
+         + destruct (Compare_dec.lt_dec (2 * k + 1)%nat (2 * S x - 1)).
            * now apply upcrossing_times_none_plus_alt with (kk := (2*S x - 1)%nat) in H8.
            * assert (2 * k + 1 = 2 * S x - 1)%nat by lia.
              rewrite H9 in H8.
@@ -921,14 +921,14 @@ Section mct.
           generalize (upcrossing_times_0 a b a0 n1 n2); intros.
           cut_to H8; trivial; try lia.
         }
-        destruct (lt_dec (S x) k).
+        destruct (Compare_dec.lt_dec (S x) k).
         + assert (n2 < n0)%nat.
           {
             specialize (H5 n2 n0 (2 * S x)%nat (2 * k)%nat).
             cut_to H5; try lia; trivial.
           }
           lia.
-        + destruct (lt_dec k (S x)).
+        + destruct (Compare_dec.lt_dec k (S x)).
           * assert (2 * k + 1 < 2 * S x)%nat by lia.
              apply (upcrossing_times_none_plus_alt a b (2 * k + 1)%nat (2 * S x)%nat a0) in H2; try lia.
              congruence.
@@ -943,14 +943,14 @@ Section mct.
           replace (2 * 0)%nat with 0%nat in H7 by lia.
           congruence.
         }
-        destruct (lt_dec (S x) k).
+        destruct (Compare_dec.lt_dec (S x) k).
         + apply (upcrossing_times_none_plus_alt a b (2 * S x)%nat (2 * k)%nat a0) in H7; try lia.
           congruence.
-        + destruct (lt_dec k (S x)).
+        + destruct (Compare_dec.lt_dec k (S x)).
           * assert (2 * k +1 <= 2 * S x - 1)%nat by lia.
             assert (upcrossing_times a b (2 * S x - 1)%nat a0 = None).
             {
-              destruct (lt_dec (2 * k + 1)%nat (2 * S x - 1)%nat).
+              destruct (Compare_dec.lt_dec (2 * k + 1)%nat (2 * S x - 1)%nat).
               - now apply (upcrossing_times_none_plus_alt a b (2 * k + 1)%nat (2 * S x - 1)%nat a0) in H2; try lia.
               - now replace (2 * k + 1)%nat with (2 * S x - 1)%nat in H2 by lia.
             }
@@ -1564,7 +1564,7 @@ Section mct.
     Definition upcrossing_var_expr1 a b n ts k
       := match upcrossing_times a b k ts with
          | None => 0%nat
-         | Some upn => if le_dec upn n then k else 0%nat
+         | Some upn => if Compare_dec.le_dec upn n then k else 0%nat
          end.
 
     Lemma upcrossing_bound_transform_ge_0 a b a0 k n0 n : 
@@ -1598,7 +1598,7 @@ Section mct.
         match_case_in H6; intros; rewrite H8 in H6; try easy.
         rewrite H8 in H7.
         replace (S n - 1)%nat with n in H7 by lia.
-        destruct (lt_dec n2 (S n)).
+        destruct (Compare_dec.lt_dec n2 (S n)).
         + match_case_in H3; intros; rewrite H9 in H3; rewrite H9 in H7; apply H7; try lia.
           match_destr_in H3; try lia.
         + assert (S n <= n2)%nat by lia.
@@ -1612,7 +1612,7 @@ Section mct.
       forall j, (upcrossing_var_expr a b (S n) a0 j <= k)%nat.
     Proof.
       intros upk j.
-      destruct (le_dec j (S n)).
+      destruct (Compare_dec.le_dec j (S n)).
       - unfold upcrossing_var, upcrossing_var_expr in *.
         match_option; [| lia].
         match_destr; [| lia].
@@ -1669,7 +1669,7 @@ Section mct.
                  (upcrossing_var_expr a b (S n) a0 x1 <= kk)%nat).
       {
         intros.
-        destruct (le_dec x1 (S n)).
+        destruct (Compare_dec.le_dec x1 (S n)).
         - apply INR_le.
           subst.
           apply Hin'.
@@ -1716,7 +1716,7 @@ Section mct.
           generalize (upcrossing_bound_range0_init a b a0); intros.
           unfold Hierarchy.sum_n.
           match_case_in H1; intros; rewrite H3 in H1.
-          + destruct (lt_dec n n0).
+          + destruct (Compare_dec.lt_dec n n0).
             * rewrite  (@Hierarchy.sum_n_m_ext_loc  Hierarchy.R_AbelianGroup) with
                   (b := fun n1 => Hierarchy.zero).
               -- rewrite Hierarchy.sum_n_m_const_zero.
@@ -1835,7 +1835,7 @@ Section mct.
               unfold Hierarchy.zero; simpl; lra.
         - generalize (upcrossing_bound_transform_helper a b a0 n0); intros.
           match_case_in H1; intros; rewrite H3 in H1.
-          + destruct (lt_dec (n1-1)%nat n).
+          + destruct (Compare_dec.lt_dec (n1-1)%nat n).
             * unfold Hierarchy.sum_n.
               rewrite Hierarchy.sum_n_m_Chasles with (m := (n1-1)%nat); try lia.
               unfold Hierarchy.sum_n in H1.
@@ -1892,7 +1892,7 @@ Section mct.
         rewrite Hierarchy.sum_n_m_zero; try lia.
         unfold Hierarchy.zero; simpl.
         lra.
-      - destruct  (le_dec 1 (upcrossing_var_expr a b (S n) a0 (S k))).
+      - destruct  (Compare_dec.le_dec 1 (upcrossing_var_expr a b (S n) a0 (S k))).
         + transitivity
             (@Hierarchy.sum_n_m Hierarchy.R_AbelianGroup
                                 (fun _ => b - a)
@@ -2097,7 +2097,7 @@ Section mct.
               generalize (classic_min_of_some_first _ _ eqq); simpl; unfold id; intros HHY2.
               generalize (classic_min_of_some_first _ _ eqq0); simpl; unfold id; intros HHM2.
               apply antisymmetry
-              ; apply not_lt
+              ; apply Nat.le_ngt
               ; intros HH.
               + apply (HHY2 _ HH).
                 unfold Y, ϕ.
@@ -2131,7 +2131,7 @@ Section mct.
               generalize (classic_min_of_some_first _ _ eqq); simpl; unfold id; intros HHY2.
               generalize (classic_min_of_some_first _ _ eqq0); simpl; unfold id; intros HHM2.
               apply antisymmetry
-              ; apply not_lt
+              ; apply Nat.le_ngt
               ; intros HH.
               + apply (HHY2 _ HH).
                 unfold Y, ϕ.

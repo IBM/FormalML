@@ -24,7 +24,7 @@ Section dynkin.
   Class Lambda_system (c:pre_event T -> Prop)
     := mk_lambda_system {
         lambda_Ω : c pre_Ω
-      ; lambda_proper :> Proper (pre_event_equiv ==> iff) c
+      ; lambda_proper ::> Proper (pre_event_equiv ==> iff) c
       ; lambda_complement {a} : c a -> c (pre_event_complement a)
       ; lambda_disjoint_countable_union (an : nat -> pre_event T) :
         (forall x, c (an x)) ->
@@ -654,7 +654,7 @@ Section monotone_class_def.
   Class monotone_class (M : pre_event E -> Prop)
     := mk_monotone_class {
         monotone_Ω : M pre_Ω
-      ; monotone_proper :> Proper (pre_event_equiv ==> iff) M
+      ; monotone_proper ::> Proper (pre_event_equiv ==> iff) M
       ; monotone_diff a b :
           M a -> M b ->
           pre_event_sub a b ->

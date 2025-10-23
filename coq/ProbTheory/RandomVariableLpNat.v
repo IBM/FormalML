@@ -343,9 +343,9 @@ Section Lp.
       * unfold Binomial.C.
         left; unfold Rdiv.
         apply Rmult_lt_0_compat.
-        -- apply lt_0_INR; apply lt_O_fact.
+        -- apply lt_0_INR; apply Factorial.lt_O_fact.
         -- apply Rinv_0_lt_compat.
-           apply Rmult_lt_0_compat; apply lt_0_INR; apply lt_O_fact.
+           apply Rmult_lt_0_compat; apply lt_0_INR; apply Factorial.lt_O_fact.
       * destruct (Rle_dec y x).
         -- replace (p) with (i + (p-i))%nat at 2.
            ++ rewrite Rdef_pow_add.
@@ -573,8 +573,8 @@ Section Lp.
     Record LpRRV : Type
       := LpRRV_of {
              LpRRV_rv_X :> Ts -> R
-             ; LpRRV_rv :> RandomVariable dom borel_sa LpRRV_rv_X
-             ; LpRRV_lp :> IsLp p LpRRV_rv_X
+             ; LpRRV_rv ::> RandomVariable dom borel_sa LpRRV_rv_X
+             ; LpRRV_lp ::> IsLp p LpRRV_rv_X
            }.
 
     Global Existing Instance LpRRV_rv.
@@ -869,13 +869,19 @@ Section Lp.
         apply LpRRV_plus_inv.
       Qed.
       
-      Definition LpRRVq_AbelianGroup_mixin : AbelianGroup.mixin_of LpRRVq
-        := AbelianGroup.Mixin LpRRVq LpRRVq_plus LpRRVq_opp LpRRVq_zero
+      Definition LpRRVq_AbelianMonoid_mixin : AbelianMonoid.mixin_of LpRRVq
+        := AbelianMonoid.Mixin LpRRVq LpRRVq_plus LpRRVq_zero
                               LpRRVq_plus_comm LpRRVq_plus_assoc
-                              LpRRVq_plus_zero LpRRVq_plus_inv.
+                              LpRRVq_plus_zero.
+
+      Canonical LpRRVq_AbelianMonoid :=
+        AbelianMonoid.Pack LpRRVq LpRRVq_AbelianMonoid_mixin LpRRVq.
+
+      Definition LpRRVq_AbelianGroup_mixin : AbelianGroup.mixin_of LpRRVq_AbelianMonoid
+        := AbelianGroup.Mixin LpRRVq_AbelianMonoid LpRRVq_opp LpRRVq_plus_inv.
 
       Canonical LpRRVq_AbelianGroup :=
-        AbelianGroup.Pack LpRRVq LpRRVq_AbelianGroup_mixin LpRRVq.
+        AbelianGroup.Pack LpRRVq (AbelianGroup.Class _ (LpRRVq_AbelianMonoid_mixin) LpRRVq_AbelianGroup_mixin) LpRRVq.
 
 
       Ltac LpRRVq_simpl ::=
@@ -922,7 +928,7 @@ Section Lp.
                              LpRRVq_scale_plus_l LpRRVq_scale_plus_r.
 
       Canonical LpRRVq_ModuleSpace :=
-        ModuleSpace.Pack R_Ring LpRRVq (ModuleSpace.Class R_Ring LpRRVq LpRRVq_AbelianGroup_mixin LpRRVq_ModuleSpace_mixin) LpRRVq.
+        ModuleSpace.Pack R_Ring LpRRVq (ModuleSpace.Class R_Ring LpRRVq _ LpRRVq_ModuleSpace_mixin) LpRRVq.
       
     End quot.
 
@@ -1014,7 +1020,7 @@ Section Lp.
     Proof.
       repeat rewrite Rsqr_pow2.
       repeat rewrite <- pow_mult.
-      now rewrite mult_comm.
+      now rewrite Nat.mul_comm.
     Qed.
     
     Lemma pow_incr_inv (x y:R) (n : nat) :

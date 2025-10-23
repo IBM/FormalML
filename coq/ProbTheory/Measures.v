@@ -31,7 +31,7 @@ Section measure.
 
   Class is_measure (μ:event σ -> Rbar)
     := mk_measure {
-        measure_proper :> Proper (event_equiv ==> eq) μ
+        measure_proper ::> Proper (event_equiv ==> eq) μ
       ; measure_none : μ event_none = 0%R
       ; measure_nneg a : Rbar_le 0 (μ a)
       ; measure_countable_disjoint_union (B:nat->event σ) :
@@ -283,7 +283,7 @@ Section outer_measure.
                                                               
   Class is_outer_measure (μ:pre_event T -> Rbar)
     := mk_outer_measure {
-        outer_measure_proper :> Proper (pre_event_equiv ==> eq) μ
+        outer_measure_proper ::> Proper (pre_event_equiv ==> eq) μ
       ; outer_measure_none : μ pre_event_none = 0%R
       ; outer_measure_nneg a : Rbar_le 0 (μ a)
       ; outer_measure_countable_subadditive (A:pre_event T) (B:nat->pre_event T) :
@@ -295,7 +295,7 @@ Section outer_measure.
     := mk_outer_measure_alt {
         outer_measure_alt_none : μ pre_event_none = 0%R
       ; outer_measure_alt_nneg a : Rbar_le 0 (μ a)
-      ; outer_measure_alt_monotone :> Proper (pre_event_sub ==> Rbar_le) μ
+      ; outer_measure_alt_monotone ::> Proper (pre_event_sub ==> Rbar_le) μ
       ; outer_measure_alt_countable_union (B:nat->pre_event T) :
         Rbar_le (μ (pre_union_of_collection B)) (ELim_seq (fun i : nat => sum_Rbar_n (fun n : nat => μ (B n)) i))
       }.
@@ -1597,7 +1597,7 @@ Section premeasure.
   (* we could generalize events, but that is too much work for now :-) *)
   Class is_premeasure (λ:alg_set Alg -> Rbar)
     := mk_premeasure {
-        premeasure_proper :> Proper (alg_equiv ==> eq) λ 
+        premeasure_proper ::> Proper (alg_equiv ==> eq) λ 
       ; premeasure_none : λ alg_none = 0%R
       ; premeasure_nneg a : Rbar_le 0 (λ a)
       ; premeasure_countable_disjoint_union (B:nat->alg_set Alg) :
@@ -1714,7 +1714,7 @@ Section premeasure.
       apply alg_make_collection_disjoint_in in e2.
       destruct e1 as [H11 H12].
       destruct e2 as [H21 H22].
-      destruct (not_eq _ _ xyneq) as [xlt|ylt].
+      destruct (Compare_dec.not_eq _ _ xyneq) as [xlt|ylt].
       - eapply H22; eauto.
       - eapply H12; eauto.
     Qed.
@@ -2497,7 +2497,7 @@ Section semi_premeasure.
 
   Class is_semipremeasure (λ:salg_set SAlg -> Rbar)
     := mk_semipremeasure {
-        semipremeasure_proper :> Proper (salg_equiv ==> eq) λ 
+        semipremeasure_proper ::> Proper (salg_equiv ==> eq) λ 
       ; semipremeasure_nneg a : Rbar_le 0 (λ a)
                                     
       ; semipremeasure_list_disjoint_union (B:list (salg_set SAlg)) :

@@ -2151,7 +2151,7 @@ Section event.
     unfold collection_take.
     split.
     - intros na.
-      destruct (lt_dec a n).
+      destruct (Compare_dec.lt_dec a n).
       + split; trivial.
         destruct (map_nth_in_exists En (seq 0 n) event_none a).
         * now rewrite seq_length.
@@ -2357,7 +2357,7 @@ Section vec.
   Definition pre_bounded_inter_of_pre_collection_unbound {T} {n} (collection: forall i (pf:(i<n)%nat), pre_event T)
     : pre_event T
     := pre_inter_of_collection
-         (fun i => match lt_dec i n with
+         (fun i => match Compare_dec.lt_dec i n with
                 | left pf => collection i pf
                 | right _ => pre_Ω
                 end).
@@ -2396,7 +2396,7 @@ Section vec.
   Definition bounded_inter_of_collection_unbound {T} {n} {σ: SigmaAlgebra T} (collection: forall i (pf:(i<n)%nat), event σ)
     : event σ
     := inter_of_collection
-         (fun i => match lt_dec i n with
+         (fun i => match Compare_dec.lt_dec i n with
                 | left pf => collection i pf
                 | right _ => Ω
                 end).
@@ -2719,7 +2719,7 @@ Section pre_make_disjoint.
   
   Definition make_pre_collection_disjoint (coll:nat->pre_event T) : nat -> pre_event T
     := fun x => pre_event_diff (coll x) ((pre_union_of_collection (fun y =>
-                                                                  if lt_dec y x
+                                                                  if Compare_dec.lt_dec y x
                                                                   then coll y
                                                                   else pre_event_none))).
 
@@ -2755,13 +2755,13 @@ Section pre_make_disjoint.
       intros y ylt cy.
       apply H2.
       exists y.
-      destruct (lt_dec y x); intuition.
+      destruct (Compare_dec.lt_dec y x); intuition.
     - intros [ce fce].
       unfold make_pre_collection_disjoint.
       split; trivial.
       unfold pre_union_of_collection.
       intros [n Hn].
-      destruct (lt_dec n x); trivial.
+      destruct (Compare_dec.lt_dec n x); trivial.
       eapply fce; eauto.
   Qed.
   
@@ -2773,7 +2773,7 @@ Section pre_make_disjoint.
     apply make_pre_collection_disjoint_in in e2.
     destruct e1 as [H11 H12].
     destruct e2 as [H21 H22].
-    destruct (not_eq _ _ xyneq) as [xlt|ylt].
+    destruct (Compare_dec.not_eq _ _ xyneq) as [xlt|ylt].
     - eapply H22; eauto.
     - eapply H12; eauto.
   Qed.
@@ -2797,7 +2797,7 @@ Section pre_make_disjoint.
       split; trivial.
       unfold pre_union_of_collection.
       intros [nn Hnn].
-      destruct (lt_dec nn m); [ | tauto].
+      destruct (Compare_dec.lt_dec nn m); [ | tauto].
       specialize (H0 _ Hnn).
       lia.
     - apply make_pre_collection_disjoint_in in Hn.
@@ -2870,7 +2870,7 @@ Section more_pre_props.
     unfold collection_take.
     split.
     - intros na.
-      destruct (lt_dec a n).
+      destruct (Compare_dec.lt_dec a n).
       + split; trivial.
         destruct (map_nth_in_exists En (seq 0 n) pre_event_none a).
         * now rewrite seq_length.
@@ -2923,8 +2923,8 @@ Section more_pre_props.
   Qed.
 
   Lemma pre_union_of_collection_lt_S {A} (E:nat->pre_event A) n :
-    pre_event_equiv (pre_union_of_collection (fun y : nat => if lt_dec y (S n) then E y else pre_event_none))
-                    (pre_event_union (E n) (pre_union_of_collection (fun y : nat => if lt_dec y n then E y else pre_event_none))).
+    pre_event_equiv (pre_union_of_collection (fun y : nat => if Compare_dec.lt_dec y (S n) then E y else pre_event_none))
+                    (pre_event_union (E n) (pre_union_of_collection (fun y : nat => if Compare_dec.lt_dec y n then E y else pre_event_none))).
   Proof.
     intros ?; split.
     - intros [? HH].

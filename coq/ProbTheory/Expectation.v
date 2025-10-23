@@ -1,4 +1,4 @@
-Require Import Reals.
+Require Import ZArith Reals.
 
 Require Import Lra Lia.
 Require Import List Permutation.
@@ -1074,7 +1074,7 @@ Section Expectation_sec.
         * invcs H1.
           rewrite H4 in H3.
           congruence.
-      + destruct (gt_dec n 0).
+      + destruct (Compare_dec.gt_dec n 0).
         * generalize (find_none _ _ H2); intros.
           specialize (H3 0).
           rewrite <- in_rev in H3.
@@ -1095,7 +1095,7 @@ Section Expectation_sec.
                 generalize (pow_exp_gt 2 n); intros.
                 cut_to H4.
                 replace (0%nat) with (n*0)%nat at 1 by lia.
-                apply mult_lt_compat_l; lia.
+                apply Nat.mul_lt_mono_pos_l; lia.
                 lia.
         * assert (n = 0)%nat by lia.
           invcs H3.
@@ -1142,13 +1142,13 @@ Section Expectation_sec.
     clear n0.
     assert (pos1:(n * 2 ^ n > 0)%nat).
     {
-      apply NPeano.Nat.mul_pos_pos.
+      apply Nat.mul_pos_pos.
       - destruct n; try lia.
         simpl in Xlt.
         specialize (posX omega).
         now apply Rbar_le_not_lt in posX.
       - simpl.
-        apply NPeano.Nat.Private_NZPow.pow_pos_nonneg
+        apply Nat.Private_NZPow.pow_pos_nonneg
         ; lia.
     }
     match_case; intros.
@@ -1191,7 +1191,7 @@ Section Expectation_sec.
         simpl in HH.
         rewrite app_ass in HH.
         rewrite app_nth2 in HH by lia.
-        rewrite NPeano.Nat.sub_diag in HH.
+        rewrite Nat.sub_diag in HH.
         simpl in HH.
         subst.
         split; intros.
@@ -1210,7 +1210,7 @@ Section Expectation_sec.
                    rewrite last_app in eqq0 by congruence.
                    simpl in eqq0.
                    rewrite <- eqq0.
-                   rewrite NPeano.Nat.sub_1_r.
+                   rewrite Nat.sub_1_r.
                    rewrite Nat.succ_pred_pos by trivial.
                    rewrite mult_INR.
                    simpl.
@@ -1234,7 +1234,7 @@ Section Expectation_sec.
                          rewrite eqq4 in Fl1.
                          invcs Fl1.
                          match_destr_in H1.
-                         rewrite NPeano.Nat.add_1_r in n0.
+                         rewrite Nat.add_1_r in n0.
                          rewrite Rbar_div_Rdiv.
                          now apply Rbar_not_le_lt in n0.
                        + rewrite app_length; simpl.
@@ -1251,7 +1251,7 @@ Section Expectation_sec.
           rewrite <- Rbar_div_Rdiv in r0.
           rewrite Rbar_le_div_l in r0 ; [| apply pow2_pos].
           {
-            destruct (lt_eq_lt_dec (length d) k) as [[lt1|]|lt1]; trivial
+            destruct (Compare_dec.lt_eq_lt_dec (length d) k) as [[lt1|]|lt1]; trivial
             ; exfalso.
             - generalize (f_equal (fun x => nth k x 0)%nat); intros HH.
               specialize (HH _ _ eqq2).
@@ -1363,14 +1363,7 @@ Section Expectation_sec.
     intros posX.
     intros omega k.
     intros klt.
-    assert (pos1:(n * 2 ^ n > 0)%nat).
-    {
-      apply NPeano.Nat.mul_pos_pos.
-      - destruct n; try lia.
-      - simpl.
-        apply NPeano.Nat.Private_NZPow.pow_pos_nonneg
-        ; lia.
-    }
+    assert (pos1:(n * 2 ^ n > 0)%nat) by lia.
     unfold simple_approx.
     split; intros HH.
     - match_destr_in HH.
@@ -1414,7 +1407,7 @@ Section Expectation_sec.
                   rewrite last_app in eqq0 by congruence.
                   simpl in eqq0.
                   subst.
-                  rewrite NPeano.Nat.sub_1_r.
+                  rewrite Nat.sub_1_r.
                   rewrite Nat.succ_pred_pos by trivial.
                   rewrite mult_INR.
                   unfold Rdiv.
@@ -1453,7 +1446,7 @@ Section Expectation_sec.
                     rewrite app_length in HH.
                     replace ((S (length (rev l2)) - (length (rev l2) + length [length (rev l2)])))%nat with 0%nat in HH.
                     * rewrite rev_nth in HH by (simpl; lia).
-                      rewrite plus_0_l in HH.
+                      rewrite Nat.add_0_l in HH.
                       rewrite HH.
                       rewrite Forall_forall in Fl1.
                       specialize (Fl1 (nth (length (n1 :: l1) - 1) (n1 :: l1) 0%nat)).
@@ -1537,7 +1530,7 @@ Section Expectation_sec.
             subst.
             apply Rmult_eq_compat_r.
             f_equal.
-            destruct (lt_eq_lt_dec (length (rev l2)) k) as [[lt1|]|lt1]; trivial
+            destruct (Compare_dec.lt_eq_lt_dec (length (rev l2)) k) as [[lt1|]|lt1]; trivial
             ; exfalso.
             - generalize (f_equal (fun x => nth k x ((fun x : nat => INR x / 2 ^ n) 0%nat))); intros HH.
               specialize (HH _ _ eqq2).
@@ -1991,7 +1984,7 @@ Section Expectation_sec.
                        apply Rinv_0_lt_compat.
                        apply cond_pos.
              ++ apply Rle_pow; [lra |].
-                apply Max.le_max_l.
+                apply Nat.le_max_l.
         * rewrite Rinv_involutive.
           reflexivity.
           apply Rgt_not_eq.
@@ -2006,7 +1999,7 @@ Section Expectation_sec.
           specialize (posX ω).
           now rewrite <- isfin in posX; simpl in posX.
         * apply le_INR.
-          apply Max.le_max_r.
+          apply Nat.le_max_r.
   Qed.
 
   Lemma simple_approx_lim_seq (X:Ts -> Rbar) (posX : Rbar_NonnegativeFunction X) :

@@ -7,7 +7,7 @@ Require Import Morphisms EquivDec Program.
 
 Require Import Utils DVector.
 Require Export Event.
-Require Import Lia.
+Require Import Arith Lia.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -1635,13 +1635,6 @@ Qed.
         reflexivity.
   Qed.
 
-  Lemma Nat.succ_lt_mono_S i1 n pf :
-    (Lt.Nat.succ_lt_mono i1 n (Lt.lt_n_S i1 n pf)) = pf.
-  Proof.
-    apply digit_pf_irrel.
-  Qed.
-  
-  
   Lemma generated_rectangle_proj {T} {n} (s : SigmaAlgebra T) (i : ivector (SigmaAlgebra T) n) (e : pre_event (ivector T n)) :
     sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma i))) e ->
     sa_sigma (generated_sa (pre_event_set_ivector_product (ivector_map sa_sigma (n:=S n) (s, i)))) (fun '(_, x₂) => e x₂).
@@ -1668,8 +1661,11 @@ Qed.
                 apply HH.
           -- apply H0; intros.
              destruct x0.
-             specialize (HH (S i0) (Lt.lt_n_S _ _ pf)); simpl in *.
-             now rewrite Nat.succ_lt_mono_S in HH.
+             assert (pf':S i0 < S n) by lia.
+             specialize (HH (S i0) pf'); simpl in *.
+             erewrite (ivector_nth_prf_irrelevance _ x).
+             erewrite (ivector_nth_prf_irrelevance _ i1).
+             apply HH.
   Qed.
 
   Lemma ivector_rectangles_generate_sa {n} {T} 
@@ -1761,7 +1757,7 @@ Qed.
         destruct x0.
         exists p.
         exists (fun v => ivector_Forall2 (fun a0 (x : T) => a0 x) i0 v).
-        generalize (H1 0 (NPeano.Nat.lt_0_succ n)); intros.
+        generalize (H1 0 (Nat.lt_0_succ n)); intros.
         simpl in H3.
         split; trivial.
         split.
@@ -1770,23 +1766,27 @@ Qed.
           unfold pre_event_set_ivector_product.
           exists i0; split.
           -- intros.
-             specialize (H1 (S i1) (Lt.lt_n_S i1 n pf)).
+             specialize (H1 (S i1) (proj1 (Nat.succ_lt_mono i1 n) pf)).
              simpl in H1.
-             now rewrite Nat.succ_lt_mono_S in H1.
+             erewrite (ivector_nth_prf_irrelevance _ (ivector_map sa_sigma i)).
+             erewrite (ivector_nth_prf_irrelevance _ i0).
+             apply H1.
           -- intros ?.
              now rewrite <- ivector_Forall2_nth_iff.
         * rewrite H2.
           intros ?.
           destruct x0.
           split; intros.
-          generalize (H4 0 (NPeano.Nat.lt_0_succ n)); intros.
+          generalize (H4 0 (Nat.lt_0_succ n)); intros.
           simpl in H5.
           split; trivial.
           -- rewrite <- ivector_Forall2_nth_iff.
              intros.
-             specialize (H4 (S i2) (Lt.lt_n_S i2 n pf)).
+             specialize (H4 (S i2) ((proj1 (Nat.succ_lt_mono i2 n) pf))).
              simpl in H4.
-             now rewrite Nat.succ_lt_mono_S in H4.             
+             erewrite (ivector_nth_prf_irrelevance _ i0).
+             erewrite (ivector_nth_prf_irrelevance _ i1).
+             apply H4.
           -- destruct H4.
              rewrite <- ivector_Forall2_nth_iff in H5.
              destruct i2.
