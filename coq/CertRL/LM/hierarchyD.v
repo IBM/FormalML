@@ -416,7 +416,7 @@ Lemma clm_lim_aux2: forall (Fi : ((clm E F) -> Prop) -> Prop),
 Proof.
 intros Fi FFi HFc t eps.
 case (is_zero_dec t); intros Ht.
-exists zero.
+exists (@zero F).
 unfold Fri, Fr, cleanFilter.
 exists (fun _ => True).
 split.
@@ -461,7 +461,7 @@ Definition clm_lim (Fi : ((clm E F) -> Prop) -> Prop)
       lim (Fri Fi t) (clm_lim_aux1 Fi H1 t) (clm_lim_aux2 Fi H1 H2 t).
 
 Lemma ball_plus_plus: forall (x a y b:F) (eps:posreal), ball x eps a -> ball y eps b ->
-      ball (plus x y) (2*(@norm_factor R_AbsRing F)*eps) (plus a b).
+      ball (@plus F x y) (2*(@norm_factor R_AbsRing F)*eps) (@plus F a b).
 Proof.
 intros x a y b eps Hx Hy.
 pose (v:=@norm_factor R_AbsRing F); fold v.
@@ -642,7 +642,7 @@ apply Rle_trans with
               (minus (g x) (f x)))).
 right; f_equal.
 unfold minus; rewrite <- plus_assoc.
-apply trans_eq with (plus (clm_lim Fi H1 H2 x) (opp (f x))).
+apply trans_eq with (@plus F (clm_lim Fi H1 H2 x) (opp (f x))).
 reflexivity.
 f_equal.
 rewrite plus_assoc.

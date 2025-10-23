@@ -79,7 +79,7 @@ Module Exports.
 Coercion base : class_of >-> ModuleSpace.class_of.
 Coercion mixin : class_of >-> mixin_of.
 Coercion sort : type >-> Sortclass.
-Coercion AbelianGroup : type >-> AbelianGroup.type.
+Global Coercion AbelianGroup : type >-> AbelianGroup.type.
 Canonical AbelianGroup.
 Coercion ModuleSpace : type >-> ModuleSpace.type.
 Canonical ModuleSpace.
@@ -133,7 +133,7 @@ Proof.
 apply PreHilbert.ax2.
 Qed.
 
-Lemma inner_eq_0 : forall x, inner x x = 0 -> x = zero.
+Lemma inner_eq_0 : forall x, inner x x = 0 -> x = (@zero E).
 Proof.
 apply PreHilbert.ax3.
 Qed.
@@ -143,7 +143,7 @@ Proof.
 intros x; apply sqrt_pos.
 Qed.
 
-Lemma norm_eq_0: forall x,  Hnorm x = 0 -> x = zero.
+Lemma norm_eq_0: forall x,  Hnorm x = 0 -> x = (@zero E).
 Proof.
 intros x; unfold norm; intros H.
 assert (inner x x = 0).
@@ -163,7 +163,7 @@ intros x y l.
 now rewrite inner_sym inner_scal_l inner_sym.
 Qed.
 
-Lemma inner_zero_l: forall x, inner zero x = 0.
+Lemma inner_zero_l: forall x, inner (@zero E) x = 0.
 Proof.
 intros x.
 apply trans_eq with (inner (scal 0 zero) x).
@@ -172,18 +172,18 @@ rewrite inner_scal_l.
 apply Rmult_0_l.
 Qed.
 
-Lemma inner_zero_r: forall x, inner x zero = 0.
+Lemma inner_zero_r: forall x, inner x (@zero E) = 0.
 Proof.
 intros x.
 rewrite inner_sym; apply inner_zero_l.
 Qed.
 
-Lemma inner_plus_l : forall (x y z : E), inner (plus x y) z = inner x z + inner y z.
+Lemma inner_plus_l : forall (x y z : E), inner (@plus E x y) z = inner x z + inner y z.
 Proof.
 apply PreHilbert.ax5.
 Qed.
 
-Lemma inner_plus_r : forall (x y z : E), inner x (plus y z) = inner x y + inner x z.
+Lemma inner_plus_r : forall (x y z : E), inner x (@plus E y z) = inner x y + inner x z.
 Proof.
 intros x y z.
 now rewrite inner_sym inner_plus_l 2!(inner_sym x).
@@ -202,7 +202,7 @@ intros x y.
 now rewrite inner_sym inner_opp_r inner_sym.
 Qed.
 
-Lemma norm_zero: Hnorm zero = 0.
+Lemma norm_zero: Hnorm (@zero E) = 0.
 Proof.
 unfold Hnorm; now rewrite inner_zero_l sqrt_0.
 Qed.
@@ -236,7 +236,7 @@ apply inner_ge_0.
 Qed.
 
 Lemma square_expansion_plus: forall x y,
-  inner (plus x y) (plus x y) = inner x x + 2 * inner x y + inner y y.
+  inner (@plus E x y) (plus x y) = inner x x + 2 * inner x y + inner y y.
 Proof.
 intros x y.
 rewrite inner_plus_l 2!inner_plus_r.
@@ -260,7 +260,7 @@ Qed.
 (** Equalities and inequalities *)
 
 Lemma parallelogram_id: forall x y,
-  (inner (plus x y) (plus x y)) + (inner (minus x y) (minus x y))
+  (inner (@plus E x y) (plus x y)) + (inner (minus x y) (minus x y))
   = 2*((inner x x) + (inner y y)).
 Proof.
 intros x y.
@@ -299,7 +299,7 @@ now rewrite 2!squared_norm.
 apply Rmult_le_pos; apply norm_ge_0.
 Qed.
 
-Lemma norm_triangle: forall x y, Hnorm (plus x y) <= Hnorm x + Hnorm y.
+Lemma norm_triangle: forall x y, Hnorm (@plus E x y) <= Hnorm x + Hnorm y.
 Proof.
 intros x y.
 apply Rsqr_incr_0_var; unfold Rsqr.
@@ -361,7 +361,7 @@ apply plus_zero_r.
 Qed.
 
 Definition PreHilbert_UniformSpace_mixin :=
-  UniformSpace.Mixin E zero ball ball_center ball_sym ball_triangle.
+  UniformSpace.Mixin E (@zero E) ball ball_center ball_sym ball_triangle.
 
 Canonical PreHilbert_UniformSpace :=
   UniformSpace.Pack E (PreHilbert_UniformSpace_mixin) E.
@@ -672,13 +672,13 @@ intros g Hg1 Hg2.
 unfold Hierarchy.ball; simpl; unfold ball; simpl.
 simpl in Hf2, Hg2.
 (* . *)
-assert (M:4*Rsqr (norm (minus u (scal (/2) (plus f g)))) + Rsqr (norm (minus f g)) =
-           2*Rsqr (norm (minus u f)) + 2*Rsqr (norm (minus u g))).
+assert (M: 4*Rsqr (norm (@minus E u (scal (/2) (@plus E f g)))) + Rsqr (norm (@minus E f g)) =
+           2*Rsqr (norm (@minus E u f)) + 2*Rsqr (norm (@minus E u g))).
 unfold Rsqr at 3 4; rewrite 2!squared_norm.
 rewrite <- Rmult_plus_distr_l.
 rewrite <- parallelogram_id.
 f_equal.
-apply trans_eq with (Rsqr (2*norm (minus u (scal (/ 2) (plus f g))))).
+apply trans_eq with (Rsqr (2*norm (minus u (scal (/ 2) (@plus E f g))))).
 unfold Rsqr; ring.
 replace 2 with (abs 2) at 1.
 2: apply Rabs_right; left; apply Rlt_0_2.
@@ -694,10 +694,15 @@ replace 2 with (plus 1 1).
 2: unfold plus; simpl; ring.
 rewrite scal_distr_r scal_one.
 unfold minus; rewrite <- 2!plus_assoc; f_equal.
-rewrite opp_plus 2!plus_assoc; f_equal.
-apply plus_comm.
+rewrite <- Rsqr_def.
+do 3 f_equal.
+rewrite (plus_comm (opp f)).
+rewrite <- plus_assoc.
+f_equal.
+rewrite plus_comm.
+apply opp_plus.
 rewrite <- squared_norm.
-fold (Rsqr (Hnorm (minus (minus u f) (minus u g)))).
+rewrite <- Rsqr_def.
 f_equal.
 rewrite <- norm_opp.
 unfold norm; simpl; f_equal.
@@ -710,10 +715,10 @@ now rewrite plus_opp_r plus_zero_l.
 apply Rsqr_incrst_0.
 2: apply norm_ge_0.
 2: left; apply cond_pos.
-apply Rle_lt_trans with (-4 * (norm (minus u (scal (/ 2) (plus f g))))² +
+apply Rle_lt_trans with (-4 * (norm (minus u (scal (/ 2) (@plus E f g))))² +
     2 * (norm (minus u f))² + 2 * (norm (minus u g))²).
 right.
-apply Rplus_eq_reg_l with (4 * (norm (minus u (scal (/ 2) (plus f g))))²).
+apply Rplus_eq_reg_l with (4 * (norm (minus u (scal (/ 2) (@plus E f g))))²).
 rewrite M; ring.
 apply Rle_lt_trans with (-4*Rsqr delta+2 * (norm (minus u f))² +2 * (norm (minus u g))²).
 apply Rplus_le_compat_r, Rplus_le_compat_r.
@@ -723,10 +728,10 @@ apply Ropp_le_contravar.
 apply Rmult_le_pos; left; apply Rlt_0_2.
 apply Rsqr_incr_1; try assumption.
 assert (H2:Rbar_le (Glb_Rbar (fun r : R => exists w0 : E, phi w0
-  /\ r = norm (minus u w0))) (norm (minus u (scal (/ 2) (plus f g))))).
+  /\ r = norm (@minus E u w0))) (norm (@minus E u (scal (/ 2) (@plus E f g))))).
 apply Glb_Rbar_correct.
-exists (scal (/ 2) (plus f g)); split; try easy.
-replace (scal (/ 2) (plus f g)) with
+exists (scal (/ 2) (@plus E f g)); split; try easy.
+replace (scal (/ 2) (@plus E f g)) with
    (plus (scal (/2) f) (scal (1-/2) g)).
 apply phi_convex; try assumption.
 split.
@@ -865,7 +870,7 @@ intros H u v v' H0 H1 H2 H3.
 rewrite <- H3 in H1.
 pose (a := minus u v').
 pose (b := minus u v).
-pose (v'' := scal (1/2) (plus v v')).
+pose (v'' := scal (1/2) (@plus E v v')).
 pose (d := norm (minus u v)).
 assert (E1 : plus (4*((norm (minus u v''))*(norm (minus u v''))))
                   ((norm (minus v v'))*(norm (minus v v')))
@@ -905,12 +910,12 @@ rewrite plus_comm.
 rewrite (plus_comm _ ((norm (minus v v') * norm (minus v v')))).
 apply Rplus_eq_compat_l.
 replace (plus (minus u v') (minus u v))
-       with (minus ((scal 2) u) (plus v v')).
+       with (minus ((scal 2) u) (@plus E v v')).
 unfold minus.
-assert (H42 : (4 *(norm (plus u (opp (scal (1 / 2) (plus v v')))) *
-             norm (plus u (opp (scal (1 / 2) (plus v v'))))))
-       =((2*(norm (plus u (opp (scal (1 / 2) (plus v v'))))))*
-         (2*(norm (plus u (opp (scal (1 / 2) (plus v v')))))))).
+assert (H42 : (4 *(norm (@plus E u (opp (scal (1 / 2) (@plus E v v')))) *
+             norm (@plus E u (opp (scal (1 / 2) (@plus E v v'))))))
+       =((2*(norm (@plus E u (opp (scal (1 / 2) (@plus E v v'))))))*
+         (2*(norm (@plus E u (opp (scal (1 / 2) (@plus E v v')))))))).
 ring.
 rewrite H42.
 replace 2 with (Rabs 2) at 1.
@@ -954,12 +959,9 @@ rewrite plus_comm.
 rewrite opp_opp.
 rewrite (plus_comm (opp u) v).
 rewrite plus_assoc.
-rewrite <- (plus_assoc u (opp v') v).
-rewrite (plus_comm u (plus (opp v') v)).
-rewrite <- (plus_assoc (plus (opp v') v) u (opp u)).
-rewrite plus_opp_r.
-rewrite plus_zero_r.
-reflexivity.
+rewrite (plus_comm _ (opp u)).
+repeat rewrite plus_assoc.
+now rewrite plus_opp_l plus_zero_l.
 assert (Hmin : norm (minus v v') * norm (minus v v') <= 0).
 replace 0 with (plus (4*(d*d)) (-4*(d*d))).
 replace (norm (minus v v') * norm (minus v v')) with
@@ -968,8 +970,8 @@ replace (norm (minus v v') * norm (minus v v')) with
 unfold minus.
 apply Rplus_le_compat_l.
 replace (-4 * (d * d)) with (opp (4*(d*d))).
-assert (Has: opp (4 * (norm (plus u (opp v'')) * norm (plus u (opp v''))))
-        = (-((4 * (norm (plus u (opp v'')) * norm (plus u (opp v''))))))).
+assert (Has: opp (4 * (norm (@plus E u (opp v'')) * norm (@plus E u (opp v''))))
+        = (-((4 * (norm (@plus E u (opp v'')) * norm (@plus E u (opp v''))))))).
 reflexivity.
 rewrite Has.
 clear Has.
@@ -1001,7 +1003,7 @@ assert (Hf :Rbar_le x (norm (minus u v''))).
 apply Hp.
 unfold v''.
 unfold convex in phi_convex.
-replace (scal (1 / 2) (plus v v'))
+replace (scal (1 / 2) (@plus E v v'))
         with
         (plus (scal (1/2) v) (scal (1/2) v')).
 replace (1 / 2) with (1 - (1 / 2)) at 2 by field.
@@ -1123,7 +1125,7 @@ intros. unfold minus at 1.
 rewrite scal_distr_r. rewrite scal_one. rewrite scal_opp_l.
 rewrite opp_plus. rewrite (opp_plus v (opp (scal t v))).
 rewrite opp_opp. rewrite plus_assoc. rewrite plus_assoc.
-rewrite (plus_comm (plus u (opp (scal t w))) (opp v)).
+rewrite (plus_comm (@plus E u (opp (scal t w))) (opp v)).
 rewrite plus_assoc. unfold minus at 1.
 rewrite (plus_comm (opp v) u). unfold minus.
 rewrite <- plus_assoc. rewrite <- scal_opp_l.
@@ -1227,7 +1229,7 @@ Lemma charac_ortho_projection_convex_aux1_r : forall u v w :E, phi v ->
             <= ((norm (minus u w) * norm (minus u w)))).
 intros.
 assert (minus u w = plus (minus u v) (minus v w)).
-unfold minus. rewrite (plus_comm u (opp v)).
+unfold minus. rewrite (@plus_comm E u (opp v)).
 rewrite plus_assoc_gen. rewrite plus_opp_l.
 rewrite plus_zero_l. reflexivity.
 rewrite H2.
@@ -1332,7 +1334,7 @@ intros; split.
  intros.
  assert
       (forall w, minus u w = plus (minus u v) (minus v w)).
- unfold minus. symmetry. rewrite (plus_comm u (opp v)).
+ unfold minus. symmetry. rewrite (@plus_comm E u (opp v)).
  rewrite plus_assoc_gen. rewrite plus_opp_l.
  rewrite plus_zero_l. reflexivity.
  assert
@@ -1433,7 +1435,7 @@ apply mod2.
 trivial.
 apply unique_existence1; split.
 apply ortho_projection_convex'; try easy.
-exists zero.
+exists (@zero E).
 apply (compatible_m_zero phi phi_mod).
 intros v v' Hv Hv'.
 apply (ortho_projection_convex_unique phi phi_convex phi_compl u); intuition.
@@ -1489,7 +1491,7 @@ rewrite inner_scal_l.
 rewrite (H1 _ Hy); ring.
 Qed.
 
-Lemma trivial_orth_compl : forall u : E, ((forall v : E, inner u v = 0) <-> u = zero).
+Lemma trivial_orth_compl : forall u : E, ((forall v : E, inner u v = 0) <-> u = @zero E).
 intros; split.
 intro H0. assert (inner u u = 0). apply H0; trivial.
 apply PreHilbert.ax3 in H. trivial.
@@ -1497,7 +1499,7 @@ intros. rewrite H. rewrite inner_zero_l; reflexivity.
 Qed.
 
 Lemma trivial_orth_compl' : forall (phi : E -> Prop) (u : E),
-       closed phi -> phi u -> ((forall v : E, phi v -> inner u v = 0) <-> u = zero).
+       closed phi -> phi u -> ((forall v : E, phi v -> inner u v = 0) <-> u = @zero E).
 intros; split.
 intro H1. assert (inner u u = 0). apply H1; trivial.
 apply PreHilbert.ax3 in H2. trivial.
@@ -1524,7 +1526,7 @@ split; intros.
 + assert
      (forall w:E, phi w -> inner (minus u v) (minus w v) <= 0).
   apply charac_ortho_projection_subspace1; intuition.
-  pose (w' := plus w v).
+  pose (w' := @plus E w v).
   assert (inner (minus u v) w <= 0).
   assert (Hm1 : w = minus w' v).
   unfold minus.
@@ -1670,7 +1672,7 @@ Qed.
 Lemma direct_sum_with_orth_compl_charac2: forall u v,
     phi v -> norm (minus u v)
         = Glb_Rbar (fun r => exists w:E, phi w /\ r = norm (minus u w)) ->
-      (orth_compl u <-> v = zero).
+      (orth_compl u <-> v = @zero E).
 split; intros.
 + unfold orth_compl in H1.
   assert
@@ -1688,7 +1690,7 @@ split; intros.
   intros.
   apply direct_sum_with_orth_compl_decomp in H0.
   assert
-       (forall x : E, phi x -> orth_compl x -> x = zero).
+       (forall x : E, phi x -> orth_compl x -> x = @zero E).
   apply direct_sumable_with_orth_compl. unfold orth_compl in H0.
   assert (inner (minus u zero) (minus w zero) = 0).
   unfold minus. rewrite opp_zero.

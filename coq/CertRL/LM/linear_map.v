@@ -66,15 +66,21 @@ Lemma fct_plus_opp_r: forall f:E->F, fct_plus f (fct_opp f) = fct_zero.
 Proof.
 intros f.
 apply functional_extensionality.
-intros x; apply plus_opp_r.
+intros x; apply (@plus_opp_r F).
 Qed.
 
+Definition fct_AbelianMonoid_mixin :=
+  AbelianMonoid.Mixin (E->F) fct_plus fct_zero fct_plus_comm
+   fct_plus_assoc fct_plus_zero_r.
+
+Canonical fct_AbelianMonoid :=
+  AbelianMonoid.Pack (E->F) (fct_AbelianMonoid_mixin) (E->F).
+
 Definition fct_AbelianGroup_mixin :=
-  AbelianGroup.Mixin (E->F) fct_plus fct_opp fct_zero fct_plus_comm
-   fct_plus_assoc fct_plus_zero_r fct_plus_opp_r.
+  AbelianGroup.Mixin fct_AbelianMonoid fct_opp fct_plus_opp_r.
 
 Canonical fct_AbelianGroup :=
-  AbelianGroup.Pack (E->F) (fct_AbelianGroup_mixin) (E->F).
+  AbelianGroup.Pack (E->F) (AbelianGroup.Class _ (fct_AbelianMonoid_mixin) fct_AbelianGroup_mixin) (E->F).
 
 Lemma fct_scal_assoc: forall x y (u:E->F),
    fct_scal x (fct_scal y u) = fct_scal (mult x y) u.
@@ -138,7 +144,10 @@ split.
    unfold plus at 1 4 5; unfold opp; simpl.
    unfold fct_plus, fct_opp.
    rewrite Hf1, Hg1.
-   rewrite opp_plus.
+   transitivity (plus (plus (f x) (f y)) (plus (opp (g x)) (opp (g y)))).
+   { f_equal.
+     apply (opp_plus (g x) (g y)).
+   } 
    repeat rewrite <- plus_assoc.
    apply f_equal.
    repeat rewrite plus_assoc.
@@ -193,7 +202,7 @@ Proof.
 intros f (H1,H2); split.
 intros x y; unfold opp; simpl; unfold fct_opp.
 rewrite H1.
-apply opp_plus.
+apply (opp_plus (f x) (f y)).
 intros x l; unfold opp; simpl; unfold fct_opp.
 rewrite H2.
 now rewrite <- scal_opp_r.
@@ -254,13 +263,23 @@ intros x y l;unfold plus; unfold opp; simpl;unfold fct_plus, fct_opp;unfold plus
    unfold fct_plus, fct_opp;rewrite Hf2,Hg2;rewrite <- scal_opp_r;now rewrite scal_distr_l.
 split.
 intros x y z; unfold plus at 1 4 5; unfold opp;simpl; unfold fct_plus, fct_opp;
-  unfold plus at 1 5 6;unfold opp;simpl;unfold fct_plus, fct_opp;rewrite Hf3,Hg3;
-  rewrite opp_plus;rewrite plus_assoc;rewrite plus_assoc;apply f_equal2;trivial.
- rewrite <- plus_assoc;rewrite (plus_comm (f y z) (opp (g x z)));now rewrite plus_assoc.
-intros x y z; unfold plus at 1 4 5; unfold opp;simpl; unfold fct_plus, fct_opp.
-  unfold plus at 1 4 5;unfold opp;simpl;unfold fct_plus, fct_opp. rewrite Hf4,Hg4;
-  rewrite opp_plus;rewrite plus_assoc;rewrite plus_assoc;apply f_equal2;trivial.
- rewrite <- plus_assoc;rewrite (plus_comm (f x z) (opp (g x y)));now rewrite plus_assoc.
+  unfold plus at 1 5 6;unfold opp;simpl;unfold fct_plus, fct_opp;rewrite Hf3,Hg3.
+repeat rewrite <- plus_assoc.
+f_equal.
+rewrite (plus_comm (opp (g x z))).
+repeat rewrite <- plus_assoc.
+f_equal.
+rewrite (plus_comm (opp _)).
+apply (opp_plus (g x z) (g y z)).
+intros x y z; unfold plus at 1 4 5; unfold opp;simpl; unfold fct_plus, fct_opp;
+  unfold plus at 1 4 5;unfold opp;simpl;unfold fct_plus, fct_opp. rewrite Hf4,Hg4.
+repeat rewrite <- plus_assoc.
+f_equal.
+rewrite (plus_comm (opp (g x y))).
+repeat rewrite <- plus_assoc.
+f_equal.
+rewrite (plus_comm (opp _)).
+apply (opp_plus (g x y) (g x z)).
 exists zero;split.
 unfold zero;intros;simpl;unfold fct_zero; simpl;unfold zero;simpl;unfold fct_zero;
   now rewrite scal_zero_r.

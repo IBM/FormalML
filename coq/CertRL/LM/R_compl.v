@@ -116,9 +116,9 @@ generalize (archimed (ln d / ln k)); intros (Y1,_).
 rewrite Rmult_comm.
 apply Rlt_le_trans with (1:=Y1).
 generalize (up (ln d / ln k)); clear; intros x.
-rewrite INR_IZR_INZ, Zabs2Nat.id_abs.
+rewrite INR_IZR_INZ, Zabs.inj_Zabs_nat.
 apply IZR_le.
-case (Zabs_spec x); intros (T1,T2); rewrite T2; auto with zarith.
+case (Zabs.Zabs_spec x); intros (T1,T2); rewrite T2; auto with zarith.
 (* k = 0 *)
 exists 1%nat.
 rewrite <- Hk';simpl.

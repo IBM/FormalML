@@ -133,10 +133,11 @@ intros. split.
 unfold compatible_m in *.
 unfold compatible_g in *.
 assert (u = opp u').
+replace  (@zero (ModuleSpace.AbelianMonoid R_Ring E)) with (@zero (AbelianGroup.AbelianMonoid (ModuleSpace.AbelianGroup R_Ring E))) in H2 by reflexivity.
 rewrite <- plus_opp_r with u' in H2.
 rewrite plus_comm in H2.
-apply plus_reg_l in H2.
-trivial.
+eapply plus_reg_l.
+eapply H2.
 assert (phi' u).
 rewrite H3 in H2.
 rewrite H3.
@@ -144,8 +145,9 @@ rewrite <- scal_opp_one.
 apply (proj2 Cphi'). trivial.
 apply H; trivial.
 assert (u' = opp u).
+replace  (@zero (ModuleSpace.AbelianMonoid R_Ring E)) with (@zero (AbelianGroup.AbelianMonoid (ModuleSpace.AbelianGroup R_Ring E))) in H2 by reflexivity.
 rewrite <- plus_opp_r with u in H2.
-apply plus_reg_l in H2. trivial.
+eapply plus_reg_l; eauto.
 assert (phi u').
 rewrite H3 in H2.
 rewrite H3.
@@ -156,7 +158,7 @@ Qed.
 
 Lemma plus_u_opp_v : forall (u v : E), u = v <-> (plus u (opp v) = zero).
 intros; split.
-+ intros. rewrite H. rewrite plus_opp_r. reflexivity.
++ intros. rewrite H. now generalize (plus_opp_r v).
 + intros. apply plus_reg_r with (opp v). rewrite plus_opp_r; trivial.
 Qed.
 
@@ -179,7 +181,9 @@ destruct Cphi as ((Cphi1,(x,Cphi2)),Cphi3).
 destruct Cphi' as ((Cphi'1,(x',Cphi'2)),Cphi'3).
 assert (plus (plus u (opp v)) (plus u' (opp v')) = zero).
 rewrite plus_assoc_gen. rewrite H4.
-rewrite plus_assoc_gen. rewrite plus_opp_r. rewrite plus_opp_r.
+rewrite plus_assoc_gen.
+replace  (plus v' (opp v')) with (@zero (ModuleSpace.AbelianMonoid R_Ring E)) by (symmetry; generalize (plus_opp_r v'); intros HH; apply HH).
+replace  (plus v (opp v)) with (@zero (ModuleSpace.AbelianMonoid R_Ring E)) by (symmetry; generalize (plus_opp_r v); intros HH; apply HH).
 rewrite plus_zero_r. reflexivity.
 rewrite plus_u_opp_v.
 rewrite (plus_u_opp_v u' v').
@@ -203,9 +207,18 @@ apply (Cphi'3 x (opp one)) in H1.
 assert ((x = zero) /\ (opp x = zero)).
 apply H. trivial. rewrite <- (scal_zero_l y). trivial.
 rewrite <- scal_opp_one. trivial.
+simpl.
+replace (@zero
+       (AbelianMonoid.Pack (ModuleSpace.sort R_Ring E)
+          (AbelianGroup.base (ModuleSpace.sort R_Ring E)
+             (ModuleSpace.base R_Ring
+                match E return Type with
+                | @ModuleSpace.Pack _ T _ _ => T
+                end (ModuleSpace.class R_Ring E)))
+          (ModuleSpace.sort R_Ring E))) with (@zero (ModuleSpace.AbelianMonoid R_Ring E)) by reflexivity.
 rewrite <- (scal_zero_l y'). trivial.
-rewrite plus_opp_r.
-rewrite plus_zero_l. reflexivity.
+rewrite plus_zero_l.
+apply (plus_opp_r x).
 intuition.
 Qed.
 

@@ -138,10 +138,11 @@ destruct H0 as (H0,H7).
 destruct H7 as (H7,(H8,H9)).
 unfold minus.
 rewrite H9.
-replace (a (plus u (opp uh)) u) with
-        (plus (a (plus u (opp uh)) u) 0).
+transitivity (plus (a (@plus E u (opp uh)) u) 0); cycle 1.
+{ unfold plus; simpl.
+  apply Rplus_0_r.
+} 
 f_equal.
-now rewrite plus_zero_r.
 specialize (H1 uh).
 apply H1 in X1.
 specialize (H2 uh).
@@ -165,10 +166,12 @@ rewrite H7 scal_opp_one.
 reflexivity.
 rewrite scal_opp_one.
 reflexivity.
-rewrite plus_zero_r; reflexivity.
-replace (M * norm (minus u vh) * norm (minus u uh)) with
-        (M * norm (minus u uh) * norm (minus u vh)) by ring.
-assumption.
+eapply Rle_trans; try eapply H4.
+right.
+simpl.
+repeat rewrite Rmult_assoc.
+f_equal.
+now rewrite Rmult_comm.
 destruct Hca.
 intro Hk.
 rewrite Hk in H0.

@@ -105,7 +105,7 @@ Proof.
 intros f a k p m D H1 H2 H3 H4.
 case_eq m.
 (* *)
-intros _; rewrite plus_0_r.
+intros _; rewrite Nat.add_0_r.
 assert (L:(0 < k ^ p / (1 - k) * D)).
 apply Rmult_lt_0_compat; trivial.
 apply Rdiv_lt_0_compat.
@@ -184,7 +184,8 @@ Proof.
 intros a k p m n D (H1,H1') H2 Phi_a H3 H4 Hp Hm Hn.
 case H1; intros P.
 (* *)
-case (le_or_lt p m); intros H5.
+
+case (Nat.le_gt_cases p m); intros H5.
 (* . *)
 replace m with (p+(m-p))%nat.
 apply ball_le with (k^p/(1-k) *D).
@@ -197,7 +198,7 @@ apply Rle_pow_le; try assumption.
 split; try left; try assumption.
 apply dist_iter; try assumption.
 split; assumption.
-now apply le_plus_minus_r.
+auto with arith.
 (* . *)
 apply ball_sym.
 replace p with (m+(p-m))%nat.
@@ -211,7 +212,7 @@ apply Rle_pow_le; try assumption.
 split; try left; assumption.
 apply dist_iter; try assumption.
 split; assumption.
-now apply le_plus_minus_r, lt_le_weak.
+auto with arith.
 (* *)
 apply ball_le with 0.
 rewrite <- P.
@@ -219,8 +220,8 @@ rewrite pow_i; try assumption.
 right; unfold Rdiv; ring.
 apply dist_iter_aux_zero; try assumption.
 now rewrite P.
-now apply lt_le_trans with n.
-now apply lt_le_trans with n.
+now apply Nat.lt_le_trans with n.
+now apply Nat.lt_le_trans with n.
 Qed.
 
 End iter_dist.
@@ -403,11 +404,11 @@ intros P Q (N1,H1) (N2,H2).
 exists (max N1 N2).
 intros n Hn; split.
 apply H1.
-apply le_trans with (2:=Hn).
-apply Max.le_max_l.
+apply Nat.le_trans with (2:=Hn).
+apply Nat.le_max_l.
 apply H2.
-apply le_trans with (2:=Hn).
-apply Max.le_max_r.
+apply Nat.le_trans with (2:=Hn).
+apply Nat.le_max_r.
 intros P Q H (N,HN).
 exists N.
 intros n Hn.
@@ -746,7 +747,7 @@ Proof.
 intros f P a k p m D H1 H2 HH H3 H4.
 case_eq m.
 (* *)
-intros _; rewrite plus_0_r.
+intros _; rewrite Nat.add_0_r.
 assert (L:(0 < k ^ p / (1 - k) * D)).
 apply Rmult_lt_0_compat; trivial.
 apply Rdiv_lt_0_compat.
@@ -825,7 +826,7 @@ Proof.
 intros a k p m n D (H1,H1') H2 Phi_a H3 H4 Hp Hm Hn.
 case H1; intros P0.
 (* *)
-case (le_or_lt p m); intros H5.
+case (Nat.le_gt_cases  p m); intros H5.
 (* . *)
 replace m with (p+(m-p))%nat.
 apply ball_le with (k^p/(1-k) *D).
@@ -842,7 +843,7 @@ intros p0.
 apply phi_iter_f.
 trivial.
 trivial.
-now apply le_plus_minus_r.
+auto with arith.
 (* . *)
 apply ball_sym.
 replace p with (m+(p-m))%nat.
@@ -858,7 +859,7 @@ apply dist_iter_phi with phi; try assumption.
 split; assumption.
 intros p0.
 apply phi_iter_f; trivial.
-now apply le_plus_minus_r, lt_le_weak.
+auto with arith.
 (* *)
 apply ball_le with 0.
 rewrite <- P0.
@@ -866,8 +867,8 @@ rewrite pow_i; try assumption.
 right; unfold Rdiv; ring.
 apply dist_iter_aux_zero_phi; try assumption.
 now rewrite P0.
-now apply lt_le_trans with n.
-now apply lt_le_trans with n.
+now apply Nat.lt_le_trans with n.
+now apply Nat.lt_le_trans with n.
 Qed.
 
 End iter_dist_sub.
@@ -979,11 +980,11 @@ intros P Q (N1,H1) (N2,H2).
 exists (max N1 N2).
 intros n Hn; split.
 apply H1.
-apply le_trans with (2:=Hn).
-apply Max.le_max_l.
+apply Nat.le_trans with (2:=Hn).
+apply Nat.le_max_l.
 apply H2.
-apply le_trans with (2:=Hn).
-apply Max.le_max_r.
+apply Nat.le_trans with (2:=Hn).
+apply Nat.le_max_r.
 intros P Q H (N,HN).
 exists N.
 intros n Hn.

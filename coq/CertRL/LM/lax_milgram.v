@@ -206,7 +206,7 @@ Theorem Riesz_Frechet'_zero_phi : forall (f:topo_dual E),
      phi v -> f v = inner u v.
 Proof.
 intros f H.
-exists zero.
+exists (@zero E).
 split.
 destruct m_C as ((CG1,(z,CG2)),CS).
 unfold compatible_m in m_C.
@@ -242,9 +242,9 @@ apply C1; trivial.
 apply C1'; trivial.
 exists zero.
 split.
-apply compatible_m_zero.
+apply (compatible_m_zero phi0).
 apply C.
-apply compatible_m_zero.
+apply (compatible_m_zero phi0').
 apply C'.
 intros x l.
 split.
@@ -316,7 +316,7 @@ assert (forall u, exists! v:E,
        = Glb_Rbar (fun r => exists w:E, PHI w
         /\ r = norm (minus u w))).
 intros u; apply: ortho_projection_convex.
-exists zero.
+exists (@zero E).
 split.
 (*apply ker_nnker_equiv.*)
 apply: compatible_m_zero.
@@ -772,7 +772,7 @@ exfalso.
 apply H.
 exists v.
 split; trivial.
-assert (u = zero).
+assert (u = @zero E).
 rewrite <- H0.
 assert (exists! (u:E), phi u /\ forall (v:E),
       phi v -> f v = inner u v).
@@ -803,7 +803,7 @@ trivial.
 apply H2'.
 rewrite H2.
 rewrite norm_zero.
-assert (forall u, u <> zero -> phi u -> norm (f u) <= 0 * norm u).
+assert (forall u, u <> @zero E -> phi u -> norm (f u) <= 0 * norm u).
 intros u0 H3 H3'.
 unfold f_phi_neq_zero.
 rewrite H1.
@@ -861,7 +861,7 @@ apply H0.
 apply (iota_elim _ _ ) in H0.
 unfold tau.
 rewrite H0.
-assert (u <> zero).
+assert (u <> @zero E).
 rewrite Heq.
 destruct H1 as (H11,H12).
 assert (f v = inner u1 v).
@@ -1720,7 +1720,7 @@ destruct H as (H,H2).
 rewrite <- plus_assoc in H.
 destruct H as (Pu,H).
 symmetry in H.
-assert (Hu0 : plus u zero = u).
+assert (Hu0 : @plus E u zero = u).
 rewrite plus_zero_r. reflexivity.
 rewrite <- Hu0 in H at 1.
 apply plus_reg_l in H.
@@ -1812,7 +1812,7 @@ rewrite <- plus_assoc.
 rewrite <- plus_assoc.
 rewrite plus_comm.
 rewrite (plus_comm (opp v') _).
-assert (Hp1 : forall a b, plus (plus a b) v
+assert (Hp1 : forall a b, plus (@plus E a b) v
               = plus a (plus b v)).
 intros.
 rewrite plus_assoc.
@@ -1820,7 +1820,7 @@ reflexivity.
 rewrite Hp1.
 rewrite Hp1.
 rewrite Hp1.
-rewrite (plus_assoc v (opp v') _).
+rewrite (@plus_assoc E v (opp v') _).
 assert (Hp2 : forall a b, plus a (plus b
           (plus (opp v') v)) =
           plus (plus a b) (plus (opp v') v)).
@@ -1830,30 +1830,30 @@ rewrite Hp2.
 rewrite Hp2.
 rewrite plus_comm.
 rewrite (plus_comm (opp v') v).
-assert (Hpaux : ((plus (opp (scal r (Tau (A v))))
+assert (Hpaux : ((@plus E (opp (scal r (Tau (A v))))
      (plus (scal r (Tau f))
         (plus (opp (opp (scal r (Tau (A v')))))
            (opp (scal r (Tau f)))))))
-   = (opp (scal r (Tau (A (plus v (opp v'))))))).
+   = (opp (scal r (Tau (A (@plus E v (opp v'))))))).
 rewrite plus_assoc.
 rewrite opp_opp.
 rewrite (plus_comm _ (opp (scal r (Tau f)))).
-assert (Hg : forall a b c d : E, plus (plus a b) (plus c d)
-                           = plus (plus a d) (plus b c)).
+assert (Hg : forall a b c d : E, @plus E (@plus E a b) (@plus E c d)
+                           = @plus E (@plus E a d) (@plus E b c)).
 intros.
 rewrite plus_assoc.
 rewrite plus_assoc.
 rewrite plus_comm.
-rewrite (plus_comm a0 d).
-rewrite <- (plus_assoc d a0 b).
-rewrite <- (plus_assoc d _ _).
+rewrite (@plus_comm E a0 d).
+rewrite <- (@plus_assoc E d a0 b).
+rewrite <- (@plus_assoc E d _ _).
 reflexivity.
 rewrite Hg.
 rewrite plus_opp_r.
 rewrite plus_zero_r.
-replace (opp (scal r (Tau (A (plus v (opp v'))))))
+replace (opp (scal r (Tau (A (@plus E v (opp v'))))))
         with
-        (scal r (Tau (A (opp (plus v (opp v')))))).
+        (scal r (Tau (A (opp (@plus E v (opp v')))))).
 replace ((opp (scal r (Tau (A v)))))
         with
         (scal r (Tau (A (opp v)))).
@@ -1891,14 +1891,14 @@ rewrite Hsr.
 reflexivity.
 rewrite <- scal_opp_r.
 rewrite <- scal_opp_one.
-replace ((scal (opp one) (Tau (A (plus v (opp v'))))))
+replace ((scal (opp one) (Tau (A (@plus E v (opp v'))))))
         with
-        ((Tau (scal (opp one) (A (plus v (opp v')))))).
+        ((Tau (scal (opp one) (A (@plus E v (opp v')))))).
 assert (H : is_linear_mapping Tau).
 apply Riesz_Frechet_moreover2_phi; trivial.
 destruct H as (Hl1,Hl2).
-replace (Tau (A (opp (plus v (opp v')))))
-     with (Tau (scal (opp one) (A (plus v (opp v'))))).
+replace (Tau (A (opp (@plus E v (opp v')))))
+     with (Tau (scal (opp one) (A (@plus E v (opp v'))))).
 reflexivity.
 clear Hp1 Hp2 Hg.
 assert (Hlb : forall l y, scal l (A y)
@@ -2353,7 +2353,7 @@ intros u' Hu'.
 symmetry.
 apply (proj2 Hu).
 trivial.
-exists zero.
+exists (@zero E).
 split.
 unfold is_sol_linear_pb_phi.
 split.
@@ -2363,12 +2363,12 @@ intros v Hv.
 apply Is_only_zero_set_correct1_phi with E phi v in i.
 rewrite i.
 destruct Hba as ((Hba1,(Hba2,Hba3)),Hba4).
-assert (a zero zero = a (scal zero zero) zero).
+assert (a (@zero E) (@zero E) = a (scal zero zero) (@zero E)).
 rewrite scal_zero_l.
 reflexivity.
 rewrite H.
-replace (a (scal zero zero) zero)
-        with (scal zero (a zero zero)).
+replace (a (scal zero zero) (@zero E))
+        with (scal zero (a (@zero E) (@zero E))).
 rewrite scal_zero_l.
 assert (is_linear_mapping f).
 apply f.

@@ -56,7 +56,7 @@ specialize (H2 (norm x)).
 assert (norm x = 0).
 case (Req_dec (norm x) 0); trivial.
 intros H3.
-elimtype False.
+exfalso.
 apply H2.
 exists x.
 split; trivial.
@@ -93,7 +93,7 @@ Proof.
 intros A H1 H2 H3.
 case H2; trivial.
 intros H4.
-elimtype False.
+exfalso.
 specialize (Is_only_zero_set_correct3 H1).
 intros H5.
 assert (~(exists x : E, x <> zero)).
@@ -104,7 +104,7 @@ intros x.
 case (Req_dec (norm x) 0).
 apply norm_eq_zero.
 intros H6.
-elimtype False.
+exfalso.
 apply H.
 exists x.
 intros H7; apply H6.
@@ -236,7 +236,6 @@ Proof.
 intros f.
 generalize (operator_norm_ge_0 f).
 destruct (operator_norm f); try easy.
-intros _; apply Rle_refl; simpl.
 Qed.
 
 Lemma operator_norm_helper:
@@ -889,12 +888,19 @@ unfold clm_plus, clm_opp; simpl.
 apply: plus_opp_r.
 Qed.
 
+
+Definition clm_AbelianMonoid_mixin :=
+  AbelianMonoid.Mixin clm clm_plus clm_zero clm_plus_comm
+   clm_plus_assoc clm_plus_zero_r.
+
+Canonical clm_AbelianMonoid :=
+  AbelianMonoid.Pack clm (clm_AbelianMonoid_mixin) clm.
+
 Definition clm_AbelianGroup_mixin :=
-  AbelianGroup.Mixin clm clm_plus clm_opp clm_zero clm_plus_comm
-   clm_plus_assoc clm_plus_zero_r clm_plus_opp_r.
+  AbelianGroup.Mixin clm_AbelianMonoid clm_opp clm_plus_opp_r.
 
 Canonical clm_AbelianGroup :=
-  AbelianGroup.Pack clm (clm_AbelianGroup_mixin) clm.
+  AbelianGroup.Pack clm (AbelianGroup.Class _ (clm_AbelianMonoid_mixin) clm_AbelianGroup_mixin) clm.
 
 (** Clm is ModuleSpace *)
 
@@ -1308,7 +1314,7 @@ specialize (H2 (norm x)).
 assert (norm x = 0).
 case (Req_dec (norm x) 0); trivial.
 intros H3.
-elimtype False.
+exfalso.
 apply H2.
 exists x.
 split; trivial.
@@ -1391,7 +1397,7 @@ intros A H1 H2 H3.
 case H2; trivial.
 intros H4.
 apply H3.
-elimtype False.
+exfalso.
 apply H1.
 apply Is_only_zero_set_correct2''_phi.
 intros x.
@@ -1460,7 +1466,6 @@ Proof.
 intros f.
 generalize (operator_norm_ge_0_phi f).
 destruct (operator_norm_phi f); try easy.
-intros _; apply Rle_refl; simpl.
 Qed.
 
 Lemma operator_norm_helper'_phi:

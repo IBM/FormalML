@@ -118,17 +118,16 @@ intros k Hk.
 replace k with 0%nat.
 apply H.
 intros m Hm; contradict Hm.
-apply lt_n_0.
+auto with arith.
 generalize Hk; case k; trivial.
 intros m Hm; contradict Hm.
-apply le_not_lt.
-now auto with arith.
+now auto with arith. 
 intros k Hk.
 apply H.
 intros m Hm.
 apply IHn.
-apply lt_le_trans with (1:=Hm).
-now apply gt_S_le.
+apply Nat.lt_le_trans with (1:=Hm).
+auto with arith. 
 apply H0.
 apply le_n.
 Qed.

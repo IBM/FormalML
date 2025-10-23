@@ -29,7 +29,7 @@ Context {CCP: compatible_g P}.
 Record Sg:= mk_Sg {
     val :> G ;
     H: P val
-}.
+              }.
 
 Lemma Sg_eq: forall (x y:Sg), (val x = val y) -> x = y.
 Proof.
@@ -45,11 +45,11 @@ Qed.
 Definition Sg_zero : Sg := mk_Sg zero (compatible_g_zero P CCP).
 
 Definition Sg_plus (x y : Sg) : Sg :=
-    mk_Sg (plus x y)
+    mk_Sg (plus (val x) (val y))
           (compatible_g_plus P (val x) (val y) CCP (H x) (H y)).
 
 Definition Sg_opp (x : Sg) : Sg :=
-    mk_Sg (opp x)
+    mk_Sg (opp (val x))
           (compatible_g_opp P (val x) CCP (H x)).
 
 Lemma Sg_plus_comm: forall (x y:Sg), Sg_plus x y = Sg_plus y x.
@@ -81,12 +81,18 @@ unfold Sg_plus; simpl.
 apply plus_opp_r.
 Qed.
 
+Definition Sg_AbelianMonoid_mixin :=
+  AbelianMonoid.Mixin Sg Sg_plus Sg_zero Sg_plus_comm
+   Sg_plus_assoc Sg_plus_zero_r.
+
+Canonical Sg_AbelianMonoid :=
+  AbelianMonoid.Pack Sg (Sg_AbelianMonoid_mixin) Sg.
+
 Definition Sg_AbelianGroup_mixin :=
-  AbelianGroup.Mixin Sg Sg_plus Sg_opp Sg_zero Sg_plus_comm
-   Sg_plus_assoc Sg_plus_zero_r Sg_plus_opp_r.
+  AbelianGroup.Mixin Sg_AbelianMonoid Sg_opp Sg_plus_opp_r.
 
 Canonical Sg_AbelianGroup :=
-  AbelianGroup.Pack Sg (Sg_AbelianGroup_mixin) Sg.
+  AbelianGroup.Pack Sg (AbelianGroup.Class _ (Sg_AbelianMonoid_mixin) Sg_AbelianGroup_mixin) Sg.
 
 End Subgroups.
 
@@ -135,12 +141,18 @@ unfold Sg_plus; unfold Sg_scal; simpl.
 apply scal_distr_r.
 Qed.
 
+Definition Sg_MAbelianMonoid_mixin :=
+  AbelianMonoid.Mixin (@Sg _ P) Sg_Mplus Sg_zero Sg_plus_comm
+   Sg_plus_assoc Sg_plus_zero_r.
+
+Canonical Sg_MAbelianMonoid :=
+  AbelianMonoid.Pack(@Sg _ P) (Sg_MAbelianMonoid_mixin) (@Sg _ P).
+
 Definition Sg_MAbelianGroup_mixin :=
-  AbelianGroup.Mixin Sg Sg_Mplus Sg_opp Sg_zero Sg_plus_comm
-   Sg_plus_assoc Sg_plus_zero_r Sg_plus_opp_r.
+  AbelianGroup.Mixin Sg_MAbelianMonoid Sg_opp Sg_plus_opp_r.
 
 Canonical Sg_MAbelianGroup :=
-  AbelianGroup.Pack Sg (Sg_MAbelianGroup_mixin) (@Sg _ P).
+  AbelianGroup.Pack (@Sg _ P) (AbelianGroup.Class _ (Sg_MAbelianMonoid_mixin) Sg_MAbelianGroup_mixin) (@Sg _ P).
 
 Definition Sg_ModuleSpace_mixin :=
 ModuleSpace.Mixin R_Ring (Sg_MAbelianGroup)
