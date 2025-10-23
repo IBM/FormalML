@@ -128,6 +128,4 @@ MODULES =  $(addprefix lib_utils/,$(QCERT_LIB_UTILS)) \
 	$(addprefix ProbTheory/,$(PROB_THEORY)) \
 	$(addprefix CertRL/,$(CERTRL)) \
 	$(addprefix QLearn/,$(QLEARN)) \
-	$(addprefix FHE/,$(FHE)) \
-	API
-	
+	$(addprefix FHE/,$(FHE))
