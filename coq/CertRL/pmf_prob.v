@@ -127,7 +127,7 @@ Section Pmf_PMF.
              rewrite Forall_forall; intros lmu.
              specialize (lmu _ inn).
              lia.
-          -- destruct (in_dec eq_nat_dec a l); trivial.
+          -- destruct (in_dec Peano_dec.eq_nat_dec a l); trivial.
              specialize (nin _ n).
              unfold nequiv_decb, negb, equiv_decb in non0.
              destruct (equiv_dec (coll a) 0); congruence.
@@ -283,7 +283,7 @@ Section Pmf_PMF.
            (map (fun x : nonnegreal * A => nonneg (fst x))
               (filter (fun x : nonnegreal * A => if equiv_dec a (snd x) then true else false) outcomes))
      | None => 0
-     end) (nodup eq_nat_dec (map countable_index (map snd outcomes))))).
+     end) (nodup Peano_dec.eq_nat_dec (map countable_index (map snd outcomes))))).
     - apply infinite_sum'_finite
       ; intros.
       + match_case; intros.
@@ -389,7 +389,7 @@ Section pmf_prob.
                             (exist (fun _ : pre_event A => True)
                                    (fun omega : A => pre_event_singleton c (rv_X omega))
                                    (sa_preimage_singleton rv_X c)))
-                 (nodup eq_nat_dec (map countable_index (map snd pmf.(outcomes)))))
+                 (nodup Peano_dec.eq_nat_dec (map countable_index (map snd pmf.(outcomes)))))
    ; intros HH.
    cut_to HH.
    - rewrite (infinite_sum'_unique i HH).

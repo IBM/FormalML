@@ -96,8 +96,6 @@ Proof.
   eapply FiniteType_fun_dep ; eauto.
   - apply fs.
   - apply fa.
- Unshelve.
- apply st_eqdec.
 Qed.
 
 Global Instance act_finite (M : MDP) : FiniteType (sigT M.(act))
@@ -407,12 +405,19 @@ Proof.
   lra.
 Qed.
 
+
+Definition Rfct_AbelianMonoid_mixin :=
+  AbelianMonoid.Mixin (Rfct A) Rfct_plus Rfct_zero Rfct_plus_comm
+   Rfct_plus_assoc Rfct_plus_zero_r.
+
+Canonical Rfct_AbelianMonoid :=
+  AbelianMonoid.Pack (Rfct A) (Rfct_AbelianMonoid_mixin) (Rfct A).
+
 Definition Rfct_AbelianGroup_mixin :=
-  AbelianGroup.Mixin (Rfct A) Rfct_plus Rfct_opp Rfct_zero Rfct_plus_comm
-   Rfct_plus_assoc Rfct_plus_zero_r Rfct_plus_opp_r.
+  AbelianGroup.Mixin Rfct_AbelianMonoid Rfct_opp Rfct_plus_opp_r.
 
 Canonical Rfct_AbelianGroup :=
-  AbelianGroup.Pack (Rfct A) (Rfct_AbelianGroup_mixin) (Rfct A).
+  AbelianGroup.Pack (Rfct A) (AbelianGroup.Class _ (Rfct_AbelianMonoid_mixin) Rfct_AbelianGroup_mixin) (Rfct A).
 
 End Rfct_AbelianGroup.
 

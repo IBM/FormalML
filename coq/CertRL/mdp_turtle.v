@@ -253,7 +253,7 @@ End optimal_path.
   Section to_string.
     Section utils.
 
-      Definition newline := String (Ascii.ascii_of_N 10) EmptyString.
+      Definition newline := String (Ascii.ascii_of_N (Npos 10%positive)) EmptyString.
 
       Definition string_bracket (sstart send:string) (smiddle:string)
         := String.append sstart (String.append smiddle send).
