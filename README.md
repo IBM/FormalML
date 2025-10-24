@@ -8,15 +8,15 @@
 
  ## Getting Started
 
- To compile the Coq code in this repository,
+ To compile the [Rocq](https://rocq-prover.org/) (previously known as Coq) code in this repository, [Install Rocq](https://rocq-prover.org/install).  For example:
   - first install opam [opam (ocaml package manager)](https://opam.ocaml.org/).
-  - Add support for coq ocaml repositories: `opam repo add coq-released --set-default https://coq.inria.fr/opam/released`.
-  - If you want to create a local environment (switch), you can run `opam switch create nnsopt 4.07.0`.
-  - Next, run `opam install . --deps-only`.  This should install all the dependencies needed, including Coq.
+  - Add support for rocq ocaml repositories: `opam repo add rocq-released https://rocq-prover.org/opam/released`
+  - If you want to create a local environment (switch), you can run `opam switch create formalml 4.14.2`.
+  - Next, run `opam install . --deps-only`.  This should install all the dependencies needed, including Rocq.
   - Once the prerequisites are installed, run `make` to compile it.
 
- Alternatively, the included Docker file can be built using Docker to compile the coq code in a suitable environment.
- `docker build --build-arg=coq_image="coqorg/coq:8.8.2" --pull -t nn_sopt .`
+ Alternatively, the included Docker file can be built using Docker to compile the rocq code in a suitable environment.
+ `docker build --pull -t formalml .`
 
  ## License
  This repository is distributed under the terms of the Apache 2.0 License, see LICENSE.txt.

@@ -1,1 +1,0 @@
--R coq FormalML -arg -set -arg "Warnings=+default,-ambiguous-path,-coercions,-hiding-delimiting-key,-overwriting-delimiting-key,-redundant-canonical-projection,-typechecker,-ssr-search-moved,-deprecated,-notation-overridden"
