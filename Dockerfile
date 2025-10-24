@@ -17,7 +17,7 @@ RUN ["/bin/bash", "--login", "-c", "set -x \
 
 
 COPY --chown=rocq:rocq _RocqProject Makefile Makefile.rocq_modules ./formal_ml/
-COPY --chown=rocq:rocq coq ./formal_ml/coq
+COPY --chown=rocq:rocq rocq ./formal_ml/rocq
 
 RUN ["/bin/bash", "--login", "-c", "set -x && cd formal_ml && \
      make && make doc"]

@@ -1,7 +1,7 @@
-# Contains the list of all the Coq modules
+# Contains the list of all the Rocq modules
 include Makefile.rocq_modules
 
-ROCQ_FILES = $(addprefix coq/,$(MODULES:%=%.v))
+ROCQ_FILES = $(addprefix rocq/,$(MODULES:%=%.v))
 
 all: rocq
 
@@ -21,7 +21,7 @@ GLOB_FILES_FOR_DOC = $(MODULES:%=%.glob)
 doc: rocq
 	mkdir -p documentation/html
 	rm -f documentation/html/*.html
-	cd coq && coq2html -d ../documentation/html -base FormalML -external http://coquelicot.saclay.inria.fr/html/ Coquelicot $(ROCQ_FILES_FOR_DOC) $(GLOB_FILES_FOR_DOC)
+	cd rocq && coq2html -d ../documentation/html -base FormalML -external http://coquelicot.saclay.inria.fr/html/ Coquelicot $(ROCQ_FILES_FOR_DOC) $(GLOB_FILES_FOR_DOC)
 
 clean: clean-rocq
 	rm -rf documentation/html
