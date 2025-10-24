@@ -1,4 +1,3 @@
-Require Import Qreals.
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
 Require Import Morphisms FiniteType List ListAdd Permutation infprod Almost NumberIso.
 Require Import Sums SimpleExpectation PushNeg.
@@ -6,7 +5,6 @@ Require Import EquivDec.
 Require Import Classical.
 Require Import ClassicalChoice.
 Require Import IndefiniteDescription ClassicalDescription.
-Require QArith.
 Require Import BorelSigmaAlgebra.
 Require Import utils.Utils.
 Require Import ConditionalExpectation.
@@ -1693,7 +1691,7 @@ Qed.
       rv_unfold.
       rewrite  Rmax_list_app by now simpl.
       unfold Rmax.
-      rewrite plus_0_l.
+      rewrite Nat.add_0_l.
       destruct (Rle_dec (Rmax_list (map (fun n : nat => F n a) (seq 0 (S k)))) (F (S k) a)); trivial.
     } 
     apply IsFiniteExpectation_case.
@@ -2867,12 +2865,12 @@ Qed.
   Qed.
 
    Lemma sum_shift_diff (X : nat -> R) (m a : nat) :
-     sum_n X (a + S m) - sum_n X m =
-     sum_n (fun n0 : nat => X (n0 + S m)%nat) a.
+     @sum_n R_AbelianGroup X (a + S m) - @sum_n R_AbelianGroup X m =
+     @sum_n R_AbelianGroup (fun n0 : nat => X (n0 + S m)%nat) a.
    Proof.
      rewrite <- sum_n_m_shift.
      unfold sum_n.
-     rewrite (@sum_split _ _ _ _ m); try lia.
+     rewrite (@sum_split R_AbelianGroup _ _ _ m); try lia.
      unfold plus; simpl.
      lra.
    Qed.
@@ -3997,7 +3995,7 @@ Qed.
         match_destr.
       }
       unfold independent_event_collection in indep.
-      destruct (in_dec NPeano.Nat.eq_dec 0%nat l).
+      destruct (in_dec Nat.eq_dec 0%nat l).
       - pose (ll := 1%nat :: map (fun n => match n with
                                        | 0%nat => n
                                        | S n' => S n
@@ -4024,13 +4022,28 @@ Qed.
         etransitivity; [| etransitivity]; [| apply indep' |].
         + apply ps_proper.
           unfold ll.
-          rewrite perm.
-          simpl.
+          etransitivity.
+          { apply list_inter_equivlist_proper.
+            apply Permutation_equivlist.
+            apply Permutation_map.
+            apply perm.
+          }
+          etransitivity; cycle 1.
+          {
+            apply list_inter_equivlist_proper.
+            apply Permutation_equivlist.
+            apply Permutation_map.
+            apply Permutation_cons; [reflexivity |].
+            apply Permutation_map.
+            symmetry.
+            apply perm.
+          }
+          repeat rewrite map_cons.
           repeat rewrite list_inter_cons.
           rewrite event_inter_assoc.
           apply event_inter_proper.
-          * rewrite event_inter_comm.
-             apply H6.
+          * red; simpl.
+            now rewrite pre_event_inter_comm.
           * apply list_inter_proper.
              rewrite map_map.
              apply Forall2_map_f.
@@ -4924,7 +4937,7 @@ Qed.
     - apply collection_take_preserves_disjoint.
       intros ????[??][??]; simpl in *.
       apply H.
-      apply le_antisym.
+      apply Nat.le_antisymm.
       + assert (INR n1 < INR (S n2)) by (rewrite S_INR; lra).
         apply INR_lt in H4.
         lia.
@@ -5292,7 +5305,7 @@ Qed.
               apply Rbar_finite_eq.
               lra.
            -- intros.
-              rewrite sum_split with (m := n); try lia.
+              rewrite (@sum_split R_AbelianGroup) with (m := n); try lia.
               rewrite sum_n_m_ext_loc with (b := fun _ => zero).
               ++ rewrite sum_n_m_const_zero.
                  rewrite plus_zero_l.
@@ -5324,7 +5337,7 @@ Qed.
               apply ps_pos.
        + intros.
          unfold sum_n.
-         rewrite sum_split with (m := n); try lia.
+         rewrite (@sum_split R_AbelianGroup) with (m := n); try lia.
          reflexivity.
     Qed.
 
@@ -5387,7 +5400,7 @@ Qed.
           -- replace (n0 + S (S a))%nat with (S (n0 + S a)) by lia.
              rewrite sum_Rbar_n_finite_sum_n.
              unfold sum_n.
-             rewrite sum_split with (m := a); try lia.
+             rewrite (@sum_split R_AbelianGroup) with (m := a); try lia.
              rewrite plus_comm.
              rewrite sum_n_m_ext_loc with (b := (fun _ => @zero R_AbelianGroup)).
              ++ rewrite sum_n_m_const_zero.

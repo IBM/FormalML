@@ -1,4 +1,4 @@
-Require Import Reals Sums Lra Lia.
+Require Import ZArith Reals Sums Lra Lia.
 (* Require Import Coquelicot.Hierarchy Coquelicot.Series Coquelicot.Lim_seq Coquelicot.Rbar.*)
 Require Import Coquelicot.Coquelicot.
 Require Import LibUtils.
@@ -493,7 +493,7 @@ Proof.
   replace (S n2 - n1)%nat with ((S m - n1) + (S n2 - S m))%nat by lia.
   rewrite seq_plus.
   rewrite List.fold_right_app.
-  rewrite fold_right_plus_acc.
+  rewrite (@fold_right_plus_acc G).
   now replace (n1 + (S m - n1))%nat with (S m) by lia.
 Qed.
 
@@ -534,7 +534,7 @@ Qed.
             now simpl.
         + intros.
           unfold sum_n.
-          rewrite sum_split with (m := (nk-1)%nat); try lia.
+          rewrite (@sum_split R_AbelianGroup) with (m := (nk-1)%nat); try lia.
           apply Rplus_eq_compat_l.
           replace (S (nk - 1)) with (nk) by lia.
           apply sum_n_m_shift.
@@ -562,7 +562,8 @@ Qed.
       cut (ex_lim_seq (fun n : nat => sum_n_m α 0 (nk + S n) - sum_n_m α 0 nk)).
       {
         apply ex_lim_seq_ext; intros.
-        rewrite (sum_split_plus α 0 nk (S n)); try lia.
+        change ((@sum_n_m R_AbelianGroup α 0 (nk + S n) - @sum_n_m R_AbelianGroup α 0 nk) = @sum_n_m R_AbelianGroup α (S nk) (n + S nk)).
+        rewrite (@sum_split_plus R_AbelianGroup α 0 nk (S n) ltac:(lia) ltac:(lia)).
         unfold plus; simpl.
         field_simplify.
         f_equal.
@@ -948,7 +949,7 @@ Proof.
     specialize (IHk H1).
     apply Rle_trans with (r2 := part_prod_n (pos_sq_fun F) (m + k) n); trivial.
     replace (m + S k)%nat with (S (m+k)%nat) by lia.
-    destruct (le_gt_dec (S (m+k)) n).
+    destruct (Compare_dec.le_gt_dec (S (m+k)) n).
     + apply max_bounded1_pre_le; trivial.
       intros; apply pos_sq_bounded1; trivial.
     + rewrite (part_prod_n_1 (pos_sq_fun F) (S (m + k)%nat)) ; [|lia].
@@ -1110,7 +1111,7 @@ Section Dvoretsky.
 Theorem Dvoretzky4_0 (F: nat -> posreal) (sigma V : nat -> R) :
   (forall (n:nat), V (S n) <= (F n) * (V n) + (sigma n)) ->
   (forall (n:nat), 
-      V (S n) <= sum_n (fun k => (sigma k)*(part_prod_n F (S k) n)) n + 
+      V (S n) <= @sum_n R_AbelianGroup (fun k => (sigma k)*(part_prod_n F (S k) n)) n + 
                  (V 0%nat)*(part_prod_n F 0 n)).
 Proof.
   intros.
@@ -1145,8 +1146,8 @@ Qed.
 
 Lemma sum_bound_prod_A (F : nat -> posreal) (sigma : nat -> R) (A : R) (n m:nat) :
   (forall r s, part_prod_n (pos_sq_fun F) r s <= A) ->
-  sum_n_m (fun k => (Rsqr (sigma k))*(part_prod_n (pos_sq_fun F) (S k) n)) (S m) n <=
-  (sum_n_m (fun k => Rsqr (sigma k)) (S m) n) * A.
+  @sum_n_m R_AbelianGroup (fun k => (Rsqr (sigma k))*(part_prod_n (pos_sq_fun F) (S k) n)) (S m) n <=
+  (@sum_n_m R_AbelianGroup (fun k => Rsqr (sigma k)) (S m) n) * A.
 Proof.
   intros.
   rewrite <- sum_n_m_mult_r with (a := A).
@@ -1160,8 +1161,8 @@ Qed.
 
 Lemma sum_bound3_max (F : nat -> posreal) (sigma : nat -> R) (n m:nat) :
   (S m <= n)%nat ->
-  sum_n (fun k => (Rsqr (sigma k))*(part_prod_n (pos_sq_fun F) (S k) n)) m <=
-  (sum_n (fun k => (Rsqr (sigma k))) m) * (max_prod_fun (pos_sq_fun F) (S m) n).
+  @sum_n R_AbelianGroup (fun k => (Rsqr (sigma k))*(part_prod_n (pos_sq_fun F) (S k) n)) m <=
+  (@sum_n R_AbelianGroup (fun k => (Rsqr (sigma k))) m) * (max_prod_fun (pos_sq_fun F) (S m) n).
 Proof.  
   intros.
   rewrite <- sum_n_mult_r with (a := (max_prod_fun (pos_sq_fun F) (S m) n)).
@@ -1176,8 +1177,8 @@ Theorem Dvoretzky4_8_5 (F : nat -> posreal) (sigma V: nat -> R) (n m:nat) (A:R):
   (forall (n:nat), Rsqr (V (S n)) <= (pos_sq_fun F) n * Rsqr (V n) + Rsqr (sigma n)) ->
   (m<n)%nat ->
    Rsqr (V (S n)) <= 
-     ( sum_n_m (fun k => Rsqr (sigma k)) (S m) n) * A +
-     (Rsqr (V 0%nat) + sum_n (fun k => (Rsqr (sigma k))) m) *
+     ( @sum_n_m R_AbelianGroup (fun k => Rsqr (sigma k)) (S m) n) * A +
+     (Rsqr (V 0%nat) + @sum_n R_AbelianGroup (fun k => (Rsqr (sigma k))) m) *
              (max_prod_fun (pos_sq_fun F) (S m) n).
 Proof.
   intros F1 Vsqle mn.
@@ -1185,6 +1186,7 @@ Proof.
   intros.
   specialize (H Vsqle n).
   unfold sum_n in H.
+  
   rewrite (sum_split _ _ _ m) in H; trivial; [|lia].
   generalize (sum_bound_prod_A F sigma A n m F1); intros.
   generalize (max_prod_le (pos_sq_fun F) 0 (S m) n); intros.
@@ -1204,8 +1206,8 @@ Lemma sum_bound_prod_A_sigma1
       (F : nat -> posreal) (sigma : nat -> R) (A : R) (n m:nat) :
   (forall r s, part_prod_n (pos_sq_fun F) r s <= A) ->
   (forall n, 0 <= sigma n) ->
-  sum_n_m (fun k => (sigma k)*(part_prod_n (pos_sq_fun F) (S k) n)) (S m) n <=
-  (sum_n_m sigma (S m) n) * A.
+  @sum_n_m R_AbelianGroup (fun k => (sigma k)*(part_prod_n (pos_sq_fun F) (S k) n)) (S m) n <=
+  (@sum_n_m R_AbelianGroup sigma (S m) n) * A.
 Proof.
   intros.
   rewrite <- sum_n_m_mult_r with (a := A).
@@ -1218,8 +1220,8 @@ Qed.
 Lemma sum_bound3_max_sigma1 (F : nat -> posreal) (sigma : nat -> R) (n m:nat) :
   (S m <= n)%nat ->
   (forall n, 0 <= sigma n) ->
-  sum_n (fun k => (sigma k)*(part_prod_n (pos_sq_fun F) (S k) n)) m <=
-  (sum_n sigma m) * (max_prod_fun (pos_sq_fun F) (S m) n).
+  @sum_n R_AbelianGroup (fun k => (sigma k)*(part_prod_n (pos_sq_fun F) (S k) n)) m <=
+  (@sum_n R_AbelianGroup sigma m) * (max_prod_fun (pos_sq_fun F) (S m) n).
 Proof.  
   intros.
   rewrite <- sum_n_mult_r with (a := (max_prod_fun (pos_sq_fun F) (S m) n)).
@@ -1238,8 +1240,8 @@ Theorem Dvoretzky4_8_5_V1 (F : nat -> posreal) (sigma V: nat -> R) (n m:nat) (A:
   (forall (n:nat), 0 <= sigma n) ->
   (m<n)%nat ->
   V (S n) <= 
-  (sum_n_m sigma (S m) n) * A +
-  (V 0%nat + sum_n sigma m) *
+  (@sum_n_m R_AbelianGroup sigma (S m) n) * A +
+  (V 0%nat + @sum_n R_AbelianGroup sigma m) *
              (max_prod_fun (pos_sq_fun F) (S m) n).
 Proof.
   intros F1 Vle Vpos sigma_pos mn.
@@ -1269,12 +1271,12 @@ Theorem Dvoretzky4_8_5_1 (F : nat -> posreal) (sigma V: nat -> R) (n m:nat) (A s
   is_series (fun n => Rsqr (sigma n)) sigmasum ->   
   (m<n)%nat ->
    Rsqr (V (S n)) <= 
-      (sum_n_m (fun k => Rsqr (sigma k)) (S m) n) * A +
+      (@sum_n_m R_AbelianGroup (fun k => Rsqr (sigma k)) (S m) n) * A +
      (Rsqr (V 0%nat) + sigmasum) * (max_prod_fun (pos_sq_fun F) (S m) n).      
 Proof.
   intros.
   generalize (Dvoretzky4_8_5 F sigma V n m A H H0 H2); intros.
-  assert (sum_n (fun k : nat => (sigma k)²) m <= sigmasum).
+  assert (@sum_n R_AbelianGroup (fun k : nat => (sigma k)²) m <= sigmasum).
   - assert (H1' := H1).
     apply is_series_unique in H1.
     assert (ex_series (fun k : nat => (sigma k)²)).
@@ -1300,12 +1302,12 @@ Theorem Dvoretzky4_8_5_1_V1 (F : nat -> posreal) (sigma V: nat -> R) (n m:nat) (
   is_series sigma sigmasum ->   
   (m<n)%nat ->
    V (S n) <= 
-      (sum_n_m sigma (S m) n) * A +
+      (@sum_n_m R_AbelianGroup sigma (S m) n) * A +
       (V 0%nat + sigmasum) * (max_prod_fun (pos_sq_fun F) (S m) n).      
 Proof.
   intros.
   generalize (Dvoretzky4_8_5_V1 F sigma V n m A H H0 H2 H1 H4); intros.
-  assert (sum_n sigma m <= sigmasum).
+  assert (@sum_n R_AbelianGroup sigma m <= sigmasum).
   - assert (H3' := H3).
     apply is_series_unique in H3.
     assert (ex_series sigma).

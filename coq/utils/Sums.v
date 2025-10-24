@@ -1243,7 +1243,7 @@ Qed.
 
 
 Lemma sum_n_m_shift (α : nat -> R) (k n0 : nat) :
-  sum_n_m α k (n0 + k)%nat = sum_n (fun n1 : nat => α (n1 + k)%nat) n0.
+  @sum_n_m R_AbelianGroup α k (n0 + k)%nat = @sum_n R_AbelianGroup (fun n1 : nat => α (n1 + k)%nat) n0.
 Proof.
   unfold sum_n.
   induction n0.
@@ -1259,7 +1259,7 @@ Qed.
 
 Lemma sum_n_m_pos a n1 n2 :
   (forall n, (n1 <= n <= n2)%nat -> 0 <= a n) ->
-  0 <= (sum_n_m a n1 n2).
+  0 <= (@sum_n_m R_AbelianGroup a n1 n2).
 Proof.
   intros.
   rewrite sum_n_m_fold_right_seq.
@@ -1276,7 +1276,7 @@ Qed.
 
 
 Lemma sum_n_pos_incr a n1 n2 : (forall n, (n1 < n <= n2)%nat -> 0 <= a n) ->
-                               (n1 <= n2)%nat -> sum_n a n1 <= sum_n a n2.
+                               (n1 <= n2)%nat -> @sum_n R_AbelianGroup a n1 <= @sum_n R_AbelianGroup a n2.
 Proof.
   intros.
   destruct (Nat.eq_dec n1 n2); [rewrite e; lra|].
