@@ -688,11 +688,11 @@ Section fe.
          (Xn : nat -> Ts -> R)
          (Xn_pos : forall n, NonnegativeFunction (Xn n)) 
          (is_fin_lim : 
-            forall omega, is_finite (Lim_seq (sum_n (fun n => Xn n omega)))):
-    NonnegativeFunction (fun omega => Lim_seq (sum_n (fun n => Xn n omega))).
+            forall omega, is_finite (Lim_seq (@sum_n R_AbelianGroup (fun n => Xn n omega)))):
+    NonnegativeFunction (fun omega => Lim_seq (@sum_n R_AbelianGroup (fun n => Xn n omega))).
   Proof.
     unfold NonnegativeFunction in *; intros.
-    generalize (Lim_seq_pos (sum_n (fun n : nat => Xn n x))).
+    generalize (Lim_seq_pos (@sum_n R_AbelianGroup (fun n : nat => Xn n x))).
     rewrite <- is_fin_lim; simpl.
     intros; apply H.
     intros.
@@ -726,7 +726,7 @@ Section fe.
         (Xn_rv : forall n, RandomVariable dom borel_sa  (Xn n)) 
         (isfe : forall n, IsFiniteExpectation (Xn n)) :
     forall (n:nat),
-      sum_n (fun n0 : nat => FiniteExpectation (Xn n0)) n =
+      @sum_n R_AbelianGroup (fun n0 : nat => FiniteExpectation (Xn n0)) n =
       FiniteExpectation (rvsum Xn n).
     Proof.
       intros.
@@ -883,8 +883,8 @@ Lemma Fatou_FiniteExpectation
      apply H.
      intros.
      unfold rvsum, sum_n.
-     replace (sum_n_m (fun n1 : nat => Xn n1 x) 0 n0) with
-         (sum_n_m (fun n1 : nat => Xn n1 x) 0 n0 + 0) by lra.
+     replace (@sum_n_m R_AbelianGroup (fun n1 : nat => Xn n1 x) 0 n0) with
+         (@sum_n_m R_AbelianGroup (fun n1 : nat => Xn n1 x) 0 n0 + 0) by lra.
      rewrite sum_n_Sm; [|lia].
      unfold plus; simpl.
      apply Rplus_le_compat_l.

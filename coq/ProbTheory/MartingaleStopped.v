@@ -72,7 +72,7 @@ Section stopped_process.
     - destruct (Nat.min_dec (S n) n0).
       + assert (nle: (S n <= n0)%nat) by lia.
         rewrite e.
-        rewrite (@Hierarchy.sum_n_ext_loc Hierarchy.R_AbelianMonoid _ (fun _ => 0)).
+        rewrite (@Hierarchy.sum_n_ext_loc (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup) _ (fun _ => 0)).
         * rewrite sum_n_zero.
           field_simplify.
           match_destr; try lra.
@@ -93,7 +93,7 @@ Section stopped_process.
           rewrite eqq in p.
           assert (n0 = S n) by lia.
           subst.
-          rewrite (@Hierarchy.sum_n_ext_loc Hierarchy.R_AbelianMonoid _ (fun _ => 0)).
+          rewrite (@Hierarchy.sum_n_ext_loc  (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup) _ (fun _ => 0)).
           -- rewrite sum_n_zero.
              lra.
           -- intros.
@@ -689,7 +689,7 @@ Section stopped_process.
           unfold Hierarchy.plus; simpl.
           destruct (Nat.eq_dec n (S n0)).
           * subst.
-            assert (0 <= @Hierarchy.sum_n Hierarchy.R_AbelianMonoid (fun n0 : nat => Rabs (Y n0 x)) n0).
+            assert (0 <= @Hierarchy.sum_n  (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup) (fun n0 : nat => Rabs (Y n0 x)) n0).
             {
               apply sum_n_nneg; intros.
               apply Rabs_pos.

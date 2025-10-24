@@ -1,4 +1,3 @@
-Require Import QArith.Qreals.
 Require Import Lra Lia Reals RealAdd RandomVariableL2 Coquelicot.Coquelicot.
 Require Import Morphisms FiniteType List ListAdd Permutation infprod Almost NumberIso.
 Require Import Sums SimpleExpectation PushNeg.
@@ -585,7 +584,7 @@ Section vec_cauchy.
   Lemma nth_exist_join {T} {size:nat} {P} (f:forall (i:nat) (pf:(i < size)%nat), exists (t:T), P i pf t) :
     exists (ts:list T), length ts = size /\ forall i pf d, P i pf (nth i ts d).
   Proof.
-    destruct (nth_exist_join_aux f _ (le_refl _)) as [??]; firstorder.
+    destruct (nth_exist_join_aux f _ (Nat.le_refl _)) as [??]; firstorder.
   Qed.
 
   Lemma Hnorm_vector0 (x : vector R 0) : hilbert.Hnorm x = 0.
@@ -2611,7 +2610,7 @@ End ash.
       rv_unfold.
       rewrite  Rmax_list_app by now simpl.
       unfold Rmax.
-      rewrite plus_0_l.
+      rewrite Nat.add_0_l.
       destruct (Rle_dec (Rmax_list (map (fun n : nat => F n a) (seq 0 (S k)))) (F (S k) a)); trivial.
     } 
     apply IsFiniteExpectation_case.
@@ -2668,7 +2667,7 @@ End ash.
       rv_unfold.
       rewrite  Rmax_list_app by now simpl.
       unfold Rmax.
-      rewrite plus_0_l.
+      rewrite Nat.add_0_l.
       destruct (Rle_dec (Rmax_list (map (fun n : nat => F n a) (seq 0 (S k)))) (F (S k) a)); trivial.
     } 
     apply IsFiniteExpectation_case; trivial.
@@ -3257,7 +3256,7 @@ End ash.
         + apply cond_pos.
         + exists q.
           split.
-          * apply Rlt_Qlt.
+          * apply Qreals.Rlt_Qlt.
             unfold QArith_base.inject_Z.
             unfold Q2R.
             simpl.
@@ -3270,7 +3269,7 @@ End ash.
       - intros [eps [epos HH]].
         assert (qepspos: 0 < Q2R eps).
         {
-          apply Qlt_Rlt in epos.
+          apply Qreals.Qlt_Rlt in epos.
           now rewrite RMicromega.Q2R_0 in epos.
         }
         exists (mkposreal (Q2R eps) qepspos).
@@ -3285,23 +3284,23 @@ End ash.
     destruct (Rlt_dec 0 (Q2R i)).
     - assert (QArith_base.Qlt {| QArith_base.Qnum := 0; QArith_base.Qden := 1 |} i).
       {
-        apply Rlt_Qlt.
+        apply Qreals.Rlt_Qlt.
         now rewrite RMicromega.Q2R_0.
       } 
       eapply (sa_proper _  (fun omega => (forall N : nat,
                                              exists n m : nat,
                                                (n >= N)%nat /\ (m >= N)%nat /\ hilbert.Hnorm (minus (X n omega) (X m omega)) >= Q2R i))).
-      + firstorder.
+      + red; simpl; intuition.
       + apply sa_pre_countable_inter; intros N.
         now apply (vec_sa_sigma_not_cauchy X (mkposreal _ r)).
     - eapply sa_proper; try apply sa_none.
       assert (~ QArith_base.Qlt {| QArith_base.Qnum := 0; QArith_base.Qden := 1 |} i).
       {
         intros qlt.
-        apply Qlt_Rlt in qlt.
+        apply Qreals.Qlt_Rlt in qlt.
         now rewrite RMicromega.Q2R_0 in qlt.
       } 
-      firstorder.
+      red; intuition.
   Qed.
 
   Lemma vec_sa_sigma_cauchy_descending {size:nat} (X : nat -> Ts -> vector R size )(eps : posreal)
@@ -3660,7 +3659,7 @@ End ash.
     Qed.
 
     Lemma vec_sum_n_m_shift {size:nat} (α : nat -> vector R size) (k n0 : nat) :
-      sum_n_m α k (n0 + k)%nat = sum_n (fun n1 : nat => α (n1 + k)%nat) n0.
+      @sum_n_m Rvector_AbelianGroup α k (n0 + k)%nat = @sum_n Rvector_AbelianGroup (fun n1 : nat => α (n1 + k)%nat) n0.
     Proof.
       unfold sum_n.
       induction n0.
@@ -3675,9 +3674,10 @@ End ash.
     Qed.
 
     Lemma vec_sum_shift_diff {size:nat} (X : nat -> vector R size) (m a : nat) :
-      minus (sum_n X (a + S m)) (sum_n X m) =
-      sum_n (fun n0 : nat => X (n0 + S m)%nat) a.
+      minus (@sum_n Rvector_AbelianGroup X (a + S m)) (@sum_n Rvector_AbelianGroup X m) =
+        @sum_n Rvector_AbelianGroup (fun n0 : nat => X (n0 + S m)%nat) a.
     Proof.
+      simpl.
       rewrite <- vec_sum_n_m_shift.
       unfold sum_n.
       rewrite (@sum_split _ _ _ _ m); try lia.
@@ -3806,7 +3806,7 @@ End ash.
           rewrite minus_eq_zero in r.
           rewrite (@hilbert.norm_zero) in r.
           generalize (is_pos_div_2 eps); intros; lra.
-        + assert (n > N)%nat by (destruct H; try lia;firstorder).
+        + assert (n > N)%nat by (destruct H; try lia;intuition).
           exists (n - (S N))%nat.
           unfold vecrvminus.
           now replace (n - S N + S N)%nat with (n) by lia.

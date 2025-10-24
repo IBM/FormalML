@@ -81,7 +81,7 @@ Section defs.
       (fun omega =>  (rv_X1 omega) + (rv_X2 omega)).
 
     Definition rvsum (Xn : nat -> Ts -> R) (n : nat) :=
-      (fun omega => sum_n (fun n0 => Xn n0 omega) n).
+      (fun omega => @sum_n R_AbelianGroup (fun n0 => Xn n0 omega) n).
 
     Definition rvscale (c:R) (rv_X : Ts -> R) :=
       fun omega => c * (rv_X omega).
@@ -845,7 +845,7 @@ Section defs.
   Qed.
 
     Lemma Rbar_Rabs_lim_sum_le0 (f : nat -> Ts -> R) (x : Ts) :
-    is_finite (Lim_seq (sum_n (fun n=> Rabs (f n x)))) ->
+    is_finite (Lim_seq (@sum_n R_AbelianGroup (fun n=> Rabs (f n x)))) ->
     Rbar_le
       (Rbar_abs (Lim_seq (fun n => (rvsum f) n x)))
       (Rbar_abs (Lim_seq (fun n => (rvsum (fun n0 => (rvabs (f n0))) n x)))).
@@ -859,11 +859,11 @@ Section defs.
     apply ex_series_Lim_seq in H.
     apply ex_series_Lim_seq in H0.
     replace (Lim_seq
-               (fun n : nat => sum_n (fun n0 : nat => f n0 x) n))
+               (fun n : nat => @sum_n R_AbelianGroup (fun n0 : nat => f n0 x) n))
       with (Finite ( Series (fun n : nat => f n x))).
     replace (Lim_seq
           (fun n : nat =>
-             sum_n (fun n0 : nat => Rabs (f n0 x)) n))
+             @sum_n R_AbelianGroup (fun n0 : nat => Rabs (f n0 x)) n))
       with (Finite (Series (fun n : nat => Rabs (f n x)))).
     simpl.
     apply Rge_le.
@@ -875,7 +875,7 @@ Section defs.
   Qed.
 
   Lemma Rabs_lim_sum_le0 (f : nat -> Ts -> R) (x : Ts) :
-    is_finite (Lim_seq (sum_n (fun n=> Rabs (f n x)))) ->
+    is_finite (Lim_seq (@sum_n R_AbelianGroup (fun n=> Rabs (f n x)))) ->
     Rbar_le
       (Rbar_abs (Finite (real (Lim_seq (fun n => (rvsum f) n x)))))
       (Rbar_abs (Lim_seq (fun n => (rvsum (fun n0 => (rvabs (f n0))) n x)))).
@@ -889,11 +889,11 @@ Section defs.
     apply ex_series_Lim_seq in H.
     apply ex_series_Lim_seq in H0.
     replace (Lim_seq
-               (fun n : nat => sum_n (fun n0 : nat => f n0 x) n))
+               (fun n : nat => @sum_n R_AbelianGroup (fun n0 : nat => f n0 x) n))
       with (Finite ( Series (fun n : nat => f n x))).
     replace (Lim_seq
           (fun n : nat =>
-             sum_n (fun n0 : nat => Rabs (f n0 x)) n))
+             @sum_n R_AbelianGroup (fun n0 : nat => Rabs (f n0 x)) n))
       with (Finite (Series (fun n : nat => Rabs (f n x)))).
     simpl.
     apply Rge_le.
@@ -915,11 +915,11 @@ Section defs.
     - rewrite <- H.
       apply Rbar_Rabs_lim_sum_le0.
       unfold rvsum, rvabs in H.
-      replace  (Lim_seq (sum_n (fun n : nat => Rabs (f n x))))
+      replace  (Lim_seq (@sum_n R_AbelianGroup (fun n : nat => Rabs (f n x))))
         with
            (Lim_seq
               (fun n : nat =>
-                 sum_n (fun n0 : nat => Rabs (f n0 x)) n)).
+                 @sum_n R_AbelianGroup (fun n0 : nat => Rabs (f n0 x)) n)).
       now rewrite H.
       apply Lim_seq_ext.
       intros; trivial.
@@ -949,11 +949,11 @@ Section defs.
     - rewrite <- H.
       apply Rabs_lim_sum_le0.
       unfold rvsum, rvabs in H.
-      replace  (Lim_seq (sum_n (fun n : nat => Rabs (f n x))))
+      replace  (Lim_seq (@sum_n R_AbelianGroup (fun n : nat => Rabs (f n x))))
         with
            (Lim_seq
               (fun n : nat =>
-                 sum_n (fun n0 : nat => Rabs (f n0 x)) n)).
+                 @sum_n R_AbelianGroup (fun n0 : nat => Rabs (f n0 x)) n)).
       now rewrite H.
       apply Lim_seq_ext.
       intros; trivial.

@@ -2012,7 +2012,7 @@ Proof.
          unfold Sum, rvsum. rewrite sum_Sn. unfold plus. simpl.
          rewrite Rplus_comm.
          unfold Rminus; rewrite Rplus_assoc.
-         replace  (sum_n (fun n0 : nat => X (n0+m)%nat w) j + - sum_n (fun n0 : nat => X (n0+m)%nat w) j) with 0 by lra.
+         replace  (@sum_n R_AbelianGroup (fun n0 : nat => X (n0+m)%nat w) j + - @sum_n R_AbelianGroup (fun n0 : nat => X (n0+m)%nat w) j) with 0 by lra.
          rewrite Rplus_0_r.
          match_destr.
          - match_destr.

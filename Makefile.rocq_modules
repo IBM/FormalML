@@ -48,7 +48,8 @@ UTILS = BasicUtils \
 	Vector \
 	PushNeg \
 	DVector \
-	Utils 
+	Utils \
+	derivlemmas
 
 CERTRL = pmf_monad \
 	qvalues \

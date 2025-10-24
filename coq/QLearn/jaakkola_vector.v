@@ -3030,16 +3030,16 @@ Section jaakola_vector2.
         repeat rewrite vector_map_create.
         repeat rewrite vector_nth_create.
         repeat rewrite vector_nth_map.
-        assert (pf3 : (i < (S N))%nat).
+        assert (pf3 : (0 + i < 0 + (S N))%nat).
         {
           lia.
         }
         simpl.
         repeat match goal with
-          [|- context [@vector_nth ?RR ?nn i (plus_lt_compat_l ?pi ?pn ?pc ?pp) ?v]] =>
-            replace (@vector_nth RR nn i (plus_lt_compat_l pi pn pc pp) v)
-            with (@vector_nth RR nn i pf3 v)
-            by apply vector_nth_ext
+          [|- context [@vector_nth R (S N) i (@proj1 ?h1 ?h2 (Nat.add_lt_mono_l ?pi ?pn ?pc) ?pp) ?v]] =>
+            replace (@vector_nth R (S N) i (@proj1 h1 h2 (Nat.add_lt_mono_l pi pn pc) pp) v)
+            with (@vector_nth R (S N) i pf3 v)
+            by now apply vector_nth_ext
         end.
         lra. 
     }

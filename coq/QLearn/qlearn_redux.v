@@ -1906,7 +1906,7 @@ Lemma Dvoretzky_converge_Y (C : R) (Y : nat -> Ts -> R) (alpha : nat -> Ts -> R)
       {adaptY : IsAdapted borel_sa Y F} (adapt_alpha : IsAdapted borel_sa alpha F) 
       (alpha_pos:forall n x, 0 <= alpha n x) 
       (alpha_one:forall n x, 0 <= 1 - alpha n x ) :
-   almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
+   almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup) (fun n : nat => alpha n omega)) 
                                                      Rbar.p_infty)  ->
   rv_eq (Y 0%nat) (const C) ->
   (forall n, rv_eq (Y (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Y n)) (rvscale (gamma * C) (alpha n)))) ->
@@ -2042,10 +2042,10 @@ Lemma Dvoretzky_converge_Z  (Z BB: nat -> Ts -> R) (alpha : nat -> Ts -> R)
              (fun x : Ts =>
                 ConditionalExpectation.ConditionalExpectation prts (filt_sub n) (BB n) x = 
                 Rbar.Finite (const 0 x))) ->
-   almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
+   almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup)  (fun n : nat => alpha n omega)) 
                                                      Rbar.p_infty)  ->
    (exists (A2 : R),
-       almost prts (fun omega => Rbar.Rbar_lt (Lim_seq.Lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => rvsqr (alpha n) omega))) (Rbar.Finite A2))) ->
+       almost prts (fun omega => Rbar.Rbar_lt (Lim_seq.Lim_seq (@Hierarchy.sum_n (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup)  (fun n : nat => rvsqr (alpha n) omega))) (Rbar.Finite A2))) ->
    (exists (sigma : R), forall n, rv_le (rvsqr (BB n)) (const (Rsqr sigma))) ->
   rv_eq (Z 0%nat) (const 0) ->
   (forall n, rv_eq (Z (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Z n)) (rvmult (BB n) (alpha n)))) ->
@@ -2276,6 +2276,10 @@ Proof.
           typeclasses eauto.
         }
         specialize (H4 H5 svy1).
+        change (Rbar.is_finite
+    (Lim_seq.Lim_seq (@Hierarchy.sum_n (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup) (fun n : nat => FiniteExpectation prts (rvsqr (alpha n)))))
+).
+
         rewrite (Lim_seq.Lim_seq_ext _ _ H4).
         destruct alpha_sqr as [A2 alpha_sqr].
         generalize (Dominated_convergence_almost 
@@ -2303,7 +2307,7 @@ Proof.
                unfold rvsum.
                left.
                generalize (Lim_seq_increasing_le
-                             (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n0 : nat => rvsqr (alpha n0) x))); intros.
+                             (@Hierarchy.sum_n (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup) (fun n0 : nat => rvsqr (alpha n0) x))); intros.
                  cut_to H8.
                  --- specialize (H8 n).
                      generalize (Rbar.Rbar_le_lt_trans _ _ _ H8 H7); intros.
@@ -2359,7 +2363,7 @@ Proof.
               simpl.
               unfold rvsum.
               rewrite Rabs_right.
-              ** generalize (Lim_seq_increasing_le (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n0 : nat => rvsqr (alpha n0) x))); intros.
+              ** generalize (Lim_seq_increasing_le (@Hierarchy.sum_n (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup) (fun n0 : nat => rvsqr (alpha n0) x))); intros.
                  cut_to H8.
                  --- specialize (H8 n).
                      generalize (Rbar.Rbar_le_lt_trans _ _ _ H8 H7); intros.
@@ -3406,10 +3410,10 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
       (forall n, independent_sas prts (filt_sub n)
                                  (pullback_rv_sub dom cod (X (S n)) (rvX (S n)))) ->
       (forall n, FiniteExpectation prts (BB ∘ X n) = 0) ->
-      almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
+      almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup) (fun n : nat => alpha n omega)) 
                                                         Rbar.p_infty)  ->
       (exists (A2 : R),
-          almost prts (fun omega => Rbar.Rbar_lt (Lim_seq.Lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => rvsqr (alpha n) omega))) (Rbar.Finite A2))) ->
+          almost prts (fun omega => Rbar.Rbar_lt (Lim_seq.Lim_seq (@Hierarchy.sum_n (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup) (fun n : nat => rvsqr (alpha n) omega))) (Rbar.Finite A2))) ->
       (exists (sigma : R), forall n, rv_le (rvsqr (BB ∘ X n)) (const (Rsqr sigma))) ->
       rv_eq (Z 0%nat) (const 0) ->
       (forall n, rv_eq (Z (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Z n)) (rvmult (BB ∘ X (S n)) (alpha n)))) ->
@@ -3626,7 +3630,7 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
           {isfe : forall n, IsFiniteExpectation prts (BB ∘ X n)} 
           (alpha_pos:forall n x, 0 <= alpha n x) 
           (alpha_one:forall n x, 0 <= 1 - alpha n x ) :
-     almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => alpha n omega)) 
+     almost prts (fun omega : Ts => Lim_seq.is_lim_seq (@Hierarchy.sum_n (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup) (fun n : nat => alpha n omega)) 
                                                      Rbar.p_infty)  ->
       gamma + eps < 1 ->
       gamma < 1 ->
@@ -3641,7 +3645,7 @@ Lemma list_inter_prob_bound (l : list (event dom * R)) :
       (forall n, rv_eq (Z (S n)) (rvplus (rvmult (rvminus (const 1) (alpha n)) (Z n)) (rvmult (BB ∘ X (S n)) (alpha n)))) ->
 
        (exists (A2 : R),
-          almost prts (fun omega => Rbar.Rbar_lt (Lim_seq.Lim_seq (@Hierarchy.sum_n Hierarchy.R_AbelianGroup (fun n : nat => rvsqr (alpha n) omega))) (Rbar.Finite A2))) ->
+          almost prts (fun omega => Rbar.Rbar_lt (Lim_seq.Lim_seq (@Hierarchy.sum_n (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup) (fun n : nat => rvsqr (alpha n) omega))) (Rbar.Finite A2))) ->
       (exists (sigma : R), forall n, rv_le (rvsqr (BB ∘ X n)) (const (Rsqr sigma))) ->
       (forall N, (N >= tk)%nat ->
           forall omega,

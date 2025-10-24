@@ -324,7 +324,7 @@ End rv_expressible.
       generalize (scal r y2) as d.
       intros.
       unfold minus.
-      rewrite opp_plus.
+      rewrite (@opp_plus X).
       rewrite plus_assoc.
       rewrite plus_assoc.
       f_equal.
@@ -577,7 +577,7 @@ End rv_expressible.
       (forall n, 0 <= α n <= 1) ->
       (forall n, 0 <= (1-gamma)* α (n+k)%nat < 1) ->
       is_lim_seq α 0 ->
-      is_lim_seq (sum_n α) p_infty ->
+      is_lim_seq (@sum_n R_AbelianGroup α) p_infty ->
       is_lim_seq (fun n => prod_f_R0 (fun m => g_alpha gamma (α (m + k)%nat)) n) 0.
       Proof.
         intros.
@@ -597,7 +597,7 @@ End rv_expressible.
           reflexivity.
         - unfold l1_divergent.
           apply is_lim_seq_ext with 
-              (u := (fun m => (1-gamma) * (sum_n  (fun n => α (n + k)%nat) m))).
+              (u := (fun m => (1-gamma) * (@sum_n R_AbelianGroup (fun n => α (n + k)%nat) m))).
           + intros.
             generalize (sum_n_mult_l (1-gamma) (fun n => α (n + k)%nat) n); intros.
             unfold Hierarchy.mult in H6; simpl in H6.
@@ -613,9 +613,9 @@ End rv_expressible.
                  lia.
               -- assert (k > 0)%nat by lia.
                  apply is_lim_seq_ext with
-                     (u := fun m => minus (sum_n α (m + k)%nat) (sum_n α (k-1)%nat)).
+                     (u := fun m => minus (@sum_n R_AbelianGroup α (m + k)%nat) (@sum_n R_AbelianGroup α (k-1)%nat)).
                  ++ intros.
-                    rewrite <- sum_n_m_sum_n; trivial; try lia.
+                    rewrite <- (@sum_n_m_sum_n R_AbelianGroup); trivial; try lia.
                     replace (S (k-1)%nat) with (k) by lia.
                     apply sum_n_m_shift.
                  ++ apply is_lim_seq_minus with 
@@ -698,10 +698,10 @@ End rv_expressible.
       unfold ex_finite_lim_seq.
       exists (x - (sum_n g_α N)).
       apply is_lim_seq_ext_loc with 
-        (u := (fun n => minus (sum_n g_α n) (sum_n g_α N))).
+        (u := (fun n => minus (@sum_n R_AbelianGroup g_α n) (@sum_n R_AbelianGroup g_α N))).
       exists N.
       intros.
-      rewrite sum_n_m_sum_n; trivial.
+      rewrite (@sum_n_m_sum_n R_AbelianGroup); trivial.
       apply is_lim_seq_minus'; trivial.
       apply is_lim_seq_const.
       unfold ex_finite_lim_seq in H4.
@@ -2230,6 +2230,7 @@ End rv_expressible.
                     ** rewrite (scal_minus_distr_r 1).
                        unfold minus.
                        rewrite <- plus_assoc.
+                       change (xstar = plus (scal 1 xstar) (plus (opp (scal (α n) xstar)) (scal (α n) xstar))).
                        rewrite plus_opp_l.
                        rewrite plus_zero_r.
                        now generalize (scal_one xstar).
@@ -3436,7 +3437,9 @@ End rv_expressible.
             now rewrite IHn.
         + apply is_lim_seq_const.
       - intros.
-        rewrite minus_eq_zero, norm_zero.
+        rewrite minus_eq_zero.
+        change (norm (@zero R_NormedModule) <= gamma * norm (minus x y)).
+        rewrite norm_zero.
         apply Rmult_le_pos; try lra.
         apply norm_ge_0.
       - intros; apply prod_f_R0_proper; [|trivial].

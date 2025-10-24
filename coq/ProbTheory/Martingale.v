@@ -1724,13 +1724,14 @@ Section martingale.
     unfold rvsum.
     destruct k; simpl.
     - lra.
-    - generalize (@Hierarchy.sum_n_plus Hierarchy.R_AbelianMonoid
+    - generalize (@Hierarchy.sum_n_plus  
+         (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup)
                  (fun n0 : nat => H1 (S n0) a * (X (S n0) a + -1 * X n0 a))
                  (fun n0 : nat => H2 (S n0) a * (X (S n0) a + -1 * X n0 a))
                  k); intros eqq.
       unfold Hierarchy.plus in eqq; simpl in eqq.
       rewrite <- eqq.
-      apply (@Hierarchy.sum_n_ext Hierarchy.R_AbelianMonoid); intros.
+      apply (@Hierarchy.sum_n_ext (Hierarchy.AbelianGroup.AbelianMonoid Hierarchy.R_AbelianGroup)); intros.
       lra.
   Qed.
 

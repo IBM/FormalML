@@ -604,7 +604,7 @@ Qed.
                        (sum_n_m (fun n0 : nat => -2 * a n0) (S n0) (n + S n0))).
             {
               intros.
-              rewrite <- sum_split; trivial; lia.
+              rewrite <- (@sum_split R_AbelianGroup); trivial; lia.
             }
             unfold plus in H13; simpl in H13.
             exists (-2*x1 - sum_n_m (fun n0 : nat => -2 * a n0) 0 n0 ).
@@ -994,15 +994,15 @@ Section Derman_Sacks.
       - rewrite is_lim_seq_incr_n with (N := N).
         apply is_lim_seq_ext with
             (u := fun n => 
-                    (sum_n_m (fun j : nat => (delta j - c j) / B j) 0 (n + N)) -
-                    (sum_n_m (fun j : nat => (delta j - c j) / B j) 0 (N-1))).
+                    (@sum_n_m R_AbelianGroup (fun j : nat => (delta j - c j) / B j) 0 (n + N)) -
+                    (@sum_n_m R_AbelianGroup (fun j : nat => (delta j - c j) / B j) 0 (N-1))).
         intros.
-        rewrite sum_split with (m := (N-1)%nat); try lia.        
+        rewrite (@sum_split R_AbelianGroup) with (m := (N-1)%nat); try lia.        
         unfold plus; simpl; ring_simplify.
         replace (S (N-1))%nat with N by lia; trivial.
         apply is_lim_seq_minus with 
             (l1 := m_infty)
-            (l2 := sum_n_m (fun j : nat => (delta j - c j) / B j) 0 (N - 1)).
+            (l2 := @sum_n_m R_AbelianGroup (fun j : nat => (delta j - c j) / B j) 0 (N - 1)).
         + now rewrite is_lim_seq_incr_n with (N := N) in H13.
         + apply is_lim_seq_const.
         + now unfold is_Rbar_minus, is_Rbar_plus; simpl.
@@ -3776,15 +3776,14 @@ Lemma Dvoretzky_converge_W_alpha_beta_uniform  (W w α β: nat -> Ts -> R)
           almostR2 prts Rbar_le
             (ConditionalExpectation prts (filt_sub n) (rvsqr (w n)))
             (const (Rsqr C)))) ->
-   almost prts (fun ω : Ts => is_lim_seq (sum_n(fun n : nat => α n ω)) p_infty)  ->
-   almost prts (fun ω : Ts => is_lim_seq (sum_n (fun n : nat => β n ω)) p_infty)  ->
+   almost prts (fun ω : Ts => is_lim_seq (@sum_n R_AbelianGroup (fun n : nat => α n ω)) p_infty)  ->
+   almost prts (fun ω : Ts => is_lim_seq (@sum_n R_AbelianGroup (fun n : nat => β n ω)) p_infty)  ->
    almost prts (fun ω => ex_series (fun n => Rsqr (β n ω))) ->
-   (exists epsilon : posreal, eventually (fun n => almostR2 prts Rbar_lt (fun ω => Lim_seq (sum_n (fun nn => rvsqr (β (nn+n)%nat) ω))) (const epsilon))) ->
+   (exists epsilon : posreal, eventually (fun n => almostR2 prts Rbar_lt (fun ω => Lim_seq (@sum_n R_AbelianGroup (fun nn => rvsqr (β (nn+n)%nat) ω))) (const epsilon))) ->
   (forall n, rv_eq (W (S n)) (rvplus (rvmult (rvminus (const 1) (α n)) (W n)) (rvmult (w n) (β n)))) ->
   almost _ (fun ω => is_lim_seq (fun n => W n ω) (Finite 0)).
 Proof.
   intros condexpw condexpw2 alpha_inf beta_inf beta_sqr [ϵ beta_bounded] (* W0 *) Wrel.
-
   assert (svy1b: forall n : nat, IsFiniteExpectation prts (rvsqr (β n))).
   {
     intros.
@@ -3792,7 +3791,10 @@ Proof.
   }
 
   eapply (@Dvoretzky_converge_W_alpha_beta_isf_seq_sum W w α β F isfilt filt_sub adaptZ adapt_alpha adapt_beta rvw); eauto.
-
+  change (is_finite
+    (Lim_seq
+       (@sum_n R_AbelianGroup
+          (fun n : nat => @FiniteExpectation Ts dom prts (@rvsqr Ts (β n)) (svy1b n))))).
   generalize (sum_expectation prts (fun n => rvsqr (β n))); intros HH.
   assert (rv2 : forall n, RandomVariable dom borel_sa (rvsqr (β n))).
   {
@@ -3812,7 +3814,7 @@ Proof.
     unfold A3'.
     unfold Series.
     apply Rbar_real_rv.
-    cut (RandomVariable dom Rbar_borel_sa (fun omega : Ts => ELim_seq (sum_n (fun n : nat => (β n omega)²)))).
+    cut (RandomVariable dom Rbar_borel_sa (fun omega : Ts => ELim_seq (@sum_n R_AbelianGroup (fun n : nat => (β n omega)²)))).
     {
       apply RandomVariable_proper; try reflexivity; intros ?.
       now rewrite <- Elim_seq_fin.
@@ -3878,7 +3880,7 @@ Proof.
     specialize (betaN (S N)).
     cut_to betaN; try lia.
     
-    pose (btail := (rvplus (fun ω => sum_n  (fun nn : nat => rvsqr (β nn) ω) N)
+    pose (btail := (rvplus (fun ω => @sum_n R_AbelianGroup  (fun nn : nat => rvsqr (β nn) ω) N)
                       (const (pos ϵ)))).
 
     assert (btail_rv : RandomVariable dom Rbar_borel_sa btail).
@@ -3892,7 +3894,7 @@ Proof.
     apply IsFiniteExpectation_Rbar.
     apply Rbar_finexp_finexp.
     {
-      cut (RandomVariable dom Rbar_borel_sa (fun omega : Ts => ELim_seq (sum_n (fun n : nat => (β n omega)²)))).
+      cut (RandomVariable dom Rbar_borel_sa (fun omega : Ts => ELim_seq (@sum_n R_AbelianGroup (fun n : nat => (β n omega)²)))).
       {
         apply RandomVariable_proper; try reflexivity; intros ?.
         now rewrite <- Elim_seq_fin.
@@ -3901,7 +3903,7 @@ Proof.
     }  
     apply (Rbar_IsFiniteExpectation_nnf_bounded_almost _ _ btail).
     - intros ?.
-      generalize (Lim_seq_le (fun _ => 0) (sum_n (fun n : nat => (β n x)²)))
+      generalize (Lim_seq_le (fun _ => 0) (@sum_n R_AbelianGroup (fun n : nat => (β n x)²)))
       ; intros HHH.
       cut_to HHH.
       + rewrite Lim_seq_const in HHH.
@@ -3916,13 +3918,13 @@ Proof.
       apply almost_impl.
       apply all_almost; intros ω bsqr_ex bsqr_bound.
       rewrite <- (Lim_seq_incr_n _ (S N)).
-      assert (eqq:Lim_seq (fun n : nat => sum_n (fun n0 : nat => (β n0 ω)²) (n + S N)) =
+      assert (eqq:Lim_seq (fun n : nat => @sum_n R_AbelianGroup (fun n0 : nat => (β n0 ω)²) (n + S N)) =
                     
-                    (Lim_seq (fun n =>  sum_n (fun nn : nat => rvsqr (β nn) ω) N +
-                                       (sum_n (fun nn : nat => rvsqr (β (nn + S N)%nat) ω) n)))).
+                    (Lim_seq (fun n =>  @sum_n R_AbelianGroup (fun nn : nat => rvsqr (β nn) ω) N +
+                                       (@sum_n R_AbelianGroup (fun nn : nat => rvsqr (β (nn + S N)%nat) ω) n)))).
       {
         apply Lim_seq_ext; intros n.
-        generalize (sum_split (fun n0 : nat => (β n0 ω)²) 0 ((n + S N)%nat) N)
+        generalize (@sum_split R_AbelianGroup (fun n0 : nat => (β n0 ω)²) 0 ((n + S N)%nat) N)
         ; intros HHH.
         cut_to HHH; try lia.
         unfold sum_n.
@@ -3931,12 +3933,19 @@ Proof.
         f_equal.
         now rewrite sum_shift.
       }
+      change ( Rbar_le (Lim_seq (fun n : nat => @sum_n R_AbelianGroup (fun n0 : nat => (β n0 ω)²) (n + S N)))
+    (rvplus (fun ω0 : Ts => @sum_n R_AbelianGroup (fun nn : nat => rvsqr (β nn) ω0) N) (const ϵ) ω)).
       rewrite eqq.
       rewrite Lim_seq_plus.
       + unfold rvplus.
         rewrite Lim_seq_const.
-        replace (Finite (sum_n (fun nn : nat => rvsqr (β nn) ω) N + const (pos ϵ) ω)) with
-          (Rbar_plus (sum_n (fun nn : nat => rvsqr (β nn) ω) N) (const (pos ϵ) ω)) by reflexivity.
+        replace  (Finite
+       (Rplus
+          (@sum_n (AbelianGroup.AbelianMonoid R_AbelianGroup)
+             (fun nn : nat => @rvsqr Ts (β nn) ω) N)
+          (pos (@const posreal Ts ϵ ω))))
+          with
+          (Rbar_plus (@sum_n R_AbelianGroup (fun nn : nat => rvsqr (β nn) ω) N) (const (pos ϵ) ω)) by reflexivity.
         apply Rbar_plus_le_compat.
         { apply Rbar_le_refl. }
         now apply Rbar_lt_le.
@@ -4139,16 +4148,18 @@ Proof.
     + destruct n; [lia |].
       rewrite <- (Lim_seq_incr_n (sum_n (fun n0 : nat => rvsqr (β n0) ω)) (S n)).
       apply Lim_seq_le; intros.
-      generalize (sum_split (fun n0 : nat => (β n0 ω)²) 0 ((n0 + S n)%nat) n)
+      generalize (@sum_split R_AbelianGroup (fun n0 : nat => (β n0 ω)²) 0 ((n0 + S n)%nat) n)
         ; intros HHH.
-        cut_to HHH; try lia.
-        unfold sum_n, rvsqr.
-        rewrite HHH.
-        unfold plus, rvsqr; simpl.
-        rewrite sum_shift.
-        cut (0 <=  sum_n_m (fun n1 : nat => (β n1 ω)²) 0 n); try lra.
-        apply sum_n_m_pos; intros.
-        apply Rle_0_sqr.
+      cut_to HHH; try lia.
+      unfold sum_n, rvsqr.
+      etransitivity; [| right; symmetry; apply HHH].
+      unfold plus, rvsqr; simpl.
+      rewrite sum_shift.
+      change (@sum_n_m R_AbelianGroup (fun nn : nat => (β (nn + S n)%nat ω)²) 0 n0 <=
+             @sum_n_m R_AbelianGroup (fun n1 : nat => (β n1 ω)²) 0 n + @sum_n_m R_AbelianGroup (fun n1 : nat => (β (n1 + S n)%nat ω)²) 0 n0).
+      cut (0 <=  @sum_n_m R_AbelianGroup (fun n1 : nat => (β n1 ω)²) 0 n); try lra.
+      apply sum_n_m_pos; intros.
+      apply Rle_0_sqr.
     + simpl.
       apply Rmax_r.
 Qed.
