@@ -14,10 +14,6 @@ depends: [
   "rocq-mathcomp-ssreflect"
   "coq-coquelicot"
   "coq-ext-lib" {<= "1.0.0"}
-  "ocamlbuild"
-  "base64"
-  "menhir"
-  "csv"
   "coq-coq2html" {with-doc}
 ]
 build: [[make]
