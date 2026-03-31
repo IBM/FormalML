@@ -3,8 +3,11 @@ Require Import RelationClasses Morphisms.
 Require Import Lia Lra Rbase.
 Require Import Relation_Definitions Sorted.
 Require FinFun.
+From Stdlib Require Import Finite.
 
 Require Import LibUtils BasicUtils.
+
+Notation EqDec := EquivDec.EqDec.
 
 Import ListNotations.
 
@@ -2271,8 +2274,8 @@ Proof.
       rewrite <- H2 in H3.
       apply in_prod_iff in H3.
       tauto.
-    + apply FinFun.Injective_map_NoDup; trivial.
-      unfold FinFun.Injective; intros.
+    + apply Injective_map_NoDup; trivial.
+      unfold Injective; intros.
       now inversion H2.
 Qed.
 

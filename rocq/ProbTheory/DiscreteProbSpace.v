@@ -20,6 +20,8 @@ Require Import Coquelicot.Coquelicot.
 Require Import ClassicalDescription.
 Require Import ProductSpace.
 
+From Stdlib Require Finite.
+
 Set Bullet Behavior "Strict Subproofs".
 
 Local Open Scope prob.
@@ -943,7 +945,7 @@ Section fin.
           assert (n = x0) by congruence.
           subst.
           lia.
-        - apply FinFun.Injective_map_NoDup.
+        - apply Finite.Injective_map_NoDup.
           + red; congruence.
           + apply NoDup_nodup.
         - intros so; split; intros inn.

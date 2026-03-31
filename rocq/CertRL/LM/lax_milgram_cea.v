@@ -17,7 +17,7 @@ COPYING file for more details.
 Require Import hilbert.
 Require Export Decidable.
 Require Export FunctionalExtensionality.
-Require Export mathcomp.ssreflect.ssreflect.
+From mathcomp Require Export ssreflect.
 Require Export Coquelicot.Hierarchy.
 Require Export Reals.
 Require Export logic_tricks.

@@ -16,7 +16,7 @@ COPYING file for more details.
 
 Require Export linear_map.
 Require Export fixed_point.
-Require Import mathcomp.ssreflect.ssreflect.
+From mathcomp Require Import ssreflect.
 Require Import Decidable.
 
 (** Properties of linear_maps of NormedModule *)

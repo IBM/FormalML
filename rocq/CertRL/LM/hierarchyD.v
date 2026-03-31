@@ -14,7 +14,8 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 COPYING file for more details.
 *)
 
-Require Import Reals mathcomp.ssreflect.ssreflect.
+Require Import Reals.
+From mathcomp Require Import ssreflect.
 Require Import Coquelicot.Rcomplements Coquelicot.Rbar Coquelicot.Markov Coquelicot.Iter Coquelicot.Lub Coquelicot.Hierarchy.
 Require Import continuous_linear_map.
 

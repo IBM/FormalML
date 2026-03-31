@@ -1,5 +1,5 @@
 Set Warnings "-parsing".
-Require Import mathcomp.ssreflect.ssreflect mathcomp.ssreflect.ssrbool mathcomp.ssreflect.eqtype mathcomp.ssreflect.seq.
+From mathcomp Require Import ssreflect ssrbool eqtype seq.
 Set Warnings "+parsing".
 Require Import Coquelicot.Coquelicot.
 Require Import Reals.Rbase.

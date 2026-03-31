@@ -9,7 +9,7 @@ Require Import EquivDec Nat Lia Lra.
 Require Import Reals.R_sqrt.
 Require Import PushNeg.
 Require Import Reals.Sqrt_reg.
-
+From Stdlib Require Finite.
 Require FinFun.
 
 Require Import LibUtils ListAdd RealAdd.
@@ -919,7 +919,7 @@ Proof.
     + lra.
 Qed.
 
-Lemma bijective_injective {B C} (f:B->C) : FinFun.Bijective f -> FinFun.Injective f.
+Lemma bijective_injective {B C} (f:B->C) : Finite.Bijective f -> Finite.Injective f.
 Proof.
   intros [g [??]] ?? eqq.
   generalize (f_equal g eqq); intros eqq2.
@@ -929,7 +929,7 @@ Qed.
 (* proof based on 
        https://www.math.ucdavis.edu/~npgallup/m17_mat25/lecture_notes/lecture_15/m17_mat25_lecture_15_notes.pdf *)
 Theorem infinite_sum'_perm (g:nat->nat) (f:nat -> R) l:
-  FinFun.Bijective g ->
+  Finite.Bijective g ->
   (exists l2, infinite_sum' (fun x => Rabs (f x)) l2) ->
   infinite_sum' f l ->
   infinite_sum' (fun n => f (g n)) l.
@@ -962,7 +962,7 @@ Proof.
     ; intros HH.
     cut_to HH.
     - now rewrite map_length, seq_length in HH.
-    - apply FinFun.Injective_map_NoDup.
+    - apply Finite.Injective_map_NoDup.
       + intros ???.
         apply (f_equal g) in H.
         now repeat rewrite gginv in H.
@@ -1026,7 +1026,7 @@ Proof.
   assert (ndgl:NoDup (gpre ++ l2)).
   {
     rewrite l2perm.
-    apply FinFun.Injective_map_NoDup.
+    apply Finite.Injective_map_NoDup.
     - now apply bijective_injective.
     - apply seq_NoDup.
   }
@@ -1119,7 +1119,7 @@ Proof.
 Qed.
 
 Corollary infinite_sum'_pos_perm (g:nat->nat) (f:nat -> R) l:
-  FinFun.Bijective g ->
+  Finite.Bijective g ->
   (forall x, 0 <= f x) ->
   infinite_sum' f l ->
   infinite_sum' (fun n => f (g n)) l.

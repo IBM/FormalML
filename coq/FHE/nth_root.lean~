@@ -1,0 +1,17 @@
+import Mathlib.RingTheory.RootsOfUnity.Complex
+
+open Classical
+open Complex
+
+noncomputable section
+
+def nth_root (j n : Nat) :=
+  (exp (2 * ↑Real.pi * I * (↑j / ↑n)))
+
+theorem nth_root_0 n :
+  nth_root 0 (Nat.succ n) = 1  := by
+     unfold nth_root
+     simp
+
+theorem  nth_root_2PI n j :
+  nth_root (j * (S n)) (S n) = 1.     

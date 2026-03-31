@@ -1,8 +1,8 @@
 Require Import LibUtils List RealAdd.
 Require Import Reals Psatz Morphisms.
-Require Import mathcomp.ssreflect.ssreflect.
+From mathcomp Require Import ssreflect.
 
-Require Import Reals mathcomp.ssreflect.ssreflect.
+Require Import Reals.
 Require Import Coquelicot.Rcomplements.
 Require Import Coquelicot.Rbar Coquelicot.Lub Coquelicot.Markov Coquelicot.Hierarchy.
 Require Import Coquelicot.Rcomplements Coquelicot.Rbar Coquelicot.Markov Coquelicot.Iter Coquelicot.Lub.

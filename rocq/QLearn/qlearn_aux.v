@@ -9,6 +9,7 @@ Require Import SigmaAlgebras ProbSpace.
 Require Import ConditionalExpectation.
 Require Import DVector RealVectorHilbert VectorRandomVariable.
 Require Import DiscreteProbSpace ProductSpace.
+From Stdlib Require Finite.
 
 Set Bullet Behavior "Strict Subproofs".
 
@@ -483,7 +484,7 @@ Qed.
    Qed.
 
     Lemma Injective_iso {A A' B} (f:A->B) {iso:Isomorphism A A'} :
-      FinFun.Injective f -> FinFun.Injective (fun a' => f (iso_b a')).
+      Finite.Injective f -> Finite.Injective (fun a' => f (iso_b a')).
     Proof.
       intros inj a1 a2 eqq.
       apply inj in eqq.
